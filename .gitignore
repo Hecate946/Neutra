@@ -1,12 +1,11 @@
 .idea
 .vscode
 .ngcvenv
-database.db
-database.db-journal
+data/database.db
+data/database.db-journal
 __pycache__
 .vscode
 *.json
-database.db
 cogs/owner.py
 cogs/config.py
 utilities/__pycache__
