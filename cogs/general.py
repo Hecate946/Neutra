@@ -137,7 +137,7 @@ class General(commands.Cog):
 
 
     @commands.command(brief="Display a user's avatar in an embed.", aliases=['av', 'pfp'])
-    async def avatar(self, ctx, user: converters.AnyUser=None):
+    async def avatar(self, ctx, user: discord.User=None):
         """
         Usage:    -avatar [user]
         Aliases:  -av, -pfp
