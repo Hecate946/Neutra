@@ -479,37 +479,3 @@ class Statistics(commands.Cog):
             x.name != "@everyone")])
         db.execute("INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                        (roles, member.guild.id, None, member.id, member.display_name, 0, 0, 0))
-        # xd = self.c.execute(
-        #     'SELECT * FROM userconfig WHERE (guild_id=? AND user_id=?)', (member.guild.id, member.id))
-        # xd = xd.fetchall()
-        # if xd == []:
-        #     self.c.execute('INSERT INTO userconfig VALUES (?, ?, ?, ?, ?, ?)',
-        #                    (member.guild.id, member.id, None, None, False, None))
-        #     self.conn.commit()
-
-    async def on_guild_join(self, guild):
-        #db.execute('INSERT OR IGNORE  INTO servers VALUES (?, ?, ?, ?, ?, ?)',
-        #                (guild.id, None, None, None, None, '?,!'))
-        #db.execute('INSERT OR IGNORE INTO logging VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        #                (guild.id, 1, 1, 1, 1, 1, 1, 1, None))
-#
-        #db.execute('''INSERT OR IGNORE INTO role_config
-        #                VALUES (?, ?, ?, ?, ?)''',
-        #            (None, False, guild.id, None, True))
-        #db.execute('''INSERT OR IGNORE INTO config
-        #                VALUES (?, ?, ?, ?, ?, ?)''',
-        #            (guild.id, None, None, True, None, None))
-        for member in guild.members:
-            roles = ','.join(
-                [str(x.id) for x in member.roles if x.name != "@everyone"])
-            db.execute("INSERT OR IGNORE INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                        (roles, member.guild.id, None, member.id, member.display_name, 0, 0, 0))
-            # self.c.execute('''SELECT *
-            #                   FROM userconfig
-            #                   WHERE (user_id=? AND guild_id=?)''',
-            #                 (member.id, member.guild.id))
-            # userconfig = self.c.fetchall()
-            # if userconfig == []:
-            #     self.c.execute('''INSERT INTO userconfig VALUES (?, ?, ?, ?, ?, ?)''',
-            #     (member.guild.id, member.id, None, None, False, None))
-            #     self.conn.commit()
