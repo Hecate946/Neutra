@@ -1,5 +1,4 @@
 import random
-import re
 import discord
 import requests
 import io
@@ -10,12 +9,6 @@ from collections import OrderedDict
 
 from utilities import permissions, default
 from lib.db import db
-
-
-def clean_string(string):
-    string = re.sub('@', '@\u200b', string)
-    string = re.sub('#', '#\u200b', string)
-    return string
 
 
 def setup(bot):
@@ -31,6 +24,8 @@ class Logging(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+        self.current_streamers = list()
+
       #####################
      ## Event Listeners ##
     #####################
@@ -40,6 +35,12 @@ class Logging(commands.Cog):
         webhook_id = db.record("SELECT LoggerWebhookID FROM guilds WHERE GuildID = ?", channel.guild.id) or (None)
         if webhook_id is None or "None" in str(webhook_id): 
             return
+
+        to_log_or_not_to_log = db.record("""
+        SELECT channel_updates FROM logging WHERE server = ?
+        """, channel.guild.id)
+        if to_log_or_not_to_log[0] != 1: return 
+
         webhook_id = int(str(webhook_id).strip("(),'"))
         webhook = await self.bot.fetch_webhook(webhook_id)
         if channel.guild.id != webhook.guild.id: return
@@ -50,13 +51,19 @@ class Logging(commands.Cog):
         , color=default.config()["embed_color"], timestamp=datetime.utcnow())
         embed.set_author(name="Channel Created", icon_url="https://cdn.discordapp.com/emojis/810659118045331517.png?v=1")
         embed.set_footer(text=f"Channel ID: {channel.id}")
-        await webhook.execute(embed=embed)
+        await webhook.execute(embed=embed, username=self.bot.user.name)
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel):
         webhook_id = db.record("SELECT LoggerWebhookID FROM guilds WHERE GuildID = ?", channel.guild.id) or (None)
         if webhook_id is None or "None" in str(webhook_id): 
             return
+
+        to_log_or_not_to_log = db.record("""
+        SELECT channel_updates FROM logging WHERE server = ?
+        """, channel.guild.id)
+        if to_log_or_not_to_log[0] != 1: return 
+
         webhook_id = int(str(webhook_id).strip("(),'"))
         webhook = await self.bot.fetch_webhook(webhook_id)
         if channel.guild.id != webhook.guild.id: return
@@ -67,13 +74,19 @@ class Logging(commands.Cog):
         , color=default.config()["embed_color"], timestamp=datetime.utcnow())
         embed.set_author(name="Channel Deleted", icon_url="https://cdn.discordapp.com/emojis/810659118045331517.png?v=1")
         embed.set_footer(text=f"Channel ID: {channel.id}")
-        await webhook.execute(embed=embed)
+        await webhook.execute(embed=embed, username=self.bot.user.name)
 
     @commands.Cog.listener()
     async def on_guild_channel_update(self, before, after):
         webhook_id = db.record("SELECT LoggerWebhookID FROM guilds WHERE GuildID = ?", after.guild.id) or (None)
         if webhook_id is None or "None" in str(webhook_id): 
             return
+
+        to_log_or_not_to_log = db.record("""
+        SELECT channel_updates FROM logging WHERE server = ?
+        """, before.guild.id)
+        if to_log_or_not_to_log[0] != 1: return 
+
         webhook_id = int(str(webhook_id).strip("(),'"))
         webhook = await self.bot.fetch_webhook(webhook_id)
         if after.guild.id != webhook.guild.id: return
@@ -87,7 +100,7 @@ class Logging(commands.Cog):
                           timestamp=datetime.utcnow())
             embed.set_author(name=f"Channel Update")
             embed.set_footer(text=f"Channel ID: {after.id}")
-            await webhook.execute(embed=embed)
+            await webhook.execute(embed=embed, username=self.bot.user.name)
 
         elif before.category != after.category:
             embed = discord.Embed(
@@ -98,7 +111,7 @@ class Logging(commands.Cog):
                           timestamp=datetime.utcnow())
             embed.set_author(name=f"Channel Update")
             embed.set_footer(text=f"Channel ID: {after.id}")
-            await webhook.execute(embed=embed)
+            await webhook.execute(embed=embed, username=self.bot.user.name)
 
         elif before.topic != after.topic:
             embed = discord.Embed(
@@ -109,7 +122,7 @@ class Logging(commands.Cog):
                           timestamp=datetime.utcnow())
             embed.set_author(name=f"Channel Update")
             embed.set_footer(text=f"Channel ID: {after.id}")
-            await webhook.execute(embed=embed)
+            await webhook.execute(embed=embed, username=self.bot.user.name)
 
         elif before.changed_roles != after.changed_roles:
             old_overwrites = str([r.mention for r in before.changed_roles if r != after.guild.default_role]).replace("'","").replace("[","").replace("]","")
@@ -122,7 +135,7 @@ class Logging(commands.Cog):
                           timestamp=datetime.utcnow())
             embed.set_author(name=f"Channel Update")
             embed.set_footer(text=f"Channel ID: {after.id}")
-            await webhook.execute(embed=embed)
+            await webhook.execute(embed=embed, username=self.bot.user.name)
 
 
     @commands.Cog.listener()
@@ -131,13 +144,18 @@ class Logging(commands.Cog):
         if before.name != after.name:
             to_send = []
             for guild in self.bot.guilds:
+
+                to_log_or_not_to_log = db.record("""
+                SELECT name_changes FROM logging WHERE server = ?
+                """, guild.id)
+                if to_log_or_not_to_log[0] != 1: return 
+
                 for member in guild.members:
                     if member.id != before.id: 
                         continue
                     to_send.append(guild.id)
             if to_send:
                 for i in to_send:
-                    print(i)
                     webhook_id = db.record("SELECT LoggerWebhookID FROM guilds WHERE GuildID = ?", i) or (None)
                     if webhook_id is None or "None" in str(webhook_id): 
                         continue
@@ -152,18 +170,23 @@ class Logging(commands.Cog):
             embed.set_author(name=f"Username Change")
             embed.set_footer(text=f"User ID: {after.id}")
 
-            await webhook.execute(embed=embed)
+            await webhook.execute(embed=embed, username=self.bot.user.name)
 
         if before.discriminator != after.discriminator:
             to_send = []
             for guild in self.bot.guilds:
+
+                to_log_or_not_to_log = db.record("""
+                SELECT name_changes FROM logging WHERE server = ?
+                """, guild.id)
+                if to_log_or_not_to_log[0] != 1: return 
+
                 for member in guild.members:
                     if member.id != before.id: 
                         continue
                     to_send.append(guild.id)
             if to_send:
                 for i in to_send:
-                    print(i)
                     webhook_id = db.record("SELECT LoggerWebhookID FROM guilds WHERE GuildID = ?", i) or (None)
                     if webhook_id is None or "None" in str(webhook_id): 
                         continue
@@ -179,11 +202,17 @@ class Logging(commands.Cog):
             embed.set_author(name=f"Discriminator Change")
             embed.set_footer(text=f"User ID: {after.id}")
 
-            await webhook.execute(embed=embed)
+            await webhook.execute(embed=embed, username=self.bot.user.name)
 
         if before.avatar_url != after.avatar_url:
             to_send = []
             for guild in self.bot.guilds:
+
+                to_log_or_not_to_log = db.record("""
+                SELECT avatar_changes FROM logging WHERE server = ?
+                """, guild.id)
+                if to_log_or_not_to_log[0] != 1: return 
+
                 for member in guild.members:
                     if member.id != before.id: 
                         continue
@@ -205,14 +234,67 @@ class Logging(commands.Cog):
             embed.set_image(url=after.avatar_url)
             embed.set_author(name=f"Avatar Change")
             embed.set_footer(text=f"User ID: {after.id}")
-            await webhook.execute(embed=embed)
+            await webhook.execute(embed=embed, username=self.bot.user.name)
 
+
+    @commands.Cog.listener()
+    async def on_member_unban(self, member):
+        webhook_id = db.record("SELECT LoggerWebhookID FROM guilds WHERE GuildID = ?", member.guild.id) or (None)
+        if webhook_id is None or "None" in str(webhook_id): 
+            return
+
+        to_log_or_not_to_log = db.record("""
+        SELECT bans FROM logging WHERE server = ?
+        """, member.guild.id)
+        if to_log_or_not_to_log[0] != 1: return 
+
+        webhook_id = int(str(webhook_id).strip("(),'"))
+        webhook = await self.bot.fetch_webhook(webhook_id)
+        if member.guild.id != webhook.guild.id: return
+
+        embed = discord.Embed(
+                      description=f"**User:** {member.mention} **Name:** `{member}`\n",
+                      colour=default.config()["embed_color"],
+                      timestamp=datetime.utcnow())
+        embed.set_author(name=f"User Unbanned")
+        embed.set_footer(text=f"User ID: {member.id}")
+        await webhook.execute(embed=embed, username=self.bot.user.name)
+
+
+    @commands.Cog.listener()
+    async def on_member_ban(self, member):
+        webhook_id = db.record("SELECT LoggerWebhookID FROM guilds WHERE GuildID = ?", member.guild.id) or (None)
+        if webhook_id is None or "None" in str(webhook_id): 
+            return
+
+        to_log_or_not_to_log = db.record("""
+        SELECT bans FROM logging WHERE server = ?
+        """, member.guild.id)
+        if to_log_or_not_to_log[0] != 1: return 
+
+        webhook_id = int(str(webhook_id).strip("(),'"))
+        webhook = await self.bot.fetch_webhook(webhook_id)
+        if member.guild.id != webhook.guild.id: return
+
+        embed = discord.Embed(
+                      description=f"**User:** {member.mention} **Name:** `{member}`\n",
+                      colour=default.config()["embed_color"],
+                      timestamp=datetime.utcnow())
+        embed.set_author(name=f"User Banned")
+        embed.set_footer(text=f"User ID: {member.id}")
+        await webhook.execute(embed=embed, username=self.bot.user.name)
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
         webhook_id = db.record("SELECT LoggerWebhookID FROM guilds WHERE GuildID = ?", member.guild.id) or (None)
         if webhook_id is None or "None" in str(webhook_id): 
             return
+
+        to_log_or_not_to_log = db.record("""
+        SELECT joins FROM logging WHERE server = ?
+        """, member.guild.id)
+        if to_log_or_not_to_log[0] != 1: return 
+
         webhook_id = int(str(webhook_id).strip("(),'"))
         webhook = await self.bot.fetch_webhook(webhook_id)
         if member.guild.id != webhook.guild.id: return
@@ -223,7 +305,7 @@ class Logging(commands.Cog):
                       timestamp=datetime.utcnow())
         embed.set_author(name=f"User Joined")
         embed.set_footer(text=f"User ID: {member.id}")
-        await webhook.execute(embed=embed)
+        await webhook.execute(embed=embed, username=self.bot.user.name)
 
 
     @commands.Cog.listener()
@@ -231,6 +313,12 @@ class Logging(commands.Cog):
         webhook_id = db.record("SELECT LoggerWebhookID FROM guilds WHERE GuildID = ?", member.guild.id) or (None)
         if webhook_id is None or "None" in str(webhook_id): 
             return
+
+        to_log_or_not_to_log = db.record("""
+        SELECT leaves FROM logging WHERE server = ?
+        """, member.guild.id)
+        if to_log_or_not_to_log[0] != 1: return 
+
         webhook_id = int(str(webhook_id).strip("(),'"))
         webhook = await self.bot.fetch_webhook(webhook_id)
         if member.guild.id != webhook.guild.id: return
@@ -241,7 +329,7 @@ class Logging(commands.Cog):
                       timestamp=datetime.utcnow())
         embed.set_author(name=f"User Left")
         embed.set_footer(text=f"User ID: {member.id}")
-        await webhook.execute(embed=embed)
+        await webhook.execute(embed=embed, username=self.bot.user.name)
 
 
     @commands.Cog.listener()
@@ -256,6 +344,12 @@ class Logging(commands.Cog):
         if after.guild.id != webhook.guild.id: return
 
         if before.display_name != after.display_name:
+
+            to_log_or_not_to_log = db.record("""
+            SELECT name_updates FROM logging WHERE server = ?
+            """, before.guild.id)
+            if to_log_or_not_to_log[0] != 1: return 
+
             embed = discord.Embed(
                           description=f"**User:** {after.mention} **Name:** `{after}`\n"
                                       f"**Old Nickname:** `{before.display_name}`\n"
@@ -265,7 +359,7 @@ class Logging(commands.Cog):
             embed.set_author(name=f"Nickname Change")
             embed.set_footer(text=f"User ID: {after.id}")
 
-            await webhook.execute(embed=embed)
+            await webhook.execute(embed=embed, username=self.bot.user.name)
 
             name_list = db.record('''SELECT nicknames
                               FROM users
@@ -289,6 +383,12 @@ class Logging(commands.Cog):
                            new_names, before.id, before.guild.id)
 
         elif before.roles != after.roles:
+
+            to_log_or_not_to_log = db.record("""
+            SELECT role_changes FROM logging WHERE server = ?
+            """, before.guild.id)
+            if to_log_or_not_to_log[0] != 1: return 
+            
             embed = discord.Embed(
                           description=f"**User:** {after.mention} **Name:** `{after}`\n"
                                       f"**Old Roles:** {', '.join([r.mention for r in before.roles if r != after.guild.default_role])}\n"
@@ -298,7 +398,109 @@ class Logging(commands.Cog):
             embed.set_author(name=f"Role Updates")
             embed.set_footer(text=f"User ID: {after.id}")
 
-            await webhook.execute(embed=embed)
+            await webhook.execute(embed=embed, username=self.bot.user.name)
+
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member, before, after):
+        if before is None:
+            return
+        webhook_id = db.record("SELECT LoggerWebhookID FROM guilds WHERE GuildID = ?", member.guild.id) or (None)
+        if webhook_id is None or "None" in str(webhook_id): 
+            return
+        to_log_or_not_to_log = db.record("""
+        SELECT voice_state_updates FROM logging WHERE server = ?
+        """, member.guild.id)
+        if to_log_or_not_to_log[0] != 1: return 
+
+        webhook_id = int(str(webhook_id).strip("(),'"))
+        webhook = await self.bot.fetch_webhook(webhook_id)
+        if member.guild.id != webhook.guild.id: return
+
+        if not before.channel:
+
+            embed = discord.Embed(
+                          description=f"**User:** {member.mention} **Name:** `{member}`\n",
+                          colour=default.config()["embed_color"],
+                          timestamp=datetime.utcnow())
+            embed.set_author(name=f"Member Joined {after.channel.name}")
+            embed.set_footer(text=f"User ID: {member.id}")
+
+            await webhook.execute(embed=embed, username=self.bot.user.name)
+
+        if before.channel and not after.channel:
+            
+            embed = discord.Embed(
+                          description=f"**User:** {member.mention} **Name:** `{member}`\n",
+                          colour=default.config()["embed_color"],
+                          timestamp=datetime.utcnow())
+            embed.set_author(name=f"Membed Left Channel {before.channel.name}")
+            embed.set_footer(text=f"User ID: {member.id}")
+
+            await webhook.execute(embed=embed, username=self.bot.user.name)
+
+        if before.channel and after.channel:
+            if before.channel.id != after.channel.id:
+                embed = discord.Embed(
+                              description=f"**User:** {member.mention} **Name:** `{member}`\n"
+                                          f"**Old Channel:** {before.channel.mention} **ID:** `{before.channel.id}`\n"
+                                          f"**New Channel:** {after.channel.mention} **ID:** `{after.channel.id}`\n",
+                              colour=default.config()["embed_color"],
+                              timestamp=datetime.utcnow())
+                embed.set_author(name=f"User Switched Voice Channels")
+                embed.set_footer(text=f"User ID: {member.id}")
+                
+                await webhook.execute(embed=embed, username=self.bot.user.name)
+            else:
+                if member.voice.self_stream:
+                    embed = discord.Embed(
+                                  description=f"**User:** {member.mention} **Name:** `{member}`\n"
+                                              f"**Channel:** {after.channel.mention} **ID:** `{after.channel.id}`\n",
+                                  colour=default.config()["embed_color"],
+                                  timestamp=datetime.utcnow())
+                    embed.set_author(name=f"User Started Streaming")
+                    embed.set_footer(text=f"User ID: {member.id}")
+
+                    await webhook.execute(embed=embed, username=self.bot.user.name)
+
+                    self.current_streamers.append(member.id)
+
+                elif member.voice.self_mute:
+                    embed = discord.Embed(
+                                  description=f"**User:** {member.mention} **Name:** `{member}`\n"
+                                              f"**Channel:** {after.channel.mention} **ID:** `{after.channel.id}`\n",
+                                  colour=default.config()["embed_color"],
+                                  timestamp=datetime.utcnow())
+                    embed.set_author(name=f"User Muted")
+                    embed.set_footer(text=f"User ID: {member.id}")
+
+                    await webhook.execute(embed=embed, username=self.bot.user.name)
+
+                elif member.voice.self_deaf:
+                    embed = discord.Embed(
+                                  description=f"**User:** {member.mention} **Name:** `{member}`\n"
+                                              f"**Channel:** {after.channel.mention} **ID:** `{after.channel.id}`\n",
+                                  colour=default.config()["embed_color"],
+                                  timestamp=datetime.utcnow())
+                    embed.set_author(name=f"User Deafened")
+                    embed.set_footer(text=f"User ID: {member.id}")
+
+                    await webhook.execute(embed=embed, username=self.bot.user.name)
+
+                else:
+                    for streamer in self.current_streamers:
+                        if member.id == streamer:
+                            if not member.voice.self_stream:
+                                embed = discord.Embed(
+                                              description=f"**User:** {member.mention} **Name:** `{member}`\n"
+                                                          f"**Channel:** {after.channel.mention} **ID:** `{after.channel.id}`\n",
+                                              colour=default.config()["embed_color"],
+                                              timestamp=datetime.utcnow())
+                                embed.set_author(name=f"User Stopped Streaming")
+                                embed.set_footer(text=f"User ID: {member.id}")
+
+                                await webhook.execute(embed=embed, username=self.bot.user.name)
+                                self.current_streamers.remove(member.id)
+                            break
 
 
     @commands.Cog.listener()
@@ -307,6 +509,12 @@ class Logging(commands.Cog):
         webhook_id = db.record("SELECT LoggerWebhookID FROM guilds WHERE GuildID = ?", after.guild.id) or (None)
         if webhook_id is None or "None" in str(webhook_id): 
             return
+
+        to_log_or_not_to_log = db.record("""
+        SELECT message_edits FROM logging WHERE server = ?
+        """, before.guild.id)
+        if to_log_or_not_to_log[0] != 1: return 
+
         webhook_id = int(str(webhook_id).strip("(),'"))
         webhook = await self.bot.fetch_webhook(webhook_id)
         if after.guild.id != webhook.guild.id: return
@@ -320,7 +528,7 @@ class Logging(commands.Cog):
         , color=default.config()["embed_color"], timestamp=datetime.utcnow())
         embed.set_author(name="Message Edited", icon_url="https://media.discordapp.net/attachments/506838906872922145/603643138854354944/messageupdate.png")
         embed.set_footer(text=f"Message ID: {after.id}")
-        await webhook.execute(embed=embed)
+        await webhook.execute(embed=embed, username=self.bot.user.name)
 
 
     @commands.Cog.listener()
@@ -332,8 +540,13 @@ class Logging(commands.Cog):
         """, message.channel.id, message.guild.id, message.author.id, message.id, str(message.content), message.created_at.strftime('%Y-%m-%d %H:%M:%S'))
 
         webhook_id = db.record("SELECT LoggerWebhookID FROM guilds WHERE GuildID = ?", message.guild.id) or (None)
-        if webhook_id is None or "None" in str(webhook_id): 
-            return
+        if webhook_id is None or "None" in str(webhook_id): return
+
+        to_log_or_not_to_log = db.record("""
+        SELECT message_deletions FROM logging WHERE server = ?
+        """, message.guild.id)
+        if to_log_or_not_to_log[0] != 1: return 
+
         webhook_id = int(str(webhook_id).strip("(),'"))
         webhook = await self.bot.fetch_webhook(webhook_id)
         if message.guild.id != webhook.guild.id: return
@@ -350,7 +563,7 @@ class Logging(commands.Cog):
         , color=default.config()["embed_color"], timestamp=datetime.utcnow())
         embed.set_author(name="Message Deleted", icon_url="https://media.discordapp.net/attachments/506838906872922145/603642595419357190/messagedelete.png")
         embed.set_footer(text=f"Message ID: {message.id}")
-        await webhook.execute(embed=embed)
+        await webhook.execute(embed=embed, username=self.bot.user.name)
 
     
     @commands.Cog.listener()
@@ -359,6 +572,12 @@ class Logging(commands.Cog):
         webhook_id = db.record("SELECT LoggerWebhookID FROM guilds WHERE GuildID = ?", guild_obj.id) or (None)
         if webhook_id is None or "None" in str(webhook_id): 
             return
+
+        to_log_or_not_to_log = db.record("""
+        SELECT message_deletions FROM logging WHERE server = ?
+        """, messages[0].guild.id)
+        if to_log_or_not_to_log[0] != 1: return 
+
         webhook_id = int(str(webhook_id).strip("(),'"))
         webhook = await self.bot.fetch_webhook(webhook_id)
         if guild_obj.id != webhook.guild.id: return
@@ -376,7 +595,7 @@ class Logging(commands.Cog):
         timestamp=datetime.utcnow())
         embed.set_author(name="Bulk Message Delete", icon_url="https://media.discordapp.net/attachments/506838906872922145/603642595419357190/messagedelete.png")
 
-        await webhook.execute(embed=embed)
+        await webhook.execute(embed=embed, username=self.bot.user.name)
 
         counter = 0
         msg = ''
@@ -471,21 +690,24 @@ class Logging(commands.Cog):
     @commands.guild_only()
     @permissions.has_permissions(manage_guild=True)
     async def logchannel(self, ctx, channel: discord.TextChannel = None):
+
         if channel is None:
             channel = ctx.channel
         server_webhook_list = await ctx.guild.webhooks()
         for webhook in server_webhook_list:
-            if webhook.name == "NGC0000":
+            if webhook.name == str(self.bot.user.id):
                 return await ctx.send(":warning: Logging is already set up on this server")
 
         response = requests.get(ctx.guild.me.avatar_url)
         avatar = response.content
-        webhook = await channel.create_webhook(name="NGC0000", avatar=avatar, reason="Webhook created for server logging.")
+        webhook = await channel.create_webhook(name=self.bot.user.id, avatar=avatar, reason="Webhook created for server logging.")
         db.execute("UPDATE guilds SET LoggerWebhookID = ? WHERE GuildID = ?", webhook.id, ctx.guild.id)
-        db.execute("UPDATE guilds SET Log_channel = ? WHERE GuildID = ?", channel.id, ctx.guild.id)
+        db.execute("UPDATE logging SET logchannel = ? WHERE server = ?", channel.id, ctx.guild.id)
         await ctx.send(f"<:ballot_box_with_check:805871188462010398> Set channel {channel.mention} as this server's logging channel.")
-        await webhook.execute("Hello! I'm going to be logging your server's messages and user updates in this channel until you tell me not to. "
-        "I'll repost all deleted messages, notify you of nickname updates, role changes, username updates, avatar changes, and more.")
+        await webhook.execute(content="Hello! I'm going to be logging your server's events in this channel from now on. "
+                                      f"Use `{ctx.prefix}log <option>` to set the specific events you want documented here. "
+                                      "By default, all events will be logged.",
+                              username=self.bot.user.name)
 
 
     @commands.command(brief="Remove your server's log channel.",aliases=['unlogserver'])
@@ -495,12 +717,378 @@ class Logging(commands.Cog):
         server_webhook_list = await ctx.guild.webhooks()
         found = []
         for webhook in server_webhook_list:
-            if webhook.name == "NGC0000":
+            if webhook.name == str(self.bot.user.id):
                 found.append(webhook.name)
         if found:
             await webhook.delete(reason=f"Logging webhook deleted by {ctx.author}.")
             db.execute("UPDATE guilds SET LoggerWebhookID = NULL WHERE GuildID = ?", ctx.guild.id)
+            db.execute("UPDATE logging SET logchannel = NULL WHERE server = ?", ctx.guild.id)
             await ctx.send("<:ballot_box_with_check:805871188462010398> Logging is now disabled on this server")
             return
         else:
             return await ctx.send(f":warning: Logging is not enabled on this server.")
+
+    @commands.group(brief="Customize your server's logging by enabling specific logging events")
+    @commands.guild_only()
+    @permissions.has_permissions(manage_guild=True)
+    async def log(self, ctx):
+        """ 
+        Usage:      -massrole <method> <role1> <role2>
+        Alias:      -multirole
+        Example:    -massrole add @everyone Verified
+        Permission: Manage Server, Manage Roles
+        Output:     Adds or removes a role to all users with a given role
+        Methods:
+            add          
+            remove (Aliases: rem, rm)
+       
+        Notes:
+            Command may take a few minutes to complete its execution.
+            Please be patient.
+        """
+        if ctx.invoked_subcommand is None:
+            help_command = self.bot.get_command("help")
+            await help_command(ctx, invokercommand="log")
+
+
+    @log.command(name="deletes", brief="Log all message deletions", aliases=['deletions','messages','message','deleted_messages','message_delete','message_deletes','delete_messages'])
+    async def _deletes(self, ctx):
+        logchan = db.record("""
+        SELECT logchannel FROM logging WHERE server = ?
+        """, str(ctx.guild.id)) or None
+        if logchan is None or logchan[0] is None: 
+            return await ctx.send(f"<:fail:812062765028081674> Logging not setup on this server. Use `{ctx.prefix}logserver` to setup a logging channel.")
+
+        logchan = ctx.guild.get_channel(int(logchan[0]))
+
+        db.execute("""
+        UPDATE logging SET message_deletion = ? WHERE server = ?
+        """, True, ctx.guild.id)
+        await ctx.send(f"<:ballot_box_with_check:805871188462010398> Message deletions will now be logged in {logchan.mention}")
+
+
+    @log.command(name="edits", brief="Log all message edits", aliases=['edit','message_update','message_updates','message_edits','message_edit','changes'])
+    async def _edits(self, ctx):
+        logchan = db.record("""
+        SELECT logchannel FROM logging WHERE server = ?
+        """, str(ctx.guild.id)) or None
+        if logchan is None or logchan[0] is None: 
+            return await ctx.send(f"<:fail:812062765028081674> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
+
+        logchan = ctx.guild.get_channel(int(logchan[0]))
+
+        db.execute("""
+        UPDATE logging SET message_edit = ? WHERE server = ?
+        """, True, ctx.guild.id)
+        await ctx.send(f"<:ballot_box_with_check:805871188462010398> Message edits will now be logged in {logchan.mention}")
+
+
+    @log.command(name="roles", brief="Log all role changes", aliases=['role','role_edits','role_updates','role_update','role_changes','role_change'])
+    async def _roles(self, ctx):
+        logchan = db.record("""
+        SELECT logchannel FROM logging WHERE server = ?
+        """, str(ctx.guild.id)) or None
+        if logchan is None or logchan[0] is None: 
+            return await ctx.send(f"<:fail:812062765028081674> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
+
+        logchan = ctx.guild.get_channel(int(logchan[0]))
+
+        db.execute("""
+        UPDATE logging SET role_changes = ? WHERE server = ?
+        """, True, ctx.guild.id)
+        await ctx.send(f"<:ballot_box_with_check:805871188462010398> Role changes will now be logged in {logchan.mention}")
+
+
+    @log.command(name="names", brief="Log all role changes", aliases=['name','name_changes','nicknames','nicks','nickname_changes','nick_changes'])
+    async def _names(self, ctx):
+        logchan = db.record("""
+        SELECT logchannel FROM logging WHERE server = ?
+        """, str(ctx.guild.id)) or None
+        if logchan is None or logchan[0] is None: 
+            return await ctx.send(f"<:fail:812062765028081674> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
+
+        logchan = ctx.guild.get_channel(int(logchan[0]))
+
+        db.execute("""
+        UPDATE logging SET name_changes = ? WHERE server = ?
+        """, True, ctx.guild.id)
+        await ctx.send(f"<:ballot_box_with_check:805871188462010398> Name changes will now be logged in {logchan.mention}")
+
+
+    @log.command(name="voice", brief="Log all member movements", aliases=['voice_updates','movements','voice_changes','member_movement'])
+    async def _voice(self, ctx):
+        logchan = db.record("""
+        SELECT logchannel FROM logging WHERE server = ?
+        """, str(ctx.guild.id)) or None
+        if logchan is None or logchan[0] is None: 
+            return await ctx.send(f"<:fail:812062765028081674> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
+
+        logchan = ctx.guild.get_channel(int(logchan[0]))
+
+        db.execute("""
+        UPDATE logging SET voice_state_updates = ? WHERE server = ?
+        """, True, ctx.guild.id)
+        await ctx.send(f"<:ballot_box_with_check:805871188462010398> Voice state updates will now be logged in {logchan.mention}")
+
+
+    @log.command(name="avatars", brief="Log all avatar changes", aliases=['avatar','pfps','profilepics','avatar_changes'])
+    async def _avatars(self, ctx):
+        logchan = db.record("""
+        SELECT logchannel FROM logging WHERE server = ?
+        """, str(ctx.guild.id)) or None
+        if logchan is None or logchan[0] is None: 
+            return await ctx.send(f"<:fail:812062765028081674> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
+
+        logchan = ctx.guild.get_channel(int(logchan[0]))
+
+        db.execute("""
+        UPDATE logging SET avatar_changes = ? WHERE server = ?
+        """, True, ctx.guild.id)
+        await ctx.send(f"<:ballot_box_with_check:805871188462010398> Avatar changes will now be logged in {logchan.mention}")
+
+
+    @log.command(name="bans", brief="Log all server bans", aliases=['ban','server_bans'])
+    async def _bans(self, ctx):
+        logchan = db.record("""
+        SELECT logchannel FROM logging WHERE server = ?
+        """, str(ctx.guild.id)) or None
+        if logchan is None or logchan[0] is None: 
+            return await ctx.send(f"<:fail:812062765028081674> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
+
+        logchan = ctx.guild.get_channel(int(logchan[0]))
+
+        db.execute("""
+        UPDATE logging SET bans = ? WHERE server = ?
+        """, True, ctx.guild.id)
+        await ctx.send(f"<:ballot_box_with_check:805871188462010398> Server bans will now be logged in {logchan.mention}")
+
+
+    @log.command(name="channels", brief="Log all server bans", aliases=['chan','channel_updates','channel_edits','channel_changes'])
+    async def _channels(self, ctx):
+        logchan = db.record("""
+        SELECT logchannel FROM logging WHERE server = ?
+        """, str(ctx.guild.id)) or None
+        if logchan is None or logchan[0] is None: 
+            return await ctx.send(f"<:fail:812062765028081674> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
+
+        logchan = ctx.guild.get_channel(int(logchan[0]))
+
+        db.execute("""
+        UPDATE logging SET bans = ? WHERE server = ?
+        """, True, ctx.guild.id)
+        await ctx.send(f"<:ballot_box_with_check:805871188462010398> Channel updates will now be logged in {logchan.mention}")
+
+
+    @log.command(name="leaves", brief="Log all server bans", aliases=['leave','left'])
+    async def _leaves(self, ctx):
+        logchan = db.record("""
+        SELECT logchannel FROM logging WHERE server = ?
+        """, str(ctx.guild.id)) or None
+        if logchan is None or logchan[0] is None: 
+            return await ctx.send(f"<:fail:812062765028081674> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
+
+        logchan = ctx.guild.get_channel(int(logchan[0]))
+
+        db.execute("""
+        UPDATE logging SET leaves = ? WHERE server = ?
+        """, True, ctx.guild.id)
+        await ctx.send(f"<:ballot_box_with_check:805871188462010398> Member leave will now be logged in {logchan.mention}")
+
+
+    @log.command(name="joins", brief="Log all server bans", aliases=['join','joined','member_join'])
+    async def _joins(self, ctx):
+        logchan = db.record("""
+        SELECT logchannel FROM logging WHERE server = ?
+        """, str(ctx.guild.id)) or None
+        if logchan is None or logchan[0] is None: 
+            return await ctx.send(f"<:fail:812062765028081674> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
+
+        logchan = ctx.guild.get_channel(int(logchan[0]))
+
+        db.execute("""
+        UPDATE logging SET joins = ? WHERE server = ?
+        """, True, ctx.guild.id)
+        await ctx.send(f"<:ballot_box_with_check:805871188462010398> Membed join will now be logged in {logchan.mention}")
+
+
+    @commands.group(brief="Customize your server's logging by disabling specific logging events")
+    @commands.guild_only()
+    @permissions.has_permissions(manage_guild=True)
+    async def unlog(self, ctx):
+        """ 
+        Usage:      -massrole <method> <role1> <role2>
+        Alias:      -multirole
+        Example:    -massrole add @everyone Verified
+        Permission: Manage Server, Manage Roles
+        Output:     Adds or removes a role to all users with a given role
+        Methods:
+            add          
+            remove (Aliases: rem, rm)
+       
+        Notes:
+            Command may take a few minutes to complete its execution.
+            Please be patient.
+        """
+        if ctx.invoked_subcommand is None:
+            help_command = self.bot.get_command("help")
+            await help_command(ctx, invokercommand="unlog")
+
+
+    @unlog.command(name="deletes", brief="Log all message deletions", aliases=['deletions','messages','message','deleted_messages','message_delete','message_deletes','delete_messages'])
+    async def deletes_(self, ctx):
+        logchan = db.record("""
+        SELECT logchannel FROM logging WHERE server = ?
+        """, str(ctx.guild.id)) or None
+        if logchan is None or logchan[0] is None: 
+            return await ctx.send(f"<:fail:812062765028081674> Logging not setup on this server. Use `{ctx.prefix}logserver` to setup a logging channel.")
+
+        logchan = ctx.guild.get_channel(int(logchan[0]))
+
+        db.execute("""
+        UPDATE logging SET message_deletion = ? WHERE server = ?
+        """, False, ctx.guild.id)
+        await ctx.send(f"<:ballot_box_with_check:805871188462010398> Message deletions will now be logged in {logchan.mention}")
+
+
+    @unlog.command(name="edits", brief="Log all message edits", aliases=['edit','message_update','message_updates','message_edits','message_edit','changes'])
+    async def edits_(self, ctx):
+        logchan = db.record("""
+        SELECT logchannel FROM logging WHERE server = ?
+        """, str(ctx.guild.id)) or None
+        if logchan is None or logchan[0] is None: 
+            return await ctx.send(f"<:fail:812062765028081674> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
+
+        logchan = ctx.guild.get_channel(int(logchan[0]))
+
+        db.execute("""
+        UPDATE logging SET message_edit = ? WHERE server = ?
+        """, False, ctx.guild.id)
+        await ctx.send(f"<:ballot_box_with_check:805871188462010398> Message edits will now be logged in {logchan.mention}")
+
+
+    @unlog.command(name="roles", brief="Log all role changes", aliases=['role','role_edits','role_updates','role_update','role_changes','role_change'])
+    async def roles_(self, ctx):
+        logchan = db.record("""
+        SELECT logchannel FROM logging WHERE server = ?
+        """, str(ctx.guild.id)) or None
+        if logchan is None or logchan[0] is None: 
+            return await ctx.send(f"<:fail:812062765028081674> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
+
+        logchan = ctx.guild.get_channel(int(logchan[0]))
+
+        db.execute("""
+        UPDATE logging SET role_changes = ? WHERE server = ?
+        """, False, ctx.guild.id)
+        await ctx.send(f"<:ballot_box_with_check:805871188462010398> Role changes will now be logged in {logchan.mention}")
+
+
+    @unlog.command(name="names", brief="Log all role changes", aliases=['name','name_changes','nicknames','nicks','nickname_changes','nick_changes'])
+    async def names_(self, ctx):
+        logchan = db.record("""
+        SELECT logchannel FROM logging WHERE server = ?
+        """, str(ctx.guild.id)) or None
+        if logchan is None or logchan[0] is None: 
+            return await ctx.send(f"<:fail:812062765028081674> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
+
+        logchan = ctx.guild.get_channel(int(logchan[0]))
+
+        db.execute("""
+        UPDATE logging SET name_changes = ? WHERE server = ?
+        """, False, ctx.guild.id)
+        await ctx.send(f"<:ballot_box_with_check:805871188462010398> Name changes will now be logged in {logchan.mention}")
+
+
+    @unlog.command(name="voice", brief="Log all member movements", aliases=['movement','voice_state','voice_changes','member_movement'])
+    async def voice_(self, ctx):
+        logchan = db.record("""
+        SELECT logchannel FROM logging WHERE server = ?
+        """, str(ctx.guild.id)) or None
+        if logchan is None or logchan[0] is None: 
+            return await ctx.send(f"<:fail:812062765028081674> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
+
+        logchan = ctx.guild.get_channel(int(logchan[0]))
+
+        db.execute("""
+        UPDATE logging SET voice_state_updates = ? WHERE server = ?
+        """, False, ctx.guild.id)
+        await ctx.send(f"<:ballot_box_with_check:805871188462010398> Voice state updates will no longer be logged in {logchan.mention}")
+
+
+    @unlog.command(name="avatar", brief="Unlog all avatar changes", aliases=['avatars','avatar_changes','pfps','profilepics','pfp_changes','profilepic_changes','avatar_updates'])
+    async def avatar_(self, ctx):
+        logchan = db.record("""
+        SELECT logchannel FROM logging WHERE server = ?
+        """, str(ctx.guild.id)) or None
+        if logchan is None or logchan[0] is None: 
+            return await ctx.send(f"<:fail:812062765028081674> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
+
+        logchan = ctx.guild.get_channel(int(logchan[0]))
+
+        db.execute("""
+        UPDATE logging SET avatar_changes = ? WHERE server = ?
+        """, False, ctx.guild.id)
+        await ctx.send(f"<:ballot_box_with_check:805871188462010398> Avatar changes will no longer be logged in {logchan.mention}")
+
+
+    @unlog.command(name="bans", brief="Unlog all server bans", aliases=['banned','member_remove','banning','banish'])
+    async def bans_(self, ctx):
+        logchan = db.record("""
+        SELECT logchannel FROM logging WHERE server = ?
+        """, str(ctx.guild.id)) or None
+        if logchan is None or logchan[0] is None: 
+            return await ctx.send(f"<:fail:812062765028081674> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
+
+        logchan = ctx.guild.get_channel(int(logchan[0]))
+
+        db.execute("""
+        UPDATE logging SET bans = ? WHERE server = ?
+        """, False, ctx.guild.id)
+        await ctx.send(f"<:ballot_box_with_check:805871188462010398> Server bans will now be logged in {logchan.mention}")
+
+
+    @unlog.command(name="channels", brief="Unlog all channel updates", aliases=['channel','channel_updates','channel_changes'])
+    async def channels_(self, ctx):
+        logchan = db.record("""
+        SELECT logchannel FROM logging WHERE server = ?
+        """, str(ctx.guild.id)) or None
+        if logchan is None or logchan[0] is None: 
+            return await ctx.send(f"<:fail:812062765028081674> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
+
+        logchan = ctx.guild.get_channel(int(logchan[0]))
+
+        db.execute("""
+        UPDATE logging SET channel_updates = ? WHERE server = ?
+        """, False, ctx.guild.id)
+        await ctx.send(f"<:ballot_box_with_check:805871188462010398> Server bans will no longer be logged in {logchan.mention}")
+
+
+    @unlog.command(name="leaves", brief="Unlog all server leaves", aliases=['leave','left','member_leave','memver_leaves'])
+    async def leaves_(self, ctx):
+        logchan = db.record("""
+        SELECT logchannel FROM logging WHERE server = ?
+        """, str(ctx.guild.id)) or None
+        if logchan is None or logchan[0] is None: 
+            return await ctx.send(f"<:fail:812062765028081674> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
+
+        logchan = ctx.guild.get_channel(int(logchan[0]))
+
+        db.execute("""
+        UPDATE logging SET leaves = ? WHERE server = ?
+        """, False, ctx.guild.id)
+        await ctx.send(f"<:ballot_box_with_check:805871188462010398> Server leaves will no longer be logged in {logchan.mention}")
+
+
+    @unlog.command(name="joins", brief="Unlog all server joins", aliases=['join','joined','member_join','membed_joins','membed_add'])
+    async def joins_(self, ctx):
+        logchan = db.record("""
+        SELECT logchannel FROM logging WHERE server = ?
+        """, str(ctx.guild.id)) or None
+        if logchan is None or logchan[0] is None: 
+            return await ctx.send(f"<:fail:812062765028081674> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
+
+        logchan = ctx.guild.get_channel(int(logchan[0]))
+
+        db.execute("""
+        UPDATE logging SET joins = ? WHERE server = ?
+        """, False, ctx.guild.id)
+        await ctx.send(f"<:ballot_box_with_check:805871188462010398> Server joins will no longer be logged in {logchan.mention}")

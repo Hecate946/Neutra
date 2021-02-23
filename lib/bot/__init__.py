@@ -17,18 +17,20 @@ from ..db import db
 
 discord_logger = logging.getLogger('discord')
 discord_logger.setLevel(logging.CRITICAL)
-error_handler = logging.FileHandler(filename="errors.log", encoding='utf-8')
+error_handler = logging.FileHandler(filename="././data/logs/errors.log", encoding='utf-8')
 discord_logger.addHandler(error_handler)
 
 
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
-handler = logging.FileHandler(filename="ngc0000.log", encoding='utf-8')
+handler = logging.FileHandler(filename="././data/logs/ngc0000.log", encoding='utf-8')
 log.addHandler(handler)
 log = logging.getLogger(__name__)
 
 logging.getLogger('asyncio').propagate = False
 logging.getLogger('apscheduler').propagate = False
+logging.getLogger('requests').propagate = False
+#logging.getLogger('io').propagate = False
 
 owners = default.config()["owners"]
 
@@ -63,6 +65,16 @@ class Bot(BotBase):
     def update_db(self):
         db.multiexec("INSERT OR IGNORE INTO guilds (GuildID, GuildName, GuildOwnerID, GuildOwner) VALUES (?, ?, ?, ?)",
         ((guild.id, guild.name, guild.owner.id, str(guild.owner)) for guild in self.guilds))
+
+        db.commit()
+
+        db.multiexec("INSERT OR IGNORE INTO roleconfig (server, whitelist, autoroles, reassign) VALUES (?, ?, ?, ?)",
+        ((guild.id, None, None, True) for guild in self.guilds))
+
+        db.commit()
+
+        db.multiexec("INSERT OR IGNORE INTO logging VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        ((str(guild.id), 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, None, None) for guild in self.guilds))
 
         db.commit()
 

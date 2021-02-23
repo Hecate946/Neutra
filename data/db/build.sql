@@ -1,4 +1,3 @@
-
 CREATE TABLE IF NOT EXISTS guilds (
 	GuildID integer PRIMARY KEY,
 	GuildName text,
@@ -11,15 +10,19 @@ CREATE TABLE IF NOT EXISTS guilds (
 );
 
 CREATE TABLE IF NOT EXISTS logging (
-	server text, 
-	message_edit boolean, 
-	message_deletion boolean,
+	server int PRIMARY KEY, 
+	message_edits boolean, 
+	message_deletions boolean,
 	role_changes boolean, 
-	name_update boolean, 
-	member_movement boolean,
+	channel_updates boolean,
+	name_updates boolean, 
+	voice_state_updates boolean,
     avatar_changes boolean, 
 	bans boolean, 
-	ignored_channels text
+	leaves boolean,
+	joins boolean,
+	ignored_channels text,
+	logchannel int
 );
 
 CREATE TABLE IF NOT EXISTS users (
@@ -114,4 +117,11 @@ CREATE TABLE IF NOT EXISTS snipe (
 CREATE TABLE IF NOT EXISTS profanity (
 	server int PRIMARY KEY,
 	word text
+);
+
+CREATE TABLE IF NOT EXISTS roleconfig (
+	server int PRIMARY KEY,
+	whitelist text,
+	autoroles text,
+	reassign boolean DEFAULT 1
 );

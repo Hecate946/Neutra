@@ -19,9 +19,45 @@ class Automoderation(commands.Cog):
         self.bot = bot
 
 
+    @commands.command(brief="Toggle whether you want to have a user's old roles be reassigned to them on rejoin.")
+    @commands.guild_only()
+    @permissions.has_permissions(manage_guild=True)
+    async def reassign(self, ctx, *, yes_no = None):
+        """
+        Usage:      -reassign <yes|enable|true|on||no|disable|false|off>
+        Aliases:    -stickyroles
+        Permission: Manage Server
+        Output:     Removes invite links sent by users without the Manage Messages permission.
+        """
+        current = db.record("SELECT reassign FROM roleconfig WHERE server = ?", ctx.guild.id)
+        current = current[0]
+        if current == 1: 
+            reassign = True
+        else:
+            current == 0
+            reassign = False
+        if yes_no is None:
+            # Output what we have
+            msg =  "{} currently *{}*.".format("Reassigning roles on member rejoin","enabled" if current == 1 else "disabled")
+        elif yes_no.lower() in [ "yes", "on", "true", "enabled", "enable" ]:
+            yes_no = True
+            reassign = True
+            msg = "{} {} *enabled*.".format("Reassigning roles on member rejoin","remains" if current == 1 else "is now")
+        elif yes_no.lower() in [ "no", "off", "false", "disabled", "disable" ]:
+            yes_no = False
+            reassign = False
+            msg = "{} {} *disabled*.".format("Reassigning roles on member rejoin","is now" if current == 1 else "remains")
+        else:
+            msg = "That is not a valid setting."
+            yes_no = current
+        if yes_no != current:
+            db.execute("UPDATE roleconfig SET reassign = ? WHERE server = ?", reassign, ctx.guild.id)
+        await ctx.send(msg)
+
+
     @commands.group(invoke_without_command=True, name="filter", aliases=['profanity'], brief="Manage the server's word filter list (Command Group).")
     @commands.guild_only()
-    @permissions.has_permissions(manage_server=True)
+    @permissions.has_permissions(manage_guild=True)
     async def _filter(self, ctx):
         """ 
         Usage:      -filter <method>
@@ -43,8 +79,9 @@ class Automoderation(commands.Cog):
             help_command = self.bot.get_command("help")
             await help_command(ctx, invokercommand="filter")
 
+
     @_filter.command(name="add", aliases=['+'])
-    @permissions.has_permissions(manage_server=True)
+    @permissions.has_permissions(manage_guild=True)
     async def add_word(self, ctx, *, word_to_filter: str=None):
         if word_to_filter is None:
             return await ctx.channel.send(f"Usage: `{ctx.prefix}filter add <word>`")
@@ -81,7 +118,7 @@ class Automoderation(commands.Cog):
             await ctx.send(f'Added word `{word_to_filter}` to the filter')
 
     @_filter.command(name="remove", aliases=['-'], brief="Remove a word from the servers filtere list")
-    @permissions.has_permissions(manage_server=True)
+    @permissions.has_permissions(manage_guild=True)
     async def remove_word(self, ctx, *, word: str=None):
         if word is None:
             return await ctx.send(f"Usage: `{ctx.prefix}filter remove <word>`")
@@ -115,7 +152,7 @@ class Automoderation(commands.Cog):
 
 
     @_filter.command(brief="Display a list of this server's filtered words.", aliases=['show'])
-    @permissions.has_permissions(manage_server=True)
+    @permissions.has_permissions(manage_guild=True)
     async def display(self, ctx):
         words = db.records("""
         SELECT word FROM profanity WHERE server=?
@@ -129,7 +166,7 @@ class Automoderation(commands.Cog):
 
 
     @_filter.command(name="clear")
-    @permissions.has_permissions(manage_server=True)
+    @permissions.has_permissions(manage_guild=True)
     async def _clear(self, ctx):
         db.execute("""
         DELETE FROM profanity WHERE server=?
@@ -177,6 +214,7 @@ class Automoderation(commands.Cog):
             chan = self.bot.get_channel(793941369282494494)
             await chan.send(f"Error when trying to remove message fat {type(e).__name__}: {e}")
 
+
     @commands.Cog.listener()
     async def on_message(self, message):
         if not message.guild:
@@ -216,3 +254,82 @@ class Automoderation(commands.Cog):
         except Exception as e:
             chan = self.bot.get_channel(793941369282494494)
             await chan.send(f"Error when trying to remove message fat {type(e).__name__}: {e}")
+
+
+    @commands.Cog.listener()
+    async def on_member_update(self, before, after):
+        roles = ','.join([str(x.id)
+                          for x in after.roles if x.name != "@everyone"])
+        db.execute('UPDATE users SET roles=? WHERE id=? AND server=?',
+                       roles, before.id, before.guild.id)
+        if len(before.roles) < len(after.roles):
+            # role added
+            s = set(before.roles)
+            # Check for what actually happened
+            newrole = [x for x in after.roles if x not in s]
+            if len(newrole) == 1:
+                fmt = ":warning: **{}#{}** had the role **{}** added.".format(
+                    before.name, before.discriminator, newrole[0].name)
+            elif not newrole:
+                return
+            else:
+                # This happens when the bot autoassigns your roles
+                # after rejoining the server
+                new_roles = [x.name for x in newrole]
+                fmt = ":warning: **{}#{}** had the roles **{}** added.".format(
+                    before.name, before.discriminator, ', '.join(new_roles))
+        else:
+            s = set(after.roles)
+            newrole = [x for x in before.roles if x not in s]
+            if len(newrole) == 1:
+                fmt = ":warning: **{}#{}** had the role **{}** removed.".format(
+                    before.name, before.discriminator, newrole[0].name)
+            elif len(newrole) == 0:
+                return
+            else:
+                new_roles = [x.name for x in newrole]
+                fmt = ":warning: **{}#{}** had the roles **{}** removed.".format(
+                    before.name, before.discriminator, ', '.join(new_roles))
+
+
+    @commands.Cog.listener()
+    async def on_member_join(self, member):
+        required_perms = member.guild.me.guild_permissions.manage_roles
+        if not required_perms: 
+            print("no")
+            return
+        print("hi")
+
+
+        reassign = db.record("""
+        SELECT reassign FROM roleconfig WHERE server = ?
+        """, member.guild.id) or None
+        print(reassign)
+        if reassign is None or reassign[0] == 0 or reassign[0] is None: 
+            pass
+        else:
+            old_roles = db.record("""
+            SELECT roles FROM users WHERE server = ? and id = ?
+            """, member.guild.id, member.id) or None
+            print(old_roles)
+            if old_roles is None: return
+            roles = str(old_roles[0]).split(",")
+            for role_id in roles:
+                role = member.guild.get_role(int(role_id))
+                try:
+                    await member.add_roles(role)
+                except Exception as e: raise e
+
+        autoroles = db.record("""
+        SELECT autoroles FROM roleconfig WHERE server = ?
+        """, member.guild.id) or None
+        if autoroles is None or autoroles[0] is None: 
+            pass
+        else:
+            roles = str(autoroles[0]).split(",")
+            for role_id in roles:
+                role = self.bot.get_role(int(role_id))
+                try:
+                    await member.add_roles(role)
+                except Exception as e: raise e
+        
