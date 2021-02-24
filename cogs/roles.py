@@ -26,7 +26,7 @@ class Roles(commands.Cog):
         self.bot = bot
 
 
-    @commands.command(description="Gets info on a specific role", aliases=["ri"])
+    @commands.command(brief="Gets info on a specific role", aliases=["ri"])
     @commands.guild_only()
     async def roleinfo(self, ctx, *, role: discord.Role):
         """

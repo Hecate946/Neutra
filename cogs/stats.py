@@ -8,7 +8,7 @@ import functools
 from discord.ext import commands
 from lib.db import db
 from lib.bot import owners
-from utilities import default
+from utilities import default, permissions
 
 from collections import OrderedDict, Counter
 
@@ -48,6 +48,7 @@ class Statistics(commands.Cog):
     
 
     @commands.command(aliases=['listinvites','invitelist'], pass_context=True, brief="List all current server invites.")
+    @commands.guild_only()
     async def invites(self, ctx):
         """
         Usage: -invites
@@ -63,8 +64,13 @@ class Statistics(commands.Cog):
                 await ctx.send(embed=em)
             except: return await ctx.send(f"<:fail:812062765028081674> Too many invites to list.")
 
-    @commands.command()
+    @commands.command(brief="See the 20 most common words a member uses.")
+    @commands.guild_only()
     async def words(self, ctx, *, member: discord.Member=None):
+        """
+        Usage: -words [member]
+        Output: 20 most common words the passed member has used.
+        """
         if member is None:
             member = ctx.author
 
@@ -190,7 +196,8 @@ class Statistics(commands.Cog):
         self.bot.socket_stats[msg.get('t')] += 1
 
 
-    @commands.command(hidden=True)
+    @commands.command(hidden=True, brief="Global Socket Stats")
+    @commands.is_owner()
     async def socketstats(self, ctx, limit=20):
 
         delta = datetime.datetime.utcnow() - self.bot.uptime
@@ -203,7 +210,8 @@ class Statistics(commands.Cog):
                          for k, c in con)
 
         await ctx.send('{0:,} socket events observed ({1:.2f}/minute):\n```yaml\n{2}```'.format(total, cpm, fancy))
-    @commands.command(hidden=True)
+
+    @commands.command(hidden=True, brief="Global Command Stats")
     @commands.is_owner()
     async def commandstats(self, ctx, limit=20):
         counter = self.bot.command_stats
@@ -230,10 +238,19 @@ class Statistics(commands.Cog):
 
 
 
-    @commands.group(invoke_without_command=True)
+    @commands.group(invoke_without_command=True, brief="Get server activity")
+    @commands.guild_only()
+    @permissions.has_permissions(administrator=True)
     async def activity(self, ctx, unit: str="month"):
+        """
+        Usage:      -activity [chars]
+        Example:    -activity, activity chars
+        Permission: Administrator
+        Output:
+            Shows details on how many messages users have sent
 
-        if ctx.author.id not in owners or not ctx.author.guild_permissions.administrator: return
+        """
+
         unit = unit.lower()
         time_dict = {
             "day": 86400,
@@ -246,8 +263,7 @@ class Statistics(commands.Cog):
         time_seconds = time_dict.get(unit, 2592000)
         now = int(datetime.datetime.utcnow().timestamp())
         diff = now - time_seconds
-        thing = functools.partial(self.get_activity, ctx.guild, diff)
-        #record = await self.bot.loop.run_in_executor(None, thing)
+
         stuff = db.records('''SELECT count(*) as c, author
                           FROM messages
                           WHERE (server=? AND unix > ?)
@@ -267,8 +283,7 @@ class Statistics(commands.Cog):
 
     @activity.command(aliases=['characters'])
     async def char(self, ctx, unit: str="day"):
-        if ctx.author.id not in owners and ctx.author.guild_permissions.administrator:
-            return
+
         unit = unit.lower()
         time_dict = {
             "day": 86400,
@@ -318,6 +333,7 @@ class Statistics(commands.Cog):
 
 
     @commands.command(brief="Get how long ago a user was seen by the bot.", aliases=['seen'])
+    @commands.guild_only()
     async def lastseen(self, ctx, *, user: discord.User):
         """
         Usage:  -lastseen [user]

@@ -21,10 +21,16 @@ class Channels(commands.Cog):
         self.bot = bot
 
 
-    @commands.command()
+    @commands.command(brief="Move a member from one voice channel into another")
+    @commands.guild_only()
+    @commands.bot_has_permissions(move_members=True)
     @permissions.has_permissions(move_members=True)
     async def vcmove(self, ctx, targets:commands.Greedy[discord.Member] = None, channel:str = None):
-        """ Move a member from one voice channel into another """
+        """
+        Usage:      -vcmove <target> <target>... <channel>
+        Output:     Moves members into a new voice channel
+        Permission: Move Members
+        """
         if not targets: return await ctx.send(f"Usage: `{ctx.prefix}vc move <to channel> <target> [target]...`")
         if not channel: return await ctx.send(f"Usage: `{ctx.prefix}vc move <to channel> <target> [target]...`")
         voice = []
@@ -55,10 +61,16 @@ class Channels(commands.Cog):
             await ctx.send('<:ballot_box_with_check:805871188462010398> VC Moved `{0}`'.format(", ".join(vckicked)))
 
 
-    @commands.command()
+    @commands.command(brief="Kick members from a voice channel")
+    @commands.guild_only()
+    @commands.bot_has_permissions(move_members=True)
     @permissions.has_permissions(move_members=True)
-    async def vckick(self, ctx, targets:commands.Greedy[discord.Member] = None, channel:str = None):
-        """ Kick a member from a voice channel """
+    async def vckick(self, ctx, targets:commands.Greedy[discord.Member] = None):
+        """
+        Usage:      -vckick <target> <target>
+        Output:     Kicks passed members from their channel
+        Permission: Move Members
+        """
         if not len(targets): return await ctx.send(f"Usage: `{ctx.prefix}vc kick <target> [target]...`")
         voice = []
         for target in targets:
@@ -80,15 +92,28 @@ class Channels(commands.Cog):
             await ctx.send('<:ballot_box_with_check:805871188462010398> VC Kicked `{0}`'.format(", ".join(vckicked)))
 
 
-    @commands.group()
-    @permissions.has_permissions(manage_guild=True)
+    @commands.group(brief="Find and destroy a channel")
+    @commands.guild_only()
+    @commands.bot_has_permissions(manage_channels=True)
+    @permissions.has_permissions(manage_guild=True, manage_channels=True)
     async def destroy(self, ctx):
-        """ Find and destroy a channel """
+        """
+        Usage:      -destroy <option> <name/id/mention>
+        Example:    -destroy textchannel General just-chatting
+        Permission: Manage Channels, Manage Server
+        Output:
+            Destroys a channel.
+        Option: 
+            textchannel  (Alias: tc)
+            voicechannel (Alias: vc)
+        """
         if ctx.invoked_subcommand is None:
             await ctx.send_help(str(ctx.command))
 
 
     @destroy.group(aliases=['tc'])
+    @commands.guild_only()
+    @commands.bot_has_permissions(manage_channels=True)
     async def textchannel(self, ctx, textchannel: discord.TextChannel = None):
         """ Destroy a text channel """
         if textchannel is None: return await ctx.send(f"Usage: `{ctx.prefix}destroy tc <ID/name>`")
@@ -110,11 +135,22 @@ class Channels(commands.Cog):
             return await ctx.send('I couldn\'t find that voice channel')
 
 
-    @commands.group()
-    @permissions.has_permissions(administrator=True)
-    @permissions.has_permissions(administrator=True)
+    @commands.group(brief="Create a channel (Command Group")
+    @commands.guild_only()
+    @commands.bot_has_permissions(manage_channels=True)
+    @permissions.has_permissions(manage_channels=True)
     async def create(self, ctx):
-        """ Create a channel """
+        """
+        Usage: -create <option> [category] <name>
+        Example: -create textchannel General just-chatting
+        Permission: Manage Channels
+        Output:
+            Creates a channel under your optionally
+            specified category.
+        Option: 
+            textchannel (Alias: tc)
+            voicechannel (Alias: vc)
+        """
         if ctx.invoked_subcommand is None:
             await ctx.send_help(str(ctx.command))
 
@@ -142,11 +178,16 @@ class Channels(commands.Cog):
             return await ctx.send('<:fail:812062765028081674> I couldn\'t create that voice channel')
 
 
-    @commands.command()
+    @commands.command(brief="Set the slowmode of the current channel in seconds.")
     @commands.guild_only()
     @commands.bot_has_permissions(manage_channels=True)
     @permissions.has_permissions(manage_channels=True)
     async def slowmode(self, ctx, time: int):
+        """
+        Usage:      -slowmode [seconds]
+        Output:     Sets the channel's slowmode to your input value.
+        Permission: Manage Channels
+        """
         try:
             await ctx.channel.edit(slowmode_delay=time)
         except discord.HTTPException as e:
@@ -161,7 +202,9 @@ class Channels(commands.Cog):
     @permissions.has_permissions(manage_channels=True)
     async def lock(self, ctx, channel:str = None, minutes: int = None):
         """
-        Usage: -lock [channel] [minutes]
+        Usage:      -lock [channel] [minutes]
+        Output:     Locked channel for the specified time. Infinite if not specified
+        Permission: Manage Channels
         """
         try:
             channel_id = int(channel)
@@ -202,12 +245,16 @@ class Channels(commands.Cog):
             await msg.edit(content=f"<:fail:812062765028081674> I have insufficient permission to lock channels.")
 
 
-    @commands.command(pass_context=True, aliases=["unlockchannel"])
+    @commands.command(brief="Unlock message sending in the channel.", pass_context=True, aliases=["unlockchannel"])
     @commands.guild_only()
     @commands.bot_has_permissions(manage_channels=True)
     @permissions.has_permissions(manage_channels=True)
     async def unlock(self, ctx, channel:discord.TextChannel = None, surpress = False):
-        """Unlock message sending in the channel."""
+        """
+        Usage:      -unlock [channel]
+        Output:     Unlocks a previously locked channel
+        Permission: Manage Channels
+        """
         if channel is None:
             channel = ctx.channel
         try:
@@ -238,14 +285,17 @@ class Channels(commands.Cog):
             await msg.edit(content=f"<:fail:812062765028081674> I have insufficient permission to unlock channels.")
 
 
-    @commands.command(brief="Lists all channels in the server in an embed.")
+    @commands.command(brief="Lists all channels in the server in an embed.", aliases=['channels'])
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
     @commands.cooldown(1, 20, commands.BucketType.guild)
     @permissions.has_permissions(manage_messages=True)
-    async def channels(self, ctx):
+    async def listchannels(self, ctx):
         """
-        Usage: -channels
+        Usage:      -listchannels
+        Alias:      -channels
+        Output:     Embed of all server channels
+        Permission: Manage Messages
         """
 
         channel_categories = {}

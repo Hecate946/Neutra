@@ -648,9 +648,9 @@ class Logging(commands.Cog):
     @commands.command(pass_context=True, aliases=['dumpmessages','messagedump'], brief="Logs a passed number of messages from the given channel - 25 by default.")
     @commands.guild_only()
     @permissions.has_permissions(manage_server=True)
-    async def log(self, ctx, messages : int = 25, *, chan : discord.TextChannel = None):
+    async def logmessages(self, ctx, messages : int = 25, *, chan : discord.TextChannel = None):
         """
-        Usage:      -log [message amount] [channel]
+        Usage:      -logmessages [message amount] [channel]
         Aliases:    -messagedump, dumpmessages
         Permission: Manage Server
         Output: 
@@ -733,22 +733,29 @@ class Logging(commands.Cog):
     @permissions.has_permissions(manage_guild=True)
     async def log(self, ctx):
         """ 
-        Usage:      -massrole <method> <role1> <role2>
-        Alias:      -multirole
-        Example:    -massrole add @everyone Verified
-        Permission: Manage Server, Manage Roles
-        Output:     Adds or removes a role to all users with a given role
-        Methods:
-            add          
-            remove (Aliases: rem, rm)
+        Usage:      -log <option>
+        Example:    -log deletes
+        Permission: Manage Server
+        Output:     Enables a specific logging event
+        Options:
+            deletes          
+            edits 
+            roles
+            names
+            voice
+            avatars 
+            bans
+            channels
+            leaves
+            joins
        
         Notes:
-            Command may take a few minutes to complete its execution.
-            Please be patient.
+            After your server's log channel has been setup, 
+            all actions are enabled by default.
         """
         if ctx.invoked_subcommand is None:
             help_command = self.bot.get_command("help")
-            await help_command(ctx, invokercommand="log")
+            await help_command(ctx, invokercommand="log", pm=False)
 
 
     @log.command(name="deletes", brief="Log all message deletions", aliases=['deletions','messages','message','deleted_messages','message_delete','message_deletes','delete_messages'])
@@ -916,18 +923,25 @@ class Logging(commands.Cog):
     @permissions.has_permissions(manage_guild=True)
     async def unlog(self, ctx):
         """ 
-        Usage:      -massrole <method> <role1> <role2>
-        Alias:      -multirole
-        Example:    -massrole add @everyone Verified
-        Permission: Manage Server, Manage Roles
-        Output:     Adds or removes a role to all users with a given role
-        Methods:
-            add          
-            remove (Aliases: rem, rm)
+        Usage:      -unlog <option>
+        Example:    -unlog deletes
+        Permission: Manage Server
+        Output:     Disables a specific logging event
+        Options:
+            deletes          
+            edits 
+            roles
+            names
+            voice
+            avatars 
+            bans
+            channels
+            leaves
+            joins
        
         Notes:
-            Command may take a few minutes to complete its execution.
-            Please be patient.
+            After your server's log channel has been setup, 
+            all actions are enabled by default.
         """
         if ctx.invoked_subcommand is None:
             help_command = self.bot.get_command("help")

@@ -2,7 +2,8 @@ import discord
 
 from utilities import default
 from discord.ext import commands
-from lib.bot import owners
+
+owners = default.config()["owners"]
 
 def is_owner(ctx):
     """ Checks if the author is one of the owners """

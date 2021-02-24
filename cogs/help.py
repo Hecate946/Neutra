@@ -1,6 +1,5 @@
 import discord
-import re
-
+import asyncio
 from utilities import default
 from discord.ext import commands
 from lib.bot import owners
@@ -27,7 +26,36 @@ class Help(commands.Cog):
      ## Get Commands From Cogs ##
     ############################
 
-    async def helper_func(self, ctx, cog, name, pm):
+    async def send_help(self, ctx, embed, pm, delete_after):
+        if pm is True:
+            if not ctx.guild: 
+                msg = await ctx.send(embed=embed)
+                return
+            try:
+                msg = await ctx.author.send(embed=embed)
+                try:
+                    await ctx.message.add_reaction("<:mailbox1:811303021492305990>")
+                except: return
+            except:
+                msg = await ctx.send(embed=embed, delete_after=delete_after)
+        else:
+            msg = await ctx.send(embed=embed, delete_after=delete_after)
+
+        def reaction_check(m):
+            if m.message_id == msg.id and m.user_id == ctx.author.id and str(m.emoji) == "<:trashcan:805643072896892949>":
+                return True
+            return False
+
+        try:
+            await msg.add_reaction("<:trashcan:805643072896892949>")
+            await self.bot.wait_for('raw_reaction_add', timeout=120.0, check=reaction_check)
+            await msg.delete()
+        except asyncio.TimeoutError:
+            await msg.delete()
+        except discord.Forbidden:
+            return
+
+    async def helper_func(self, ctx, cog, name, pm, delete_after):
         the_cog = sorted(cog.get_commands(), key=lambda x:x.name)
         cog_commands = []
         for c in the_cog:
@@ -35,7 +63,7 @@ class Help(commands.Cog):
             if str(c.name).upper() in COMMAND_EXCEPTIONS and ctx.author.id not in owners: continue
             cog_commands.append(c)
         if cog_commands:
-            await self.category_embed(ctx, cog=cog.qualified_name, list=cog_commands, pm=pm)
+            await self.category_embed(ctx, cog=cog.qualified_name, list=cog_commands, pm=pm, delete_after=delete_after)
         else:
             return await ctx.send(f":warning: No command named `{name}` found.")
 
@@ -45,7 +73,7 @@ class Help(commands.Cog):
     ##########################
     
 
-    async def category_embed(self, ctx, cog, list, pm):
+    async def category_embed(self, ctx, cog, list, pm, delete_after):
         embed = discord.Embed(title=f"Category: `{cog}`",
         description=f"**Bot Invite Link:** [https://ngc.discord.bot](https://discord.com/oauth2/authorize?client_id=810377376269205546&scope=bot&permissions=8)\n"
                     f"**Support Server:**  [https://discord.gg/ngc](https://discord.gg/947ramn)\n", color=default.config()["embed_color"])
@@ -58,41 +86,31 @@ class Help(commands.Cog):
             line = f"\n`{i.name}` {i.brief}\n"
             msg += line
         embed.add_field(name=f"**{cog} Commands**", value=f"** **{msg}")
-        if pm is True:
-            if not ctx.guild: 
-                return await ctx.send(embed=embed)
-            try:
-                await ctx.author.send(embed=embed)
-                try:
-                    await ctx.message.add_reaction("<:mailbox1:811303021492305990>")
-                except: return
-            except:
-                await ctx.send(embed=embed)
-        else:
-            await ctx.send(embed=embed)
+        
+        await self.send_help(ctx, embed, pm, delete_after)
 
 
     @commands.command(name="help", brief="NGC0000's Help Command")
-    async def _help(self, ctx, invokercommand:str = None, pm = True):
+    async def _help(self, ctx, invokercommand:str = None, pm = False, delete_after=None):
         """
         Usage:  -help [command/category] [pm = true]
         Output: HELP!
         """
-        if str(invokercommand).upper() in ["NO","FALSE"]:
+        if str(invokercommand).upper() in ["YES","TRUE"]:
             trigger = None
-            pm = False
+            pm = True
 
-        elif invokercommand and str(pm).upper() in ["NO","FALSE"]:
+        elif invokercommand and str(pm).upper() in ["YES","TRUE"]:
             trigger = True
-            pm = False
+            pm = True
 
         else:
             if invokercommand:
                 trigger = True
-                pm = True
+                pm = False
             else:
                 trigger = None
-                pm = True
+                pm = False
 
         if trigger is None:
 
@@ -118,18 +136,7 @@ class Help(commands.Cog):
 
             embed.add_field(name=f"**Current Categories**", value=f"** **{msg}")
 
-            if pm is True:
-                if not ctx.guild: 
-                    return await ctx.send(embed=embed)
-                try:
-                    await ctx.author.send(embed=embed)
-                    try:
-                        await ctx.message.add_reaction("<:mailbox1:811303021492305990>")
-                    except: return
-                except:
-                    await ctx.send(embed=embed)
-            else:
-                await ctx.send(embed=embed)
+            await self.send_help(ctx, embed, pm, delete_after)
 
         elif trigger is True:
 
@@ -139,51 +146,51 @@ class Help(commands.Cog):
 
             if invokercommand.lower() in ["auto","automod","automoderation"]:
                 cog = self.bot.get_cog("Automoderation")
-                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm)
+                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
 
             if invokercommand.lower() in ["channel","channels","channeling","channelling"]:
                 cog = self.bot.get_cog("Channels")
-                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm)
+                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
 
             if invokercommand.lower() in ["config","conf"]:
                 cog = self.bot.get_cog("Config")
-                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm)
+                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
 
             if invokercommand.lower() in ["info","general","information"]:
                 cog = self.bot.get_cog("General")
-                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm)
+                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
 
             if invokercommand.lower() in ["message","messages","cleanup","msg","msgs"]:
                 cog = self.bot.get_cog("Messages")
-                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm)
+                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
 
             if invokercommand.lower() in ["logging","logger","logs"]:
                 cog = self.bot.get_cog("Logging")
-                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm)
+                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
 
             if invokercommand.lower() in ["mod","moderator","punishment","moderation"]:
                 cog = self.bot.get_cog("Moderation")
-                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm)
+                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
 
             if invokercommand.lower() in ["owner","master","creator","owners","hidden","own"]:
                 cog = self.bot.get_cog("Owner")
-                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm)
+                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
                 
             if invokercommand.lower() in ["roles","role","serverroles"]:
                 cog = self.bot.get_cog("Roles")
-                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm)
+                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
 
             if invokercommand.lower() in ["admin","administration","administrator","settings","setup","configuration"]:
                 cog = self.bot.get_cog("Settings")
-                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm)
+                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
 
             if invokercommand.lower() in ["stats","statistics","track","tracking"]:
                 cog = self.bot.get_cog("Statistics")
-                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm)
+                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
 
             if invokercommand.lower() in ["warner","warning","warnings"]:
                 cog = self.bot.get_cog("Warnings")
-                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm)
+                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
     
             else:
 
@@ -216,20 +223,8 @@ class Help(commands.Cog):
                     help_embed.add_field(name=f"**Command Name:** `{valid_commands.title()}`", 
                     value=f"\n**Description:** `{valid_brief}`\n"
                           f"```yaml\n{valid_help}```")
-                    if pm is True:
-                        if not ctx.guild: 
-                            return await ctx.send(embed=help_embed)
-                        try:
-                            await ctx.author.send(embed=help_embed)
-                            try:
-                                await ctx.message.add_reaction("<:mailbox:811303021492305990>")
-                            except: return
-                        except:
-                            await ctx.send(embed=help_embed)
-                    else:
-                        await ctx.send(embed=help_embed)
-                else:
-                    
+                    await self.send_help(ctx, help_embed, pm, delete_after)
+                else: 
                     await ctx.send(f":warning: No command named `{invokercommand}` found.")
 
 
