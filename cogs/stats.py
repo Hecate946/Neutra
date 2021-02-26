@@ -6,11 +6,12 @@ import sys
 import functools
 
 from discord.ext import commands
-from lib.db import db
-from lib.bot import owners
+from lib.bot import bot, owners
+from lib.db import asyncdb as db
 from utilities import default, permissions
 
 from collections import OrderedDict, Counter
+
 
 def setup(bot):
     if not hasattr(bot, 'command_stats'):
@@ -32,18 +33,18 @@ class Statistics(commands.Cog):
         self.bot = bot
 
 
-    def fix_member(self, member):
+    async def fix_member(self, member):
         roles = ','.join([str(x.id)
                                 for x in member.roles if x.name != "@everyone"])
         names = member.display_name
-        db.execute('''INSERT OR IGNORE INTO users
+        await db.execute('''INSERT OR IGNORE INTO users
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
                     roles, str(member.guild.id), None, member.id, names, 0, 0, 0)
 
-    def set_messagecount(self, message):
+    async def set_messagecount(self, message):
         if message.guild is None:
             return
-        db.execute('UPDATE users SET messagecount = messagecount + 1 WHERE (id=? AND server=?)',
+        await db.execute('UPDATE users SET messagecount = messagecount + 1 WHERE (id=? AND server=?)',
                     message.author.id, message.guild.id)           
     
 
@@ -63,18 +64,18 @@ class Statistics(commands.Cog):
                 em = discord.Embed(description="**Invites:**\n {0}".format(",\n ".join(map(str, invites))), color=ctx.guild.me.color)
                 await ctx.send(embed=em)
             except: return await ctx.send(f"<:fail:812062765028081674> Too many invites to list.")
-
+    """
     @commands.command(brief="See the 20 most common words a member uses.")
     @commands.guild_only()
     async def words(self, ctx, *, member: discord.Member=None):
-        """
+
         Usage: -words [member]
         Output: 20 most common words the passed member has used.
-        """
+
         if member is None:
             member = ctx.author
 
-        all_msgs = db.records('''SELECT content FROM messages WHERE server=? AND author=?''', ctx.guild.id, member.id)
+        all_msgs = await db.records('''SELECT content FROM messages WHERE server=? AND author=?''', ctx.guild.id, member.id)
         all_msgs = [x[0] for x in all_msgs]
         all_msgs = ' '.join(all_msgs).split()
         all_msgs = list(filter(lambda x: len(x) > 3 and x.startswith != "!", all_msgs))
@@ -86,7 +87,7 @@ class Statistics(commands.Cog):
             msg += f'[{str(integer).zfill(2)}] {str(i)}\n'
         
         await ctx.send(f"```ini\n{msg}```")
-
+    """
 
     @commands.command(aliases=['mc'], brief="Find exactly how many messages a user has sent in the server.")
     @commands.guild_only()
@@ -99,9 +100,9 @@ class Statistics(commands.Cog):
             Will default to yourself if no user is passed.
         """
         user = ctx.author if member is None else member
-        a = db.record('SELECT messagecount FROM users WHERE server=? AND id=?', ctx.guild.id, user.id) or (None)
+        a = await db.record('SELECT messagecount FROM users WHERE server=? AND id=?', ctx.guild.id, user.id) or (None)
         if a is None:
-            self.fix_member(ctx.author)
+            await self.fix_member(ctx.author)
             return await ctx.send("`{}` has sent **0** messages.".format(user))
         else:
             a = int(str(a).strip("(),'"))
@@ -115,9 +116,9 @@ class Statistics(commands.Cog):
         Usage: -top
         Output: Top message senders in the server
         """
-        a = db.records(
+        a = await db.records(
             'SELECT * FROM users WHERE (server=? AND messagecount > 0) ORDER BY messagecount DESC LIMIT 20', ctx.guild.id,)
-        b = db.records(
+        b = await db.records(
             'SELECT SUM(messagecount) AS "hello" FROM users WHERE (server=? AND messagecount > 0)', ctx.guild.id,)
         b = b[0]
         post_this = ""
@@ -147,7 +148,7 @@ class Statistics(commands.Cog):
         """
         if user is None:
             user = ctx.author
-        name_list = db.record('''SELECT nicknames
+        name_list = await db.record('''SELECT nicknames
                           FROM users
                           WHERE (server=? AND id=?)''',
                        str(ctx.guild.id), user.id)
@@ -167,7 +168,7 @@ class Statistics(commands.Cog):
     @commands.Cog.listener()
     async def on_command(self, ctx):
         try:
-            db.execute(
+            await db.execute(
                 """ UPDATE users 
                     SET commandcount = commandcount + 1 
                     WHERE id = ? 
@@ -227,9 +228,9 @@ class Statistics(commands.Cog):
 
         await ctx.send('```yaml\n{}\n```'.format(output))
 
-
-    def get_activity(self, g, diff):
-        db.record('''SELECT count(*) as c, author
+    """
+    async def get_activity(self, g, diff):
+        await db.record('''SELECT count(*) as c, author
                           FROM messages
                           WHERE (server=? AND unix > ?)
                           GROUP BY author
@@ -242,14 +243,14 @@ class Statistics(commands.Cog):
     @commands.guild_only()
     @permissions.has_permissions(administrator=True)
     async def activity(self, ctx, unit: str="month"):
-        """
+        
         Usage:      -activity [chars]
         Example:    -activity, activity chars
         Permission: Administrator
         Output:
             Shows details on how many messages users have sent
 
-        """
+        
 
         unit = unit.lower()
         time_dict = {
@@ -264,7 +265,7 @@ class Statistics(commands.Cog):
         now = int(datetime.datetime.utcnow().timestamp())
         diff = now - time_seconds
 
-        stuff = db.records('''SELECT count(*) as c, author
+        stuff = await db.records('''SELECT count(*) as c, author
                           FROM messages
                           WHERE (server=? AND unix > ?)
                           GROUP BY author
@@ -296,7 +297,7 @@ class Statistics(commands.Cog):
         time_seconds = time_dict.get(unit, 2592000)
         now = int(datetime.datetime.utcnow().timestamp())
         diff = now - time_seconds
-        stuff = db.records('''SELECT SUM(LENGTH(content)) as c, author, COUNT(*)
+        stuff = await db.records('''SELECT SUM(LENGTH(content)) as c, author, COUNT(*)
                           FROM messages
                           WHERE (server=? AND unix > ?)
                           GROUP BY author
@@ -312,7 +313,7 @@ class Statistics(commands.Cog):
             e.add_field(name=f"{n+1}. {name}", value=f"{v[0]:,} chars ({ratio} chars/minute)")
         
         await ctx.send(embed=e)
-
+    """
     @commands.command(brief="👀 Check a user's eyecount 👀", aliases=['👀','eyecount'])
     @commands.guild_only()
     async def eyes(self, ctx, user: discord.Member = None):
@@ -325,11 +326,8 @@ class Statistics(commands.Cog):
         """
         if user is None:
             user = ctx.author
-        eyes = db.record("""
-        SELECT eyecount FROM users WHERE id = ? AND server = ?
-        """, user.id, ctx.guild.id)
-
-        await ctx.send(f"👀 User `{user}` has sent {eyes[0]} 👀 emoji{'' if int(eyes[0]) == 1 else 's'}")
+        eyes = await db.field("SELECT eyecount FROM users WHERE id = ? AND server = ?", user.id, ctx.guild.id)
+        await ctx.send(f"👀 User `{user}` has sent {eyes} 👀 emoji{'' if int(eyes) == 1 else 's'}")
 
 
     @commands.command(brief="Get how long ago a user was seen by the bot.", aliases=['seen'])
@@ -345,7 +343,7 @@ class Statistics(commands.Cog):
             Will default to yourself if no user is passed
         """
 
-        sql = db.record('SELECT LastSeen FROM last_seen WHERE UserID = ?', user.id) or (None)
+        sql = await db.record('SELECT LastSeen FROM last_seen WHERE UserID = ?', user.id) or (None)
         if str(sql) == "None": return await ctx.send(f"I have not seen `{user}`")
 
         sql = str(sql).strip("()',")
@@ -414,7 +412,7 @@ class Statistics(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         if message.author.bot: return None
-        db.execute("""
+        await db.execute("""
         INSERT OR REPLACE INTO last_seen (UserID, Username, LastSeen) VALUES (?, ?, ?)
         """, int(message.author.id), str(message.author), datetime.datetime.utcnow())
 
@@ -427,71 +425,72 @@ class Statistics(commands.Cog):
             if x == trigger:
                 message_eyes += 1
 
-        db.execute("""
+        await db.execute("""
         UPDATE users SET eyecount = eyecount + ? WHERE id = ? AND server = ?
         """, message_eyes, message.author.id, message.guild.id)
 
-        self.set_messagecount(message)
-        if message.content == "":
-            return
-        db.execute("""
-        INSERT INTO messages VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, message.created_at.timestamp(), 
-             message.created_at.strftime('%Y-%m-%d %H:%M:%S'), 
-             message.clean_content, 
-             message.id, 
-             message.author.id, 
-             message.channel.id, 
-             message.guild.id)
+        #await self.set_messagecount(message)
+        #if message.content == "":
+        #    return
+        #await db.execute("""
+        #INSERT INTO messages VALUES (?, ?, ?, ?, ?, ?, ?)
+        #""", message.created_at.timestamp(), 
+        #     message.created_at.strftime('%Y-%m-%d %H:%M:%S'), 
+        #     message.clean_content, 
+        #     message.id, 
+        #     message.author.id, 
+        #     message.channel.id, 
+        #     message.guild.id)
 
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
         user = await self.bot.fetch_user(payload.user_id)
-        db.execute("INSERT OR REPLACE INTO last_seen VALUES (?, ?, ?)", user.id, str(user), datetime.datetime.utcnow())
+        await db.execute("INSERT OR REPLACE INTO last_seen VALUES (?, ?, ?)", user.id, str(user), datetime.datetime.utcnow())
 
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
-        db.execute("INSERT OR REPLACE INTO last_seen VALUES (?, ?, ?)", after.id, str(after), datetime.datetime.utcnow())
+        await db.execute("INSERT OR REPLACE INTO last_seen VALUES (?, ?, ?)", after.id, str(after), datetime.datetime.utcnow())
 
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
-        db.execute("INSERT OR REPLACE INTO last_seen VALUES (?, ?, ?)", member.id, str(member), datetime.datetime.utcnow())
+        await db.execute("INSERT OR REPLACE INTO last_seen VALUES (?, ?, ?)", member.id, str(member), datetime.datetime.utcnow())
 
 
     @commands.Cog.listener()
     async def on_user_update(self, before, after):
-        db.execute("INSERT OR REPLACE INTO last_seen VALUES (?, ?, ?)", after.id, str(after), datetime.datetime.utcnow())
+        await db.execute("INSERT OR REPLACE INTO last_seen VALUES (?, ?, ?)", after.id, str(after), datetime.datetime.utcnow())
 
 
     @commands.Cog.listener()
     async def on_invite_create(self, invite):
-        db.execute("INSERT OR REPLACE INTO last_seen VALUES (?, ?, ?)", invite.inviter.id, str(invite.inviter), datetime.datetime.utcnow())
+        await db.execute("INSERT OR REPLACE INTO last_seen VALUES (?, ?, ?)", invite.inviter.id, str(invite.inviter), datetime.datetime.utcnow())
 
 
     @commands.Cog.listener()
     async def on_typing(self, channel, user, when):
-        db.execute("INSERT OR REPLACE INTO last_seen VALUES (?, ?, ?)", user.id, str(user), datetime.datetime.utcnow())
+        await self.bot.wait_until_ready()
+        await db.execute("INSERT OR REPLACE INTO last_seen VALUES (?, ?, ?)", user.id, str(user), datetime.datetime.utcnow())
 
 
     @commands.Cog.listener()
     async def on_member_join(self, user):
-        db.execute("INSERT OR REPLACE INTO last_seen VALUES (?, ?, ?)", user.id, str(user), datetime.datetime.utcnow())
+        await db.execute("INSERT OR REPLACE INTO last_seen VALUES (?, ?, ?)", user.id, str(user), datetime.datetime.utcnow())
 
 
     @commands.Cog.listener()
     async def on_member_leave(self, user):
-        db.execute("INSERT OR REPLACE INTO last_seen VALUES (?, ?, ?)", user.id, str(user), datetime.datetime.utcnow())
+        await db.execute("INSERT OR REPLACE INTO last_seen VALUES (?, ?, ?)", user.id, str(user), datetime.datetime.utcnow())
 
 
 
     async def on_member_join(self, member):
-        a = db.records('SELECT * FROM users WHERE (id=? AND server=?)', member.id, member.guild.id)
+        a = await db.records('SELECT * FROM users WHERE (id=? AND server=?)', member.id, member.guild.id)
         if a != []:
             return
         roles = ','.join([str(x.id) for x in member.roles if (
             x.name != "@everyone")])
-        db.execute("INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        await db.execute("INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                        (roles, member.guild.id, None, member.id, member.display_name, 0, 0, 0))

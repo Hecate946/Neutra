@@ -11,8 +11,18 @@ from discord.ext import commands, tasks
 from discord.ext.commands import Bot as BotBase
 
 from utilities import default
-from lib.db import asyncdb as db
-from lib.db.asyncdb import cxn
+from ..db import asyncdb
+
+DB_PATH = "/Users/siamakasasi/Desktop/☃️☃️☃️/Python/Bots/NGC0000/data/db/database.db"
+BUILD_PATH = "./data/db/build.sql"
+
+
+
+
+global_connection = None
+global_cursor = None
+
+
 
 discord_logger = logging.getLogger('discord')
 discord_logger.setLevel(logging.CRITICAL)
@@ -35,20 +45,86 @@ owners = default.config()["owners"]
 COGS = [x[:-3] for x in sorted(os.listdir('././cogs')) if x.endswith('.py') and x != "__init__.py"]
 
 async def get_prefix(bot, message):
-    if not message.guild:
+    if message.guild:
         prefix = default.config()["prefix"]
         return commands.when_mentioned_or(prefix)(bot, message)
-    prefix = await db.field("SELECT Prefix FROM guilds WHERE GuildID = ?", message.guild.id,)
-    return commands.when_mentioned_or(prefix[0])(bot, message)
-
+    #prefix = await self.field("SELECT Prefix FROM guilds WHERE GuildID = ?", message.guild.id)
+    #prefix = await bot.record("SELECT Prefix FROM guilds WHERE GuildID = ?", message.guild.id)
+    #print(prefix)
+    #return commands.when_mentioned_or(prefix[0])(bot, message)
 
 class Bot(BotBase):
     def __init__(self):
 
         super().__init__(command_prefix=get_prefix, case_insensitive=True, owner_ids=owners, intents=discord.Intents.all(),)
+        connection_task = self.loop.create_task(self.connection())
+        self.cxn = self.loop.run_until_complete(connection_task)
+
+        cursor_task = self.loop.create_task(self.cursor())
+        self.cur = self.loop.run_until_complete(cursor_task)
 
 
         self.db_updater.start()
+
+
+    async def connection(self):
+        return await aiosqlite.connect(DB_PATH, check_same_thread=False)
+
+    async def cursor(self):
+        return await self.cxn.cursor()
+
+    async def with_commit(func):
+        async def inner(self, *args, **kwargs):
+            func(*args, **kwargs)
+            await self.commit()
+
+        return  inner
+
+    @with_commit
+    async def build(self):
+        if os.path.isfile(BUILD_PATH):
+            await self.scriptexec(BUILD_PATH)
+
+    async def commit(self):
+        await self.cxn.commit()
+
+
+    async def close(self):
+        await self.cxn.close()
+
+
+    async def field(self, command, *values):
+        await self.cur.execute(command, tuple(values))
+
+
+        if (fetch := await self.cur.fetchone()) is not None:
+            return fetch[0]
+
+
+    async def record(self, command, *values):
+        await self.cur.execute(command, tuple(values))
+        return await self.cur.fetchone()
+
+    async def records(self, command, *values):
+        await self.cur.execute(command, tuple(values))
+
+        return await self.cur.fetchall()
+
+    async def column(self, command, *values):
+        await self.cur.execute(command, tuple(values))
+
+        return [item[0] for item in  await self.cur.fetchall()]
+
+    async def execute(self, command, *values):
+        await self.cur.execute(command, tuple(values))
+
+    async def multiexec(self, command, valueset):
+        await self.cur.executemany(command, valueset)
+
+    async def scriptexec(self, path):
+        with open(path, "r", encoding="utf-8") as script:
+            await self.cur.executescript(script.read())
+
 
 
     def setup(self):
@@ -82,6 +158,7 @@ class Bot(BotBase):
         await self.wait_until_ready()
         #Not pretty but might as well set the bots status here
         await self.set_status()
+        await db.tester()
 
 
     async def set_status(self):
@@ -121,6 +198,25 @@ class Bot(BotBase):
             roles, str(member.guild.id), None, str(member.id), names, 0, 0, 0)
         await db.commit()
 
+        #member_list = self.get_all_members()
+        #for member in member_list:
+        #    user_info = await db.records(
+        #        """ SELECT *
+        #            FROM users 
+        #            WHERE id=? 
+        #            AND server=?
+        #        """, member.id, member.guild.id
+        #    )
+        #    if user_info == []:
+        #        roles = ','.join([str(x.id) for x in member.roles if x.name != "@everyone"])
+        #        names = member.display_name
+        #        await db.execute(
+        #            """ INSERT OR IGNORE INTO users
+        #                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        #            """, roles, str(member.guild.id), None, str(member.id), names, 0, 0, 0
+        #        )
+        #        db.commit()
+
 
     async def on_command_error(self, ctx, error):
         if isinstance(error, commands.NoPrivateMessage):
@@ -141,6 +237,12 @@ class Bot(BotBase):
         if not hasattr(self, 'uptime'):
             self.uptime = datetime.utcnow()
 
+        global global_connection, global_cursor
+        global_connection = await aiosqlite.connect(DB_PATH, check_same_thread=False)
+        global_cursor = await global_connection.cursor()
+        #print(global_cursor)
+        #print(global_connection)
+
         """
         if os.name == 'nt':
             os.system('cls')
@@ -150,11 +252,10 @@ class Bot(BotBase):
             except Exception:
                 for _ in range(100):
                     print()
-        """
         message = 'Logged in as %s.' % bot.user
         uid_message = 'Client ID: %s.' % bot.user.id
         user_count_message = f'Users: {len([ x for x in self.get_all_members()])}     Servers: {len(self.guilds)}'
-        separator = '=' * max(len(message), len(uid_message), len(user_count_message))
+        separator = '-' * max(len(message), len(uid_message), len(user_count_message))
         print(separator)
         try:
             print(message)
@@ -163,9 +264,10 @@ class Bot(BotBase):
         print(uid_message)
         print(user_count_message)
         print(separator)
-
+        """
 
     async def on_message(self, message):
+        print(global_cursor)
         if message.author.bot:
             return
         if not message.guild:
@@ -213,3 +315,75 @@ class Bot(BotBase):
                     await message.add_reaction(r)
             await bot.process_commands(message)
 bot = Bot()
+
+class Database:
+    def __init__(self):
+        self.cxn = global_connection
+        self.cur = global_cursor
+        print(self.cxn)
+        
+
+
+    async def with_commit(func):
+        async def inner(self, *args, **kwargs):
+            func(*args, **kwargs)
+            await self.commit()
+
+        return  inner
+
+    @with_commit
+    async def build(self):
+        if os.path.isfile(BUILD_PATH):
+            await self.scriptexec(BUILD_PATH)
+
+    #async def tester(self):
+        #cur = await bot.global_connection.cursor()
+        #await cur.execute("SELECT eyecount FROM users WHERE id = ? AND server = ?", (708584008065351681, 740734113086177433))
+        #stuff = await global_cursor.fetchone()
+        #print("+++++")
+        #print(stuff)
+        #more = await db.record("SELECT eyecount FROM users WHERE id = ? AND server = ?", 708584008065351681, 740734113086177433)
+        #print(more)
+
+    async def commit(self):
+        await self.cxn.commit()
+
+
+    async def close(self):
+        await self.cxn.close()
+
+
+    async def field(self, command, *values):
+        await global_cursor.execute(command, tuple(values))
+
+
+        if (fetch := await global_cursor.fetchone()) is not None:
+            return fetch[0]
+
+
+    async def record(self, command, *values):
+        await global_cursor.execute(command, tuple(values))
+        return await global_cursor.fetchone()
+
+    async def records(self, command, *values):
+        await global_cursor.execute(command, tuple(values))
+
+        return await global_cursor.fetchall()
+
+    async def column(self, command, *values):
+        await global_cursor.execute(command, tuple(values))
+
+        return [item[0] for item in  await global_cursor.fetchall()]
+
+    async def execute(self, command, *values):
+        print(global_cursor)
+        await global_cursor.execute(command, tuple(values))
+
+    async def multiexec(self, command, valueset):
+        await global_cursor.executemany(command, valueset)
+
+    async def scriptexec(self, path):
+        with open(path, "r", encoding="utf-8") as script:
+            await global_cursor.executescript(script.read())
+
+db = Database()

@@ -5,7 +5,7 @@ import random
 from discord.ext import commands
 
 from utilities import permissions, default, converters
-from lib.db import db
+from lib.bot import bot
 from lib.bot import owners
 
 
@@ -222,10 +222,10 @@ class Channels(commands.Cog):
         try:
             overwrites_everyone = channel.overwrites_for(ctx.guild.default_role)
             everyone_overwrite_current = overwrites_everyone.send_messages
-            locked = db.record("SELECT ChannelID FROM lockedchannels WHERE ChannelID = ?", channel.id) or (None)
+            locked = await db.record("SELECT ChannelID FROM lockedchannels WHERE ChannelID = ?", channel.id) or (None)
             if locked is not None: return await ctx.send(f"<:locked:810623219677397013> Channel {channel.mention} is already locked. ID: `{channel.id}`")
             msg = await ctx.send(f"Locking channel {channel.mention}...")
-            db.execute("INSERT INTO lockedchannels VALUES (?, ?, ?, ?, ?, ?, ?)", 
+            await db.execute("INSERT INTO lockedchannels VALUES (?, ?, ?, ?, ?, ?, ?)", 
                                                                                 channel.id, 
                                                                                 channel.name, 
                                                                                 ctx.guild.id, 
@@ -258,7 +258,7 @@ class Channels(commands.Cog):
         if channel is None:
             channel = ctx.channel
         try:
-            locked = db.record("SELECT ChannelID FROM lockedchannels WHERE ChannelID = ?", channel.id) or (None)
+            locked = await db.record("SELECT ChannelID FROM lockedchannels WHERE ChannelID = ?", channel.id) or (None)
             if locked is None: 
                 if surpress is True:
                     return 
@@ -266,7 +266,7 @@ class Channels(commands.Cog):
                     return await ctx.send(f"<:locked:810623219677397013> Channel {channel.mention} is already unlocked. ID: `{channel.id}`")
 
             msg = await ctx.send(f"Unlocking channel {channel.mention}...")
-            old_overwrites = db.record("SELECT EveryonePermissions FROM lockedchannels WHERE ChannelID = ?", channel.id)
+            old_overwrites = await db.record("SELECT EveryonePermissions FROM lockedchannels WHERE ChannelID = ?", channel.id)
             everyone_perms = str(old_overwrites).strip("(),'")
 
             if everyone_perms == "None": 
@@ -279,7 +279,7 @@ class Channels(commands.Cog):
             overwrites_everyone = ctx.channel.overwrites_for(ctx.guild.default_role)
             overwrites_everyone.send_messages = everyone_perms
             await ctx.message.channel.set_permissions(ctx.guild.default_role, overwrite=overwrites_everyone, reason=(default.responsible(ctx.author, "Channel unlocked by command execution")))
-            db.execute("DELETE FROM lockedchannels WHERE ChannelID = ?", channel.id)
+            await db.execute("DELETE FROM lockedchannels WHERE ChannelID = ?", channel.id)
             await msg.edit(content=f"<:unlocked:810623262055989289> Channel {channel.mention} unlocked. ID: `{channel.id}`")
         except discord.errors.Forbidden:
             await msg.edit(content=f"<:fail:812062765028081674> I have insufficient permission to unlock channels.")

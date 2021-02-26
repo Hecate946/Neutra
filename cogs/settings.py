@@ -5,8 +5,8 @@ import re
 from discord.ext import commands
 
 from utilities import permissions
-from lib.bot import owners, get_prefix
-from lib.db import db
+from lib.bot import owners, get_prefix, bot
+from lib.db import asyncdb as db
 
    
 def setup(bot):
@@ -47,7 +47,7 @@ class Settings(commands.Cog):
             if len(new) > 5:
                 await ctx.send(f"{ctx.author.mention}, that prefix is too long. The prefix must be a maximum of five characters in length.")
             else:
-                db.execute("UPDATE guilds SET Prefix = ? WHERE GuildID = ?", new, ctx.guild.id)
+                await db.execute("UPDATE guilds SET Prefix = ? WHERE GuildID = ?", new, ctx.guild.id)
                 await ctx.send(f"{ctx.author.mention}, the prefix has been set to {new}")
 
 
@@ -60,7 +60,7 @@ class Settings(commands.Cog):
         Permission: Administrator
         Output:     Removes invite links sent by users without the Manage Messages permission.
         """
-        current = db.record("SELECT RemoveInviteLinks FROM guilds WHERE GuildID = ?", ctx.guild.id) or (None)
+        current = await db.record("SELECT RemoveInviteLinks FROM guilds WHERE GuildID = ?", ctx.guild.id) or (None)
         current = str(current).strip("',()")
         if current == "true": 
             removeinvitelinks = "true"
@@ -81,7 +81,7 @@ class Settings(commands.Cog):
             msg = "That is not a valid setting."
             yes_no = current
         if yes_no != current:
-            db.execute("UPDATE guilds SET RemoveInviteLinks = ? WHERE GuildID = ?", removeinvitelinks, ctx.guild.id)
+            await db.execute("UPDATE guilds SET RemoveInviteLinks = ? WHERE GuildID = ?", removeinvitelinks, ctx.guild.id)
         await ctx.send(msg)
 
 
@@ -92,7 +92,7 @@ class Settings(commands.Cog):
         if isinstance(message.channel, discord.DMChannel): return None
         if not self.dregex.search(message.content): return None 
         
-        removeinvitelinks = db.record("SELECT RemoveInviteLinks FROM guilds WHERE GuildID = ?", message.guild.id) or (None)
+        removeinvitelinks = await db.record("SELECT RemoveInviteLinks FROM guilds WHERE GuildID = ?", message.guild.id) or (None)
         removeinvitelinks = str(removeinvitelinks).strip("',()")
         if removeinvitelinks == "None": return None
 
@@ -123,13 +123,13 @@ class Settings(commands.Cog):
         else:
             react = False
 
-        already_ignord = db.record("""
+        already_ignord = await db.record("""
         SELECT server FROM ignored WHERE user = ? AND server = ?
         """, user.id, ctx.guild.id)
         
         if "None" not in str(already_ignord): return await ctx.send(f":warning: User `{user}` is already being ignored.")
 
-        db.execute("""
+        await db.execute("""
         INSERT INTO ignored VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """, ctx.guild.id, ctx.guild.name, user.id, str(user), reason, ctx.message.created_at.strftime('%Y-%m-%d %H:%M:%S'), str(ctx.author), react)
         if reason is not None:
@@ -144,16 +144,16 @@ class Settings(commands.Cog):
 
         if user is None: return await ctx.send(f"Usage: `{ctx.prefix}ignore <user> [react] [reason]`")
 
-        blacklisted = db.record("""
+        blacklisted = await db.record("""
         SELECT user FROM ignored WHERE user = ? AND server = ?
         """, user.id, ctx.guild.id) or None
         if blacklisted is None: return await ctx.send(f":warning: User was not ignored")
 
-        reason = db.record("""
+        reason = await db.record("""
         SELECT reason FROM ignored WHERE user = ? AND server = ?
         """, user.id, ctx.guild.id) or None
 
-        db.execute("""
+        await db.execute("""
         DELETE FROM ignored WHERE user = ? AND server = ?
         """, user.id, ctx.guild.id)
 
@@ -175,7 +175,7 @@ class Settings(commands.Cog):
             return
         # Get the list of ignored users
         
-        ignored_users = db.record("""
+        ignored_users = await db.record("""
         SELECT user FROM ignored WHERE user = ? and server = ?
         """, message.author.id, message.guild.id) or None
         if "None" in str(ignored_users):
@@ -183,7 +183,7 @@ class Settings(commands.Cog):
         if int(str(ignored_users).strip("(),'")) != message.author.id: 
             return
 
-        to_react = db.record("""
+        to_react = await db.record("""
         SELECT react FROM ignored WHERE user = ? and server = ?
         """, message.author.id, message.guild.id)
         to_react = int(to_react[0])
@@ -197,19 +197,16 @@ class Settings(commands.Cog):
     async def on_member_join(self, member):
         required_perms = member.guild.me.guild_permissions.manage_roles
         if not required_perms: 
-            print("no")
             return
-        print("hi")
 
 
-        reassign = db.record("""
+        reassign = await db.record("""
         SELECT reassign FROM roleconfig WHERE server = ?
         """, member.guild.id) or None
-        print(reassign)
         if reassign is None or reassign[0] == 0 or reassign[0] is None: 
             pass
         else:
-            old_roles = db.record("""
+            old_roles = await db.record("""
             SELECT roles FROM users WHERE server = ? and id = ?
             """, member.guild.id, member.id) or None
             print(old_roles)
@@ -221,7 +218,7 @@ class Settings(commands.Cog):
                     await member.add_roles(role)
                 except Exception as e: raise e
 
-        autoroles = db.record("""
+        autoroles = await db.record("""
         SELECT autoroles FROM roleconfig WHERE server = ?
         """, member.guild.id) or None
         if autoroles is None or autoroles[0] is None: 
@@ -244,7 +241,7 @@ class Settings(commands.Cog):
         Permission: Manage Server
         Output:     Reassigns roles when past members rejoin the server.
         """
-        current = db.record("SELECT reassign FROM roleconfig WHERE server = ?", ctx.guild.id)
+        current = await db.record("SELECT reassign FROM roleconfig WHERE server = ?", ctx.guild.id)
         current = current[0]
         if current == 1: 
             reassign = True
@@ -266,5 +263,5 @@ class Settings(commands.Cog):
             msg = "That is not a valid setting."
             yes_no = current
         if yes_no != current:
-            db.execute("UPDATE roleconfig SET reassign = ? WHERE server = ?", reassign, ctx.guild.id)
+            await db.execute("UPDATE roleconfig SET reassign = ? WHERE server = ?", reassign, ctx.guild.id)
         await ctx.send(msg)

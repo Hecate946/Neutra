@@ -1,0 +1,385 @@
+import asyncio, logging, discord, os, re, time, sys, fnmatch, subprocess, json, struct, random, dis, aiohttp, importlib, datetime, psutil, functools
+from inspect import Attribute
+from discord.ext import commands
+
+from utilities import permissions, default, http
+from lib.bot import Bot, owners
+from collections import Counter
+from lib.bot import bot
+from lib.db import asyncdb as db
+
+LOGGING_CHANNEL = 811396494304608309
+
+def setup(bot):
+    if not hasattr(bot, 'command_stats'):
+        bot.command_stats = Counter()
+
+    if not hasattr(bot, 'socket_stats'):
+        bot.socket_stats = Counter()
+    # Add the bot and deps
+    settings = bot.get_cog("Settings")
+    bot.add_cog(Owner(bot, settings, sys.argv[0], 'python'))
+
+# This is the Bot module - it contains things like nickname, status, etc
+log = logging.getLogger()
+
+class Owner(commands.Cog):
+    """
+    Owner Cog.
+    """
+    # Init with the bot reference, and a reference to the settings var
+    def __init__(self, bot, settings, path = None, pypath = None):
+        self.bot = bot
+        self.guild = None
+        self.settings = settings
+        self.startTime = int(time.time())
+        self.path = path
+        self.process = psutil.Process()
+        self.pypath = pypath
+        self.regex = re.compile(r"(http|ftp|https)://([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?")
+        self.is_current = False
+        global Utils, DisplayName
+        Utils = self.bot.get_cog("Utils")
+        DisplayName = self.bot.get_cog("DisplayName")
+        self.colors = [ 
+                discord.Color.teal(),
+                discord.Color.dark_teal(),
+                discord.Color.green(),
+                discord.Color.dark_green(),
+                discord.Color.blue(),
+                discord.Color.dark_blue(),
+                discord.Color.purple(),
+                discord.Color.dark_purple(),
+                discord.Color.magenta(),
+                discord.Color.dark_magenta(),
+                discord.Color.gold(),
+                discord.Color.dark_gold(),
+                discord.Color.orange(),
+                discord.Color.dark_orange(),
+                discord.Color.red(),
+                discord.Color.dark_red(),
+                discord.Color.lighter_grey(),
+                discord.Color.dark_grey(),
+                discord.Color.light_grey(),
+                discord.Color.darker_grey(),
+                discord.Color.blurple(),
+                discord.Color.greyple()
+                ]
+        self.command_stats = 0
+
+
+    @commands.group(hidden=True, brief="Change any aspect of the bot's specifications.")
+    @commands.is_owner()
+    async def change(self, ctx):
+        """ 
+        Usage:      -search <method> <new>
+        Examples:   -change name Milky Way, -change avatar <url>
+        Permission: Bot Owner
+        Output:     Edited Bot Specification.
+        Methods:
+            avatar        (Ex: 3523)               (Alias: pfp)
+            nickname      (Ex: Heca)               (Alias: nick)
+            username      (Ex: Hec)                (Alias: name)
+        """
+        if ctx.invoked_subcommand is None:
+            await ctx.send_help(str(ctx.command))
+
+
+    @change.command(name="username", hidden=True, aliases=['name'], brief="Change username.")
+    @commands.is_owner()
+    async def change_username(self, ctx, *, name: str):
+        try:
+            await self.bot.user.edit(username=name)
+            await ctx.send(f"Successfully changed username to **{name}**")
+        except discord.HTTPException as err:
+            await ctx.send(err)
+
+
+    @change.command(name="nickname", hidden=True, brief="Change nickname.")
+    @commands.is_owner()
+    async def change_nickname(self, ctx, *, name: str = None):
+        try:
+            await ctx.guild.me.edit(nick=name)
+            if name:
+                await ctx.send(f"Successfully changed nickname to **{name}**")
+            else:
+                await ctx.send("Successfully removed nickname")
+        except Exception as err:
+            await ctx.send(err)
+
+
+    @change.command(name="avatar", hidden=True, brief="Change avatar.")
+    @commands.is_owner()
+    async def change_avatar(self, ctx, url: str = None):
+        if url is None and len(ctx.message.attachments) == 0:
+            return await ctx.send(f"Usage: `{ctx.prefix}change avatar <avatar>`")
+        if url is None and len(ctx.message.attachments) == 1:
+            url = ctx.message.attachments[0].url
+        else:
+            url = url.strip('<>') if url else None
+
+        try:
+            bio = await http.get(url, res_method="read")
+            await self.bot.user.edit(avatar=bio)
+            em = discord.Embed(description="**Successfully changed the avatar. Currently using:**", color=ctx.guild.me.color)
+            em.set_image(url=url)
+            await ctx.send(embed=em)
+        except aiohttp.InvalidURL:
+            await ctx.send("Invalid URL.")
+        except discord.InvalidArgument:
+            await ctx.send("This URL does not contain a useable image.")
+        except discord.HTTPException as err:
+            await ctx.send(err)
+        except TypeError:
+            await ctx.send("Provide an attachment or a valid URL.")
+
+
+    def change_config_value(self, value: str, changeto: str):
+        """ Change a value from the configs """
+        config_name = "config.json"
+        with open(config_name, "r") as jsonFile:
+            data = json.load(jsonFile)
+
+        data[value] = changeto
+        with open(config_name, "w") as jsonFile:
+            json.dump(data, jsonFile, indent=2)
+
+
+    @commands.command(hidden=True)
+    @commands.is_owner()
+    @commands.check(permissions.is_owner)
+    async def load(self, ctx, name: str):
+        """ Loads an extension. """
+        try:
+            self.bot.load_extension(f"cogs.{name}")
+        except Exception as e:
+            return await ctx.send(str(e).replace("'","**"))
+        await ctx.send(f"Loaded extension **{name}.py**")
+
+
+    @commands.command(hidden=True)
+    @commands.is_owner()
+    @commands.check(permissions.is_owner)
+    async def unload(self, ctx, name: str):
+        """ Unloads an extension. """
+        try:
+            self.bot.unload_extension(f"cogs.{name}")
+        except Exception as e:
+            return await ctx.send(str(e).replace("'","**"))
+        await ctx.send(f"Unloaded extension **{name}.py**")
+
+
+    @commands.command(name="reload", hidden=True)
+    @commands.is_owner()
+    @commands.check(permissions.is_owner)
+    async def _reload(self, ctx, name: str):
+        """ Reloads an extension. """
+        try:
+            self.bot.reload_extension(f"cogs.{name}")
+        except Exception as e:
+            return await ctx.send(str(e).replace("'","**"))
+        await ctx.send(f"Reloaded extension **{name}.py**")
+
+    def get_bot_uptime(self, *, brief=False):
+        now = datetime.datetime.utcnow()
+        delta = now - self.bot.uptime
+        hours, remainder = divmod(int(delta.total_seconds()), 3600)
+        minutes, seconds = divmod(remainder, 60)
+        days, hours = divmod(hours, 24)
+
+        if not brief:
+            if days:
+                fmt = '{d} days, {h} hours, {m} minutes, and {s} seconds'
+            else:
+                fmt = '{h} hours, {m} minutes, and {s} seconds'
+        else:
+            fmt = '{h}h {m}m {s}s'
+            if days:
+                fmt = '{d}d ' + fmt
+
+        return fmt.format(d=days, h=hours, m=minutes, s=seconds)
+
+
+    @commands.command(hidden=True)
+    @commands.is_owner()
+    @commands.check(permissions.is_owner)
+    async def reloadall(self, ctx):
+        """ Reloads all extensions. """
+        error_collection = []
+        for file in os.listdir("cogs"):
+            if file.endswith(".py"):
+                name = file[:-3]
+                try:
+                    self.bot.reload_extension(f"cogs.{name}")
+                except Exception as e:
+                    error_collection.append(
+                        [file, default.traceback_maker(e, advance=False).replace('siamakasasi', 'X')]
+                    )
+
+        if error_collection:
+            output = "\n".join([f"**{g[0]}** ```diff\n- {g[1]}```" for g in error_collection])
+            return await ctx.send(
+                f"Attempted to reload all extensions, was able to reload, "
+                f"however the following failed...\n\n{output}"
+            )
+
+        await ctx.send("Successfully reloaded all extensions")
+
+
+    @commands.command(pass_context=True, hidden=True)
+    async def source(self, ctx):
+        """Link the github source. (private and outdated so don't bother) """
+        source = "https://github.com/hecatex/NGC0000"
+        msg = '**__My source is located at:__**\n\n{}'.format(source)
+        await ctx.send(msg)
+
+
+    @commands.command(hidden=True)
+    @commands.check(permissions.is_owner)
+    async def reloadutils(self, ctx, name: str):
+        """ Reloads a utils module. """
+        name_maker = f"utils/{name}.py"
+        try:
+            module_name = importlib.import_module(f"utils.{name}")
+            importlib.reload(module_name)
+        except ModuleNotFoundError:
+            return await ctx.send(f"Couldn't find module named **{name_maker}**")
+        except Exception as e:
+            error = default.traceback_maker(e)
+            return await ctx.send(f"Module **{name_maker}** returned error and was not reloaded...\n{error}")
+        await ctx.send(f"Reloaded module **{name_maker}**")
+
+
+    @commands.command(aliases=["restart"], brief="Reboot the bot.", hidden=True)
+    @commands.check(permissions.is_owner)
+    async def reboot(self, ctx):
+        """
+        Usage:       -reboot
+        Alias:       -restart
+        Permissions: Bot Owner
+        """
+        await ctx.send('Rebooting now...')
+        time.sleep(1)
+        sys.exit(0)
+
+
+    @commands.command(aliases=['pm'], brief="DM the user of your choice", hidden=True)
+    @commands.check(permissions.is_owner)
+    async def dm(self, ctx, user_id: int, *, message: str):
+        """ 
+        Usage:       -dm <id> <message>
+        Alias:       -pm
+        Example:     -dm 384059834985989 Hi
+        Permissions: Bot Owner
+        """
+        user = self.bot.get_user(user_id)
+        if not user:
+            return await ctx.send(f"Could not find any UserID matching **{user_id}**")
+
+        try:
+            await user.send(message)
+            await ctx.send(f"✉️ Sent a DM to **{user_id}**")
+        except discord.Forbidden:
+            await ctx.send("This user might be having DMs blocked or it's a bot account...")
+
+
+    @commands.command(name="?", aliases=['i'], no_pm=True)
+    async def _i(self, ctx, *, member: discord.Member=None):
+        user = ctx.message.author if member is None else member
+        _, _, _, _, names, messages, retard, sicklad = await db.record('''SELECT *
+                          FROM users
+                          WHERE (id=? AND server=?)''',
+                       user.id, ctx.guild.id)
+        pc = await db.records('''SELECT messagecount
+                          FROM users
+                          WHERE server=?''',
+                       ctx.guild.id,)
+        nicks = await db.records('''SELECT nicknames
+                          FROM users
+                          WHERE (server=? AND id=?)''',
+                       ctx.guild.id, user.id)
+        nicks = nicks[0][0].split(',')[-5:]
+        nicks = nicks[::-1]
+
+        postcount_rank = "{}\nrank {}".format(
+            messages, (sorted([x[0] for x in pc], reverse=True).index(messages) + 1))
+
+        try:
+            avatar = str(user.avatar_url)
+        except:
+            avatar = str(user.default_avatar_url)
+        try:
+            joined_at = user.joined_at
+            days_since = "({} days ago)".format(
+                (datetime.datetime.today() - user.joined_at).days)
+            days_after_creation = (user.joined_at - ctx.guild.created_at).days
+        except:
+            joined_at = "User somehow doesn't have a join date.'"
+            days_since = ""
+        try:
+            days_since_creation = "({} days ago)".format(
+                (datetime.datetime.today() - user.created_at).days)
+        except Exception as e:
+            print(e)
+            days_since_creation = ""
+
+        if len(nicks) > 1:
+            hmm = "Nicknames"
+        else:
+            hmm = "Nickname"
+
+        nicks = '\n'.join(nicks)
+        usercolor = user.color
+        created = user.created_at.strftime("%Y-%m-%d\n%H:%M:%S")
+        joined_at = user.joined_at.strftime("%Y-%m-%d\n%H:%M:%S")
+        em = discord.Embed(title=None, description=None, colour=usercolor)
+        em.set_author(name=user.name, icon_url=user.avatar_url,
+                      url=str(user.avatar_url).replace(".webp", ".png"))
+        em.add_field(name="Name", value="{}#{}".format(
+            user.name, user.discriminator), inline=True)
+        em.add_field(name=hmm, value=nicks, inline=True)
+        em.add_field(name="ID", value=user.id, inline=True)
+        em.add_field(name="Messages", value=postcount_rank, inline=True)
+
+        em.add_field(name="Created at", value="{} {}".format(
+            created, days_since_creation), inline=True)
+        em.add_field(name="Joined at", value="{} {}\nThat's {} days after the server was created".format(
+            joined_at, days_since, days_after_creation), inline=True)
+        # em.set_thumbnail(url=avatar)
+        await ctx.send(embed=em)
+
+    @commands.group(pass_context=True, invoke_without_command=True, no_pm=True, brief="idk")
+    @permissions.has_permissions(manage_guild=True)
+    async def inv(self, ctx):
+        """Manage Server Invites"""
+        if ctx.invoked_subcommand is None:
+            await ctx.send_help(str(ctx.command))
+
+    @inv.group(name='cserver', pass_context=True, invoke_without_command=True, hidden=True)
+    @commands.is_owner()
+    async def _inv_cserver(self, ctx, *, name:str):
+        found = False
+        for server in self.bot.guilds:
+            if name in server.name:
+                s = random.choice(server.channels)
+                found = True
+        if found:
+            try:
+                invite = await s.create_invite()
+            except Exception as e:
+                await ctx.send(e)
+                return
+            await ctx.send(invite)
+        else:
+            await ctx.send(f":warning: No server with name `{name}`found")
+
+
+    @_inv_cserver.command(name='id', pass_context=True, invoke_without_command=True, hidden=True)
+    @commands.is_owner()
+    async def _inv_cserver_id(self, ctx, id:int):
+        s = self.bot.get_guild(id)
+        if s is None:
+            return await ctx.send('No server with ID `{}` found'.format(str(id)))
+        inv = random.choice(s.channels)
+        invite = await inv.create_invite()
+        await ctx.send(invite)

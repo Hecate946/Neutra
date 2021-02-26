@@ -5,8 +5,8 @@ from better_profanity import profanity
 from collections import OrderedDict
 
 from utilities import permissions, default
-from lib.db import db
-
+from lib.bot import bot
+from lib.db import asyncdb as db
 def setup(bot):
     bot.add_cog(Automoderation(bot))
 
@@ -52,12 +52,12 @@ class Automoderation(commands.Cog):
 
         word_to_filter = str(word_to_filter).lower()
 
-        word_list = db.record("""
+        word_list = await db.record("""
         SELECT word FROM profanity WHERE server = ?
         """, ctx.guild.id) or None
         if word_list is None:         
 
-            db.execute("""
+            await db.execute("""
             INSERT INTO profanity VALUES (?, ?)
             """, ctx.guild.id, word_to_filter)
 
@@ -75,7 +75,7 @@ class Automoderation(commands.Cog):
                 word_list.append(word_to_filter)
             new_words = ', '.join(word_list)
 
-            db.execute("""
+            await db.execute("""
             UPDATE profanity SET word=? WHERE server = ?
             """, new_words, ctx.guild.id)
 
@@ -88,7 +88,7 @@ class Automoderation(commands.Cog):
             return await ctx.send(f"Usage: `{ctx.prefix}filter remove <word>`")
 
 
-        word_list = db.record("""
+        word_list = await db.record("""
         SELECT word FROM profanity WHERE server = ?
         """, ctx.guild.id) or None
         if word_list is None:
@@ -106,7 +106,7 @@ class Automoderation(commands.Cog):
             word_list.pop(old_index)
             new_words = ', '.join(word_list)
 
-            db.execute("""
+            await db.execute("""
             UPDATE profanity SET word=? WHERE server = ?
             """, new_words, ctx.guild.id)
 
@@ -118,7 +118,7 @@ class Automoderation(commands.Cog):
     @_filter.command(brief="Display a list of this server's filtered words.", aliases=['show'])
     @permissions.has_permissions(manage_guild=True)
     async def display(self, ctx):
-        words = db.records("""
+        words = await db.records("""
         SELECT word FROM profanity WHERE server=?
         """, ctx.guild.id) or None
 
@@ -132,7 +132,7 @@ class Automoderation(commands.Cog):
     @_filter.command(name="clear")
     @permissions.has_permissions(manage_guild=True)
     async def _clear(self, ctx):
-        db.execute("""
+        await db.execute("""
         DELETE FROM profanity WHERE server=?
         """, ctx.guild.id)
 
@@ -150,12 +150,12 @@ class Automoderation(commands.Cog):
             return
         msg = str(after.content)
         try:
-            server = db.record("""
+            server = await db.record("""
             SELECT server FROM profanity WHERE server = ?
             """, after.guild.id) or None
-            if server is None: return
+            if server is None or "None" in str(server): return
 
-            words = db.record("""
+            words = await db.record("""
             SELECT word FROM profanity WHERE server = ?
             """, after.guild.id)
 
@@ -191,12 +191,12 @@ class Automoderation(commands.Cog):
         msg = str(message.content)
 
         try:
-            server = db.record("""
+            server = await db.record("""
             SELECT server FROM profanity WHERE server = ?
             """, message.guild.id) or None
-            if server is None: return
+            if server is None or "None" in str(server): return
 
-            words = db.record("""
+            words = await db.record("""
             SELECT word FROM profanity WHERE server = ?
             """, message.guild.id)
 
@@ -222,9 +222,10 @@ class Automoderation(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
+        if before.roles == after.roles: return
         roles = ','.join([str(x.id)
                           for x in after.roles if x.name != "@everyone"])
-        db.execute('UPDATE users SET roles=? WHERE id=? AND server=?',
+        await db.execute('UPDATE users SET roles=? WHERE id=? AND server=?',
                        roles, before.id, before.guild.id)
         if len(before.roles) < len(after.roles):
             # role added

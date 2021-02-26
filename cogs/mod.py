@@ -9,8 +9,9 @@ from datetime import datetime, timedelta
 from discord.ext import commands
 
 from utilities import permissions, default, converters
-from lib.db import db
-from lib.bot import owners
+from lib.bot import bot, owners
+from lib.db import asyncdb as db
+
 
 
 def setup(bot):
@@ -96,7 +97,7 @@ class Moderation(commands.Cog):
         if ctx.guild.me.top_role.position < role.position: return await ctx.send("The muted role is above my highest role. Aborting...")
         if ctx.author.top_role.position < role.position and ctx.author.id != ctx.guild.owner.id: return await ctx.send("The muted role is above your highest role. Aborting...")
         try:
-            db.execute("UPDATE guilds SET MuteRole = ? WHERE GuildID = ?", role.id, ctx.guild.id)
+            await db.execute("UPDATE guilds SET MuteRole = ? WHERE GuildID = ?", role.id, ctx.guild.id)
         except Exception as e: return await ctx.send(e)
         msg = await ctx.send(f":warning: Creating mute system. This process may take several minutes.")
         for channel in ctx.guild.channels:
@@ -138,7 +139,7 @@ class Moderation(commands.Cog):
         else:
             unmutes = []
             try:
-                self.mute_role = db.record("SELECT MuteRole FROM guilds WHERE GuildID = ?", ctx.guild.id) or (None)
+                self.mute_role = await db.record("SELECT MuteRole FROM guilds WHERE GuildID = ?", ctx.guild.id) or (None)
                 self.mute_role = str(self.mute_role).strip("()',")
                 if str(self.mute_role) == "None": return await ctx.send(f"use `{ctx.prefix}muterole <role>` to initialize the muted role.")
                 self.mute_role = ctx.guild.get_role(int(self.mute_role))
@@ -210,7 +211,7 @@ class Moderation(commands.Cog):
         else:
             unmutes = []
             try:
-                self.mute_role = db.record("SELECT MuteRole FROM guilds WHERE GuildID = ?", ctx.guild.id) or (None)
+                self.mute_role = await db.record("SELECT MuteRole FROM guilds WHERE GuildID = ?", ctx.guild.id) or (None)
                 self.mute_role = str(self.mute_role).strip("()',")
                 if str(self.mute_role) == "None": return await ctx.send(f"use `{ctx.prefix}muterole <role>` to initialize the muted role.")
                 self.mute_role = ctx.guild.get_role(int(self.mute_role))
@@ -227,7 +228,7 @@ class Moderation(commands.Cog):
                     if ctx.guild.me.top_role.position < target.top_role.position and ctx.author.id not in owners: return await ctx.send(f"My highest role is below {target}'s highest role. Aborting mute.")
                     if ctx.guild.me.top_role.position < self.mute_role.position: return await ctx.send("My highest role is below the mute role. Aborting mute.")
                     try:
-                        db.execute("INSERT INTO mutes VALUES (?, ?, ?)", target.id, role_ids, getattr(end_time, "isoformat", lambda: None)())
+                        await db.execute("INSERT INTO mutes VALUES (?, ?, ?)", target.id, role_ids, getattr(end_time, "isoformat", lambda: None)())
                     except sqlite3.IntegrityError: return await ctx.send(f"Database error occured. Contact the bot developer by using {ctx.prefix}bugreport <report>")
                     try:
                         await target.edit(roles=[self.mute_role])
@@ -266,21 +267,21 @@ class Moderation(commands.Cog):
 
     async def unmute(self, ctx, targets):
         try:
-            self.mute_role = db.record("SELECT MuteRole FROM guilds WHERE GuildID = ?", ctx.guild.id) or (None)
+            self.mute_role = await db.record("SELECT MuteRole FROM guilds WHERE GuildID = ?", ctx.guild.id) or (None)
             self.mute_role = str(self.mute_role).strip("()',")
             self.mute_role = ctx.guild.get_role(int(self.mute_role))
         except Exception as e: return await ctx.send(e)
         unmuted = []
         for target in targets:
             if self.mute_role in target.roles:
-                role_ids = db.field("SELECT RoleIDs FROM mutes WHERE UserID = ?", target.id) or (None)
+                role_ids = await db.field("SELECT RoleIDs FROM mutes WHERE UserID = ?", target.id) or (None)
                 if str(role_ids) == "None": 
                     await target.remove_roles(self.mute_role)
                     unmuted.append(target)
                     continue
                 roles = [ctx.guild.get_role(int(id_)) for id_ in role_ids.split(",") if len(id_)]
 
-                db.execute("DELETE FROM mutes WHERE UserID = ?", target.id)
+                await db.execute("DELETE FROM mutes WHERE UserID = ?", target.id)
 
                 await target.edit(roles=roles)
                 unmuted.append(target)
@@ -730,7 +731,7 @@ class Moderation(commands.Cog):
     async def _bots(self, ctx, search=100, prefix=None):
         """Removes a bot user's messages and messages with their optional prefix."""
 
-        getprefix = db.field("SELECT Prefix FROM guilds WHERE GuildID = ?", ctx.guild.id)
+        getprefix = await db.field("SELECT Prefix FROM guilds WHERE GuildID = ?", ctx.guild.id)
 
         def predicate(m):
             return (m.webhook_id is None and m.author.bot) or m.content.startswith(tuple(getprefix))
