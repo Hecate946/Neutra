@@ -2,7 +2,7 @@ import discord
 import asyncio
 from utilities import default
 from discord.ext import commands
-from lib.bot import owners
+from core import OWNERS
 
 
 COG_EXCEPTIONS = ['OWNER','HELP','CONFIG']
@@ -20,6 +20,7 @@ class Help(commands.Cog):
     """
     def __init__(self, bot):
         self.bot = bot
+        self.cxn = bot.connection
 
 
       ############################
@@ -59,8 +60,8 @@ class Help(commands.Cog):
         the_cog = sorted(cog.get_commands(), key=lambda x:x.name)
         cog_commands = []
         for c in the_cog:
-            if c.hidden and ctx.author.id not in owners: continue
-            if str(c.name).upper() in COMMAND_EXCEPTIONS and ctx.author.id not in owners: continue
+            if c.hidden and ctx.author.id not in OWNERS: continue
+            if str(c.name).upper() in COMMAND_EXCEPTIONS and ctx.author.id not in OWNERS: continue
             cog_commands.append(c)
         if cog_commands:
             await self.category_embed(ctx, cog=cog.qualified_name, list=cog_commands, pm=pm, delete_after=delete_after)
@@ -128,7 +129,7 @@ class Help(commands.Cog):
             msg = ""
             for cog in sorted(self.bot.cogs):
                 c = self.bot.get_cog(cog)
-                if c.qualified_name.upper() in COG_EXCEPTIONS: continue
+                if c.qualified_name.upper() in COG_EXCEPTIONS and ctx.author.id not in OWNERS: continue
                 valid_cogs.append(c)
             for c in valid_cogs:
                 line = f"\n`{c.qualified_name}` {c.description}\n"
@@ -206,7 +207,7 @@ class Help(commands.Cog):
                     cog_commands = sorted(self.bot.get_cog(cog).get_commands(), key=lambda x:x.name)
                     for command in cog_commands:
                         if str(command.name) == invokercommand.lower() or invokercommand.lower() in command.aliases:
-                            if command.hidden and ctx.author.id not in owners: continue
+                            if command.hidden and ctx.author.id not in OWNERS: continue
                             valid_commands += (command.name)
                             valid_help += (command.help)
                             if not command.brief:

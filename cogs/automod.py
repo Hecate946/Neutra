@@ -5,8 +5,8 @@ from better_profanity import profanity
 from collections import OrderedDict
 
 from utilities import permissions, default
-from lib.bot import bot
-from lib.db import asyncdb as db
+from core import bot
+
 def setup(bot):
     bot.add_cog(Automoderation(bot))
 
@@ -17,6 +17,7 @@ class Automoderation(commands.Cog):
     """
     def __init__(self, bot):
         self.bot = bot
+        self.cxn = bot.connection
 
 
     @commands.group(invoke_without_command=True, name="filter", aliases=['profanity'], brief="Manage the server's word filter list (Command Group).")
@@ -52,12 +53,12 @@ class Automoderation(commands.Cog):
 
         word_to_filter = str(word_to_filter).lower()
 
-        word_list = await db.record("""
+        word_list = await self.cxn.record("""
         SELECT word FROM profanity WHERE server = ?
         """, ctx.guild.id) or None
         if word_list is None:         
 
-            await db.execute("""
+            await self.cxn.execute("""
             INSERT INTO profanity VALUES (?, ?)
             """, ctx.guild.id, word_to_filter)
 
@@ -75,7 +76,7 @@ class Automoderation(commands.Cog):
                 word_list.append(word_to_filter)
             new_words = ', '.join(word_list)
 
-            await db.execute("""
+            await self.cxn.execute("""
             UPDATE profanity SET word=? WHERE server = ?
             """, new_words, ctx.guild.id)
 
@@ -88,7 +89,7 @@ class Automoderation(commands.Cog):
             return await ctx.send(f"Usage: `{ctx.prefix}filter remove <word>`")
 
 
-        word_list = await db.record("""
+        word_list = await self.cxn.record("""
         SELECT word FROM profanity WHERE server = ?
         """, ctx.guild.id) or None
         if word_list is None:
@@ -106,7 +107,7 @@ class Automoderation(commands.Cog):
             word_list.pop(old_index)
             new_words = ', '.join(word_list)
 
-            await db.execute("""
+            await self.cxn.execute("""
             UPDATE profanity SET word=? WHERE server = ?
             """, new_words, ctx.guild.id)
 
@@ -118,7 +119,7 @@ class Automoderation(commands.Cog):
     @_filter.command(brief="Display a list of this server's filtered words.", aliases=['show'])
     @permissions.has_permissions(manage_guild=True)
     async def display(self, ctx):
-        words = await db.records("""
+        words = await self.cxn.records("""
         SELECT word FROM profanity WHERE server=?
         """, ctx.guild.id) or None
 
@@ -132,7 +133,7 @@ class Automoderation(commands.Cog):
     @_filter.command(name="clear")
     @permissions.has_permissions(manage_guild=True)
     async def _clear(self, ctx):
-        await db.execute("""
+        await self.cxn.execute("""
         DELETE FROM profanity WHERE server=?
         """, ctx.guild.id)
 
@@ -150,12 +151,12 @@ class Automoderation(commands.Cog):
             return
         msg = str(after.content)
         try:
-            server = await db.record("""
+            server = await self.cxn.record("""
             SELECT server FROM profanity WHERE server = ?
             """, after.guild.id) or None
             if server is None or "None" in str(server): return
 
-            words = await db.record("""
+            words = await self.cxn.record("""
             SELECT word FROM profanity WHERE server = ?
             """, after.guild.id)
 
@@ -191,12 +192,12 @@ class Automoderation(commands.Cog):
         msg = str(message.content)
 
         try:
-            server = await db.record("""
+            server = await self.cxn.record("""
             SELECT server FROM profanity WHERE server = ?
             """, message.guild.id) or None
             if server is None or "None" in str(server): return
 
-            words = await db.record("""
+            words = await self.cxn.record("""
             SELECT word FROM profanity WHERE server = ?
             """, message.guild.id)
 
@@ -225,7 +226,7 @@ class Automoderation(commands.Cog):
         if before.roles == after.roles: return
         roles = ','.join([str(x.id)
                           for x in after.roles if x.name != "@everyone"])
-        await db.execute('UPDATE users SET roles=? WHERE id=? AND server=?',
+        await self.cxn.execute('UPDATE users SET roles=? WHERE id=? AND server=?',
                        roles, before.id, before.guild.id)
         if len(before.roles) < len(after.roles):
             # role added

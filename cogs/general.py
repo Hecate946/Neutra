@@ -24,6 +24,7 @@ class General(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.cxn = bot.connection
         self.process = psutil.Process(os.getpid())
         self.startTime = int(time.time())
         self.config = default.config()
@@ -61,7 +62,7 @@ class General(commands.Cog):
         embed.set_thumbnail(url=ctx.bot.user.avatar_url)
         embed.add_field(name="Last boot", value=default.timeago(datetime.datetime.utcnow() - self.bot.uptime), inline=True)
         embed.add_field(
-            name=f"Developer{'' if len(self.config['owners']) == 1 else 's'}",
+            name=f"Developer{'' if len(self.config['OWNERS']) == 1 else 's'}",
             value=',\n '.join([str(self.bot.get_user(x)) for x in self.config["owners"]]),
             inline=True)
         embed.add_field(name="Python Version", value=f"{python_version()}", inline=True)
@@ -258,6 +259,58 @@ class General(commands.Cog):
         embed.add_field(name="Permissions:", value=", ".join(perm_list).replace("_", " ").replace("guild", "server").title().replace("Tts", "TTS"), inline=False)
         await ctx.send(embed=embed)
 
+    @commands.command(brief="Display information on a passed user.", aliases=["profile","whois","ui"])
+    @commands.guild_only()
+    async def userinfo(self, ctx, member: discord.Member = None):
+        """
+        Usage:    -userinfo <member>
+        Aliases:  -profile, -ui, -whois
+        Examples: -userinfo NGC0000, -userinfo 810377376269205546
+        Output:   Roles, permissions, and general stats on a user.
+        Notes:    If user is not in the server, use -user <user id>.
+        """
+        if member is None:
+            member = ctx.message.author
+
+        print(member.activities)
+        print(member.activity.name)
+        print(member.raw_status)
+        print(member.web_status)
+        print(member.premium_since)
+
+        query = '''SELECT commandcount FROM users WHERE id = $1 AND server_id = $2'''
+        commandcount = await self.cxn.fetchrow(query, member.id, ctx.guild.id)
+
+        query = '''SELECT messagecount FROM users WHERE id = $1 AND server_id = $2'''
+        messages = await self.cxn.fetchrow(query, member.id, ctx.guild.id)
+
+
+        status_dict = {'online': '<:online:810650040838258711>', 'offline': '<:offline:810650959859810384>', 'dnd': '<:dnd:810650845007708200>', 'idle': "<:idle:810650560146833429>"}
+        perm_list = [Perm[0] for Perm in member.guild_permissions if Perm[1]]
+        embed = discord.Embed(colour=default.config()["embed_color"])
+        embed.set_author(name=f"{member.display_name}", icon_url=member.avatar_url)
+        embed.set_thumbnail(url=member.avatar_url)
+        #embed.add_field(name=f"**{member.display_name}'s Info:**", value=
+        #                                                               f"> **Nickname:** {member.display_name}\n"
+        #                                                               f"> **ID:** {member.id}\n"
+        #                                                               f"> **Highest Role:** {member.top_role.mention}\n"
+        #                                                               f"> **Status:** {(status_dict[str(member.status)])}\n"
+        #                                                               f"> **Registered:** {member.created_at.__format__('%B %d, %Y at %I:%M %p')}\n"
+        #                                                               f"> **Joined:** {member.joined_at.__format__('%B %d, %Y at %I:%M %p')}\n"
+        #                                                               f"> **Bot:** {member.bot}\n", inline=False)
+        embed.add_field(name="Mention", value=f"<:mention:815622649576423464> {member.mention}")
+        embed.add_field(name="Username", value=f"{'<:owner:810678076497068032>'if member.id == ctx.guild.owner.id else ''} {member}")
+        embed.add_field(name="Messages", value=messages[0])
+        embed.add_field(name="Commands", value=commandcount[0])
+        embed.add_field(name="Status", value=f"{status_dict[str(member.status)]} {member.activity.name}")
+        if len(member.roles) > 1:
+            role_list = member.roles[::-1]
+            role_list.remove(member.roles[0])
+            embed.add_field(name=f"Roles: [{len(role_list)}]", value =" ".join([role.mention for role in role_list]), inline=False)
+        else:
+            embed.add_field(name=f"Roles: [0]", value ="** **", inline=False)
+        embed.add_field(name="Permissions:", value=", ".join(perm_list).replace("_", " ").replace("guild", "server").title().replace("Tts", "TTS"), inline=False)
+        await ctx.send(embed=embed)
 
     @commands.command(brief="Show information about the current server.", aliases=["si","serverstats","ss","server"])
     @commands.guild_only()
@@ -561,7 +614,7 @@ class General(commands.Cog):
                 "If you want to get to know me, are too a bot lover, or simply are looking for an active fun-loving server to join, "
                 "here's a link to my discord server, where I'm most active. <https://discord.gg/947ramn>\n"
                 "NGC0000 is a bot named after our galaxy, the Milky Way. I made NGC0000 specifically for server moderation. "
-                "'She' is meant to offer every imaginable feature to server owners and administrators "
+                "'She' is meant to offer every imaginable feature to server OWNERS and administrators "
                 "so that they may manage their server efficiently, and without need for multiple bots. "
                 "Having experience with using various bots, "
                 "I personally found it very difficult to achieve exactly what I wanted with a single bot. "

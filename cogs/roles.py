@@ -5,7 +5,7 @@ from io import BytesIO
 from discord.ext import commands
 
 from utilities import permissions, default
-from lib.bot import owners
+from core import OWNERS
 
 
 EMBED_MAX_LEN = 2048 # constant for paginating embeds
@@ -24,6 +24,7 @@ class Roles(commands.Cog):
     """
     def __init__(self, bot):
         self.bot = bot
+        self.cxn = bot.connection
 
 
     @commands.command(brief="Gets info on a specific role", aliases=["ri"])
@@ -87,8 +88,8 @@ class Roles(commands.Cog):
         for target in targets:
             role_list = []
             for role in roles:
-                if role.permissions.administrator and ctx.author.id not in owners: return await ctx.send("I cannot manipulate an admin role")
-                if role.position >= ctx.author.top_role.position and ctx.author.id not in owners: return await ctx.send("That role is higher than your highest role") 
+                if role.permissions.administrator and ctx.author.id not in OWNERS: return await ctx.send("I cannot manipulate an admin role")
+                if role.position >= ctx.author.top_role.position and ctx.author.id not in OWNERS: return await ctx.send("That role is higher than your highest role") 
                 try:
                     await target.add_roles(role)
                 except discord.Forbidden:
@@ -128,10 +129,10 @@ class Roles(commands.Cog):
         for target in targets:
             role_list = []
             for role in roles:
-                if role.permissions.administrator and ctx.author.id not in owners: return await ctx.send("I cannot manipulate an admin role")
-                if role.position > ctx.author.top_role.position and ctx.author.id not in owners and ctx.author.id != ctx.guild.owner.id: 
+                if role.permissions.administrator and ctx.author.id not in OWNERS: return await ctx.send("I cannot manipulate an admin role")
+                if role.position > ctx.author.top_role.position and ctx.author.id not in OWNERS and ctx.author.id != ctx.guild.owner.id: 
                     return await ctx.send("That role is higher than your highest role") 
-                if role.position == ctx.author.top_role.position and ctx.author.id not in owners and ctx.author.id != ctx.guild.owner.id: 
+                if role.position == ctx.author.top_role.position and ctx.author.id not in OWNERS and ctx.author.id != ctx.guild.owner.id: 
                     return await ctx.send("That role is your highest role") 
                 try:
                     await target.remove_roles(role)
@@ -240,9 +241,9 @@ class Roles(commands.Cog):
     async def add(self, ctx, role1: discord.Role = None, role2: discord.Role = None):
         if role1 is None: return await ctx.send('Usage: `{ctx.prefix}massrole add <role1> <role2> ')
         if role2 is None: return await ctx.send('Usage: `{ctx.prefix}massrole add <role1> <role2> ')
-        if ctx.author.top_role.position < role2.position and ctx.author.id not in owners: return await ctx.send("You have insufficient permission to execute this command")
-        if ctx.author.top_role.position < role1.position and ctx.author.id not in owners: return await ctx.send("You have insufficient permission to execute this command")
-        if role2.permissions.administrator and ctx.author.id not in owners: return await ctx.send("I cannot manipulate an admin role")
+        if ctx.author.top_role.position < role2.position and ctx.author.id not in OWNERS: return await ctx.send("You have insufficient permission to execute this command")
+        if ctx.author.top_role.position < role1.position and ctx.author.id not in OWNERS: return await ctx.send("You have insufficient permission to execute this command")
+        if role2.permissions.administrator and ctx.author.id not in OWNERS: return await ctx.send("I cannot manipulate an admin role")
         number_of_members = []
         for member in ctx.guild.members:
             if role1 in member.roles and not role2 in member.roles:
@@ -264,9 +265,9 @@ class Roles(commands.Cog):
     async def remove(self, ctx, role1: discord.Role, role2: discord.Role):
         if role1 is None: return await ctx.send('Usage: `{ctx.prefix}massrole add <role1> <role2> ')
         if role2 is None: return await ctx.send('Usage: `{ctx.prefix}massrole add <role1> <role2> ')
-        if ctx.author.top_role.position < role2.position and ctx.author.id not in owners: return await ctx.send("You have insufficient permission to execute this command")
-        if ctx.author.top_role.position < role1.position and ctx.author.id not in owners: return await ctx.send("You have insufficient permission to execute this command")
-        if role2.permissions.administrator and ctx.author.id not in owners: return await ctx.send("I cannot manipulate an admin role")
+        if ctx.author.top_role.position < role2.position and ctx.author.id not in OWNERS: return await ctx.send("You have insufficient permission to execute this command")
+        if ctx.author.top_role.position < role1.position and ctx.author.id not in OWNERS: return await ctx.send("You have insufficient permission to execute this command")
+        if role2.permissions.administrator and ctx.author.id not in OWNERS: return await ctx.send("I cannot manipulate an admin role")
         number_of_members = []
         for member in ctx.guild.members:
             if role1 in member.roles and role2 in member.roles:

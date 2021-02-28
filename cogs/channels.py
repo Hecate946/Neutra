@@ -5,8 +5,8 @@ import random
 from discord.ext import commands
 
 from utilities import permissions, default, converters
-from lib.bot import bot
-from lib.bot import owners
+from core import bot
+from core import OWNERS
 
 
 def setup(bot):
@@ -19,6 +19,7 @@ class Channels(commands.Cog):
     """
     def __init__(self, bot):
         self.bot = bot
+        self.cxn = bot.connection
 
 
     @commands.command(brief="Move a member from one voice channel into another")
@@ -42,8 +43,8 @@ class Channels(commands.Cog):
             except Exception as e:
                 await ctx.send(e)
         for target in targets:
-            if target.id in owners: return await ctx.send('You cannot move my master.')
-            if ctx.author.top_role.position < target.top_role.position and ctx.author.id not in owners: return await ctx.send('You cannot move other staff members')
+            if target.id in OWNERS: return await ctx.send('You cannot move my master.')
+            if ctx.author.top_role.position < target.top_role.position and ctx.author.id not in OWNERS: return await ctx.send('You cannot move other staff members')
             try:
                 await target.edit(voice_channel=voicechannel)
             except discord.HTTPException:
@@ -74,7 +75,7 @@ class Channels(commands.Cog):
         if not len(targets): return await ctx.send(f"Usage: `{ctx.prefix}vc kick <target> [target]...`")
         voice = []
         for target in targets:
-            if ctx.author.top_role.position <= target.top_role.position and ctx.author.id not in owners or ctx.author.id != ctx.guild.owner.id: return await ctx.send('<:fail:812062765028081674> You cannot move other staff members')
+            if ctx.author.top_role.position <= target.top_role.position and ctx.author.id not in OWNERS or ctx.author.id != ctx.guild.owner.id: return await ctx.send('<:fail:812062765028081674> You cannot move other staff members')
             try:
                 await target.edit(voice_channel=None)
             except discord.HTTPException:
@@ -222,10 +223,10 @@ class Channels(commands.Cog):
         try:
             overwrites_everyone = channel.overwrites_for(ctx.guild.default_role)
             everyone_overwrite_current = overwrites_everyone.send_messages
-            locked = await db.record("SELECT ChannelID FROM lockedchannels WHERE ChannelID = ?", channel.id) or (None)
+            locked = await self.cxn.record("SELECT ChannelID FROM lockedchannels WHERE ChannelID = ?", channel.id) or (None)
             if locked is not None: return await ctx.send(f"<:locked:810623219677397013> Channel {channel.mention} is already locked. ID: `{channel.id}`")
             msg = await ctx.send(f"Locking channel {channel.mention}...")
-            await db.execute("INSERT INTO lockedchannels VALUES (?, ?, ?, ?, ?, ?, ?)", 
+            await self.cxn.execute("INSERT INTO lockedchannels VALUES (?, ?, ?, ?, ?, ?, ?)", 
                                                                                 channel.id, 
                                                                                 channel.name, 
                                                                                 ctx.guild.id, 
@@ -258,7 +259,7 @@ class Channels(commands.Cog):
         if channel is None:
             channel = ctx.channel
         try:
-            locked = await db.record("SELECT ChannelID FROM lockedchannels WHERE ChannelID = ?", channel.id) or (None)
+            locked = await self.cxn.record("SELECT ChannelID FROM lockedchannels WHERE ChannelID = ?", channel.id) or (None)
             if locked is None: 
                 if surpress is True:
                     return 
@@ -266,7 +267,7 @@ class Channels(commands.Cog):
                     return await ctx.send(f"<:locked:810623219677397013> Channel {channel.mention} is already unlocked. ID: `{channel.id}`")
 
             msg = await ctx.send(f"Unlocking channel {channel.mention}...")
-            old_overwrites = await db.record("SELECT EveryonePermissions FROM lockedchannels WHERE ChannelID = ?", channel.id)
+            old_overwrites = await self.cxn.record("SELECT EveryonePermissions FROM lockedchannels WHERE ChannelID = ?", channel.id)
             everyone_perms = str(old_overwrites).strip("(),'")
 
             if everyone_perms == "None": 
@@ -279,7 +280,7 @@ class Channels(commands.Cog):
             overwrites_everyone = ctx.channel.overwrites_for(ctx.guild.default_role)
             overwrites_everyone.send_messages = everyone_perms
             await ctx.message.channel.set_permissions(ctx.guild.default_role, overwrite=overwrites_everyone, reason=(default.responsible(ctx.author, "Channel unlocked by command execution")))
-            await db.execute("DELETE FROM lockedchannels WHERE ChannelID = ?", channel.id)
+            await self.cxn.execute("DELETE FROM lockedchannels WHERE ChannelID = ?", channel.id)
             await msg.edit(content=f"<:unlocked:810623262055989289> Channel {channel.mention} unlocked. ID: `{channel.id}`")
         except discord.errors.Forbidden:
             await msg.edit(content=f"<:fail:812062765028081674> I have insufficient permission to unlock channels.")

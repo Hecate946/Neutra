@@ -1,19 +1,15 @@
 .idea
 .vscode
 .ngcvenv
+.testervenv
 data/db/database.db
 data/db/database.db-journal
-__pycache__
+*__pycache__
 .vscode
 *.json
-cogs/owner.py
 cogs/config.py
-utilities/__pycache__
-cogs/__pycache__
-lib/bot/__pycache__
-lib/db/__pycache__
-data/fonts
-data/images
 tokens.txt
 *.log
+*.0
+utilities
 
