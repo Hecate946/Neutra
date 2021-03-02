@@ -73,13 +73,13 @@ CREATE TABLE IF NOT EXISTS messages (
 );
 
 CREATE TABLE IF NOT EXISTS commands (
-    timestamp TIMESTAMP,
-    command VARCHAR(20),
-    content TEXT,
-    executor VARCHAR(50),
-    executor_id BIGINT,
-    channel_id BIGINT,
-    server_id BIGINT
+    timestamp timestamp,
+    command varchar(20),
+    content text,
+    executor varchar(50),
+    executor_id bigint,
+    channel_id bigint,
+    server_id bigint
 );
 
 CREATE TABLE IF NOT EXISTS blacklist (
@@ -133,6 +133,7 @@ CREATE TABLE IF NOT EXISTS roleconfig (
 );
 
 CREATE TABLE IF NOT EXISTS moderation (
-    anti_invite boolean,
+    server_id bigint PRIMARY KEY,
+    anti_invite BOOLEAN,
     mod_role bigint
 );

@@ -53,14 +53,12 @@ class Automoderation(commands.Cog):
 
         word_to_filter = str(word_to_filter).lower()
 
-        word_list = await self.cxn.record("""
-        SELECT word FROM profanity WHERE server = ?
-        """, ctx.guild.id) or None
+        query = '''SELECT word FROM profanity WHERE server = $1'''
+        word_list = await self.cxn.fetchrow(query, ctx.guild.id) or None
         if word_list is None:         
 
-            await self.cxn.execute("""
-            INSERT INTO profanity VALUES (?, ?)
-            """, ctx.guild.id, word_to_filter)
+            query = '''INSERT INTO profanity VALUES ($1, $2)'''
+            await self.cxn.execute(query, ctx.guild.id, word_to_filter)
 
             await ctx.send(f'Added word `{word_to_filter}` to the filter')
         else:
@@ -89,9 +87,8 @@ class Automoderation(commands.Cog):
             return await ctx.send(f"Usage: `{ctx.prefix}filter remove <word>`")
 
 
-        word_list = await self.cxn.record("""
-        SELECT word FROM profanity WHERE server = ?
-        """, ctx.guild.id) or None
+        query = '''SELECT words FROM profanity WHERE server = $1'''
+        word_list = await self.cxn.fetchrow(query, ctx.guild.id) or None
         if word_list is None:
             return await ctx.send(f":warning: This server has no filtered words.")   
 
@@ -107,19 +104,16 @@ class Automoderation(commands.Cog):
             word_list.pop(old_index)
             new_words = ', '.join(word_list)
 
-            await self.cxn.execute("""
-            UPDATE profanity SET word=? WHERE server = ?
-            """, new_words, ctx.guild.id)
+            query = '''UPDATE profanity SET words = $1 WHERE server = $2'''
+            await self.cxn.execute(query, new_words, ctx.guild.id)
 
-            await ctx.send(f'Added word `{word}` to the filter')
-
-        await ctx.send(f'Removed "{word}" from the filter')
+            await ctx.send(f'Removed "{word}" from the filter')
 
 
     @_filter.command(brief="Display a list of this server's filtered words.", aliases=['show'])
     @permissions.has_permissions(manage_guild=True)
     async def display(self, ctx):
-        words = await self.cxn.records("""
+        words = await self.cxn.fetch("""
         SELECT word FROM profanity WHERE server=?
         """, ctx.guild.id) or None
 
@@ -133,9 +127,9 @@ class Automoderation(commands.Cog):
     @_filter.command(name="clear")
     @permissions.has_permissions(manage_guild=True)
     async def _clear(self, ctx):
-        await self.cxn.execute("""
-        DELETE FROM profanity WHERE server=?
-        """, ctx.guild.id)
+
+        query = '''DELETE FROM profanity WHERE server = $1'''
+        await self.cxn.execute(query, ctx.guild.id)
 
         await ctx.send("Removed all filtered words")
 
@@ -150,34 +144,27 @@ class Automoderation(commands.Cog):
         if immune:
             return
         msg = str(after.content)
-        try:
-            server = await self.cxn.record("""
-            SELECT server FROM profanity WHERE server = ?
-            """, after.guild.id) or None
-            if server is None or "None" in str(server): return
 
-            words = await self.cxn.record("""
-            SELECT word FROM profanity WHERE server = ?
-            """, after.guild.id)
+        query = '''SELECT server_id FROM profanity WHERE server_id = $2'''
+        server = await self.cxn.fetchrow(query, after.guild.id) or None
+        if server is None or "None" in str(server): return
 
-            formatted_words = str(words[0])
+        query = '''SELECT words FROM profanity WHERE server_id = $1'''
+        words = await self.cxn.fetchrow(query, after.guild.id)
 
-            filtered_words = [x for x in formatted_words.split(", ")]
+        formatted_words = str(words[0])
 
-            profanity.load_censor_words(filtered_words)
+        filtered_words = [x for x in formatted_words.split(", ")]
 
-            for filtered_word in filtered_words:
-                if profanity.contains_profanity(msg) or filtered_word in msg:
-                    try:
-                        await after.delete()
-                        return await after.author.send(f'''Your message "{after.content}" was removed for containing the filtered word "{filtered_word}"''')
-                    except Exception as e:
-                        chan = self.bot.get_channel(793941369282494494)
-                        await chan.send(f"Error when trying to remove message {type(e).__name__}: {e}")
+        profanity.load_censor_words(filtered_words)
 
-        except Exception as e:
-            chan = self.bot.get_channel(793941369282494494)
-            await chan.send(f"Error when trying to remove message fat {type(e).__name__}: {e}")
+        for filtered_word in filtered_words:
+            if profanity.contains_profanity(msg) or filtered_word in msg:
+                try:
+                    await after.delete()
+                    return await after.author.send(f'''Your message "{after.content}" was removed for containing the filtered word "{filtered_word}"''')
+                except Exception: return
+                
 
 
     @commands.Cog.listener()
@@ -191,43 +178,35 @@ class Automoderation(commands.Cog):
             return
         msg = str(message.content)
 
-        try:
-            server = await self.cxn.record("""
-            SELECT server FROM profanity WHERE server = ?
-            """, message.guild.id) or None
-            if server is None or "None" in str(server): return
+        query = '''SELECT server_id FROM profanity WHERE server_id = $1'''
+        server = await self.cxn.fetchrow(query, message.guild.id) or None
+        if server is None or "None" in str(server): return
 
-            words = await self.cxn.record("""
-            SELECT word FROM profanity WHERE server = ?
-            """, message.guild.id)
+        query = '''SELECT word FROM profanity WHERE server_id = $1'''
+        words = await self.cxn.fetchrow(query, message.guild.id)
 
-            formatted_words = str(words[0])
+        formatted_words = str(words[0])
 
-            filtered_words = [x for x in formatted_words.split(", ")]
+        filtered_words = [x for x in formatted_words.split(", ")]
 
-            profanity.load_censor_words(filtered_words)
+        profanity.load_censor_words(filtered_words)
 
-            for filtered_word in filtered_words:
-                if profanity.contains_profanity(msg) or filtered_word in msg:
-                    try:
-                        await message.delete()
-                        return await message.author.send(f'''Your message "{message.content}" was removed for containing the filtered word "{filtered_word}"''')
-                    except Exception as e:
-                        chan = self.bot.get_channel(793941369282494494)
-                        await chan.send(f"Error when trying to remove message {type(e).__name__}: {e}")
-
-        except Exception as e:
-            chan = self.bot.get_channel(793941369282494494)
-            await chan.send(f"Error when trying to remove message fat {type(e).__name__}: {e}")
+        for filtered_word in filtered_words:
+            if profanity.contains_profanity(msg) or filtered_word in msg:
+                try:
+                    await message.delete()
+                    return await message.author.send(f'''Your message "{message.content}" was removed for containing the filtered word "{filtered_word}"''')
+                except Exception: return
 
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
         if before.roles == after.roles: return
-        roles = ','.join([str(x.id)
-                          for x in after.roles if x.name != "@everyone"])
-        await self.cxn.execute('UPDATE users SET roles=? WHERE id=? AND server=?',
-                       roles, before.id, before.guild.id)
+        roles = ','.join([str(x.id) for x in after.roles if x.name != "@everyone"])
+
+        query = '''UPDATE users SET roles = $1 WHERE id = $2 AND server_id = $3'''
+        await self.cxn.execute(query, roles, before.id, before.guild.id)
+
         if len(before.roles) < len(after.roles):
             # role added
             s = set(before.roles)

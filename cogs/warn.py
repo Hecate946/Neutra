@@ -69,7 +69,7 @@ class Warnings(commands.Cog):
             if target.guild_permissions.manage_messages and ctx.author.id not in OWNERS: return await ctx.send('You cannot punish other staff members.')
             if ctx.guild.me.top_role.position > target.top_role.position and not target.guild_permissions.administrator:
                 try:
-                    warnings = await self.cxn.record("SELECT Warnings FROM warn WHERE UserID = ? AND GuildID = ?", target.id, ctx.guild.id) or (None)
+                    warnings = await self.cxn.fetchrow("SELECT Warnings FROM warn WHERE UserID = ? AND GuildID = ?", target.id, ctx.guild.id) or (None)
                     if warnings is None: 
                         warnings = 0
                         warnings = str(warnings).strip("(),").lower()
@@ -98,7 +98,7 @@ class Warnings(commands.Cog):
             target = ctx.author
 
         try:
-            warnings = await self.cxn.record("SELECT Warnings FROM warn WHERE UserID = ? AND GuildID = ?", target.id, ctx.guild.id) or (None)
+            warnings = await self.cxn.fetchrow("SELECT Warnings FROM warn WHERE UserID = ? AND GuildID = ?", target.id, ctx.guild.id) or (None)
             if warnings is None: return await ctx.send(f"<:ballot_box_with_check:805871188462010398> User `{target}` has no warnings.")
             warnings = str(warnings).strip("(),")
             await ctx.send(f"<:announce:807097933916405760> User `{target}` currently has **{warnings}** warning{'' if int(warnings) == 1 else 's'} in this server.")
@@ -110,7 +110,7 @@ class Warnings(commands.Cog):
     async def clearwarns(self, ctx, target: discord.Member = None):
         if target is None: return await ctx.send(f"Usage: `{ctx.prefix}deletewarn <target>`")
         try:
-            warnings = await self.cxn.record("SELECT Warnings FROM warn WHERE UserID = ? AND GuildID = ?", target.id, ctx.guild.id) or (None)
+            warnings = await self.cxn.fetchrow("SELECT Warnings FROM warn WHERE UserID = ? AND GuildID = ?", target.id, ctx.guild.id) or (None)
             if warnings is None: return await ctx.send(f"<:ballot_box_with_check:805871188462010398> User `{target}` has no warnings.")
             warnings = str(warnings).strip("(),")
             await self.cxn.execute("DELETE FROM warn WHERE UserID = ? and GuildID = ?", target.id, ctx.guild.id)
@@ -126,7 +126,7 @@ class Warnings(commands.Cog):
     async def revokewarn(self, ctx, target: discord.Member = None):
         if target is None: return await ctx.send(f"Usage: `{ctx.prefix}revokewarn <target>`")
         try:
-            warnings = await self.cxn.record("SELECT Warnings FROM warn WHERE UserID = ? AND GuildID = ?", target.id, ctx.guild.id) or (None)
+            warnings = await self.cxn.fetchrow("SELECT Warnings FROM warn WHERE UserID = ? AND GuildID = ?", target.id, ctx.guild.id) or (None)
             if warnings is None: return await ctx.send(f"<:ballot_box_with_check:805871188462010398> User `{target}` has no warnings to revoke.")
             warnings = str(warnings).strip("(),")
             if int(warnings) == 1: 
@@ -149,7 +149,7 @@ class Warnings(commands.Cog):
     #        if member.bot:
     #            continue
     #        try:
-    #            warn = await self.cxn.record("SELECT Warnings FROM warn WHERE UserID = ? AND GuildID = ?", member.id, ctx.guild.id) or (None)
+    #            warn = await self.cxn.fetchrow("SELECT Warnings FROM warn WHERE UserID = ? AND GuildID = ?", member.id, ctx.guild.id) or (None)
     #        except TypeError: continue
     #        warn = str(warn).strip("(),")
     #        print(warn)
@@ -164,7 +164,7 @@ class Warnings(commands.Cog):
     @commands.command(description="Display the server leaderboard.", aliases=["sw"])
     async def serverwarns(self, ctx):
         """Display the global leaderboard."""
-        records = await self.cxn.records("SELECT UserID, Warnings FROM warn ORDER BY Warnings DESC")
+        records = await self.cxn.fetch("SELECT UserID, Warnings FROM warn ORDER BY Warnings DESC")
 
         menu = MenuPages(source=HelpMenu(ctx, records),
                          clear_reactions_after=True,

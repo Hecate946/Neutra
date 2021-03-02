@@ -223,7 +223,7 @@ class Channels(commands.Cog):
         try:
             overwrites_everyone = channel.overwrites_for(ctx.guild.default_role)
             everyone_overwrite_current = overwrites_everyone.send_messages
-            locked = await self.cxn.record("SELECT ChannelID FROM lockedchannels WHERE ChannelID = ?", channel.id) or (None)
+            locked = await self.cxn.fetchrow("SELECT ChannelID FROM lockedchannels WHERE ChannelID = ?", channel.id) or (None)
             if locked is not None: return await ctx.send(f"<:locked:810623219677397013> Channel {channel.mention} is already locked. ID: `{channel.id}`")
             msg = await ctx.send(f"Locking channel {channel.mention}...")
             await self.cxn.execute("INSERT INTO lockedchannels VALUES (?, ?, ?, ?, ?, ?, ?)", 
@@ -259,7 +259,7 @@ class Channels(commands.Cog):
         if channel is None:
             channel = ctx.channel
         try:
-            locked = await self.cxn.record("SELECT ChannelID FROM lockedchannels WHERE ChannelID = ?", channel.id) or (None)
+            locked = await self.cxn.fetchrow("SELECT ChannelID FROM lockedchannels WHERE ChannelID = ?", channel.id) or (None)
             if locked is None: 
                 if surpress is True:
                     return 
@@ -267,7 +267,7 @@ class Channels(commands.Cog):
                     return await ctx.send(f"<:locked:810623219677397013> Channel {channel.mention} is already unlocked. ID: `{channel.id}`")
 
             msg = await ctx.send(f"Unlocking channel {channel.mention}...")
-            old_overwrites = await self.cxn.record("SELECT EveryonePermissions FROM lockedchannels WHERE ChannelID = ?", channel.id)
+            old_overwrites = await self.cxn.fetchrow("SELECT EveryonePermissions FROM lockedchannels WHERE ChannelID = ?", channel.id)
             everyone_perms = str(old_overwrites).strip("(),'")
 
             if everyone_perms == "None": 

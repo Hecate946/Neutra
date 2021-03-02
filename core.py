@@ -85,7 +85,7 @@ class NGC0000(commands.AutoShardedBot):
             await self.invoke(ctx)
             return
 
-        # Check if we need to ignore or delete or react to the message
+        # Check if we need to ignore, delete or react to the message
         ignore, delete, react = False, False, False
         respond = None
         for cog in bot.cogs:
@@ -123,6 +123,7 @@ class NGC0000(commands.AutoShardedBot):
     async def db_updater(self):
         await self.update_db()
         #Not pretty but might as well set the bot status here
+        #For some weird reason after awhile the status doesn't show up so... updating it every 10 minutes.
         await self.set_status()      
 
 
@@ -160,7 +161,7 @@ class NGC0000(commands.AutoShardedBot):
         """, ((server.id, server.name, server.owner.id, str(server.owner)) for server in self.guilds))
 
 
-        await connection.executemany("INSERT INTO roleconfig (server, whitelist, autoroles, reassign) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING",
+        await connection.executemany("INSERT INTO roleconfig (server_id, whitelist, autoroles, reassign) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING",
         ((server.id, None, None, True) for server in self.guilds))
 
 

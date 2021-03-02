@@ -29,6 +29,15 @@ class General(commands.Cog):
         self.startTime = int(time.time())
         self.config = default.config()
 
+    async def total_global_commands(self):
+        query = '''SELECT COUNT(*) as c FROM commands'''
+        value = await self.cxn.fetchrow(query)
+        return int(value[0])
+
+    async def total_global_messages(self):
+        query = '''SELECT COUNT(*) as c FROM commands'''
+        value = await self.cxn.fetchrow(query)
+        return int(value[0])
 
     @commands.command(aliases=['info'], brief="Display information about the bot.")
     async def about(self, ctx):
@@ -62,7 +71,7 @@ class General(commands.Cog):
         embed.set_thumbnail(url=ctx.bot.user.avatar_url)
         embed.add_field(name="Last boot", value=default.timeago(datetime.datetime.utcnow() - self.bot.uptime), inline=True)
         embed.add_field(
-            name=f"Developer{'' if len(self.config['OWNERS']) == 1 else 's'}",
+            name=f"Developer{'' if len(self.config['owners']) == 1 else 's'}",
             value=',\n '.join([str(self.bot.get_user(x)) for x in self.config["owners"]]),
             inline=True)
         embed.add_field(name="Python Version", value=f"{python_version()}", inline=True)
@@ -72,9 +81,11 @@ class General(commands.Cog):
         embed.add_field(name="Server Count", value=f"{len(ctx.bot.guilds)} ( Users: {len(self.bot.users)} )", inline=True)
         embed.add_field(name="Channel Count", value=f"""<:textchannel:810659118045331517> {text}        <:voicechannel:810659257296879684> {voice}""", inline=True)
         embed.add_field(name="Member Count", value=f"{total_members}", inline=True)
-        embed.add_field(name="Commands Run", value=sum(self.bot.command_stats.values()), inline=True)
+        embed.add_field(name="Commands Run", value=f"{await self.total_global_commands():,}", inline=True)
+        embed.add_field(name="Messages Seen", value=f"{await self.total_global_commands():,}", inline=True)
+        #embed.add_field(name="Commands Run", value=sum(self.bot.command_stats.values()), inline=True)
         embed.add_field(name="RAM", value=f"{ramUsage:.2f} MB", inline=True)
-        embed.add_field(name="CPU", value=f"{cpu_time} MB", inline=True)
+        #embed.add_field(name="CPU", value=f"{cpu_time} MB", inline=True)
 
         await ctx.send(content=f"About **{ctx.bot.user}** | **{self.config['version']}**", embed=embed)
 
@@ -224,7 +235,7 @@ class General(commands.Cog):
         await default.prettyResults(ctx, "discriminator", f"Found **{len(loop)}** on your search for **{search}**", loop)
 
 
-    @commands.command(brief="Display information on a passed user.", aliases=["profile","whois","ui"])
+    @commands.command(brief="Display information on a passed user.")#, aliases=["profile","whois","ui"])
     @commands.guild_only()
     async def userinfo(self, ctx, member: discord.Member = None):
         """
@@ -261,7 +272,7 @@ class General(commands.Cog):
 
     @commands.command(brief="Display information on a passed user.", aliases=["profile","whois","ui"])
     @commands.guild_only()
-    async def userinfo(self, ctx, member: discord.Member = None):
+    async def userinfoo(self, ctx, member: discord.Member = None):
         """
         Usage:    -userinfo <member>
         Aliases:  -profile, -ui, -whois

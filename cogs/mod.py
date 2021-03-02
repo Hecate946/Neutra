@@ -140,7 +140,7 @@ class Moderation(commands.Cog):
         else:
             unmutes = []
             try:
-                self.mute_role = await self.cxn.record("SELECT MuteRole FROM guilds WHERE GuildID = ?", ctx.guild.id) or (None)
+                self.mute_role = await self.cxn.fetchrow("SELECT MuteRole FROM guilds WHERE GuildID = ?", ctx.guild.id) or (None)
                 self.mute_role = str(self.mute_role).strip("()',")
                 if str(self.mute_role) == "None": return await ctx.send(f"use `{ctx.prefix}muterole <role>` to initialize the muted role.")
                 self.mute_role = ctx.guild.get_role(int(self.mute_role))
@@ -212,7 +212,7 @@ class Moderation(commands.Cog):
         else:
             unmutes = []
             try:
-                self.mute_role = await self.cxn.record("SELECT MuteRole FROM guilds WHERE GuildID = ?", ctx.guild.id) or (None)
+                self.mute_role = await self.cxn.fetchrow("SELECT MuteRole FROM guilds WHERE GuildID = ?", ctx.guild.id) or (None)
                 self.mute_role = str(self.mute_role).strip("()',")
                 if str(self.mute_role) == "None": return await ctx.send(f"use `{ctx.prefix}muterole <role>` to initialize the muted role.")
                 self.mute_role = ctx.guild.get_role(int(self.mute_role))
@@ -268,7 +268,7 @@ class Moderation(commands.Cog):
 
     async def unmute(self, ctx, targets):
         try:
-            self.mute_role = await self.cxn.record("SELECT MuteRole FROM guilds WHERE GuildID = ?", ctx.guild.id) or (None)
+            self.mute_role = await self.cxn.fetchrow("SELECT MuteRole FROM guilds WHERE GuildID = ?", ctx.guild.id) or (None)
             self.mute_role = str(self.mute_role).strip("()',")
             self.mute_role = ctx.guild.get_role(int(self.mute_role))
         except Exception as e: return await ctx.send(e)
