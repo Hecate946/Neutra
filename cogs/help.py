@@ -1,11 +1,13 @@
 import discord
 import asyncio
-from utilities import default
+
 from discord.ext import commands
+
 from core import OWNERS
+from utilities import default
 
 
-COG_EXCEPTIONS = ['OWNER','HELP','CONFIG']
+COG_EXCEPTIONS = ['CONFIG']
 COMMAND_EXCEPTIONS = ['EYES']
 
 
@@ -16,7 +18,7 @@ def setup(bot):
 
 class Help(commands.Cog):
     """
-    Help command cog
+    My help category.
     """
     def __init__(self, bot):
         self.bot = bot
@@ -27,6 +29,7 @@ class Help(commands.Cog):
      ## Get Commands From Cogs ##
     ############################
 
+
     async def send_help(self, ctx, embed, pm, delete_after):
         if pm is True:
             if not ctx.guild: 
@@ -35,7 +38,7 @@ class Help(commands.Cog):
             try:
                 msg = await ctx.author.send(embed=embed)
                 try:
-                    await ctx.message.add_reaction("<:mailbox1:811303021492305990>")
+                    await ctx.message.add_reaction("<:letter:816520981396193280>")
                 except: return
             except:
                 msg = await ctx.send(embed=embed, delete_after=delete_after)
@@ -43,18 +46,19 @@ class Help(commands.Cog):
             msg = await ctx.send(embed=embed, delete_after=delete_after)
 
         def reaction_check(m):
-            if m.message_id == msg.id and m.user_id == ctx.author.id and str(m.emoji) == "<:trashcan:805643072896892949>":
+            if m.message_id == msg.id and m.user_id == ctx.author.id and str(m.emoji) == "<:trash:816463111958560819>":
                 return True
             return False
 
         try:
-            await msg.add_reaction("<:trashcan:805643072896892949>")
+            await msg.add_reaction("<:trash:816463111958560819>")
             await self.bot.wait_for('raw_reaction_add', timeout=120.0, check=reaction_check)
             await msg.delete()
         except asyncio.TimeoutError:
             await msg.delete()
         except discord.Forbidden:
             return
+
 
     async def helper_func(self, ctx, cog, name, pm, delete_after):
         the_cog = sorted(cog.get_commands(), key=lambda x:x.name)
@@ -66,7 +70,7 @@ class Help(commands.Cog):
         if cog_commands:
             await self.category_embed(ctx, cog=cog.qualified_name, list=cog_commands, pm=pm, delete_after=delete_after)
         else:
-            return await ctx.send(f":warning: No command named `{name}` found.")
+            return await ctx.send(f"<:error:816456396735905844> No command named `{name}` found.")
 
 
       ##########################
@@ -226,7 +230,7 @@ class Help(commands.Cog):
                           f"```yaml\n{valid_help}```")
                     await self.send_help(ctx, help_embed, pm, delete_after)
                 else: 
-                    await ctx.send(f":warning: No command named `{invokercommand}` found.")
+                    await ctx.send(f"<:error:816456396735905844> No command named `{invokercommand}` found.")
 
 
             

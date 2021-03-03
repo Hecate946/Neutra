@@ -112,9 +112,9 @@ CREATE TABLE IF NOT EXISTS ignored (
 );
 
 CREATE TABLE IF NOT EXISTS snipe (
-    channel bigint PRIMARY KEY,
+    channel_id bigint PRIMARY KEY,
     server_id bigint,
-    author bigint,
+    author_id bigint,
     message_id bigint, 
     content text,
     timestamp timestamp
@@ -129,11 +129,11 @@ CREATE TABLE IF NOT EXISTS roleconfig (
     server_id bigint PRIMARY KEY,
     whitelist text,
     autoroles text,
-    reassign boolean DEFAULT true 
+    reassign boolean DEFAULT true
 );
 
 CREATE TABLE IF NOT EXISTS moderation (
     server_id bigint PRIMARY KEY,
-    anti_invite BOOLEAN,
+    anti_invite boolean,
     mod_role bigint
 );

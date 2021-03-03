@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from discord.ext import commands
 from discord.ext.menus import MenuPages, ListPageSource
 
-from utilities import default, permissions
+from utilities import default, permissions, picker
 
 from core import OWNERS
 
@@ -69,16 +69,16 @@ class Warnings(commands.Cog):
             if target.guild_permissions.manage_messages and ctx.author.id not in OWNERS: return await ctx.send('You cannot punish other staff members.')
             if ctx.guild.me.top_role.position > target.top_role.position and not target.guild_permissions.administrator:
                 try:
-                    warnings = await self.cxn.fetchrow("SELECT Warnings FROM warn WHERE UserID = ? AND GuildID = ?", target.id, ctx.guild.id) or (None)
+                    warnings = await self.cxn.fetchrow("SELECT warnings FROM warn WHERE id = $1 AND server_id = $2", target.id, ctx.guild.id) or (None)
                     if warnings is None: 
                         warnings = 0
                         warnings = str(warnings).strip("(),").lower()
-                        await self.cxn.execute("INSERT INTO warn VALUES (?, ?, ?)", target.id, ctx.guild.id, int(warnings) + 1)
+                        await self.cxn.execute("INSERT INTO warn VALUES ($1, $2, $3)", target.id, ctx.guild.id, int(warnings) + 1)
                         warned.append(f"{target.name}#{target.discriminator}")
                     else:
                         warnings = str(warnings).strip("(),").lower()
                         try:
-                            await self.cxn.execute("UPDATE warn SET Warnings = ? WHERE GuildID = ? AND UserID = ?", (int(warnings) + 1), ctx.guild.id, target.id)
+                            await self.cxn.execute("UPDATE warn SET warnings = warnings + 1 WHERE server_id = $1 AND id = $2", ctx.guild.id, target.id)
                             warned.append(f"{target.name}#{target.discriminator}")
                         except Exception: raise
 
@@ -87,9 +87,9 @@ class Warnings(commands.Cog):
                     try:
                         await target.send(f"<:announce:807097933916405760> You have been warned in **{ctx.guild.name}** `{reason}`.")
                     except: return
-            else: return await ctx.send('<:fail:812062765028081674> `{0}` could not be warned.'.format(target))
+            else: return await ctx.send('<:fail:816521503554273320> `{0}` could not be warned.'.format(target))
         if warned:
-            await ctx.send(f'<:ballot_box_with_check:805871188462010398> Warned `{", ".join(warned)}`')
+            await ctx.send(f'<:checkmark:816534984676081705> Warned `{", ".join(warned)}`')
 
 
     @commands.command()
@@ -99,7 +99,7 @@ class Warnings(commands.Cog):
 
         try:
             warnings = await self.cxn.fetchrow("SELECT Warnings FROM warn WHERE UserID = ? AND GuildID = ?", target.id, ctx.guild.id) or (None)
-            if warnings is None: return await ctx.send(f"<:ballot_box_with_check:805871188462010398> User `{target}` has no warnings.")
+            if warnings is None: return await ctx.send(f"<:checkmark:816534984676081705> User `{target}` has no warnings.")
             warnings = str(warnings).strip("(),")
             await ctx.send(f"<:announce:807097933916405760> User `{target}` currently has **{warnings}** warning{'' if int(warnings) == 1 else 's'} in this server.")
         except Exception as e: return await ctx.send(e)
@@ -111,10 +111,10 @@ class Warnings(commands.Cog):
         if target is None: return await ctx.send(f"Usage: `{ctx.prefix}deletewarn <target>`")
         try:
             warnings = await self.cxn.fetchrow("SELECT Warnings FROM warn WHERE UserID = ? AND GuildID = ?", target.id, ctx.guild.id) or (None)
-            if warnings is None: return await ctx.send(f"<:ballot_box_with_check:805871188462010398> User `{target}` has no warnings.")
+            if warnings is None: return await ctx.send(f"<:checkmark:816534984676081705> User `{target}` has no warnings.")
             warnings = str(warnings).strip("(),")
             await self.cxn.execute("DELETE FROM warn WHERE UserID = ? and GuildID = ?", target.id, ctx.guild.id)
-            await ctx.send(f"<:ballot_box_with_check:805871188462010398> Cleared all warnings for `{target}` in this server.")
+            await ctx.send(f"<:checkmark:816534984676081705> Cleared all warnings for `{target}` in this server.")
             try:
                 await target.send(f"<:announce:807097933916405760> All your warnings have been cleared in **{ctx.guild.name}**.")
             except: return
@@ -127,46 +127,43 @@ class Warnings(commands.Cog):
         if target is None: return await ctx.send(f"Usage: `{ctx.prefix}revokewarn <target>`")
         try:
             warnings = await self.cxn.fetchrow("SELECT Warnings FROM warn WHERE UserID = ? AND GuildID = ?", target.id, ctx.guild.id) or (None)
-            if warnings is None: return await ctx.send(f"<:ballot_box_with_check:805871188462010398> User `{target}` has no warnings to revoke.")
+            if warnings is None: return await ctx.send(f"<:checkmark:816534984676081705> User `{target}` has no warnings to revoke.")
             warnings = str(warnings).strip("(),")
             if int(warnings) == 1: 
                 await self.cxn.execute("DELETE FROM warn WHERE UserID = ? and GuildID = ?", target.id, ctx.guild.id)
-                await ctx.send(f"<:ballot_box_with_check:805871188462010398> Cleared all warnings for `{target}` in this server.")
+                await ctx.send(f"<:checkmark:816534984676081705> Cleared all warnings for `{target}` in this server.")
             else:
                 await self.cxn.execute("UPDATE warn SET Warnings = ? WHERE GuildID = ? AND UserID = ?", (int(warnings) - 1), ctx.guild.id, target.id)
-                await ctx.send(f"<:ballot_box_with_check:805871188462010398> Revoked a warning for `{target}` in this server.")
+                await ctx.send(f"<:checkmark:816534984676081705> Revoked a warning for `{target}` in this server.")
             try:
                 await target.send(f"<:announce:807097933916405760> You last warning has been revoked in **{ctx.guild.name}**.")
             except: return
         except Exception as e: return await ctx.send(e)
-    
-
-    #@commands.command(aliases = ['serverwarnings','allwarnings','allwarns'])
-    #async def serverwarns(self, ctx, show = None):
-    #    """Show all warnings in this server"""
-    #    message = 'Warnings: '
-    #    for member in ctx.message.guild.members:
-    #        if member.bot:
-    #            continue
-    #        try:
-    #            warn = await self.cxn.fetchrow("SELECT Warnings FROM warn WHERE UserID = ? AND GuildID = ?", member.id, ctx.guild.id) or (None)
-    #        except TypeError: continue
-    #        warn = str(warn).strip("(),")
-    #        print(warn)
-    #        if warn == "None":
-    #            if show is not None:
-    #                message += f'<:fail:812062765028081674> `{member}` has no warnings.'
-    #        else:
-    #            message += f'\n<:announce:807097933916405760> `{member}` has `{warn}` warning{"" if int(warn) == 1 else "s"}.'
-    #    await ctx.send(message)
 
 
-    @commands.command(description="Display the server leaderboard.", aliases=["sw"])
+    @commands.command(brief="Display the server warnlist.", aliases=["warns"])
+    @commands.guild_only()
+    @permissions.has_permissions(manage_messages=True)
     async def serverwarns(self, ctx):
-        """Display the global leaderboard."""
-        records = await self.cxn.fetch("SELECT UserID, Warnings FROM warn ORDER BY Warnings DESC")
+        """
+        Usage: -serverwarns
+        Alias: -warns
+        Output: Embed of all warned members in the server
+        Permission: Manage Messages
+        """
+        query = '''SELECT COUNT(*) FROM warn'''
+        count = await self.cxn.fetchrow(query)
+        query = '''SELECT id, warnings FROM warn ORDER BY warnings DESC'''
+        records = await self.cxn.fetch(query)
 
-        menu = MenuPages(source=HelpMenu(ctx, records),
-                         clear_reactions_after=True,
-                         timeout=60.0)
-        await menu.start(ctx)
+        warn_list = []
+        for i in records:
+            warn_list.append(
+                {
+                    "name": str(ctx.guild.get_member(i[0])),
+                    "value":"{}".format(i[1]),
+                }
+            )
+        return await picker.PagePicker(title="{} Warn List ({:,} total)".format(ctx.guild.name, int(count[0])),
+        ctx=ctx, list=[{"name":"{}. {}".format(y+1,x["name"]), 
+        "value":"Warnings: " + x["value"]} for y, x in enumerate(warn_list)]).pick()

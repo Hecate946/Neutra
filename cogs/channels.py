@@ -48,7 +48,7 @@ class Channels(commands.Cog):
             try:
                 await target.edit(voice_channel=voicechannel)
             except discord.HTTPException:
-                await ctx.send(":warning: Target is not connected to a voice channel")
+                await ctx.send("<:error:816456396735905844> Target is not connected to a voice channel")
             voice.append(target)
         if voice:
             vckicked = []
@@ -59,7 +59,7 @@ class Channels(commands.Cog):
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
                     vckicked += [username]
-            await ctx.send('<:ballot_box_with_check:805871188462010398> VC Moved `{0}`'.format(", ".join(vckicked)))
+            await ctx.send('<:checkmark:816534984676081705> VC Moved `{0}`'.format(", ".join(vckicked)))
 
 
     @commands.command(brief="Kick members from a voice channel")
@@ -75,11 +75,11 @@ class Channels(commands.Cog):
         if not len(targets): return await ctx.send(f"Usage: `{ctx.prefix}vc kick <target> [target]...`")
         voice = []
         for target in targets:
-            if ctx.author.top_role.position <= target.top_role.position and ctx.author.id not in OWNERS or ctx.author.id != ctx.guild.owner.id: return await ctx.send('<:fail:812062765028081674> You cannot move other staff members')
+            if ctx.author.top_role.position <= target.top_role.position and ctx.author.id not in OWNERS or ctx.author.id != ctx.guild.owner.id: return await ctx.send('<:fail:816521503554273320> You cannot move other staff members')
             try:
                 await target.edit(voice_channel=None)
             except discord.HTTPException:
-                await ctx.send(":warning: Target is not connected to a voice channel")
+                await ctx.send("<:error:816456396735905844> Target is not connected to a voice channel")
             voice.append(target)
         if voice:
             vckicked = []
@@ -90,7 +90,7 @@ class Channels(commands.Cog):
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
                     vckicked += [username]
-            await ctx.send('<:ballot_box_with_check:805871188462010398> VC Kicked `{0}`'.format(", ".join(vckicked)))
+            await ctx.send('<:checkmark:816534984676081705> VC Kicked `{0}`'.format(", ".join(vckicked)))
 
 
     @commands.group(brief="Find and destroy a channel")
@@ -163,7 +163,7 @@ class Channels(commands.Cog):
         guild = ctx.message.guild
         try:
             await guild.create_text_channel(name, category=category)
-            await ctx.send(f'<:ballot_box_with_check:805871188462010398> Text channel **{name}** has been created by {ctx.author.display_name}')
+            await ctx.send(f'<:checkmark:816534984676081705> Text channel **{name}** has been created by {ctx.author.display_name}')
         except Exception as e: raise
 
 
@@ -174,9 +174,9 @@ class Channels(commands.Cog):
         guild = ctx.message.guild
         try:
             await guild.create_voice_channel(name, category=category)
-            await ctx.send(f'<:ballot_box_with_check:805871188462010398> Voice channel **{name}** has been created by {ctx.author.display_name}')
+            await ctx.send(f'<:checkmark:816534984676081705> Voice channel **{name}** has been created by {ctx.author.display_name}')
         except:
-            return await ctx.send('<:fail:812062765028081674> I couldn\'t create that voice channel')
+            return await ctx.send('<:fail:816521503554273320> I couldn\'t create that voice channel')
 
 
     @commands.command(brief="Set the slowmode of the current channel in seconds.")
@@ -192,9 +192,9 @@ class Channels(commands.Cog):
         try:
             await ctx.channel.edit(slowmode_delay=time)
         except discord.HTTPException as e:
-            await ctx.send(f'<:fail:812062765028081674> Failed to set slowmode because of an error\n{e}')
+            await ctx.send(f'<:fail:816521503554273320> Failed to set slowmode because of an error\n{e}')
         else:
-            await ctx.send(f'<:ballot_box_with_check:805871188462010398> Slowmode set to `{time}s`')
+            await ctx.send(f'<:checkmark:816534984676081705> Slowmode set to `{time}s`')
 
 
     @commands.command(pass_context=True, aliases=["lockdown","lockchannel"], brief="Lock message sending in a channel.")
@@ -243,7 +243,7 @@ class Channels(commands.Cog):
                 await self.unlock(ctx, channel=channel, surpress=True)
             await msg.edit(content=f"<:locked:810623219677397013> Channel {channel.mention} locked. ID: `{channel.id}`")
         except discord.errors.Forbidden:
-            await msg.edit(content=f"<:fail:812062765028081674> I have insufficient permission to lock channels.")
+            await msg.edit(content=f"<:fail:816521503554273320> I have insufficient permission to lock channels.")
 
 
     @commands.command(brief="Unlock message sending in the channel.", pass_context=True, aliases=["unlockchannel"])
@@ -283,7 +283,7 @@ class Channels(commands.Cog):
             await self.cxn.execute("DELETE FROM lockedchannels WHERE ChannelID = ?", channel.id)
             await msg.edit(content=f"<:unlocked:810623262055989289> Channel {channel.mention} unlocked. ID: `{channel.id}`")
         except discord.errors.Forbidden:
-            await msg.edit(content=f"<:fail:812062765028081674> I have insufficient permission to unlock channels.")
+            await msg.edit(content=f"<:fail:816521503554273320> I have insufficient permission to unlock channels.")
 
 
     @commands.command(brief="Lists all channels in the server in an embed.", aliases=['channels'])

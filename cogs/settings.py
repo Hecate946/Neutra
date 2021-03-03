@@ -1,20 +1,16 @@
-from utilities.http import query
 import discord
-import random
 import re
 
 from discord.ext import commands
 
 from utilities import permissions
-from core import OWNERS, get_prefix, bot
+from core import OWNERS, get_prefix
 
 
 def setup(bot):
     bot.add_cog(Settings(bot))
 
-
 class Settings(commands.Cog):
-
     """
     Configure your server settings.
     """
@@ -22,7 +18,8 @@ class Settings(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.cxn = bot.connection
-        self.dregex = re.compile(r"(?i)(discord(\.gg|app\.com)\/)(?!attachments)([^\s]+)")
+        self.dregex = re.compile(r"(https?:\/\/)?(www\.)?(discord\.(gg|io|me|li)|discordapp\.com\/invite)\/.+[a-z]")
+        #self.dregex = re.compile(r"(?i)(discord(\.gg|app\.com)\/)(?!attachments)([^\s]+)")
 
 
     @commands.command(aliases=["setprefix"], brief="Set your server's custom prefix.")
@@ -44,7 +41,7 @@ class Settings(commands.Cog):
             prefix = prefix[-1]
             await ctx.send(f"{ctx.author.mention}, the current prefix is {prefix}")
         else:
-            if not ctx.guild: return await ctx.send("<:fail:812062765028081674> This command can only be used inside of servers.")
+            if not ctx.guild: return await ctx.send("<:fail:816521503554273320> This command can only be used inside of servers.")
             if len(new) > 5:
                 await ctx.send(f"{ctx.author.mention}, that prefix is too long. The prefix must be a maximum of five characters in length.")
             else:
@@ -117,9 +114,9 @@ class Settings(commands.Cog):
 
         if user is None: return await ctx.send(f"Usage: `{ctx.prefix}ignore <user> [react] [reason]`")
 
-        if user.guild_permissions.administrator: return await ctx.send(f"<:fail:812062765028081674> You cannot punish other staff members")
-        if user.id in OWNERS: return await ctx.send(f"<:fail:812062765028081674> You cannot punish my creator.")
-        if user.top_role.position > ctx.author.position: return await ctx.send(f"<:fail:812062765028081674> User `{user}` is higher in the role hierarchy than you.")
+        if user.guild_permissions.administrator: return await ctx.send(f"<:fail:816521503554273320> You cannot punish other staff members")
+        if user.id in OWNERS: return await ctx.send(f"<:fail:816521503554273320> You cannot punish my creator.")
+        if user.top_role.position > ctx.author.position: return await ctx.send(f"<:fail:816521503554273320> User `{user}` is higher in the role hierarchy than you.")
 
         if react.upper() == "REACT":
             react = True
@@ -129,14 +126,14 @@ class Settings(commands.Cog):
         query = '''SELECT server_id FROM ignored WHERE id = $1 AND server_id = $2'''
         already_ignord = await self.cxn.fetchrow(query, user.id, ctx.guild.id)
         
-        if "None" not in str(already_ignord): return await ctx.send(f":warning: User `{user}` is already being ignored.")
+        if "None" not in str(already_ignord): return await ctx.send(f"<:error:816456396735905844> User `{user}` is already being ignored.")
 
         query = '''INSERT INTO ignored VALUES ($1, $2, $3, $4, $5, $6, $7, $8)'''
         await self.cxn.execute(query, ctx.guild.id, ctx.guild.name, user.id, str(user), reason, ctx.message.created_at.strftime('%Y-%m-%d %H:%M:%S'), str(ctx.author), react)
         if reason is not None:
-            await ctx.send(F"<:ballot_box_with_check:805871188462010398> Ignored `{user}` {reason}")
+            await ctx.send(F"<:checkmark:816534984676081705> Ignored `{user}` {reason}")
         else:
-            await ctx.send(F"<:ballot_box_with_check:805871188462010398> Ignored `{user}`")
+            await ctx.send(F"<:checkmark:816534984676081705> Ignored `{user}`")
 
 
     @commands.command(brief="Reallow certain to use using the bot within your server.", aliases=['listen'])
@@ -147,7 +144,7 @@ class Settings(commands.Cog):
 
         query = '''SELECT id FROM ignored WHERE id = $1 AND server = $2'''
         blacklisted = await self.cxn.fetchrow(query, user.id, ctx.guild.id) or None
-        if blacklisted is None: return await ctx.send(f":warning: User was not ignored")
+        if blacklisted is None: return await ctx.send(f"<:error:816456396735905844> User was not ignored")
 
         query = '''SELECT reason FROM ignored WHERE id = $1 AND server = $2'''
         reason = await self.cxn.fetchrow(query, user.id, ctx.guild.id) or None
@@ -156,9 +153,9 @@ class Settings(commands.Cog):
         await self.cxn.execute(query, user.id, ctx.guild.id)
 
         if "None" in str(reason): 
-            await ctx.send(f"<:ballot_box_with_check:805871188462010398> Removed `{user}` from the ignore list.")
+            await ctx.send(f"<:checkmark:816534984676081705> Removed `{user}` from the ignore list.")
         else:
-            await ctx.send(f"<:ballot_box_with_check:805871188462010398> Removed `{user}`from the ignore list. " 
+            await ctx.send(f"<:checkmark:816534984676081705> Removed `{user}`from the ignore list. " 
                            f"Previously ignored: `{str(reason).strip('(),')}`")
 
 
@@ -184,7 +181,7 @@ class Settings(commands.Cog):
         to_react = await self.cxn.fetchrow(query, message.author.id, message.guild.id)
         to_react = int(to_react[0])
         if to_react == 1:
-            await message.add_reaction("<:fail:812062765028081674>")
+            await message.add_reaction("<:fail:816521503554273320>")
         # We have an ignored user
         return { 'Ignore' : True, 'Delete' : False }
 

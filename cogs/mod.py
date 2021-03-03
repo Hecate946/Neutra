@@ -42,15 +42,15 @@ class Moderation(commands.Cog):
         Notes:      Nickname will reset if no member is passed.
         """
         if user is None: return await ctx.send(f"Usage: `{ctx.prefix}nickname <user> <nickname>`")
-        if user.id == ctx.guild.owner.id: return await ctx.send(f"<:fail:812062765028081674> User `{user}` is the server owner. I cannot edit the nickname of the server owner.")
+        if user.id == ctx.guild.owner.id: return await ctx.send(f"<:fail:816521503554273320> User `{user}` is the server owner. I cannot edit the nickname of the server owner.")
         try:
             await user.edit(nick=nickname, reason=default.responsible(ctx.author, "Nickname edited by command execution"))
-            message = f"<:ballot_box_with_check:805871188462010398> Nicknamed `{user}: {nickname}`"
+            message = f"<:checkmark:816534984676081705> Nicknamed `{user}: {nickname}`"
             if nickname is None:
-                message = f"<:ballot_box_with_check:805871188462010398> Reset nickname for `{user}`"
+                message = f"<:checkmark:816534984676081705> Reset nickname for `{user}`"
             await ctx.send(message)
         except discord.Forbidden:
-            await ctx.send(f"<:fail:812062765028081674> I do not have permission to edit `{user}'s` nickname.")
+            await ctx.send(f"<:fail:816521503554273320> I do not have permission to edit `{user}'s` nickname.")
 
 
     @commands.command(brief="Unbans a member from the server.", aliases=['revokeban'])
@@ -71,9 +71,9 @@ class Moderation(commands.Cog):
 
         await ctx.guild.unban(member.user, reason=reason)
         if member.reason:
-            await ctx.send(f'<:ballot_box_with_check:805871188462010398> Unbanned `{member.user} (ID: {member.user.id})`, previously banned for `{member.reason}.`')
+            await ctx.send(f'<:checkmark:816534984676081705> Unbanned `{member.user} (ID: {member.user.id})`, previously banned for `{member.reason}.`')
         else:
-            await ctx.send(f'<:ballot_box_with_check:805871188462010398> Unbanned `{member.user} (ID: {member.user.id}).`')
+            await ctx.send(f'<:checkmark:816534984676081705> Unbanned `{member.user} (ID: {member.user.id}).`')
 
 
     @commands.command(brief="Setup server muting system.", aliases=["setmuterole"])
@@ -100,7 +100,7 @@ class Moderation(commands.Cog):
         try:
             await self.cxn.execute("UPDATE guilds SET MuteRole = ? WHERE GuildID = ?", role.id, ctx.guild.id)
         except Exception as e: return await ctx.send(e)
-        msg = await ctx.send(f":warning: Creating mute system. This process may take several minutes.")
+        msg = await ctx.send(f"<:error:816456396735905844> Creating mute system. This process may take several minutes.")
         for channel in ctx.guild.channels:
             await channel.set_permissions(role, view_channel=False)
         muted_channel = []
@@ -113,7 +113,7 @@ class Moderation(commands.Cog):
             role: discord.PermissionOverwrite(read_messages=True, send_messages=True)
             }
             await ctx.guild.create_text_channel(name="muted", overwrites=overwrites, topic="Punishment Channel", slowmode_delay = 30)
-        await msg.edit(content=f"<:ballot_box_with_check:805871188462010398> Saved `{role.name}` as this server's mute role.")
+        await msg.edit(content=f"<:checkmark:816534984676081705> Saved `{role.name}` as this server's mute role.")
 
 
     @commands.command(brief="Softmute members. (Users can read messages)", aliases=["sm"])
@@ -169,7 +169,7 @@ class Moderation(commands.Cog):
                     if minutes:
                         unmutes.append(target)
                 else:
-                    await ctx.send(f":warning: Member `{target.display_name}` is already muted.")
+                    await ctx.send(f"<:error:816456396735905844> Member `{target.display_name}` is already muted.")
             if muted:   
                 allmuted = []
                 for member in muted: 
@@ -180,9 +180,9 @@ class Moderation(commands.Cog):
                         username = f"{user.name}#{user.discriminator}"
                         allmuted += [username]
                 if minutes is None:
-                    msg = f'<:ballot_box_with_check:805871188462010398> Softmuted `{", ".join(allmuted)}` indefinetely'
+                    msg = f'<:checkmark:816534984676081705> Softmuted `{", ".join(allmuted)}` indefinetely'
                 else:
-                    msg = f'<:ballot_box_with_check:805871188462010398> Softmuted `{", ".join(allmuted)}` for {minutes:,} minute{"" if minutes == 1 else "s"}'
+                    msg = f'<:checkmark:816534984676081705> Softmuted `{", ".join(allmuted)}` for {minutes:,} minute{"" if minutes == 1 else "s"}'
                 await ctx.send(msg)
             if len(unmutes):
                 await asyncio.sleep(minutes*60)
@@ -246,7 +246,7 @@ class Moderation(commands.Cog):
                     if minutes:
                         unmutes.append(target)
                 else:
-                    await ctx.send(f":warning: Member `{target.display_name}` is already muted.")
+                    await ctx.send(f"<:error:816456396735905844> Member `{target.display_name}` is already muted.")
             if muted:   
                 allmuted = []
                 for member in muted: 
@@ -257,9 +257,9 @@ class Moderation(commands.Cog):
                         username = f"{user.name}#{user.discriminator}"
                         allmuted += [username]
                 if minutes is None:
-                    msg = f'<:ballot_box_with_check:805871188462010398> Hardmuted `{", ".join(allmuted)}` indefinetely'
+                    msg = f'<:checkmark:816534984676081705> Hardmuted `{", ".join(allmuted)}` indefinetely'
                 else:
-                    msg = f'<:ballot_box_with_check:805871188462010398> Hardmuted `{", ".join(allmuted)}` for {minutes:,} minute{"" if minutes == 1 else "s"}'
+                    msg = f'<:checkmark:816534984676081705> Hardmuted `{", ".join(allmuted)}` for {minutes:,} minute{"" if minutes == 1 else "s"}'
                 await ctx.send(msg)
             if len(unmutes):
                 await asyncio.sleep(minutes*60)
@@ -291,7 +291,7 @@ class Moderation(commands.Cog):
                         await target.send(f"<:announce:807097933916405760> You have been unmuted in **{ctx.guild.name}**")
                     except: return 
 
-            else: return await ctx.send(":warning: Member is not muted")
+            else: return await ctx.send("<:error:816456396735905844> Member is not muted")
 
         if unmuted:   
             allmuted = []
@@ -302,7 +302,7 @@ class Moderation(commands.Cog):
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
                     allmuted += [username]
-            await ctx.send(f'<:ballot_box_with_check:805871188462010398> Unmuted `{", ".join(allmuted)}`')
+            await ctx.send(f'<:checkmark:816534984676081705> Unmuted `{", ".join(allmuted)}`')
 
 
     @commands.command(name="unmute", brief="Unmute previously muted members.", aliases=['endmute'])
@@ -357,7 +357,7 @@ class Moderation(commands.Cog):
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
                     blocked_users += [username]
-            await ctx.send('<:ballot_box_with_check:805871188462010398> Blocked `{0}`'.format(", ".join(blocked_users)))
+            await ctx.send('<:checkmark:816534984676081705> Blocked `{0}`'.format(", ".join(blocked_users)))
 
 
     @commands.command(brief="Reallow users to send messages in a channel.")
@@ -393,7 +393,7 @@ class Moderation(commands.Cog):
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
                     unblocked_users += [username]
-            await ctx.send('<:ballot_box_with_check:805871188462010398> Unblocked `{0}`'.format(", ".join(unblocked_users)))
+            await ctx.send('<:checkmark:816534984676081705> Unblocked `{0}`'.format(", ".join(unblocked_users)))
 
 
     @commands.command(brief="Restrict users from reading messages in a channel.")
@@ -429,7 +429,7 @@ class Moderation(commands.Cog):
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
                     blinded_users += [username]
-            await ctx.send('<:ballot_box_with_check:805871188462010398> Blinded `{0}`'.format(", ".join(blinded_users)))
+            await ctx.send('<:checkmark:816534984676081705> Blinded `{0}`'.format(", ".join(blinded_users)))
 
 
     @commands.command(brief="Reallow users see the channel.")
@@ -465,7 +465,7 @@ class Moderation(commands.Cog):
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
                     unblinded_users += [username]
-            await ctx.send('<:ballot_box_with_check:805871188462010398> Unblinded `{0}`'.format(", ".join(unblinded_users)))
+            await ctx.send('<:checkmark:816534984676081705> Unblinded `{0}`'.format(", ".join(unblinded_users)))
 
 
     @commands.command(brief="Kick members from the server")
@@ -492,10 +492,10 @@ class Moderation(commands.Cog):
                     await ctx.guild.kick(target, reason=reason)
                     kicked.append(f"{target.name}#{target.discriminator}")
                 except:
-                    await ctx.send('<:fail:812062765028081674> `{0}` could not be kicked.'.format(target))
+                    await ctx.send('<:fail:816521503554273320> `{0}` could not be kicked.'.format(target))
                     continue
             if kicked:
-                await ctx.send('<:ballot_box_with_check:805871188462010398> Kicked `{0}`'.format(", ".join(kicked)))
+                await ctx.send('<:checkmark:816534984676081705> Kicked `{0}`'.format(", ".join(kicked)))
 
     @commands.command(brief="Ban members from the server.")
     @commands.guild_only()
@@ -527,10 +527,10 @@ class Moderation(commands.Cog):
                     await ctx.guild.ban(target, reason=reason, delete_message_days=delete_message_days)
                     banned.append(f"{target.name}#{target.discriminator}")
                 except:
-                    await ctx.send('<:fail:812062765028081674> `{0}` could not be banned.'.format(target))
+                    await ctx.send('<:fail:816521503554273320> `{0}` could not be banned.'.format(target))
                     continue
         if banned:
-            await ctx.send('<:ballot_box_with_check:805871188462010398> Banned `{0}`'.format(", ".join(banned)))
+            await ctx.send('<:checkmark:816534984676081705> Banned `{0}`'.format(", ".join(banned)))
 
 
     @commands.command(brief="Softbans members from the server.")
@@ -562,10 +562,10 @@ class Moderation(commands.Cog):
                 await ctx.guild.unban(target, reason=reason)
                 banned.append(f"{target.name}#{target.discriminator}")
             except:
-                await ctx.send('<:fail:812062765028081674> `{0}` could not be softbanned.'.format(target))
+                await ctx.send('<:fail:816521503554273320> `{0}` could not be softbanned.'.format(target))
                 continue
         if banned:
-            await ctx.send('<:ballot_box_with_check:805871188462010398> Softbanned `{0}`'.format(", ".join(banned)))
+            await ctx.send('<:checkmark:816534984676081705> Softbanned `{0}`'.format(", ".join(banned)))
 
 
     @commands.command(pass_context=True, brief="Hackban multiple users by ID.")
@@ -600,9 +600,9 @@ class Moderation(commands.Cog):
             except:
                 uu = ctx.message.guild.get_member(user)
                 if uu is None:
-                    await ctx.send('<:fail:812062765028081674> `{0}` could not be hackbanned.'.format(user))
+                    await ctx.send('<:fail:816521503554273320> `{0}` could not be hackbanned.'.format(user))
                 else:
-                    await ctx.send('<:fail:812062765028081674> `{0}` is already on the server and could not be banned.'.format(uu))
+                    await ctx.send('<:fail:816521503554273320> `{0}` is already on the server and could not be banned.'.format(uu))
                 continue
         if banned:
             hackbanned = []
@@ -613,7 +613,7 @@ class Moderation(commands.Cog):
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
                     hackbanned += [username]
-            await ctx.send('<:ballot_box_with_check:805871188462010398> Hackbanned `{0}`'.format(", ".join(hackbanned)))
+            await ctx.send('<:checkmark:816534984676081705> Hackbanned `{0}`'.format(", ".join(hackbanned)))
 
     # command mostly from Alex Flipnote's discord_bot.py bot
     # https://github.com/AlexFlipnote/discord_bot.py
@@ -675,7 +675,7 @@ class Moderation(commands.Cog):
 
         deleted = len(deleted)
         if message is True:
-            msg = await ctx.send(f'<:trashcan:805643072896892949> Deleted {deleted} message{"" if deleted == 1 else "s"}')
+            msg = await ctx.send(f'<:trash:816463111958560819> Deleted {deleted} message{"" if deleted == 1 else "s"}')
             await asyncio.sleep(7)
             await ctx.message.delete()
             await msg.delete()
@@ -773,7 +773,7 @@ class Moderation(commands.Cog):
             if len(message.reactions):
                 total_reactions += sum(r.count for r in message.reactions)
                 await message.clear_reactions()
-        await ctx.send(f'<:trashcan:805643072896892949> Successfully removed {total_reactions} reactions.', delete_after=7)
+        await ctx.send(f'<:trash:816463111958560819> Successfully removed {total_reactions} reactions.', delete_after=7)
 
 
     @prune.command(name='until')

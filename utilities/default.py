@@ -32,7 +32,7 @@ def timetext(name):
 
 def timeago(target):
     """ Timeago in easier way """
-    return timesince.format(target)
+    return str(timesince.format(target)).capitalize()
 
 
 def date(target, clock=True):

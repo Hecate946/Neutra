@@ -103,7 +103,7 @@ class Roles(commands.Cog):
                     role_names += [name]
             name = f"{target.name}#{target.discriminator}"
             target_names.append(name)
-        await ctx.send(f'<:ballot_box_with_check:805871188462010398> '
+        await ctx.send(f'<:checkmark:816534984676081705> '
                        f'Added user{"" if len(target_names) == 1 else "s"} `{", ".join(target_names)}` '
                        f'the role{"" if len(role_list) == 1 else "s"} `{", ".join(role_names)}`')
 
@@ -147,7 +147,7 @@ class Roles(commands.Cog):
                     role_names += [name]
             name = f"{target.name}#{target.discriminator}"
             target_names.append(name)
-        await ctx.send(f'<:ballot_box_with_check:805871188462010398> '
+        await ctx.send(f'<:checkmark:816534984676081705> '
                        f'Removed user{"" if len(target_names) == 1 else "s"} `{", ".join(target_names)}` '
                        f'the role{"" if len(role_list) == 1 else "s"} `{", ".join(role_names)}`')
 
@@ -190,9 +190,9 @@ class Roles(commands.Cog):
         try:
             await ctx.guild.create_role(name=role_name)
             role = discord.utils.get(ctx.guild.roles, name=role_name)
-            await ctx.send(f'<:ballot_box_with_check:805871188462010398> Created role `{role.name}`')
+            await ctx.send(f'<:checkmark:816534984676081705> Created role `{role.name}`')
         except discord.Forbidden:
-            await ctx.send('<:fail:812062765028081674> I do not have sufficient permissions to create roles.')
+            await ctx.send('<:fail:816521503554273320> I do not have sufficient permissions to create roles.')
 
 
     @commands.command(brief="Deletes a role with a specified name.", aliases=["dr","roledelete"])
@@ -209,7 +209,7 @@ class Roles(commands.Cog):
         if role is None: return await ctx.send(f"Usage: `{ctx.prefix}deleterole <role>`")
         else:
             await role.delete()
-            await ctx.send(f'<:ballot_box_with_check:805871188462010398> Deleted role `{role.name}`')
+            await ctx.send(f'<:checkmark:816534984676081705> Deleted role `{role.name}`')
 
         
     @commands.group(brief="Adds or removes a role to all users with a role. (Command Group)", aliases=['multirole'])
@@ -250,15 +250,15 @@ class Roles(commands.Cog):
                 number_of_members.append(member)
 
         members_to_add_roles = len(number_of_members)
-        if members_to_add_roles < 1: return await ctx.send(f":warning: No members to add roles to")
-        msg = await ctx.send(f":warning: Adding role `{role2.name}` to `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}. This process may take several minutes.")
+        if members_to_add_roles < 1: return await ctx.send(f"<:error:816456396735905844> No members to add roles to")
+        msg = await ctx.send(f"<:error:816456396735905844> Adding role `{role2.name}` to `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}. This process may take several minutes.")
         for member in role1.members: 
             try:
                 await member.add_roles(role2)
             except discord.Forbidden:
                 return await ctx.send("I do not have permission to do that")
         # we made it
-        await msg.edit(content=f"<:ballot_box_with_check:805871188462010398> Added role `{role2.name}` to `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}")
+        await msg.edit(content=f"<:checkmark:816534984676081705> Added role `{role2.name}` to `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}")
 
 
     @massrole.command(brief="Removes all members with a certain role a new role", aliases=["rm","rem"])
@@ -274,15 +274,15 @@ class Roles(commands.Cog):
                 number_of_members.append(member)
 
         members_to_add_roles = len(number_of_members)
-        if members_to_add_roles < 1: return await ctx.send(f":warning: No members to remove roles from")
-        msg = await ctx.send(f":warning: Removing role `{role2.name}` from `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}. This process may take several minutes.")
+        if members_to_add_roles < 1: return await ctx.send(f"<:error:816456396735905844> No members to remove roles from")
+        msg = await ctx.send(f"<:error:816456396735905844> Removing role `{role2.name}` from `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}. This process may take several minutes.")
         for member in role1.members: 
             try:
                 await member.remove_roles(role2)
             except discord.Forbidden:
                 return await ctx.send("I do not have permission to do that")
         # we made it
-        await msg.edit(content=f"<:ballot_box_with_check:805871188462010398> Removed role `{role2.name}` from `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}")
+        await msg.edit(content=f"<:checkmark:816534984676081705> Removed role `{role2.name}` from `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}")
 
 
     def get_user(message, user):
@@ -403,7 +403,7 @@ class Roles(commands.Cog):
         """
         check_role = self.get_named_role(ctx.guild, rolename)
         if not check_role:
-            return await ctx.send("<:fail:812062765028081674> I could not find that role!")
+            return await ctx.send("<:fail:816521503554273320> I could not find that role!")
 
         count = 0
         online = 0
@@ -554,7 +554,7 @@ class Roles(commands.Cog):
 
         try:
             await role.edit(reason=reason, color=value)
-            await ctx.send("Successfully edited role.")
+            await ctx.send("<:checkmark:816534984676081705> Successfully edited role.")
         except Exception as e:
             await ctx.send(e)
 
@@ -576,7 +576,7 @@ class Roles(commands.Cog):
 
         try:
             await role.edit(reason=reason, name=name)
-            await ctx.send("Successfully edited role.")
+            await ctx.send("<:checkmark:816534984676081705> Successfully edited role.")
         except Exception as e:
             await ctx.send(e)
 

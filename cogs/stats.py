@@ -4,7 +4,7 @@ import datetime
 
 from discord.ext import commands
 
-from utilities import default, permissions
+from utilities import default, permissions, converters, picker
 from core import OWNERS
 from collections import OrderedDict, Counter
 
@@ -30,12 +30,165 @@ class Statistics(commands.Cog):
 
 
     async def fix_member(self, member):
-        roles = ','.join([str(x.id)
-                                for x in member.roles if x.name != "@everyone"])
+        roles = ','.join([str(x.id) for x in member.roles if x.name != "@everyone"])
         names = member.display_name
         query = '''INSERT OR IGNORE INTO users VALUES ($1, $2, $3, $4, $5, $6, $7, $8)'''
         await self.cxn.execute(query, roles, str(member.guild.id), None, member.id, names, 0, 0, 0)      
     
+    @commands.command(brief="Lists how many servers you share with the bot.")
+    async def sharedservers(self, ctx, *, member: converters.DiscordUser = None):
+        """
+        Usage: -sharedservers [member]
+        Output: The servers that the passed member share with the bot
+        Notes:
+            Will default to youself if no member is passed
+        """
+
+        if member is None:
+            member = ctx.author
+
+        if member.id == self.bot.user.id:
+            return await ctx.send("I'm on **{:,}** server{}. ".format(len(self.bot.guilds),"" if len(self.bot.guilds)==1 else "s"))
+        
+        count = 0
+        for guild in self.bot.guilds:
+            for mem in guild.members:
+                if mem.id == member.id:
+                    count += 1
+        if ctx.author.id == member.id:
+            targ = "You share"
+        else:
+            targ = "**{}** shares".format(member.display_name)
+
+        await ctx.send("{} **{:,}** server{} with me.".format(targ,count,"" if count==1 else "s"))
+
+
+    @commands.command(brief="Check when a user joined the server")
+    async def joinedat(self, ctx, *, user: discord.Member = None):
+        """
+        Usage: -joinedat <member>
+        Output: Shows when the passed user joined the server
+        Notes:
+            Will default to youself if no member is passed.
+        """
+        user = user or ctx.author
+
+        embed = discord.Embed(colour=user.top_role.colour.value)
+        embed.set_thumbnail(url=user.avatar_url)
+        embed.description = f'**{user}** joined **{ctx.guild.name}**\n{default.date(user.joined_at)}'
+        await ctx.send(embed=embed)
+
+
+    @commands.command(brief="Tells when a user joined compared to other users.", aliases=["joinposition"])
+    async def joinpos(self, ctx, *, member: discord.Member = None):
+        """
+        Usage: -joinpos <member>
+        Alias: -joinposition
+        Example: -joinpos @Hecate
+        Output: Tells when a user joined compared to other users.
+        """
+
+        if member is None:
+            member = ctx.author
+
+
+        joinedList = []
+        for mem in ctx.message.guild.members:
+            joinedList.append({ 'ID' : mem.id, 'Joined' : mem.joined_at })
+        
+        # sort the users by join date
+        joinedList = sorted(joinedList, key=lambda x:x["Joined"].timestamp() if x["Joined"] != None else -1)
+
+        check_item = { "ID" : member.id, "Joined" : member.joined_at }
+
+        total = len(joinedList)
+        position = joinedList.index(check_item) + 1
+
+        before = ""
+        after  = ""
+        
+        msg = "**{}'s** join position is **{:,}**.".format(member.display_name, position, total)
+        if position-1 == 1:
+            # We have previous members
+            before = "**1** user"
+        elif position-1 > 1:
+            before = "**{:,}** users".format(position-1)
+        if total-position == 1:
+            # There were users after as well
+            after = "**1** user"
+        elif total-position > 1:
+            after = "**{:,}** users".format(total-position)
+        # Build the string!
+        if len(before) and len(after):
+            # Got both
+            msg += "\n\n{} joined before, and {} after.".format(before, after)
+        elif len(before):
+            # Just got before
+            msg += "\n\n{} joined before.".format(before)
+        elif len(after):
+            # Just after
+            msg += "\n\n{} joined after.".format(after)
+        await ctx.send(msg)
+
+
+    @commands.command(brief="Shows the user that joined at the passed position.", aliases=["joinedatposition"])
+    async def joinedatpos(self, ctx, *, position):
+        """
+        Usage: -joinedatpos <integer>
+        Alias: -joinedatposition
+        Example: -joinedatpos 34
+        Output: Shows the user that joined at the passed position.
+        """
+        try:
+            position = int(position) - 1
+            assert -1 < position < len(ctx.guild.members) 
+        except:
+            return await ctx.send("Position must be an int between 1 and {:,}".format(len(ctx.guild.members)))
+        joinedList = [{"member":mem,"joined":mem.joined_at} for mem in ctx.guild.members]
+        # sort the users by join date
+        joinedList = sorted(joinedList, key=lambda x:x["joined"].timestamp() if x["joined"] != None else - 1)
+        join = joinedList[position]
+        msg = "**{}** joined at position **{:,}**.".format(join["member"].display_name, position + 1)
+        await ctx.send(msg)
+
+
+    @commands.command(brief="Lists the first users to join.")
+    async def firstjoins(self, ctx):
+        """
+        Usage: -firstjoins
+        Output: Embed of members to first join the current server.
+        """
+        our_list = []
+        for member in ctx.guild.members:
+            our_list.append(
+                {
+                    "name":member.display_name,
+                    "value":"{} UTC".format(member.joined_at.strftime("%Y-%m-%d %I:%M %p") if member.joined_at != None else "Unknown"),
+                    "date":member.joined_at
+                }
+            )
+        our_list = sorted(our_list, key=lambda x:x["date"].timestamp() if x["date"] != None else -1)
+        return await picker.PagePicker(title="First Members to Join {} ({:,} total)".format(ctx.guild.name,len(ctx.guild.members)),ctx=ctx,list=[{"name":"{}. {}".format(y+1,x["name"]),"value":x["value"]} for y,x in enumerate(our_list)]).pick()
+
+
+    @commands.command(brief="Lists the most recent users to join.")
+    async def recentjoins(self, ctx):
+        """
+        Usage: -recentjoins
+        Output: Embed of most recent members to join the server.
+        """
+        our_list = []
+        for member in ctx.guild.members:
+            our_list.append(
+                {
+                    "name":member.display_name,
+                    "value":"{} UTC".format(member.joined_at.strftime("%Y-%m-%d %I:%M %p") if member.joined_at != None else "Unknown"),
+                    "date":member.joined_at
+                }
+            )
+        our_list = sorted(our_list, key=lambda x:x["date"].timestamp() if x["date"] != None else -1, reverse=True)
+        return await picker.PagePicker(title="Most Recent Members to Join {} ({:,} total)".format(ctx.guild.name,len(ctx.guild.members)),ctx=ctx,list=[{"name":"{}. {}".format(y+1,x["name"]),"value":x["value"]} for y,x in enumerate(our_list)]).pick()
+
 
     @commands.command(aliases=['listinvites','invitelist'], pass_context=True, brief="List all current server invites.")
     @commands.guild_only()
@@ -49,12 +202,12 @@ class Statistics(commands.Cog):
         """
         invites = await ctx.guild.invites()
         if len(invites) == 0:
-            await ctx.send("`:warning: There currently no invites active.`")
+            await ctx.send("`<:error:816456396735905844> There currently no invites active.`")
         else:
             try:
-                em = discord.Embed(description="**Invites:**\n {0}".format(",\n ".join(map(str, invites))), color=ctx.guild.me.color)
+                em = discord.Embed(description="**Invites:**\n {0}".format(",\n ".join(map(str, invites))), color=default.config()["embed_color"])
                 await ctx.send(embed=em)
-            except: return await ctx.send(f"<:fail:812062765028081674> Too many invites to list.")
+            except: return await ctx.send(f"<:fail:816521503554273320> Too many invites to list.")
 
 
     @commands.command(aliases=['mc'], brief="Find exactly how many messages a user has sent in the server.")
@@ -265,7 +418,7 @@ class Statistics(commands.Cog):
         counter = Counter(formatted_list)
         try:
             width = len(max(counter, key=len))
-        except ValueError: return await ctx.send(f":warning: User `{user}` has not run any commands.")
+        except ValueError: return await ctx.send(f"<:error:816456396735905844> User `{user}` has not run any commands.")
         total = sum(counter.values())
 
         if limit > 0:
@@ -441,6 +594,7 @@ class Statistics(commands.Cog):
             msg += f'[{str(integer).zfill(2)}] Uses: [{args[1].zfill(2)}] Word: {args[0]}\n'
         
         await ctx.send(f"Most common words sent by **{member.display_name}**```ini\n{msg}```")
+
 
       #####################
      ## Event Listeners ##

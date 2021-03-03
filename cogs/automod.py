@@ -5,7 +5,6 @@ from better_profanity import profanity
 from collections import OrderedDict
 
 from utilities import permissions, default
-from core import bot
 
 def setup(bot):
     bot.add_cog(Automoderation(bot))
@@ -75,7 +74,7 @@ class Automoderation(commands.Cog):
             new_words = ', '.join(word_list)
 
             await self.cxn.execute("""
-            UPDATE profanity SET word=? WHERE server = ?
+            UPDATE profanity SET word=$1 WHERE server = $2
             """, new_words, ctx.guild.id)
 
             await ctx.send(f'Added word `{word_to_filter}` to the filter')
@@ -90,13 +89,13 @@ class Automoderation(commands.Cog):
         query = '''SELECT words FROM profanity WHERE server = $1'''
         word_list = await self.cxn.fetchrow(query, ctx.guild.id) or None
         if word_list is None:
-            return await ctx.send(f":warning: This server has no filtered words.")   
+            return await ctx.send(f"<:error:816456396735905844> This server has no filtered words.")   
 
         word_list = word_list[0].split(', ')
         word_list = list(OrderedDict.fromkeys(word_list))
 
         if word not in word_list: 
-            return await ctx.send(f":warning: Word `{word}` is not in the filtered list.")
+            return await ctx.send(f"<:error:816456396735905844> Word `{word}` is not in the filtered list.")
 
         else:
 
@@ -114,7 +113,7 @@ class Automoderation(commands.Cog):
     @permissions.has_permissions(manage_guild=True)
     async def display(self, ctx):
         words = await self.cxn.fetch("""
-        SELECT word FROM profanity WHERE server=?
+        SELECT word FROM profanity WHERE server=$1
         """, ctx.guild.id) or None
 
         if words == [] or None:
@@ -145,7 +144,7 @@ class Automoderation(commands.Cog):
             return
         msg = str(after.content)
 
-        query = '''SELECT server_id FROM profanity WHERE server_id = $2'''
+        query = '''SELECT server_id FROM profanity WHERE server_id = $1'''
         server = await self.cxn.fetchrow(query, after.guild.id) or None
         if server is None or "None" in str(server): return
 
@@ -163,8 +162,7 @@ class Automoderation(commands.Cog):
                 try:
                     await after.delete()
                     return await after.author.send(f'''Your message "{after.content}" was removed for containing the filtered word "{filtered_word}"''')
-                except Exception: return
-                
+                except Exception: return                
 
 
     @commands.Cog.listener()
@@ -213,7 +211,7 @@ class Automoderation(commands.Cog):
             # Check for what actually happened
             newrole = [x for x in after.roles if x not in s]
             if len(newrole) == 1:
-                fmt = ":warning: **{}#{}** had the role **{}** added.".format(
+                fmt = "<:error:816456396735905844> **{}#{}** had the role **{}** added.".format(
                     before.name, before.discriminator, newrole[0].name)
             elif not newrole:
                 return
@@ -221,17 +219,17 @@ class Automoderation(commands.Cog):
                 # This happens when the bot autoassigns your roles
                 # after rejoining the server
                 new_roles = [x.name for x in newrole]
-                fmt = ":warning: **{}#{}** had the roles **{}** added.".format(
+                fmt = "<:error:816456396735905844> **{}#{}** had the roles **{}** added.".format(
                     before.name, before.discriminator, ', '.join(new_roles))
         else:
             s = set(after.roles)
             newrole = [x for x in before.roles if x not in s]
             if len(newrole) == 1:
-                fmt = ":warning: **{}#{}** had the role **{}** removed.".format(
+                fmt = "<:error:816456396735905844> **{}#{}** had the role **{}** removed.".format(
                     before.name, before.discriminator, newrole[0].name)
             elif len(newrole) == 0:
                 return
             else:
                 new_roles = [x.name for x in newrole]
-                fmt = ":warning: **{}#{}** had the roles **{}** removed.".format(
+                fmt = "<:error:816456396735905844> **{}#{}** had the roles **{}** removed.".format(
                     before.name, before.discriminator, ', '.join(new_roles))

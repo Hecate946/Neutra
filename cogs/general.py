@@ -35,7 +35,7 @@ class General(commands.Cog):
         return int(value[0])
 
     async def total_global_messages(self):
-        query = '''SELECT COUNT(*) as c FROM commands'''
+        query = '''SELECT COUNT(*) as c FROM messages'''
         value = await self.cxn.fetchrow(query)
         return int(value[0])
 
@@ -61,7 +61,8 @@ class General(commands.Cog):
         currentTime = int(time.time())
         proc = Process()
         with proc.oneshot():
-            cpu_time = datetime.timedelta(seconds=(cpu := proc.cpu_times()).system + cpu.user)
+            #This could be used, but I thought most people are not interested in stuff like CPU Time
+            #cpu_time = datetime.timedelta(seconds=(cpu := proc.cpu_times()).system + cpu.user)
             mem_total = virtual_memory().total / (1024**2)
             mem_of_total = proc.memory_percent()
             mem_usage = mem_total * (mem_of_total / 100)
@@ -75,14 +76,15 @@ class General(commands.Cog):
             value=',\n '.join([str(self.bot.get_user(x)) for x in self.config["owners"]]),
             inline=True)
         embed.add_field(name="Python Version", value=f"{python_version()}", inline=True)
-        embed.add_field(name="Library", value="discord.py", inline=True)
+        embed.add_field(name="Library", value="Discord.py", inline=True)
         embed.add_field(name="API Version", value=f"{discord_version}", inline=True)
         embed.add_field(name="Command Count", value=len([x.name for x in self.bot.commands if not x.hidden]), inline=True)
-        embed.add_field(name="Server Count", value=f"{len(ctx.bot.guilds)} ( Users: {len(self.bot.users)} )", inline=True)
+        embed.add_field(name="Server Count", value=f"{len(ctx.bot.guilds)}", inline=True)
         embed.add_field(name="Channel Count", value=f"""<:textchannel:810659118045331517> {text}        <:voicechannel:810659257296879684> {voice}""", inline=True)
         embed.add_field(name="Member Count", value=f"{total_members}", inline=True)
         embed.add_field(name="Commands Run", value=f"{await self.total_global_commands():,}", inline=True)
-        embed.add_field(name="Messages Seen", value=f"{await self.total_global_commands():,}", inline=True)
+        embed.add_field(name="Messages Seen", value=f"{await self.total_global_messages():,}", inline=True)
+        #Below are cached commands. Above are stored in the asyncpg database
         #embed.add_field(name="Commands Run", value=sum(self.bot.command_stats.values()), inline=True)
         embed.add_field(name="RAM", value=f"{ramUsage:.2f} MB", inline=True)
         #embed.add_field(name="CPU", value=f"{cpu_time} MB", inline=True)
@@ -91,6 +93,7 @@ class General(commands.Cog):
 
 
     @commands.command(aliases=["platform"], brief = "Show which discord platform a user is on.")
+    @commands.guild_only()
     async def mobile(self, ctx, members:commands.Greedy[discord.Member]):
         """
         Usage:  -mobile <member> [member] [member]...
@@ -149,7 +152,7 @@ class General(commands.Cog):
 
 
     @commands.command(brief="Display a user's avatar in an embed.", aliases=['av', 'pfp'])
-    async def avatar(self, ctx, user: discord.User=None):
+    async def avatar(self, ctx, *, user: converters.DiscordUser=None):
         """
         Usage:    -avatar [user]
         Aliases:  -av, -pfp
@@ -161,13 +164,13 @@ class General(commands.Cog):
             user = ctx.author
         try:
             await self.bot.fetch_user(user.id)
-        except AttributeError: return await ctx.send(f"<:fail:812062765028081674> User `{user}` does not exist.")
+        except AttributeError: return await ctx.send(f"<:fail:816521503554273320> User `{user}` does not exist.")
         avatar = user.avatar_url
         embed = discord.Embed(title=f"**{user.display_name}'s avatar.**", description=f'Links to `{user}\'s` avatar:  '
                                                                                       f'[webp]({(str(user.avatar_url))}) | '
                                                                                       f'[png]({(str(user.avatar_url).replace("webp", "png"))}) | ' 
                                                                                       f'[jpeg]({(str(user.avatar_url).replace("webp", "jpg"))})  ', 
-                                                                          color=ctx.guild.me.color)
+                                                                          color=default.config()["embed_color"])
         embed.set_image(url=avatar)
         await ctx.send(embed=embed)
 
@@ -247,10 +250,9 @@ class General(commands.Cog):
         """
         if member is None:
             member = ctx.message.author
-        robot = ctx.guild.me
         status_dict = {'online': 'Online', 'offline': 'Offline', 'dnd': 'Do Not Disturb', 'idle': "Idle"}
         perm_list = [Perm[0] for Perm in member.guild_permissions if Perm[1]]
-        embed = discord.Embed(colour=robot.color, timestamp=ctx.message.created_at)
+        embed = discord.Embed(colour=default.config()["embed_color"], timestamp=ctx.message.created_at)
         embed.set_author(name=f"{member}", icon_url=member.avatar_url)
         embed.set_thumbnail(url=member.avatar_url)
         embed.add_field(name=f"**{member.display_name}'s Info:**", value=
@@ -378,7 +380,7 @@ class General(commands.Cog):
         else:
             region = str(server.region).title()
 
-        em = discord.Embed(color = ctx.guild.me.color)
+        em = discord.Embed(color = default.config()["embed_color"])
         em.set_thumbnail(url=server.icon_url)
         em.set_author(name=server.name, icon_url=server.icon_url)
         em.set_footer(text=f"Server ID: {server.id} | Created on {server.created_at.__format__('%m/%d/%Y')}")
@@ -567,13 +569,17 @@ class General(commands.Cog):
 
 
     @commands.command(brief="Get information on any discord user by ID.", aliases=['lookup'])
-    async def user(self, ctx, snowflake:int):
+    async def user(self, ctx, snowflake:int = None):
         """
-        Usage:   -user <id>
+        Usage:   -user <user>
         Alias:   -lookup
         Example: -user 810377376269205546
         Output:  General information on any discord user.
+        Notes:
+            Accepts nickname, ID, mention, username, and username+discrim
+            Neither you nor the bot must share a server with the user.
         """
+        if snowflake is None: return await ctx.send(f"Usage: -user <user>")
         try:
             user = await self.bot.fetch_user(snowflake)
         except discord.NotFound:
@@ -582,7 +588,7 @@ class General(commands.Cog):
         timestamp = ((sid >> 22) + 1420070400000) / 1000
         cdate = datetime.datetime.utcfromtimestamp(timestamp)
         fdate = cdate.strftime('%A, %B %d, %Y at %H:%M:%S')
-        em = discord.Embed(description=f"{user}'s information.", color=ctx.guild.me.color)
+        em = discord.Embed(description=f"{user}'s information.", color=default.config()["embed_color"])
         em.set_author(name=user, icon_url=user.avatar_url)
         em.set_thumbnail(url=user.avatar_url)
         em.add_field(name="Mention", value=user.mention)
@@ -595,13 +601,15 @@ class General(commands.Cog):
 
 
     @commands.command(pass_context=True, brief="Show the date a discord snowflake ID was created.", aliases=['id'])
-    async def snowflake(self, ctx, *, sid : str = None):
+    async def snowflake(self, ctx, *, sid = None):
         """
         Usage: -snowflake <id>
         Alias: -id
         Example: -snowflake 810377376269205546
         Output: Date and time of the snowflake's creation
         """
+        if not sid.isdigit(): 
+            return await ctx.send(f'Usage: {ctx.prefix}snowflake <id>')
 
         sid = int(sid)
         timestamp = ((sid >> 22) + 1420070400000) / 1000 # python uses seconds not milliseconds
@@ -625,11 +633,8 @@ class General(commands.Cog):
                 "If you want to get to know me, are too a bot lover, or simply are looking for an active fun-loving server to join, "
                 "here's a link to my discord server, where I'm most active. <https://discord.gg/947ramn>\n"
                 "NGC0000 is a bot named after our galaxy, the Milky Way. I made NGC0000 specifically for server moderation. "
-                "'She' is meant to offer every imaginable feature to server OWNERS and administrators "
+                "'She' is meant to offer every imaginable feature to server owners and administrators "
                 "so that they may manage their server efficiently, and without need for multiple bots. "
-                "Having experience with using various bots, "
-                "I personally found it very difficult to achieve exactly what I wanted with a single bot. "
-                "NGC0000 does single-handedly, what a multitude of other bots combined couldn't do. "
                 "Her commands are fast, efficient, and offer every opportunity for custom and fair punishments. "
                 f"Her help command shows extensive usage examples and explanations of all {len([x.name for x in self.bot.commands if not x.hidden])} commands, " 
                 "but if you need further assistance, have questions, or are simply looking for a great community to join, "

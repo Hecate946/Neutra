@@ -8,6 +8,7 @@ import traceback
 
 from datetime import datetime
 from discord.ext import commands, tasks
+from colr import color
 
 from utilities import default
 
@@ -23,10 +24,10 @@ try:
 except Exception:
     for _ in range(100):
         print()
-SEPARATOR = '=' * len(str(CONNECTION))
-print(SEPARATOR)
-print(CONNECTION)
-print(SEPARATOR)
+#SEPARATOR = '=' * len(str(CONNECTION))
+#print(SEPARATOR)
+#print(CONNECTION)
+#print(SEPARATOR)
 
 
 connection = CONNECTION
@@ -51,7 +52,7 @@ class NGC0000(commands.AutoShardedBot):
 
     def setup(self):
         for cog in COGS:
-            print(f"Loaded: {str(cog).upper()}")
+            print(color(fore="#2EFF00", text=f"Loaded: {str(cog).upper()}"))
             self.load_extension(f"cogs.{cog}")
 
 
@@ -183,10 +184,10 @@ class NGC0000(commands.AutoShardedBot):
     async def on_command_error(self, ctx, error):
 
         if isinstance(error, commands.NoPrivateMessage):
-            await ctx.author.send('<:fail:812062765028081674> This command cannot be used in private messages.')
+            await ctx.author.send('<:fail:816521503554273320> This command cannot be used in private messages.')
 
         elif isinstance(error, commands.DisabledCommand):
-            await ctx.author.send('<:fail:812062765028081674> This command is disabled and cannot be used.')
+            await ctx.author.send('<:fail:816521503554273320> This command is disabled and cannot be used.')
 
         elif isinstance(error, commands.CommandInvokeError):
             print(f'In {ctx.command.qualified_name}:', file=sys.stderr)
@@ -202,18 +203,18 @@ class NGC0000(commands.AutoShardedBot):
         if not hasattr(self, 'uptime'):
             self.uptime = datetime.utcnow()
 
-        message = 'Logged in as %s.' % bot.user
-        uid_message = 'Client ID: %s.' % bot.user.id
-        user_count_message = f'Users: {len([ x for x in self.get_all_members()])}     Servers: {len(self.guilds)}'
+        message = f'Client Name: {bot.user}'
+        uid_message = f'Client ID:   {bot.user.id}'
+        user_count_message = f'Users: {len([ x for x in self.get_all_members()])}   Servers: {len(self.guilds)}'
         separator = '=' * max(len(message), len(uid_message), len(user_count_message))
-        print(separator)
+        print(color(fore="#00D8E3", text=separator))
         try:
-            print(message)
+            print(color(fore="#00D8E3", text=message))
         except:
-            print(message.encode(errors='replace').decode())
-        print(uid_message)
-        print(user_count_message)
-        print(separator)
+            print(color(fore="#00D8E3", text=message.encode(errors='replace').decode()))
+        print(color(fore="#00D8E3", text=uid_message))
+        print(color(fore="#00D8E3", text=user_count_message))
+        print(color(fore="#00D8E3", text=separator))
 
 
     async def on_message(self, message):
