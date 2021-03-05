@@ -42,7 +42,7 @@ class Logging(commands.Cog):
         to_log_or_not_to_log = await self.cxn.fetchrow("""
         SELECT channel_updates FROM logging WHERE server_id = $1
         """, channel.guild.id)
-        if to_log_or_not_to_log[0] != 1: return 
+        if to_log_or_not_to_log[0] is not True: return 
 
         webhook_id = int(webhook_id[0])
         webhook = await self.bot.fetch_webhook(webhook_id)
@@ -66,7 +66,7 @@ class Logging(commands.Cog):
         to_log_or_not_to_log = await self.cxn.fetchrow("""
         SELECT channel_updates FROM logging WHERE server_id = $1
         """, channel.guild.id)
-        if to_log_or_not_to_log[0] != 1: return 
+        if to_log_or_not_to_log[0] is not True: return 
 
         webhook_id = int(webhook_id[0])
         webhook = await self.bot.fetch_webhook(webhook_id)
@@ -83,14 +83,14 @@ class Logging(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_channel_update(self, before, after):
         query = '''SELECT logging_webhook_id FROM logging WHERE server_id = $1'''
-        webhook_id = await self.cxn.fetchrow(query, channel.guild.id) or None
+        webhook_id = await self.cxn.fetchrow(query, before.guild.id) or None
         if webhook_id is None or "None" in str(webhook_id): 
             return
 
         to_log_or_not_to_log = await self.cxn.fetchrow("""
         SELECT channel_updates FROM logging WHERE server_id = $1
         """, before.guild.id)
-        if to_log_or_not_to_log[0] != 1: return 
+        if to_log_or_not_to_log[0] is not True: return
 
         webhook_id = int(webhook_id[0])
         webhook = await self.bot.fetch_webhook(webhook_id)
@@ -146,15 +146,15 @@ class Logging(commands.Cog):
     @commands.Cog.listener()
     async def on_user_update(self, before, after):
         # TODO Fix up this listener. Possibly remove altogether.
-        """
+
         if before.name != after.name:
             to_send = []
             for guild in self.bot.guilds:
 
-                to_log_or_not_to_log = await self.cxn.fetchrow("
-                SELECT name_updates FROM logging WHERE server = ?
-                ", guild.id)
-                if to_log_or_not_to_log[0] != 1: return 
+                to_log_or_not_to_log = await self.cxn.fetchrow("""
+                SELECT name_updates FROM logging WHERE server_id = $1
+                """, guild.id)
+                if to_log_or_not_to_log[0] != True: return 
 
                 for member in guild.members:
                     if member.id != before.id:
@@ -162,7 +162,7 @@ class Logging(commands.Cog):
                     to_send.append(guild.id)
             if to_send:
                 for i in to_send:
-                    webhook_id = await self.cxn.fetchrow("SELECT LoggerWebhookID FROM guilds WHERE GuildID = ?", i) or (None)
+                    webhook_id = await self.cxn.fetchrow("SELECT logging_webhook_id FROM logging WHERE server_id = $1", i) or None
                     if webhook_id is None or "None" in str(webhook_id): 
                         continue
                     webhook_id = int(webhook_id[0])
@@ -182,10 +182,10 @@ class Logging(commands.Cog):
             to_send = []
             for guild in self.bot.guilds:
 
-                to_log_or_not_to_log = await self.cxn.fetchrow("
-                SELECT name_updates FROM logging WHERE server = ?
-                ", guild.id)
-                if to_log_or_not_to_log[0] != 1: return 
+                to_log_or_not_to_log = await self.cxn.fetchrow("""
+                SELECT name_updates FROM logging WHERE server_id = $1
+                """, guild.id)
+                if to_log_or_not_to_log[0] is not True: return 
 
                 for member in guild.members:
                     if member.id != before.id: 
@@ -193,7 +193,7 @@ class Logging(commands.Cog):
                     to_send.append(guild.id)
             if to_send:
                 for i in to_send:
-                    webhook_id = await self.cxn.fetchrow("SELECT LoggerWebhookID FROM guilds WHERE GuildID = ?", i) or (None)
+                    webhook_id = await self.cxn.fetchrow("SELECT logging_webhook_id FROM logging WHERE server_id = $1", i) or None
                     if webhook_id is None or "None" in str(webhook_id): 
                         continue
 
@@ -208,29 +208,24 @@ class Logging(commands.Cog):
                 embed.set_author(name=f"Discriminator Change")
                 embed.set_footer(text=f"User ID: {after.id}")
 
-            await webhook.execute(embed=embed, username=self.bot.user.name)
+                await webhook.execute(embed=embed, username=self.bot.user.name)
         
         if before.avatar_url != after.avatar_url:
             to_send = []
-            send = []
             for guild in self.bot.guilds:
+
+                to_log_or_not_to_log = await self.cxn.fetchrow("""
+                SELECT avatar_changes FROM logging WHERE server_id = $1
+                """, guild.id)
+                if to_log_or_not_to_log[0] is not True: return 
+
                 for member in guild.members:
-                    if member.id == before.id: 
-                        to_send.append(guild.id)
-                        break
-                    break
-                
-            
-
-                to_log_or_not_to_log = await self.cxn.fetchrow("
-                SELECT avatar_changes FROM logging WHERE server = ?
-                ", guild.id)
-                if to_log_or_not_to_log[0] == 1:
-                    send.append(guild.id) 
-
-            if to_send and send:
+                    if member.id != before.id: 
+                        continue
+                    to_send.append(guild.id)
+            if to_send:
                 for i in to_send:
-                    webhook_id = await self.cxn.fetchrow("SELECT LoggerWebhookID FROM guilds WHERE GuildID = ?", i) or (None)
+                    webhook_id = await self.cxn.fetchrow("SELECT logging_webhook_id FROM logging WHERE server_id = $1", i) or None
                     if webhook_id is None or "None" in str(webhook_id): 
                         continue
                     webhook_id = int(webhook_id[0])
@@ -246,7 +241,7 @@ class Logging(commands.Cog):
                 embed.set_author(name=f"Avatar Change")
                 embed.set_footer(text=f"User ID: {after.id}")
                 await webhook.execute(embed=embed, username=self.bot.user.name)
-        """
+
 
     @commands.Cog.listener()
     async def on_member_unban(self, member):
@@ -258,7 +253,7 @@ class Logging(commands.Cog):
         to_log_or_not_to_log = await self.cxn.fetchrow("""
         SELECT bans FROM logging WHERE server_id = $1
         """, member.guild.id)
-        if to_log_or_not_to_log[0] != 1: return 
+        if to_log_or_not_to_log[0] is not True: return 
 
         webhook_id = int(webhook_id[0])
         webhook = await self.bot.fetch_webhook(webhook_id)
@@ -283,7 +278,7 @@ class Logging(commands.Cog):
         to_log_or_not_to_log = await self.cxn.fetchrow("""
         SELECT bans FROM logging WHERE server_id = $1
         """, member.guild.id)
-        if to_log_or_not_to_log[0] != 1: return 
+        if to_log_or_not_to_log[0] is not True: return 
 
         webhook_id = int(webhook_id[0])
         webhook = await self.bot.fetch_webhook(webhook_id)
@@ -307,7 +302,7 @@ class Logging(commands.Cog):
         to_log_or_not_to_log = await self.cxn.fetchrow("""
         SELECT joins FROM logging WHERE server_id = $1
         """, member.guild.id)
-        if to_log_or_not_to_log[0] != 1: return 
+        if to_log_or_not_to_log[0] is not True: return 
 
         webhook_id = int(webhook_id[0])
         webhook = await self.bot.fetch_webhook(webhook_id)
@@ -332,7 +327,7 @@ class Logging(commands.Cog):
         to_log_or_not_to_log = await self.cxn.fetchrow("""
         SELECT leaves FROM logging WHERE server_id = $1
         """, member.guild.id)
-        if to_log_or_not_to_log[0] != 1: return 
+        if to_log_or_not_to_log[0] is not True: return 
 
         webhook_id = int(webhook_id[0])
         webhook = await self.bot.fetch_webhook(webhook_id)
@@ -364,7 +359,7 @@ class Logging(commands.Cog):
             to_log_or_not_to_log = await self.cxn.fetchrow("""
             SELECT name_updates FROM logging WHERE server_id = $1
             """, before.guild.id)
-            if to_log_or_not_to_log[0] != 1: return 
+            if to_log_or_not_to_log[0] is not True: return 
 
             embed = discord.Embed(
                           description=f"**User:** {after.mention} **Name:** `{after}`\n"
@@ -382,7 +377,7 @@ class Logging(commands.Cog):
             to_log_or_not_to_log = await self.cxn.fetchrow("""
             SELECT role_changes FROM logging WHERE server_id = $1
             """, before.guild.id)
-            if to_log_or_not_to_log[0] != 1: return 
+            if to_log_or_not_to_log[0] is not True: return 
             
             embed = discord.Embed(
                           description=f"**User:** {after.mention} **Name:** `{after}`\n"
@@ -510,7 +505,7 @@ class Logging(commands.Cog):
         to_log_or_not_to_log = await self.cxn.fetchrow("""
         SELECT message_edits FROM logging WHERE server_id = $1
         """, before.guild.id)
-        if to_log_or_not_to_log[0] != 1: return 
+        if to_log_or_not_to_log[0] is not True: return 
 
         webhook_id = int(webhook_id[0])
         webhook = await self.bot.fetch_webhook(webhook_id)
@@ -544,7 +539,7 @@ class Logging(commands.Cog):
         to_log_or_not_to_log = await self.cxn.fetchrow("""
         SELECT message_deletions FROM logging WHERE server_id = $1
         """, message.guild.id)
-        if to_log_or_not_to_log[0] != 1: return 
+        if to_log_or_not_to_log[0] is not True: return 
 
         webhook_id = int(webhook_id[0])
         webhook = await self.bot.fetch_webhook(webhook_id)
@@ -575,7 +570,7 @@ class Logging(commands.Cog):
         to_log_or_not_to_log = await self.cxn.fetchrow("""
         SELECT message_deletions FROM logging WHERE server_id = $1
         """, messages[0].guild.id)
-        if to_log_or_not_to_log[0] != 1: return 
+        if to_log_or_not_to_log[0] is not True: return 
 
         webhook_id = int(webhook_id[0])
         webhook = await self.bot.fetch_webhook(webhook_id)
@@ -644,7 +639,7 @@ class Logging(commands.Cog):
         await ctx.send(embed=embed)
 
 
-    @commands.command(pass_context=True, aliases=['dumpmessages','messagedump'], brief="Logs a passed number of messages from the given channel - 25 by default.")
+    @commands.command(aliases=['dumpmessages','messagedump'], brief="Logs a passed number of messages from the given channel - 25 by default.")
     @commands.guild_only()
     @permissions.has_permissions(manage_server=True)
     async def logmessages(self, ctx, messages : int = 25, *, chan : discord.TextChannel = None):
@@ -762,7 +757,7 @@ class Logging(commands.Cog):
     async def _deletes(self, ctx):
         logchan = await self.cxn.fetchrow("""
         SELECT logchannel FROM logging WHERE server_id = $1
-        """, str(ctx.guild.id)) or None
+        """, ctx.guild.id) or None
         if logchan is None or logchan[0] is None: 
             return await ctx.send(f"<:fail:816521503554273320> Logging not setup on this server. Use `{ctx.prefix}logserver` to setup a logging channel.")
 
@@ -778,7 +773,7 @@ class Logging(commands.Cog):
     async def _edits(self, ctx):
         logchan = await self.cxn.fetchrow("""
         SELECT logchannel FROM logging WHERE server_id = $1
-        """, str(ctx.guild.id)) or None
+        """, ctx.guild.id) or None
         if logchan is None or logchan[0] is None: 
             return await ctx.send(f"<:fail:816521503554273320> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
 
@@ -794,7 +789,7 @@ class Logging(commands.Cog):
     async def _roles(self, ctx):
         logchan = await self.cxn.fetchrow("""
         SELECT logchannel FROM logging WHERE server_id = $1
-        """, str(ctx.guild.id)) or None
+        """, ctx.guild.id) or None
         if logchan is None or logchan[0] is None: 
             return await ctx.send(f"<:fail:816521503554273320> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
 
@@ -810,7 +805,7 @@ class Logging(commands.Cog):
     async def _names(self, ctx):
         logchan = await self.cxn.fetchrow("""
         SELECT logchannel FROM logging WHERE server_id = $1
-        """, str(ctx.guild.id)) or None
+        """, ctx.guild.id) or None
         if logchan is None or logchan[0] is None: 
             return await ctx.send(f"<:fail:816521503554273320> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
 
@@ -826,7 +821,7 @@ class Logging(commands.Cog):
     async def _voice(self, ctx):
         logchan = await self.cxn.fetchrow("""
         SELECT logchannel FROM logging WHERE server_id = $1
-        """, str(ctx.guild.id)) or None
+        """, ctx.guild.id) or None
         if logchan is None or logchan[0] is None: 
             return await ctx.send(f"<:fail:816521503554273320> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
 
@@ -842,7 +837,7 @@ class Logging(commands.Cog):
     async def _avatars(self, ctx):
         logchan = await self.cxn.fetchrow("""
         SELECT logchannel FROM logging WHERE server_id = $1
-        """, str(ctx.guild.id)) or None
+        """, ctx.guild.id) or None
         if logchan is None or logchan[0] is None: 
             return await ctx.send(f"<:fail:816521503554273320> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
 
@@ -858,7 +853,7 @@ class Logging(commands.Cog):
     async def _bans(self, ctx):
         logchan = await self.cxn.fetchrow("""
         SELECT logchannel FROM logging WHERE server_id = $1
-        """, str(ctx.guild.id)) or None
+        """, ctx.guild.id) or None
         if logchan is None or logchan[0] is None: 
             return await ctx.send(f"<:fail:816521503554273320> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
 
@@ -874,7 +869,7 @@ class Logging(commands.Cog):
     async def _channels(self, ctx):
         logchan = await self.cxn.fetchrow("""
         SELECT logchannel FROM logging WHERE server_id = $1
-        """, str(ctx.guild.id)) or None
+        """, ctx.guild.id) or None
         if logchan is None or logchan[0] is None: 
             return await ctx.send(f"<:fail:816521503554273320> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
 
@@ -890,7 +885,7 @@ class Logging(commands.Cog):
     async def _leaves(self, ctx):
         logchan = await self.cxn.fetchrow("""
         SELECT logchannel FROM logging WHERE server_id = $1
-        """, str(ctx.guild.id)) or None
+        """, ctx.guild.id) or None
         if logchan is None or logchan[0] is None: 
             return await ctx.send(f"<:fail:816521503554273320> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
 
@@ -906,7 +901,7 @@ class Logging(commands.Cog):
     async def _joins(self, ctx):
         logchan = await self.cxn.fetchrow("""
         SELECT logchannel FROM logging WHERE server_id = $1
-        """, str(ctx.guild.id)) or None
+        """, ctx.guild.id) or None
         if logchan is None or logchan[0] is None: 
             return await ctx.send(f"<:fail:816521503554273320> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
 
@@ -952,7 +947,7 @@ class Logging(commands.Cog):
     async def deletes_(self, ctx):
         logchan = await self.cxn.fetchrow("""
         SELECT logchannel FROM logging WHERE server_id = $1
-        """, str(ctx.guild.id)) or None
+        """, ctx.guild.id) or None
         if logchan is None or logchan[0] is None: 
             return await ctx.send(f"<:fail:816521503554273320> Logging not setup on this server. Use `{ctx.prefix}logserver` to setup a logging channel.")
 
@@ -968,7 +963,7 @@ class Logging(commands.Cog):
     async def edits_(self, ctx):
         logchan = await self.cxn.fetchrow("""
         SELECT logchannel FROM logging WHERE server_id = $1
-        """, str(ctx.guild.id)) or None
+        """, ctx.guild.id) or None
         if logchan is None or logchan[0] is None: 
             return await ctx.send(f"<:fail:816521503554273320> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
 
@@ -984,7 +979,7 @@ class Logging(commands.Cog):
     async def roles_(self, ctx):
         logchan = await self.cxn.fetchrow("""
         SELECT logchannel FROM logging WHERE server_id = $1
-        """, str(ctx.guild.id)) or None
+        """, ctx.guild.id) or None
         if logchan is None or logchan[0] is None: 
             return await ctx.send(f"<:fail:816521503554273320> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
 
@@ -1000,7 +995,7 @@ class Logging(commands.Cog):
     async def names_(self, ctx):
         logchan = await self.cxn.fetchrow("""
         SELECT logchannel FROM logging WHERE server_id = $1
-        """, str(ctx.guild.id)) or None
+        """, ctx.guild.id) or None
         if logchan is None or logchan[0] is None: 
             return await ctx.send(f"<:fail:816521503554273320> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
 
@@ -1016,7 +1011,7 @@ class Logging(commands.Cog):
     async def voice_(self, ctx):
         logchan = await self.cxn.fetchrow("""
         SELECT logchannel FROM logging WHERE server_id = $1
-        """, str(ctx.guild.id)) or None
+        """, ctx.guild.id) or None
         if logchan is None or logchan[0] is None: 
             return await ctx.send(f"<:fail:816521503554273320> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
 
@@ -1032,7 +1027,7 @@ class Logging(commands.Cog):
     async def avatar_(self, ctx):
         logchan = await self.cxn.fetchrow("""
         SELECT logchannel FROM logging WHERE server_id = $1
-        """, str(ctx.guild.id)) or None
+        """, ctx.guild.id) or None
         if logchan is None or logchan[0] is None: 
             return await ctx.send(f"<:fail:816521503554273320> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
 
@@ -1048,7 +1043,7 @@ class Logging(commands.Cog):
     async def bans_(self, ctx):
         logchan = await self.cxn.fetchrow("""
         SELECT logchannel FROM logging WHERE server_id = $1
-        """, str(ctx.guild.id)) or None
+        """, ctx.guild.id) or None
         if logchan is None or logchan[0] is None: 
             return await ctx.send(f"<:fail:816521503554273320> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
 
@@ -1064,7 +1059,7 @@ class Logging(commands.Cog):
     async def channels_(self, ctx):
         logchan = await self.cxn.fetchrow("""
         SELECT logchannel FROM logging WHERE server_id = $1
-        """, str(ctx.guild.id)) or None
+        """, ctx.guild.id) or None
         if logchan is None or logchan[0] is None: 
             return await ctx.send(f"<:fail:816521503554273320> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
 
@@ -1080,7 +1075,7 @@ class Logging(commands.Cog):
     async def leaves_(self, ctx):
         logchan = await self.cxn.fetchrow("""
         SELECT logchannel FROM logging WHERE server_id = $1
-        """, str(ctx.guild.id)) or None
+        """, ctx.guild.id) or None
         if logchan is None or logchan[0] is None: 
             return await ctx.send(f"<:fail:816521503554273320> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
 
@@ -1096,7 +1091,7 @@ class Logging(commands.Cog):
     async def joins_(self, ctx):
         logchan = await self.cxn.fetchrow("""
         SELECT logchannel FROM logging WHERE server_id = $1
-        """, str(ctx.guild.id)) or None
+        """, ctx.guild.id) or None
         if logchan is None or logchan[0] is None: 
             return await ctx.send(f"<:fail:816521503554273320> Logging not setup on this server. Use `{ctx.prefix}logchannel` to setup a logging channel.")
 

@@ -1,48 +1,14 @@
-import time, discord, asyncio, json, re, sys, random
+import discord
 
-from datetime import datetime, timedelta
 from discord.ext import commands
-from discord.ext.menus import MenuPages, ListPageSource
-
-from utilities import default, permissions, picker
 
 from core import OWNERS
+from utilities import permissions, picker
 
 
 
 def setup(bot):
     bot.add_cog(Warnings(bot))
-    
-    
-class HelpMenu(ListPageSource):
-    def __init__(self, ctx, data):
-        self.ctx = ctx
-
-        super().__init__(data, per_page=10)
-
-    async def write_page(self, menu, offset, fields=[]):
-        len_data = len(self.entries)
-
-        embed = discord.Embed(title="Server Warnings",
-                      colour=default.config()["embed_color"])
-        embed.set_thumbnail(url=self.ctx.guild.icon_url)
-        embed.set_footer(text=f"{offset:,} - {min(len_data, offset+self.per_page-1):,} of {len_data:,} members.")
-
-        for name, value in fields:
-            embed.add_field(name=name, value=value, inline=False)
-
-        return embed
-
-    async def format_page(self, menu, entries):
-        offset = (menu.current_page*self.per_page) + 1
-
-        fields = []
-        table = ("\n".join(f"{idx+offset}. {self.ctx.bot.guild.get_member(entry[0])} Warnings: {entry[1]}"
-                for idx, entry in enumerate(entries)))
-
-        fields.append(("Warnings", table))
-
-        return await self.write_page(menu, offset, fields)
 
 class Warnings(commands.Cog):
     """
@@ -58,6 +24,7 @@ class Warnings(commands.Cog):
     ###################
 
     @commands.command()
+    @commands.guild_only()
     @permissions.has_permissions(kick_members=True)
     async def warn(self, ctx, targets: commands.Greedy[discord.Member], *, reason: str = None):
         if not len(targets): return await ctx.send(f"Usage: `{ctx.prefix}warn <target> [target]... [reason]`")
@@ -72,11 +39,10 @@ class Warnings(commands.Cog):
                     warnings = await self.cxn.fetchrow("SELECT warnings FROM warn WHERE id = $1 AND server_id = $2", target.id, ctx.guild.id) or (None)
                     if warnings is None: 
                         warnings = 0
-                        warnings = str(warnings).strip("(),").lower()
                         await self.cxn.execute("INSERT INTO warn VALUES ($1, $2, $3)", target.id, ctx.guild.id, int(warnings) + 1)
                         warned.append(f"{target.name}#{target.discriminator}")
                     else:
-                        warnings = str(warnings).strip("(),").lower()
+                        warnings = int(warnings[0])
                         try:
                             await self.cxn.execute("UPDATE warn SET warnings = warnings + 1 WHERE server_id = $1 AND id = $2", ctx.guild.id, target.id)
                             warned.append(f"{target.name}#{target.discriminator}")
@@ -93,27 +59,29 @@ class Warnings(commands.Cog):
 
 
     @commands.command()
-    async def listwarns(self, ctx, target: discord.Member =None):
+    @commands.guild_only()
+    async def listwarns(self, ctx, *, target: discord.Member =None):
         if target is None:
             target = ctx.author
 
         try:
-            warnings = await self.cxn.fetchrow("SELECT Warnings FROM warn WHERE UserID = ? AND GuildID = ?", target.id, ctx.guild.id) or (None)
+            warnings = await self.cxn.fetchrow("SELECT warnings FROM warn WHERE id = $1 AND server_id = $2", target.id, ctx.guild.id) or None
             if warnings is None: return await ctx.send(f"<:checkmark:816534984676081705> User `{target}` has no warnings.")
-            warnings = str(warnings).strip("(),")
+            warnings = int(warnings[0])
             await ctx.send(f"<:announce:807097933916405760> User `{target}` currently has **{warnings}** warning{'' if int(warnings) == 1 else 's'} in this server.")
         except Exception as e: return await ctx.send(e)
 
 
     @commands.command(aliases = ['deletewarnings','removewarns','removewarnings','deletewarns','clearwarnings'])
+    @commands.guild_only()
     @permissions.has_permissions(kick_members = True)
-    async def clearwarns(self, ctx, target: discord.Member = None):
+    async def clearwarns(self, ctx, *, target: discord.Member = None):
         if target is None: return await ctx.send(f"Usage: `{ctx.prefix}deletewarn <target>`")
         try:
-            warnings = await self.cxn.fetchrow("SELECT Warnings FROM warn WHERE UserID = ? AND GuildID = ?", target.id, ctx.guild.id) or (None)
+            warnings = await self.cxn.fetchrow("SELECT warnings FROM warn WHERE id = $1 AND server_id = $2", target.id, ctx.guild.id) or None
             if warnings is None: return await ctx.send(f"<:checkmark:816534984676081705> User `{target}` has no warnings.")
-            warnings = str(warnings).strip("(),")
-            await self.cxn.execute("DELETE FROM warn WHERE UserID = ? and GuildID = ?", target.id, ctx.guild.id)
+            warnings = int(warnings[0])
+            await self.cxn.execute("DELETE FROM warn WHERE id = $1 and server_id = $2", target.id, ctx.guild.id)
             await ctx.send(f"<:checkmark:816534984676081705> Cleared all warnings for `{target}` in this server.")
             try:
                 await target.send(f"<:announce:807097933916405760> All your warnings have been cleared in **{ctx.guild.name}**.")
@@ -122,18 +90,19 @@ class Warnings(commands.Cog):
 
 
     @commands.command(aliases=['revokewarning','undowarning','undowarn'])
+    @commands.guild_only()
     @permissions.has_permissions(kick_members = True)
-    async def revokewarn(self, ctx, target: discord.Member = None):
+    async def revokewarn(self, ctx, *, target: discord.Member = None):
         if target is None: return await ctx.send(f"Usage: `{ctx.prefix}revokewarn <target>`")
         try:
-            warnings = await self.cxn.fetchrow("SELECT Warnings FROM warn WHERE UserID = ? AND GuildID = ?", target.id, ctx.guild.id) or (None)
+            warnings = await self.cxn.fetchrow("SELECT warnings FROM warn WHERE id = $1 AND server_id = $2", target.id, ctx.guild.id) or None
             if warnings is None: return await ctx.send(f"<:checkmark:816534984676081705> User `{target}` has no warnings to revoke.")
-            warnings = str(warnings).strip("(),")
+            warnings = int(warnings[0])
             if int(warnings) == 1: 
-                await self.cxn.execute("DELETE FROM warn WHERE UserID = ? and GuildID = ?", target.id, ctx.guild.id)
+                await self.cxn.execute("DELETE FROM warn WHERE id = $1 and server_id = $2", target.id, ctx.guild.id)
                 await ctx.send(f"<:checkmark:816534984676081705> Cleared all warnings for `{target}` in this server.")
             else:
-                await self.cxn.execute("UPDATE warn SET Warnings = ? WHERE GuildID = ? AND UserID = ?", (int(warnings) - 1), ctx.guild.id, target.id)
+                await self.cxn.execute("UPDATE warn SET warnings = warnings - 1 WHERE server_id = $1 AND id = $2", ctx.guild.id, target.id)
                 await ctx.send(f"<:checkmark:816534984676081705> Revoked a warning for `{target}` in this server.")
             try:
                 await target.send(f"<:announce:807097933916405760> You last warning has been revoked in **{ctx.guild.name}**.")

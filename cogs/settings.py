@@ -50,7 +50,7 @@ class Settings(commands.Cog):
                 await ctx.send(f"{ctx.author.mention}, the prefix has been set to {new}")
 
 
-    @commands.command(pass_context=True, brief="Enable or disable auto-deleting invite links")
+    @commands.command(brief="Enable or disable auto-deleting invite links")
     @permissions.has_permissions(administrator=True)
     async def antiinvite(self, ctx, *, yes_no = None):
         """
@@ -60,23 +60,24 @@ class Settings(commands.Cog):
         Output:     Removes invite links sent by users without the Manage Messages permission.
         """
         query = '''SELECT anti_invite FROM moderation WHERE server_id = $1'''
-        current = await self.cxn.fetchrow(query, ctx.guild.id) or (None)
+        current = await self.cxn.fetchrow(query, ctx.guild.id) or None
         current = str(current[0])
-        if current == "true": 
-            removeinvitelinks = "true"
+        if current is True:
+            print("true") 
+            removeinvitelinks = True
         else:
-            removeinvitelinks = None
-        if yes_no == None: 
-            # Output what we have
-            msg =  "{} currently *{}*.".format("removal of invite links","enabled" if current == "true" else "disabled")
+            removeinvitelinks = False
+        if yes_no is None:
+            # Output current setting
+            msg =  "{} currently *{}*.".format("Removal of invite links","enabled" if current is True else "disabled")
         elif yes_no.lower() in [ "yes", "on", "true", "enabled", "enable" ]:
-            yes_no = 'true'
-            removeinvitelinks = 'true'
-            msg = "{} {} *enabled*.".format("removal of invite links","remains" if current is None else "is now")
+            yes_no = True
+            removeinvitelinks = True
+            msg = "{} {} *enabled*.".format("Removal of invite links","remains" if current is True else "is now")
         elif yes_no.lower() in [ "no", "off", "false", "disabled", "disable" ]:
             yes_no = False
-            removeinvitelinks = None
-            msg = "{} {} *disabled*.".format("removal of invite links","is now" if current else "remains")
+            removeinvitelinks = False
+            msg = "{} {} *disabled*.".format("Removal of invite links","is now" if current is True else "remains")
         else:
             msg = "That is not a valid setting."
             yes_no = current
@@ -86,7 +87,6 @@ class Settings(commands.Cog):
 
 
     @commands.Cog.listener()
-    @commands.guild_only()
     async def on_message(self, message):
 
         if isinstance(message.channel, discord.DMChannel): return None
@@ -179,48 +179,15 @@ class Settings(commands.Cog):
 
         query = '''SELECT react FROM ignored WHERE id = $2 and server = $2'''
         to_react = await self.cxn.fetchrow(query, message.author.id, message.guild.id)
-        to_react = int(to_react[0])
-        if to_react == 1:
+        to_react = to_react[0]
+        if to_react is True:
             await message.add_reaction("<:fail:816521503554273320>")
         # We have an ignored user
         return { 'Ignore' : True, 'Delete' : False }
 
 
-    @commands.Cog.listener()
-    async def on_member_join(self, member):
-        required_perms = member.guild.me.guild_permissions.manage_roles
-        if not required_perms:
-            return
-
-
-        query = '''SELECT reassign FROM roleconfig WHERE server = $1'''
-        reassign = await self.cxn.fetchrow(query, member.guild.id) or None
-        if reassign is None or reassign[0] == 0 or reassign[0] is None: 
-            pass
-        else:
-            query = '''SELECT roles FROM users WHERE id = $1 and server_id = $2'''
-            old_roles = await self.cxn.fetchrow(query, member.guild.id, member.id) or None
-            if old_roles is None: return
-            roles = str(old_roles[0]).split(",")
-            for role_id in roles:
-                role = member.guild.get_role(int(role_id))
-                try:
-                    await member.add_roles(role)
-                except Exception as e: raise e
-
-        query = '''SELECT autoroles FROM roleconfig WHERE server_id = $1'''
-        autoroles = await self.cxn.fetchrow(query, member.guild.id) or None
-        if autoroles is None or autoroles[0] is None: 
-            pass
-        else:
-            roles = str(autoroles[0]).split(",")
-            for role_id in roles:
-                role = self.bot.get_role(int(role_id))
-                try:
-                    await member.add_roles(role)
-                except Exception as e: raise e
         
-    @commands.command(brief="Toggle whether you want to have a user's old roles be reassigned to them on rejoin.")
+    @commands.command(brief="Toggle whether you want to have a user's old roles be reassigned to them on rejoin.", aliases=['stickyroles'])
     @commands.guild_only()
     @permissions.has_permissions(manage_guild=True)
     async def reassign(self, ctx, *, yes_no = None):
@@ -233,25 +200,59 @@ class Settings(commands.Cog):
         query = '''SELECT reassign FROM roleconfig WHERE server = $1'''
         current = await self.cxn.fetchrow(query, ctx.guild.id)
         current = current[0]
-        if current == 1: 
-            reassign = True
-        else:
-            current == 0
+        if current == False: 
             reassign = False
+        else:
+            current == True
+            reassign = True
         if yes_no is None:
             # Output what we have
-            msg =  "{} currently *{}*.".format("Reassigning roles on member rejoin","enabled" if current == 1 else "disabled")
+            msg =  "{} currently *{}*.".format("Reassigning roles on member rejoin","enabled" if current == True else "disabled")
         elif yes_no.lower() in [ "yes", "on", "true", "enabled", "enable" ]:
             yes_no = True
             reassign = True
-            msg = "{} {} *enabled*.".format("Reassigning roles on member rejoin","remains" if current == 1 else "is now")
+            msg = "{} {} *enabled*.".format("Reassigning roles on member rejoin","remains" if current == True else "is now")
         elif yes_no.lower() in [ "no", "off", "false", "disabled", "disable" ]:
             yes_no = False
             reassign = False
-            msg = "{} {} *disabled*.".format("Reassigning roles on member rejoin","is now" if current == 1 else "remains")
+            msg = "{} {} *disabled*.".format("Reassigning roles on member rejoin","is now" if current == True else "remains")
         else:
             msg = "That is not a valid setting."
             yes_no = current
         if yes_no != current:
             await self.cxn.execute("UPDATE roleconfig SET reassign = $1 WHERE server = $2", reassign, ctx.guild.id)
         await ctx.send(msg)
+
+    @commands.Cog.listener()
+    async def on_member_join(self, member):
+        required_perms = member.guild.me.guild_permissions.manage_roles
+        if not required_perms:
+            return
+
+
+        query = '''SELECT reassign FROM roleconfig WHERE server = $1'''
+        reassign = await self.cxn.fetchrow(query, member.guild.id) or None
+        if reassign is None or reassign[0] == False or reassign[0] is None: 
+            pass
+        else:
+            query = '''SELECT roles FROM users WHERE id = $1 and server_id = $2'''
+            old_roles = await self.cxn.fetchrow(query, member.guild.id, member.id) or None
+            if old_roles is None or old_roles[0] is None: return
+            roles = str(old_roles[0]).split(",")
+            for role_id in roles:
+                role = member.guild.get_role(int(role_id))
+                try:
+                    await member.add_roles(role)
+                except Exception as e: return
+
+        query = '''SELECT autoroles FROM roleconfig WHERE server_id = $1'''
+        autoroles = await self.cxn.fetchrow(query, member.guild.id) or None
+        if autoroles is None or autoroles[0] is None: 
+            pass
+        else:
+            roles = str(autoroles[0]).split(",")
+            for role_id in roles:
+                role = self.bot.get_role(int(role_id))
+                try:
+                    await member.add_roles(role)
+                except Exception as e: raise e

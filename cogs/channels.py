@@ -1,11 +1,11 @@
 import asyncio
 import discord
 import random
+import asyncpg
 
 from discord.ext import commands
 
-from utilities import permissions, default, converters
-from core import bot
+from utilities import permissions, default
 from core import OWNERS
 
 
@@ -197,56 +197,70 @@ class Channels(commands.Cog):
             await ctx.send(f'<:checkmark:816534984676081705> Slowmode set to `{time}s`')
 
 
-    @commands.command(pass_context=True, aliases=["lockdown","lockchannel"], brief="Lock message sending in a channel.")
+    @commands.command(aliases=["lockdown","lockchannel"], brief="Lock message sending in a channel.")
     @commands.guild_only()
     @commands.bot_has_permissions(manage_channels=True)
     @permissions.has_permissions(manage_channels=True)
-    async def lock(self, ctx, channel:str = None, minutes: int = None):
+    async def lock(self, ctx, channel_ = None, minutes_: int = None):
         """
         Usage:      -lock [channel] [minutes]
         Output:     Locked channel for the specified time. Infinite if not specified
         Permission: Manage Channels
         """
-        try:
-            channel_id = int(channel)
-            channel = ctx.guild.get_channel(channel_id)
-        except:
+        channel_id = 0
+        
+        minutes = 0
+        if channel_ is None: 
+            channel_id += ctx.channel.id
+
+        elif channel_.isdigit() or str(channel_).strip("<#>").isdigit(): 
             try:
-                channel_obj = discord.utils.get(ctx.guild.text_channels, name=channel)
+                channel = ctx.guild.get_channel(int(str(channel_).strip("<#>")))
+                channel_id += int(channel.id)
+            except TypeError:
+                minutes += int(channel_)
+                channel_id += ctx.channel.id
+        else:
+            try:
+                channel_obj = discord.utils.get(ctx.guild.text_channels, name=channel_)
                 if channel_obj is None: 
-                    channel = ctx.channel
+                    channel_id += ctx.channel.id
                 else:
-                    channel = channel_obj
+                    channel_id += channel_obj.id
             except Exception as e: return await ctx.send(e)
-        if channel is None: 
-            channel = ctx.channel
+        channel = ctx.guild.get_channel(channel_id)
         try:
             overwrites_everyone = channel.overwrites_for(ctx.guild.default_role)
             everyone_overwrite_current = overwrites_everyone.send_messages
-            locked = await self.cxn.fetchrow("SELECT ChannelID FROM lockedchannels WHERE ChannelID = ?", channel.id) or (None)
-            if locked is not None: return await ctx.send(f"<:locked:810623219677397013> Channel {channel.mention} is already locked. ID: `{channel.id}`")
             msg = await ctx.send(f"Locking channel {channel.mention}...")
-            await self.cxn.execute("INSERT INTO lockedchannels VALUES (?, ?, ?, ?, ?, ?, ?)", 
-                                                                                channel.id, 
-                                                                                channel.name, 
-                                                                                ctx.guild.id, 
-                                                                                ctx.guild.name, 
-                                                                                ctx.author.id, 
-                                                                                str(ctx.author), 
-                                                                                str(everyone_overwrite_current))
+            try:
+                await self.cxn.execute("INSERT INTO lockedchannels VALUES ($1, $2, $3, $4)", 
+                                        channel.id,
+                                        ctx.guild.id, 
+                                        ctx.author.id, 
+                                        str(everyone_overwrite_current))
+            except asyncpg.UniqueViolationError:
+                return await msg.edit(content=f"<:fail:816521503554273320> Channel {channel.mention} is already locked.")
+
 
             overwrites_everyone.send_messages = False
             await ctx.message.channel.set_permissions(ctx.guild.default_role, overwrite=overwrites_everyone, reason=(default.responsible(ctx.author, "Channel locked by command execution")))
-            if minutes is not None:
-                await msg.edit(content=f"<:locked:810623219677397013> Channel {channel.mention} locked for `{minutes}` minute{'' if minutes == 1 else 's'}. ID: `{channel.id}`")
+            if minutes_ is not None:
+                if minutes_ > 120:
+                    minutes_ = 120
+                elif minutes_ < 1:
+                    minutes_ = 0
+                minutes += minutes_
+            if minutes != 0:
+                await msg.edit(content=f"<:lock:817168229712527360> Channel {channel.mention} locked for `{minutes}` minute{'' if minutes == 1 else 's'}. ID: `{channel.id}`")
                 await asyncio.sleep(minutes*60)
                 await self.unlock(ctx, channel=channel, surpress=True)
-            await msg.edit(content=f"<:locked:810623219677397013> Channel {channel.mention} locked. ID: `{channel.id}`")
-        except discord.errors.Forbidden:
+            await msg.edit(content=f"<:lock:817168229712527360> Channel {channel.mention} locked. ID: `{channel.id}`")
+        except discord.Forbidden:
             await msg.edit(content=f"<:fail:816521503554273320> I have insufficient permission to lock channels.")
 
 
-    @commands.command(brief="Unlock message sending in the channel.", pass_context=True, aliases=["unlockchannel"])
+    @commands.command(brief="Unlock message sending in the channel.", aliases=["unlockchannel"])
     @commands.guild_only()
     @commands.bot_has_permissions(manage_channels=True)
     @permissions.has_permissions(manage_channels=True)
@@ -259,16 +273,16 @@ class Channels(commands.Cog):
         if channel is None:
             channel = ctx.channel
         try:
-            locked = await self.cxn.fetchrow("SELECT ChannelID FROM lockedchannels WHERE ChannelID = ?", channel.id) or (None)
+            locked = await self.cxn.fetchrow("SELECT channel_id FROM lockedchannels WHERE channel_id = $1", channel.id) or (None)
             if locked is None: 
                 if surpress is True:
                     return 
                 else:
-                    return await ctx.send(f"<:locked:810623219677397013> Channel {channel.mention} is already unlocked. ID: `{channel.id}`")
+                    return await ctx.send(f"<:lock:817168229712527360> Channel {channel.mention} is already unlocked. ID: `{channel.id}`")
 
             msg = await ctx.send(f"Unlocking channel {channel.mention}...")
-            old_overwrites = await self.cxn.fetchrow("SELECT EveryonePermissions FROM lockedchannels WHERE ChannelID = ?", channel.id)
-            everyone_perms = str(old_overwrites).strip("(),'")
+            old_overwrites = await self.cxn.fetchrow("SELECT everyone_perms FROM lockedchannels WHERE channel_id = $1", channel.id)
+            everyone_perms = old_overwrites[0]
 
             if everyone_perms == "None": 
                 everyone_perms = None
@@ -280,8 +294,8 @@ class Channels(commands.Cog):
             overwrites_everyone = ctx.channel.overwrites_for(ctx.guild.default_role)
             overwrites_everyone.send_messages = everyone_perms
             await ctx.message.channel.set_permissions(ctx.guild.default_role, overwrite=overwrites_everyone, reason=(default.responsible(ctx.author, "Channel unlocked by command execution")))
-            await self.cxn.execute("DELETE FROM lockedchannels WHERE ChannelID = ?", channel.id)
-            await msg.edit(content=f"<:unlocked:810623262055989289> Channel {channel.mention} unlocked. ID: `{channel.id}`")
+            await self.cxn.execute("DELETE FROM lockedchannels WHERE channel_id = $1", channel.id)
+            await msg.edit(content=f"<:unlock:817168258825846815> Channel {channel.mention} unlocked. ID: `{channel.id}`")
         except discord.errors.Forbidden:
             await msg.edit(content=f"<:fail:816521503554273320> I have insufficient permission to unlock channels.")
 

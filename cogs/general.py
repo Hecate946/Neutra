@@ -1,13 +1,14 @@
-import discord
+import os
 import re
 import time
 import psutil
-import os
+import inspect
+import discord
 import datetime
 
 from discord.ext import commands
-from psutil import Process, virtual_memory
 from platform import python_version
+from psutil import Process, virtual_memory
 from discord import __version__ as discord_version
 
 from utilities import permissions, default, converters
@@ -39,7 +40,8 @@ class General(commands.Cog):
         value = await self.cxn.fetchrow(query)
         return int(value[0])
 
-    @commands.command(aliases=['info'], brief="Display information about the bot.")
+
+    @commands.command(aliases = ['info'], brief="Display information about the bot.")
     async def about(self, ctx):
         """
         Usage:  -about
@@ -105,8 +107,11 @@ class General(commands.Cog):
             return await ctx.send(f"Usage: `{ctx.prefix}mobile <member> [member] [member]...`")
         mobilestatus = []
         notmobilestatus = []
+        web_status = []
         offline = []
         for member in members:
+            print(member.is_on_mobile())
+            print(member.web_status)
             try:
                 mobile = member.is_on_mobile()
             except Exception as e:
@@ -116,6 +121,8 @@ class General(commands.Cog):
                 mobilestatus.append(member)
             elif mobile is False and str(member.status) == "offline":
                 offline.append(member)
+            elif mobile is False and str(member.web_status) != "offline":
+                web_status.append(member)
             else:
                 notmobilestatus.append(member)
         if notmobilestatus:
@@ -127,7 +134,7 @@ class General(commands.Cog):
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
                     notmobile += [username]
-            await ctx.send(f'<:laptop:810970906037846077> User{"" if len(notmobile) == 1 else "s"} `{", ".join(notmobile)}` {"is" if len(notmobile) == 1 else "are"} not on mobile')
+            await ctx.send(f'<:desktop:817160032391135262> User{"" if len(notmobile) == 1 else "s"} `{", ".join(notmobile)}` {"is" if len(notmobile) == 1 else "are"} on discord desktop.')
         if mobilestatus:
             mobile = []
             for member in mobilestatus: 
@@ -137,7 +144,17 @@ class General(commands.Cog):
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
                     mobile += [username]
-            await ctx.send(f'<:phone:810970970314506270> User{"" if len(mobile) == 1 else "s"} `{", ".join(mobile)}` {"is" if len(mobile) == 1 else "are"} on mobile')
+            await ctx.send(f'<:mobile:817160232248672256> User{"" if len(mobile) == 1 else "s"} `{", ".join(mobile)}` {"is" if len(mobile) == 1 else "are"} on discord mobile.')
+        if web_status:
+            mobile = []
+            for member in web_status: 
+                users = []
+                people = await self.bot.fetch_user(int(member.id))
+                users.append(people)
+                for user in users:
+                    username = f"{user.name}#{user.discriminator}"
+                    mobile += [username]
+            await ctx.send(f'<:web:817163202877194301> User{"" if len(mobile) == 1 else "s"} `{", ".join(mobile)}` {"is" if len(mobile) == 1 else "are"} on discord web.')
         if offline:
             mobile = []
             for member in offline: 
@@ -148,7 +165,6 @@ class General(commands.Cog):
                     username = f"{user.name}#{user.discriminator}"
                     mobile += [username]
             await ctx.send(f'<:offline:810650959859810384> User{"" if len(mobile) == 1 else "s"} `{", ".join(mobile)}` {"is" if len(mobile) == 1 else "are"} offline')
-
 
 
     @commands.command(brief="Display a user's avatar in an embed.", aliases=['av', 'pfp'])
@@ -238,7 +254,7 @@ class General(commands.Cog):
         await default.prettyResults(ctx, "discriminator", f"Found **{len(loop)}** on your search for **{search}**", loop)
 
 
-    @commands.command(brief="Display information on a passed user.")#, aliases=["profile","whois","ui"])
+    @commands.command(brief="Display information on a passed user.", aliases=["whois","ui"])
     @commands.guild_only()
     async def userinfo(self, ctx, member: discord.Member = None):
         """
@@ -248,82 +264,71 @@ class General(commands.Cog):
         Output:   Roles, permissions, and general stats on a user.
         Notes:    If user is not in the server, use -user <user id>.
         """
-        if member is None:
-            member = ctx.message.author
-        status_dict = {'online': 'Online', 'offline': 'Offline', 'dnd': 'Do Not Disturb', 'idle': "Idle"}
-        perm_list = [Perm[0] for Perm in member.guild_permissions if Perm[1]]
-        embed = discord.Embed(colour=default.config()["embed_color"], timestamp=ctx.message.created_at)
-        embed.set_author(name=f"{member}", icon_url=member.avatar_url)
-        embed.set_thumbnail(url=member.avatar_url)
-        embed.add_field(name=f"**{member.display_name}'s Info:**", value=
-                                                                       f"> **Nickname:** {member.display_name}\n"
-                                                                       f"> **ID:** {member.id}\n"
-                                                                       f"> **Highest Role:** {member.top_role.mention}\n"
-                                                                       f"> **Status:** {(status_dict[str(member.status)])}\n"
-                                                                       f"> **Registered:** {member.created_at.__format__('%B %d, %Y at %I:%M %p')}\n"
-                                                                       f"> **Joined:** {member.joined_at.__format__('%B %d, %Y at %I:%M %p')}\n"
-                                                                       f"> **Bot:** {member.bot}\n", inline=False)
-        if len(member.roles) > 1:
-            role_list = member.roles[::-1]
-            role_list.remove(member.roles[0])
-            embed.add_field(name=f"Roles: [{len(role_list)}]", value =" ".join([role.mention for role in role_list]), inline=False)
-        else:
-            embed.add_field(name=f"Roles: [0]", value ="** **", inline=False)
-        embed.add_field(name="Permissions:", value=", ".join(perm_list).replace("_", " ").replace("guild", "server").title().replace("Tts", "TTS"), inline=False)
-        await ctx.send(embed=embed)
 
-    @commands.command(brief="Display information on a passed user.", aliases=["profile","whois","ui"])
-    @commands.guild_only()
-    async def userinfoo(self, ctx, member: discord.Member = None):
-        """
-        Usage:    -userinfo <member>
-        Aliases:  -profile, -ui, -whois
-        Examples: -userinfo NGC0000, -userinfo 810377376269205546
-        Output:   Roles, permissions, and general stats on a user.
-        Notes:    If user is not in the server, use -user <user id>.
-        """
         if member is None:
             member = ctx.message.author
 
-        print(member.activities)
-        print(member.activity.name)
-        print(member.raw_status)
-        print(member.web_status)
-        print(member.premium_since)
+        if member is None:
+            member = ctx.author
+
+
+        joinedList = []
+        for mem in ctx.message.guild.members:
+            joinedList.append({ 'ID' : mem.id, 'Joined' : mem.joined_at })
+        
+        # sort the users by join date
+        joinedList = sorted(joinedList, key=lambda x:x["Joined"].timestamp() if x["Joined"] != None else -1)
+
+        check_item = { "ID" : member.id, "Joined" : member.joined_at }
+
+        total = len(joinedList)
+        position = joinedList.index(check_item) + 1
+        
+        msg = "{:,}".format(position)
 
         query = '''SELECT commandcount FROM users WHERE id = $1 AND server_id = $2'''
-        commandcount = await self.cxn.fetchrow(query, member.id, ctx.guild.id)
+        command_count = await self.cxn.fetchrow(query, member.id, ctx.guild.id)
 
         query = '''SELECT messagecount FROM users WHERE id = $1 AND server_id = $2'''
         messages = await self.cxn.fetchrow(query, member.id, ctx.guild.id)
 
-
-        status_dict = {'online': '<:online:810650040838258711>', 'offline': '<:offline:810650959859810384>', 'dnd': '<:dnd:810650845007708200>', 'idle': "<:idle:810650560146833429>"}
+        #status_dict = {'online': 'Online', 'offline': 'Offline', 'dnd': 'Do Not Disturb', 'idle': "Idle"}
+        status_dict = {
+            'online': '<:online:810650040838258711> Online', 
+            'offline': '<:offline:810650959859810384> Offline', 
+            'dnd': '<:dnd:810650845007708200> Do Not Disturb', 
+            'idle': "<:idle:810650560146833429> Idle"
+            }
         perm_list = [Perm[0] for Perm in member.guild_permissions if Perm[1]]
-        embed = discord.Embed(colour=default.config()["embed_color"])
-        embed.set_author(name=f"{member.display_name}", icon_url=member.avatar_url)
+        embed = discord.Embed(color=default.config()["embed_color"])
+        embed.set_author(name=f"{member}", icon_url=member.avatar_url)
         embed.set_thumbnail(url=member.avatar_url)
+        embed.set_footer(text=f"User ID: {member.id} | Created on {member.created_at.__format__('%m/%d/%Y')}")
+        embed.add_field(name="Nickname", value=f"{'<:owner:810678076497068032>'if member.id == ctx.guild.owner.id else '<:bot:816692223566544946>' if member.bot else ''} {member.display_name}")
+        embed.add_field(name="Messages", value=f"<:messages:816696500314701874>  {messages[0]}")
+        embed.add_field(name="Commands", value=f"<:command:816693906951372870>  {command_count[0]}")
+        embed.add_field(name="Status", value=f"{status_dict[str(member.status)]}")
+        embed.add_field(name="Highest Role", value=f"<:role:816699853685522442> {'@everyone' if member.top_role.name == '@everyone' else member.top_role.mention}")
+        embed.add_field(name="Join Position", value=f"<:invite:816700067632513054> #{msg}")
         #embed.add_field(name=f"**{member.display_name}'s Info:**", value=
         #                                                               f"> **Nickname:** {member.display_name}\n"
         #                                                               f"> **ID:** {member.id}\n"
+        #                                                               f"> **Messages:** {messages[0]}\n"
+        #                                                               f"> **Commands:** {command_count[0]}\n"
         #                                                               f"> **Highest Role:** {member.top_role.mention}\n"
         #                                                               f"> **Status:** {(status_dict[str(member.status)])}\n"
         #                                                               f"> **Registered:** {member.created_at.__format__('%B %d, %Y at %I:%M %p')}\n"
         #                                                               f"> **Joined:** {member.joined_at.__format__('%B %d, %Y at %I:%M %p')}\n"
         #                                                               f"> **Bot:** {member.bot}\n", inline=False)
-        embed.add_field(name="Mention", value=f"<:mention:815622649576423464> {member.mention}")
-        embed.add_field(name="Username", value=f"{'<:owner:810678076497068032>'if member.id == ctx.guild.owner.id else ''} {member}")
-        embed.add_field(name="Messages", value=messages[0])
-        embed.add_field(name="Commands", value=commandcount[0])
-        embed.add_field(name="Status", value=f"{status_dict[str(member.status)]} {member.activity.name}")
-        if len(member.roles) > 1:
-            role_list = member.roles[::-1]
-            role_list.remove(member.roles[0])
-            embed.add_field(name=f"Roles: [{len(role_list)}]", value =" ".join([role.mention for role in role_list]), inline=False)
-        else:
-            embed.add_field(name=f"Roles: [0]", value ="** **", inline=False)
-        embed.add_field(name="Permissions:", value=", ".join(perm_list).replace("_", " ").replace("guild", "server").title().replace("Tts", "TTS"), inline=False)
+        #if len(member.roles) > 1:
+        #    role_list = member.roles[::-1]
+        #    role_list.remove(member.roles[0])
+        #    embed.add_field(name=f"Roles: [{len(role_list)}]", value =" ".join([role.mention for role in role_list]), inline=False)
+        #else:
+        #    embed.add_field(name=f"Roles: [0]", value ="** **", inline=False)
+        #embed.add_field(name="Permissions:", value=", ".join(perm_list).replace("_", " ").replace("guild", "server").title().replace("Tts", "TTS"), inline=False)
         await ctx.send(embed=embed)
+
 
     @commands.command(brief="Show information about the current server.", aliases=["si","serverstats","ss","server"])
     @commands.guild_only()
@@ -396,7 +401,7 @@ class General(commands.Cog):
         await ctx.send(embed=em)
 
 
-    @commands.command(pass_context=True, brief="Send a bugreport to the bot developer.", aliases=['reportbug','reportissue',"issuereport"])
+    @commands.command(brief="Send a bugreport to the bot developer.", aliases=['reportbug','reportissue',"issuereport"])
     @commands.cooldown(2, 60, commands.BucketType.user)
     async def bugreport(self, ctx, *, bug:str):
         """
@@ -600,7 +605,7 @@ class General(commands.Cog):
         await ctx.send(embed=em)
 
 
-    @commands.command(pass_context=True, brief="Show the date a discord snowflake ID was created.", aliases=['id'])
+    @commands.command(brief="Show the date a discord snowflake ID was created.", aliases=['id'])
     async def snowflake(self, ctx, *, sid = None):
         """
         Usage: -snowflake <id>
@@ -618,7 +623,7 @@ class General(commands.Cog):
         return await ctx.send(msg)
 
 
-    @commands.command(pass_context=True, brief="Show some info on the bot's developer and purpose.", aliases=['boss'])
+    @commands.command(brief="Show some info on the bot's developer and purpose.", aliases=['boss'])
     async def botowner(self, ctx):
         """
         Usage:  -botowner
@@ -647,3 +652,38 @@ class General(commands.Cog):
             await ctx.send(embed=embed)
         else:
             await ctx.send("I don't know who my owner is ¯\_(ツ)_/¯.")
+
+    @commands.command(brief="Displays the source code or for a specific command.", aliases=['sourcecode'])
+    async def source(self, ctx, *, command: str = None):
+        """
+        Usage: -source [command]
+        Alias: -sourcecode
+        Notes:
+            If no command is specified, shows full repository
+        """
+        source_url = 'https://github.com/Hecate946/NGC0000'
+        branch = 'main'
+        if command is None:
+            return await ctx.send(source_url)
+
+        else:
+            obj = self.bot.get_command(command.replace('.', ' '))
+            if obj is None:
+                return await ctx.send(f'<:fail:816521503554273320> Command `{command}` does not exist.')
+
+            src = obj.callback.__code__
+            module = obj.callback.__module__
+            filename = src.co_filename
+
+        lines, firstlineno = inspect.getsourcelines(src)
+        if not module.startswith('discord'):
+            # not a built-in command
+            location = os.path.relpath(filename).replace('\\', '/')
+        else:
+            location = module.replace('.', '/') + '.py'
+            source_url = 'https://github.com/Hecate946/NGC0000'
+            branch = 'main'
+
+        final_url = f'<{source_url}/blob/{branch}/{location}#L{firstlineno}-L{firstlineno + len(lines) - 1}>'
+        msg = f"**__My source {'' if command is None else f'for {command}'} is located at:__**\n\n{final_url}"
+        await ctx.send(msg)

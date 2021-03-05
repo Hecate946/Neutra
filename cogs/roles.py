@@ -352,7 +352,7 @@ class Roles(commands.Cog):
     # The next couple commands are mostly from CorpBot.py with a few modifications
     # https://github.com/corpnewt/CorpBot.py
 
-    @commands.command(pass_context=True, brief="Shows an embed of all the server roles.", aliases=["roles"])
+    @commands.command(brief="Shows an embed of all the server roles.", aliases=["roles"])
     @commands.guild_only()
     @permissions.has_permissions(manage_messages=True)
     async def listroles(self, ctx, sort_order:str='default'):
@@ -393,7 +393,7 @@ class Roles(commands.Cog):
         await self.rolelist_paginate(ctx,sorted_list) # send the list to get actually printed to discord
 
 
-    @commands.command(pass_context=True, brief="Counts the number of members with a specific role.")
+    @commands.command(brief="Counts the number of members with a specific role.")
     @commands.guild_only()
     async def rolecall(self, ctx, *, rolename):
         """
@@ -417,7 +417,7 @@ class Roles(commands.Cog):
         embed.set_footer(text='ID: {}'.format(check_role.id))
         await ctx.send(embed=embed)
 
-    @commands.command(pass_context=True, brief="Lists the people who have the specified role.")
+    @commands.command(brief="Lists the people who have the specified role.")
     @commands.guild_only()
     async def whohas(self, ctx, *, rolename):
         """
@@ -489,7 +489,7 @@ class Roles(commands.Cog):
             await ctx.send("```Couldn't find role, are you sure you typed it correctly?\n\nYou typed: '{}'```".format(role))
 
 
-    @commands.command(pass_context=True, brief="Counts the number of roles on the server. (excluding @everyone)")
+    @commands.command(brief="Counts the number of roles on the server. (excluding @everyone)")
     @commands.guild_only()
     async def rolecount(self, ctx):
         """
@@ -497,7 +497,7 @@ class Roles(commands.Cog):
         """
         await ctx.send('This server has {:,} total roles.'.format(len(ctx.guild.roles) - 1))
 
-    @commands.command(pass_context=True, brief="Shows a list of roles that have zero members.")
+    @commands.command(brief="Shows a list of roles that have zero members.")
     @commands.guild_only()
     async def emptyroles(self, ctx):
         """

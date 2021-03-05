@@ -190,7 +190,7 @@ class Statistics(commands.Cog):
         return await picker.PagePicker(title="Most Recent Members to Join {} ({:,} total)".format(ctx.guild.name,len(ctx.guild.members)),ctx=ctx,list=[{"name":"{}. {}".format(y+1,x["name"]),"value":x["value"]} for y,x in enumerate(our_list)]).pick()
 
 
-    @commands.command(aliases=['listinvites','invitelist'], pass_context=True, brief="List all current server invites.")
+    @commands.command(aliases=['listinvites','invitelist'], brief="List all current server invites.")
     @commands.guild_only()
     @permissions.has_permissions(manage_invites=True)
     async def invites(self, ctx):
@@ -233,7 +233,7 @@ class Statistics(commands.Cog):
             await ctx.send(f"`{user}` has sent **{a}** message{'' if a == 1 else 's'}")
 
 
-    @commands.command(brief="Show the top message senders in the server", pass_context=True)
+    @commands.command(brief="Show the top message senders in the server")
     @commands.guild_only()
     @permissions.has_permissions(manage_messages=True)
     async def top(self, ctx):

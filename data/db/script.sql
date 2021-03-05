@@ -5,9 +5,7 @@ CREATE TABLE IF NOT EXISTS servers (
     server_owner_id bigint,
     server_owner_name varchar(50),
     server_join_position serial,
-    prefix VARCHAR(5) DEFAULT '-',
-    message_count bigint,
-    command_count bigint
+    prefix VARCHAR(5) DEFAULT '-'
 );
 
 CREATE TABLE IF NOT EXISTS logging (
@@ -34,8 +32,7 @@ CREATE TABLE IF NOT EXISTS users (
     nicknames text, 
     messagecount bigint DEFAULT 0 NOT NULL, 
     eyecount bigint DEFAULT 0 NOT NULL, 
-    commandcount bigint DEFAULT 0 NOT NULL,
-    location text
+    commandcount bigint DEFAULT 0 NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS mutes (
@@ -127,7 +124,6 @@ CREATE TABLE IF NOT EXISTS profanity (
 
 CREATE TABLE IF NOT EXISTS roleconfig (
     server_id bigint PRIMARY KEY,
-    whitelist text,
     autoroles text,
     reassign boolean DEFAULT true
 );
@@ -135,5 +131,5 @@ CREATE TABLE IF NOT EXISTS roleconfig (
 CREATE TABLE IF NOT EXISTS moderation (
     server_id bigint PRIMARY KEY,
     anti_invite boolean,
-    mod_role bigint
+    mute_role bigint
 );

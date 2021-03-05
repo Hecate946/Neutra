@@ -98,7 +98,7 @@ class Moderation(commands.Cog):
         if ctx.guild.me.top_role.position < role.position: return await ctx.send("The muted role is above my highest role. Aborting...")
         if ctx.author.top_role.position < role.position and ctx.author.id != ctx.guild.owner.id: return await ctx.send("The muted role is above your highest role. Aborting...")
         try:
-            await self.cxn.execute("UPDATE guilds SET MuteRole = ? WHERE GuildID = ?", role.id, ctx.guild.id)
+            await self.cxn.execute("UPDATE moderation SET mute_role = $1 WHERE server_id = $2", role.id, ctx.guild.id)
         except Exception as e: return await ctx.send(e)
         msg = await ctx.send(f"<:error:816456396735905844> Creating mute system. This process may take several minutes.")
         for channel in ctx.guild.channels:
@@ -568,7 +568,7 @@ class Moderation(commands.Cog):
             await ctx.send('<:checkmark:816534984676081705> Softbanned `{0}`'.format(", ".join(banned)))
 
 
-    @commands.command(pass_context=True, brief="Hackban multiple users by ID.")
+    @commands.command(brief="Hackban multiple users by ID.")
     @commands.bot_has_permissions(ban_members=True)
     @permissions.has_permissions(manage_guild=True)
     async def hackban(self, ctx, *users:str):
@@ -732,7 +732,7 @@ class Moderation(commands.Cog):
     async def _bots(self, ctx, search=100, prefix=None):
         """Removes a bot user's messages and messages with their optional prefix."""
 
-        getprefix = await self.cxn.field("SELECT Prefix FROM guilds WHERE GuildID = ?", ctx.guild.id)
+        getprefix = await self.cxn.field("SELECT prefix FROM server WHERE server_id = $1", ctx.guild.id)
 
         def predicate(m):
             return (m.webhook_id is None and m.author.bot) or m.content.startswith(tuple(getprefix))
