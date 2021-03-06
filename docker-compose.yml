@@ -1,0 +1,8 @@
+version: "3.3"
+
+services:
+  bot:
+    container_name: "NGC0000"
+    build: .
+    volumes:
+      - ./config.json:/NGC0000/config.json

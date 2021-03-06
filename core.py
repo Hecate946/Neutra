@@ -1,5 +1,6 @@
 import os
 import sys
+import aiohttp
 import asyncio
 import asyncpg
 import discord
@@ -15,8 +16,11 @@ from utilities import default
 
 BUILD_PATH = "data/db/script.sql"
 COGS = [x[:-3] for x in sorted(os.listdir('././cogs')) if x.endswith('.py') and x != "__init__.py"]
-CONNECTION = asyncio.get_event_loop().run_until_complete(asyncpg.create_pool(default.config()["database"]))
 OWNERS = default.config()["owners"]
+try:
+    CONNECTION = asyncio.get_event_loop().run_until_complete(asyncpg.create_pool(default.config()["database"]))
+except KeyboardInterrupt:
+    pass
 
 #This basically clears my console and beautifies the startup
 try:
@@ -65,8 +69,10 @@ class NGC0000(commands.AutoShardedBot):
         self.setup()
 
         self.token = default.config()["token"]
-
-        super().run(self.token, reconnect=True)
+        try:
+            super().run(self.token, reconnect=True)
+        except (RuntimeWarning, RuntimeError):
+            pass
 
     
     async def process_commands(self, message):
@@ -184,8 +190,8 @@ class NGC0000(commands.AutoShardedBot):
                 continue
             roles = ','.join([str(x.id) for x in member.roles if x.name != "@everyone"])
             names = member.display_name
-            await connection.execute("INSERT INTO users VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-            member.id, roles, member.guild.id, names, 0, 0, 0, None)
+            await connection.execute("INSERT INTO users VALUES ($1, $2, $3, $4, $5, $6, $7)",
+            member.id, roles, member.guild.id, names, 0, 0, 0)
 
 
     async def on_command_error(self, ctx, error):

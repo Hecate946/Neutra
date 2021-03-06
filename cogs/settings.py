@@ -197,7 +197,7 @@ class Settings(commands.Cog):
         Permission: Manage Server
         Output:     Reassigns roles when past members rejoin the server.
         """
-        query = '''SELECT reassign FROM roleconfig WHERE server = $1'''
+        query = '''SELECT reassign FROM roleconfig WHERE server_id = $1'''
         current = await self.cxn.fetchrow(query, ctx.guild.id)
         current = current[0]
         if current == False: 
@@ -220,30 +220,36 @@ class Settings(commands.Cog):
             msg = "That is not a valid setting."
             yes_no = current
         if yes_no != current:
-            await self.cxn.execute("UPDATE roleconfig SET reassign = $1 WHERE server = $2", reassign, ctx.guild.id)
+            await self.cxn.execute("UPDATE roleconfig SET reassign = $1 WHERE server_id = $2", reassign, ctx.guild.id)
         await ctx.send(msg)
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
         required_perms = member.guild.me.guild_permissions.manage_roles
         if not required_perms:
+            print("no perms")
             return
 
 
-        query = '''SELECT reassign FROM roleconfig WHERE server = $1'''
+        query = '''SELECT reassign FROM roleconfig WHERE server_id = $1'''
         reassign = await self.cxn.fetchrow(query, member.guild.id) or None
-        if reassign is None or reassign[0] == False or reassign[0] is None: 
+        if reassign is False or reassign[0] == False: 
             pass
         else:
+            print("so far so good")
             query = '''SELECT roles FROM users WHERE id = $1 and server_id = $2'''
-            old_roles = await self.cxn.fetchrow(query, member.guild.id, member.id) or None
-            if old_roles is None or old_roles[0] is None: return
-            roles = str(old_roles[0]).split(",")
+            old_roles = await self.cxn.fetchrow(query, member.id, member.guild.id) or None
+            if old_roles is None or old_roles[0] is None: return print("nothing to add")
+            print(old_roles)
+            roles = str(old_roles).split(",")
+            print(roles)
             for role_id in roles:
+                print(role_id)
                 role = member.guild.get_role(int(role_id))
                 try:
                     await member.add_roles(role)
-                except Exception as e: return
+                    print("worked")
+                except Exception as e: print(e)
 
         query = '''SELECT autoroles FROM roleconfig WHERE server_id = $1'''
         autoroles = await self.cxn.fetchrow(query, member.guild.id) or None

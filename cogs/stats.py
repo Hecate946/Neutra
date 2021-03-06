@@ -3,8 +3,10 @@ import logging
 import datetime
 
 from discord.ext import commands
+from discord.ext import menus
+from discord.ext.menus import MenuError
 
-from utilities import default, permissions, converters, picker
+from utilities import default, permissions, converters, pagination
 from core import OWNERS
 from collections import OrderedDict, Counter
 
@@ -168,7 +170,15 @@ class Statistics(commands.Cog):
                 }
             )
         our_list = sorted(our_list, key=lambda x:x["date"].timestamp() if x["date"] != None else -1)
-        return await picker.PagePicker(title="First Members to Join {} ({:,} total)".format(ctx.guild.name,len(ctx.guild.members)),ctx=ctx,list=[{"name":"{}. {}".format(y+1,x["name"]),"value":x["value"]} for y,x in enumerate(our_list)]).pick()
+        p = pagination.MainMenu(pagination.FieldPageSource(
+            entries=[("{}. {}".format(y+1,x["name"]), x["value"]) for y,x in enumerate(our_list)], 
+            title="First Members to Join {} ({:,} total)".format(ctx.guild.name,len(ctx.guild.members)),
+            per_page=15))
+
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send(e)
 
 
     @commands.command(brief="Lists the most recent users to join.")
@@ -187,7 +197,15 @@ class Statistics(commands.Cog):
                 }
             )
         our_list = sorted(our_list, key=lambda x:x["date"].timestamp() if x["date"] != None else -1, reverse=True)
-        return await picker.PagePicker(title="Most Recent Members to Join {} ({:,} total)".format(ctx.guild.name,len(ctx.guild.members)),ctx=ctx,list=[{"name":"{}. {}".format(y+1,x["name"]),"value":x["value"]} for y,x in enumerate(our_list)]).pick()
+        p = pagination.MainMenu(pagination.FieldPageSource(
+            entries=[("{}. {}".format(y+1,x["name"]), x["value"]) for y,x in enumerate(our_list)], 
+            title="First Members to Join {} ({:,} total)".format(ctx.guild.name,len(ctx.guild.members)),
+            per_page=15))
+
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send(e)
 
 
     @commands.command(aliases=['listinvites','invitelist'], brief="List all current server invites.")
@@ -569,7 +587,7 @@ class Statistics(commands.Cog):
     @commands.command(brief="Get the most commonly used words of a user.")
     @commands.guild_only()
     @permissions.has_permissions(manage_messages=True)
-    async def words(self, ctx, *, member: discord.Member=None):
+    async def words(self, ctx, member: discord.Member=None, limit:int = 20):
         """
         Usage: -words [user]
         Output: Most commonly used words by the passed user
@@ -584,7 +602,7 @@ class Statistics(commands.Cog):
         all_msgs = [x[0] for x in all_msgs]
         all_msgs = ' '.join(all_msgs).split()
         all_msgs = list(filter(lambda x: len(x) > 3, all_msgs))
-        all_words = (Counter(all_msgs).most_common()[:20])
+        all_words = (Counter(all_msgs).most_common()[:limit])
         msg = ""
         integer = 0
         for i in all_words:
@@ -592,7 +610,11 @@ class Statistics(commands.Cog):
             args = i.split(" ")
             integer += 1
             msg += f'[{str(integer).zfill(2)}] Uses: [{args[1].zfill(2)}] Word: {args[0]}\n'
-        
+        pages = pagination.MainMenu(pagination.TextPageSource(msg, prefix="```ini", max_size=1000))
+        try:
+            await pages.start(ctx)
+        except MenuError as e:
+            await ctx.send(str(e))
         await ctx.send(f"Most common words sent by **{member.display_name}**```ini\n{msg}```")
 
 

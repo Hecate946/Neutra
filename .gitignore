@@ -2,13 +2,10 @@
 .vscode
 .ngcvenv
 .testervenv
-data/db/database.db
-data/db/database.db-journal
 *__pycache__
 .vscode
 *.json
-cogs/config.py
 tokens.txt
 *.log
+logs
 *.0
-utilities

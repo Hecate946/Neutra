@@ -1,9 +1,9 @@
 import discord
 
-from discord.ext import commands
+from discord.ext import commands, menus
 
 from core import OWNERS
-from utilities import permissions, picker
+from utilities import permissions, pagination
 
 
 
@@ -123,16 +123,16 @@ class Warnings(commands.Cog):
         query = '''SELECT COUNT(*) FROM warn'''
         count = await self.cxn.fetchrow(query)
         query = '''SELECT id, warnings FROM warn ORDER BY warnings DESC'''
-        records = await self.cxn.fetch(query)
+        records = await self.cxn.fetch(query) or None
+        if records is None:
+            return await ctx.send(f"<:error:816456396735905844> No current warnings exist on this server.")
 
-        warn_list = []
-        for i in records:
-            warn_list.append(
-                {
-                    "name": str(ctx.guild.get_member(i[0])),
-                    "value":"{}".format(i[1]),
-                }
-            )
-        return await picker.PagePicker(title="{} Warn List ({:,} total)".format(ctx.guild.name, int(count[0])),
-        ctx=ctx, list=[{"name":"{}. {}".format(y+1,x["name"]), 
-        "value":"Warnings: " + x["value"]} for y, x in enumerate(warn_list)]).pick()
+        p = pagination.SimplePages(
+            entries=[[f"User: `{ctx.guild.get_member(x[0]) or 'Not Found'}` Warnings `{x[1]}`"] for x in records], 
+            per_page=20)
+        p.embed.title = "{} Warn List ({:,} total)".format(ctx.guild.name, int(count[0]))
+
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send(e)

@@ -2,6 +2,7 @@ import random
 import discord
 import requests
 import io
+import re
 
 from discord.ext import commands
 from datetime import datetime
@@ -25,6 +26,7 @@ class Logging(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.cxn = bot.connection
+        self.uregex = re.compile(r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+")
 
         self.current_streamers = list()
 
@@ -244,52 +246,52 @@ class Logging(commands.Cog):
 
 
     @commands.Cog.listener()
-    async def on_member_unban(self, member):
+    async def on_member_unban(self, guild, user):
         query = '''SELECT logging_webhook_id FROM logging WHERE server_id = $1'''
-        webhook_id = await self.cxn.fetchrow(query, member.guild.id) or None
+        webhook_id = await self.cxn.fetchrow(query, guild.id) or None
         if webhook_id is None or "None" in str(webhook_id): 
             return
 
         to_log_or_not_to_log = await self.cxn.fetchrow("""
         SELECT bans FROM logging WHERE server_id = $1
-        """, member.guild.id)
+        """, guild.id)
         if to_log_or_not_to_log[0] is not True: return 
 
         webhook_id = int(webhook_id[0])
         webhook = await self.bot.fetch_webhook(webhook_id)
-        if member.guild.id != webhook.guild.id: return
+        if guild.id != webhook.guild.id: return
 
         embed = discord.Embed(
-                      description=f"**User:** {member.mention} **Name:** `{member}`\n",
+                      description=f"**User:** {user.mention} **Name:** `{user}`\n",
                       colour=default.config()["embed_color"],
                       timestamp=datetime.utcnow())
         embed.set_author(name=f"User Unbanned")
-        embed.set_footer(text=f"User ID: {member.id}")
+        embed.set_footer(text=f"User ID: {user.id}")
         await webhook.execute(embed=embed, username=self.bot.user.name)
 
 
     @commands.Cog.listener()
-    async def on_member_ban(self, member):
+    async def on_member_ban(self, guild, user):
         query = '''SELECT logging_webhook_id FROM logging WHERE server_id = $1'''
-        webhook_id = await self.cxn.fetchrow(query, member.guild.id) or None
+        webhook_id = await self.cxn.fetchrow(query, guild.id) or None
         if webhook_id is None or "None" in str(webhook_id): 
             return
 
         to_log_or_not_to_log = await self.cxn.fetchrow("""
         SELECT bans FROM logging WHERE server_id = $1
-        """, member.guild.id)
+        """, guild.id)
         if to_log_or_not_to_log[0] is not True: return 
 
         webhook_id = int(webhook_id[0])
         webhook = await self.bot.fetch_webhook(webhook_id)
-        if member.guild.id != webhook.guild.id: return
+        if guild.id != webhook.guild.id: return
 
         embed = discord.Embed(
-                      description=f"**User:** {member.mention} **Name:** `{member}`\n",
+                      description=f"**User:** {user.mention} **Name:** `{user}`\n",
                       colour=default.config()["embed_color"],
                       timestamp=datetime.utcnow())
         embed.set_author(name=f"User Banned")
-        embed.set_footer(text=f"User ID: {member.id}")
+        embed.set_footer(text=f"User ID: {user.id}")
         await webhook.execute(embed=embed, username=self.bot.user.name)
 
     @commands.Cog.listener()
@@ -514,8 +516,8 @@ class Logging(commands.Cog):
         embed = discord.Embed(description=f"**Author:**  {after.author.mention}, **ID:** `{after.author.id}`\n"
                                           f"**Channel:** {after.channel.mention} **ID:** `{after.channel.id}`\n"
                                           f"**Server:** `{after.guild.name}` **ID:** `{after.guild.id},`\n\n"
-                                          f"**__Old Message Content__**\n ```fix\n{before.content}```\n"
-                                          f"**__New Message Content__**\n ```fix\n{after.content}```\n"
+                                          f"**__Old Message Content__**\n ```fix\n{before.clean_content}```\n"
+                                          f"**__New Message Content__**\n ```fix\n{after.clean_content}```\n"
                                           f"**[Jump to message](https://discord.com/channels/{after.guild.id}/{after.channel.id}/{after.id})**"
         , color=default.config()["embed_color"], timestamp=datetime.utcnow())
         embed.set_author(name="Message Edited", icon_url="https://media.discordapp.net/attachments/506838906872922145/603643138854354944/messageupdate.png")
@@ -546,9 +548,9 @@ class Logging(commands.Cog):
         if message.guild.id != webhook.guild.id: return
 
         if message.content.startswith("```"):
-            content = f"**__Message Content__**\n {message.content}"
+            content = f"**__Message Content__**\n {message.clean_content}"
         else:
-            content = f"**__Message Content__**\n ```fix\n{message.content}```"
+            content = f"**__Message Content__**\n ```fix\n{message.clean_content}```"
 
         embed = discord.Embed(description=f"**Author:**  {message.author.mention}, **ID:** `{message.author.id}`\n"
                                           f"**Channel:** {message.channel.mention} **ID:** `{message.channel.id}`\n"
