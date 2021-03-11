@@ -84,6 +84,7 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_channel_update(self, before, after):
+        if type(before) != discord.channel.TextChannel: return
         query = '''SELECT logging_webhook_id FROM logging WHERE server_id = $1'''
         webhook_id = await self.cxn.fetchrow(query, before.guild.id) or None
         if webhook_id is None or "None" in str(webhook_id): 
@@ -121,6 +122,8 @@ class Logging(commands.Cog):
             await webhook.execute(embed=embed, username=self.bot.user.name)
 
         elif before.topic != after.topic:
+            if type(before) != discord.TextChannel:
+                return
             embed = discord.Embed(
                           description=f"**Channel:** {after.mention} **Name:** `{after}`\n"
                                       f"**Old Topic:** `{before.topic}`\n"

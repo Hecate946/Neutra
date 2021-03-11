@@ -24,7 +24,7 @@ class Channels(commands.Cog):
 
     @commands.command(brief="Move a member from one voice channel into another")
     @commands.guild_only()
-    @commands.bot_has_permissions(move_members=True)
+    @commands.bot_has_guild_permissions(move_members=True)
     @permissions.has_permissions(move_members=True)
     async def vcmove(self, ctx, targets:commands.Greedy[discord.Member] = None, channel:str = None):
         """
@@ -64,18 +64,19 @@ class Channels(commands.Cog):
 
     @commands.command(brief="Kick members from a voice channel")
     @commands.guild_only()
-    @commands.bot_has_permissions(move_members=True)
     @permissions.has_permissions(move_members=True)
-    async def vckick(self, ctx, targets:commands.Greedy[discord.Member] = None):
+    @commands.bot_has_guild_permissions(move_members=True)
+    async def vckick(self, ctx, targets:commands.Greedy[discord.Member]):
         """
         Usage:      -vckick <target> <target>
         Output:     Kicks passed members from their channel
         Permission: Move Members
         """
-        if not len(targets): return await ctx.send(f"Usage: `{ctx.prefix}vc kick <target> [target]...`")
+        if not len(targets): return await ctx.send(f"Usage: `{ctx.prefix}vckick <target> [target]...`")
         voice = []
         for target in targets:
-            if ctx.author.top_role.position <= target.top_role.position and ctx.author.id not in OWNERS or ctx.author.id != ctx.guild.owner.id: return await ctx.send('<:fail:816521503554273320> You cannot move other staff members')
+            if ctx.author.top_role.position <= target.top_role.position and ctx.author.id not in OWNERS or ctx.author.id != ctx.guild.owner.id and target.id != ctx.author.id:
+                return await ctx.send('<:fail:816521503554273320> You cannot move other staff members')
             try:
                 await target.edit(voice_channel=None)
             except discord.HTTPException:
@@ -92,10 +93,26 @@ class Channels(commands.Cog):
                     vckicked += [username]
             await ctx.send('<:checkmark:816534984676081705> VC Kicked `{0}`'.format(", ".join(vckicked)))
 
+    @commands.command()
+    @commands.guild_only()
+    @permissions.has_permissions(move_members=True)
+    @commands.bot_has_guild_permissions(move_members=True)
+    async def vcpurge(self, ctx, channel:discord.VoiceChannel = None):
+        if channel is None: return await ctx.send(f"Usage: `{ctx.prefix}vcpurge <voice channel name/id>`")
+        if channel.members is None:
+            return await ctx.send("<:error:816456396735905844> No members in voice channel.")
+        for member in channel.members:
+            try:
+                if await permissions.voice_priv(ctx, member):
+                    continue
+                await member.edit(voice_channel=None)
+            except Exception:
+                continue
+
 
     @commands.group(brief="Find and destroy a channel")
     @commands.guild_only()
-    @commands.bot_has_permissions(manage_channels=True)
+    @commands.bot_has_guild_permissions(manage_channels=True)
     @permissions.has_permissions(manage_guild=True, manage_channels=True)
     async def destroy(self, ctx):
         """
@@ -114,7 +131,7 @@ class Channels(commands.Cog):
 
     @destroy.group(aliases=['tc'])
     @commands.guild_only()
-    @commands.bot_has_permissions(manage_channels=True)
+    @commands.bot_has_guild_permissions(manage_channels=True)
     async def textchannel(self, ctx, textchannel: discord.TextChannel = None):
         """ Destroy a text channel """
         if textchannel is None: return await ctx.send(f"Usage: `{ctx.prefix}destroy tc <ID/name>`")
@@ -136,9 +153,20 @@ class Channels(commands.Cog):
             return await ctx.send('I couldn\'t find that voice channel')
 
 
+    @destroy.group(aliases=['cc'])
+    async def category(self, ctx, category: discord.CategoryChannel = None):
+        """ Destroy a category """
+        if category is None: return await ctx.send(f"Usage: `{ctx.prefix}destroy cc <ID/name>`")
+        try:
+            await category.delete()
+            await ctx.send(f'Voice channel **{category}** has been deleted by {ctx.author.display_name}')
+        except Exception:
+            return await ctx.send('I couldn\'t find that category')
+
+    '''
     @commands.group(brief="Create a channel (Command Group")
     @commands.guild_only()
-    @commands.bot_has_permissions(manage_channels=True)
+    @commands.bot_has_guild_permissions(manage_channels=True)
     @permissions.has_permissions(manage_channels=True)
     async def create(self, ctx):
         """
@@ -177,11 +205,11 @@ class Channels(commands.Cog):
             await ctx.send(f'<:checkmark:816534984676081705> Voice channel **{name}** has been created by {ctx.author.display_name}')
         except:
             return await ctx.send('<:fail:816521503554273320> I couldn\'t create that voice channel')
-
+    '''
 
     @commands.command(brief="Set the slowmode of the current channel in seconds.")
     @commands.guild_only()
-    @commands.bot_has_permissions(manage_channels=True)
+    @commands.bot_has_guild_permissions(manage_channels=True)
     @permissions.has_permissions(manage_channels=True)
     async def slowmode(self, ctx, time: int):
         """
@@ -199,7 +227,7 @@ class Channels(commands.Cog):
 
     @commands.command(aliases=["lockdown","lockchannel"], brief="Lock message sending in a channel.")
     @commands.guild_only()
-    @commands.bot_has_permissions(manage_channels=True)
+    @commands.bot_has_guild_permissions(manage_channels=True)
     @permissions.has_permissions(manage_channels=True)
     async def lock(self, ctx, channel_ = None, minutes_: int = None):
         """
@@ -262,7 +290,7 @@ class Channels(commands.Cog):
 
     @commands.command(brief="Unlock message sending in the channel.", aliases=["unlockchannel"])
     @commands.guild_only()
-    @commands.bot_has_permissions(manage_channels=True)
+    @commands.bot_has_guild_permissions(manage_channels=True)
     @permissions.has_permissions(manage_channels=True)
     async def unlock(self, ctx, channel:discord.TextChannel = None, surpress = False):
         """
@@ -302,20 +330,22 @@ class Channels(commands.Cog):
 
     @commands.command(brief="Lists all channels in the server in an embed.", aliases=['channels'])
     @commands.guild_only()
-    @commands.bot_has_permissions(embed_links=True)
+    @commands.bot_has_guild_permissions(embed_links=True)
     @commands.cooldown(1, 20, commands.BucketType.guild)
     @permissions.has_permissions(manage_messages=True)
-    async def listchannels(self, ctx):
+    async def listchannels(self, ctx, guild:int = None):
         """
         Usage:      -listchannels
         Alias:      -channels
         Output:     Embed of all server channels
         Permission: Manage Messages
         """
-
+        if guild is None:
+            guild = ctx.guild.id
+        guild = self.bot.get_guild(guild)
         channel_categories = {}
 
-        for chn in sorted(ctx.guild.channels, key=lambda c: c.position):
+        for chn in sorted(guild.channels, key=lambda c: c.position):
             if isinstance(chn, discord.CategoryChannel) and chn.id not in channel_categories:
                 channel_categories[chn.id] = []
             else:
@@ -419,6 +449,7 @@ class Paginator:
                 description = description_
             else:
                 description = description[:EmbedLimits.Description]
+        
 
         self._pages.append(discord.Embed(title=title, description=description, color=default.config()["embed_color"]))
         self._current_page += 1
@@ -445,6 +476,7 @@ class Paginator:
             page.description = str(description)
             self.description = description
             self._char_count += len(description)
+        self.color = default.config()["embed_color"]
 
     def _add_field(self):
         if not self._current_field:

@@ -10,8 +10,17 @@ from core import OWNERS
 
 EMBED_MAX_LEN = 2048 # constant for paginating embeds
 MAX_USERS = 30 # max people to list for -whohas
-STATUSMAP1 = {discord.Status.online:'1',discord.Status.dnd:'2',discord.Status.idle:'3'} ##for sorting
-STATUSMAP2 = {discord.Status.online:'<:online:810650040838258711>',discord.Status.dnd:'<:dnd:810650845007708200>',discord.Status.idle:'<:idle:810650560146833429>',discord.Status.offline:'<:offline:810650959859810384>'}
+STATUSMAP1 = {
+    discord.Status.online:'1',
+    discord.Status.dnd:'2',
+    discord.Status.idle:'3'
+    } ##for sorting
+STATUSMAP2 = {
+    discord.Status.online:'<:online:810650040838258711>',
+    discord.Status.dnd:'<:dnd:810650845007708200>',
+    discord.Status.idle:'<:idle:810650560146833429>',
+    discord.Status.offline:'<:offline:810650959859810384>'
+    }
 
 
 def setup(bot):
@@ -69,11 +78,11 @@ class Roles(commands.Cog):
 
     @commands.command(aliases=["ar",'adrl', 'addrl', 'adrole'], brief="Adds multiple roles to multiple users")
     @commands.guild_only()
-    @commands.bot_has_permissions(manage_roles=True)
+    @commands.bot_has_guild_permissions(manage_roles=True)
     @permissions.has_permissions(manage_guild=True, manage_roles=True)
     async def addrole(self, ctx, targets: commands.Greedy[discord.Member], *roles: discord.Role):
         """
-        Usage:      -removerole [user] [user...] [role] [role]...
+        Usage:      -addrole [user] [user...] [role] [role]...
         Aliases:    -ar, -adrole, -adrl, -addrl
         Example:    -ar Hecate#3523 @NGC0000 @Verified Member
         Permission: Manage Server, Manage Roles
@@ -110,7 +119,7 @@ class Roles(commands.Cog):
 
     @commands.command(aliases=["rr",'remrole','rmrole','rmrl'], brief="Removes multiple roles from multiple users")
     @commands.guild_only()
-    @commands.bot_has_permissions(manage_roles=True)
+    @commands.bot_has_guild_permissions(manage_roles=True)
     @permissions.has_permissions(manage_guild=True, manage_roles=True)
     async def removerole(self, ctx, targets: commands.Greedy[discord.Member], *roles: discord.Role):
         """
@@ -177,7 +186,7 @@ class Roles(commands.Cog):
 
     @commands.command(aliases=['cr','rolecreate'], brief="Create a role with a specified name")
     @commands.guild_only()
-    @commands.bot_has_permissions(manage_roles=True)
+    @commands.bot_has_guild_permissions(manage_roles=True)
     @permissions.has_permissions(manage_roles=True)
     async def createrole(self, ctx, *, role_name:str):
         """
@@ -197,7 +206,7 @@ class Roles(commands.Cog):
 
     @commands.command(brief="Deletes a role with a specified name.", aliases=["dr","roledelete"])
     @commands.guild_only()
-    @commands.bot_has_permissions(manage_roles=True)
+    @commands.bot_has_guild_permissions(manage_roles=True)
     @permissions.has_permissions(administrator=True)
     async def deleterole(self, ctx, *, role: discord.Role):
         """
@@ -207,6 +216,10 @@ class Roles(commands.Cog):
         Permission: Administrator
         """
         if role is None: return await ctx.send(f"Usage: `{ctx.prefix}deleterole <role>`")
+        if role.position > ctx.author.top_role.position:
+            return await ctx.send(f"<:fail:816521503554273320> That role is above your highest role")
+        if role.position == ctx.author.top_role.position:
+            return await ctx.send(f"<:fail:816521503554273320> That role is your highest role")
         else:
             await role.delete()
             await ctx.send(f'<:checkmark:816534984676081705> Deleted role `{role.name}`')
@@ -214,7 +227,7 @@ class Roles(commands.Cog):
         
     @commands.group(brief="Adds or removes a role to all users with a role. (Command Group)", aliases=['multirole'])
     @commands.guild_only()
-    @commands.bot_has_permissions(manage_guild=True, manage_roles=True)
+    @commands.bot_has_guild_permissions(manage_guild=True, manage_roles=True)
     @permissions.has_permissions(manage_guild=True, manage_roles=True)
     async def massrole(self, ctx):
         """ 
@@ -241,9 +254,16 @@ class Roles(commands.Cog):
     async def add(self, ctx, role1: discord.Role = None, role2: discord.Role = None):
         if role1 is None: return await ctx.send('Usage: `{ctx.prefix}massrole add <role1> <role2> ')
         if role2 is None: return await ctx.send('Usage: `{ctx.prefix}massrole add <role1> <role2> ')
-        if ctx.author.top_role.position < role2.position and ctx.author.id not in OWNERS: return await ctx.send("You have insufficient permission to execute this command")
         if ctx.author.top_role.position < role1.position and ctx.author.id not in OWNERS: return await ctx.send("You have insufficient permission to execute this command")
         if role2.permissions.administrator and ctx.author.id not in OWNERS: return await ctx.send("I cannot manipulate an admin role")
+        if role2.position > ctx.author.top_role.position and ctx.author.id not in OWNERS and ctx.author.id != ctx.guild.owner.id: 
+            return await ctx.send("That role is higher than your highest role") 
+        if role2.position == ctx.author.top_role.position and ctx.author.id not in OWNERS and ctx.author.id != ctx.guild.owner.id: 
+            return await ctx.send("That role is your highest role") 
+        if role1.position > ctx.author.top_role.position and ctx.author.id not in OWNERS and ctx.author.id != ctx.guild.owner.id: 
+            return await ctx.send("That role is higher than your highest role") 
+        if role1.position == ctx.author.top_role.position and ctx.author.id not in OWNERS and ctx.author.id != ctx.guild.owner.id: 
+            return await ctx.send("That role is your highest role") 
         number_of_members = []
         for member in ctx.guild.members:
             if role1 in member.roles and not role2 in member.roles:
@@ -265,9 +285,18 @@ class Roles(commands.Cog):
     async def remove(self, ctx, role1: discord.Role, role2: discord.Role):
         if role1 is None: return await ctx.send('Usage: `{ctx.prefix}massrole add <role1> <role2> ')
         if role2 is None: return await ctx.send('Usage: `{ctx.prefix}massrole add <role1> <role2> ')
-        if ctx.author.top_role.position < role2.position and ctx.author.id not in OWNERS: return await ctx.send("You have insufficient permission to execute this command")
-        if ctx.author.top_role.position < role1.position and ctx.author.id not in OWNERS: return await ctx.send("You have insufficient permission to execute this command")
-        if role2.permissions.administrator and ctx.author.id not in OWNERS: return await ctx.send("I cannot manipulate an admin role")
+        if ctx.author.top_role.position < role1.position and ctx.author.id not in OWNERS:
+            return await ctx.send("You have insufficient permission to execute this command")
+        if role2.permissions.administrator and ctx.author.id not in OWNERS:
+            return await ctx.send("I cannot manipulate an admin role")
+        if role2.position > ctx.author.top_role.position and ctx.author.id not in OWNERS and ctx.author.id != ctx.guild.owner.id: 
+            return await ctx.send("That role is higher than your highest role") 
+        if role2.position == ctx.author.top_role.position and ctx.author.id not in OWNERS and ctx.author.id != ctx.guild.owner.id: 
+            return await ctx.send("That role is your highest role") 
+        if role1.position > ctx.author.top_role.position and ctx.author.id not in OWNERS and ctx.author.id != ctx.guild.owner.id: 
+            return await ctx.send("That role is higher than your highest role") 
+        if role1.position == ctx.author.top_role.position and ctx.author.id not in OWNERS and ctx.author.id != ctx.guild.owner.id: 
+            return await ctx.send("That role is your highest role")
         number_of_members = []
         for member in ctx.guild.members:
             if role1 in member.roles and role2 in member.roles:

@@ -15,7 +15,8 @@ async def check_permissions(ctx, perms, *, check=all):
     if ctx.author.id in owners:
         return True
 
-    resolved = ctx.channel.permissions_for(ctx.author)
+    #resolved = ctx.channel.permissions_for(ctx.author)
+    resolved = ctx.author.guild_permissions
     return check(getattr(resolved, name, None) == value for name, value in perms.items())
 
 
@@ -31,29 +32,51 @@ async def check_priv(ctx, member):
     try:
         # Self checks
         if member == ctx.author:
-            return await ctx.send(f"You can't {ctx.command.name} yourself")
+            return await ctx.send(f"You cannot {ctx.command.name} yourself")
         if member.id == ctx.bot.user.id:
-            return await ctx.send("So that's what you think of me huh..? sad ;-;")
+            return await ctx.send(f"Fuck off or I'll {ctx.command.name} you. Little piece of shit.")
 
         # Check if user bypasses
         if ctx.author.id == ctx.guild.owner.id:
-            return False
+            return None
+        if ctx.author.id in owners:
+            return None
 
         # Now permission check
         if member.id in owners:
             if ctx.author.id not in owners:
-                return await ctx.send(f"I can't {ctx.command.name} my creator ;-;")
+                return await ctx.send(f"I cannot {ctx.command.name} my creator.")
             else:
                 pass
         if member.id == ctx.guild.owner.id:
-            return await ctx.send(f"You can't {ctx.command.name} the owner, lol")
+            return await ctx.send(f"You cannot {ctx.command.name} the server owner.")
         if ctx.author.top_role == member.top_role:
-            return await ctx.send(f"You can't {ctx.command.name} someone who has the same permissions as you...")
+            return await ctx.send(f"You cannot {ctx.command.name} someone who has the same permissions as you.")
         if ctx.author.top_role < member.top_role:
-            return await ctx.send(f"Nope, you can't {ctx.command.name} someone higher than yourself.")
+            return await ctx.send(f"You cannot {ctx.command.name} someone with a higher role than you.")
     except Exception:
         pass
 
+async def voice_priv(ctx, member):
+    try:
+        if member == ctx.author:
+            return None
+        if member.id == ctx.bot.user.id:
+            return None
+
+        if ctx.author.id == ctx.guild.owner.id:
+            return None
+        if ctx.author.id in owners:
+            return None
+        
+        if member.id == ctx.guild.owner.id:
+            return await ctx.send(f"You cannot {ctx.command.name} the server owner.")
+        if ctx.author.top_role == member.top_role:
+            return await ctx.send(f"You cannot {ctx.command.name} someone who has the same permissions as you.")
+        if ctx.author.top_role < member.top_role:
+            return await ctx.send(f"You cannot {ctx.command.name} someone who has a higher role than you.")
+    except Exception:
+        raise
 
 def can_handle(ctx, permission: str):
     """ Checks if bot has permissions or is in DMs right now """

@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import aiohttp
 import asyncio
 import asyncpg
@@ -7,35 +8,44 @@ import discord
 import logging
 import traceback
 
+from logging.handlers import RotatingFileHandler
 from datetime import datetime
 from discord.ext import commands, tasks
 from colr import color
 
 from utilities import default
 
+MAX_LOGGING_BYTES = 32 * 1024 * 1024 # 32 MiB
+BUILD_PATH        = "data/db/script.sql"
+COGS              = [x[:-3] for x in sorted(os.listdir('././cogs')) if x.endswith('.py') and x != "__init__.py"]
+OWNERS            = default.config()["owners"]
+CONNECTION        = asyncio.get_event_loop().run_until_complete(asyncpg.create_pool(default.config()["database"]))
 
-BUILD_PATH = "data/db/script.sql"
-COGS = [x[:-3] for x in sorted(os.listdir('././cogs')) if x.endswith('.py') and x != "__init__.py"]
-OWNERS = default.config()["owners"]
-try:
-    CONNECTION = asyncio.get_event_loop().run_until_complete(asyncpg.create_pool(default.config()["database"]))
-except KeyboardInterrupt:
-    pass
+# Set up our command logger
 
-#This basically clears my console and beautifies the startup
+command_logger = logging.getLogger("NGC0000")
+command_logger.setLevel(logging.DEBUG)
+command_logger_handler = RotatingFileHandler(
+    filename="./data/logs/commands.log",
+    encoding="utf-8",
+    mode="w",
+    maxBytes=MAX_LOGGING_BYTES,
+    backupCount=5
+    )
+command_logger.addHandler(command_logger_handler)
+command_logger_format = logging.Formatter(
+    '{asctime}: [{levelname}] {name} || {message}', '%Y-%m-%d %H:%M:%S', style='{'
+    )
+command_logger_handler.setFormatter(command_logger_format)
+
+# This basically clears my console and beautifies the startup
 try:
     os.system('clear')
 except Exception:
     for _ in range(100):
         print()
-#SEPARATOR = '=' * len(str(CONNECTION))
-#print(SEPARATOR)
-#print(CONNECTION)
-#print(SEPARATOR)
-
 
 connection = CONNECTION
-
 
 async def get_prefix(bot, message):
     if not message.guild:
@@ -50,14 +60,13 @@ class NGC0000(commands.AutoShardedBot):
     def __init__(self):
 
         super().__init__(command_prefix=get_prefix, case_insensitive=True, owner_ids=OWNERS, intents=discord.Intents.all(),)
-
-        self.db_updater.start()
-
+        # Just an index to show how many database updates have taken place
+        self.index = 0
 
     def setup(self):
         for cog in COGS:
-            print(color(fore="#2EFF00", text=f"Loaded: {str(cog).upper()}"))
             self.load_extension(f"cogs.{cog}")
+            print(color(fore="#3EC4CD", text=f"Loaded: {str(cog).upper()}"))
 
 
     async def scriptexec(self, path):
@@ -69,10 +78,8 @@ class NGC0000(commands.AutoShardedBot):
         self.setup()
 
         self.token = default.config()["token"]
-        try:
-            super().run(self.token, reconnect=True)
-        except (RuntimeWarning, RuntimeError):
-            pass
+
+        super().run(self.token, reconnect=True)
 
     
     async def process_commands(self, message):
@@ -126,23 +133,45 @@ class NGC0000(commands.AutoShardedBot):
             await self.invoke(ctx)
 
 
-    @tasks.loop(minutes=1)
+    @tasks.loop(minutes=10)
     async def db_updater(self):
         await self.update_db()
-        #Not pretty but might as well set the bot status here
-        #For some weird reason after awhile the status doesn't show up so... updating it every 10 minutes.
-        await self.set_status()      
-
+        # The real 
+        self.index += 1
+        msg    = f"DATABASE TASK UPDATE #{self.index}"
+        top    = "##" + "#" * (len(msg) + 4)
+        middle = " ##" + f" {msg} " + "##"
+        bottom = "  ##"+ "#" * (len(msg) + 4)
+        print(color(fore="#1EDA10", text=top))
+        print(color(fore="#1EDA10", text=middle))
+        print(color(fore="#1EDA10", text=bottom))
+        sys.stdout.write("\033[F" * 3)
+        # Not pretty but might as well set the bot status here
+        # For some weird reason after awhile the status doesn't show up so... updating it every minute.
+        await self.set_status()
 
     @db_updater.before_loop
     async def before_some_task(self):
+        SEPARATOR = '================================'
         await self.wait_until_ready()
+        # After the bot is ready, but before the task loop for the DB updater starts,
+        # We can execute the SQL script to make sure we have all our tables.
         if os.path.isfile(BUILD_PATH):
+            print(color(fore="#830083", text=SEPARATOR))
+            print(color(fore="#830083", text="Executing data/db/script.sql..."))
+            print(color(fore="#830083", text=SEPARATOR))
             await self.scriptexec(BUILD_PATH)
-
+            await asyncio.sleep(0.7)
+            sys.stdout.write("\033[F" * 2)
+            print(color(fore="#830083", text="Successfully executed SQL script"))
+            print(color(fore="#830083", text=SEPARATOR))
+            await asyncio.sleep(0.7)
+            sys.stdout.write("\033[F" * 2)
+            if CONNECTION is not None:
+                print(color(fore="#830083", text=f"Established Database Connection."))
+                print(color(fore="#830083", text=SEPARATOR))
 
     async def set_status(self):
-
         if default.config()["activity"] == "listening":
             a = discord.ActivityType.listening
         elif default.config()["activity"] == "watching":
@@ -153,12 +182,23 @@ class NGC0000(commands.AutoShardedBot):
             a = discord.ActivityType.playing
 
         if default.config()["presence"] == "":
-            presence = None
+            activity = discord.Activity(type=a)
         else:
             presence = default.config()["presence"]
+            activity = discord.Activity(type=a, name=presence)
 
-        activity = discord.Activity(type=a, name=presence)
-        await self.change_presence(status=default.config()["status"], activity=activity)
+        status = default.config()["status"]
+        if status == "idle":
+            s = discord.Status.idle
+        elif status == "dnd":
+            s = discord.Status.dnd
+        elif status == "offline":
+            s = discord.Status.invisible
+        else:
+            # Online when in doubt
+            s = discord.Status.online
+
+        await self.change_presence(status=s, activity=activity)
 
 
     async def update_db(self):
@@ -170,7 +210,7 @@ class NGC0000(commands.AutoShardedBot):
 
 
         await connection.executemany("""INSERT INTO roleconfig (server_id, whitelist, autoroles, reassign) VALUES ($1, $2, $3, $4)
-         ON CONFLICT (server_id) DO NOTHING""",
+        ON CONFLICT (server_id) DO NOTHING""",
         ((server.id, None, None, True) for server in self.guilds))
 
 
@@ -184,20 +224,46 @@ class NGC0000(commands.AutoShardedBot):
 
         member_list = self.get_all_members()
         for member in member_list:
-            query = '''SELECT * FROM users WHERE id = $1 AND server_id = $2'''
-            result = await connection.fetch(query, member.id, member.guild.id)
-            if result !=[]: 
+            query = '''SELECT * FROM users WHERE user_id = $1 AND server_id = $2'''
+            result = await connection.fetch(query, member.id, member.guild.id) or None
+            if result is not None:
                 continue
             roles = ','.join([str(x.id) for x in member.roles if x.name != "@everyone"])
             names = member.display_name
-            await connection.execute("INSERT INTO users VALUES ($1, $2, $3, $4, $5, $6, $7)",
-            member.id, roles, member.guild.id, names, 0, 0, 0)
 
+            query = '''
+                    INSERT INTO users (
+                        user_id, 
+                        server_id,
+                        nicknames, 
+                        roles,
+                        eyecount
+                    ) 
+                    VALUES ($1, $2, $3, $4, $5)
+                    '''
+            await connection.execute(
+                query,
+                member.id,
+                member.guild.id,
+                names,
+                roles,
+                0
+            )
+
+    @commands.Cog.listener()
+    async def on_command(self, ctx):
+        message = ctx.message
+        destination = None
+        if ctx.guild is None:
+            destination = 'Private Message'
+        else:
+            destination = '#{0.channel} [{0.channel.id}] ({0.guild}) [{0.guild.id}]'.format(message)
+        command_logger.info('{0.author} in {1}: {0.content}'.format(message, destination))
 
     async def on_command_error(self, ctx, error):
 
         if isinstance(error, commands.MissingRequiredArgument) or isinstance(error, commands.BadArgument):
-            name = str(ctx.command.qualified_name)
+            name = str(ctx.command.qualified_name) if ctx.command.parent is None else str(ctx.command.full_parent_name)
             help_command = self.get_command("help")
             await help_command(ctx, invokercommand=name)
 
@@ -217,9 +283,12 @@ class NGC0000(commands.AutoShardedBot):
             print(color(fore="FF0000", text=f'\nCommand {ctx.command.qualified_name} raised the error: {error.original.__class__.__name__}: {error.original}'), file=sys.stderr)
             print(err, file=sys.stderr)
 
+        elif isinstance(error, commands.BotMissingPermissions):
+            await ctx.send(f"<:error:816456396735905844> {error}")
+
         else:
             print(color(fore="FF0000", text="Error"))
-            traceback.print_exc()
+            print(error)
 
 
     async def on_guild_join(self, guild):
@@ -279,8 +348,13 @@ class NGC0000(commands.AutoShardedBot):
 
 
     async def on_ready(self):
+
         if not hasattr(self, 'uptime'):
             self.uptime = datetime.utcnow()
+        if not hasattr(self, 'starttime'):
+            self.starttime = int(time.time())
+        if not hasattr(self, 'owner'):
+            self.owner = await self.fetch_user(OWNERS[0]) or "I can't find my owner"
 
         # Beautiful console logging on startup
 
@@ -288,15 +362,17 @@ class NGC0000(commands.AutoShardedBot):
         uid_message = f'Client ID:   {bot.user.id}'
         user_count_message = f'Users: {len([ x for x in self.get_all_members()])}   Servers: {len(self.guilds)}'
         separator = '=' * max(len(message), len(uid_message), len(user_count_message))
-        print(color(fore="#00D8E3", text=separator))
+        print(color(fore="#ff008c", text=separator))
         try:
-            print(color(fore="#00D8E3", text=message))
+            print(color(fore="#ff008c", text=message))
         except:
-            print(color(fore="#00D8E3", text=message.encode(errors='replace').decode()))
-        print(color(fore="#00D8E3", text=uid_message))
-        print(color(fore="#00D8E3", text=user_count_message))
-        print(color(fore="#00D8E3", text=separator))
+            print(color(fore="#ff008c", text=message.encode(errors='replace').decode()))
+        print(color(fore="#ff008c", text=uid_message))
+        print(color(fore="#ff008c", text=user_count_message))
+        print(color(fore="#ff008c", text=separator))
 
+        # Start task loop
+        await self.db_updater.start()
 
     async def on_message(self, message):
         await self.process_commands(message)

@@ -72,12 +72,10 @@ class Help(commands.Cog):
         else:
             return await ctx.send(f"<:error:816456396735905844> No command named `{name}` found.")
 
-
       ##########################
      ## Build Category Embed ##
     ##########################
     
-
     async def category_embed(self, ctx, cog, list, pm, delete_after):
         embed = discord.Embed(title=f"Category: `{cog}`",
         description=f"**Bot Invite Link:** [https://ngc.discord.bot](https://discord.com/oauth2/authorize?client_id=810377376269205546&scope=bot&permissions=8)\n"

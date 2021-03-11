@@ -18,7 +18,8 @@ class Settings(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.cxn = bot.connection
-        self.dregex = re.compile(r"(https?:\/\/)?(www\.)?(discord\.(gg|io|me|li)|discordapp\.com\/invite)\/.+[a-z]")
+        self.dregex = re.compile(r"(?:https?://)?discord(?:app)?\.(?:com/invite|gg)/[a-zA-Z0-9]+/?")
+        #self.dregex = re.compile(r"(https?:\/\/)?(www\.)?(discord\.(gg|io|me|li)|discordapp\.com\/invite)\/.+[a-z]")
         #self.dregex = re.compile(r"(?i)(discord(\.gg|app\.com)\/)(?!attachments)([^\s]+)")
 
 
@@ -110,7 +111,7 @@ class Settings(commands.Cog):
 
     @commands.command(brief="Disallows certain users from using the bot within your server.")
     @permissions.has_permissions(administrator=True)
-    async def ignore(self, ctx, user: discord.User = None, react:str = "", *, reason: str = None):
+    async def ignore(self, ctx, user: discord.Member = None, react:str = "", *, reason: str = None):
 
         if user is None: return await ctx.send(f"Usage: `{ctx.prefix}ignore <user> [react] [reason]`")
 
@@ -123,7 +124,7 @@ class Settings(commands.Cog):
         else:
             react = False
 
-        query = '''SELECT server_id FROM ignored WHERE id = $1 AND server_id = $2'''
+        query = '''SELECT server_id FROM ignored WHERE user_id = $1 AND server_id = $2'''
         already_ignord = await self.cxn.fetchrow(query, user.id, ctx.guild.id)
         
         if "None" not in str(already_ignord): return await ctx.send(f"<:error:816456396735905844> User `{user}` is already being ignored.")
@@ -138,18 +139,18 @@ class Settings(commands.Cog):
 
     @commands.command(brief="Reallow certain to use using the bot within your server.", aliases=['listen'])
     @permissions.has_permissions(administrator=True)
-    async def unignore(self, ctx, user: discord.User = None):
+    async def unignore(self, ctx, user: discord.Member = None):
 
         if user is None: return await ctx.send(f"Usage: `{ctx.prefix}ignore <user> [react] [reason]`")
 
-        query = '''SELECT id FROM ignored WHERE id = $1 AND server = $2'''
+        query = '''SELECT id FROM ignored WHERE user_id = $1 AND server = $2'''
         blacklisted = await self.cxn.fetchrow(query, user.id, ctx.guild.id) or None
         if blacklisted is None: return await ctx.send(f"<:error:816456396735905844> User was not ignored")
 
-        query = '''SELECT reason FROM ignored WHERE id = $1 AND server = $2'''
+        query = '''SELECT reason FROM ignored WHERE user_id = $1 AND server = $2'''
         reason = await self.cxn.fetchrow(query, user.id, ctx.guild.id) or None
 
-        query = '''DELETE FROM ignored WHERE id = $1 AND server = $2'''
+        query = '''DELETE FROM ignored WHERE user_id = $1 AND server = $2'''
         await self.cxn.execute(query, user.id, ctx.guild.id)
 
         if "None" in str(reason): 
@@ -170,14 +171,14 @@ class Settings(commands.Cog):
             return
         # Get the list of ignored users
         
-        query = '''SELECT id FROM ignored WHERE id = $1 and server = $2'''
+        query = '''SELECT id FROM ignored WHERE user_id = $1 and server = $2'''
         ignored_users = await self.cxn.fetchrow(query, message.author.id, message.guild.id) or None
         if "None" in str(ignored_users):
             return
         if int(str(ignored_users).strip("(),'")) != message.author.id: 
             return
 
-        query = '''SELECT react FROM ignored WHERE id = $2 and server = $2'''
+        query = '''SELECT react FROM ignored WHERE user_id = $2 and server = $2'''
         to_react = await self.cxn.fetchrow(query, message.author.id, message.guild.id)
         to_react = to_react[0]
         if to_react is True:
@@ -237,7 +238,7 @@ class Settings(commands.Cog):
             pass
         else:
             print("so far so good")
-            query = '''SELECT roles FROM users WHERE id = $1 and server_id = $2'''
+            query = '''SELECT roles FROM users WHERE user_id = $1 and server_id = $2'''
             old_roles = await self.cxn.fetchrow(query, member.id, member.guild.id) or None
             if old_roles is None or old_roles[0] is None: return print("nothing to add")
             print(old_roles)

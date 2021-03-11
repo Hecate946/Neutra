@@ -73,10 +73,7 @@ class Automoderation(commands.Cog):
                     old_index = word_list.index(i)
                     word_list.pop(old_index)
                     word_list.append(i)
-        try:
-            new_words = ','.join(word_list)
-        except TypeError:
-            pass
+        new_words = ','.join(word_list)
         await self.cxn.execute("""
         UPDATE profanity SET words = $1 WHERE server_id = $2
         """, new_words, ctx.guild.id)
@@ -203,7 +200,7 @@ class Automoderation(commands.Cog):
             if profanity.contains_profanity(msg) or filtered_word in msg:
                 try:
                     await message.delete()
-                    return await message.author.send(f'''Your message `{message.content}` was removed for containing the filtered word `{filtered_word}`''')
+                    return await message.author.send(f'Your message `{message.content}` was removed for containing a filtered word')
                 except Exception: return
 
 
@@ -212,11 +209,10 @@ class Automoderation(commands.Cog):
         if before.roles == after.roles: return
         roles = ','.join([str(x.id) for x in after.roles if x.name != "@everyone"])
 
-        query = '''UPDATE users SET roles = $1 WHERE id = $2 AND server_id = $3'''
+        query = '''UPDATE users SET roles = $1 WHERE user_id = $2 AND server_id = $3'''
         await self.cxn.execute(query, roles, before.id, before.guild.id)
 
         if len(before.roles) < len(after.roles):
-            print("added role")
             # role added
             s = set(before.roles)
             # Check for what actually happened

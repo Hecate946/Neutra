@@ -1,15 +1,14 @@
-import discord
 import re
-import asyncio
 import typing
+import asyncio
+import discord
 import sqlite3
 
-
+from discord.ext import commands, menus
 from datetime import datetime, timedelta
-from discord.ext import commands
 
-from utilities import permissions, default, converters
-from core import bot, OWNERS
+from utilities import permissions, default, converters, pagination
+from core import OWNERS
 
 
 
@@ -52,29 +51,9 @@ class Moderation(commands.Cog):
         except discord.Forbidden:
             await ctx.send(f"<:fail:816521503554273320> I do not have permission to edit `{user}'s` nickname.")
 
-
-    @commands.command(brief="Unbans a member from the server.", aliases=['revokeban'])
-    @commands.guild_only()
-    @permissions.has_permissions(ban_members=True)
-    async def unban(self, ctx, member: converters.BannedMember, *, reason: str = None):
-        """
-        Usage:      -unban <user> [reason]
-        Alias:      -revokeban
-        Example:    Unban Hecate#3523 Because...
-        Permission: Ban Members
-        Output:     Unbans a member from the server.
-        Notes:      Pass either the user's ID or their username
-        """
-        if not member: return await ctx.send(f"Usage: `{ctx.prefix}unban <id/member> [reason]`")
-        if reason is None:
-            reason = default.responsible(ctx.author, f"Unbanned member {member} by command execution")
-
-        await ctx.guild.unban(member.user, reason=reason)
-        if member.reason:
-            await ctx.send(f'<:checkmark:816534984676081705> Unbanned `{member.user} (ID: {member.user.id})`, previously banned for `{member.reason}.`')
-        else:
-            await ctx.send(f'<:checkmark:816534984676081705> Unbanned `{member.user} (ID: {member.user.id}).`')
-
+      ###################
+     ## Mute Commands ##
+    ###################
 
     @commands.command(brief="Setup server muting system.", aliases=["setmuterole"])
     @commands.guild_only()
@@ -116,9 +95,9 @@ class Moderation(commands.Cog):
         await msg.edit(content=f"<:checkmark:816534984676081705> Saved `{role.name}` as this server's mute role.")
 
 
-    @commands.command(brief="Softmute members. (Users can read messages)", aliases=["sm"])
+    @commands.command(brief="Softmute members. (Users can read messages)", aliases=["sm"], hidden=True)
     @commands.guild_only()
-    @commands.bot_has_permissions(manage_roles=True)
+    @commands.bot_has_guild_permissions(manage_roles=True)
     @permissions.has_permissions(kick_members=True)
     async def softmute(self, ctx, targets: commands.Greedy[discord.Member], minutes: typing.Optional[int], *, reason: typing.Optional[str] = None):
         """
@@ -140,9 +119,9 @@ class Moderation(commands.Cog):
         else:
             unmutes = []
             try:
-                self.mute_role = await self.cxn.fetchrow("SELECT MuteRole FROM guilds WHERE GuildID = ?", ctx.guild.id) or (None)
-                self.mute_role = str(self.mute_role).strip("()',")
-                if str(self.mute_role) == "None": return await ctx.send(f"use `{ctx.prefix}muterole <role>` to initialize the muted role.")
+                self.mute_role = await self.cxn.fetchrow("SELECT mute_role FROM moderation WHERE server_id = $1", ctx.guild.id) or None
+                self.mute_role = self.mute_role[0]
+                if "None" in str(self.mute_role): return await ctx.send(f"use `{ctx.prefix}muterole <role>` to initialize the muted role.")
                 self.mute_role = ctx.guild.get_role(int(self.mute_role))
             except Exception as e: return await ctx.send(e)
             muted = []
@@ -161,7 +140,9 @@ class Moderation(commands.Cog):
                         return await ctx.send(e)
                     if reason:
                         try:
-                            await target.send(f"<:announce:807097933916405760> You have been muted in **{ctx.guild.name}** {reason}. Mute duration: `{minutes} minute{'' if minutes == 1 else 's'}`")
+                            await target.send(f"<:announce:807097933916405760> You have been muted in **{ctx.guild.name}** {reason}.\
+                                                Mute duration: `{minutes if minutes is not None else 'Indefinetely'} \
+                                                minute{'' if minutes == 1 else 's'}`")
                         except: return
                     global unmutereason
                     unmutereason = reason
@@ -212,8 +193,8 @@ class Moderation(commands.Cog):
         else:
             unmutes = []
             try:
-                self.mute_role = await self.cxn.fetchrow("SELECT MuteRole FROM guilds WHERE GuildID = ?", ctx.guild.id) or (None)
-                self.mute_role = str(self.mute_role).strip("()',")
+                self.mute_role = await self.cxn.fetchrow("SELECT mute_role FROM moderation WHERE server_id = $1", ctx.guild.id) or None
+                self.mute_role = self.mute_role[0]
                 if str(self.mute_role) == "None": return await ctx.send(f"use `{ctx.prefix}muterole <role>` to initialize the muted role.")
                 self.mute_role = ctx.guild.get_role(int(self.mute_role))
             except Exception as e: return await ctx.send(e)
@@ -229,8 +210,8 @@ class Moderation(commands.Cog):
                     if ctx.guild.me.top_role.position < target.top_role.position and ctx.author.id not in OWNERS: return await ctx.send(f"My highest role is below {target}'s highest role. Aborting mute.")
                     if ctx.guild.me.top_role.position < self.mute_role.position: return await ctx.send("My highest role is below the mute role. Aborting mute.")
                     try:
-                        await self.cxn.execute("INSERT INTO mutes VALUES (?, ?, ?)", target.id, role_ids, getattr(end_time, "isoformat", lambda: None)())
-                    except sqlite3.IntegrityError: return await ctx.send(f"Database error occured. Contact the bot developer by using {ctx.prefix}bugreport <report>")
+                        await self.cxn.execute("INSERT INTO mutes VALUES ($1, $2, $3, $4)", target.id, ctx.guild.id, role_ids, getattr(end_time, "isoformat", lambda: None)())
+                    except Exception as e: return await ctx.send(e)
                     try:
                         await target.edit(roles=[self.mute_role])
                         muted.append(target)
@@ -238,7 +219,7 @@ class Moderation(commands.Cog):
                         return await ctx.send(e)
                     if reason:
                         try:
-                            await target.send(f"<:announce:807097933916405760> You have been muted in **{ctx.guild.name}** {reason}. Mute duration: `{minutes} minute{'' if minutes == 1 else 's'}`")
+                            await target.send(f"<:announce:807097933916405760> You have been muted in **{ctx.guild.name}** {reason}. Mute duration: `{minutes if minutes is not None else 'Infinite'} minute{'' if minutes == 1 else 's'}`")                        
                         except: return
                     global unmutereason
                     unmutereason = reason
@@ -268,21 +249,22 @@ class Moderation(commands.Cog):
 
     async def unmute(self, ctx, targets):
         try:
-            self.mute_role = await self.cxn.fetchrow("SELECT MuteRole FROM guilds WHERE GuildID = ?", ctx.guild.id) or (None)
-            self.mute_role = str(self.mute_role).strip("()',")
+            self.mute_role = await self.cxn.fetchrow("SELECT mute_role FROM moderation WHERE server_id = $1", ctx.guild.id) or None
+            self.mute_role = self.mute_role[0]
             self.mute_role = ctx.guild.get_role(int(self.mute_role))
         except Exception as e: return await ctx.send(e)
         unmuted = []
         for target in targets:
             if self.mute_role in target.roles:
-                role_ids = await self.cxn.field("SELECT RoleIDs FROM mutes WHERE UserID = ?", target.id) or (None)
+                role_ids = await self.cxn.fetchrow("SELECT role_ids FROM mutes WHERE muted_user = $1", target.id) or None
                 if str(role_ids) == "None": 
                     await target.remove_roles(self.mute_role)
                     unmuted.append(target)
                     continue
+                role_ids = role_ids[0]
                 roles = [ctx.guild.get_role(int(id_)) for id_ in role_ids.split(",") if len(id_)]
 
-                await self.cxn.execute("DELETE FROM mutes WHERE UserID = ?", target.id)
+                await self.cxn.execute("DELETE FROM mutes WHERE muted_user = $1", target.id)
 
                 await target.edit(roles=roles)
                 unmuted.append(target)
@@ -307,7 +289,7 @@ class Moderation(commands.Cog):
 
     @commands.command(name="unmute", brief="Unmute previously muted members.", aliases=['endmute'])
     @commands.guild_only()
-    @commands.bot_has_permissions(manage_roles=True)
+    @commands.bot_has_guild_permissions(manage_roles=True)
     @permissions.has_permissions(kick_members=True)
     async def unmute_members(self, ctx, targets: commands.Greedy[discord.Member]):
         """
@@ -323,6 +305,9 @@ class Moderation(commands.Cog):
         else:
             await self.unmute(ctx, targets)
 
+      ##########################
+     ## Restriction Commands ##
+    ##########################
 
     @commands.command(brief="Restrict users from sending messages in a channel.")
     @commands.guild_only()
@@ -467,19 +452,23 @@ class Moderation(commands.Cog):
                     unblinded_users += [username]
             await ctx.send('<:checkmark:816534984676081705> Unblinded `{0}`'.format(", ".join(unblinded_users)))
 
+      ##################
+     ## Kick Command ##
+    ##################
 
     @commands.command(brief="Kick members from the server")
     @commands.guild_only()
-    @commands.bot_has_permissions(kick_members=True)
+    @commands.bot_has_guild_permissions(kick_members=True)
     @permissions.has_permissions(kick_members=True)
     async def kick(self, ctx, users: commands.Greedy[discord.Member], *, reason: typing.Optional[str] = "No reason"):
+
         """
         Usage:      -kick <target> [target]... [reason]
         Example:    -kick @Jacob Sarah for advertising
         Permission: Kick Members
         Output:     Kicks passed members from the server.
         """
-        if not len(users): return await ctx.send(f"Usage: `{ctx.prefix}kick <target> [target]... [reason]")
+        if not len(users): return await ctx.send(f"Usage: `{ctx.prefix}kick <target> [target]... [reason]`")
 
         kicked = []
         for target in users:
@@ -497,9 +486,13 @@ class Moderation(commands.Cog):
             if kicked:
                 await ctx.send('<:checkmark:816534984676081705> Kicked `{0}`'.format(", ".join(kicked)))
 
+      ##################
+     ## Ban Commands ##
+    ##################
+
     @commands.command(brief="Ban members from the server.")
     @commands.guild_only()
-    @commands.bot_has_permissions(ban_members=True)
+    @commands.bot_has_guild_permissions(ban_members=True)
     @permissions.has_permissions(ban_members=True)
     async def ban(self, ctx, targets: commands.Greedy[discord.Member], delete_message_days:int=1, *, reason: typing.Optional[str] = "No reason"):
         """
@@ -518,24 +511,28 @@ class Moderation(commands.Cog):
             delete_message_days = delete_message_days
         banned = []
         for target in targets:
-            if target.id in OWNERS: return await ctx.send('You cannot ban my master.')
-            if target.id == ctx.author.id: return await ctx.send('I don\'t think you really want to ban yourself...')
-            if target.id == self.bot.user.id: return await ctx.send('I don\'t think I want to ban myself...')
-            if target.guild_permissions.kick_members and ctx.author.id not in OWNERS and ctx.author.id != ctx.guild.owner.id: return await ctx.send('You cannot punish other staff members.')
-            if (ctx.guild.me.top_role.position > target.top_role.position and not target.guild_permissions.administrator):
+            if await permissions.check_priv(ctx, target):
+                continue
+            #if target.id in OWNERS: return await ctx.send('You cannot ban my master.')
+            #if target.id == ctx.author.id: return await ctx.send('I don\'t think you really want to ban yourself...')
+            #if target.id == self.bot.user.id: return await ctx.send('I don\'t think I want to ban myself...')
+            #if target.guild_permissions.kick_members and ctx.author.id not in OWNERS and ctx.author.id != ctx.guild.owner.id: return await ctx.send('You cannot punish other staff members.')
+            if ctx.guild.me.top_role.position > target.top_role.position and not target.guild_permissions.administrator:
                 try:
                     await ctx.guild.ban(target, reason=reason, delete_message_days=delete_message_days)
                     banned.append(f"{target.name}#{target.discriminator}")
                 except:
                     await ctx.send('<:fail:816521503554273320> `{0}` could not be banned.'.format(target))
                     continue
+            else:
+                return await ctx.send(f"My role is too low to execute that action against {target}")
         if banned:
             await ctx.send('<:checkmark:816534984676081705> Banned `{0}`'.format(", ".join(banned)))
 
 
     @commands.command(brief="Softbans members from the server.")
     @commands.guild_only()
-    @commands.bot_has_permissions(ban_members=True)
+    @commands.bot_has_guild_permissions(ban_members=True)
     @permissions.has_permissions(kick_members=True)
     async def softban(self, ctx, targets: commands.Greedy[discord.Member], delete_message_days:int = 7, *, reason:str = "No reason"):
         """
@@ -553,9 +550,9 @@ class Moderation(commands.Cog):
         banned = []
         for target in targets:
             if ctx.author.id not in OWNERS and ctx.author.id != ctx.guild.owner.id and not ctx.author.guild_permissions.kick_members: return await ctx.send('You have insufficient permission to execute that command.')
-            if target.id in OWNERS: return await ctx.send('You cannot hackban my master.')
-            if target.id == ctx.author.id: return await ctx.send('I don\'t think you really want to hackban yourself...')
-            if target.id == self.bot.user.id: return await ctx.send('I don\'t think I want to hackban myself...')
+            if target.id in OWNERS: return await ctx.send('You cannot softban my master.')
+            if target.id == ctx.author.id: return await ctx.send('I don\'t think you really want to softban yourself...')
+            if target.id == self.bot.user.id: return await ctx.send('I don\'t think I want to softban myself...')
             if target.guild_permissions.kick_members and ctx.author.id not in OWNERS and ctx.author.id != ctx.guild.owner.id: return await ctx.send('You cannot punish other staff members.')
             try:
                 await ctx.guild.ban(target, reason=reason, delete_message_days=delete_message_days)
@@ -569,7 +566,7 @@ class Moderation(commands.Cog):
 
 
     @commands.command(brief="Hackban multiple users by ID.")
-    @commands.bot_has_permissions(ban_members=True)
+    @commands.bot_has_guild_permissions(ban_members=True)
     @permissions.has_permissions(manage_guild=True)
     async def hackban(self, ctx, *users:str):
         """
@@ -602,7 +599,7 @@ class Moderation(commands.Cog):
                 if uu is None:
                     await ctx.send('<:fail:816521503554273320> `{0}` could not be hackbanned.'.format(user))
                 else:
-                    await ctx.send('<:fail:816521503554273320> `{0}` is already on the server and could not be banned.'.format(uu))
+                    await ctx.send('<:fail:816521503554273320> `{0}` is already on the server and could not be hackbanned.'.format(uu))
                 continue
         if banned:
             hackbanned = []
@@ -615,13 +612,39 @@ class Moderation(commands.Cog):
                     hackbanned += [username]
             await ctx.send('<:checkmark:816534984676081705> Hackbanned `{0}`'.format(", ".join(hackbanned)))
 
-    # command mostly from Alex Flipnote's discord_bot.py bot
+
+    @commands.command(brief="Unbans a member from the server.", aliases=['revokeban'])
+    @commands.guild_only()
+    @permissions.has_permissions(ban_members=True)
+    async def unban(self, ctx, member: converters.BannedMember, *, reason: str = None):
+        """
+        Usage:      -unban <user> [reason]
+        Alias:      -revokeban
+        Example:    Unban Hecate#3523 Because...
+        Permission: Ban Members
+        Output:     Unbans a member from the server.
+        Notes:      Pass either the user's ID or their username
+        """
+        if not member: return await ctx.send(f"Usage: `{ctx.prefix}unban <id/member> [reason]`")
+        if reason is None:
+            reason = default.responsible(ctx.author, f"Unbanned member {member} by command execution")
+
+        await ctx.guild.unban(member.user, reason=reason)
+        if member.reason:
+            await ctx.send(f'<:checkmark:816534984676081705> Unbanned `{member.user} (ID: {member.user.id})`, previously banned for `{member.reason}.`')
+        else:
+            await ctx.send(f'<:checkmark:816534984676081705> Unbanned `{member.user} (ID: {member.user.id}).`')
+
     # https://github.com/AlexFlipnote/discord_bot.py
+
+      ###################
+     ## Prune Command ##
+    ###################
 
     @commands.group(brief='Remove any type of content in the last 2000 messages.', aliases=["cleanup","purge","clean"])
     @commands.guild_only()
-    @commands.max_concurrency(1, per=commands.BucketType.guild)
-    @commands.bot_has_permissions(manage_messages=True)
+    @commands.max_concurrency(5, per=commands.BucketType.guild)
+    @commands.bot_has_guild_permissions(manage_messages=True)
     @permissions.has_permissions(manage_messages=True)
     async def prune(self, ctx):
         """
@@ -732,7 +755,7 @@ class Moderation(commands.Cog):
     async def _bots(self, ctx, search=100, prefix=None):
         """Removes a bot user's messages and messages with their optional prefix."""
 
-        getprefix = await self.cxn.field("SELECT prefix FROM server WHERE server_id = $1", ctx.guild.id)
+        getprefix = await self.cxn.fetchrow("SELECT prefix FROM servers WHERE server_id = $1", ctx.guild.id)
 
         def predicate(m):
             return (m.webhook_id is None and m.author.bot) or m.content.startswith(tuple(getprefix))
@@ -789,3 +812,146 @@ class Moderation(commands.Cog):
         await ctx.message.delete()
         await channel.purge(after=message)
         return True
+
+      ###################
+     ## WARN COMMANDS ##
+    ###################
+
+    @commands.command(brief="Warn multiple members for misbehaving")
+    @commands.guild_only()
+    @permissions.has_permissions(kick_members=True)
+    async def warn(self, ctx, targets: commands.Greedy[discord.Member], *, reason: str = None):
+        """
+        Usage: -warn [target] [target]... [reason]
+        Output: Warns members and DMs them the reason they were warned for
+        Permission: Kick Members
+        Notes:
+            Warnings do not automatically enforce punishments on members.
+            They only store a record of how many instances a user has misbehaved.
+        """
+        if not len(targets): return await ctx.send(f"Usage: `{ctx.prefix}warn <target> [target]... [reason]`")
+        warned = []
+        for target in targets:
+            if target.id in OWNERS: return await ctx.send('You cannot warn my master.')
+            if target.id == ctx.author.id: return await ctx.send('I don\'t think you really want to warn yourself...')
+            if target.id == self.bot.user.id: return await ctx.send('I don\'t think I want to warn myself...')
+            if target.guild_permissions.manage_messages and ctx.author.id not in OWNERS: return await ctx.send('You cannot punish other staff members.')
+            if ctx.guild.me.top_role.position > target.top_role.position and not target.guild_permissions.administrator:
+                try:
+                    warnings = await self.cxn.fetchrow("SELECT warnings FROM warn WHERE user_id = $1 AND server_id = $2", target.id, ctx.guild.id) or (None)
+                    if warnings is None: 
+                        warnings = 0
+                        await self.cxn.execute("INSERT INTO warn VALUES ($1, $2, $3)", target.id, ctx.guild.id, int(warnings) + 1)
+                        warned.append(f"{target.name}#{target.discriminator}")
+                    else:
+                        warnings = int(warnings[0])
+                        try:
+                            await self.cxn.execute("UPDATE warn SET warnings = warnings + 1 WHERE server_id = $1 AND user_id = $2", ctx.guild.id, target.id)
+                            warned.append(f"{target.name}#{target.discriminator}")
+                        except Exception: raise
+
+                except Exception as e: return await ctx.send(e)
+                if reason:
+                    try:
+                        await target.send(f"<:announce:807097933916405760> You have been warned in **{ctx.guild.name}** `{reason}`.")
+                    except: return
+            else: return await ctx.send('<:fail:816521503554273320> `{0}` could not be warned.'.format(target))
+        if warned:
+            await ctx.send(f'<:checkmark:816534984676081705> Warned `{", ".join(warned)}`')
+
+
+    @commands.command(brief="Show how many warnings a member has", aliases=["listwarns"])
+    @commands.guild_only()
+    async def warncount(self, ctx, *, target: discord.Member =None):
+        """
+        Usage: -warncount [member]
+        Alias: -listwarns
+        Output: Show how many warnings the member has on the server
+        """
+        if target is None:
+            target = ctx.author
+
+        try:
+            warnings = await self.cxn.fetchrow("SELECT warnings FROM warn WHERE user_id = $1 AND server_id = $2", target.id, ctx.guild.id) or None
+            if warnings is None: return await ctx.send(f"<:checkmark:816534984676081705> User `{target}` has no warnings.")
+            warnings = int(warnings[0])
+            await ctx.send(f"<:announce:807097933916405760> User `{target}` currently has **{warnings}** warning{'' if int(warnings) == 1 else 's'} in this server.")
+        except Exception as e: return await ctx.send(e)
+
+
+    @commands.command(aliases = ['deletewarnings','removewarns','removewarnings','deletewarns','clearwarnings'])
+    @commands.guild_only()
+    @permissions.has_permissions(kick_members = True)
+    async def clearwarns(self, ctx, *, target: discord.Member = None):
+        """
+        Usage: -clearwarns [user]
+        Aliases: -deletewarnings, -removewarns, -removewarnings, -deletewarns, -clearwarnings
+        Permission: Kick Members
+        Output: Clears all warnings for that user
+        """
+        if target is None: return await ctx.send(f"Usage: `{ctx.prefix}deletewarn <target>`")
+        try:
+            warnings = await self.cxn.fetchrow("SELECT warnings FROM warn WHERE user_id = $1 AND server_id = $2", target.id, ctx.guild.id) or None
+            if warnings is None: return await ctx.send(f"<:checkmark:816534984676081705> User `{target}` has no warnings.")
+            warnings = int(warnings[0])
+            await self.cxn.execute("DELETE FROM warn WHERE user_id = $1 and server_id = $2", target.id, ctx.guild.id)
+            await ctx.send(f"<:checkmark:816534984676081705> Cleared all warnings for `{target}` in this server.")
+            try:
+                await target.send(f"<:announce:807097933916405760> All your warnings have been cleared in **{ctx.guild.name}**.")
+            except: return
+        except Exception as e: return await ctx.send(e)
+
+
+    @commands.command(brief="Revoke a warnings from a user", aliases=['revokewarning','undowarning','undowarn'])
+    @commands.guild_only()
+    @permissions.has_permissions(kick_members = True)
+    async def revokewarn(self, ctx, *, target: discord.Member = None):
+        """
+        Usage: -revokewarn [user]
+        Aliases: -revokewarning, -undowarning, -undowarn
+        Permission: Kick Members
+        Output: Revokes a warning from a user
+        """
+        if target is None: return await ctx.send(f"Usage: `{ctx.prefix}revokewarn <target>`")
+        try:
+            warnings = await self.cxn.fetchrow("SELECT warnings FROM warn WHERE user_id = $1 AND server_id = $2", target.id, ctx.guild.id) or None
+            if warnings is None: return await ctx.send(f"<:checkmark:816534984676081705> User `{target}` has no warnings to revoke.")
+            warnings = int(warnings[0])
+            if int(warnings) == 1: 
+                await self.cxn.execute("DELETE FROM warn WHERE user_id = $1 and server_id = $2", target.id, ctx.guild.id)
+                await ctx.send(f"<:checkmark:816534984676081705> Cleared all warnings for `{target}` in this server.")
+            else:
+                await self.cxn.execute("UPDATE warn SET warnings = warnings - 1 WHERE server_id = $1 AND user_id = $2", ctx.guild.id, target.id)
+                await ctx.send(f"<:checkmark:816534984676081705> Revoked a warning for `{target}` in this server.")
+            try:
+                await target.send(f"<:announce:807097933916405760> You last warning has been revoked in **{ctx.guild.name}**.")
+            except: return
+        except Exception as e: return await ctx.send(e)
+
+
+    @commands.command(brief="Display the server warnlist.", aliases=["warns"])
+    @commands.guild_only()
+    @permissions.has_permissions(manage_messages=True)
+    async def serverwarns(self, ctx):
+        """
+        Usage: -serverwarns
+        Alias: -warns
+        Output: Embed of all warned members in the server
+        Permission: Manage Messages
+        """
+        query = '''SELECT COUNT(*) FROM warn WHERE server_id = $1'''
+        count = await self.cxn.fetchrow(query, ctx.guild.id)
+        query = '''SELECT id, warnings FROM warn WHERE server_id = $1 ORDER BY warnings DESC'''
+        records = await self.cxn.fetch(query, ctx.guild.id) or None
+        if records is None:
+            return await ctx.send(f"<:error:816456396735905844> No current warnings exist on this server.")
+
+        p = pagination.SimplePages(
+            entries=[[f"User: `{ctx.guild.get_member(x[0]) or 'Not Found'}` Warnings `{x[1]}`"] for x in records], 
+            per_page=20)
+        p.embed.title = "{} Warn List ({:,} total)".format(ctx.guild.name, int(count[0]))
+
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send(e)

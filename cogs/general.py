@@ -1,17 +1,23 @@
 import os
 import re
+import sys
 import time
+import struct
 import psutil
+import asyncio
 import inspect
 import discord
+import platform
 import datetime
+import subprocess
+
 
 from discord.ext import commands
 from platform import python_version
 from psutil import Process, virtual_memory
 from discord import __version__ as discord_version
 
-from utilities import permissions, default, converters
+from utilities import permissions, default, converters, speedtest
 
    
 def setup(bot):
@@ -254,7 +260,7 @@ class General(commands.Cog):
         await default.prettyResults(ctx, "discriminator", f"Found **{len(loop)}** on your search for **{search}**", loop)
 
 
-    @commands.command(brief="Display information on a passed user.", aliases=["whois","ui"])
+    @commands.command(brief="Display information on a passed user.", aliases=["whois","ui","profile"])
     @commands.guild_only()
     async def userinfo(self, ctx, member: discord.Member = None):
         """
@@ -281,25 +287,26 @@ class General(commands.Cog):
 
         check_item = { "ID" : member.id, "Joined" : member.joined_at }
 
-        total = len(joinedList)
         position = joinedList.index(check_item) + 1
         
         msg = "{:,}".format(position)
 
-        query = '''SELECT commandcount FROM users WHERE id = $1 AND server_id = $2'''
-        command_count = await self.cxn.fetchrow(query, member.id, ctx.guild.id)
+        query = '''SELECT COUNT(*) FROM commands WHERE author_id = $1 AND server_id = $2'''
+        command_count = await self.cxn.fetchrow(query, member.id, ctx.guild.id) or None
+        if command_count is None:
+            command_count = 0
 
-        query = '''SELECT messagecount FROM users WHERE id = $1 AND server_id = $2'''
-        messages = await self.cxn.fetchrow(query, member.id, ctx.guild.id)
+        query = '''SELECT COUNT(*) FROM messages WHERE author_id = $1 AND server_id = $2'''
+        messages = await self.cxn.fetchrow(query, member.id, ctx.guild.id) or None
+        if messages is None:
+            messages = 0
 
-        #status_dict = {'online': 'Online', 'offline': 'Offline', 'dnd': 'Do Not Disturb', 'idle': "Idle"}
         status_dict = {
             'online': '<:online:810650040838258711> Online', 
             'offline': '<:offline:810650959859810384> Offline', 
             'dnd': '<:dnd:810650845007708200> Do Not Disturb', 
             'idle': "<:idle:810650560146833429> Idle"
             }
-        perm_list = [Perm[0] for Perm in member.guild_permissions if Perm[1]]
         embed = discord.Embed(color=default.config()["embed_color"])
         embed.set_author(name=f"{member}", icon_url=member.avatar_url)
         embed.set_thumbnail(url=member.avatar_url)
@@ -310,6 +317,7 @@ class General(commands.Cog):
         embed.add_field(name="Status", value=f"{status_dict[str(member.status)]}")
         embed.add_field(name="Highest Role", value=f"<:role:816699853685522442> {'@everyone' if member.top_role.name == '@everyone' else member.top_role.mention}")
         embed.add_field(name="Join Position", value=f"<:invite:816700067632513054> #{msg}")
+        #perm_list = [Perm[0] for Perm in member.guild_permissions if Perm[1]]
         #embed.add_field(name=f"**{member.display_name}'s Info:**", value=
         #                                                               f"> **Nickname:** {member.display_name}\n"
         #                                                               f"> **ID:** {member.id}\n"
@@ -499,7 +507,8 @@ class General(commands.Cog):
         Alias:  -runningtime
         Output: Time since last reboot.
         """
-        await ctx.send(f":stopwatch: I've been running for `{self.get_bot_uptime(brief=False)}`")
+        #await ctx.send(f":stopwatch: I've been running for `{self.get_bot_uptime(brief=False)}`")
+        await ctx.send(f":stopwatch: I've been running for `{default.time_between(self.bot.starttime, int(time.time()))}`")
 
 
     @commands.command(brief="Show which server mods are online.", aliases=['moderators'])
@@ -560,18 +569,106 @@ class General(commands.Cog):
         await ctx.send(f"Admins in **{ctx.guild.name}:**\n\n{message}")
 
 
-    @commands.command(brief="Test the bot's response time.", aliases=['latency'])        
+    @commands.command(brief="Test the bot's response time.", 
+                      aliases=['latency', 'speedtest', 'network', 'speed', 'download', 'upload'])        
     async def ping(self, ctx):
         """
         Usage: -ping
-        Alias: -latency
-        Output: API and Bot response time.
+        Aliases: -latency, speedtest, network
+        Output: Bot speed statistics.
         """
-        start = time.time()
-        message = await ctx.send(f"{ctx.author.mention} The bot latency is {self.bot.latency*1000:,.0f} ms.")
-        end = time.time()
-        await message.edit(content=f"{ctx.author.mention} The bot latency is {self.bot.latency*1000:,.0f} ms. The response time is {(end-start)*1000:,.0f} ms.")
+        async with ctx.channel.typing():
+            start = time.time()
+            message = await ctx.reply('<a:loading:819280509007560756> **Calculating Speed...**')
+            end = time.time()
+            st = speedtest.Speedtest()
+            st.get_best_server()
+            d = await self.bot.loop.run_in_executor(None, st.download)
+            u = await self.bot.loop.run_in_executor(None, st.upload)
 
+            p = str(round((end-start)*1000, 2))
+            q = str(round(self.bot.latency*1000, 2))
+            r = str(round(st.results.ping, 2))
+            s = str(round(d/1024/1024, 2))
+            t = str(round(u/1024/1024, 2))
+
+            
+            formatter = []
+            formatter.append(p)
+            formatter.append(q)
+            formatter.append(r)
+            formatter.append(s)
+            formatter.append(t)
+            width = max(len(a) for a in formatter)
+
+            msg = '**Results:**\n'
+            msg += '```yaml\n'
+            msg += ' Latency: {} ms\n'.format(q.ljust(width, " "))
+            msg += ' Network: {} ms\n'.format(r.ljust(width, " "))
+            msg += 'Response: {} ms\n'.format(p.ljust(width, " "))
+            msg += 'Download: {} Mb/s\n'.format(s.ljust(width, " "))
+            msg += '  Upload: {} Mb/s\n'.format(t.ljust(width, " "))
+            msg += '```'
+        await message.edit(content=msg)
+        
+
+    @commands.command(pass_context=True)
+    async def hostinfo(self, ctx):
+        """List info about the bot's host environment."""
+        message = await ctx.channel.send('Gathering info...')
+
+        cpuCores    = psutil.cpu_count(logical=False)
+        cpuThread    = psutil.cpu_count()
+        #cpuThred      = os.cpu_count()
+        cpuUsage      = psutil.cpu_percent(interval=1)
+        memStats      = psutil.virtual_memory()
+        memPerc       = memStats.percent
+        memUsed       = memStats.used
+        memTotal      = memStats.total
+        memUsedGB     = "{0:.1f}".format(((memUsed / 1024) / 1024) / 1024)
+        memTotalGB    = "{0:.1f}".format(((memTotal/1024)/1024)/1024)
+        currentOS     = platform.platform()
+        system        = platform.system()
+        release       = platform.release()
+        version       = platform.version()
+        processor     = platform.processor()
+        botOwner      = self.bot.owner
+        botName       = ctx.guild.me
+        currentTime   = int(time.time())
+        timeString    = default.time_between(self.bot.starttime, currentTime)
+        pythonMajor   = sys.version_info.major
+        pythonMinor   = sys.version_info.minor
+        pythonMicro   = sys.version_info.micro
+        pythonRelease = sys.version_info.releaselevel
+        pyBit         = struct.calcsize("P") * 8
+        process       = subprocess.Popen(['git', 'rev-parse', '--short', 'HEAD'], shell=False, stdout=subprocess.PIPE)
+        git_head_hash = process.communicate()[0].strip()
+
+        threadString = 'thread'
+        if not cpuThread == 1:
+            threadString += 's'
+
+        msg = '***{}\'s*** ***Home:***\n'.format(botName)
+        msg += '```diff\n'
+        msg += '+ OS       : {}\n'.format(currentOS)
+        msg += '+ Owner    : {}\n'.format(botOwner)
+        msg += '+ Client   : {}\n'.format(botName)
+        msg += '+ Commit   : {}\n'.format(git_head_hash.decode("utf-8"))
+        msg += '+ Uptime   : {}\n'.format(timeString)
+        msg += '+ Hostname : {}\n'.format(platform.node().replace("Siamaks","X"))
+        msg += '+ Language : Python {}.{}.{} {} ({} bit)\n'.format(pythonMajor, pythonMinor, pythonMicro, pythonRelease, pyBit)
+        msg += '+ Processor: {}\n'.format(processor)
+        msg += '+ System   : {}\n'.format(system)
+        msg += '+ Release  : {}\n'.format(release)
+        msg += '+ CPU Core : {} Threads\n\n'.format(cpuCores)
+        msg += default.center('{}% of {} {}'.format(cpuUsage, cpuThread, threadString), '- CPU') + '\n'
+        msg += default.makeBar(int(round(cpuUsage))) + "\n\n"
+        msg += default.center('{} ({}%) of {}GB used'.format(memUsedGB, memPerc, memTotalGB), '- RAM') + '\n'
+        msg += default.makeBar(int(round(memPerc))) + "\n"
+        #msg += 'Processor Version: {}\n\n'.format(version)
+        msg += "```"
+
+        await message.edit(content=msg)
 
     @commands.command(brief="Get information on any discord user by ID.", aliases=['lookup'])
     async def user(self, ctx, snowflake:int = None):
@@ -652,6 +749,7 @@ class General(commands.Cog):
             await ctx.send(embed=embed)
         else:
             await ctx.send("I don't know who my owner is ¯\_(ツ)_/¯.")
+
 
     @commands.command(brief="Displays the source code or for a specific command.", aliases=['sourcecode'])
     async def source(self, ctx, *, command: str = None):

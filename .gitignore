@@ -9,3 +9,4 @@ tokens.txt
 *.log
 logs
 *.0
+cogs/config.py

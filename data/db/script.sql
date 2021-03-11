@@ -9,35 +9,35 @@ CREATE TABLE IF NOT EXISTS servers (
 );
 
 CREATE TABLE IF NOT EXISTS logging (
-    server_id bigint PRIMARY KEY, 
-    message_edits boolean, 
+    server_id bigint PRIMARY KEY,
+    message_edits boolean,
     message_deletions boolean,
-    role_changes boolean, 
+    role_changes boolean,
     channel_updates boolean,
-    name_updates boolean, 
+    name_updates boolean,
     voice_state_updates boolean,
-    avatar_changes boolean, 
-    bans boolean, 
+    avatar_changes boolean,
+    bans boolean,
     leaves boolean,
     joins boolean,
     ignored_channels text,
     logchannel bigint,
     logging_webhook_id varchar(100)
 );
-
+DROP TABLE users;
 CREATE TABLE IF NOT EXISTS users (
-    id bigint, 
-    roles text, 
-    server_id bigint, 
-    nicknames text, 
-    messagecount bigint DEFAULT 0 NOT NULL, 
-    eyecount bigint DEFAULT 0 NOT NULL, 
-    commandcount bigint DEFAULT 0 NOT NULL
+    index bigserial PRIMARY KEY,
+    user_id bigint,
+    server_id bigint,
+    nicknames text,
+    roles text,
+    eyecount bigint DEFAULT 0 NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS mutes (
     muted_user bigint,
     server_id bigint,
+    role_ids text,
     endtime timestamp
 );
 
@@ -60,23 +60,24 @@ CREATE TABLE IF NOT EXISTS last_seen (
 );
 
 CREATE TABLE IF NOT EXISTS messages (
-    unix real, 
-    timestamp timestamp, 
-    content text, 
-    msg_id bigint, 
-    author_id bigint, 
-    channel_id bigint, 
+    unix real,
+    timestamp timestamp,
+    content text,
+    msg_id bigint,
+    author_id bigint,
+    channel_id bigint,
     server_id bigint
 );
 
 CREATE TABLE IF NOT EXISTS commands (
-    timestamp timestamp,
-    command varchar(20),
-    content text,
-    executor varchar(50),
-    executor_id bigint,
-    channel_id bigint,
-    server_id bigint
+    index BIGSERIAL PRIMARY KEY,
+    server_id BIGINT,
+    channel_id BIGINT,
+    author_id BIGINT,
+    timestamp TIMESTAMP,
+    prefix TEXT,
+    command TEXT,
+    failed BOOLEAN
 );
 
 CREATE TABLE IF NOT EXISTS blacklist (
@@ -112,7 +113,7 @@ CREATE TABLE IF NOT EXISTS snipe (
     channel_id bigint PRIMARY KEY,
     server_id bigint,
     author_id bigint,
-    message_id bigint, 
+    message_id bigint,
     content text,
     timestamp timestamp
 );
