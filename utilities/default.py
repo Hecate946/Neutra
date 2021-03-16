@@ -164,7 +164,7 @@ async def prettyResults(ctx, filename: str = "Results", resultmsg: str = "Here's
     )
 
 def makeBar(progress):
-    return '- [{0}{1}] {2}%'.format('#'*(int(round(progress/2))), ' '*(50-(int(round(progress/2)))), progress)
+    return '[{0}{1}] {2}%'.format('#'*(int(round(progress/2))), ' '*(50-(int(round(progress/2)))), progress)
 
 def center(string, header = None):
     leftPad = ' '*(int(round((50-len(string))/2)))
@@ -174,12 +174,3 @@ def center(string, header = None):
     else:
         output = leftPad
     return output
-
-class RemoveNoise(logging.Filter):
-    def __init__(self):
-        super().__init__(name='discord.state')
-
-    def filter(self, record):
-        if record.levelname == 'WARNING' and 'referencing an unknown' in record.msg:
-            return False
-        return True

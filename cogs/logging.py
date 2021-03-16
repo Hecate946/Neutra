@@ -147,7 +147,7 @@ class Logging(commands.Cog):
             embed.set_footer(text=f"Channel ID: {after.id}")
             await webhook.execute(embed=embed, username=self.bot.user.name)
 
-
+    '''
     @commands.Cog.listener()
     async def on_user_update(self, before, after):
         # TODO Fix up this listener. Possibly remove altogether.
@@ -232,20 +232,24 @@ class Logging(commands.Cog):
                 for i in to_send:
                     webhook_id = await self.cxn.fetchrow("SELECT logging_webhook_id FROM logging WHERE server_id = $1", i) or None
                     if webhook_id is None or "None" in str(webhook_id): 
+                        webhook = False
                         continue
+                    webhook = True
                     webhook_id = int(webhook_id[0])
                     webhook = await self.bot.fetch_webhook(webhook_id)
-                embed = discord.Embed(
-                              description=f"**User:** {after.mention} **Name:** `{after}`\n"
-                                          "New image below, old image to the right.",
-                              colour=default.config()["embed_color"],
-                              timestamp=datetime.utcnow())
-    
-                embed.set_thumbnail(url=before.avatar_url)
-                embed.set_image(url=after.avatar_url)
-                embed.set_author(name=f"Avatar Change")
-                embed.set_footer(text=f"User ID: {after.id}")
-                await webhook.execute(embed=embed, username=self.bot.user.name)
+                if webhook is True:
+                    embed = discord.Embed(
+                                  description=f"**User:** {after.mention} **Name:** `{after}`\n"
+                                              "New image below, old image to the right.",
+                                  colour=default.config()["embed_color"],
+                                  timestamp=datetime.utcnow())
+
+                    embed.set_thumbnail(url=before.avatar_url)
+                    embed.set_image(url=after.avatar_url)
+                    embed.set_author(name=f"Avatar Change")
+                    embed.set_footer(text=f"User ID: {after.id}")
+                    await webhook.execute(embed=embed, username=self.bot.user.name)
+    '''
 
 
     @commands.Cog.listener()

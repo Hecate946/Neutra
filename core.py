@@ -64,6 +64,7 @@ class NGC0000(commands.AutoShardedBot):
         self.index = 0
 
     def setup(self):
+        # loads all the cogs in ./cogs and prints them on sys.stdout
         for cog in COGS:
             self.load_extension(f"cogs.{cog}")
             print(color(fore="#3EC4CD", text=f"Loaded: {str(cog).upper()}"))
@@ -75,6 +76,7 @@ class NGC0000(commands.AutoShardedBot):
 
 
     def run(self):
+        # Starter function that gets called in starter.py
         self.setup()
 
         self.token = default.config()["token"]
@@ -136,7 +138,8 @@ class NGC0000(commands.AutoShardedBot):
     @tasks.loop(minutes=10)
     async def db_updater(self):
         await self.update_db()
-        # The real 
+        # ( ͡° ͜ʖ ͡°) The real reason why I code ( ͡° ͜ʖ ͡°) 
+        # (っ´▽｀)っ So pretty...
         self.index += 1
         msg    = f"DATABASE TASK UPDATE #{self.index}"
         top    = "##" + "#" * (len(msg) + 4)
@@ -147,16 +150,19 @@ class NGC0000(commands.AutoShardedBot):
         print(color(fore="#1EDA10", text=bottom))
         sys.stdout.write("\033[F" * 3)
         # Not pretty but might as well set the bot status here
-        # For some weird reason after awhile the status doesn't show up so... updating it every minute.
+        # For some weird reason after awhile the status doesn't show up so... 
+        # updating it with the database task loop.
         await self.set_status()
+
 
     @db_updater.before_loop
     async def before_some_task(self):
-        SEPARATOR = '================================'
         await self.wait_until_ready()
+        await self.set_status()
         # After the bot is ready, but before the task loop for the DB updater starts,
         # We can execute the SQL script to make sure we have all our tables.
         if os.path.isfile(BUILD_PATH):
+            SEPARATOR = '================================'
             print(color(fore="#830083", text=SEPARATOR))
             print(color(fore="#830083", text="Executing data/db/script.sql..."))
             print(color(fore="#830083", text=SEPARATOR))
@@ -171,7 +177,10 @@ class NGC0000(commands.AutoShardedBot):
                 print(color(fore="#830083", text=f"Established Database Connection."))
                 print(color(fore="#830083", text=SEPARATOR))
 
+
     async def set_status(self):
+        # This sets the bot's presence, status, and activity
+        # based off of the values in ./config.json
         if default.config()["activity"] == "listening":
             a = discord.ActivityType.listening
         elif default.config()["activity"] == "watching":
@@ -202,24 +211,30 @@ class NGC0000(commands.AutoShardedBot):
 
 
     async def update_db(self):
-
+        # Main database updater. This gets updated in the task loop on interval.
         await connection.executemany("""
         INSERT INTO servers (server_id, server_name, server_owner_id, server_owner_name) VALUES ($1, $2, $3, $4)
         ON CONFLICT (server_id) DO UPDATE SET server_id = $1, server_name = $2, server_owner_id = $3, server_owner_name = $4
-        """, ((server.id, server.name, server.owner.id, str(server.owner)) for server in self.guilds))
+        """, ((server.id, server.name, server.owner.id, str(server.owner))
+        for server in self.guilds))
 
 
         await connection.executemany("""INSERT INTO roleconfig (server_id, whitelist, autoroles, reassign) VALUES ($1, $2, $3, $4)
         ON CONFLICT (server_id) DO NOTHING""",
-        ((server.id, None, None, True) for server in self.guilds))
+        ((server.id, None, None, True)
+        for server in self.guilds))
 
 
-        await connection.executemany("INSERT INTO logging VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT (server_id) DO NOTHING",
-        ((server.id, True, True, True, True, True, True, True, True, True, True, None, None) for server in self.guilds))
+        await connection.executemany("""INSERT INTO logging VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        ON CONFLICT (server_id) DO NOTHING""",
+        ((server.id, True, True, True, True, True, True, True, True, True, True, None, None)
+        for server in self.guilds))
 
 
         await connection.executemany("""INSERT INTO moderation VALUES ($1, $2, $3, $4)
-        ON CONFLICT (server_id) DO NOTHING""", ((server.id, False, None, None) for server in self.guilds))
+        ON CONFLICT (server_id) DO NOTHING""", 
+        ((server.id, False, None, None)
+        for server in self.guilds))
 
 
         member_list = self.get_all_members()
@@ -249,7 +264,7 @@ class NGC0000(commands.AutoShardedBot):
                 roles,
                 0
             )
-
+    # Command logger to ./data/logs/commands.log
     @commands.Cog.listener()
     async def on_command(self, ctx):
         message = ctx.message
@@ -279,11 +294,12 @@ class NGC0000(commands.AutoShardedBot):
         elif isinstance(error, commands.CommandInvokeError):
             err = default.traceback_maker(error.original, advance=True)
             if "2000 or fewer" in str(error) and len(ctx.message.clean_content) > 1900:
-                return await ctx.send("<:fail:816521503554273320> Result was greater than 2000 characters. Aborting...")
+                return await ctx.send("<:fail:816521503554273320> Result was greater than 2000 characters.")
             print(color(fore="FF0000", text=f'\nCommand {ctx.command.qualified_name} raised the error: {error.original.__class__.__name__}: {error.original}'), file=sys.stderr)
             print(err, file=sys.stderr)
 
         elif isinstance(error, commands.BotMissingPermissions):
+            # Readable error so just send it to the channel where the error occurred.
             await ctx.send(f"<:error:816456396735905844> {error}")
 
         else:
@@ -371,7 +387,7 @@ class NGC0000(commands.AutoShardedBot):
         print(color(fore="#ff008c", text=user_count_message))
         print(color(fore="#ff008c", text=separator))
 
-        # Start task loop
+        # Start the task loop
         await self.db_updater.start()
 
     async def on_message(self, message):

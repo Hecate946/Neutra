@@ -1,14 +1,16 @@
-import discord
+import os
 import asyncio
+import discord
 
+from datetime import datetime
 from discord.ext import commands
 
 from core import OWNERS
 from utilities import default
 
 
-COG_EXCEPTIONS = ['CONFIG']
-COMMAND_EXCEPTIONS = ['EYES']
+COG_EXCEPTIONS = ['CONFIG','HELP']
+COMMAND_EXCEPTIONS = ['EYECOUNT']
 
 
 def setup(bot):
@@ -55,7 +57,10 @@ class Help(commands.Cog):
             await self.bot.wait_for('raw_reaction_add', timeout=120.0, check=reaction_check)
             await msg.delete()
         except asyncio.TimeoutError:
-            await msg.delete()
+            try:
+                await msg.delete()
+            except discord.NotFound:
+                return
         except discord.Forbidden:
             return
 
@@ -147,52 +152,32 @@ class Help(commands.Cog):
              ## Manages Cog Help ##
             ######################
 
-            if invokercommand.lower() in ["auto","automod","automoderation"]:
-                cog = self.bot.get_cog("Automoderation")
-                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
-
-            if invokercommand.lower() in ["channel","channels","channeling","channelling"]:
-                cog = self.bot.get_cog("Channels")
-                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
-
-            if invokercommand.lower() in ["config","conf"]:
-                cog = self.bot.get_cog("Config")
-                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
-
-            if invokercommand.lower() in ["info","general","information"]:
+            if invokercommand.lower() in ["info","general","information","utils","util","misc","utilities","utility"]:
                 cog = self.bot.get_cog("General")
-                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
-
-            if invokercommand.lower() in ["message","messages","cleanup","msg","msgs"]:
-                cog = self.bot.get_cog("Messages")
                 return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
 
             if invokercommand.lower() in ["logging","logger","logs"]:
                 cog = self.bot.get_cog("Logging")
                 return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
 
-            if invokercommand.lower() in ["mod","moderator","punishment","moderation"]:
+            if invokercommand.lower() in ["mod","moderator","punishment","moderation","cleanup"]:
                 cog = self.bot.get_cog("Moderation")
                 return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
 
-            if invokercommand.lower() in ["owner","master","creator","owners","hidden","own"]:
-                cog = self.bot.get_cog("Owner")
+            if invokercommand.lower() in ["owner","master","creator","owners","hidden","own","config","conf"]:
+                cog = self.bot.get_cog("Config")
                 return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
                 
             if invokercommand.lower() in ["roles","role","serverroles"]:
                 cog = self.bot.get_cog("Roles")
                 return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
 
-            if invokercommand.lower() in ["admin","administration","administrator","settings","setup","configuration"]:
+            if invokercommand.lower() in ["admin","administration","administrator","settings","setup","configuration","auto","automod","automoderation"]:
                 cog = self.bot.get_cog("Settings")
                 return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
 
             if invokercommand.lower() in ["stats","statistics","track","tracking"]:
                 cog = self.bot.get_cog("Statistics")
-                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
-
-            if invokercommand.lower() in ["warner","warning","warnings"]:
-                cog = self.bot.get_cog("Warnings")
                 return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
     
             else:
@@ -231,7 +216,96 @@ class Help(commands.Cog):
                     await ctx.send(f"<:error:816456396735905844> No command named `{invokercommand}` found.")
 
 
-            
+    def _get_help(self, command, max_len = 0):
+        # A helper method to return the command help - or a placeholder if none
+        if max_len == 0:
+            # Get the whole thing
+            if command.help == None:
+                return "No description..."
+            else:
+                return command.help
+        else:
+            if command.help == None:
+                c_help = "No description..."
+            else:
+                c_help = command.help.split("\n")[0]
+            return (c_help[:max_len-3]+"...") if len(c_help) > max_len else c_help
+
+    def _is_submodule(self, parent, child):
+        return parent == child or child.startswith(parent + ".")
+
+    @commands.command(
+        brief   = "Dumps a timestamped, formatted list of commands and descriptions.", 
+        aliases = ["txthelp","helpfile"]
+    )
+    async def dumphelp(self, ctx):
+        """
+        Usage: -dumphelp
+        Aliases: -txthelp, -helpfile
+        Output: List of commands and descriptions
+        """
+        timestamp = datetime.today().strftime("%m-%d-%Y")
+
+        help_txt = './data/wastebin/Help-{}.txt'.format(timestamp)
+
+        message = await ctx.send('Uploading help list...')
+        msg = ''
+        prefix = ctx.prefix
+        
+        # Get and format the help
+        for cog in sorted(self.bot.cogs):
+            if cog.upper() in COG_EXCEPTIONS:
+                continue
+            cog_commands = sorted(self.bot.get_cog(cog).get_commands(), key=lambda x:x.name)
+            cog_string = ""
+            # Get the extension
+            the_cog = self.bot.get_cog(cog)
+            # Make sure there are non-hidden commands here
+            visible = []
+            for command in self.bot.get_cog(cog).get_commands():
+                if not command.hidden:
+                    visible.append(command)
+            if not len(visible):
+                # All hidden - skip
+                continue
+            cog_count = "1 command" if len(visible) == 1 else "{} commands".format(len(visible))
+            for e in self.bot.extensions:
+                b_ext = self.bot.extensions.get(e)
+                if self._is_submodule(b_ext.__name__, the_cog.__module__):
+                    # It's a submodule
+                    cog_string += "{}{} Cog ({}) - {}.py Extension:\n".format(
+                        "    ",
+                        cog,
+                        cog_count,
+                        e[5:]
+                    )
+                    break
+            if cog_string == "":
+                cog_string += "{}{} Cog ({}):\n".format(
+                    "    ",
+                    cog,
+                    cog_count
+                )
+            for command in cog_commands:
+                cog_string += "{}  {}\n".format("    ", prefix + command.name + " " + command.signature)
+                cog_string += "\n{}  {}  {}\n\n".format(
+                    "\t",
+                    " "*len(prefix),
+                    self._get_help(command, 80)
+                )
+            cog_string += "\n"
+            msg += cog_string
+        
+        # Encode to binary
+        # Trim the last 2 newlines
+        msg = msg[:-2].encode("utf-8")
+        with open(help_txt, "wb") as myfile:
+            myfile.write(msg)
+
+        await ctx.send(file=discord.File(help_txt))
+        await message.edit(content='<:checkmark:816534984676081705> Uploaded Help-{}.txt'.format(timestamp))
+        os.remove(help_txt)
+
 
 
 

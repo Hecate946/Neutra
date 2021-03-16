@@ -165,8 +165,12 @@ class SimplePageSource(menus.ListPageSource):
 
     async def format_page(self, menu, entries):
         pages = []
-        for index, entry in enumerate(entries, start=menu.current_page * self.per_page):
-            pages.append(f'{index + 1}. {entry}')
+        if to_index is False:
+            for entry in entries:
+                pages.append(f'{entry}')
+        else:
+            for index, entry in enumerate(entries, start=menu.current_page * self.per_page):
+                pages.append(f'{index + 1}. {entry}')
 
         maximum = self.get_max_pages()
         if maximum > 1:
@@ -177,7 +181,7 @@ class SimplePageSource(menus.ListPageSource):
             pages.append('')
             pages.append('Need help? React with <:info:817625979014348830> for more info.')
             self.initial_page = False
-        
+
         formatted_pages = []
         for i in pages:
             formatted_pages.append(str(i).replace("[","").replace("]","").replace("'",""))
@@ -190,6 +194,188 @@ class SimplePages(MainMenu):
     Basically an embed with some normal formatting.
     """
 
-    def __init__(self, entries, *, per_page=12):
-        super().__init__(SimplePageSource(entries, per_page=per_page))
+    def __init__(self, entries, **kwargs):
+        super().__init__(SimplePageSource(entries, per_page=kwargs.get("per_page", 12)))
         self.embed = discord.Embed(color=default.config()["embed_color"])
+        global to_index
+        to_index = kwargs.get("index", True)
+
+
+class Pager(menus.Menu):
+    def __init__(self, entries, **kwargs):
+        per_page = kwargs.get("per_page", 12)
+        self.title = kwargs.get("title", discord.Embed.Empty)
+        self.desc = kwargs.get("description", discord.Embed.Empty)
+        self.desc_head = kwargs.get("desc_head", None)
+        self.desc_foot = kwargs.get("desc_foot", None)
+        self.color = kwargs.get("color", default.config()["embed_color"])
+        super().__init__(entries, per_page=per_page)
+        self.embed = discord.Embed()
+
+    async def send_initial_message(self, ctx, channel):
+        return super().send_initial_message(ctx, channel)
+        
+    def enforce_limit(self, value, max):
+        if not type(value) is str:
+            return value
+        return (value[:max-3]+"...") if len(value) > max else value
+
+    async def format_page(self, menu, entries):
+        self.embed.clear_fields()
+        self.embed.description = discord.Embed.Empty
+
+        #for key, value in entries:
+        #    self.embed.add_field(name=key, value=value, inline=False)
+
+        maximum = self.get_max_pages()
+        if maximum > 1:
+            text = f'Page {menu.current_page + 1}/{maximum} ({len(self.entries)} entries)'
+            self.embed.set_footer(text=text)
+
+        self.embed.title=self.title
+        self.embed.color=self.color
+        if self.desc_head and self.desc_foot and self.desc is not discord.Embed.Empty:
+            self.embed.description=f"{self.desc_head}\n{self.enforce_limit(self.desc, DESC_LIMIT)}\n{self.desc_foot}"
+        else:
+            self.embed.description = self.enforce_limit(self.desc, DESC_LIMIT)
+        return self.embed
+
+
+
+class EmbedLimits:
+    Field = 1024
+    Name = 256
+    Title = 256
+    Description = 2048
+    Fields = 25
+    Total = 6000
+
+
+class Paginator:
+    def __init__(self, title=None, description=None, page_count=True, init_page=True, color=default.config()["embed_color"]):
+        """
+        Args:
+            title: title of the embed
+            description: description of the embed
+            page_count: whether to show page count in the footer or not
+            init_page: create a page in the init method
+        """
+        self.color = color
+        self._fields = 0
+        self._pages = []
+        self.title = title
+        self.description = description
+        self.set_page_count = page_count
+        self._current_page = -1
+        self._char_count = 0
+        self._current_field = None
+        if init_page:
+            self.add_page(title, description)
+
+    @property
+    def pages(self):
+        return self._pages
+
+    def finalize(self):
+        self._add_field()
+        if not self.set_page_count:
+            return
+
+        total = len(self.pages)
+        for idx, embed in enumerate(self.pages):
+            embed.set_footer(text=f'{idx+1}/{total}')
+
+    def add_page(self, title=None, description=None, color=default.config()["embed_color"], paginate_description=False):
+        """
+        Args:
+            title:
+            description:
+            paginate_description:
+                If set to true will split description based on max description length
+                into multiple embeds
+        """
+        title = title or self.title
+        description = description or self.description
+        overflow = None
+        if description:
+            if paginate_description:
+                description_ = description[:EmbedLimits.Description]
+                overflow = description[EmbedLimits.Description:]
+                description = description_
+            else:
+                description = description[:EmbedLimits.Description]
+        
+
+        self._pages.append(discord.Embed(title=title, description=description, color=default.config()["embed_color"]))
+        self._current_page += 1
+        self._fields = 0
+        self._char_count = 0
+        self._char_count += len(title) if title else 0
+        self._char_count += len(description) if description else 0
+        self.title = title
+        self.description = description
+        self.color = color
+
+        if overflow:
+            self.add_page(title=title, description=overflow, color=color, paginate_description=True)
+
+    def edit_page(self, title=None, description=None, color=default.config()["embed_color"]):
+        page = self.pages[self._current_page]
+        if title:
+            self._char_count -= len(str(title))
+            page.title = str(title)
+            self.title = title
+            self._char_count += len(title)
+        if description:
+            self._char_count -= len(str(description))
+            page.description = str(description)
+            self.description = description
+            self._char_count += len(description)
+        self.color = default.config()["embed_color"]
+
+    def _add_field(self):
+        if not self._current_field:
+            return
+
+        if not self._current_field['value']:
+            self._current_field['value'] = 'Emptiness'
+
+        self.pages[self._current_page].add_field(**self._current_field)
+        self._fields += 1
+        self._char_count += len(self._current_field['name']) + len(self._current_field['value'])
+        self._current_field = None
+
+    def add_field(self, name, value='', inline=False):
+        if self._current_field is not None and self._fields < 25:
+            self._add_field()
+
+        name = name[:EmbedLimits.Title]
+        leftovers = value[EmbedLimits.Field:]
+        value = value[:EmbedLimits.Field]
+        length = len(name) + len(value)
+
+        if self._fields == 25:
+            self._pages.append(discord.Embed(title=self.title))
+            self._current_page += 1
+            self._fields = 0
+            self._char_count = len(self.title)
+            if self._current_field is not None:
+                self._add_field()
+
+        elif length + self._char_count > EmbedLimits.Total:
+            self._pages.append(discord.Embed(title=self.title))
+            self._current_page += 1
+            self._fields = 0
+            self._char_count = len(self.title)
+
+        self._current_field = {'name': name, 'value': value, 'inline': inline}
+
+        if leftovers:
+            self.add_field(name, leftovers, inline=inline)
+
+    def add_to_field(self, value):
+        v = self._current_field['value']
+        if len(v) + len(value) > EmbedLimits.Field:
+            self.add_field(self._current_field['name'], value)
+        else:
+            self._current_field['value'] += value

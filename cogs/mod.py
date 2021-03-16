@@ -1,15 +1,15 @@
 import re
 import typing
 import asyncio
+import asyncpg
 import discord
-import sqlite3
 
 from discord.ext import commands, menus
 from datetime import datetime, timedelta
+from better_profanity import profanity
 
 from utilities import permissions, default, converters, pagination
 from core import OWNERS
-
 
 
 
@@ -28,7 +28,226 @@ class Moderation(commands.Cog):
         self.mention_re = re.compile(r"[0-9]{17,21}")
 
 
-    @commands.command(aliases=["nick", "setnick"], brief="Edit or reset a member's nickname.")
+    @commands.command(brief="Set the slowmode for a channel")
+    @commands.guild_only()
+    @commands.bot_has_guild_permissions(manage_channels=True)
+    @permissions.has_permissions(manage_channels=True)
+    async def slowmode(self, ctx, time: float):
+        """
+        Usage:      -slowmode [seconds]
+        Output:     Sets the channel's slowmode to your input value.
+        Permission: Manage Channels
+        """
+        try:
+            await ctx.channel.edit(slowmode_delay=time)
+        except discord.HTTPException as e:
+            await ctx.send(f'<:fail:816521503554273320> Failed to set slowmode because of an error\n{e}')
+        else:
+            await ctx.send(f'<:checkmark:816534984676081705> Slowmode set to `{time}s`')
+
+
+    @commands.command(aliases=["lockdown","lockchannel"], brief="Lock a channel")
+    @commands.guild_only()
+    @commands.bot_has_guild_permissions(manage_channels=True)
+    @permissions.has_permissions(manage_channels=True)
+    async def lock(self, ctx, channel_ = None, minutes_: int = None):
+        """
+        Usage:      -lock [channel] [minutes]
+        Output:     Locked channel for the specified time. Infinite if not specified
+        Permission: Manage Channels
+        """
+        channel_id = 0
+        
+        minutes = 0
+        if channel_ is None: 
+            channel_id += ctx.channel.id
+
+        elif channel_.isdigit() or str(channel_).strip("<#>").isdigit(): 
+            try:
+                channel = ctx.guild.get_channel(int(str(channel_).strip("<#>")))
+                channel_id += int(channel.id)
+            except TypeError:
+                minutes += int(channel_)
+                channel_id += ctx.channel.id
+        else:
+            try:
+                channel_obj = discord.utils.get(ctx.guild.text_channels, name=channel_)
+                if channel_obj is None: 
+                    channel_id += ctx.channel.id
+                else:
+                    channel_id += channel_obj.id
+            except Exception as e: return await ctx.send(e)
+        channel = ctx.guild.get_channel(channel_id)
+        try:
+            overwrites_everyone = channel.overwrites_for(ctx.guild.default_role)
+            everyone_overwrite_current = overwrites_everyone.send_messages
+            msg = await ctx.send(f"Locking channel {channel.mention}...")
+            try:
+                await self.cxn.execute("INSERT INTO lockedchannels VALUES ($1, $2, $3, $4)", 
+                                        channel.id,
+                                        ctx.guild.id, 
+                                        ctx.author.id, 
+                                        str(everyone_overwrite_current))
+            except asyncpg.UniqueViolationError:
+                return await msg.edit(content=f"<:fail:816521503554273320> Channel {channel.mention} is already locked.")
+
+
+            overwrites_everyone.send_messages = False
+            await ctx.message.channel.set_permissions(ctx.guild.default_role, overwrite=overwrites_everyone, reason=(default.responsible(ctx.author, "Channel locked by command execution")))
+            if minutes_ is not None:
+                if minutes_ > 120:
+                    minutes_ = 120
+                elif minutes_ < 1:
+                    minutes_ = 0
+                minutes += minutes_
+            if minutes != 0:
+                await msg.edit(content=f"<:lock:817168229712527360> Channel {channel.mention} locked for `{minutes}` minute{'' if minutes == 1 else 's'}. ID: `{channel.id}`")
+                await asyncio.sleep(minutes*60)
+                await self.unlock(ctx, channel=channel, surpress=True)
+            await msg.edit(content=f"<:lock:817168229712527360> Channel {channel.mention} locked. ID: `{channel.id}`")
+        except discord.Forbidden:
+            await msg.edit(content=f"<:fail:816521503554273320> I have insufficient permission to lock channels.")
+
+
+    @commands.command(brief="Unlock a channel.", aliases=["unlockchannel"])
+    @commands.guild_only()
+    @commands.bot_has_guild_permissions(manage_channels=True)
+    @permissions.has_permissions(manage_channels=True)
+    async def unlock(self, ctx, channel:discord.TextChannel = None, surpress = False):
+        """
+        Usage:      -unlock [channel]
+        Output:     Unlocks a previously locked channel
+        Permission: Manage Channels
+        """
+        if channel is None:
+            channel = ctx.channel
+        try:
+            locked = await self.cxn.fetchrow("SELECT channel_id FROM lockedchannels WHERE channel_id = $1", channel.id) or (None)
+            if locked is None: 
+                if surpress is True:
+                    return 
+                else:
+                    return await ctx.send(f"<:lock:817168229712527360> Channel {channel.mention} is already unlocked. ID: `{channel.id}`")
+
+            msg = await ctx.send(f"Unlocking channel {channel.mention}...")
+            old_overwrites = await self.cxn.fetchrow("SELECT everyone_perms FROM lockedchannels WHERE channel_id = $1", channel.id)
+            everyone_perms = old_overwrites[0]
+
+            if everyone_perms == "None": 
+                everyone_perms = None
+            elif everyone_perms == "False": 
+                everyone_perms = False
+            elif everyone_perms == "True": 
+                everyone_perms = True
+
+            overwrites_everyone = ctx.channel.overwrites_for(ctx.guild.default_role)
+            overwrites_everyone.send_messages = everyone_perms
+            await ctx.message.channel.set_permissions(ctx.guild.default_role, overwrite=overwrites_everyone, reason=(default.responsible(ctx.author, "Channel unlocked by command execution")))
+            await self.cxn.execute("DELETE FROM lockedchannels WHERE channel_id = $1", channel.id)
+            await msg.edit(content=f"<:unlock:817168258825846815> Channel {channel.mention} unlocked. ID: `{channel.id}`")
+        except discord.errors.Forbidden:
+            await msg.edit(content=f"<:fail:816521503554273320> I have insufficient permission to unlock channels.")
+ 
+      ####################
+     ## VOICE COMMANDS ##
+    ####################
+
+    @commands.command(brief="Move a member from one voice channel into another")
+    @commands.guild_only()
+    @commands.bot_has_guild_permissions(move_members=True)
+    @permissions.has_permissions(move_members=True)
+    async def vcmove(self, ctx, targets:commands.Greedy[discord.Member] = None, channel:str = None):
+        """
+        Usage:      -vcmove <target> <target>... <channel>
+        Output:     Moves members into a new voice channel
+        Permission: Move Members
+        """
+        if not targets: return await ctx.send(f"Usage: `{ctx.prefix}vc move <to channel> <target> [target]...`")
+        if not channel: return await ctx.send(f"Usage: `{ctx.prefix}vc move <to channel> <target> [target]...`")
+        voice = []
+        try:
+            voicechannel = ctx.guild.get_channel(int(channel))
+        except Exception as e:
+            try:
+                voicechannel = discord.utils.get(ctx.guild.voice_channels, name = channel)
+            except Exception as e:
+                await ctx.send(e)
+        for target in targets:
+            if target.id in OWNERS: return await ctx.send('You cannot move my master.')
+            if ctx.author.top_role.position < target.top_role.position and ctx.author.id not in OWNERS: return await ctx.send('You cannot move other staff members')
+            try:
+                await target.edit(voice_channel=voicechannel)
+            except discord.HTTPException:
+                await ctx.send("<:error:816456396735905844> Target is not connected to a voice channel")
+            voice.append(target)
+        if voice:
+            vckicked = []
+            for member in voice: 
+                users = []
+                people = await self.bot.fetch_user(int(member.id))
+                users.append(people)
+                for user in users:
+                    username = f"{user.name}#{user.discriminator}"
+                    vckicked += [username]
+            await ctx.send('<:checkmark:816534984676081705> VC Moved `{0}`'.format(", ".join(vckicked)))
+
+
+    @commands.command(brief="Disconnect all members from a voice channel")
+    @commands.guild_only()
+    @permissions.has_permissions(move_members=True)
+    @commands.bot_has_guild_permissions(move_members=True)
+    async def vcpurge(self, ctx, channel:discord.VoiceChannel = None):
+        """
+        Usage: -vcpurge <voice channel>
+        Output: Kicks all members from the channel
+        Permission: Move Members
+        """
+        if channel is None: return await ctx.send(f"Usage: `{ctx.prefix}vcpurge <voice channel name/id>`")
+        if channel.members is None:
+            return await ctx.send("<:error:816456396735905844> No members in voice channel.")
+        for member in channel.members:
+            try:
+                if await permissions.voice_priv(ctx, member):
+                    continue
+                await member.edit(voice_channel=None)
+            except Exception:
+                continue
+        await ctx.send(f"<:checkmark:816534984676081705> Purged {channel.mention}.")
+
+
+    @commands.command(brief="Kick members from a voice channel")
+    @commands.guild_only()
+    @permissions.has_permissions(move_members=True)
+    @commands.bot_has_guild_permissions(move_members=True)
+    async def vckick(self, ctx, targets:commands.Greedy[discord.Member]):
+        """
+        Usage:      -vckick <target> <target>
+        Output:     Kicks passed members from their channel
+        Permission: Move Members
+        """
+        if not len(targets): return await ctx.send(f"Usage: `{ctx.prefix}vckick <target> [target]...`")
+        voice = []
+        for target in targets:
+            if ctx.author.top_role.position <= target.top_role.position and ctx.author.id not in OWNERS or ctx.author.id != ctx.guild.owner.id and target.id != ctx.author.id:
+                return await ctx.send('<:fail:816521503554273320> You cannot move other staff members')
+            try:
+                await target.edit(voice_channel=None)
+            except discord.HTTPException:
+                await ctx.send("<:error:816456396735905844> Target is not connected to a voice channel")
+            voice.append(target)
+        if voice:
+            vckicked = []
+            for member in voice: 
+                users = []
+                people = await self.bot.fetch_user(int(member.id))
+                users.append(people)
+                for user in users:
+                    username = f"{user.name}#{user.discriminator}"
+                    vckicked += [username]
+            await ctx.send('<:checkmark:816534984676081705> VC Kicked `{0}`'.format(", ".join(vckicked)))
+
+
+    @commands.command(aliases=["nick", "setnick"], brief="Edit or reset a member's nickname")
     @commands.guild_only()
     @permissions.has_permissions(manage_nicknames=True)
     async def nickname(self, ctx, user: discord.Member, *, nickname: str = None):
@@ -55,122 +274,7 @@ class Moderation(commands.Cog):
      ## Mute Commands ##
     ###################
 
-    @commands.command(brief="Setup server muting system.", aliases=["setmuterole"])
-    @commands.guild_only()
-    @permissions.has_permissions(administrator=True)
-    async def muterole(self, ctx, role:discord.Role = None):
-        """
-        Usage:      -muterole <role>
-        Alias:      -setmuterole
-        Example:    -muterole @Muted
-        Permission: Administrator
-        Output:
-            This command will set a role of your choice as the 
-            "Muted" role. The bot will also create a channel 
-            named "muted" specifically for muted members.
-        Notes:
-            Channel "muted" may be deleted after command execution 
-            if so desired.
-        """
-        if role is None: return await ctx.send(f"Usage: `{ctx.prefix}setmuterole [role]`")
-        if not ctx.guild.me.guild_permissions.administrator: return await ctx.send("I cannot create a muted role without administrator permissions")
-        if ctx.guild.me.top_role.position < role.position: return await ctx.send("The muted role is above my highest role. Aborting...")
-        if ctx.author.top_role.position < role.position and ctx.author.id != ctx.guild.owner.id: return await ctx.send("The muted role is above your highest role. Aborting...")
-        try:
-            await self.cxn.execute("UPDATE moderation SET mute_role = $1 WHERE server_id = $2", role.id, ctx.guild.id)
-        except Exception as e: return await ctx.send(e)
-        msg = await ctx.send(f"<:error:816456396735905844> Creating mute system. This process may take several minutes.")
-        for channel in ctx.guild.channels:
-            await channel.set_permissions(role, view_channel=False)
-        muted_channel = []
-        for channel in ctx.guild.channels:
-            if channel.name == "muted":
-                muted_channel.append(channel)
-        if not muted_channel:
-            overwrites = {
-            ctx.guild.default_role: discord.PermissionOverwrite(read_messages=False),
-            role: discord.PermissionOverwrite(read_messages=True, send_messages=True)
-            }
-            await ctx.guild.create_text_channel(name="muted", overwrites=overwrites, topic="Punishment Channel", slowmode_delay = 30)
-        await msg.edit(content=f"<:checkmark:816534984676081705> Saved `{role.name}` as this server's mute role.")
-
-
-    @commands.command(brief="Softmute members. (Users can read messages)", aliases=["sm"], hidden=True)
-    @commands.guild_only()
-    @commands.bot_has_guild_permissions(manage_roles=True)
-    @permissions.has_permissions(kick_members=True)
-    async def softmute(self, ctx, targets: commands.Greedy[discord.Member], minutes: typing.Optional[int], *, reason: typing.Optional[str] = None):
-        """
-        Usage:     -mute <target> [target]... [minutes] [reason]
-        Alias:     -softmute
-        Example:   -mute person1 person2 10 for spamming
-        Pemission: Kick Members
-        Output:    Adds the mute role to passed users.
-        Notes: 
-            Command -muterole must be executed prior to usage of 
-            this command. Upon usage, will not be able to send 
-            messages in any channel except for messages in #muted 
-            (if still exists). Muted role will be removed from the 
-            user upon -unmute, or when their timed mute ends.
-        """
-        global target
-        if not len(targets): return await ctx.send(f"Usage: `{ctx.prefix}mute <target> [target]... [minutes] [reason]`")
-
-        else:
-            unmutes = []
-            try:
-                self.mute_role = await self.cxn.fetchrow("SELECT mute_role FROM moderation WHERE server_id = $1", ctx.guild.id) or None
-                self.mute_role = self.mute_role[0]
-                if "None" in str(self.mute_role): return await ctx.send(f"use `{ctx.prefix}muterole <role>` to initialize the muted role.")
-                self.mute_role = ctx.guild.get_role(int(self.mute_role))
-            except Exception as e: return await ctx.send(e)
-            muted = []
-            for target in targets:
-                if not self.mute_role in target.roles:
-                    if target.id in OWNERS: return await ctx.send('You cannot mute my master.')
-                    if target.id == ctx.author.id: return await ctx.send('I don\'t think you really want to mute yourself...')
-                    if target.id == self.bot.user.id: return await ctx.send('I don\'t think I want to mute myself...')
-                    if target.guild_permissions.kick_members and ctx.author.id not in OWNERS and ctx.author.id != ctx.guild.owner.id: return await ctx.send('You cannot punish other staff members.')
-                    if ctx.guild.me.top_role.position < target.top_role.position and ctx.author.id not in OWNERS: return await ctx.send(f"My highest role is below {target}'s highest role. Aborting mute.")
-                    if ctx.guild.me.top_role.position < self.mute_role.position: return await ctx.send("My highest role is below the mute role. Aborting mute.")
-                    try:
-                        await target.add_roles(self.mute_role)
-                        muted.append(target)
-                    except Exception as e: 
-                        return await ctx.send(e)
-                    if reason:
-                        try:
-                            await target.send(f"<:announce:807097933916405760> You have been muted in **{ctx.guild.name}** {reason}.\
-                                                Mute duration: `{minutes if minutes is not None else 'Indefinetely'} \
-                                                minute{'' if minutes == 1 else 's'}`")
-                        except: return
-                    global unmutereason
-                    unmutereason = reason
-
-                    if minutes:
-                        unmutes.append(target)
-                else:
-                    await ctx.send(f"<:error:816456396735905844> Member `{target.display_name}` is already muted.")
-            if muted:   
-                allmuted = []
-                for member in muted: 
-                    users = []
-                    people = await self.bot.fetch_user(int(member.id))
-                    users.append(people)
-                    for user in users:
-                        username = f"{user.name}#{user.discriminator}"
-                        allmuted += [username]
-                if minutes is None:
-                    msg = f'<:checkmark:816534984676081705> Softmuted `{", ".join(allmuted)}` indefinetely'
-                else:
-                    msg = f'<:checkmark:816534984676081705> Softmuted `{", ".join(allmuted)}` for {minutes:,} minute{"" if minutes == 1 else "s"}'
-                await ctx.send(msg)
-            if len(unmutes):
-                await asyncio.sleep(minutes*60)
-                await self.unmute(ctx, targets)
-
-
-    @commands.command(brief='Hardmute members. (Users cannot read messages)', aliases=["hackmute","mute"])
+    @commands.command(brief='Mute members', aliases=["hackmute","mute"])
     @commands.guild_only()
     @permissions.has_permissions(kick_members=True)
     async def hardmute(self, ctx, targets: commands.Greedy[discord.Member], minutes: typing.Optional[int], *, reason: typing.Optional[str] = None):
@@ -381,7 +485,7 @@ class Moderation(commands.Cog):
             await ctx.send('<:checkmark:816534984676081705> Unblocked `{0}`'.format(", ".join(unblocked_users)))
 
 
-    @commands.command(brief="Restrict users from reading messages in a channel.")
+    @commands.command(brief="Hide a channel from a user")
     @commands.guild_only()
     @permissions.has_permissions(kick_members=True)
     async def blind(self, ctx, targets: commands.Greedy[discord.Member] = None):
@@ -417,7 +521,7 @@ class Moderation(commands.Cog):
             await ctx.send('<:checkmark:816534984676081705> Blinded `{0}`'.format(", ".join(blinded_users)))
 
 
-    @commands.command(brief="Reallow users see the channel.")
+    @commands.command(brief="Reallow users see a channel")
     @commands.guild_only()
     @permissions.has_permissions(kick_members=True)
     async def unblind(self, ctx, targets: commands.Greedy[discord.Member] = None):
@@ -456,7 +560,7 @@ class Moderation(commands.Cog):
      ## Kick Command ##
     ##################
 
-    @commands.command(brief="Kick members from the server")
+    @commands.command(brief="Kick users")
     @commands.guild_only()
     @commands.bot_has_guild_permissions(kick_members=True)
     @permissions.has_permissions(kick_members=True)
@@ -490,7 +594,7 @@ class Moderation(commands.Cog):
      ## Ban Commands ##
     ##################
 
-    @commands.command(brief="Ban members from the server.")
+    @commands.command(brief="Ban users")
     @commands.guild_only()
     @commands.bot_has_guild_permissions(ban_members=True)
     @permissions.has_permissions(ban_members=True)
@@ -530,7 +634,7 @@ class Moderation(commands.Cog):
             await ctx.send('<:checkmark:816534984676081705> Banned `{0}`'.format(", ".join(banned)))
 
 
-    @commands.command(brief="Softbans members from the server.")
+    @commands.command(brief="Softbans members")
     @commands.guild_only()
     @commands.bot_has_guild_permissions(ban_members=True)
     @permissions.has_permissions(kick_members=True)
@@ -565,7 +669,7 @@ class Moderation(commands.Cog):
             await ctx.send('<:checkmark:816534984676081705> Softbanned `{0}`'.format(", ".join(banned)))
 
 
-    @commands.command(brief="Hackban multiple users by ID.")
+    @commands.command(brief="Hackban multiple users by ID")
     @commands.bot_has_guild_permissions(ban_members=True)
     @permissions.has_permissions(manage_guild=True)
     async def hackban(self, ctx, *users:str):
@@ -613,7 +717,7 @@ class Moderation(commands.Cog):
             await ctx.send('<:checkmark:816534984676081705> Hackbanned `{0}`'.format(", ".join(hackbanned)))
 
 
-    @commands.command(brief="Unbans a member from the server.", aliases=['revokeban'])
+    @commands.command(brief="Unban a member", aliases=['revokeban'])
     @commands.guild_only()
     @permissions.has_permissions(ban_members=True)
     async def unban(self, ctx, member: converters.BannedMember, *, reason: str = None):
@@ -641,7 +745,7 @@ class Moderation(commands.Cog):
      ## Prune Command ##
     ###################
 
-    @commands.group(brief='Remove any type of content in the last 2000 messages.', aliases=["cleanup","purge","clean"])
+    @commands.group(brief='Remove any type of content', aliases=["cleanup","purge","clean"])
     @commands.guild_only()
     @commands.max_concurrency(5, per=commands.BucketType.guild)
     @commands.bot_has_guild_permissions(manage_messages=True)
@@ -814,10 +918,10 @@ class Moderation(commands.Cog):
         return True
 
       ###################
-     ## WARN COMMANDS ##
+     ## Warn Commands ##
     ###################
 
-    @commands.command(brief="Warn multiple members for misbehaving")
+    @commands.command(brief="Warn members")
     @commands.guild_only()
     @permissions.has_permissions(kick_members=True)
     async def warn(self, ctx, targets: commands.Greedy[discord.Member], *, reason: str = None):
@@ -879,7 +983,7 @@ class Moderation(commands.Cog):
         except Exception as e: return await ctx.send(e)
 
 
-    @commands.command(aliases = ['deletewarnings','removewarns','removewarnings','deletewarns','clearwarnings'])
+    @commands.command(brief="Clear a user's warnings", aliases = ['deletewarnings','removewarns','removewarnings','deletewarns','clearwarnings'])
     @commands.guild_only()
     @permissions.has_permissions(kick_members = True)
     async def clearwarns(self, ctx, *, target: discord.Member = None):
@@ -929,7 +1033,7 @@ class Moderation(commands.Cog):
         except Exception as e: return await ctx.send(e)
 
 
-    @commands.command(brief="Display the server warnlist.", aliases=["warns"])
+    @commands.command(brief="Display the server warnlist", aliases=["warns"])
     @commands.guild_only()
     @permissions.has_permissions(manage_messages=True)
     async def serverwarns(self, ctx):
@@ -941,7 +1045,7 @@ class Moderation(commands.Cog):
         """
         query = '''SELECT COUNT(*) FROM warn WHERE server_id = $1'''
         count = await self.cxn.fetchrow(query, ctx.guild.id)
-        query = '''SELECT id, warnings FROM warn WHERE server_id = $1 ORDER BY warnings DESC'''
+        query = '''SELECT user_id, warnings FROM warn WHERE server_id = $1 ORDER BY warnings DESC'''
         records = await self.cxn.fetch(query, ctx.guild.id) or None
         if records is None:
             return await ctx.send(f"<:error:816456396735905844> No current warnings exist on this server.")
@@ -955,3 +1059,71 @@ class Moderation(commands.Cog):
             await p.start(ctx)
         except menus.MenuError as e:
             await ctx.send(e)
+
+
+      #########################
+     ## Profanity Listeners ##
+    #########################
+
+    @commands.Cog.listener()
+    async def on_message_edit(self, before, after):
+        if before.guild is None:
+            return
+        if before.author.bot:
+            return
+        immune = before.author.guild_permissions.manage_messages
+        if immune:
+            return
+        msg = str(after.content)
+
+        query = '''SELECT server_id FROM profanity WHERE server_id = $1'''
+        server = await self.cxn.fetchrow(query, after.guild.id) or None
+        if server is None or "None" in str(server): return
+
+        query = '''SELECT words FROM profanity WHERE server_id = $1'''
+        words = await self.cxn.fetchrow(query, after.guild.id)
+
+        formatted_words = str(words[0])
+
+        filtered_words = [x for x in formatted_words.split(",")]
+
+        profanity.load_censor_words(filtered_words)
+
+        for filtered_word in filtered_words:
+            if profanity.contains_profanity(msg) or filtered_word in msg:
+                try:
+                    await after.delete()
+                    return await after.author.send(f'''Your message "{after.content}" was removed for containing the filtered word "{filtered_word}"''')
+                except Exception: return
+
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if not message.guild:
+            return
+        if message.author.bot:
+            return
+        immune = message.author.guild_permissions.manage_messages
+        if immune:
+            return
+        msg = str(message.content)
+
+        query = '''SELECT server_id FROM profanity WHERE server_id = $1'''
+        server = await self.cxn.fetchrow(query, message.guild.id) or None
+        if server is None or "None" in str(server): return
+
+        query = '''SELECT words FROM profanity WHERE server_id = $1'''
+        words = await self.cxn.fetchrow(query, message.guild.id)
+
+        formatted_words = str(words[0])
+
+        filtered_words = [x for x in formatted_words.split(",")]
+
+        profanity.load_censor_words(filtered_words)
+
+        for filtered_word in filtered_words:
+            if profanity.contains_profanity(msg) or filtered_word in msg:
+                try:
+                    await message.delete()
+                    return await message.author.send(f'Your message `{message.content}` was removed for containing a filtered word')
+                except Exception: return

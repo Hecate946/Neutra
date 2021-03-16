@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS logging (
     logchannel bigint,
     logging_webhook_id varchar(100)
 );
-DROP TABLE users;
+
 CREATE TABLE IF NOT EXISTS users (
     index bigserial PRIMARY KEY,
     user_id bigint,
@@ -49,13 +49,13 @@ CREATE TABLE IF NOT EXISTS lockedchannels (
 );
 
 CREATE TABLE IF NOT EXISTS warn (
-    id bigint,
+    user_id bigint,
     server_id bigint,
     warnings smallint
 );
 
 CREATE TABLE IF NOT EXISTS last_seen (
-    id bigint PRIMARY KEY,
+    user_id bigint PRIMARY KEY,
     timestamp timestamp
 );
 
@@ -81,32 +81,28 @@ CREATE TABLE IF NOT EXISTS commands (
 );
 
 CREATE TABLE IF NOT EXISTS blacklist (
-    id bigint PRIMARY KEY,
-    username text,
-    reason text,
-    timestamp timestamp,
-    executor text,
-    react boolean
+    user_id BIGINT PRIMARY KEY,
+    author_id BIGINT, -- OK this will only be the owner but ¯\＿( ͡° ͜ʖ ͡°)＿/¯
+    reason TEXT,
+    react BOOLEAN,
+    timestamp TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS serverblacklist (
-    server_id bigint PRIMARY KEY,
-    server_name text,
-    reason text,
-    timestamp timestamp,
-    executor text,
-    react boolean
+    server_id BIGINT PRIMARY KEY,
+    reason TEXT,
+    timestamp TIMESTAMP,
+    executor TEXT,
+    react BOOLEAN
 );
 
 CREATE TABLE IF NOT EXISTS ignored (
-    server_id bigint,
-    servername text,
-    id bigint,
-    username text,
-    reason text,
-    timestamp timestamp,
-    executor text,
-    react boolean
+    server_id BIGINT,
+    user_id BIGINT,
+    author_id BIGINT,
+    reason TEXT,
+    react BOOLEAN,
+    timestamp TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS snipe (

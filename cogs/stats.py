@@ -37,13 +37,9 @@ class Statistics(commands.Cog):
         query = '''INSERT OR IGNORE INTO users VALUES ($1, $2, $3, $4, $5, $6, $7, $8)'''
         await self.cxn.execute(query, roles, str(member.guild.id), None, member.id, names, 0, 0, 0)  
 
-    @commands.command()
-    @commands.is_owner()
-    async def logger(self, ctx):
-        sh = self.bot.get_command("sh")
-        await ctx.invoke(sh, prefix="log", command="cat ./data/logs/commands.log")
     
     @commands.command(brief="Lists how many servers you share with the bot.")
+    @commands.guild_only()
     async def sharedservers(self, ctx, *, member: converters.DiscordUser = None):
         """
         Usage: -sharedservers [member]
@@ -72,6 +68,7 @@ class Statistics(commands.Cog):
 
 
     @commands.command(brief="Check when a user joined the server")
+    @commands.guild_only()
     async def joinedat(self, ctx, *, user: discord.Member = None):
         """
         Usage: -joinedat <member>
@@ -88,6 +85,7 @@ class Statistics(commands.Cog):
 
 
     @commands.command(brief="Tells when a user joined compared to other users.", aliases=["joinposition"])
+    @commands.guild_only()
     async def joinpos(self, ctx, *, member: discord.Member = None):
         """
         Usage: -joinpos <member>
@@ -140,6 +138,7 @@ class Statistics(commands.Cog):
 
 
     @commands.command(brief="Shows the user that joined at the passed position.", aliases=["joinedatposition"])
+    @commands.guild_only()
     async def joinedatpos(self, ctx, *, position):
         """
         Usage: -joinedatpos <integer>
@@ -161,6 +160,7 @@ class Statistics(commands.Cog):
 
 
     @commands.command(brief="Lists the first users to join.")
+    @commands.guild_only()
     async def firstjoins(self, ctx):
         """
         Usage: -firstjoins
@@ -188,6 +188,7 @@ class Statistics(commands.Cog):
 
 
     @commands.command(brief="Lists the most recent users to join.")
+    @commands.guild_only()
     async def recentjoins(self, ctx):
         """
         Usage: -recentjoins
@@ -330,7 +331,7 @@ class Statistics(commands.Cog):
         if user is None:
             user = ctx.author
         query = '''SELECT eyecount FROM users WHERE user_id = $1 AND server_id = $2'''
-        eyes = await self.cxn.fetchrow(query, ctx.author.id, ctx.guild.id)
+        eyes = await self.cxn.fetchrow(query, user.id, ctx.guild.id)
         await ctx.send(f"👀 User `{user}` has sent {eyes[0]} 👀 emoji{'' if int(eyes[0]) == 1 else 's'}")
 
 
@@ -401,24 +402,6 @@ class Statistics(commands.Cog):
         await ctx.send(msg)
 
 
-    @commands.command(hidden=True)
-    @commands.guild_only()
-    @commands.is_owner()
-    async def cachedcommands(self, ctx, limit=20):
-        counter = self.bot.command_stats
-        width = len(max(counter, key=len))
-        total = sum(counter.values())
-
-        if limit > 0:
-            common = counter.most_common(limit)
-        else:
-            common = counter.most_common()[limit:]
-        output = '\n'.join('{0:<{1}} : {2}'.format(k, width, c)
-                           for k, c in common)
-
-        await ctx.send('```yaml\n{}\n```'.format(output))
-
-
     @commands.command(brief="Show bot commands listed by popularity")
     @commands.guild_only()
     @permissions.has_permissions(manage_messages=True)
@@ -455,7 +438,7 @@ class Statistics(commands.Cog):
 
         msg = "{0} \n\nTOTAL: {1}".format(output, total)
         #await ctx.send(premsg + '```yaml\n{}\n\nTOTAL: {}```'.format(output, total))
-        pages = pagination.MainMenu(pagination.TextPageSource(msg, prefix="```yaml", max_size=500))
+        pages = pagination.MainMenu(pagination.ctx.sendurce(msg, prefix="```yaml", max_size=500))
         if user is None:
             title = f"Most common commands used in **{ctx.guild.name}**"
         else:
@@ -468,32 +451,13 @@ class Statistics(commands.Cog):
             await ctx.send(str(e))
 
 
-    @commands.command(brief="Global socketstats", hidden=True)
-    @commands.is_owner()
-    async def socketstats(self, ctx, limit=20):
-        """
-        Usage: -socketstats [limit]
-        Output: Global bot socketstats
-        Permission: Bot Owner
-        """
-        delta = datetime.datetime.utcnow() - self.bot.uptime
-        minutes = delta.total_seconds() / 60
-        total = sum(self.bot.socket_stats.values())
-        cpm = total / minutes
-        width = len(max(self.bot.socket_stats, key=lambda x: len(str(x))))
-        con = self.bot.socket_stats.most_common(limit)
-        fancy = '\n'.join('{0:<{1}} : {2:>12,}'.format(str(k), width, c) for k, c in con)
-
-        await ctx.send('{0:,} socket events observed ({1:.2f}/minute):\n```yaml\n{2}```'.format(total, cpm, fancy))
-
-
     @commands.command(name="commands", brief="Show how many commands have been executed on the server.")
     @commands.guild_only()
     @permissions.has_permissions(manage_messages=True)
     async def command_count(self, ctx, user: discord.Member = None):
         '''
         Usage:  -commands [user]
-        Output: Command count
+        Output: Command count for the user or server
         Permission: Manage Messages
         Notes:
             If no user is passed, will show total server commands
@@ -619,22 +583,56 @@ class Statistics(commands.Cog):
         all_msgs = await self.cxn.fetch('''SELECT content FROM messages WHERE author_id = $1 AND server_id = $2''', member.id, ctx.guild.id)
         all_msgs = [x[0] for x in all_msgs]
         all_msgs = ' '.join(all_msgs).split()
-        all_msgs = list(filter(lambda x: len(x) > 3, all_msgs))
+        all_msgs = list(filter(lambda x: len(x) > 0, all_msgs))
         all_words = (Counter(all_msgs).most_common()[:limit])
         msg = ""
-        integer = 0
         for i in all_words:
-            i = str(i).strip("(),'\"").replace("'","").replace('"',"").replace(",","").replace(":","").replace(".","")
-            args = i.split(" ")
-            integer += 1
-            msg += f'[{str(integer).zfill(2)}] Uses: [{args[1].zfill(2)}] Word: {args[0]}\n'
+            msg += f'Uses: [{str(i[1]).zfill(2)}] Word: {i[0]}\n'
         pages = pagination.MainMenu(pagination.TextPageSource(msg, prefix="```ini", max_size=1000))
         await ctx.send(f"Most common words sent by **{member.display_name}**")
         try:
             await pages.start(ctx)
         except MenuError as e:
             await ctx.send(str(e))
-        #await ctx.send(f"Most common words sent by **{member.display_name}**```ini\n{msg}```")
+
+    @commands.command(brief="Get the number of times a word has been used by a user.")
+    @commands.guild_only()
+    @permissions.has_permissions(manage_messages=True)
+    async def word(self, ctx, word: str = None, member: discord.Member = None):
+        """
+        Usage: -word [user] [word]
+        Output: Number of times a word has been used by a user
+        Permission: Manage Messages
+        Notes:
+            Will default to you if no user is passed.
+        """
+        if word is None:
+            return await ctx.send(f"Usage: `{ctx.prefix}word [user] <word>`")
+        if member is None:
+            member = ctx.author
+        all_msgs = await self.cxn.fetch('''SELECT content FROM messages WHERE author_id = $1 AND server_id = $2''', member.id, ctx.guild.id)
+        all_msgs = [x[0] for x in all_msgs]
+        all_msgs = ' '.join(all_msgs).split()
+        all_msgs = list(filter(lambda x: len(x) > 0, all_msgs))
+        all_msgs = ' '.join(all_msgs).split()
+        all_msgs = list(all_msgs)
+        all_words = (Counter(all_msgs).most_common())
+        found = []
+        for x in all_words:
+            if x[0] == word:
+                found.append(x)
+                found.append(int(all_words.index(x)) + 1)
+        if found == []:
+            return await ctx.send(f"The word `{word}` has never been used by **{member.display_name}**")
+        if str(found[1]).endswith("1") and found[1] != 11:
+            common = str(found[1]) + "st"
+        elif str(found[1]).endswith("2") and found[1] != 12:
+            common = str(found[1]) + "nd"
+        elif str(found[1]).endswith("3") and found[1] != 13:
+            common = str(found[1]) + "rd"
+        else:
+            common = str(found[1]) + "th"
+        await ctx.send(f"The word `{word}` has been used {found[0][1]} time{'' if found[0][1] == 1 else 's'} and is the {common} most common word used by **{member.display_name}**")
 
 
       #####################
@@ -671,7 +669,7 @@ class Statistics(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         if message.author.bot: return None
-        query = '''INSERT INTO last_seen (id, timestamp) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET timestamp = $2'''
+        query = '''INSERT INTO last_seen (user_id, timestamp) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET timestamp = $2'''
         await self.cxn.execute(query, message.author.id, datetime.datetime.utcnow())
         if not message.guild: return
         
@@ -682,9 +680,7 @@ class Statistics(commands.Cog):
                 message_eyes += 1
         query = '''UPDATE users SET eyecount = eyecount + $1 WHERE user_id = $2 AND server_id = $3'''
         await self.cxn.execute(query, message_eyes, message.author.id, message.guild.id)
-
-        #query = '''UPDATE users SET messagecount = messagecount + 1 WHERE user_id = $1 AND server_id = $2'''
-        #await self.cxn.execute(query, message.author.id, message.guild.id)   
+        
 
         if message.content == "":
             return
@@ -723,7 +719,7 @@ class Statistics(commands.Cog):
 
     @commands.Cog.listener()
     async def on_user_update(self, before, after):
-        query = '''INSERT INTO last_seen (id, timestamp) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET timestamp = $2'''
+        query = '''INSERT INTO last_seen (user_id, timestamp) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET timestamp = $2'''
         await self.cxn.execute(query, after.id, datetime.datetime.utcnow())
         if before.name != after.name:
             query = '''SELECT nicknames FROM users WHERE user_id = $1'''
@@ -750,37 +746,37 @@ class Statistics(commands.Cog):
         
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
-        query = '''INSERT INTO last_seen (id, timestamp) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET timestamp = $2'''
+        query = '''INSERT INTO last_seen (user_id, timestamp) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET timestamp = $2'''
         user = await self.bot.fetch_user(payload.user_id)
         await self.cxn.execute(query, user.id, datetime.datetime.utcnow())
     
     
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
-        query = '''INSERT INTO last_seen (id, timestamp) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET timestamp = $2'''
+        query = '''INSERT INTO last_seen (user_id, timestamp) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET timestamp = $2'''
         await self.cxn.execute(query, member.id, datetime.datetime.utcnow())
     
     
     @commands.Cog.listener()
     async def on_invite_create(self, invite):
-        query = '''INSERT INTO last_seen (id, timestamp) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET timestamp = $2'''
+        query = '''INSERT INTO last_seen (user_id, timestamp) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET timestamp = $2'''
         await self.cxn.execute(query, invite.inviter.id, datetime.datetime.utcnow())
     
     
     @commands.Cog.listener()
     async def on_typing(self, channel, user, when):
         await self.bot.wait_until_ready()
-        query = '''INSERT INTO last_seen (id, timestamp) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET timestamp = $2'''
+        query = '''INSERT INTO last_seen (user_id, timestamp) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET timestamp = $2'''
         await self.cxn.execute(query, user.id, datetime.datetime.utcnow())
 
 
     @commands.Cog.listener()
     async def on_member_join(self, user):
-        query = '''INSERT INTO last_seen (id, timestamp) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET timestamp = $2'''
+        query = '''INSERT INTO last_seen (user_id, timestamp) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET timestamp = $2'''
         await self.cxn.execute(query, user.id, datetime.datetime.utcnow())
 
 
     @commands.Cog.listener()
     async def on_member_leave(self, user):
-        query = '''INSERT INTO last_seen (id, timestamp) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET timestamp = $2'''
+        query = '''INSERT INTO last_seen (user_id, timestamp) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET timestamp = $2'''
         await self.cxn.execute(query, user.id, datetime.datetime.utcnow())

@@ -55,6 +55,26 @@ class DiscordUser(commands.Converter):
         #Was just username
         return result
 
+class BotServer(commands.Converter):
+    async def convert(self, ctx, argument):
+        if argument.isdigit():
+            server_id = int(argument, base=10)
+            try:
+                server = ctx.bot.get_guild(server_id)
+                return server
+            except discord.HTTPException:
+                await ctx.send(f"Something went wrong.")
+            except discord.Forbidden:
+                return await ctx.send(f"I'm not in that server")
+            except discord.NotFound:
+                return await ctx.send("Server doesn't exist")
+            except Exception as e: await ctx.send(e)
+        options = [f"{s.id}" for s in ctx.bot.guilds if argument.lower() in s.name.lower()]
+        if options is None:
+            return await ctx.send(f"Didn't find that server.")
+        return options
+
+
 #converter from R.Danny
 class BannedMember(commands.Converter):
     async def convert(self, ctx, argument):
@@ -71,3 +91,4 @@ class BannedMember(commands.Converter):
         if entity is None:
             raise commands.BadArgument('This member has not been banned before.')
         return entity
+            

@@ -1,8 +1,10 @@
+import io
 import os
 import re
 import sys
 import time
 import struct
+import pprint
 import psutil
 import asyncio
 import inspect
@@ -12,12 +14,12 @@ import datetime
 import subprocess
 
 
-from discord.ext import commands
+from discord.ext import commands, menus
 from platform import python_version
 from psutil import Process, virtual_memory
 from discord import __version__ as discord_version
 
-from utilities import permissions, default, converters, speedtest
+from utilities import permissions, default, converters, speedtest, pagination
 
    
 def setup(bot):
@@ -338,7 +340,7 @@ class General(commands.Cog):
         await ctx.send(embed=embed)
 
 
-    @commands.command(brief="Show information about the current server.", aliases=["si","serverstats","ss","server"])
+    @commands.command(brief="Show server information.", aliases=["si","serverstats","ss","server"])
     @commands.guild_only()
     async def serverinfo(self, ctx): 
         """
@@ -445,7 +447,7 @@ class General(commands.Cog):
             await ctx.send("Your bug report has been sent.")
 
 
-    @commands.command(brief="Send a much appreciated suggestion to the bot developer.", aliases=["suggestion"])
+    @commands.command(brief="Send a suggestion to the bot developer.", aliases=["suggestion"])
     @commands.cooldown(2, 60, commands.BucketType.user)
     async def suggest(self, ctx, *, suggestion : str):
         """
@@ -500,7 +502,7 @@ class General(commands.Cog):
         return fmt.format(d=days, h=hours, m=minutes, s=seconds)
 
 
-    @commands.command(brief="Show how long the bot has been running for.", aliases=['runningtime'])
+    @commands.command(brief="Show the bot's uptime.", aliases=['runningtime'])
     async def uptime(self, ctx):
         """
         Usage:  -uptime
@@ -579,7 +581,7 @@ class General(commands.Cog):
         """
         async with ctx.channel.typing():
             start = time.time()
-            message = await ctx.reply('<a:loading:819280509007560756> **Calculating Speed...**')
+            message = await ctx.send('<a:loading:819280509007560756> **Calculating Speed...**')
             end = time.time()
             st = speedtest.Speedtest()
             st.get_best_server()
@@ -612,10 +614,9 @@ class General(commands.Cog):
         await message.edit(content=msg)
         
 
-    @commands.command(pass_context=True)
+    @commands.command(brief="List info about the bot's host environment.")
     async def hostinfo(self, ctx):
-        """List info about the bot's host environment."""
-        message = await ctx.channel.send('Gathering info...')
+        message = await ctx.channel.send('<a:loading:819280509007560756> **Collecting Information...**')
 
         cpuCores    = psutil.cpu_count(logical=False)
         cpuThread    = psutil.cpu_count()
@@ -649,21 +650,21 @@ class General(commands.Cog):
             threadString += 's'
 
         msg = '***{}\'s*** ***Home:***\n'.format(botName)
-        msg += '```diff\n'
-        msg += '+ OS       : {}\n'.format(currentOS)
-        msg += '+ Owner    : {}\n'.format(botOwner)
-        msg += '+ Client   : {}\n'.format(botName)
-        msg += '+ Commit   : {}\n'.format(git_head_hash.decode("utf-8"))
-        msg += '+ Uptime   : {}\n'.format(timeString)
-        msg += '+ Hostname : {}\n'.format(platform.node().replace("Siamaks","X"))
-        msg += '+ Language : Python {}.{}.{} {} ({} bit)\n'.format(pythonMajor, pythonMinor, pythonMicro, pythonRelease, pyBit)
-        msg += '+ Processor: {}\n'.format(processor)
-        msg += '+ System   : {}\n'.format(system)
-        msg += '+ Release  : {}\n'.format(release)
-        msg += '+ CPU Core : {} Threads\n\n'.format(cpuCores)
-        msg += default.center('{}% of {} {}'.format(cpuUsage, cpuThread, threadString), '- CPU') + '\n'
+        msg += '```fix\n'
+        msg += 'OS       : {}\n'.format(currentOS)
+        msg += 'Owner    : {}\n'.format(botOwner)
+        msg += 'Client   : {}\n'.format(botName)
+        msg += 'Commit   : {}\n'.format(git_head_hash.decode("utf-8"))
+        msg += 'Uptime   : {}\n'.format(timeString)
+        msg += 'Hostname : {}\n'.format(platform.node())
+        msg += 'Language : Python {}.{}.{} {} ({} bit)\n'.format(pythonMajor, pythonMinor, pythonMicro, pythonRelease, pyBit)
+        msg += 'Processor: {}\n'.format(processor)
+        msg += 'System   : {}\n'.format(system)
+        msg += 'Release  : {}\n'.format(release)
+        msg += 'CPU Core : {} Threads\n\n'.format(cpuCores)
+        msg += default.center('{}% of {} {}'.format(cpuUsage, cpuThread, threadString), 'CPU') + '\n'
         msg += default.makeBar(int(round(cpuUsage))) + "\n\n"
-        msg += default.center('{} ({}%) of {}GB used'.format(memUsedGB, memPerc, memTotalGB), '- RAM') + '\n'
+        msg += default.center('{} ({}%) of {}GB used'.format(memUsedGB, memPerc, memTotalGB), 'RAM') + '\n'
         msg += default.makeBar(int(round(memPerc))) + "\n"
         #msg += 'Processor Version: {}\n\n'.format(version)
         msg += "```"
@@ -751,7 +752,7 @@ class General(commands.Cog):
             await ctx.send("I don't know who my owner is ¯\_(ツ)_/¯.")
 
 
-    @commands.command(brief="Displays the source code or for a specific command.", aliases=['sourcecode'])
+    @commands.command(brief="Displays the source code.", aliases=['sourcecode'])
     async def source(self, ctx, *, command: str = None):
         """
         Usage: -source [command]
@@ -785,3 +786,130 @@ class General(commands.Cog):
         final_url = f'<{source_url}/blob/{branch}/{location}#L{firstlineno}-L{firstlineno + len(lines) - 1}>'
         msg = f"**__My source {'' if command is None else f'for {command}'} is located at:__**\n\n{final_url}"
         await ctx.send(msg)
+
+    @commands.command(name="permissions",brief="Show a user's permissions in a specific channel.")
+    @commands.guild_only()
+    async def _permissions(self, ctx, member: discord.Member = None, channel: discord.TextChannel = None):
+        """
+        Usage:  -permissions [member] [channel]
+        Output: Shows a member's permissions in a specific channel.
+        Notes:
+            Will default to yourself and the current channel
+            if they are not specified.
+        """
+        channel = channel or ctx.channel
+        if member is None:
+            member = ctx.author
+
+        await self.say_permissions(ctx, member, channel)
+
+    async def say_permissions(self, ctx, member, channel):
+        permissions = channel.permissions_for(member)
+        e = discord.Embed(colour=member.colour)
+        avatar = member.avatar_url_as(static_format='png')
+        e.set_author(name=str(member), url=avatar)
+        allowed, denied = [], []
+        for name, value in permissions:
+            name = name.replace('_', ' ').replace('guild', 'server').title()
+            if value:
+                allowed.append(name)
+            else:
+                denied.append(name)
+
+        e.add_field(name='Allowed', value='\n'.join(allowed))
+        e.add_field(name='Denied', value='\n'.join(denied))
+        await ctx.send(embed=e)
+
+
+    @commands.command(brief="Lists the server's channels in an embed.", aliases=['channels'])
+    @commands.guild_only()
+    @commands.bot_has_guild_permissions(embed_links=True)
+    @commands.cooldown(1, 20, commands.BucketType.guild)
+    @permissions.has_permissions(manage_messages=True)
+    async def listchannels(self, ctx, guild:int = None):
+        """
+        Usage:      -listchannels
+        Alias:      -channels
+        Output:     Embed of all server channels
+        Permission: Manage Messages
+        """
+        if guild is None:
+            guild = ctx.guild.id
+        guild = self.bot.get_guild(guild)
+        channel_categories = {}
+
+        for chn in sorted(guild.channels, key=lambda c: c.position):
+            if isinstance(chn, discord.CategoryChannel) and chn.id not in channel_categories:
+                channel_categories[chn.id] = []
+            else:
+                category = chn.category_id
+                if category not in channel_categories:
+                    channel_categories[category] = []
+
+                channel_categories[category].append(chn)
+
+        description = None
+
+        def make_category(channels):
+            val = ''
+            for chn in sorted(channels, key=lambda c: isinstance(c, discord.VoiceChannel)):
+                if isinstance(chn, discord.VoiceChannel):
+                    val += '\\🔊 '
+                else:
+                    val += '# '
+
+                val += f'{chn.name}\n'
+
+            return val
+
+        if None in channel_categories:
+            description = make_category(channel_categories.pop(None))
+
+        paginator = pagination.Paginator(title='Channels', description=description)
+
+        for category_id in sorted(channel_categories.keys(), key=lambda k: ctx.guild.get_channel(k).position):
+            category = ctx.guild.get_channel(category_id)
+
+            val = make_category(channel_categories[category_id])
+
+            paginator.add_field(name=category.name.upper(), value=val, inline=False)
+
+        paginator.finalize()
+
+        for page in paginator.pages:
+            await ctx.send(embed=page)
+
+    @commands.command(brief="Shows the raw content of a message")
+    async def raw(self, ctx, *, message: discord.Message):
+        """
+        Usage: -raw [message id]
+        Output: Raw message content
+        """
+
+        raw_data = await self.bot.http.get_message(message.channel.id, message.id)
+
+        if message.content:
+            content = message.content
+            for e in message.content:
+                emoji_unicode = e.encode('unicode-escape').decode('ASCII')
+                content = content.replace(e, emoji_unicode)
+            return await ctx.send('```\n' + 'Raw Content\n===========\n\n' + content + '\n```')
+
+        transformer = pprint.pformat
+        desc = ""
+        for field_name in ('embeds', 'attachments'):
+            data = raw_data[field_name]
+
+            if not data:
+                continue
+
+            total = len(data)
+            for current, item in enumerate(data, start=1):
+                title = f'Raw {field_name} ({current}/{total})'
+                desc += f"{title}\n\n{transformer(item)}\n"
+        p = pagination.MainMenu(pagination.TextPageSource(desc, prefix="```"))
+
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send(str(e))

@@ -2,9 +2,9 @@ import discord
 import colorsys
 
 from io import BytesIO
-from discord.ext import commands
+from discord.ext import commands, menus
 
-from utilities import permissions, default
+from utilities import permissions, default, pagination
 from core import OWNERS
 
 
@@ -182,47 +182,6 @@ class Roles(commands.Cog):
             await ctx.message.add_reaction("📬")
         except:
             await ctx.send(content=f"Roles in **{ctx.guild.name}**", file=discord.File(data, filename=f"{default.timetext('Roles')}"))
-
-
-    @commands.command(aliases=['cr','rolecreate'], brief="Create a role with a specified name")
-    @commands.guild_only()
-    @commands.bot_has_guild_permissions(manage_roles=True)
-    @permissions.has_permissions(manage_roles=True)
-    async def createrole(self, ctx, *, role_name:str):
-        """
-        Usage:      -createrole <name>
-        Aliases:    -cr, -rolecreate
-        Output:     Creates a role with your specified name
-        Permission: Manage Roles
-        """
-        if role_name is None: return await ctx.send(f"Usage: `{ctx.prefix}createrole <role>`")
-        try:
-            await ctx.guild.create_role(name=role_name)
-            role = discord.utils.get(ctx.guild.roles, name=role_name)
-            await ctx.send(f'<:checkmark:816534984676081705> Created role `{role.name}`')
-        except discord.Forbidden:
-            await ctx.send('<:fail:816521503554273320> I do not have sufficient permissions to create roles.')
-
-
-    @commands.command(brief="Deletes a role with a specified name.", aliases=["dr","roledelete"])
-    @commands.guild_only()
-    @commands.bot_has_guild_permissions(manage_roles=True)
-    @permissions.has_permissions(administrator=True)
-    async def deleterole(self, ctx, *, role: discord.Role):
-        """
-        Usage:      -deleterole <name>
-        Aliases:    -dr, -roledelete
-        Output:     Deletes a role with your specified name
-        Permission: Administrator
-        """
-        if role is None: return await ctx.send(f"Usage: `{ctx.prefix}deleterole <role>`")
-        if role.position > ctx.author.top_role.position:
-            return await ctx.send(f"<:fail:816521503554273320> That role is above your highest role")
-        if role.position == ctx.author.top_role.position:
-            return await ctx.send(f"<:fail:816521503554273320> That role is your highest role")
-        else:
-            await role.delete()
-            await ctx.send(f'<:checkmark:816534984676081705> Deleted role `{role.name}`')
 
         
     @commands.group(brief="Adds or removes a role to all users with a role. (Command Group)", aliases=['multirole'])
@@ -472,24 +431,28 @@ class Roles(commands.Cog):
         users = [member for member in ctx.guild.members if check_role in member.roles]
 
         sorted_list = sorted(users, key=lambda usr: (STATUSMAP1.get(usr.status,'4')) + (usr.nick.lower() if usr.nick else usr.name.lower()))
-        truncated = False
-        if len(sorted_list) > MAX_USERS:
-            sorted_list = sorted_list[:MAX_USERS] ## truncate to the limit
-            truncated = True
+
         if mode == 2: # add full username
-            page = '\n'.join('{} {} ({}#{})'.format(STATUSMAP2.get(member.status, '<:offline:810650959859810384>'), member.mention, member.name, member.discriminator) for member in sorted_list) # not bothering with multiple pages cause 30 members is way shorter than one embed
+            page = ['{} {} ({}#{})'.format(STATUSMAP2.get(member.status, '<:offline:810650959859810384>'),
+            member.mention, member.name, member.discriminator) for member in sorted_list] # not bothering with multiple pages cause 30 members is way shorter than one embed
         elif mode == 1: # add nickname
-            page = '\n'.join('{} {} ({})'.format(STATUSMAP2.get(member.status, '<:offline:810650959859810384>'), member.mention, member.display_name) for member in sorted_list)
+            page = ['{} {} ({})'.format(STATUSMAP2.get(member.status, '<:offline:810650959859810384>'),
+            member.mention, member.display_name) for member in sorted_list]
         else:
-            page = '\n'.join('{} {}'.format(STATUSMAP2.get(member.status, '<:offline:810650959859810384>'), member.mention) for member in sorted_list)
+            page = ['{} {}'.format(STATUSMAP2.get(member.status, '<:offline:810650959859810384>'),
+            member.mention) for member in sorted_list]
 
-        if truncated:
-            page += '\n*and {} more...*'.format(len(users) - MAX_USERS)
+        p = pagination.SimplePages(
+                            entries=page, 
+                            per_page=20,
+                            index=False
+                        )
+        p.embed.title = '{:,} members with {}'.format(len(users), check_role.name)
 
-        embed = discord.Embed(title='{:,} members with {}'.format(len(users), check_role.name), description=page, color=check_role.color)
-        embed.set_footer(text='ID: {}'.format(check_role.id))
-        await ctx.send(embed=embed)
-
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send(e)
 
     @commands.command(aliases=['rp'], brief="Get the permissions for a passed role.")
     @commands.guild_only()
@@ -545,116 +508,3 @@ class Roles(commands.Cog):
             return await ctx.send('Seems there are no empty roles...')
 
         await self.rolelist_paginate(ctx, sorted_list, title='Empty Roles')
-
-
-    @commands.group(brief="Edit the specifications of a passed role. (Command Group)", aliases=["changerole"])
-    @commands.guild_only()
-    @permissions.has_permissions(manage_roles=True, manage_guild=True)
-    async def editrole(self, ctx: commands.Context):
-        """ 
-        Usage:      -editrole <method> <role>
-        Alias:      -changerole
-        Example:    -editrole color @Verified #ff0000
-        Permission: Manage Server, Manage Roles
-        Output:     Edits the color or name of a role.
-        Methods:
-            color  (Alias: colour)        
-            name
-        Notes:
-            Use double quotes around the role, name, 
-            and color if they contain spaces.
-        """
-        if ctx.invoked_subcommand is None:
-            help_command = self.bot.get_command("help")
-            await help_command(ctx, invokercommand="editrole")
-
-
-    @editrole.command(name="colour", aliases=["color"])
-    async def editrole_colour(self, ctx: commands.Context, role: discord.Role, value: discord.Colour = None):
-        """
-        Edit a role's colour.
-        Use double quotes if the role contains spaces.
-        """
-        usage = "`{}editrole colour Test #ff9900`".format(ctx.prefix)
-        if not value:
-            await ctx.send(usage)
-        author = ctx.author
-        reason = "{}({}) changed the colour of role '{}'".format(author.name, author.id, role.name)
-
-        try:
-            await role.edit(reason=reason, color=value)
-            await ctx.send("<:checkmark:816534984676081705> Successfully edited role.")
-        except Exception as e:
-            await ctx.send(e)
-
-
-    @editrole.command(name="name")
-    async def edit_role_name(self, ctx: commands.Context, role: discord.Role, name: str = None):
-        """
-        Edit a role's name.
-        Use double quotes if the role or the name contain spaces.
-        """
-        usage = "`{}editrole name \"Hecatex Bot\" Test`".format(ctx.prefix)
-        if not name:
-            await ctx.send(usage)
-        author = ctx.message.author
-        old_name = role.name
-        reason = "{}({}) changed the name of role '{}' to '{}'".format(
-            author.name, author.id, old_name, name
-        )
-
-        try:
-            await role.edit(reason=reason, name=name)
-            await ctx.send("<:checkmark:816534984676081705> Successfully edited role.")
-        except Exception as e:
-            await ctx.send(e)
-
-
-    async def say_permissions(self, ctx, member, channel):
-        permissions = channel.permissions_for(member)
-        e = discord.Embed(colour=member.colour)
-        avatar = member.avatar_url_as(static_format='png')
-        e.set_author(name=str(member), url=avatar)
-        allowed, denied = [], []
-        for name, value in permissions:
-            name = name.replace('_', ' ').replace('guild', 'server').title()
-            if value:
-                allowed.append(name)
-            else:
-                denied.append(name)
-
-        e.add_field(name='Allowed', value='\n'.join(allowed))
-        e.add_field(name='Denied', value='\n'.join(denied))
-        await ctx.send(embed=e)
-
-
-    @commands.command(name="permissions",brief="Shows a member's permissions in a specific channel.")
-    @commands.guild_only()
-    async def _permissions(self, ctx, member: discord.Member = None, channel: discord.TextChannel = None):
-        """
-        Usage:  -permissions [member] [channel]
-        Output: Shows a member's permissions in a specific channel.
-        Notes:
-            Will default to yourself and the current channel
-            if they are not specified.
-        """
-        channel = channel or ctx.channel
-        if member is None:
-            member = ctx.author
-
-        await self.say_permissions(ctx, member, channel)
-
-
-    @commands.command(brief="Shows the bot's permissions in a specific channel.")
-    @commands.guild_only()
-    async def botpermissions(self, ctx, *, channel: discord.TextChannel = None):
-        """
-        Usage:  -botpermissions [channel]
-        Output: Shows the bot's permissions in a specific channel.
-        Notes:
-            Will default to the current channel
-            if a channel is not specified.
-        """
-        channel = channel or ctx.channel
-        member = ctx.guild.me
-        await self.say_permissions(ctx, member, channel)
