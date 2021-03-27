@@ -1,13 +1,3 @@
-
-CREATE TABLE IF NOT EXISTS servers (
-    server_id bigint PRIMARY KEY,
-    server_name varchar(50),
-    server_owner_id bigint,
-    server_owner_name varchar(50),
-    server_join_position serial,
-    prefix VARCHAR(5) DEFAULT '-'
-);
-
 CREATE TABLE IF NOT EXISTS logging (
     server_id bigint PRIMARY KEY,
     message_edits boolean,
@@ -23,15 +13,6 @@ CREATE TABLE IF NOT EXISTS logging (
     ignored_channels text,
     logchannel bigint,
     logging_webhook_id varchar(100)
-);
-
-CREATE TABLE IF NOT EXISTS users (
-    index bigserial PRIMARY KEY,
-    user_id bigint,
-    server_id bigint,
-    nicknames text,
-    roles text,
-    eyecount bigint DEFAULT 0 NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS mutes (
@@ -54,31 +35,6 @@ CREATE TABLE IF NOT EXISTS warn (
     warnings smallint
 );
 
-CREATE TABLE IF NOT EXISTS last_seen (
-    user_id bigint PRIMARY KEY,
-    timestamp timestamp
-);
-
-CREATE TABLE IF NOT EXISTS messages (
-    unix real,
-    timestamp timestamp,
-    content text,
-    msg_id bigint,
-    author_id bigint,
-    channel_id bigint,
-    server_id bigint
-);
-
-CREATE TABLE IF NOT EXISTS commands (
-    index BIGSERIAL PRIMARY KEY,
-    server_id BIGINT,
-    channel_id BIGINT,
-    author_id BIGINT,
-    timestamp TIMESTAMP,
-    prefix TEXT,
-    command TEXT,
-    failed BOOLEAN
-);
 
 CREATE TABLE IF NOT EXISTS blacklist (
     user_id BIGINT PRIMARY KEY,
@@ -105,28 +61,24 @@ CREATE TABLE IF NOT EXISTS ignored (
     timestamp TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS snipe (
-    channel_id bigint PRIMARY KEY,
-    server_id bigint,
-    author_id bigint,
-    message_id bigint,
-    content text,
-    timestamp timestamp
-);
-
 CREATE TABLE IF NOT EXISTS profanity (
     server_id bigint PRIMARY KEY,
     words text
 );
 
 CREATE TABLE IF NOT EXISTS roleconfig (
-    server_id bigint PRIMARY KEY,
-    autoroles text,
-    reassign boolean DEFAULT true
+    server_id BIGINT PRIMARY KEY,
+    autoroles TEXT,
+    reassign BOOLEAN DEFAULT true
 );
 
 CREATE TABLE IF NOT EXISTS moderation (
-    server_id bigint PRIMARY KEY,
-    anti_invite boolean,
-    mute_role bigint
+    server_id BIGINT PRIMARY KEY,
+    anti_invite BOOLEAN,
+    mute_role BIGINT
+);
+
+CREATE TABLE IF NOT EXISTS tracker (
+    user_id BIGINT PRIMARY KEY,
+    unix BIGINT
 );

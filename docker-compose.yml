@@ -4,5 +4,6 @@ services:
   bot:
     container_name: "NGC0000"
     build: .
+    restart: always
     volumes:
       - ./config.json:/NGC0000/config.json

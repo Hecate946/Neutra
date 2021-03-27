@@ -1,4 +1,4 @@
-from core import bot, CONNECTION
-
-bot.connection = CONNECTION
+from core import bot
+# run the application ...
 bot.run()
+

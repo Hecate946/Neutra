@@ -3,9 +3,11 @@ import os
 import re
 import sys
 import time
-import struct
+import codecs
 import pprint
+from discord.ext.tasks import loop
 import psutil
+import struct
 import asyncio
 import inspect
 import discord
@@ -13,13 +15,14 @@ import platform
 import datetime
 import subprocess
 
-
+from collections import Counter
 from discord.ext import commands, menus
 from platform import python_version
 from psutil import Process, virtual_memory
 from discord import __version__ as discord_version
 
-from utilities import permissions, default, converters, speedtest, pagination
+from secret import constants
+from utilities import permissions, default, converters, pagination, speedtest
 
    
 def setup(bot):
@@ -30,26 +33,26 @@ class General(commands.Cog):
     """
     Module for all information on users, bots etc.
     """
-
     def __init__(self, bot):
         self.bot = bot
-        self.cxn = bot.connection
+        
+        self.emote_dict = bot.emote_dict
         self.process = psutil.Process(os.getpid())
         self.startTime = int(time.time())
         self.config = default.config()
 
     async def total_global_commands(self):
         query = '''SELECT COUNT(*) as c FROM commands'''
-        value = await self.cxn.fetchrow(query)
+        value = await self.bot.cxn.fetchrow(query)
         return int(value[0])
 
     async def total_global_messages(self):
         query = '''SELECT COUNT(*) as c FROM messages'''
-        value = await self.cxn.fetchrow(query)
+        value = await self.bot.cxn.fetchrow(query)
         return int(value[0])
 
 
-    @commands.command(aliases = ['info'], brief="Display information about the bot.")
+    @commands.command(aliases=['info'], brief="Display information about the bot.")
     async def about(self, ctx):
         """
         Usage:  -about
@@ -78,7 +81,7 @@ class General(commands.Cog):
             mem_usage = mem_total * (mem_of_total / 100)
 
 
-        embed = discord.Embed(colour=default.config()["embed_color"])
+        embed = discord.Embed(colour=constants.embed)
         embed.set_thumbnail(url=ctx.bot.user.avatar_url)
         embed.add_field(name="Last boot", value=default.timeago(datetime.datetime.utcnow() - self.bot.uptime), inline=True)
         embed.add_field(
@@ -89,9 +92,9 @@ class General(commands.Cog):
         embed.add_field(name="Library", value="Discord.py", inline=True)
         embed.add_field(name="API Version", value=f"{discord_version}", inline=True)
         embed.add_field(name="Command Count", value=len([x.name for x in self.bot.commands if not x.hidden]), inline=True)
-        embed.add_field(name="Server Count", value=f"{len(ctx.bot.guilds)}", inline=True)
-        embed.add_field(name="Channel Count", value=f"""<:textchannel:810659118045331517> {text}        <:voicechannel:810659257296879684> {voice}""", inline=True)
-        embed.add_field(name="Member Count", value=f"{total_members}", inline=True)
+        embed.add_field(name="Server Count", value=f"{len(ctx.bot.guilds):,}", inline=True)
+        embed.add_field(name="Channel Count", value=f"""{self.emote_dict['textchannel']} {text:,}        {self.emote_dict['voicechannel']} {voice:,}""", inline=True)
+        embed.add_field(name="Member Count", value=f"{total_members:,}", inline=True)
         embed.add_field(name="Commands Run", value=f"{await self.total_global_commands():,}", inline=True)
         embed.add_field(name="Messages Seen", value=f"{await self.total_global_messages():,}", inline=True)
         #Below are cached commands. Above are stored in the asyncpg database
@@ -102,9 +105,9 @@ class General(commands.Cog):
         await ctx.send(content=f"About **{ctx.bot.user}** | **{self.config['version']}**", embed=embed)
 
 
-    @commands.command(aliases=["platform"], brief = "Show which discord platform a user is on.")
+    @commands.command(aliases=["mobile"], brief = "Show which discord platform a user is on.")
     @commands.guild_only()
-    async def mobile(self, ctx, members:commands.Greedy[discord.Member]):
+    async def platform(self, ctx, members:commands.Greedy[discord.Member]):
         """
         Usage:  -mobile <member> [member] [member]...
         Alias:  -platform
@@ -123,7 +126,7 @@ class General(commands.Cog):
             try:
                 mobile = member.is_on_mobile()
             except Exception as e:
-                await ctx.send(f'Somthing went wrong: {e}')
+                await ctx.send(f"{self.emote_dict['failed']} Somthing went wrong: {e}")
 
             if mobile is True:
                 mobilestatus.append(member)
@@ -142,7 +145,7 @@ class General(commands.Cog):
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
                     notmobile += [username]
-            await ctx.send(f'<:desktop:817160032391135262> User{"" if len(notmobile) == 1 else "s"} `{", ".join(notmobile)}` {"is" if len(notmobile) == 1 else "are"} on discord desktop.')
+            await ctx.send(f"{self.emote_dict['desktop']} User{'' if len(notmobile) == 1 else 's'} `{', '.join(notmobile)}` {'is' if len(notmobile) == 1 else 'are'} on discord desktop.")
         if mobilestatus:
             mobile = []
             for member in mobilestatus: 
@@ -152,7 +155,7 @@ class General(commands.Cog):
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
                     mobile += [username]
-            await ctx.send(f'<:mobile:817160232248672256> User{"" if len(mobile) == 1 else "s"} `{", ".join(mobile)}` {"is" if len(mobile) == 1 else "are"} on discord mobile.')
+            await ctx.send(f"{self.emote_dict['mobile']} User{'' if len(mobile) == 1 else 's'} `{', '.join(mobile)}` {'is' if len(mobile) == 1 else 'are'} on discord mobile.")
         if web_status:
             mobile = []
             for member in web_status: 
@@ -162,7 +165,7 @@ class General(commands.Cog):
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
                     mobile += [username]
-            await ctx.send(f'<:web:817163202877194301> User{"" if len(mobile) == 1 else "s"} `{", ".join(mobile)}` {"is" if len(mobile) == 1 else "are"} on discord web.')
+            await ctx.send(f"{self.emote_dict['web']} User{'' if len(mobile) == 1 else 's'} `{', '.join(mobile)}` {'is' if len(mobile) == 1 else 'are'} on discord web.")
         if offline:
             mobile = []
             for member in offline: 
@@ -172,7 +175,17 @@ class General(commands.Cog):
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
                     mobile += [username]
-            await ctx.send(f'<:offline:810650959859810384> User{"" if len(mobile) == 1 else "s"} `{", ".join(mobile)}` {"is" if len(mobile) == 1 else "are"} offline')
+            await ctx.send(f"{self.emote_dict['offline']} User{'' if len(mobile) == 1 else 's'} `{', '.join(mobile)}` {'is' if len(mobile) == 1 else 'are'} offline")
+
+
+    async def do_avatar(self, ctx, user, url):
+        embed = discord.Embed(title=f"**{user.display_name}'s avatar.**", description=f'Links to `{user}\'s` avatar:  '
+                                                                                      f'[webp]({(str(url))}) | '
+                                                                                      f'[png]({(str(url).replace("webp", "png"))}) | ' 
+                                                                                      f'[jpeg]({(str(url).replace("webp", "jpg"))})  ', 
+                                                                          color=constants.embed)
+        embed.set_image(url=url)
+        await ctx.send(embed=embed)
 
 
     @commands.command(brief="Display a user's avatar in an embed.", aliases=['av', 'pfp'])
@@ -188,17 +201,28 @@ class General(commands.Cog):
             user = ctx.author
         try:
             await self.bot.fetch_user(user.id)
-        except AttributeError: return await ctx.send(f"<:fail:816521503554273320> User `{user}` does not exist.")
-        avatar = user.avatar_url
-        embed = discord.Embed(title=f"**{user.display_name}'s avatar.**", description=f'Links to `{user}\'s` avatar:  '
-                                                                                      f'[webp]({(str(user.avatar_url))}) | '
-                                                                                      f'[png]({(str(user.avatar_url).replace("webp", "png"))}) | ' 
-                                                                                      f'[jpeg]({(str(user.avatar_url).replace("webp", "jpg"))})  ', 
-                                                                          color=default.config()["embed_color"])
-        embed.set_image(url=avatar)
-        await ctx.send(embed=embed)
+        except AttributeError: return await ctx.send(f"{self.emote_dict['failed']} User `{user}` does not exist.")
+        await self.do_avatar(ctx, user, url=user.avatar_url)
+
+
+    @commands.command(brief="Show a user's default avatar.", aliases=['dav', 'dpfp', 'davatar'])
+    async def defaultavatar(self, ctx, *, user: converters.DiscordUser = None):
+        """
+        Usage:    -defaultavatar [user]
+        Aliases:  -dav, -dpfp, davatar
+        Examples: -defaultavatar 810377376269205546, -davatar NGC0000
+        Output:   Shows an enlarged embed of a user's default avatar.
+        Notes:    Will default to yourself if no user is passed. 
+        """
+        if user is None:
+            user = ctx.author
+        try:
+            await self.bot.fetch_user(user.id)
+        except AttributeError: return await ctx.send(f"{self.emote_dict['failed']} User `{user}` does not exist.")
+        await self.do_avatar(ctx, user, user.default_avatar_url)
 
     # command mostly from Alex Flipnote's discord_bot.py bot
+    # I'll rewrite his "prettyresults" method to use a paginator later.
     # https://github.com/AlexFlipnote/discord_bot.py
 
     @commands.group(brief="Find any user using a search (Command Group).",aliases=['search'])
@@ -261,6 +285,45 @@ class General(commands.Cog):
         loop = [f"{i} ({i.id})" for i in ctx.guild.members if search == i.discriminator]
         await default.prettyResults(ctx, "discriminator", f"Found **{len(loop)}** on your search for **{search}**", loop)
 
+    @find.command(name="duplicates", aliases=['dups'])
+    async def find_duplicates(self, ctx):
+        """Show members with identical names.
+        """
+        name_list = []
+        for member in ctx.guild.members:
+            name_list.append(member.display_name.lower())
+
+        name_list = Counter(name_list)
+        name_list = name_list.most_common()
+
+        loop = []
+        for name_tuple in name_list:
+            if name_tuple[1] > 1:
+                loop.append(f"Duplicates: [{str(name_tuple[1]).zfill(2)}] {name_tuple[0]}")
+
+
+        await default.prettyResults(ctx, "name", f"Found **{len(loop)}** on your search for duplicates", loop)
+
+
+    def _is_hard_to_mention(self, name):
+        """Determine if a name is hard to mention."""
+        codecs.register_error('newreplace', lambda x: (
+            b" " * (x.end - x.start), x.end))
+
+        encoderes, chars = codecs.getwriter('ascii').encode(name, 'newreplace')
+
+        return re.search(br'[^ ][^ ]+', encoderes) is None
+    
+    @find.command(name="weird", aliases=['hardmention'])
+    async def findhardmention(self, ctx):
+        """List members with difficult to mention usernames."""
+        loop = [
+            member for member
+            in ctx.message.guild.members if self._is_hard_to_mention(member.name)
+        ]
+        print(loop)
+        await default.prettyResults(ctx, "name", f"Found **{len(loop)}** on your search for weird names.", loop)
+
 
     @commands.command(brief="Display information on a passed user.", aliases=["whois","ui","profile"])
     @commands.guild_only()
@@ -294,42 +357,32 @@ class General(commands.Cog):
         msg = "{:,}".format(position)
 
         query = '''SELECT COUNT(*) FROM commands WHERE author_id = $1 AND server_id = $2'''
-        command_count = await self.cxn.fetchrow(query, member.id, ctx.guild.id) or None
+        command_count = await self.bot.cxn.fetchrow(query, member.id, ctx.guild.id) or None
         if command_count is None:
             command_count = 0
 
         query = '''SELECT COUNT(*) FROM messages WHERE author_id = $1 AND server_id = $2'''
-        messages = await self.cxn.fetchrow(query, member.id, ctx.guild.id) or None
+        messages = await self.bot.cxn.fetchrow(query, member.id, ctx.guild.id) or None
         if messages is None:
             messages = 0
 
         status_dict = {
-            'online': '<:online:810650040838258711> Online', 
-            'offline': '<:offline:810650959859810384> Offline', 
-            'dnd': '<:dnd:810650845007708200> Do Not Disturb', 
-            'idle': "<:idle:810650560146833429> Idle"
+            'online'  : f"{self.emote_dict['online']} Online",
+            'offline' : f"{self.emote_dict['offline']} Offline",
+            'dnd'     : f"{self.emote_dict['dnd']} Do Not Disturb", 
+            'idle'    : f"{self.emote_dict['idle']} Idle"
             }
-        embed = discord.Embed(color=default.config()["embed_color"])
+        embed = discord.Embed(color=constants.embed)
         embed.set_author(name=f"{member}", icon_url=member.avatar_url)
         embed.set_thumbnail(url=member.avatar_url)
         embed.set_footer(text=f"User ID: {member.id} | Created on {member.created_at.__format__('%m/%d/%Y')}")
-        embed.add_field(name="Nickname", value=f"{'<:owner:810678076497068032>'if member.id == ctx.guild.owner.id else '<:bot:816692223566544946>' if member.bot else ''} {member.display_name}")
-        embed.add_field(name="Messages", value=f"<:messages:816696500314701874>  {messages[0]}")
-        embed.add_field(name="Commands", value=f"<:command:816693906951372870>  {command_count[0]}")
+        embed.add_field(name="Nickname", value=f"{self.emote_dict['owner'] if member.id == ctx.guild.owner.id else self.emote_dict['bot'] if member.bot else ''} {member.display_name}")
+        embed.add_field(name="Messages", value=f"{self.emote_dict['messages']}  {messages[0]}")
+        embed.add_field(name="Commands", value=f"{self.emote_dict['commands']}  {command_count[0]}")
         embed.add_field(name="Status", value=f"{status_dict[str(member.status)]}")
-        embed.add_field(name="Highest Role", value=f"<:role:816699853685522442> {'@everyone' if member.top_role.name == '@everyone' else member.top_role.mention}")
-        embed.add_field(name="Join Position", value=f"<:invite:816700067632513054> #{msg}")
+        embed.add_field(name="Highest Role", value=f"{self.emote_dict['role']} {'@everyone' if member.top_role.name == '@everyone' else member.top_role.mention}")
+        embed.add_field(name="Join Position", value=f"{self.emote_dict['invite']} #{msg}")
         #perm_list = [Perm[0] for Perm in member.guild_permissions if Perm[1]]
-        #embed.add_field(name=f"**{member.display_name}'s Info:**", value=
-        #                                                               f"> **Nickname:** {member.display_name}\n"
-        #                                                               f"> **ID:** {member.id}\n"
-        #                                                               f"> **Messages:** {messages[0]}\n"
-        #                                                               f"> **Commands:** {command_count[0]}\n"
-        #                                                               f"> **Highest Role:** {member.top_role.mention}\n"
-        #                                                               f"> **Status:** {(status_dict[str(member.status)])}\n"
-        #                                                               f"> **Registered:** {member.created_at.__format__('%B %d, %Y at %I:%M %p')}\n"
-        #                                                               f"> **Joined:** {member.joined_at.__format__('%B %d, %Y at %I:%M %p')}\n"
-        #                                                               f"> **Bot:** {member.bot}\n", inline=False)
         #if len(member.roles) > 1:
         #    role_list = member.roles[::-1]
         #    role_list.remove(member.roles[0])
@@ -395,7 +448,7 @@ class General(commands.Cog):
         else:
             region = str(server.region).title()
 
-        em = discord.Embed(color = default.config()["embed_color"])
+        em = discord.Embed(color = constants.embed)
         em.set_thumbnail(url=server.icon_url)
         em.set_author(name=server.name, icon_url=server.icon_url)
         em.set_footer(text=f"Server ID: {server.id} | Created on {server.created_at.__format__('%m/%d/%Y')}")
@@ -411,7 +464,7 @@ class General(commands.Cog):
         await ctx.send(embed=em)
 
 
-    @commands.command(brief="Send a bugreport to the bot developer.", aliases=['reportbug','reportissue',"issuereport"])
+    @commands.command(brief="Send a bugreport to the bot creator.", aliases=['reportbug','reportissue',"issuereport"])
     @commands.cooldown(2, 60, commands.BucketType.user)
     async def bugreport(self, ctx, *, bug:str):
         """
@@ -447,7 +500,7 @@ class General(commands.Cog):
             await ctx.send("Your bug report has been sent.")
 
 
-    @commands.command(brief="Send a suggestion to the bot developer.", aliases=["suggestion"])
+    @commands.command(brief="Send a suggestion to the bot creator.", aliases=["suggestion"])
     @commands.cooldown(2, 60, commands.BucketType.user)
     async def suggest(self, ctx, *, suggestion : str):
         """
@@ -482,26 +535,6 @@ class General(commands.Cog):
             await ctx.send("Your message has been sent.")
 
 
-    def get_bot_uptime(self, *, brief=False):
-        now = datetime.datetime.utcnow()
-        delta = now - self.bot.uptime
-        hours, remainder = divmod(int(delta.total_seconds()), 3600)
-        minutes, seconds = divmod(remainder, 60)
-        days, hours = divmod(hours, 24)
-
-        if not brief:
-            if days:
-                fmt = '{d} days, {h} hours, {m} minutes, and {s} seconds'
-            else:
-                fmt = '{h} hours, {m} minutes, and {s} seconds'
-        else:
-            fmt = '{h}h {m}m {s}s'
-            if days:
-                fmt = '{d}d ' + fmt
-
-        return fmt.format(d=days, h=hours, m=minutes, s=seconds)
-
-
     @commands.command(brief="Show the bot's uptime.", aliases=['runningtime'])
     async def uptime(self, ctx):
         """
@@ -509,11 +542,10 @@ class General(commands.Cog):
         Alias:  -runningtime
         Output: Time since last reboot.
         """
-        #await ctx.send(f":stopwatch: I've been running for `{self.get_bot_uptime(brief=False)}`")
-        await ctx.send(f":stopwatch: I've been running for `{default.time_between(self.bot.starttime, int(time.time()))}`")
+        await ctx.send(f"\N{STOPWATCH} I've been running for `{default.time_between(self.bot.starttime, int(time.time()))}`")
 
 
-    @commands.command(brief="Show which server mods are online.", aliases=['moderators'])
+    @commands.command(brief="Show the server mods.", aliases=['moderators'])
     @commands.guild_only()
     async def mods(self, ctx):
         """
@@ -542,7 +574,7 @@ class General(commands.Cog):
         await ctx.send(f"Mods in **{ctx.guild.name}:**\n\n{message}")
 
 
-    @commands.command(brief="Show which server admins are online.", aliases=['administrators'])
+    @commands.command(brief="Show the server admins.", aliases=['administrators'])
     @commands.guild_only()
     async def admins(self, ctx):
         """
@@ -581,46 +613,67 @@ class General(commands.Cog):
         """
         async with ctx.channel.typing():
             start = time.time()
-            message = await ctx.send('<a:loading:819280509007560756> **Calculating Speed...**')
+            message = await ctx.send(f'{self.bot.emote_dict["loading"]} **Calculating Speed...**')
             end = time.time()
-            st = speedtest.Speedtest()
-            st.get_best_server()
-            d = await self.bot.loop.run_in_executor(None, st.download)
-            u = await self.bot.loop.run_in_executor(None, st.upload)
+
+            if ctx.invoked_with in ["speedtest", "network","speed", "download", "upload"]:
+
+                st = speedtest.Speedtest()
+                st.get_best_server()
+                d = await self.bot.loop.run_in_executor(None, st.download)
+                u = await self.bot.loop.run_in_executor(None, st.upload)
+
+            db_start = time.time()
+            await self.bot.cxn.fetch("SELECT 1;")
+            elapsed = time.time() - db_start
 
             p = str(round((end-start)*1000, 2))
             q = str(round(self.bot.latency*1000, 2))
-            r = str(round(st.results.ping, 2))
-            s = str(round(d/1024/1024, 2))
-            t = str(round(u/1024/1024, 2))
-
+            if ctx.invoked_with in ["speedtest", "network","speed", "download", "upload"]:
+                r = str(round(st.results.ping, 2))
+                s = str(round(d/1024/1024, 2))
+                t = str(round(u/1024/1024, 2))
+            v = str(round((elapsed)*1000, 2))
             
             formatter = []
             formatter.append(p)
             formatter.append(q)
-            formatter.append(r)
-            formatter.append(s)
-            formatter.append(t)
+            if ctx.invoked_with in ["speedtest", "network","speed", "download", "upload"]:
+                formatter.append(r)
+                formatter.append(s)
+                formatter.append(t)
+            formatter.append(v)
             width = max(len(a) for a in formatter)
 
             msg = '**Results:**\n'
             msg += '```yaml\n'
             msg += ' Latency: {} ms\n'.format(q.ljust(width, " "))
-            msg += ' Network: {} ms\n'.format(r.ljust(width, " "))
+            if ctx.invoked_with in ["speedtest", "network","speed", "download", "upload"]:
+                msg += ' Network: {} ms\n'.format(r.ljust(width, " "))
             msg += 'Response: {} ms\n'.format(p.ljust(width, " "))
-            msg += 'Download: {} Mb/s\n'.format(s.ljust(width, " "))
-            msg += '  Upload: {} Mb/s\n'.format(t.ljust(width, " "))
+            msg += 'Database: {} ms\n'.format(v.ljust(width, " "))
+            if ctx.invoked_with in ["speedtest", "network","speed", "download", "upload"]:
+                msg += 'Download: {} Mb/s\n'.format(s.ljust(width, " "))
+                msg += '  Upload: {} Mb/s\n'.format(t.ljust(width, " "))
             msg += '```'
         await message.edit(content=msg)
         
 
-    @commands.command(brief="List info about the bot's host environment.")
+    @commands.command(brief="Get info about the bot's host environment.")
     async def hostinfo(self, ctx):
-        message = await ctx.channel.send('<a:loading:819280509007560756> **Collecting Information...**')
+        message = await ctx.channel.send(f'{self.bot.emote_dict["loading"]} **Collecting Information...**')
 
-        cpuCores    = psutil.cpu_count(logical=False)
-        cpuThread    = psutil.cpu_count()
-        #cpuThred      = os.cpu_count()
+        with self.process.oneshot():
+            process = self.process.name
+        swap = psutil.swap_memory()
+        
+        processName   = self.process.name()
+        pid           = self.process.ppid()
+        swapUsage     = "{0:.1f}".format(((swap[1] / 1024) /1024 ) /1024)
+        swapTotal     = "{0:.1f}".format(((swap[0] / 1024) /1024 ) /1024)
+        swapPerc      = swap[3]
+        cpuCores      = psutil.cpu_count(logical=False)
+        cpuThread     = psutil.cpu_count()
         cpuUsage      = psutil.cpu_percent(interval=1)
         memStats      = psutil.virtual_memory()
         memPerc       = memStats.percent
@@ -633,7 +686,7 @@ class General(commands.Cog):
         release       = platform.release()
         version       = platform.version()
         processor     = platform.processor()
-        botOwner      = self.bot.owner
+        botOwner      = await self.bot.fetch_user(constants.owners[0])
         botName       = ctx.guild.me
         currentTime   = int(time.time())
         timeString    = default.time_between(self.bot.starttime, currentTime)
@@ -656,6 +709,8 @@ class General(commands.Cog):
         msg += 'Client   : {}\n'.format(botName)
         msg += 'Commit   : {}\n'.format(git_head_hash.decode("utf-8"))
         msg += 'Uptime   : {}\n'.format(timeString)
+        msg += 'Process  : {}\n'.format(processName)
+        msg += 'PID      : {}\n'.format(pid)
         msg += 'Hostname : {}\n'.format(platform.node())
         msg += 'Language : Python {}.{}.{} {} ({} bit)\n'.format(pythonMajor, pythonMinor, pythonMicro, pythonRelease, pyBit)
         msg += 'Processor: {}\n'.format(processor)
@@ -665,14 +720,16 @@ class General(commands.Cog):
         msg += default.center('{}% of {} {}'.format(cpuUsage, cpuThread, threadString), 'CPU') + '\n'
         msg += default.makeBar(int(round(cpuUsage))) + "\n\n"
         msg += default.center('{} ({}%) of {}GB used'.format(memUsedGB, memPerc, memTotalGB), 'RAM') + '\n'
-        msg += default.makeBar(int(round(memPerc))) + "\n"
+        msg += default.makeBar(int(round(memPerc))) + "\n\n"
+        msg += default.center('{} ({}%) of {}GB used'.format(swapUsage, swapPerc, swapTotal), 'Swap') + '\n'
+        msg += default.makeBar(int(round(swapPerc))) + "\n"
         #msg += 'Processor Version: {}\n\n'.format(version)
         msg += "```"
 
         await message.edit(content=msg)
 
-    @commands.command(brief="Get information on any discord user by ID.", aliases=['lookup'])
-    async def user(self, ctx, snowflake:int = None):
+    @commands.command(brief="Get info on any discord user.", aliases=['lookup', 'rawuser'])
+    async def user(self, ctx, *, user: converters.UserMemberConverter = None):
         """
         Usage:   -user <user>
         Alias:   -lookup
@@ -682,28 +739,119 @@ class General(commands.Cog):
             Accepts nickname, ID, mention, username, and username+discrim
             Neither you nor the bot must share a server with the user.
         """
-        if snowflake is None: return await ctx.send(f"Usage: -user <user>")
-        try:
-            user = await self.bot.fetch_user(snowflake)
-        except discord.NotFound:
-            return await ctx.send(f"No user with id {snowflake} exists.")
-        sid = int(snowflake)
-        timestamp = ((sid >> 22) + 1420070400000) / 1000
-        cdate = datetime.datetime.utcfromtimestamp(timestamp)
-        fdate = cdate.strftime('%A, %B %d, %Y at %H:%M:%S')
-        em = discord.Embed(description=f"{user}'s information.", color=default.config()["embed_color"])
-        em.set_author(name=user, icon_url=user.avatar_url)
-        em.set_thumbnail(url=user.avatar_url)
-        em.add_field(name="Mention", value=user.mention)
-        em.add_field(name="Name", value=user.name)
-        em.add_field(name="ID", value=user.id)
-        em.add_field(name="Discriminator", value=user.discriminator)
-        em.add_field(name="Default Avatar", value=user.default_avatar)
-        em.add_field(name="Registered On", value=fdate)
-        await ctx.send(embed=em)
+        async with ctx.channel.typing():
+            if user is None:
+                return await ctx.send(f"Usage: `-user <user>`")
+
+            sid = int(user.id)
+            timestamp = ((sid >> 22) + 1420070400000) / 1000
+            cdate = datetime.datetime.utcfromtimestamp(timestamp)
+            fdate = cdate.strftime('%A, %B %d, %Y at %H:%M:%S')
+
+            try:
+                member = self.bot.get_member(sid)
+                user = member
+            except:
+                pass
+
+            # em = discord.Embed(description=f"{user}'s information.", color=constants.embed)
+            # em.set_author(name=user, icon_url=user.avatar_url)
+            # em.set_thumbnail(url=user.avatar_url)
+            # em.add_field(name="Mention", value=user.mention)
+            # em.add_field(name="Name", value=user.name)
+            # em.add_field(name="ID", value=user.id)
+            # em.add_field(name="Discriminator", value=user.discriminator)
+            # em.add_field(name="Default Avatar", value=user.default_avatar)
+            # em.add_field(name="Registered On", value=fdate)
+            # await ctx.send(embed=em)
+
+            tracking = self.bot.get_cog("Tracker")
+
+            title_str = f"Information on **{user}**"
+            msg = ""
+            msg += f"Username      : {user}\n"
+            if ctx.guild:
+                if isinstance(user, discord.Member) and user.nick:
+                    msg += f"Nickname      : {user.nick}\n"
+            msg += f"ID            : {user.id}\n"
+            if tracking is not None:
+                names = (await tracking.user_data(ctx, user))['usernames']
+                if names != str(user):
+                    msg += f"Usernames     : {names}\n"
+                avatars = (await tracking.user_data(ctx, user))['avatars']
+                msg += f"Avatars       : {avatars}\n"
+                if ctx.guild:
+                    if isinstance(user, discord.Member):
+                        nicknames = (await tracking.user_data(ctx, user))['nicknames']
+                        if nicknames:
+                            if nicknames != user.nick:
+                                msg += f"Nicknames     : {nicknames}\n"
+            msg += f"Common Servers: {sum(g.get_member(user.id) is not None for g in ctx.bot.guilds)}\n"
+            unix = user.created_at.timestamp()
+            msg += f"Created       : {default.time_between(int(unix), int(time.time()))} ago\n"
+            if ctx.guild:
+                if isinstance(user, discord.Member):
+                    unix = user.joined_at.timestamp()
+                    msg += f"Joined        : {default.time_between(int(unix), int(time.time()))} ago\n"
+            if tracking is not None:
+                last_observed = await tracking.last_observed(user)
+                if last_observed['last_seen'] is not None:
+                    msg += f"Last seen     : {last_observed['last_seen']} ago\n"
+                if last_observed['last_spoke'] is not None:
+                    msg += f"Last spoke    : {last_observed['last_spoke']} ago\n"
+                if ctx.guild:
+                    if isinstance(user, discord.Member):
+                        if last_observed['server_last_spoke'] is not None:
+                            msg += f"Spoke here    : {last_observed['server_last_spoke']} ago\n"
+            if ctx.guild:
+                if isinstance(user, discord.Member) and user.activities:
+                    msg += "Status        : {}\n".format('\n'.join(self.activity_string(a) for a in user.activities))
+            if ctx.guild:
+                if isinstance(user, discord.Member):
+                    msg += f"Roles         : {', '.join([r.name for r in sorted(user.roles, key=lambda r: -r.position) if r.name != '@everyone'])}\n"
+            if ctx.guild:
+                if isinstance(user, discord.Member):
+                    perm_list = [Perm[0] for Perm in user.guild_permissions if Perm[1]]
+                    msg += f'Permissions   : {", ".join(perm_list).replace("_", " ").replace("guild", "server").title().replace("Tts", "TTS")}'
+
+            await ctx.send(title_str)
+            t = pagination.MainMenu(pagination.TextPageSource(msg, prefix="```yaml\n", suffix="```"))
+            try:
+                await t.start(ctx)
+            except menus.MenuError as e:
+                await ctx.send(e)
 
 
-    @commands.command(brief="Show the date a discord snowflake ID was created.", aliases=['id'])
+    def activity_string(self, activity):
+        if isinstance(activity, (discord.Game, discord.Streaming)):
+            return str(activity)
+        elif isinstance(activity, discord.Activity):
+            ret = activity.name
+            if activity.details:
+                ret += " ({})".format(activity.details)
+            if activity.state:
+                ret += " - {}".format(activity.state)
+            return ret
+        elif isinstance(activity, discord.Spotify):
+            elapsed = datetime.utcnow() - activity.start
+            return "{}: {} by {} from {} [{}/{}]".format(
+                activity.name,
+                activity.title or "Unknown Song",
+                activity.artist or "Unknown Artist",
+                activity.album or "Unknown Album",
+                self.format_timedelta(elapsed),
+                self.format_timedelta(activity.duration)
+                )
+        else:
+            return str(activity)
+
+    def format_timedelta(self, td):
+        ts = td.total_seconds()
+        return "{:02d}:{:06.3f}".format(
+            int(ts//60),
+            ts % 60)
+
+    @commands.command(brief="Show the creation date a discord snowflake.", aliases=['id'])
     async def snowflake(self, ctx, *, sid = None):
         """
         Usage: -snowflake <id>
@@ -742,7 +890,7 @@ class General(commands.Cog):
                 f"Her help command shows extensive usage examples and explanations of all {len([x.name for x in self.bot.commands if not x.hidden])} commands, " 
                 "but if you need further assistance, have questions, or are simply looking for a great community to join, "
                 "look no further and join the [support server](https://discord.gg/947ramn).",
-                color=default.config()["embed_color"]
+                color=constants.embed
             )
             embed.set_author(
                 name=owner, icon_url=owner.avatar_url
@@ -768,7 +916,7 @@ class General(commands.Cog):
         else:
             obj = self.bot.get_command(command.replace('.', ' '))
             if obj is None:
-                return await ctx.send(f'<:fail:816521503554273320> Command `{command}` does not exist.')
+                return await ctx.send(f'{self.bot.emote_dict["fail"]} Command `{command}` does not exist.')
 
             src = obj.callback.__code__
             module = obj.callback.__module__
@@ -913,3 +1061,40 @@ class General(commands.Cog):
             await p.start(ctx)
         except menus.MenuError as e:
             await ctx.send(str(e))
+
+
+    @commands.command(brief="Snipe?", aliases=['retrieve'])
+    @commands.guild_only()
+    async def snipe(self, ctx, *, member: discord.Member = None):
+
+        if member is None:
+            query = """SELECT author_id, message_id, content, timestamp FROM messages WHERE channel_id = $1 AND deleted = True ORDER BY unix DESC;"""
+            result = await self.bot.cxn.fetchrow(query, ctx.channel.id) or None
+        else:
+            query = """SELECT author_id, message_id, content, timestamp FROM messages WHERE channel_id = $1 AND author_id = $2 AND deleted = True ORDER BY unix DESC;"""
+            result = await self.bot.cxn.fetchrow(query, ctx.channel.id, member.id) or None
+
+        if result is None:
+            return await ctx.send(f"{self.emote_dict['error']} There is nothing to snipe.")
+
+        author = result[0]
+        message_id = result[1]
+        content = result[2]
+        timestamp = result[3]
+
+        author = await self.bot.fetch_user(author)
+
+        if str(content).startswith("```"):
+            content = f"**__Message Content__**\n {str(content)}"
+        else:
+            content = f"**__Message Content__**\n ```fix\n{str(content)}```"
+
+        embed = discord.Embed(description=f"**Author:**  {author.mention}, **ID:** `{author.id}`\n"
+                                          f"**Channel:** {ctx.channel.mention} **ID:** `{ctx.channel.id}`\n"
+                                          f"**Server:** `{ctx.guild.name}` **ID:** `{ctx.guild.id},`\n\n"
+                                          f"**Sent at:** `{timestamp}`\n\n"
+                                          f"{content}"
+        , color=constants.embed, timestamp=datetime.datetime.utcnow())
+        embed.set_author(name="Deleted Message Retrieved", icon_url="https://media.discordapp.net/attachments/506838906872922145/603642595419357190/messagedelete.png")
+        embed.set_footer(text=f"Message ID: {message_id}")
+        await ctx.send(embed=embed)

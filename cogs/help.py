@@ -5,16 +5,14 @@ import discord
 from datetime import datetime
 from discord.ext import commands
 
-from core import OWNERS
-from utilities import default
+from secret import constants
 
-
-COG_EXCEPTIONS = ['CONFIG','HELP']
+COG_EXCEPTIONS = ['CONFIG','OWNER','MANAGER', 'HELP', 'TRACKER']
 COMMAND_EXCEPTIONS = ['EYECOUNT']
 
 
 def setup(bot):
-    bot.remove_command("help")
+    bot.remove_command('help')
     bot.add_cog(Help(bot))
 
 
@@ -24,13 +22,12 @@ class Help(commands.Cog):
     """
     def __init__(self, bot):
         self.bot = bot
-        self.cxn = bot.connection
-
+        
+        self.emote_dict = bot.emote_dict
 
       ############################
      ## Get Commands From Cogs ##
     ############################
-
 
     async def send_help(self, ctx, embed, pm, delete_after):
         if pm is True:
@@ -40,7 +37,7 @@ class Help(commands.Cog):
             try:
                 msg = await ctx.author.send(embed=embed)
                 try:
-                    await ctx.message.add_reaction("<:letter:816520981396193280>")
+                    await ctx.message.add_reaction(self.emote_dict['letter'])
                 except: return
             except:
                 msg = await ctx.send(embed=embed, delete_after=delete_after)
@@ -48,12 +45,12 @@ class Help(commands.Cog):
             msg = await ctx.send(embed=embed, delete_after=delete_after)
 
         def reaction_check(m):
-            if m.message_id == msg.id and m.user_id == ctx.author.id and str(m.emoji) == "<:trash:816463111958560819>":
+            if m.message_id == msg.id and m.user_id == ctx.author.id and str(m.emoji) == self.emote_dict['trash']:
                 return True
             return False
 
         try:
-            await msg.add_reaction("<:trash:816463111958560819>")
+            await msg.add_reaction(self.emote_dict['trash'])
             await self.bot.wait_for('raw_reaction_add', timeout=120.0, check=reaction_check)
             await msg.delete()
         except asyncio.TimeoutError:
@@ -69,13 +66,16 @@ class Help(commands.Cog):
         the_cog = sorted(cog.get_commands(), key=lambda x:x.name)
         cog_commands = []
         for c in the_cog:
-            if c.hidden and ctx.author.id not in OWNERS: continue
-            if str(c.name).upper() in COMMAND_EXCEPTIONS and ctx.author.id not in OWNERS: continue
+            if c.hidden and ctx.author.id not in constants.owners:
+                continue
+            if str(c.name).upper() in COMMAND_EXCEPTIONS and ctx.author.id not in constants.owners:
+                await ctx.send(f"{self.emote_dict['error']} No command named `{name}` found.")
+                continue
             cog_commands.append(c)
         if cog_commands:
             await self.category_embed(ctx, cog=cog.qualified_name, list=cog_commands, pm=pm, delete_after=delete_after)
         else:
-            return await ctx.send(f"<:error:816456396735905844> No command named `{name}` found.")
+            return await ctx.send(f"{self.emote_dict['error']} No command named `{name}` found.")
 
       ##########################
      ## Build Category Embed ##
@@ -84,7 +84,7 @@ class Help(commands.Cog):
     async def category_embed(self, ctx, cog, list, pm, delete_after):
         embed = discord.Embed(title=f"Category: `{cog}`",
         description=f"**Bot Invite Link:** [https://ngc.discord.bot](https://discord.com/oauth2/authorize?client_id=810377376269205546&scope=bot&permissions=8)\n"
-                    f"**Support Server:**  [https://discord.gg/ngc](https://discord.gg/947ramn)\n", color=default.config()["embed_color"])
+                    f"**Support Server:**  [https://discord.gg/ngc](https://discord.gg/947ramn)\n", color=constants.embed)
         embed.set_footer(text=f"Use \"{ctx.prefix}help command\" for information and usage examples on a command.\n")
 
         msg = ""
@@ -128,7 +128,7 @@ class Help(commands.Cog):
 
             embed = discord.Embed(title=f"{self.bot.user.name}'s Help Command", url="https://discord.gg/947ramn",
             description=f"**Bot Invite Link:** [https://ngc.discord.bot](https://discord.com/oauth2/authorize?client_id=810377376269205546&scope=bot&permissions=8)\n"
-                        f"**Support Server:**  [https://discord.gg/ngc](https://discord.gg/947ramn)", color=default.config()["embed_color"])
+                        f"**Support Server:**  [https://discord.gg/ngc](https://discord.gg/947ramn)", color=constants.embed)
 
             embed.set_footer(text=f"Use \"{ctx.prefix}help category\" for specific information on a category.")
 
@@ -136,7 +136,7 @@ class Help(commands.Cog):
             msg = ""
             for cog in sorted(self.bot.cogs):
                 c = self.bot.get_cog(cog)
-                if c.qualified_name.upper() in COG_EXCEPTIONS and ctx.author.id not in OWNERS: continue
+                if c.qualified_name.upper() in COG_EXCEPTIONS and ctx.author.id not in constants.owners: continue
                 valid_cogs.append(c)
             for c in valid_cogs:
                 line = f"\n`{c.qualified_name}` {c.description}\n"
@@ -163,10 +163,6 @@ class Help(commands.Cog):
             if invokercommand.lower() in ["mod","moderator","punishment","moderation","cleanup"]:
                 cog = self.bot.get_cog("Moderation")
                 return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
-
-            if invokercommand.lower() in ["owner","master","creator","owners","hidden","own","config","conf"]:
-                cog = self.bot.get_cog("Config")
-                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
                 
             if invokercommand.lower() in ["roles","role","serverroles"]:
                 cog = self.bot.get_cog("Roles")
@@ -179,7 +175,30 @@ class Help(commands.Cog):
             if invokercommand.lower() in ["stats","statistics","track","tracking"]:
                 cog = self.bot.get_cog("Statistics")
                 return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
-    
+
+            if invokercommand.lower() in ["jsk","jish","jishaku"]:
+                if ctx.author.id not in constants.owners:
+                    return await ctx.send(f"{self.emote_dict['error']} No command named `{invokercommand}` found.")
+                return await ctx.send_help("jishaku")
+
+            if invokercommand.lower() in ["conf","config","configuration","bot"]:
+                if ctx.author.id not in constants.owners:
+                    return await ctx.send(f"{self.emote_dict['error']} No command named `{invokercommand}` found.")
+                cog = self.bot.get_cog("Config")
+                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
+
+            if invokercommand.lower() in ["own","owners","owner","creator","hidden"]:
+                if ctx.author.id not in constants.owners:
+                    return await ctx.send(f"{self.emote_dict['error']} No command named `{invokercommand}` found.")
+                cog = self.bot.get_cog("Owner")
+                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
+
+            if invokercommand.lower() in ["manage","manager","master","heart"]:
+                if ctx.author.id not in constants.owners:
+                    return await ctx.send(f"{self.emote_dict['error']} No command named `{invokercommand}` found.")
+                cog = self.bot.get_cog("Manager")
+                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
+
             else:
 
                   ##########################
@@ -194,7 +213,7 @@ class Help(commands.Cog):
                     cog_commands = sorted(self.bot.get_cog(cog).get_commands(), key=lambda x:x.name)
                     for command in cog_commands:
                         if str(command.name) == invokercommand.lower() or invokercommand.lower() in command.aliases:
-                            if command.hidden and ctx.author.id not in OWNERS: continue
+                            if command.hidden and ctx.author.id not in constants.owners: continue
                             valid_commands += (command.name)
                             valid_help += (command.help)
                             if not command.brief:
@@ -206,14 +225,14 @@ class Help(commands.Cog):
                     help_embed = discord.Embed(title=f"Category: `{valid_cog.title()}`", 
                     description=f"**Bot Invite Link:** [https://ngc.discord.bot](https://discord.com/oauth2/authorize?client_id=810377376269205546&scope=bot&permissions=8)\n"
                                 f"**Support Server:**  [https://discord.gg/ngc](https://discord.gg/947ramn)", 
-                    color=default.config()["embed_color"])
+                    color=constants.embed)
                     help_embed.set_footer(text=f"Use \"{ctx.prefix}help command\" for information and usage examples on a command.")
                     help_embed.add_field(name=f"**Command Name:** `{valid_commands.title()}`", 
                     value=f"\n**Description:** `{valid_brief}`\n"
                           f"```yaml\n{valid_help}```")
                     await self.send_help(ctx, help_embed, pm, delete_after)
                 else: 
-                    await ctx.send(f"<:error:816456396735905844> No command named `{invokercommand}` found.")
+                    await ctx.send(f"{self.emote_dict['error']} No command named `{invokercommand}` found.")
 
 
     def _get_help(self, command, max_len = 0):
@@ -303,7 +322,7 @@ class Help(commands.Cog):
             myfile.write(msg)
 
         await ctx.send(file=discord.File(help_txt))
-        await message.edit(content='<:checkmark:816534984676081705> Uploaded Help-{}.txt'.format(timestamp))
+        await message.edit(content=f"{self.emote_dict['success']} Uploaded Help-{timestamp}.txt")
         os.remove(help_txt)
 
 

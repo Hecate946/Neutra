@@ -1,90 +1,214 @@
+import asyncio
+import contextlib
 import os
 import sys
+import json
 import time
 import aiohttp
-import asyncio
-import asyncpg
 import discord
 import logging
 import traceback
+import collections
+import tracemalloc
 
-from logging.handlers import RotatingFileHandler
-from datetime import datetime
-from discord.ext import commands, tasks
-from colr import color
+from colr              import color
+from datetime          import datetime
+from discord.ext       import commands, tasks
+from logging.handlers  import RotatingFileHandler
 
-from utilities import default
+from utilities         import default, cleanup, database
+from secret            import constants
+
 
 MAX_LOGGING_BYTES = 32 * 1024 * 1024 # 32 MiB
-BUILD_PATH        = "data/db/script.sql"
-COGS              = [x[:-3] for x in sorted(os.listdir('././cogs')) if x.endswith('.py') and x != "__init__.py"]
-OWNERS            = default.config()["owners"]
-CONNECTION        = asyncio.get_event_loop().run_until_complete(asyncpg.create_pool(default.config()["database"]))
+COGS              = [x[:-3] for x in sorted(os.listdir('././cogs')) if x.endswith('.py')]
+OWNERS            = constants.owners
+DEFAULT_PREFIX    = constants.prefix
+EMOTE_DICT        = constants.emotes
+
+cxn               = database.postgres
 
 # Set up our command logger
-
 command_logger = logging.getLogger("NGC0000")
 command_logger.setLevel(logging.DEBUG)
 command_logger_handler = RotatingFileHandler(
-    filename="./data/logs/commands.log",
-    encoding="utf-8",
-    mode="w",
-    maxBytes=MAX_LOGGING_BYTES,
-    backupCount=5
+        filename="./data/logs/commands.log",
+        encoding="utf-8",
+        mode="w",
+        maxBytes=MAX_LOGGING_BYTES,
+        backupCount=5
     )
 command_logger.addHandler(command_logger_handler)
 command_logger_format = logging.Formatter(
     '{asctime}: [{levelname}] {name} || {message}', '%Y-%m-%d %H:%M:%S', style='{'
-    )
+)
 command_logger_handler.setFormatter(command_logger_format)
 
-# This basically clears my console and beautifies the startup
-try:
-    os.system('clear')
-except Exception:
-    for _ in range(100):
-        print()
+#Set up our basic info logger
+info_logger = logging.getLogger("INFO_LOGGER")
+info_logger.setLevel(logging.INFO)
+info_logger_handler = RotatingFileHandler(
+        filename="./data/logs/info.log",
+        encoding="utf-8",
+        mode="w",
+        maxBytes=MAX_LOGGING_BYTES,
+        backupCount=5
+)
+info_logger.addHandler(info_logger_handler)
+info_logger_format = logging.Formatter(
+    '{asctime}: [{levelname}] {name} || {message}', '%Y-%m-%d %H:%M:%S', style='{'    
+)
+info_logger_handler.setFormatter(info_logger_format)
 
-connection = CONNECTION
+#Set up the error logger
+error_logger = logging.getLogger("ERROR_LOGGER")
+error_logger.setLevel(logging.WARNING)
+error_logger_handler = RotatingFileHandler(
+        filename="./data/logs/errors.log",
+        encoding="utf-8",
+        mode="w",
+        maxBytes=MAX_LOGGING_BYTES,
+        backupCount=5
+)
+error_logger.addHandler(error_logger_handler)
+error_logger_format = logging.Formatter(
+    '{asctime}: [{levelname}] {name} || {message}', '%Y-%m-%d %H:%M:%S', style='{'
+)
+error_logger_handler.setFormatter(error_logger_format)
+
+
+#Set up the traceback logger this just dumps all the errors
+traceback_logger = logging.getLogger("TRACEBACK_LOGGER")
+traceback_logger.setLevel(logging.WARNING)
+traceback_logger_handler = RotatingFileHandler(
+        filename="./data/logs/traceback.log",
+        encoding="utf-8",
+        mode="w",
+        maxBytes=MAX_LOGGING_BYTES,
+        backupCount=5
+)
+traceback_logger.addHandler(traceback_logger_handler)
+traceback_logger_format = logging.Formatter(
+    '{asctime}: [{levelname}] {name} || {message}', '%Y-%m-%d %H:%M:%S', style='{'
+)
+traceback_logger_handler.setFormatter(traceback_logger_format)
+
 
 async def get_prefix(bot, message):
     if not message.guild:
-        prefix = default.config()["prefix"]
+        prefix = constants.prefix
         return commands.when_mentioned_or(prefix)(bot, message)
-    query = '''SELECT prefix FROM servers WHERE server_id = $1;'''
-    prefix = await connection.fetchrow(query, message.guild.id)
-    return commands.when_mentioned_or(prefix[0])(bot, message)
+    prefix = await database.fetch_prefix(message.guild.id)
+    return commands.when_mentioned_or(prefix)(bot, message)
+
 
 #Main bot class. Heart of the application
 class NGC0000(commands.AutoShardedBot):
     def __init__(self):
 
         super().__init__(command_prefix=get_prefix, case_insensitive=True, owner_ids=OWNERS, intents=discord.Intents.all(),)
-        # Just an index to show how many database updates have taken place
-        self.index = 0
+
+        self.session = aiohttp.ClientSession(loop=self.loop)
+
+        # Start the task loop
+        self.status_loop.start()
 
     def setup(self):
+
+        # Sets up all the global bot variables
+        if not hasattr(self, 'bot_ready'):
+            self.bot_ready = False
+
+        if not hasattr(self, 'command_stats'):
+            self.command_stats = collections.Counter()
+
+        if not hasattr(self, 'socket_events'):
+            self.socket_events = collections.Counter()
+
+        if not hasattr(self, 'batch_inserts'):
+            self.batch_inserts = int()
+
+        if not hasattr(self, 'messages'):
+            self.messages = int()
+
+        if not hasattr(self, 'emojis_seen'):
+            self.emojis_seen = int()
+
+        if not hasattr(self, 'nickchanges'):
+            self.nickchanges = int()
+
+        if not hasattr(self, 'namechanges'):
+            self.namechanges = int()
+
+        if not hasattr(self, 'avchanges'):
+            self.avchanges = int()
+
+        if not hasattr(self, 'rolechanges'):
+            self.rolechanges = int()
+
+        if not hasattr(self, 'uptime'):
+            self.uptime = datetime.utcnow()
+
+        if not hasattr(self, 'starttime'):
+            self.starttime = int(time.time())
+
+        if not hasattr(self, 'cxn'):
+            self.cxn = cxn
+
+        if not hasattr(self, 'emote_dict'):
+            self.emote_dict = constants.emotes
+
+        if not hasattr(self, 'server_settings'):
+            self.server_settings = database.settings
+
         # loads all the cogs in ./cogs and prints them on sys.stdout
         for cog in COGS:
             self.load_extension(f"cogs.{cog}")
             print(color(fore="#3EC4CD", text=f"Loaded: {str(cog).upper()}"))
 
-
-    async def scriptexec(self, path):
-        with open(path, "r", encoding="utf-8") as script:
-            await connection.execute(script.read())
-
-
     def run(self):
-        # Starter function that gets called in starter.py
+
+        # Startup function that gets called in starter.py
         self.setup()
 
-        self.token = default.config()["token"]
+        self.token = constants.token
+        try:
+            super().run(self.token, reconnect=True)
+        finally:
+            self.status_loop.stop()
+            print("\nKilled")
+            with open("./data/json/commands.json", 'w', encoding='utf-8') as fp:
+                json.dump(self.command_stats, fp, indent=2)
+            with open("./data/json/sockets.json", 'w', encoding='utf-8') as fp:
+                json.dump(self.socket_events, fp, indent=2)
+            with open("./data/json/stats.json", 'w', encoding='utf-8') as fp:
+                stats = {
+                    "client name": self.user.name,
+                    "client id": self.user.id,
+                    "client age": default.time_between(self.user.created_at.timestamp(), time.time()),
+                    "client owner": f"{self.owner_ids[0]}, {self.get_user(self.owner_ids[0])}",
+                    "last run": default.timeago(datetime.utcnow() - self.uptime),
+                    "commands run": len(self.command_stats),
+                    "messages seen": self.messages,
+                    "server count": len(self.guilds),
+                    "channel count": len([x for x in self.get_all_channels()]),
+                    "member count": len([x for x in self.get_all_members()]),
+                    "batch inserts": self.batch_inserts,
+                    "username changes": self.namechanges,
+                    "nickname changes": self.nickchanges,
+                    "avatar changes": self.avchanges,
+                }
 
-        super().run(self.token, reconnect=True)
+                json.dump(stats, fp, indent=2)
+                
 
-    
+
+    async def close(self):
+        await super().close()
+        await self.session.close()
+
     async def process_commands(self, message):
+        await self.wait_until_ready()
         ctx = await self.get_context(message, cls=commands.Context)
         if ctx.command is None:
             return
@@ -113,9 +237,9 @@ class NGC0000(commands.AutoShardedBot):
 
             if not type(check) is dict:
                 check = {}
-            if check.get("Delete",False):
+            if check.get("Delete", False):
                 delete = True
-            if check.get("Ignore",False):
+            if check.get("Ignore", False):
                 ignore = True
             try: respond = check['Respond']
             except KeyError: pass
@@ -136,242 +260,37 @@ class NGC0000(commands.AutoShardedBot):
 
 
     @tasks.loop(minutes=10)
-    async def db_updater(self):
-        await self.update_db()
+    async def status_loop(self):
         # ( ͡° ͜ʖ ͡°) The real reason why I code ( ͡° ͜ʖ ͡°) 
         # (っ´▽｀)っ So pretty...
-        self.index += 1
-        msg    = f"DATABASE TASK UPDATE #{self.index}"
-        top    = "##" + "#" * (len(msg) + 4)
-        middle = " ##" + f" {msg} " + "##"
-        bottom = "  ##"+ "#" * (len(msg) + 4)
-        print(color(fore="#1EDA10", text=top))
-        print(color(fore="#1EDA10", text=middle))
-        print(color(fore="#1EDA10", text=bottom))
-        sys.stdout.write("\033[F" * 3)
-        # Not pretty but might as well set the bot status here
+        # self.index += 1
+
+        # msg    = f"DATABASE TASK UPDATE #{self.index}"
+        # top    = "##" + "#" * (len(msg) + 4)
+        # middle = " ##" + f" {msg} " + "##"
+        # bottom = "  ##"+ "#" * (len(msg) + 4)
+        # sys.stdout.write("\033[F" * 3)
+        # print(color(fore="#1EDA10", text=top))
+        # print(color(fore="#1EDA10", text=middle))
+        # print(color(fore="#1EDA10", text=bottom))
+
         # For some weird reason after awhile the status doesn't show up so... 
-        # updating it with the database task loop.
+        # updating it with the task loop.
         await self.set_status()
 
 
-    @db_updater.before_loop
-    async def before_some_task(self):
+    @status_loop.before_loop
+    async def before_status_loop(self):
         await self.wait_until_ready()
         await self.set_status()
-        # After the bot is ready, but before the task loop for the DB updater starts,
-        # We can execute the SQL script to make sure we have all our tables.
-        if os.path.isfile(BUILD_PATH):
-            SEPARATOR = '================================'
-            print(color(fore="#830083", text=SEPARATOR))
-            print(color(fore="#830083", text="Executing data/db/script.sql..."))
-            print(color(fore="#830083", text=SEPARATOR))
-            await self.scriptexec(BUILD_PATH)
-            await asyncio.sleep(0.7)
-            sys.stdout.write("\033[F" * 2)
-            print(color(fore="#830083", text="Successfully executed SQL script"))
-            print(color(fore="#830083", text=SEPARATOR))
-            await asyncio.sleep(0.7)
-            sys.stdout.write("\033[F" * 2)
-            if CONNECTION is not None:
-                print(color(fore="#830083", text=f"Established Database Connection."))
-                print(color(fore="#830083", text=SEPARATOR))
 
-
-    async def set_status(self):
-        # This sets the bot's presence, status, and activity
-        # based off of the values in ./config.json
-        if default.config()["activity"] == "listening":
-            a = discord.ActivityType.listening
-        elif default.config()["activity"] == "watching":
-            a = discord.ActivityType.watching
-        elif default.config()["activity"] == "competing":
-            a = discord.ActivityType.competing
-        else:
-            a = discord.ActivityType.playing
-
-        if default.config()["presence"] == "":
-            activity = discord.Activity(type=a)
-        else:
-            presence = default.config()["presence"]
-            activity = discord.Activity(type=a, name=presence)
-
-        status = default.config()["status"]
-        if status == "idle":
-            s = discord.Status.idle
-        elif status == "dnd":
-            s = discord.Status.dnd
-        elif status == "offline":
-            s = discord.Status.invisible
-        else:
-            # Online when in doubt
-            s = discord.Status.online
-
-        await self.change_presence(status=s, activity=activity)
-
-
-    async def update_db(self):
-        # Main database updater. This gets updated in the task loop on interval.
-        await connection.executemany("""
-        INSERT INTO servers (server_id, server_name, server_owner_id, server_owner_name) VALUES ($1, $2, $3, $4)
-        ON CONFLICT (server_id) DO UPDATE SET server_id = $1, server_name = $2, server_owner_id = $3, server_owner_name = $4
-        """, ((server.id, server.name, server.owner.id, str(server.owner))
-        for server in self.guilds))
-
-
-        await connection.executemany("""INSERT INTO roleconfig (server_id, whitelist, autoroles, reassign) VALUES ($1, $2, $3, $4)
-        ON CONFLICT (server_id) DO NOTHING""",
-        ((server.id, None, None, True)
-        for server in self.guilds))
-
-
-        await connection.executemany("""INSERT INTO logging VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-        ON CONFLICT (server_id) DO NOTHING""",
-        ((server.id, True, True, True, True, True, True, True, True, True, True, None, None)
-        for server in self.guilds))
-
-
-        await connection.executemany("""INSERT INTO moderation VALUES ($1, $2, $3, $4)
-        ON CONFLICT (server_id) DO NOTHING""", 
-        ((server.id, False, None, None)
-        for server in self.guilds))
-
-
-        member_list = self.get_all_members()
-        for member in member_list:
-            query = '''SELECT * FROM users WHERE user_id = $1 AND server_id = $2'''
-            result = await connection.fetch(query, member.id, member.guild.id) or None
-            if result is not None:
-                continue
-            roles = ','.join([str(x.id) for x in member.roles if x.name != "@everyone"])
-            names = member.display_name
-
-            query = '''
-                    INSERT INTO users (
-                        user_id, 
-                        server_id,
-                        nicknames, 
-                        roles,
-                        eyecount
-                    ) 
-                    VALUES ($1, $2, $3, $4, $5)
-                    '''
-            await connection.execute(
-                query,
-                member.id,
-                member.guild.id,
-                names,
-                roles,
-                0
-            )
-    # Command logger to ./data/logs/commands.log
-    @commands.Cog.listener()
-    async def on_command(self, ctx):
-        message = ctx.message
-        destination = None
-        if ctx.guild is None:
-            destination = 'Private Message'
-        else:
-            destination = '#{0.channel} [{0.channel.id}] ({0.guild}) [{0.guild.id}]'.format(message)
-        command_logger.info('{0.author} in {1}: {0.content}'.format(message, destination))
-
-    async def on_command_error(self, ctx, error):
-
-        if isinstance(error, commands.MissingRequiredArgument) or isinstance(error, commands.BadArgument):
-            name = str(ctx.command.qualified_name) if ctx.command.parent is None else str(ctx.command.full_parent_name)
-            help_command = self.get_command("help")
-            await help_command(ctx, invokercommand=name)
-
-        elif isinstance(error, commands.NoPrivateMessage):
-            await ctx.author.send('<:fail:816521503554273320> This command cannot be used in private messages.')
-
-        elif isinstance(error, commands.CommandOnCooldown):
-            await ctx.send(f"<:error:816456396735905844> This command is on cooldown... retry in {error.retry_after:.2f} seconds.")
-
-        elif isinstance(error, commands.DisabledCommand):
-            await ctx.author.send('<:fail:816521503554273320> This command is disabled.')
-
-        elif isinstance(error, commands.CommandInvokeError):
-            err = default.traceback_maker(error.original, advance=True)
-            if "2000 or fewer" in str(error) and len(ctx.message.clean_content) > 1900:
-                return await ctx.send("<:fail:816521503554273320> Result was greater than 2000 characters.")
-            print(color(fore="FF0000", text=f'\nCommand {ctx.command.qualified_name} raised the error: {error.original.__class__.__name__}: {error.original}'), file=sys.stderr)
-            print(err, file=sys.stderr)
-
-        elif isinstance(error, commands.BotMissingPermissions):
-            # Readable error so just send it to the channel where the error occurred.
-            await ctx.send(f"<:error:816456396735905844> {error}")
-
-        else:
-            print(color(fore="FF0000", text="Error"))
-            print(error)
-
-
-    async def on_guild_join(self, guild):
-        await self.update_db()
-
-
-    async def on_guild_remove(self, guild):
-        # This happens when the bot gets kicked from a server. 
-        # No need to waste any space storing their info anymore.
-        connection.execute("""
-        DELETE FROM servers WHERE server_id = $1
-        """, guild.id)
-
-        connection.execute("""
-        DELETE FROM users WHERE server_id = $1
-        """, guild.id)
-
-        connection.execute("""
-        DELETE FROM roleconfig WHERE server_id = $1
-        """, guild.id)
-
-        connection.execute("""
-        DELETE FROM mutes WHERE server_id = $1
-        """, guild.id)
-
-        connection.execute("""
-        DELETE FROM logging WHERE server_id = $1
-        """, guild.id)
-
-        connection.execute("""
-        DELETE FROM lockedchannels WHERE server_id = $1
-        """, guild.id)
-
-        connection.execute("""
-        DELETE FROM warn WHERE server_id = $1
-        """, guild.id)
-
-        connection.execute("""
-        DELETE FROM messages WHERE server_id = $1
-        """, guild.id)
-
-        connection.execute("""
-        DELETE FROM ignored WHERE server_id = $1
-        """, guild.id)
-
-        connection.execute("""
-        DELETE FROM snipe WHERE server_id = $1
-        """, guild.id)
-
-        connection.execute("""
-        DELETE FROM profanity WHERE server_id = $1
-        """, guild.id)
-
-        connection.execute("""
-        DELETE FROM moderation WHERE server_id = $1
-        """, guild.id) 
-
-
-    async def on_ready(self):
-
-        if not hasattr(self, 'uptime'):
-            self.uptime = datetime.utcnow()
-        if not hasattr(self, 'starttime'):
-            self.starttime = int(time.time())
-        if not hasattr(self, 'owner'):
-            self.owner = await self.fetch_user(OWNERS[0]) or "I can't find my owner"
-
+        member_list = []
+        for member in self.get_all_members():
+            member_list.append(member)
+        try:
+            await database.initialize(self.guilds, member_list)
+        except Exception as e:
+            print(e)
         # Beautiful console logging on startup
 
         message = f'Client Name: {bot.user}'
@@ -387,10 +306,132 @@ class NGC0000(commands.AutoShardedBot):
         print(color(fore="#ff008c", text=user_count_message))
         print(color(fore="#ff008c", text=separator))
 
-        # Start the task loop
-        await self.db_updater.start()
+        await cleanup.cleanup_servers(self.guilds)
+
+        self.bot_ready = True
+
+
+    async def set_status(self):
+        # This sets the bot's presence, status, and activity
+        # based off of the values in ./config.json
+        if constants.activity == "listening":
+            a = discord.ActivityType.listening
+        elif constants.activity == "watching":
+            a = discord.ActivityType.watching
+        elif constants.activity == "competing":
+            a = discord.ActivityType.competing
+        else:
+            a = discord.ActivityType.playing
+
+        if constants.presence == "":
+            activity = discord.Activity(type=a)
+        else:
+            presence = constants.presence
+            activity = discord.Activity(type=a, name=presence)
+
+        status = constants.status
+        if status == "idle":
+            s = discord.Status.idle
+        elif status == "dnd":
+            s = discord.Status.dnd
+        elif status == "offline":
+            s = discord.Status.invisible
+        else:
+            # Online when in doubt
+            s = discord.Status.online
+
+        await self.change_presence(status=s, activity=activity)
+
+
+    async def on_command_error(self, ctx, error):
+        if isinstance(error, commands.MissingRequiredArgument):
+            name = str(ctx.command.qualified_name) if ctx.command.parent is None else str(ctx.command.full_parent_name)
+            help_command = self.get_command("help")
+            await help_command(ctx, invokercommand=name)
+
+        elif isinstance(error, commands.BadArgument):
+            await ctx.send(f"{self.emote_dict['failed']} {error}")
+
+        elif isinstance(error, commands.NoPrivateMessage):
+            # Debating whether or not to ignore this.
+            await ctx.author.send(f"{self.emote_dict['failed']} This command cannot be used in private messages.")
+
+        elif isinstance(error, commands.CommandOnCooldown):
+            await ctx.send(f"{self.emote_dict['error']} This command is on cooldown... retry in {error.retry_after:.2f} seconds.")
+
+        elif isinstance(error, commands.DisabledCommand):
+            # This could get annoying so lets just comment out for now
+            # await ctx.author.send(f"{self.emote_dict['failed']} This command is disabled.")
+            pass
+
+        elif isinstance(error, discord.Forbidden):
+            pass
+
+        elif isinstance(error, commands.CommandInvokeError):
+            err = default.traceback_maker(error.original, advance=True)
+            if "or fewer" in str(error):
+                return await ctx.send(f"{self.emote_dict['failed']} Result was greater than the character limit.")
+            print(color(fore="FF0000", text=f'\nCommand {ctx.command.qualified_name} raised the error: {error.original.__class__.__name__}: {error.original}'), file=sys.stderr)
+            if ctx.guild is None:
+                destination = 'Private Message'
+            else:
+                destination = '#{0.channel} [{0.channel.id}] ({0.guild}) [{0.guild.id}]'.format(ctx)
+            error_logger.warning("{0.author} in {1}:\n\tCONTENT: {0.message.content}\n\tERROR : {2.original.__class__.__name__}:{2.original}".format(ctx, destination, error))
+            traceback_logger.warning(err)
+
+        elif isinstance(error, commands.BotMissingPermissions):
+            # Readable error so just send it to the channel where the error occurred.
+            await ctx.send(f"{self.emote_dict['error']} {error}")
+
+        elif isinstance(error, commands.CheckFailure):
+            # Readable error so just send it to the channel where the error occurred. 
+            # Or not
+            # await ctx.send(f"{self.emote_dict['error']} {error}")
+            pass
+
+        else:
+            # Ok so here we don't really know what the error is, so lets print the basic error. 
+            # We can always check pm2.log for the full error later if necessary
+            err = default.traceback_maker(error.original, advance=True)
+            print(color(fore="FF0000", text="Error"))
+            print(error)
+            if ctx.guild is None:
+                destination = 'Private Message'
+            else:
+                destination = '#{0.channel} [{0.channel.id}] ({0.guild}) [{0.guild.id}]'.format(ctx)
+            error_logger.warning("{0.author} in {1}:\n\tCONTENT: {0.message.content}\n\tERROR : {2}".format(ctx, destination, error))
+            traceback_logger.warning(err)
+
+
+    async def on_guild_join(self, guild):
+        if self.bot_ready is False:
+            return
+        member_list = []
+        for member in self.get_all_members():
+            member_list.append(member)
+
+        await database.initialize(self.guilds, member_list)
+
+
+    async def on_guild_remove(self, guild):
+        if self.bot_ready is False:
+            return
+        # This happens when the bot gets kicked from a server. 
+        # No need to waste any space storing their info anymore.
+        await cleanup.cleanup_servers(self.guilds)
+
+
+    async def on_ready(self):
+        try:
+            channel = self.get_channel(default.config()['reboot']['channel'])
+            msg = await channel.fetch_message(default.config()['reboot']['message'])
+            await msg.edit(content=self.emote_dict['success'] + " " + "{0}ed Successfully.".format(constants.reboot["invoker"]))
+        except:
+            pass
 
     async def on_message(self, message):
+        if self.bot_ready is False:
+            return
         await self.process_commands(message)
 
 bot = NGC0000()

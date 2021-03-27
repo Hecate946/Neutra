@@ -1,26 +1,24 @@
+import re
+import time
+import asyncio
 import discord
 import logging
 import datetime
 
-from discord.ext import commands
-from discord.ext import menus
-from discord.ext.menus import MenuError
+from collections import OrderedDict, Counter, defaultdict
+from discord.ext import commands, tasks, menus
 
+from secret import constants
 from utilities import default, permissions, converters, pagination
-from core import OWNERS
-from collections import OrderedDict, Counter
+        
+
+
+EMOJI_REGEX      = re.compile(r'<a?:.+?:([0-9]{15,21})>')
+EMOJI_NAME_REGEX = re.compile(r'[0-9a-zA-Z\_]{2,32}')
 
 
 def setup(bot):
-    if not hasattr(bot, 'command_stats'):
-        bot.command_stats = Counter()
-
-    if not hasattr(bot, 'socket_stats'):
-        bot.socket_stats = Counter()
-
     bot.add_cog(Statistics(bot))
-
-#log = logging.getLogger()
 
 class Statistics(commands.Cog):
     """
@@ -28,16 +26,95 @@ class Statistics(commands.Cog):
     """
     def __init__(self, bot):
         self.bot = bot
-        self.cxn = bot.connection
+        self.emoji_batch = defaultdict(Counter)
+        self.batch_lock = asyncio.Lock(loop=bot.loop)
+        
+        self.bulk_inserter.start()
+
+    def cog_unload(self):
+        self.bulk_inserter.stop()
 
 
-    async def fix_member(self, member):
-        roles = ','.join([str(x.id) for x in member.roles if x.name != "@everyone"])
-        names = member.display_name
-        query = '''INSERT OR IGNORE INTO users VALUES ($1, $2, $3, $4, $5, $6, $7, $8)'''
-        await self.cxn.execute(query, roles, str(member.guild.id), None, member.id, names, 0, 0, 0)  
+    @commands.command(brief="Shows all the bots in a server.")
+    @commands.guild_only()
+    async def listbots(self, ctx, *, guild: converters.DiscordGuild = None):
+        """
+        Usage: -listbots [server]
+        """
+        if guild is None:
+            guild = ctx.guild
 
-    
+        list_of_bots = [x for x in guild.members if x.bot]
+        if not len(list_of_bots):
+            # No bots - should... never... happen.
+            await ctx.send(f"This server has no bots.")
+        else:
+            # Got some bots!
+            bot_list = []
+            for bot in list_of_bots:
+                bot_list.append(
+                {
+                    "name": str(bot),
+                    "value":"Mention: {}\nID: `{}`".format(bot.mention, bot.id)
+                }
+                )
+            p = pagination.MainMenu(pagination.FieldPageSource(
+                entries=[("{}. {}".format(y+1,x["name"]), x["value"]) for y,x in enumerate(bot_list)], 
+                title="Bots in **{}** ({:,} total)".format(guild.name, len(list_of_bots)),
+                per_page=10))
+            try:
+                await p.start(ctx)
+            except menus.MenuError as e:
+                await ctx.send(e)
+
+    @commands.command(brief="Shows all users I'm connected to.")
+    async def users(self, ctx):
+        """
+        Usage: -users
+        """
+        users         = [x for x in self.bot.get_all_members() if not x.bot]
+        users_online  = [x for x in users if x.status != discord.Status.offline]
+        unique_users  = set([x.id for x in users])
+        bots          = [x for x in self.bot.get_all_members() if x.bot]
+        bots_online   = [x for x in bots if x.status != discord.Status.offline]
+        unique_bots   = set([x.id for x in bots])
+        e = discord.Embed(
+            title="User Stats",
+            color=constants.embed
+        )
+        e.add_field(
+            name='Humans',
+            value="{:,}/{:,} online ({:,g}%) - {:,} unique ({:,g}%)".format(
+                    len(users_online),
+                    len(users),
+                    round((len(users_online)/len(users))*100, 2),
+                    len(unique_users),
+                    round((len(unique_users)/len(users))*100, 2)
+            ),
+            inline=False
+        )
+        e.add_field(
+            name='Bots',
+            value="{:,}/{:,} online ({:,g}%) - {:,} unique ({:,g}%)".format(
+                    len(bots_online),
+                    len(bots),
+                    round((len(bots_online)/len(bots))*100, 2),
+                    len(unique_bots),
+                    round(len(unique_bots)/len(bots)*100, 2)
+            ),
+            inline=False
+        )
+        e.add_field(
+            name='Total',
+            value="{:,}/{:,} online ({:,g}%)".format(
+                    len(users_online)+len(bots_online),
+                    len(users)+len(bots),
+                    round(((len(users_online)+len(bots_online))/(len(users)+len(bots)))*100, 2)
+            ),
+            inline=False
+        )
+        await ctx.send(embed=e)
+
     @commands.command(brief="Lists how many servers you share with the bot.")
     @commands.guild_only()
     async def sharedservers(self, ctx, *, member: converters.DiscordUser = None):
@@ -187,7 +264,7 @@ class Statistics(commands.Cog):
             await ctx.send(e)
 
 
-    @commands.command(brief="Lists the most recent users to join.")
+    @commands.command(brief="Show the most recent users to join.")
     @commands.guild_only()
     async def recentjoins(self, ctx):
         """
@@ -215,29 +292,28 @@ class Statistics(commands.Cog):
             await ctx.send(e)
 
 
-    @commands.command(aliases=['listinvites','invitelist'], brief="List all current server invites.")
-    @commands.guild_only()
-    @permissions.has_permissions(manage_invites=True)
-    async def invites(self, ctx):
-        """
-        Usage: -invites
-        Aliases: -listinvites -invitelist
-        Output: Embed with all server invites listed
-        Permission: Manage Messages
-        """
-        invites = await ctx.guild.invites()
-        if len(invites) == 0:
-            await ctx.send("`<:error:816456396735905844> There currently no invites active.`")
-        else:
-            try:
-                em = discord.Embed(description="**Invites:**\n {0}".format(",\n ".join(map(str, invites))), color=default.config()["embed_color"])
-                await ctx.send(embed=em)
-            except: return await ctx.send(f"<:fail:816521503554273320> Too many invites to list.")
+    # @commands.command(aliases=['listinvites','invitelist'], brief="List all current server invites.")
+    # @commands.guild_only()
+    # @permissions.has_permissions(manage_invites=True)
+    # async def invites(self, ctx):
+    #     """
+    #     Usage: -invites
+    #     Aliases: -listinvites -invitelist
+    #     Output: Embed with all server invites listed
+    #     Permission: Manage Messages
+    #     """
+    #     invites = await ctx.guild.invites()
+    #     if len(invites) == 0:
+    #         await ctx.send(f"{self.bot.emote_dict['error']} There currently no invites active.")
+    #     else:
+    #         try:
+    #             em = discord.Embed(description="**Invites:**\n {0}".format(",\n ".join(map(str, invites))), color=constants.embed)
+    #             await ctx.send(embed=em)
+    #         except: return await ctx.send(f"{self.bot.emote_dict['failed']} Too many invites to list.")
 
 
-    @commands.command(aliases=['mc'], brief="Find exactly how many messages a user has sent in the server.")
+    @commands.command(aliases=['mc'], brief="Show how many messages a user has sent.")
     @commands.guild_only()
-    @permissions.has_permissions(manage_messages=True)
     async def messagecount(self, ctx, member: discord.Member = None):
         """
         Usage:  -messagecount [user]
@@ -249,7 +325,7 @@ class Statistics(commands.Cog):
         """
         user = ctx.author if member is None else member
         query = '''SELECT COUNT(*) as c FROM messages WHERE author_id = $1 AND server_id = $2'''
-        a = await self.cxn.fetchrow(query, user.id, ctx.guild.id) or None
+        a = await self.bot.cxn.fetchrow(query, user.id, ctx.guild.id) or None
         if a is None:
             #await self.fix_member(ctx.author)
             return await ctx.send("`{}` has sent **0** messages.".format(user))
@@ -258,12 +334,12 @@ class Statistics(commands.Cog):
             await ctx.send(f"`{user}` has sent **{a}** message{'' if a == 1 else 's'}")
 
 
-    @commands.command(brief="Show the top message senders in the server")
+    @commands.command(brief="Show the top message senders in the server", aliases=['top'])
     @commands.guild_only()
-    @permissions.has_permissions(manage_messages=True)
-    async def top(self, ctx, limit: int = 100):
+    async def messagestats(self, ctx, limit: int = 100):
         """
-        Usage: -top
+        Usage: -messagestats
+        Alias: -top
         Output: Top message senders in the server
         Permission: Manage Messages
         """
@@ -276,9 +352,9 @@ class Statistics(commands.Cog):
                 ORDER BY COUNT(author_id) DESC
                 LIMIT $2
                 '''
-        a = await self.cxn.fetch(query, ctx.guild.id, limit)
+        a = await self.bot.cxn.fetch(query, ctx.guild.id, limit)
         sum_query = '''SELECT COUNT(*) FROM messages WHERE server_id = $1'''
-        b = await self.cxn.fetchrow(sum_query, ctx.guild.id)
+        b = await self.bot.cxn.fetchrow(sum_query, ctx.guild.id)
         b = b[0]
         p = pagination.SimplePages(entries=[f"<@!{row[0]}>. [ Messages: {row[1]} ]" for row in a], per_page=20)
         p.embed.title = "**{0}** messages by **{1}** users.".format(b, len([x for x in ctx.guild.members]))
@@ -288,7 +364,7 @@ class Statistics(commands.Cog):
         except menus.MenuError as e:
             await ctx.send(e)
 
-    @commands.command(brief="Show all past and current nicknames for a user on the server.", aliases=["nicknames"])
+    @commands.command(brief="Show a user's nicknames.", aliases=["nicknames"])
     @commands.guild_only()
     async def nicks(self, ctx, user: discord.Member = None):
         """
@@ -301,110 +377,101 @@ class Statistics(commands.Cog):
         """
         if user is None:
             user = ctx.author
-        query = '''SELECT nicknames FROM users WHERE server_id = $1 AND user_id = $2'''
-        name_list = await self.cxn.fetchrow(query, ctx.guild.id, user.id)
+        query = '''SELECT nicknames FROM nicknames WHERE server_id = $1 AND user_id = $2'''
+        name_list = await self.bot.cxn.fetchrow(query, ctx.guild.id, user.id)
         name_list = name_list[0].split(',')
-        name_list = name_list[-10:]
         name_list = list(OrderedDict.fromkeys(name_list))
-        msg = ""
-        integer = 0
-        for i in name_list:
-            integer += 1
-            msg += f"{str(integer).zfill(2)}. `{i}`\n"
-        
-        embed = discord.Embed(color=default.config()["embed_color"])
-        embed.description = msg
-        embed.set_author(name=f"{user.name}'s Nicknames")
-        await ctx.send(embed=embed)
 
+        p = pagination.SimplePages(entries=[f"`{n}`" for n in name_list])
+        p.embed.title = f"Nicknames for {user}"
 
-    @commands.command(brief="👀 Check a user's eyecount 👀", aliases=['👀','eyecount'])
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send(e)
+
+    @commands.command(brief="Show a user's names.", aliases=["usernames"])
     @commands.guild_only()
-    async def eyes(self, ctx, user: discord.Member = None):
+    async def names(self, ctx, user: discord.Member = None):
         """
-        Usage:   -eyes [user]
-        Aliases: -eyecount 👀
-        Output:  👀 Check a user's eyecount 👀
+        Usage: -names [user]
+        Alias: -usernames
+        Output: Embed of all user's names.
+        Permission: Manage Messages
         Notes:
             Will default to yourself if no user is passed
         """
         if user is None:
             user = ctx.author
-        query = '''SELECT eyecount FROM users WHERE user_id = $1 AND server_id = $2'''
-        eyes = await self.cxn.fetchrow(query, user.id, ctx.guild.id)
-        await ctx.send(f"👀 User `{user}` has sent {eyes[0]} 👀 emoji{'' if int(eyes[0]) == 1 else 's'}")
+        query = '''SELECT usernames FROM usernames WHERE user_id = $1'''
+        name_list = await self.bot.cxn.fetchrow(query, user.id)
+        name_list = name_list[0].split(',')
+        name_list = list(OrderedDict.fromkeys(name_list))
 
+        p = pagination.SimplePages(entries=[f"`{n}`" for n in name_list])
+        p.embed.title = f"Usernames for {user}"
 
-    @commands.command(brief="Get how long ago a user was seen by the bot.", aliases=['seen'], hidden=True)
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send(e)
+
+    @commands.command(brief="Show a user's avatars.", aliases=["avs"])
     @commands.guild_only()
-    @permissions.has_permissions(manage_messages=True)
-    async def lastseen(self, ctx, *, user: converters.DiscordUser):
+    async def avatars(self, ctx, user: discord.Member = None):
         """
-        Usage:  -lastseen [user]
-        Alias:  -seen
-        Output: Get when a user was last seen on discord.
+        Usage: -names [user]
+        Alias: -usernames
+        Output: Embed of all user's names.
+        Permission: Manage Messages
+        Notes:
+            Will default to yourself if no user is passed
+        """
+        if user is None:
+            user = ctx.author
+        query = '''SELECT avatars FROM useravatars WHERE user_id = $1'''
+        name_list = await self.bot.cxn.fetchrow(query, user.id)
+        name_list = name_list[0].split(',')
+        name_list = list(OrderedDict.fromkeys(name_list))
+
+        p = pagination.SimplePages(entries=[f"`{n}`" for n in name_list], per_page=5)
+        p.embed.title = f"Avatars for {user}"
+
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send(e)
+
+    
+
+    @commands.command(brief="Check when a user was last observed", aliases=['lastseen','track','tracker'])
+    @permissions.has_permissions(manage_messages=True)
+    async def seen(self, ctx, user: converters.DiscordUser = None):
+        """
+        Usage:  -seen [user]
+        Alias:  -lastseen, -track, -tracker
+        Output: Get when a user was last observed on discord.
         Permission: Manage Messages
         Notes:
             User can be a mention, user id, or full discord 
             username with discrim Username#0001.
             Will default to yourself if no user is passed
         """
-        query = '''SELECT timestamp FROM last_seen WHERE user_id = $1;'''
-        timestamp = await self.cxn.fetchrow(query, user.id) or (None)
-        if str(timestamp) == "None": return await ctx.send(f"I have not seen `{user}`")
-        timestamp = timestamp[0]
-        everything = []
-        first_time = timestamp
-        later_time = datetime.datetime.utcnow()
-        difference = later_time - first_time
-        seconds_in_day = 24 * 60 * 60
-        elapsed = divmod(difference.days * seconds_in_day + difference.seconds, 60)
-        args = str(elapsed).strip("()").replace(",","").split(" ")
-        seconds = args[1]
-        everything.append(str(seconds) + " seconds")
-        if int(args[0]) > 60:
-            elapsed2 = divmod(int(args[0]), 60)
-            args2 = str(elapsed2).strip("()").replace(",","").split(" ")
-            minutes = args2[1]
-            everything.append(str(minutes) + f" minute{'' if int(minutes) == 1 else 's'}")
-            if int(args2[0]) > 24:
-                elapsed3 = divmod(int(args2[0]), 24)
-                args3 = str(elapsed3).strip("()").replace(",","").split(" ")
-                hours = args3[1]
-                everything.append(str(hours) + f" hour{'' if int(hours) == 1 else 's'}")
-                if int(args3[0]) > 30:
-                    elapsed4 = divmod(int(args2[0]), 30)
-                    args4 = str(elapsed4).strip("()").replace(",","").split(" ")
-                    days = args4[1]
-                    everything.append(str(days) + f" day{'' if int(days) == 1 else 's'}")
-                    if int(args4[0]) > 12:
-                        elapsed5 = divmod(int(args2[0]), 12)
-                        args5 = str(elapsed5).strip("()").replace(",","").split(" ")
-                        months = args5[1]
-                        years = args5[0]
-                        everything.append(str(months) + f" month{'' if int(months) == 1 else 's'}")
-                        everything.append(str(years) + f" year{'' if int(years) == 1 else 's'}")
-                    else:
-                        months = args4[0]
-                        everything.append(str(months) + f" month{'' if int(months) == 1 else 's'}")
-                else:
-                    days = args3[0]
-                    everything.append(str(days) + f" day{'' if int(days) == 1 else 's'}")
-            else:
-                hours = args2[0]
-                everything.append(str(hours) + f" hour{'' if int(hours) == 1 else 's'}")
-        else:
-            minutes = args[0]
-            everything.append(str(minutes) + f" minute{'' if int(minutes) == 1 else 's'}")
-        everything.reverse()
-        everything = str(everything).strip("[]").replace("'","")
-        msg = f"User: `{user}` was last seen **{everything}** ago"
-        await ctx.send(msg)
+        if user is None:
+            return await ctx.send(f"Usage: `{ctx.prefix}seen <user>`")
+        
+        tracker = self.bot.get_cog('Tracker')
 
+        data = await tracker.last_observed(user)
 
-    @commands.command(brief="Show bot commands listed by popularity")
+        if data['last_seen'] is None:
+            return await ctx.send(f"I have not seen `{user}`")
+        
+        await ctx.send(f"User `{user}` was last seen {data['last_seen']} ago.")
+        
+
+    @commands.command(brief="Show bot commands listed by popularity.")
     @commands.guild_only()
-    @permissions.has_permissions(manage_messages=True)
     async def commandstats(self, ctx, user: discord.Member = None, limit=100):
         """
         Usage: -commandstats [user] [limit]
@@ -413,11 +480,11 @@ class Statistics(commands.Cog):
         """
         if user is None:
             query = '''SELECT command FROM commands WHERE server_id = $1'''
-            command_list = await self.cxn.fetch(query, ctx.guild.id)
+            command_list = await self.bot.cxn.fetch(query, ctx.guild.id)
             premsg = f"Commands most frequently used in **{ctx.guild.name}**"
         else:
             query = '''SELECT command FROM commands WHERE server_id = $1 AND user_id = $2'''
-            command_list = await self.cxn.fetch(query, ctx.guild.id, user.id)
+            command_list = await self.bot.cxn.fetch(query, ctx.guild.id, user.id)
             premsg = f"Commands most frequently used by **{user}**"
         formatted_list = []
         for c in command_list:
@@ -426,7 +493,8 @@ class Statistics(commands.Cog):
         counter = Counter(formatted_list)
         try:
             width = len(max(counter, key=len))
-        except ValueError: return await ctx.send(f"<:error:816456396735905844> User `{user}` has not run any commands.")
+        except ValueError:
+            return await ctx.send(f"{self.bot.emote_dict['error']} User `{user}` has not run any commands.")
         total = sum(counter.values())
 
         if limit > 0:
@@ -438,7 +506,7 @@ class Statistics(commands.Cog):
 
         msg = "{0} \n\nTOTAL: {1}".format(output, total)
         #await ctx.send(premsg + '```yaml\n{}\n\nTOTAL: {}```'.format(output, total))
-        pages = pagination.MainMenu(pagination.ctx.sendurce(msg, prefix="```yaml", max_size=500))
+        pages = pagination.MainMenu(pagination.TextPageSource(msg, prefix="```yaml", max_size=500))
         if user is None:
             title = f"Most common commands used in **{ctx.guild.name}**"
         else:
@@ -447,13 +515,12 @@ class Statistics(commands.Cog):
         await ctx.send(title)
         try:
             await pages.start(ctx)
-        except MenuError as e:
+        except menus.MenuError as e:
             await ctx.send(str(e))
 
 
-    @commands.command(name="commands", brief="Show how many commands have been executed on the server.")
+    @commands.command(name="commands", brief="Show how many commands have been run.")
     @commands.guild_only()
-    @permissions.has_permissions(manage_messages=True)
     async def command_count(self, ctx, user: discord.Member = None):
         '''
         Usage:  -commands [user]
@@ -464,23 +531,22 @@ class Statistics(commands.Cog):
         '''
         if user is None:
             query = '''SELECT COUNT(*) as c FROM commands WHERE server_id = $1'''
-            command_count = await self.cxn.fetchrow(query, ctx.guild.id)
+            command_count = await self.bot.cxn.fetchrow(query, ctx.guild.id)
             return await ctx.send(f"A total of **{command_count[0]:,}** command{' has' if int(command_count[0]) == 1 else 's have'} been executed on this server.")
         else:
             query = '''SELECT COUNT(*) as c FROM commands WHERE executor_id = $1 AND server_id = $2'''
-            command_count = await self.cxn.fetchrow(query, user.id, ctx.guild.id)
+            command_count = await self.bot.cxn.fetchrow(query, user.id, ctx.guild.id)
             return await ctx.send(f"User `{user}` has executed **{int(command_count[0]):,}** commands.")
 
 
-    @commands.command(brief="See the top bot users in the server.",aliases=["botusage"])
+    @commands.command(brief="Top bot users.",aliases=["botusage"])
     @commands.guild_only()
-    @permissions.has_permissions(manage_messages=True)
     async def usage(self, ctx, unit: str="month"):
         """
         Usage: -usage [unit of time]
         ALias: -botusage
         Output: Top bot users in the server
-        Permission: Manage Messages
+        Permission: Manage Messages 
         """
         unit = unit.lower()
         time_dict = {
@@ -491,11 +557,11 @@ class Statistics(commands.Cog):
         }
         if unit not in time_dict:
             unit = "month"
-        query = '''SELECT COUNT(*) as c, executor FROM commands WHERE server_id = $1 GROUP BY executor ORDER BY c DESC LIMIT 25'''
-        usage = await self.cxn.fetch(query, ctx.guild.id)
-        e = discord.Embed(title=f"Activity for the last {unit}", description=f"{sum(x[0] for x in usage)} commands from {len(usage)} user{'' if len(usage) == 1 else 's'}", color=default.config()["embed_color"])
-        for n, v in enumerate(usage[:25]):
-            name = v[1]
+        query = '''SELECT COUNT(*) as c, author_id FROM commands WHERE server_id = $1 GROUP BY author_id ORDER BY c DESC LIMIT 25'''
+        usage = await self.bot.cxn.fetch(query, ctx.guild.id)
+        e = discord.Embed(title=f"Bot usage for the last {unit}", description=f"{sum(x[0] for x in usage)} commands from {len(usage)} user{'' if len(usage) == 1 else 's'}", color=constants.embed)
+        for n, v in enumerate(usage[:24]):
+            name = await self.bot.fetch_user(v[1])
             e.add_field(name=f"{n+1}. {name}", value=f"{v[0]} command{'' if int(v[0]) == 1 else 's'}")
         
         await ctx.send(embed=e)
@@ -503,7 +569,6 @@ class Statistics(commands.Cog):
 
     @commands.group(brief="Show the most active server members", invoke_without_command=True)
     @commands.guild_only()
-    @permissions.has_permissions(manage_messages=True)
     async def activity(self, ctx, unit: str="month"):
         """
         Usage: -activity [characters] [unit of time]
@@ -523,10 +588,10 @@ class Statistics(commands.Cog):
         now = int(datetime.datetime.utcnow().timestamp())
         diff = now - time_seconds
         query = '''SELECT COUNT(*) as c, author_id FROM messages WHERE server_id = $1 AND unix > $2 GROUP BY author_id ORDER BY c DESC LIMIT 25'''
-        stuff = await self.cxn.fetch(query, ctx.guild.id, diff)
+        stuff = await self.bot.cxn.fetch(query, ctx.guild.id, diff)
 
-        e = discord.Embed(title=f"Activity for the last {unit}", description=f"{sum(x[0] for x in stuff)} messages from {len(stuff)} user{'' if len(stuff) == 1 else 's'}", color=default.config()["embed_color"])
-        for n, v in enumerate(stuff[:25]):
+        e = discord.Embed(title=f"Activity for the last {unit}", description=f"{sum(x[0] for x in stuff)} messages from {len(stuff)} user{'' if len(stuff) == 1 else 's'}", color=constants.embed)
+        for n, v in enumerate(stuff[:24]):
             try:
                 name = ctx.guild.get_member(int(v[1])).name
             except AttributeError:
@@ -535,10 +600,11 @@ class Statistics(commands.Cog):
         
         await ctx.send(embed=e)
 
+
     @activity.command(aliases=['characters'])
     @commands.guild_only()
     async def char(self, ctx, unit: str="day"):
-        if ctx.author.id not in OWNERS and ctx.author.guild_permissions.administrator:
+        if ctx.author.id not in constants.owners:
             return
         unit = unit.lower()
         time_dict = {
@@ -553,8 +619,8 @@ class Statistics(commands.Cog):
         now = int(datetime.datetime.utcnow().timestamp())
         diff = now - time_seconds
         query = '''SELECT SUM(LENGTH(content)) as c, author_id, COUNT(*) FROM messages WHERE server_id = $1 AND unix > $2 GROUP BY author_id ORDER BY c DESC LIMIT 25'''
-        stuff = await self.cxn.fetch(query, ctx.guild.id, diff)
-        e = discord.Embed(title="Current leaderboard", description=f"Activity for the last {unit}", color=default.config()["embed_color"])
+        stuff = await self.bot.cxn.fetch(query, ctx.guild.id, diff)
+        e = discord.Embed(title="Current leaderboard", description=f"Activity for the last {unit}", color=constants.embed)
         for n, v in enumerate(stuff): 
             try:
                 name = ctx.guild.get_member(int(v[1])).name
@@ -566,9 +632,9 @@ class Statistics(commands.Cog):
         
         await ctx.send(embed=e)
 
-    @commands.command(brief="Get the most commonly used words of a user.")
+
+    @commands.command(brief="Most used words.")
     @commands.guild_only()
-    @permissions.has_permissions(manage_messages=True)
     async def words(self, ctx, member: discord.Member=None, limit:int = 20):
         """
         Usage: -words [user]
@@ -580,7 +646,7 @@ class Statistics(commands.Cog):
         if member is None:
             member = ctx.author
 
-        all_msgs = await self.cxn.fetch('''SELECT content FROM messages WHERE author_id = $1 AND server_id = $2''', member.id, ctx.guild.id)
+        all_msgs = await self.bot.cxn.fetch('''SELECT content FROM messages WHERE author_id = $1 AND server_id = $2''', member.id, ctx.guild.id)
         all_msgs = [x[0] for x in all_msgs]
         all_msgs = ' '.join(all_msgs).split()
         all_msgs = list(filter(lambda x: len(x) > 0, all_msgs))
@@ -592,12 +658,12 @@ class Statistics(commands.Cog):
         await ctx.send(f"Most common words sent by **{member.display_name}**")
         try:
             await pages.start(ctx)
-        except MenuError as e:
+        except menus.MenuError as e:
             await ctx.send(str(e))
 
-    @commands.command(brief="Get the number of times a word has been used by a user.")
+
+    @commands.command(brief="Usage for a word.")
     @commands.guild_only()
-    @permissions.has_permissions(manage_messages=True)
     async def word(self, ctx, word: str = None, member: discord.Member = None):
         """
         Usage: -word [user] [word]
@@ -610,7 +676,7 @@ class Statistics(commands.Cog):
             return await ctx.send(f"Usage: `{ctx.prefix}word [user] <word>`")
         if member is None:
             member = ctx.author
-        all_msgs = await self.cxn.fetch('''SELECT content FROM messages WHERE author_id = $1 AND server_id = $2''', member.id, ctx.guild.id)
+        all_msgs = await self.bot.cxn.fetch('''SELECT content FROM messages WHERE author_id = $1 AND server_id = $2''', member.id, ctx.guild.id)
         all_msgs = [x[0] for x in all_msgs]
         all_msgs = ' '.join(all_msgs).split()
         all_msgs = list(filter(lambda x: len(x) > 0, all_msgs))
@@ -635,148 +701,174 @@ class Statistics(commands.Cog):
         await ctx.send(f"The word `{word}` has been used {found[0][1]} time{'' if found[0][1] == 1 else 's'} and is the {common} most common word used by **{member.display_name}**")
 
 
+    @commands.command(brief="Emoji usage tracking.")
+    @commands.guild_only()
+    async def emojistats(self, ctx):
+        async with ctx.channel.typing():
+            msg = await ctx.send(f"{self.bot.emote_dict['loading']} **Collecting Emoji Statistics**")
+            query = """SELECT (emoji_id, total) FROM emojistats WHERE server_id = $1 ORDER BY total DESC;"""
+
+            emoji_list = []
+            result = await self.bot.cxn.fetch(query, ctx.guild.id)
+            for x in result:
+                try:
+                    emoji = await ctx.guild.fetch_emoji(int(x[0][0]))
+                    emoji_list.append((emoji, x[0][1]))
+
+                except Exception:
+                    continue
+
+
+            p = pagination.SimplePages(entries = ['{}: Uses: {}'.format(e[0], e[1]) for e in emoji_list], per_page = 15)
+            p.embed.title = f"Emoji usage stats in **{ctx.guild.name}**"
+            await msg.delete()
+            try:
+                await p.start(ctx)
+            except menus.MenuError as e:
+                await ctx.send(e)
+
+
+    # @commands.command(brief="Emoji usage tracking.")
+    # @commands.guild_only()
+    # async def emojistats(self, ctx, member: discord.Member = None):
+    #     async with ctx.channel.typing():
+    #         if member is None:
+    #             msg = await ctx.send(f"{self.bot.emote_dict['loading']} **Collecting Emoji Statistics**")
+    #             query = """SELECT content FROM messages WHERE content ~ '<a?:.+?:([0-9]{15,21})>' AND server_id = $1;"""
+
+    #             stuff = await self.bot.cxn.fetch(query, ctx.guild.id)
+    #             fat_msg = ""
+    #             for x in stuff:
+    #                 fat_msg += '\n'.join(x)
+    #             matches = EMOJI_REGEX.findall(fat_msg)
+
+    #             emoji_list = []
+    #             for x in matches:
+    #                 try:
+    #                     emoji = await ctx.guild.fetch_emoji(int(x))
+    #                 except discord.NotFound:
+    #                     continue
+    #                 emoji_list.append(emoji)
+
+    #             emoji_list = Counter(emoji_list)
+    #             emoji_list = emoji_list.most_common()
+
+    #             p = pagination.SimplePages(entries = ['{}: Uses: {}'.format(e[0], e[1]) for e in emoji_list], per_page = 15)
+    #             p.embed.title = f"Emoji usage stats in **{ctx.guild.name}**"
+    #             await msg.delete()
+    #             try:
+    #                 await p.start(ctx)
+    #             except menus.MenuError as e:
+    #                 await ctx.send(e)
+    #         else:
+    #             msg = await ctx.send(f"{self.bot.emote_dict['loading']} **Collecting Emoji Statistics**")
+    #             query = """SELECT content FROM messages WHERE content ~ '<a?:.+?:([0-9]{15,21})>' AND server_id = $1 AND author_id = $2;"""
+
+    #             stuff = await self.bot.cxn.fetch(query, ctx.guild.id, member.id)
+    #             fat_msg = ""
+    #             for x in stuff:
+    #                 fat_msg += '\n'.join(x)
+    #             matches = EMOJI_REGEX.findall(fat_msg)
+    #             emoji_list = []
+
+    #             for x in matches:
+    #                 try:
+    #                     emoji = await ctx.guild.fetch_emoji(int(x))
+    #                 except discord.NotFound:
+    #                     continue
+    #                 emoji_list.append(emoji)
+
+    #             emoji_list = Counter(emoji_list)
+    #             emoji_list = emoji_list.most_common()
+    #             p = pagination.SimplePages(entries = ['{}: Uses: {}'.format(e[0], e[1]) for e in emoji_list], per_page = 15)
+    #             p.embed.title = f"Emoji usage stats for **{member.display_name}**"
+    #             await msg.delete()
+    #             try:
+    #                 await p.start(ctx)
+    #             except menus.MenuError as e:
+    #                 await ctx.send(e)
+
+
+    @commands.command(brief="Get stats on an emoji.")
+    async def emoji(self, ctx, emoji: discord.PartialEmoji = None):
+        """
+        Usage: -emoji <custom emoji>
+        Output: Usage stats on the passed emoji
+        """
+        async with ctx.channel.typing():
+            if emoji is None:
+                return await ctx.send(f"Usage: `{ctx.prefix}emoji <custom emoji>`")
+            emoji_id = emoji.id
+
+            msg = await ctx.send(f"{self.bot.emote_dict['loading']} **Collecting Emoji Statistics**")
+            query = f"""SELECT (author_id, content) FROM messages WHERE content ~ '<a?:.+?:{emoji_id}>';"""
+
+            stuff = await self.bot.cxn.fetch(query)
+
+            emoji_users = []
+            for x in stuff:
+                emoji_users.append(x[0][0])
+
+            fat_msg = ""
+            for x in stuff:
+                fat_msg += x[0][1]
+
+            emoji_users = Counter(emoji_users).most_common()
+
+            matches = EMOJI_REGEX.findall(fat_msg)
+            total_uses = len(matches)
+
+            p = pagination.SimplePages(entries = ['`{}`: Uses: {}'.format(await self.bot.fetch_user(u[0]), u[1]) for u in emoji_users], per_page = 15)
+            p.embed.title = f"Emoji usage stats for {emoji} (Total: {total_uses})"
+            await msg.delete()
+            try:
+                await p.start(ctx)
+            except menus.MenuError as e:
+                await ctx.send(e)
+
       #####################
-     ## Event Listeners ##
+     ## Emoji Task Loop ##
     #####################
 
+    @tasks.loop(seconds=10.0)
+    async def bulk_inserter(self):
 
-    @commands.Cog.listener()
-    async def on_command(self, ctx):
-        if not ctx.guild: return
+        #============#
+        # On Message #
+        #============#
+        # query = """INSERT INTO emojistats (server_id, emoji_id, total)
+                #    VALUES ($1, $2, $3) ON CONFLICT (server_id, emoji_id)
+                #    DO UPDATE SET total = emoji_stats.total + excluded.total;
+                # """
 
-        query = '''
-                INSERT INTO commands (
-                    server_id, channel_id, author_id,
-                    timestamp, prefix, command, failed
-                )
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
-                '''
-        await self.cxn.execute(
-            query,
-            ctx.guild.id,
-            ctx.channel.id,
-            ctx.author.id,
-            ctx.message.created_at.utcnow(), 
-            ctx.prefix,
-            ctx.command.qualified_name,
-            ctx.command_failed
-        )
+        query = """INSERT INTO emojistats (serveremoji, server_id, emoji_id, total)
+                   VALUES ($1, $2, $3, $4) ON CONFLICT (serveremoji) DO UPDATE
+                   SET total = emojistats.total + excluded.total;
+                """
 
-        command = ctx.command.qualified_name
-        self.bot.command_stats[command] += 1
-    
+        async with self.batch_lock:
+            for data in self.emoji_batch.items():
+                server_id = data[0]
+                for key in data[1]:
+                    emoji_id = key
+                count = data[1][emoji_id]
+                await self.bot.cxn.execute(query, f"{server_id}:{emoji_id}", server_id, emoji_id, count)
+            self.bot.emojis_seen += len(self.emoji_batch.items())
+            self.emoji_batch.clear()
+        
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if message.author.bot: return None
-        query = '''INSERT INTO last_seen (user_id, timestamp) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET timestamp = $2'''
-        await self.cxn.execute(query, message.author.id, datetime.datetime.utcnow())
-        if not message.guild: return
-        
-        message_eyes = 0 
-        trigger = '👀'
-        for x in str(message.content):
-            if x == trigger:
-                message_eyes += 1
-        query = '''UPDATE users SET eyecount = eyecount + $1 WHERE user_id = $2 AND server_id = $3'''
-        await self.cxn.execute(query, message_eyes, message.author.id, message.guild.id)
-        
-
-        if message.content == "":
+        if self.bot.bot_ready is False:
             return
-        query = '''INSERT INTO messages VALUES ($1, $2, $3, $4, $5, $6, $7)'''
-        await self.cxn.execute(
-            query,
-            message.created_at.timestamp(), 
-            message.created_at.utcnow(), 
-            message.clean_content,
-            message.id,
-            message.author.id,
-            message.channel.id,
-            message.guild.id)
+        if message.author.bot:
+            return
+        if not message.guild:
+            return
 
+        matches = EMOJI_REGEX.findall(message.content)
+        if not matches:
+            return
+        async with self.batch_lock:
+            self.emoji_batch[message.guild.id].update(map(int, matches))
 
-    @commands.Cog.listener()
-    async def on_member_update(self, before, after):
-        if before.display_name != after.display_name:
-            query = '''SELECT nicknames FROM users WHERE user_id = $1 AND server_id = $2'''
-            name_list = await self.cxn.fetchrow(query, before.id, before.guild.id)
-
-            name_list = name_list[0].split(',')
-            name_list = list(OrderedDict.fromkeys(name_list))
-
-            if after.display_name not in name_list:
-                name_list.append(after.display_name)
-            else:
-
-                old_index = name_list.index(after.display_name)
-                name_list.pop(old_index)
-                name_list.append(after.display_name)
-            new_names = ','.join(name_list)
-            query = '''UPDATE users SET nicknames = $1 WHERE user_id = $2 AND server_id = $3'''
-            await self.cxn.execute(query, new_names, before.id, before.guild.id)
-
-
-    @commands.Cog.listener()
-    async def on_user_update(self, before, after):
-        query = '''INSERT INTO last_seen (user_id, timestamp) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET timestamp = $2'''
-        await self.cxn.execute(query, after.id, datetime.datetime.utcnow())
-        if before.name != after.name:
-            query = '''SELECT nicknames FROM users WHERE user_id = $1'''
-            name_list = await self.cxn.fetchrow(query, before.id)
-
-            name_list = name_list[0].split(',')
-            name_list = list(OrderedDict.fromkeys(name_list))
-
-            if after.name not in name_list:
-                name_list.append(after.name)
-            else:
-
-                old_index = name_list.index(after.name)
-                name_list.pop(old_index)
-                name_list.append(after.name)
-            new_names = ','.join(name_list)
-            query = '''UPDATE users SET nicknames = $1 WHERE user_id = $2'''
-            await self.cxn.execute(query, new_names, before.id)
-
-    @commands.Cog.listener()
-    async def on_socket_response(self, msg):
-        self.bot.socket_stats[msg.get('t')] += 1
-
-        
-    @commands.Cog.listener()
-    async def on_raw_reaction_add(self, payload):
-        query = '''INSERT INTO last_seen (user_id, timestamp) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET timestamp = $2'''
-        user = await self.bot.fetch_user(payload.user_id)
-        await self.cxn.execute(query, user.id, datetime.datetime.utcnow())
-    
-    
-    @commands.Cog.listener()
-    async def on_voice_state_update(self, member, before, after):
-        query = '''INSERT INTO last_seen (user_id, timestamp) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET timestamp = $2'''
-        await self.cxn.execute(query, member.id, datetime.datetime.utcnow())
-    
-    
-    @commands.Cog.listener()
-    async def on_invite_create(self, invite):
-        query = '''INSERT INTO last_seen (user_id, timestamp) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET timestamp = $2'''
-        await self.cxn.execute(query, invite.inviter.id, datetime.datetime.utcnow())
-    
-    
-    @commands.Cog.listener()
-    async def on_typing(self, channel, user, when):
-        await self.bot.wait_until_ready()
-        query = '''INSERT INTO last_seen (user_id, timestamp) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET timestamp = $2'''
-        await self.cxn.execute(query, user.id, datetime.datetime.utcnow())
-
-
-    @commands.Cog.listener()
-    async def on_member_join(self, user):
-        query = '''INSERT INTO last_seen (user_id, timestamp) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET timestamp = $2'''
-        await self.cxn.execute(query, user.id, datetime.datetime.utcnow())
-
-
-    @commands.Cog.listener()
-    async def on_member_leave(self, user):
-        query = '''INSERT INTO last_seen (user_id, timestamp) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET timestamp = $2'''
-        await self.cxn.execute(query, user.id, datetime.datetime.utcnow())

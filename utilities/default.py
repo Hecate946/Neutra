@@ -44,6 +44,7 @@ def date(target, clock=True):
         return target.strftime("%d %B %Y")
     return target.strftime("%d %B %Y, %H:%M")
 
+
 def get_years(timeBetween, year, reverse):
     years = 0
 
@@ -63,6 +64,7 @@ def get_years(timeBetween, year, reverse):
         timeBetween -= year_seconds
 
     return timeBetween, years, year
+
 
 def get_months(timeBetween, year, month, reverse):
     months = 0
@@ -108,7 +110,7 @@ def time_between(first, last, reverse=False):
     minutes = int((timeBetween-(hours*3600 + days*86400 + weeks*604800))/60)
     seconds = int(timeBetween-(minutes*60 + hours*3600 + days*86400 + weeks*604800))
     msg = ""
-    
+
     if years > 0:
         msg += "1 year, " if years == 1 else "{:,} years, ".format(years)
     if months > 0:
@@ -127,7 +129,8 @@ def time_between(first, last, reverse=False):
     if msg == "":
         return "0 seconds"
     else:
-        return msg[:-2]	
+        return msg[:-2]
+
 
 def responsible(target, reason):
     """ Default responsible maker targeted to find user in AuditLogs """
@@ -166,6 +169,7 @@ async def prettyResults(ctx, filename: str = "Results", resultmsg: str = "Here's
 def makeBar(progress):
     return '[{0}{1}] {2}%'.format('#'*(int(round(progress/2))), ' '*(50-(int(round(progress/2)))), progress)
 
+
 def center(string, header = None):
     leftPad = ' '*(int(round((50-len(string))/2)))
     leftPad += string
@@ -174,3 +178,13 @@ def center(string, header = None):
     else:
         output = leftPad
     return output
+
+
+def edit_config(value: str, changeto: str):
+    """ Change a value from the configs """
+    config_name = "config.json"
+    with open(config_name, "r") as jsonFile:
+        data = json.load(jsonFile)
+    data[value] = changeto
+    with open(config_name, "w") as jsonFile:
+        json.dump(data, jsonFile, indent=2)

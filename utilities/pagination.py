@@ -5,6 +5,8 @@ from discord.ext import menus
 from utilities import default
 from collections import namedtuple
 
+from secret import constants
+
 # Embed limits
 TITLE_LIMIT = 256
 DESC_LIMIT = 2048
@@ -63,7 +65,7 @@ class MainMenu(menus.MenuPages):
     @menus.button('<:info:817625979014348830>', position=menus.Last(5))
     async def show_help(self, payload):
         """`shows this message`"""
-        embed = discord.Embed(title='Menu Help', color=default.config()["embed_color"])
+        embed = discord.Embed(title='Menu Help', color=constants.embed)
         messages = []
         for (emoji, button) in self.buttons.items():
             messages.append(f'{emoji}: `{button.action.__doc__}`')
@@ -115,7 +117,7 @@ class FieldPageSource(menus.ListPageSource):
         self.desc = kwargs.get("description", discord.Embed.Empty)
         self.desc_head = kwargs.get("desc_head", None)
         self.desc_foot = kwargs.get("desc_foot", None)
-        self.color = kwargs.get("color", default.config()["embed_color"])
+        self.color = kwargs.get("color", constants.embed)
         super().__init__(entries, per_page=per_page)
         self.embed = discord.Embed()
 
@@ -196,50 +198,9 @@ class SimplePages(MainMenu):
 
     def __init__(self, entries, **kwargs):
         super().__init__(SimplePageSource(entries, per_page=kwargs.get("per_page", 12)))
-        self.embed = discord.Embed(color=default.config()["embed_color"])
+        self.embed = discord.Embed(color=constants.embed)
         global to_index
         to_index = kwargs.get("index", True)
-
-
-class Pager(menus.Menu):
-    def __init__(self, entries, **kwargs):
-        per_page = kwargs.get("per_page", 12)
-        self.title = kwargs.get("title", discord.Embed.Empty)
-        self.desc = kwargs.get("description", discord.Embed.Empty)
-        self.desc_head = kwargs.get("desc_head", None)
-        self.desc_foot = kwargs.get("desc_foot", None)
-        self.color = kwargs.get("color", default.config()["embed_color"])
-        super().__init__(entries, per_page=per_page)
-        self.embed = discord.Embed()
-
-    async def send_initial_message(self, ctx, channel):
-        return super().send_initial_message(ctx, channel)
-        
-    def enforce_limit(self, value, max):
-        if not type(value) is str:
-            return value
-        return (value[:max-3]+"...") if len(value) > max else value
-
-    async def format_page(self, menu, entries):
-        self.embed.clear_fields()
-        self.embed.description = discord.Embed.Empty
-
-        #for key, value in entries:
-        #    self.embed.add_field(name=key, value=value, inline=False)
-
-        maximum = self.get_max_pages()
-        if maximum > 1:
-            text = f'Page {menu.current_page + 1}/{maximum} ({len(self.entries)} entries)'
-            self.embed.set_footer(text=text)
-
-        self.embed.title=self.title
-        self.embed.color=self.color
-        if self.desc_head and self.desc_foot and self.desc is not discord.Embed.Empty:
-            self.embed.description=f"{self.desc_head}\n{self.enforce_limit(self.desc, DESC_LIMIT)}\n{self.desc_foot}"
-        else:
-            self.embed.description = self.enforce_limit(self.desc, DESC_LIMIT)
-        return self.embed
-
 
 
 class EmbedLimits:
@@ -252,7 +213,7 @@ class EmbedLimits:
 
 
 class Paginator:
-    def __init__(self, title=None, description=None, page_count=True, init_page=True, color=default.config()["embed_color"]):
+    def __init__(self, title=None, description=None, page_count=True, init_page=True, color=constants.embed):
         """
         Args:
             title: title of the embed
@@ -285,7 +246,7 @@ class Paginator:
         for idx, embed in enumerate(self.pages):
             embed.set_footer(text=f'{idx+1}/{total}')
 
-    def add_page(self, title=None, description=None, color=default.config()["embed_color"], paginate_description=False):
+    def add_page(self, title=None, description=None, color=constants.embed, paginate_description=False):
         """
         Args:
             title:
@@ -306,7 +267,7 @@ class Paginator:
                 description = description[:EmbedLimits.Description]
         
 
-        self._pages.append(discord.Embed(title=title, description=description, color=default.config()["embed_color"]))
+        self._pages.append(discord.Embed(title=title, description=description, color=constants.embed))
         self._current_page += 1
         self._fields = 0
         self._char_count = 0
@@ -319,7 +280,7 @@ class Paginator:
         if overflow:
             self.add_page(title=title, description=overflow, color=color, paginate_description=True)
 
-    def edit_page(self, title=None, description=None, color=default.config()["embed_color"]):
+    def edit_page(self, title=None, description=None, color=constants.embed):
         page = self.pages[self._current_page]
         if title:
             self._char_count -= len(str(title))
@@ -331,7 +292,7 @@ class Paginator:
             page.description = str(description)
             self.description = description
             self._char_count += len(description)
-        self.color = default.config()["embed_color"]
+        self.color = constants.embed
 
     def _add_field(self):
         if not self._current_field:
