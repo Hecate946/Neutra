@@ -1,59 +1,154 @@
 import re
+import typing
 import discord
-
 from discord.ext import commands
 
-class DiscordUser(commands.Converter):
-    """
-    Returns user object from ID, mention, nickname, username, or username+discriminator (If user exists)
-    """
-    async def convert(self, ctx, argument):
-        #Check to see whether the ID was passed
-        if argument.isdigit():
-            user_id = int(argument, base=10)
-            result = await ctx.bot.fetch_user(user_id)
-            #Got our user, return result
-            return result
+EMOJI_REGEX = re.compile(r'<a?:.+?:([0-9]{15,21})>')
+EMOJI_NAME_REGEX = re.compile(r'[0-9a-zA-Z\_]{2,32}')
 
-        #Check to see if the user was mentioned
-        match = re.match(r'<@!?([0-9]+)>$', argument)
 
-        if match is not None:
-            #Parse the mention and fetch user from ID
-            user_id = int(match.group(1))
-            result = ctx.bot.get_user(user_id)
-            if not result:
-                try:
-                    result = await ctx.bot.fetch_user(user_id)
-                    return result
-                except discord.HTTPException:
-                    result = user_id
-        else:
-            member_list = ctx.bot.get_all_members()
-            arg = argument
-            # check for discriminator if it exists
-            if len(arg) > 5 and arg[-5] == '#':
-                discrim = arg[-4:]
-                name = arg[:-5]
-                user = discord.utils.find(lambda u: u.name == name and u.discriminator == discrim, member_list)
-                if user is not None:
-                    #Got the user from username+discrim
-                    return user
+tag_regex = re.compile(r'(.*)#(\d{4})')
+lax_id_regex = re.compile(r'([0-9]{15,21})$')
+mention_regex = re.compile(r'<@!?([0-9]+)>$')
 
-            result = discord.utils.find(lambda u: u.name == arg, member_list)
-            if result is None:
-                #Lastly try for nickname match
-                if not ctx.guild:
-                    return None
-                server_members = ctx.guild.members
-                result = discord.utils.find(lambda u: u.display_name == arg, server_members)
-                if result is None:
-                    raise commands.BadArgument(f'No user id or user found with "{argument}"')
-                
-        if result is None:
-            raise commands.BadArgument('User "{}" not found'.format(argument))
-        #Was just username
+class SearchEmojiConverter(commands.Converter):
+    """Search for matching emoji."""
+
+    async def get_by_id(self, ctx, emoji_id):
+        """Exact emoji_id lookup."""
+        if ctx.guild:
+            result = discord.utils.get(ctx.guild.emojis, id=emoji_id)
+        if not result:
+            result = discord.utils.get(ctx.bot.emojis, id=emoji_id)
         return result
+
+    async def get_by_name(self, ctx, emoji_name):
+        """Lookup by name.
+        Returns list of possible matches.
+        Does a bot-wide case-insensitive match.
+        """
+
+        emoji_name = emoji_name.lower()
+        def pred(emoji):
+            return emoji.name.lower() == emoji_name
+        return [e for e in ctx.bot.emojis if pred(e)]
+
+    async def find_match(self, ctx, argument):
+        """Get a match...
+        If we have a number, try lookup by id.
+        Fallback to lookup by name.
+        Disambiguate in case we have multiple name results.
+        """
+        lax_id_match = lax_id_regex.match(argument)
+        if lax_id_match:
+            result = await self.get_by_id(ctx, int(lax_id_match.group(1)))
+            if result:
+                return result
+
+        results = await self.get_by_name(ctx, argument)
+        if results:
+            return results[0]
+            
+    async def convert(self, ctx, argument):
+        match = await self.find_match(ctx, argument)
+
+        if match:
+            return match
+
+        try:
+            return await commands.converter.EmojiConverter().convert(ctx, argument)
+        except commands.BadArgument:
+            pass
+
+        try:
+            return await commands.PartialEmojiConverter().convert(ctx, argument)
+        except commands.BadArgument:
+            pass
+
+        lax_id_match = lax_id_regex.match(argument)
+        if lax_id_match:
+            return discord.PartialEmoji(name="unknown", id=int(lax_id_match.group(1)), animated=False)
+
+        raise commands.BadArgument(
+            'Emoji "{}" not found'.format(argument))
+            
+class DiscordUser(commands.Converter):
+    """Resolve users/members.
+    If given a username only checks current server. (Ease of use)
+    If given a full DiscordTag or ID, will check current server for Member,
+    fallback to bot for User.
+    """
+
+    async def get_by_id(self, ctx, user_id):
+        """Exact user_id lookup."""
+        result = None
+        if ctx.guild:
+            result = ctx.guild.get_member(user_id)
+        if not result:
+            try:
+                result = await ctx.bot.fetch_user(user_id)
+            except discord.NotFound:
+                raise commands.BadArgument(f"User {user_id} not found")
+        return result
+
+    async def get_by_name(self, ctx, user_name):
+        """Lookup by name.
+        Returns list of possible matches. For user#discrim will only give exact
+        matches.
+        Try doing an exact match.
+        If within guild context, fall back to inexact match.
+        If found in current guild, return Member, else User.
+        (Will not do bot-wide inexact match)
+        """
+        tag_match = tag_regex.match(user_name)
+
+        if tag_match:
+            def pred(member):
+                return member.name == tag_match.group(1) and member.discriminator == tag_match.group(2)
+
+            result = None
+            if ctx.guild:
+                result = discord.utils.get(ctx.guild.members, name=tag_match.group(1), discriminator=tag_match.group(2))
+            if not result:
+                result = discord.utils.get(ctx.bot.users, name=tag_match.group(1), discriminator=tag_match.group(2))
+            if result:
+                return [result]
+
+        if ctx.guild:
+            user_name = user_name.lower()
+            def pred(member):
+                return (member.nick and member.nick.lower() == user_name) or member.name.lower() == user_name
+            return [m for m in ctx.guild.members if pred(m)]
+        return []
+
+    async def find_match(self, ctx, argument):
+        """Get a match...
+        If we have a mention, try and get an exact match.
+        If we have a number, try lookup by id.
+        Fallback to lookup by name.
+        Disambiguate in case we have multiple name results.
+        """
+        mention_match = mention_regex.match(argument)
+        if mention_match:
+            return await self.get_by_id(ctx, int(mention_match.group(1)))
+
+        lax_id_match = lax_id_regex.match(argument)
+        if lax_id_match:
+            result = await self.get_by_id(ctx, int(lax_id_match.group(1)))
+            if result:
+                return result
+
+        results = await self.get_by_name(ctx, argument)
+        if results:
+            return results[0]
+
+    async def convert(self, ctx, argument):
+        match = await self.find_match(ctx, argument)
+
+        if not match:
+            raise commands.BadArgument(
+                'User "{}" not found'.format(argument))
+        return match
 
 class BotServer(commands.Converter):
     async def convert(self, ctx, argument):
@@ -74,6 +169,26 @@ class BotServer(commands.Converter):
             return await ctx.send(f"Didn't find that server.")
         return options
 
+# Similar to Botserver but does not return a list of findings
+class DiscordGuild(commands.Converter):
+    async def convert(self, ctx, argument):
+        if argument.isdigit():
+            server_id = int(argument, base=10)
+            try:
+                server = ctx.bot.get_guild(server_id)
+                return server
+            except discord.HTTPException:
+                await ctx.send(f"Something went wrong.")
+            except discord.Forbidden:
+                return await ctx.send(f"I'm not in that server")
+            except discord.NotFound:
+                return await ctx.send("Server doesn't exist")
+            except Exception as e: await ctx.send(e)
+        server = discord.utils.find(lambda s: argument.lower() in str(s.name).lower(), ctx.bot.guilds)
+        if server is None:
+            return await ctx.send(f"Didn't find that server.")
+        return server
+
 
 #converter from R.Danny
 class BannedMember(commands.Converter):
@@ -91,4 +206,25 @@ class BannedMember(commands.Converter):
         if entity is None:
             raise commands.BadArgument('This member has not been banned before.')
         return entity
+    
+    
+class GlobalChannel(commands.Converter):
+    async def convert(self, ctx, argument):
+        try:
+            return await commands.TextChannelConverter().convert(ctx, argument)
+        except commands.BadArgument:
+            # Not found... so fall back to ID + global lookup
+            try:
+                channel_id = int(argument, base=10)
+            except ValueError:
+                raise commands.BadArgument(f'Could not find a channel by ID {argument!r}.')
+            else:
+                channel = ctx.bot.get_channel(channel_id)
+                if channel is None:
+                    raise commands.BadArgument(f'Could not find a channel by ID {argument!r}.')
+                return channel
             
+DiscordChannel = typing.Union[
+    commands.converter.TextChannelConverter,
+    commands.converter.VoiceChannelConverter,
+    commands.converter.CategoryChannelConverter]

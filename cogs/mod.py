@@ -9,9 +9,7 @@ from discord.ext import commands, menus
 from datetime import datetime, timedelta
 from better_profanity import profanity
 
-from utilities import permissions, default, converters, pagination
-from secret import constants
-
+from utilities import permissions, utils, converters, pagination
 
 
 def setup(bot):
@@ -43,7 +41,7 @@ class Moderation(commands.Cog):
         try:
             await ctx.channel.edit(slowmode_delay=time)
         except discord.HTTPException as e:
-            await ctx.send(f'{self.bot.emote_dict["fail"]} Failed to set slowmode because of an error\n{e}')
+            await ctx.send(f'{self.bot.emote_dict["failed"]} Failed to set slowmode because of an error\n{e}')
         else:
             await ctx.send(f'{self.bot.emote_dict["success"]} Slowmode set to `{time}s`')
 
@@ -95,7 +93,7 @@ class Moderation(commands.Cog):
 
 
             overwrites_everyone.send_messages = False
-            await ctx.message.channel.set_permissions(ctx.guild.default_role, overwrite=overwrites_everyone, reason=(default.responsible(ctx.author, "Channel locked by command execution")))
+            await ctx.message.channel.set_permissions(ctx.guild.default_role, overwrite=overwrites_everyone, reason=(utils.responsible(ctx.author, "Channel locked by command execution")))
             if minutes_ is not None:
                 if minutes_ > 120:
                     minutes_ = 120
@@ -144,7 +142,7 @@ class Moderation(commands.Cog):
 
             overwrites_everyone = ctx.channel.overwrites_for(ctx.guild.default_role)
             overwrites_everyone.send_messages = everyone_perms
-            await ctx.message.channel.set_permissions(ctx.guild.default_role, overwrite=overwrites_everyone, reason=(default.responsible(ctx.author, "Channel unlocked by command execution")))
+            await ctx.message.channel.set_permissions(ctx.guild.default_role, overwrite=overwrites_everyone, reason=(utils.responsible(ctx.author, "Channel unlocked by command execution")))
             await self.bot.cxn.execute("DELETE FROM lockedchannels WHERE channel_id = $1", channel.id)
             await msg.edit(content=f"<:unlock:817168258825846815> Channel {channel.mention} unlocked. ID: `{channel.id}`")
         except discord.errors.Forbidden:
@@ -175,8 +173,8 @@ class Moderation(commands.Cog):
             except Exception as e:
                 await ctx.send(e)
         for target in targets:
-            if target.id in constants.owners: return await ctx.send('You cannot move my master.')
-            if ctx.author.top_role.position < target.top_role.position and ctx.author.id not in constants.owners: return await ctx.send('You cannot move other staff members')
+            if target.id in self.bot.constants.owners: return await ctx.send('You cannot move my master.')
+            if ctx.author.top_role.position < target.top_role.position and ctx.author.id not in self.bot.constants.owners: return await ctx.send('You cannot move other staff members')
             try:
                 await target.edit(voice_channel=voicechannel)
             except discord.HTTPException:
@@ -230,7 +228,7 @@ class Moderation(commands.Cog):
         if not len(targets): return await ctx.send(f"Usage: `{ctx.prefix}vckick <target> [target]...`")
         voice = []
         for target in targets:
-            if ctx.author.top_role.position <= target.top_role.position and ctx.author.id not in constants.owners or ctx.author.id != ctx.guild.owner.id and target.id != ctx.author.id:
+            if ctx.author.top_role.position <= target.top_role.position and ctx.author.id not in self.bot.constants.owners or ctx.author.id != ctx.guild.owner.id and target.id != ctx.author.id:
                 return await ctx.send('<:fail:816521503554273320> You cannot move other staff members')
             try:
                 await target.edit(voice_channel=None)
@@ -264,7 +262,7 @@ class Moderation(commands.Cog):
         if user is None: return await ctx.send(f"Usage: `{ctx.prefix}nickname <user> <nickname>`")
         if user.id == ctx.guild.owner.id: return await ctx.send(f"{self.emote_dict['failed']} User `{user}` is the server owner. I cannot edit the nickname of the server owner.")
         try:
-            await user.edit(nick=nickname, reason=default.responsible(ctx.author, "Nickname edited by command execution"))
+            await user.edit(nick=nickname, reason=utils.responsible(ctx.author, "Nickname edited by command execution"))
             message = f"{self.emote_dict['success']} Nicknamed `{user}: {nickname}`"
             if nickname is None:
                 message = f"{self.emote_dict['success']} Reset nickname for `{user}`"
@@ -276,10 +274,10 @@ class Moderation(commands.Cog):
      ## Mute Commands ##
     ###################
 
-    @commands.command(brief='Mute members', aliases=["hackmute","mute"])
+    @commands.command(brief='Mute members', aliases=["hackmute","hardmute"])
     @commands.guild_only()
     @permissions.has_permissions(kick_members=True)
-    async def hardmute(self, ctx, targets: commands.Greedy[discord.Member], minutes: typing.Optional[int], *, reason: typing.Optional[str] = None):
+    async def mute(self, ctx, targets: commands.Greedy[discord.Member], minutes: typing.Optional[int], *, reason: typing.Optional[str] = None):
         """
         Usage:     -hardmute <target> [target]... [minutes] [reason]
         Alias:     -hackmute
@@ -299,7 +297,7 @@ class Moderation(commands.Cog):
         else:
             unmutes = []
             try:
-                self.mute_role = await self.bot.cxn.fetchrow("SELECT mute_role FROM moderation WHERE server_id = $1", ctx.guild.id) or None
+                self.mute_role = await self.bot.cxn.fetchrow("SELECT muterole FROM servers WHERE server_id = $1", ctx.guild.id) or None
                 self.mute_role = self.mute_role[0]
                 if str(self.mute_role) == "None": return await ctx.send(f"use `{ctx.prefix}muterole <role>` to initialize the muted role.")
                 self.mute_role = ctx.guild.get_role(int(self.mute_role))
@@ -309,11 +307,11 @@ class Moderation(commands.Cog):
                 if not self.mute_role in target.roles:
                     role_ids = ",".join([str(r.id) for r in target.roles])
                     end_time = datetime.utcnow() + timedelta(seconds=minutes*60) if minutes else None
-                    if target.id in constants.owners: return await ctx.send('You cannot mute my master.')
+                    if target.id in self.bot.constants.owners: return await ctx.send('You cannot mute my master.')
                     if target.id == ctx.author.id: return await ctx.send('I don\'t think you really want to mute yourself...')
                     if target.id == self.bot.user.id: return await ctx.send('I don\'t think I want to mute myself...')
-                    if target.guild_permissions.kick_members and ctx.author.id not in constants.owners and ctx.author.id != ctx.guild.owner.id: return await ctx.send('You cannot punish other staff members.')
-                    if ctx.guild.me.top_role.position < target.top_role.position and ctx.author.id not in constants.owners: return await ctx.send(f"My highest role is below {target}'s highest role. Aborting mute.")
+                    if target.guild_permissions.kick_members and ctx.author.id not in self.bot.constants.owners and ctx.author.id != ctx.guild.owner.id: return await ctx.send('You cannot punish other staff members.')
+                    if ctx.guild.me.top_role.position < target.top_role.position and ctx.author.id not in self.bot.constants.owners: return await ctx.send(f"My highest role is below {target}'s highest role. Aborting mute.")
                     if ctx.guild.me.top_role.position < self.mute_role.position: return await ctx.send("My highest role is below the mute role. Aborting mute.")
                     try:
                         await self.bot.cxn.execute("INSERT INTO mutes VALUES ($1, $2, $3, $4)", target.id, ctx.guild.id, role_ids, getattr(end_time, "isoformat", lambda: None)())
@@ -344,9 +342,9 @@ class Moderation(commands.Cog):
                         username = f"{user.name}#{user.discriminator}"
                         allmuted += [username]
                 if minutes is None:
-                    msg = f'{self.bot.emote_dict["success"]} Hardmuted `{", ".join(allmuted)}` indefinetely'
+                    msg = f'{self.bot.emote_dict["success"]} Muted `{", ".join(allmuted)}` indefinetely'
                 else:
-                    msg = f'{self.bot.emote_dict["success"]} Hardmuted `{", ".join(allmuted)}` for {minutes:,} minute{"" if minutes == 1 else "s"}'
+                    msg = f'{self.bot.emote_dict["success"]} Muted `{", ".join(allmuted)}` for {minutes:,} minute{"" if minutes == 1 else "s"}'
                 await ctx.send(msg)
             if len(unmutes):
                 await asyncio.sleep(minutes*60)
@@ -355,7 +353,7 @@ class Moderation(commands.Cog):
 
     async def unmute(self, ctx, targets):
         try:
-            self.mute_role = await self.bot.cxn.fetchrow("SELECT mute_role FROM moderation WHERE server_id = $1", ctx.guild.id) or None
+            self.mute_role = await self.bot.cxn.fetchrow("SELECT muterole FROM servers WHERE server_id = $1", ctx.guild.id) or None
             self.mute_role = self.mute_role[0]
             self.mute_role = ctx.guild.get_role(int(self.mute_role))
         except Exception as e: return await ctx.send(e)
@@ -429,11 +427,11 @@ class Moderation(commands.Cog):
             return await ctx.send(f"Usage: `{ctx.prefix}block <target> [target] [target]...`")
         blocked = []
         for target in targets:
-            if ctx.author.id not in constants.owners and ctx.author.id != ctx.guild.owner.id and not ctx.author.guild_permissions.kick_members: return await ctx.send('You have insufficient permission to execute that command.')
-            if target.id in constants.owners: return await ctx.send('You cannot block my master.')
+            if ctx.author.id not in self.bot.constants.owners and ctx.author.id != ctx.guild.owner.id and not ctx.author.guild_permissions.kick_members: return await ctx.send('You have insufficient permission to execute that command.')
+            if target.id in self.bot.constants.owners: return await ctx.send('You cannot block my master.')
             if target.id == ctx.author.id: return await ctx.send('I don\'t think you really want to block yourself...')
             if target.id == self.bot.user.id: return await ctx.send('I don\'t think I want to block myself...') 
-            if target.guild_permissions.kick_members and ctx.author.id not in constants.owners and ctx.author.id != ctx.guild.owner.id: return await ctx.send('You cannot punish other staff members.')
+            if target.guild_permissions.kick_members and ctx.author.id not in self.bot.constants.owners and ctx.author.id != ctx.guild.owner.id: return await ctx.send('You cannot punish other staff members.')
             try:
                 await ctx.channel.set_permissions(target, send_messages=False)  # gives back send messages permissions
                 blocked.append(target)
@@ -465,11 +463,11 @@ class Moderation(commands.Cog):
             return await ctx.send(f"Usage: `{ctx.prefix}unblock <target> [target] [target]...`")
         unblocked = []
         for target in targets:
-            if ctx.author.id not in constants.owners and ctx.author.id != ctx.guild.owner.id and not ctx.author.guild_permissions.kick_members: return await ctx.send('You have insufficient permission to execute that command.')
-            if target.id in constants.owners: return await ctx.send('You cannot unblock my master.')
+            if ctx.author.id not in self.bot.constants.owners and ctx.author.id != ctx.guild.owner.id and not ctx.author.guild_permissions.kick_members: return await ctx.send('You have insufficient permission to execute that command.')
+            if target.id in self.bot.constants.owners: return await ctx.send('You cannot unblock my master.')
             if target.id == ctx.author.id: return await ctx.send('I don\'t think you really want to unblock yourself...')
             if target.id == self.bot.user.id: return await ctx.send('I don\'t think I want to unblock myself...') 
-            if target.guild_permissions.kick_members and ctx.author.id not in constants.owners and ctx.author.id != ctx.guild.owner.id: return await ctx.send('You cannot punish other staff members.')
+            if target.guild_permissions.kick_members and ctx.author.id not in self.bot.constants.owners and ctx.author.id != ctx.guild.owner.id: return await ctx.send('You cannot punish other staff members.')
             try:
                 await ctx.channel.set_permissions(target, send_messages=None)  # gives back send messages permissions
                 unblocked.append(target)
@@ -501,11 +499,11 @@ class Moderation(commands.Cog):
             return await ctx.send(f"Usage: `{ctx.prefix}blind <target> [target] [target]...`")
         blinded = []
         for target in targets:
-            if ctx.author.id not in constants.owners and ctx.author.id != ctx.guild.owner.id and not ctx.author.guild_permissions.kick_members: return await ctx.send('You have insufficient permission to execute that command.')
-            if target.id in constants.owners: return await ctx.send('You cannot blind my master.')
+            if ctx.author.id not in self.bot.constants.owners and ctx.author.id != ctx.guild.owner.id and not ctx.author.guild_permissions.kick_members: return await ctx.send('You have insufficient permission to execute that command.')
+            if target.id in self.bot.constants.owners: return await ctx.send('You cannot blind my master.')
             if target.id == ctx.author.id: return await ctx.send('I don\'t think you really want to blind yourself...')
             if target.id == self.bot.user.id: return await ctx.send('I don\'t think I want to blind myself...') 
-            if target.guild_permissions.kick_members and ctx.author.id not in constants.owners and ctx.author.id != ctx.guild.owner.id: return await ctx.send('You cannot punish other staff members.')
+            if target.guild_permissions.kick_members and ctx.author.id not in self.bot.constants.owners and ctx.author.id != ctx.guild.owner.id: return await ctx.send('You cannot punish other staff members.')
             try:
                 await ctx.channel.set_permissions(target, send_messages=False, read_messages=False)  # gives back send messages permissions
                 blinded.append(target)
@@ -537,11 +535,11 @@ class Moderation(commands.Cog):
             return await ctx.send(f"Usage: `{ctx.prefix}unblind <target> [target] [target]...`")
         unblinded = []
         for target in targets:
-            if ctx.author.id not in constants.owners and ctx.author.id != ctx.guild.owner.id and not ctx.author.guild_permissions.kick_members: return await ctx.send('You have insufficient permission to execute that command.')
-            if target.id in constants.owners: return await ctx.send('You cannot unblind my master.')
+            if ctx.author.id not in self.bot.constants.owners and ctx.author.id != ctx.guild.owner.id and not ctx.author.guild_permissions.kick_members: return await ctx.send('You have insufficient permission to execute that command.')
+            if target.id in self.bot.constants.owners: return await ctx.send('You cannot unblind my master.')
             if target.id == ctx.author.id: return await ctx.send('I don\'t think you really want to unblind yourself...')
             if target.id == self.bot.user.id: return await ctx.send('I don\'t think I want to unblind myself...') 
-            if target.guild_permissions.kick_members and ctx.author.id not in constants.owners and ctx.author.id != ctx.guild.owner.id: return await ctx.send('You cannot punish other staff members.')
+            if target.guild_permissions.kick_members and ctx.author.id not in self.bot.constants.owners and ctx.author.id != ctx.guild.owner.id: return await ctx.send('You cannot punish other staff members.')
             try:
                 await ctx.channel.set_permissions(target, send_messages=None, read_messages=None)  # gives back send messages permissions
                 unblinded.append(target)
@@ -581,10 +579,10 @@ class Moderation(commands.Cog):
         kicked = []
         immune = []
         for target in users:
-            #if target.id in constants.owners: return await ctx.send('You cannot kick my master.')
+            #if target.id in self.bot.constants.owners: return await ctx.send('You cannot kick my master.')
             #if target.id == ctx.author.id: return await ctx.send('I don\'t think you really want to kick yourself...')
             #if target.id == self.bot.user.id: return await ctx.send('I don\'t think I want to kick myself...')
-            #if target.guild_permissions.kick_members and ctx.author.id not in constants.owners and ctx.author.id != ctx.guild.owner.id: return await ctx.send('You cannot punish other staff members.')
+            #if target.guild_permissions.kick_members and ctx.author.id not in self.bot.constants.owners and ctx.author.id != ctx.guild.owner.id: return await ctx.send('You cannot punish other staff members.')
             #if ctx.guild.me.top_role.position > target.top_role.position and not target.guild_permissions.administrator:
             try:
                 await ctx.guild.kick(target, reason=reason)
@@ -612,10 +610,11 @@ class Moderation(commands.Cog):
         Permission: Ban Members
         Output:     Ban passed members from the server.
         """
-        if await permissions.checker(ctx, value=targets):
-            return
 
         if not len(targets): return await ctx.send(f"Usage: `{ctx.prefix}ban <target1> [target2] [delete message days] [reason]`")
+
+        if await permissions.checker(ctx, value=targets):
+            return
 
         if delete_message_days > 7:
             delete_message_days = 7
@@ -653,9 +652,10 @@ class Moderation(commands.Cog):
             unbans s/he in order to delete messages.
             The days to delete messages is set to 7 days.
         """
+        if not len(targets): return await ctx.send(f"Usage: `{ctx.prefix}softban <member> [days to delete messages] [reason]`")
+        
         if await permissions.checker(ctx, value=targets):
             return
-        if not len(targets): return await ctx.send(f"Usage: `{ctx.prefix}softban <member> [days to delete messages] [reason]`")
 
         banned = []
         immune = []
@@ -689,14 +689,14 @@ class Moderation(commands.Cog):
         for user in users:
             try:
                 u = ctx.guild.get_member(int(user))
-                if u.guild_permissions.kick_members and ctx.author.id not in constants.owners and ctx.author.id != ctx.guild.owner.id: return await ctx.send('You cannot punish other staff members.')
+                if u.guild_permissions.kick_members and ctx.author.id not in self.bot.constants.owners and ctx.author.id != ctx.guild.owner.id: return await ctx.send('You cannot punish other staff members.')
             except:
                 try:
                     u = discord.Object(id=user)
                 except TypeError:
                     return await ctx.send('User snowflake must be integer. Ex: 708584008065351681.')
-            if ctx.author.id not in constants.owners and not ctx.author.guild_permissions.manage_guild: return await ctx.send('You have insufficient permission to execute that command.')
-            if u.id in constants.owners: return await ctx.send('You cannot hackban my master.')
+            if ctx.author.id not in self.bot.constants.owners and not ctx.author.guild_permissions.manage_guild: return await ctx.send('You have insufficient permission to execute that command.')
+            if u.id in self.bot.constants.owners: return await ctx.send('You cannot hackban my master.')
             if u.id == ctx.author.id: return await ctx.send('I don\'t think you really want to hackban yourself...')
             if u.id == self.bot.user.id: return await ctx.send('I don\'t think I want to hackban myself...')
             try:
@@ -735,7 +735,7 @@ class Moderation(commands.Cog):
         """
         if not member: return await ctx.send(f"Usage: `{ctx.prefix}unban <id/member> [reason]`")
         if reason is None:
-            reason = default.responsible(ctx.author, f"Unbanned member {member} by command execution")
+            reason = utils.responsible(ctx.author, f"Unbanned member {member} by command execution")
 
         await ctx.guild.unban(member.user, reason=reason)
         if member.reason:
@@ -940,10 +940,10 @@ class Moderation(commands.Cog):
         if not len(targets): return await ctx.send(f"Usage: `{ctx.prefix}warn <target> [target]... [reason]`")
         warned = []
         for target in targets:
-            if target.id in constants.owners: return await ctx.send('You cannot warn my master.')
+            if target.id in self.bot.constants.owners: return await ctx.send('You cannot warn my master.')
             if target.id == ctx.author.id: return await ctx.send('I don\'t think you really want to warn yourself...')
             if target.id == self.bot.user.id: return await ctx.send('I don\'t think I want to warn myself...')
-            if target.guild_permissions.manage_messages and ctx.author.id not in constants.owners: return await ctx.send('You cannot punish other staff members.')
+            if target.guild_permissions.manage_messages and ctx.author.id not in self.bot.constants.owners: return await ctx.send('You cannot punish other staff members.')
             if ctx.guild.me.top_role.position > target.top_role.position and not target.guild_permissions.administrator:
                 try:
                     warnings = await self.bot.cxn.fetchrow("SELECT warnings FROM warn WHERE user_id = $1 AND server_id = $2", target.id, ctx.guild.id) or (None)
@@ -1065,45 +1065,6 @@ class Moderation(commands.Cog):
         except menus.MenuError as e:
             await ctx.send(e)
 
-
-    @commands.command(aliases=['dumpmessages','messagedump'], brief="Logs channel messages.")
-    @commands.guild_only()
-    @permissions.has_permissions(manage_server=True)
-    async def logmessages(self, ctx, messages : int = 25, *, chan : discord.TextChannel = None):
-        """
-        Usage:      -logmessages [message amount] [channel]
-        Aliases:    -messagedump, dumpmessages
-        Permission: Manage Server
-        Output: 
-                    Logs a passed number of messages from a specified channel 
-                    - 25 by default.
-        """
-
-        timeStamp = datetime.today().strftime("%Y-%m-%d %H.%M")
-        logFile = 'Logs-{}.txt'.format(timeStamp)
-
-        if not chan:
-            chan = ctx
-
-        mess = await ctx.send('Saving logs to **{}**...'.format(logFile))
-
-        counter = 0
-        msg = ''
-        async for message in chan.history(limit=messages):
-            counter += 1
-            msg += message.content + "\n"
-            msg += '----Sent-By: ' + message.author.name + '#' + message.author.discriminator + "\n"
-            msg += '---------At: ' + message.created_at.strftime("%Y-%m-%d %H.%M") + "\n"
-            if message.edited_at:
-                msg += '--Edited-At: ' + message.edited_at.strftime("%Y-%m-%d %H.%M") + "\n"
-            msg += '\n'
-
-        data = io.BytesIO(msg[:-2].encode("utf-8"))
-        
-        await mess.edit(content='Uploading `{}`...'.format(logFile))
-        await ctx.author.send(file=discord.File(data, filename=logFile))
-        await mess.edit(content='<:checkmark:816534984676081705> Uploaded `{}`.'.format(logFile))
-
       #########################
      ## Profanity Listeners ##
     #########################
@@ -1121,16 +1082,10 @@ class Moderation(commands.Cog):
             return
         msg = str(after.content)
 
-        query = '''SELECT server_id FROM profanity WHERE server_id = $1'''
-        server = await self.bot.cxn.fetchrow(query, after.guild.id) or None
-        if server is None or "None" in str(server): return
+        filtered_words = self.bot.server_settings[after.guild.id]['profanities']
 
-        query = '''SELECT words FROM profanity WHERE server_id = $1'''
-        words = await self.bot.cxn.fetchrow(query, after.guild.id)
-
-        formatted_words = str(words[0])
-
-        filtered_words = [x for x in formatted_words.split(",")]
+        if filtered_words == []:
+            return
 
         profanity.load_censor_words(filtered_words)
 
@@ -1138,7 +1093,7 @@ class Moderation(commands.Cog):
             if profanity.contains_profanity(msg) or filtered_word in msg:
                 try:
                     await after.delete()
-                    return await after.author.send(f'''Your message "{after.content}" was removed for containing the filtered word "{filtered_word}"''')
+                    return await after.author.send(f"Your message `{after.content}` was removed for containing the filtered word `{filtered_word}`")
                 except Exception: return
 
 
@@ -1155,16 +1110,10 @@ class Moderation(commands.Cog):
             return
         msg = str(message.content)
 
-        query = '''SELECT server_id FROM profanity WHERE server_id = $1'''
-        server = await self.bot.cxn.fetchrow(query, message.guild.id) or None
-        if server is None or "None" in str(server): return
+        filtered_words = self.bot.server_settings[message.guild.id]['profanities']
 
-        query = '''SELECT words FROM profanity WHERE server_id = $1'''
-        words = await self.bot.cxn.fetchrow(query, message.guild.id)
-
-        formatted_words = str(words[0])
-
-        filtered_words = [x for x in formatted_words.split(",")]
+        if filtered_words == []:
+            return
 
         profanity.load_censor_words(filtered_words)
 

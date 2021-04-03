@@ -3,7 +3,9 @@ version: "3.3"
 services:
   bot:
     container_name: "NGC0000"
+    command: python starter.py production
     build: .
     restart: always
     volumes:
-      - ./config.json:/NGC0000/config.json
+      - ./config_test.json:/NGC0000/config_test.json
+      - ./config_prod.json:/NGC0000/config_prod.json

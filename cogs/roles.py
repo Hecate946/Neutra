@@ -1,12 +1,9 @@
 import discord
 import colorsys
 
-from io import BytesIO
 from discord.ext import commands, menus
 
-from utilities import permissions, default, pagination
-from secret import constants
-
+from utilities import permissions, pagination
 
 EMBED_MAX_LEN = 2048 # constant for paginating embeds
 STATUSMAP1 = {
@@ -51,7 +48,7 @@ class Roles(commands.Cog):
 
         # perm_list = [Perm[0] for Perm in role.permissions if Perm[1]]
 
-        embed = discord.Embed(color=constants.embed, timestamp=ctx.message.created_at)
+        embed = discord.Embed(color=self.bot.constants.embed, timestamp=ctx.message.created_at)
         
         embed.set_author(name=f"{owner}", icon_url=owner.avatar_url)
         embed.set_thumbnail(url=guild.icon_url)
@@ -98,8 +95,8 @@ class Roles(commands.Cog):
         for target in targets:
             role_list = []
             for role in roles:
-                if role.permissions.administrator and ctx.author.id not in constants.owners: return await ctx.send("I cannot manipulate an admin role")
-                if role.position >= ctx.author.top_role.position and ctx.author.id not in constants.owners: return await ctx.send("That role is higher than your highest role") 
+                if role.permissions.administrator and ctx.author.id not in self.bot.constants.owners: return await ctx.send("I cannot manipulate an admin role")
+                if role.position >= ctx.author.top_role.position and ctx.author.id not in self.bot.constants.owners: return await ctx.send("That role is higher than your highest role") 
                 try:
                     await target.add_roles(role)
                 except discord.Forbidden:
@@ -139,10 +136,10 @@ class Roles(commands.Cog):
         for target in targets:
             role_list = []
             for role in roles:
-                if role.permissions.administrator and ctx.author.id not in constants.owners: return await ctx.send("I cannot manipulate an admin role")
-                if role.position > ctx.author.top_role.position and ctx.author.id not in constants.owners and ctx.author.id != ctx.guild.owner.id: 
+                if role.permissions.administrator and ctx.author.id not in self.bot.constants.owners: return await ctx.send("I cannot manipulate an admin role")
+                if role.position > ctx.author.top_role.position and ctx.author.id not in self.bot.constants.owners and ctx.author.id != ctx.guild.owner.id: 
                     return await ctx.send("That role is higher than your highest role") 
-                if role.position == ctx.author.top_role.position and ctx.author.id not in constants.owners and ctx.author.id != ctx.guild.owner.id: 
+                if role.position == ctx.author.top_role.position and ctx.author.id not in self.bot.constants.owners and ctx.author.id != ctx.guild.owner.id: 
                     return await ctx.send("That role is your highest role") 
                 try:
                     await target.remove_roles(role)
@@ -160,29 +157,6 @@ class Roles(commands.Cog):
         await ctx.send(f'{self.bot.emote_dict["success"]} '
                        f'Removed user{"" if len(target_names) == 1 else "s"} `{", ".join(target_names)}` '
                        f'the role{"" if len(role_list) == 1 else "s"} `{", ".join(role_names)}`')
-
-
-    @commands.command(brief="Sends a txt file to your DMs with a list of roles for the server")
-    @commands.guild_only()
-    @permissions.has_permissions(manage_messages=True)
-    async def dumproles(self, ctx):
-        """
-        Usage:  -dumproles
-        Alias:  -txtroles
-        Output:  Sends a list of roles for the server to your DMs
-        Permission: Manage Messages
-        """
-        allroles = ""
-
-        for num, role in enumerate(sorted(ctx.guild.roles, reverse=True), start=1):
-            allroles += f"[{str(num).zfill(2)}] {role.id}\t{role.name}\t[ Users: {len(role.members)} ]\r\n"
-
-        data = BytesIO(allroles.encode('utf-8'))
-        try:
-            await ctx.author.send(content=f"Roles in **{ctx.guild.name}**", file=discord.File(data, filename=f"{default.timetext('Roles')}"))
-            await ctx.message.add_reaction("📬")
-        except:
-            await ctx.send(content=f"Roles in **{ctx.guild.name}**", file=discord.File(data, filename=f"{default.timetext('Roles')}"))
 
         
     @commands.group(brief="Adds or removes a role to all users with a role. (Command Group)", aliases=['multirole'])
@@ -214,15 +188,15 @@ class Roles(commands.Cog):
     async def add(self, ctx, role1: discord.Role = None, role2: discord.Role = None):
         if role1 is None: return await ctx.send('Usage: `{ctx.prefix}massrole add <role1> <role2> ')
         if role2 is None: return await ctx.send('Usage: `{ctx.prefix}massrole add <role1> <role2> ')
-        if ctx.author.top_role.position < role1.position and ctx.author.id not in constants.owners: return await ctx.send("You have insufficient permission to execute this command")
-        if role2.permissions.administrator and ctx.author.id not in constants.owners: return await ctx.send("I cannot manipulate an admin role")
-        if role2.position > ctx.author.top_role.position and ctx.author.id not in constants.owners and ctx.author.id != ctx.guild.owner.id: 
+        if ctx.author.top_role.position < role1.position and ctx.author.id not in self.bot.constants.owners: return await ctx.send("You have insufficient permission to execute this command")
+        if role2.permissions.administrator and ctx.author.id not in self.bot.constants.owners: return await ctx.send("I cannot manipulate an admin role")
+        if role2.position > ctx.author.top_role.position and ctx.author.id not in self.bot.constants.owners and ctx.author.id != ctx.guild.owner.id: 
             return await ctx.send("That role is higher than your highest role") 
-        if role2.position == ctx.author.top_role.position and ctx.author.id not in constants.owners and ctx.author.id != ctx.guild.owner.id: 
+        if role2.position == ctx.author.top_role.position and ctx.author.id not in self.bot.constants.owners and ctx.author.id != ctx.guild.owner.id: 
             return await ctx.send("That role is your highest role") 
-        if role1.position > ctx.author.top_role.position and ctx.author.id not in constants.owners and ctx.author.id != ctx.guild.owner.id: 
+        if role1.position > ctx.author.top_role.position and ctx.author.id not in self.bot.constants.owners and ctx.author.id != ctx.guild.owner.id: 
             return await ctx.send("That role is higher than your highest role") 
-        if role1.position == ctx.author.top_role.position and ctx.author.id not in constants.owners and ctx.author.id != ctx.guild.owner.id: 
+        if role1.position == ctx.author.top_role.position and ctx.author.id not in self.bot.constants.owners and ctx.author.id != ctx.guild.owner.id: 
             return await ctx.send("That role is your highest role") 
         number_of_members = []
         for member in ctx.guild.members:
@@ -245,17 +219,17 @@ class Roles(commands.Cog):
     async def remove(self, ctx, role1: discord.Role, role2: discord.Role):
         if role1 is None: return await ctx.send('Usage: `{ctx.prefix}massrole add <role1> <role2> ')
         if role2 is None: return await ctx.send('Usage: `{ctx.prefix}massrole add <role1> <role2> ')
-        if ctx.author.top_role.position < role1.position and ctx.author.id not in constants.owners:
+        if ctx.author.top_role.position < role1.position and ctx.author.id not in self.bot.constants.owners:
             return await ctx.send("You have insufficient permission to execute this command")
-        if role2.permissions.administrator and ctx.author.id not in constants.owners:
+        if role2.permissions.administrator and ctx.author.id not in self.bot.constants.owners:
             return await ctx.send("I cannot manipulate an admin role")
-        if role2.position > ctx.author.top_role.position and ctx.author.id not in constants.owners and ctx.author.id != ctx.guild.owner.id: 
+        if role2.position > ctx.author.top_role.position and ctx.author.id not in self.bot.constants.owners and ctx.author.id != ctx.guild.owner.id: 
             return await ctx.send("That role is higher than your highest role") 
-        if role2.position == ctx.author.top_role.position and ctx.author.id not in constants.owners and ctx.author.id != ctx.guild.owner.id: 
+        if role2.position == ctx.author.top_role.position and ctx.author.id not in self.bot.constants.owners and ctx.author.id != ctx.guild.owner.id: 
             return await ctx.send("That role is your highest role") 
-        if role1.position > ctx.author.top_role.position and ctx.author.id not in constants.owners and ctx.author.id != ctx.guild.owner.id: 
+        if role1.position > ctx.author.top_role.position and ctx.author.id not in self.bot.constants.owners and ctx.author.id != ctx.guild.owner.id: 
             return await ctx.send("That role is higher than your highest role") 
-        if role1.position == ctx.author.top_role.position and ctx.author.id not in constants.owners and ctx.author.id != ctx.guild.owner.id: 
+        if role1.position == ctx.author.top_role.position and ctx.author.id not in self.bot.constants.owners and ctx.author.id != ctx.guild.owner.id: 
             return await ctx.send("That role is your highest role")
         number_of_members = []
         for member in ctx.guild.members:
@@ -334,7 +308,7 @@ class Roles(commands.Cog):
             pages.append(buildstr) #if the string has data not already listed in the pages, add it
 
         for index,page in enumerate(pages): # enumerate so we can add a page number
-            embed = discord.Embed(title=f'{title}', description=page, color=constants.embed)
+            embed = discord.Embed(title=f'{title}', description=page, color=self.bot.constants.embed)
             embed.set_footer(text='Page {:,}/{:,}'.format(index+1, len(pages)))
             await ctx.send(embed=embed)
 
@@ -402,7 +376,7 @@ class Roles(commands.Cog):
                 if member.status != discord.Status.offline:
                     online += 1
 
-        embed = discord.Embed(title=check_role.name, description='{}/{} online'.format(online, count), color=constants.embed)
+        embed = discord.Embed(title=check_role.name, description='{}/{} online'.format(online, count), color=self.bot.constants.embed)
         embed.set_footer(text='ID: {}'.format(check_role.id))
         await ctx.send(embed=embed)
 

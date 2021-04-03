@@ -3,9 +3,11 @@ import discord
 import asyncio
 import logging
 import datetime
+
 from discord.ext import commands, tasks
 from collections import defaultdict
-from utilities import default, converters
+
+from settings import database
 
 command_logger = logging.getLogger("NGC0000")
 
@@ -22,6 +24,7 @@ class Updater(commands.Cog):
         
         self.command_batch = defaultdict(list)
         self.snipe_batch   = defaultdict(list)
+        self.member_batch  = defaultdict(list)
 
 
         self.batch_lock = asyncio.Lock(loop=bot.loop)
@@ -79,6 +82,30 @@ class Updater(commands.Cog):
             self.snipe_batch.clear()
 
 
+        query = '''WITH username_insert AS (
+                    INSERT INTO usernames(user_id, usernames)
+                    VALUES ($1, $2) ON CONFLICT (user_id) DO NOTHING RETURNING user_id
+                   ),
+                   nickname_insert AS (
+                       INSERT INTO nicknames(serveruser, user_id, server_id, nicknames)
+                       VALUES ($3, $1, $4, $5) ON CONFLICT (serveruser) DO NOTHING RETURNING user_id
+                   )
+                   INSERT INTO userroles(serveruser, user_id, server_id, roles)
+                   VALUES ($3, $1, $4, $6) ON CONFLICT (serveruser) DO NOTHING
+                '''
+
+        async with self.batch_lock:
+            for data in self.member_batch.items():
+                user_id    = data[1][0]['user_id'  ]
+                server_id  = data[1][0]['server_id']
+                username   = data[1][0]['username' ]
+                nickname   = data[1][0]['nickname' ]
+                roles      = data[1][0]['roles'    ]
+
+                await self.bot.cxn.execute(query, user_id, username, f"{server_id}:{user_id}", server_id, nickname, roles)
+            self.member_batch.clear()
+
+
     @commands.Cog.listener()
     async def on_command(self, ctx):
         command = ctx.command.qualified_name
@@ -118,3 +145,33 @@ class Updater(commands.Cog):
                     "channel_id": message.channel.id
                 }
             )
+
+
+    @commands.Cog.listener()
+    async def on_member_join(self, member):
+        if self.bot.bot_ready is False:
+            return
+        if member.bot:
+            return
+        
+        await asyncio.sleep(3)
+
+        async with self.batch_lock:
+            self.member_batch[member.id].append(               
+                {
+                    "user_id": member.id,
+                    "username": str(member),
+                    "nickname": member.display_name,
+                    "server_id": member.guild.id,
+                    "roles": ",".join([str(x.id) for x in member.roles if x.name != "@everyone"])
+                }
+            )
+
+
+    @commands.Cog.listener()
+    async def on_reaction_add(self, reaction, user):
+        self.bot.dispatch("picklist_reaction", reaction, user)
+
+    @commands.Cog.listener()
+    async def on_reaction_remove(self, reaction, user):
+        self.bot.dispatch("picklist_reaction", reaction, user)

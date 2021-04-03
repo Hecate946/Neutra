@@ -4,7 +4,7 @@ import asyncio
 import datetime
 from discord.ext import commands, tasks
 from collections import defaultdict
-from utilities import default, converters
+from utilities import utils, converters
 
 
 def setup(bot):
@@ -76,15 +76,15 @@ class Tracker(commands.Cog):
         #================#
         # On User Update #
         #================#
-        query = f"""UPDATE useravatars SET avatars = CONCAT_WS(',', avatars, cast($1 as text)) WHERE user_id = $2"""
-        async with self.batch_lock:
-            for data in self.avatar_batch.items():
-                user_id = data[1]['user_id']
-                avatar  = data[1]['avatar']
+        # query = f"""UPDATE useravatars SET avatars = CONCAT_WS(',', avatars, cast($1 as text)) WHERE user_id = $2"""
+        # async with self.batch_lock:
+        #     for data in self.avatar_batch.items():
+        #         user_id = data[1]['user_id']
+        #         avatar  = data[1]['avatar']
 
-                await self.bot.cxn.execute(query, str(avatar), user_id)
-            self.bot.avchanges += len(self.avatar_batch.items())
-            self.avatar_batch.clear()
+        #         await self.bot.cxn.execute(query, str(avatar), user_id)
+        #     self.bot.avchanges += len(self.avatar_batch.items())
+        #     self.avatar_batch.clear()
 
         query = f"""UPDATE usernames SET usernames = CONCAT_WS(',', usernames, cast($1 as text)) WHERE user_id = $2"""
         async with self.batch_lock:
@@ -205,12 +205,12 @@ class Tracker(commands.Cog):
                 "user_id": after.id
             }
 
-        if await self.avatar_changed(before, after):
-            async with self.batch_lock:
-                self.avatar_batch[after.id] = {
-                    "user_id": after.id,
-                    "avatar": after.avatar_url
-                }
+        # if await self.avatar_changed(before, after):
+        #     async with self.batch_lock:
+        #         self.avatar_batch[after.id] = {
+        #             "user_id": after.id,
+        #             "avatar": after.avatar_url
+        #         }
 
         if await self.username_changed(before, after):
             async with self.batch_lock:
@@ -352,11 +352,11 @@ class Tracker(commands.Cog):
             server_last_spoke = None
         
         if last_seen:
-            last_seen = default.time_between(int(last_seen), int(time.time()))
+            last_seen = utils.time_between(int(last_seen), int(time.time()))
         if last_spoke:
-            last_spoke = default.time_between(int(last_spoke), int(time.time()))
+            last_spoke = utils.time_between(int(last_spoke), int(time.time()))
         if server_last_spoke:
-            server_last_spoke = default.time_between(int(server_last_spoke), int(time.time()))
+            server_last_spoke = utils.time_between(int(server_last_spoke), int(time.time()))
 
         observed_data = {
             "last_seen": last_seen or None,
@@ -370,8 +370,8 @@ class Tracker(commands.Cog):
 
         usernames = await self.bot.cxn.fetchval(
             "SELECT usernames from usernames WHERE user_id = $1 LIMIT 1", member.id) or None
-        avatars = await self.bot.cxn.fetchval(
-            "SELECT avatars from useravatars WHERE user_id = $1 LIMIT 1", member.id) or None
+        # avatars = await self.bot.cxn.fetchval(
+        #     "SELECT avatars from useravatars WHERE user_id = $1 LIMIT 1", member.id) or None
         if hasattr(member, 'guild'):
             nicknames = await self.bot.cxn.fetchval(
                 "SELECT nicknames FROM nicknames WHERE user_id = $1 AND server_id = $2 LIMIT 1", member.id, ctx.guild.id) or None
@@ -381,16 +381,16 @@ class Tracker(commands.Cog):
         
         if usernames:
             usernames = str(usernames).replace(",",", ")
-        if avatars:
-            avatars = str(avatars).replace(",",", ")
+        # if avatars:
+        #     avatars = str(avatars).replace(",",", ")
         if hasattr(member, 'guild'):
             if nicknames:
                 nicknames = str(nicknames).replace(",",", ")
 
         observed_data = {
             "usernames": usernames or None,
-            "nicknames": nicknames or None,
-            "avatars": avatars or None
+            "nicknames": nicknames or None
+            #"avatars": avatars or None
         }
         return observed_data
 

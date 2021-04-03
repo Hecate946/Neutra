@@ -4,6 +4,10 @@ import os
 import sys
 import json
 import time
+
+from discord_slash.client import SlashCommand
+from discord_slash.context import SlashContext
+from utilities.permissions import has_permissions
 import aiohttp
 import discord
 import logging
@@ -16,15 +20,12 @@ from datetime          import datetime
 from discord.ext       import commands, tasks
 from logging.handlers  import RotatingFileHandler
 
-from utilities         import default, cleanup, database
-from secret            import constants
-
+from settings          import database, cleanup
+from utilities         import utils
+from settings          import constants
 
 MAX_LOGGING_BYTES = 32 * 1024 * 1024 # 32 MiB
 COGS              = [x[:-3] for x in sorted(os.listdir('././cogs')) if x.endswith('.py')]
-OWNERS            = constants.owners
-DEFAULT_PREFIX    = constants.prefix
-EMOTE_DICT        = constants.emotes
 
 cxn               = database.postgres
 
@@ -40,7 +41,7 @@ command_logger_handler = RotatingFileHandler(
     )
 command_logger.addHandler(command_logger_handler)
 command_logger_format = logging.Formatter(
-    '{asctime}: [{levelname}] {name} || {message}', '%Y-%m-%d %H:%M:%S', style='{'
+    '\n{asctime}: [{levelname}] {name} || {message}', '%Y-%m-%d %H:%M:%S', style='{'
 )
 command_logger_handler.setFormatter(command_logger_format)
 
@@ -97,16 +98,20 @@ traceback_logger_handler.setFormatter(traceback_logger_format)
 async def get_prefix(bot, message):
     if not message.guild:
         prefix = constants.prefix
-        return commands.when_mentioned_or(prefix)(bot, message)
+        return commands.when_mentioned_or(prefix + ' ', prefix)(bot, message)
     prefix = await database.fetch_prefix(message.guild.id)
-    return commands.when_mentioned_or(prefix)(bot, message)
+    if prefix is None:
+        await database.update_server(message.guild.id, message.guild.members)
+        await database.fix_server(message.guild.id)
+        prefix = await database.fetch_prefix(message.guild.id)
+    return commands.when_mentioned_or(prefix + ' ', prefix)(bot, message)
 
 
 #Main bot class. Heart of the application
 class NGC0000(commands.AutoShardedBot):
     def __init__(self):
 
-        super().__init__(command_prefix=get_prefix, case_insensitive=True, owner_ids=OWNERS, intents=discord.Intents.all(),)
+        super().__init__(command_prefix=get_prefix, case_insensitive=True, owner_ids=constants.owners, intents=discord.Intents.all(),)
 
         self.session = aiohttp.ClientSession(loop=self.loop)
 
@@ -161,14 +166,23 @@ class NGC0000(commands.AutoShardedBot):
         if not hasattr(self, 'server_settings'):
             self.server_settings = database.settings
 
+        if not hasattr(self, 'session'):
+            self.session = self.session
+
+        if not hasattr(self, 'constants'):
+            self.constants = constants
+
+        if not hasattr(self, "slash"):
+            self.slash = SlashCommand(self, sync_commands=True)
+
         # loads all the cogs in ./cogs and prints them on sys.stdout
         for cog in COGS:
             self.load_extension(f"cogs.{cog}")
             print(color(fore="#3EC4CD", text=f"Loaded: {str(cog).upper()}"))
 
-    def run(self):
-
+    def run(self, mode="production"):
         # Startup function that gets called in starter.py
+        
         self.setup()
 
         self.token = constants.token
@@ -185,9 +199,9 @@ class NGC0000(commands.AutoShardedBot):
                 stats = {
                     "client name": self.user.name,
                     "client id": self.user.id,
-                    "client age": default.time_between(self.user.created_at.timestamp(), time.time()),
+                    "client age": utils.time_between(self.user.created_at.timestamp(), time.time()),
                     "client owner": f"{self.owner_ids[0]}, {self.get_user(self.owner_ids[0])}",
-                    "last run": default.timeago(datetime.utcnow() - self.uptime),
+                    "last run": utils.timeago(datetime.utcnow() - self.uptime),
                     "commands run": len(self.command_stats),
                     "messages seen": self.messages,
                     "server count": len(self.guilds),
@@ -200,6 +214,12 @@ class NGC0000(commands.AutoShardedBot):
                 }
 
                 json.dump(stats, fp, indent=2)
+
+            data = utils.load_json('config.json')
+            if mode == "tester":
+                utils.write_json("config_test.json", data)
+            else:
+                utils.write_json("config_prod.json", data)
                 
 
 
@@ -308,28 +328,38 @@ class NGC0000(commands.AutoShardedBot):
 
         await cleanup.cleanup_servers(self.guilds)
 
+        try:
+            channel = self.get_channel(constants.reboot['channel'])
+            msg = await channel.fetch_message(constants.reboot['message'])
+            await msg.edit(content=self.emote_dict['success'] + " " + "{0}ed Successfully.".format(constants.reboot["invoker"]))
+        except Exception as e:
+            print(e)
+
+        from settings import cache
+        cache.Settings(self)
+
         self.bot_ready = True
 
 
     async def set_status(self):
         # This sets the bot's presence, status, and activity
         # based off of the values in ./config.json
-        if constants.activity == "listening":
+        if self.constants.activity == "listening":
             a = discord.ActivityType.listening
-        elif constants.activity == "watching":
+        elif self.constants.activity == "watching":
             a = discord.ActivityType.watching
-        elif constants.activity == "competing":
+        elif self.constants.activity == "competing":
             a = discord.ActivityType.competing
         else:
             a = discord.ActivityType.playing
 
-        if constants.presence == "":
+        if self.constants.presence == "":
             activity = discord.Activity(type=a)
         else:
-            presence = constants.presence
+            presence = self.constants.presence
             activity = discord.Activity(type=a, name=presence)
 
-        status = constants.status
+        status = self.constants.status
         if status == "idle":
             s = discord.Status.idle
         elif status == "dnd":
@@ -364,11 +394,11 @@ class NGC0000(commands.AutoShardedBot):
             # await ctx.author.send(f"{self.emote_dict['failed']} This command is disabled.")
             pass
 
-        elif isinstance(error, discord.Forbidden):
+        elif isinstance(error, discord.errors.Forbidden):
             pass
 
         elif isinstance(error, commands.CommandInvokeError):
-            err = default.traceback_maker(error.original, advance=True)
+            err = utils.traceback_maker(error.original, advance=True)
             if "or fewer" in str(error):
                 return await ctx.send(f"{self.emote_dict['failed']} Result was greater than the character limit.")
             print(color(fore="FF0000", text=f'\nCommand {ctx.command.qualified_name} raised the error: {error.original.__class__.__name__}: {error.original}'), file=sys.stderr)
@@ -392,26 +422,23 @@ class NGC0000(commands.AutoShardedBot):
         else:
             # Ok so here we don't really know what the error is, so lets print the basic error. 
             # We can always check pm2.log for the full error later if necessary
-            err = default.traceback_maker(error.original, advance=True)
+            err = utils.traceback_maker(error, advance=True)
             print(color(fore="FF0000", text="Error"))
             print(error)
             if ctx.guild is None:
                 destination = 'Private Message'
             else:
                 destination = '#{0.channel} [{0.channel.id}] ({0.guild}) [{0.guild.id}]'.format(ctx)
-            error_logger.warning("{0.author} in {1}:\n\tCONTENT: {0.message.content}\n\tERROR : {2}".format(ctx, destination, error))
-            traceback_logger.warning(err)
+            error_logger.warning("{0.author} in {1}:\n\tCONTENT: {0.message.content}\n\tERROR : {2}\n".format(ctx, destination, error))
+            traceback_logger.warning(str(err) + "\n")
 
 
     async def on_guild_join(self, guild):
         if self.bot_ready is False:
             return
-        member_list = []
-        for member in self.get_all_members():
-            member_list.append(member)
 
-        await database.initialize(self.guilds, member_list)
-
+        await database.update_server(guild, guild.members)
+        await database.fix_server(guild.id)
 
     async def on_guild_remove(self, guild):
         if self.bot_ready is False:
@@ -420,14 +447,10 @@ class NGC0000(commands.AutoShardedBot):
         # No need to waste any space storing their info anymore.
         await cleanup.cleanup_servers(self.guilds)
 
-
     async def on_ready(self):
-        try:
-            channel = self.get_channel(default.config()['reboot']['channel'])
-            msg = await channel.fetch_message(default.config()['reboot']['message'])
-            await msg.edit(content=self.emote_dict['success'] + " " + "{0}ed Successfully.".format(constants.reboot["invoker"]))
-        except:
-            pass
+        # from discord_slash import utils
+        # await utils.manage_commands.remove_all_commands_in(bot.user.id, bot.token, 740734113086177433)
+        pass
 
     async def on_message(self, message):
         if self.bot_ready is False:

@@ -8,9 +8,7 @@ import datetime
 from collections import OrderedDict, Counter, defaultdict
 from discord.ext import commands, tasks, menus
 
-from secret import constants
-from utilities import default, permissions, converters, pagination
-        
+from utilities import utils, permissions, converters, pagination
 
 
 EMOJI_REGEX      = re.compile(r'<a?:.+?:([0-9]{15,21})>')
@@ -80,7 +78,7 @@ class Statistics(commands.Cog):
         unique_bots   = set([x.id for x in bots])
         e = discord.Embed(
             title="User Stats",
-            color=constants.embed
+            color=self.bot.constants.embed
         )
         e.add_field(
             name='Humans',
@@ -157,7 +155,7 @@ class Statistics(commands.Cog):
 
         embed = discord.Embed(colour=user.top_role.colour.value)
         embed.set_thumbnail(url=user.avatar_url)
-        embed.description = f'**{user}** joined **{ctx.guild.name}**\n{default.date(user.joined_at)}'
+        embed.description = f'**{user}** joined **{ctx.guild.name}**\n{utils.date(user.joined_at)}'
         await ctx.send(embed=embed)
 
 
@@ -307,7 +305,7 @@ class Statistics(commands.Cog):
     #         await ctx.send(f"{self.bot.emote_dict['error']} There currently no invites active.")
     #     else:
     #         try:
-    #             em = discord.Embed(description="**Invites:**\n {0}".format(",\n ".join(map(str, invites))), color=constants.embed)
+    #             em = discord.Embed(description="**Invites:**\n {0}".format(",\n ".join(map(str, invites))), color=self.bot.constants.embed)
     #             await ctx.send(embed=em)
     #         except: return await ctx.send(f"{self.bot.emote_dict['failed']} Too many invites to list.")
 
@@ -416,31 +414,31 @@ class Statistics(commands.Cog):
         except menus.MenuError as e:
             await ctx.send(e)
 
-    @commands.command(brief="Show a user's avatars.", aliases=["avs"])
-    @commands.guild_only()
-    async def avatars(self, ctx, user: discord.Member = None):
-        """
-        Usage: -names [user]
-        Alias: -usernames
-        Output: Embed of all user's names.
-        Permission: Manage Messages
-        Notes:
-            Will default to yourself if no user is passed
-        """
-        if user is None:
-            user = ctx.author
-        query = '''SELECT avatars FROM useravatars WHERE user_id = $1'''
-        name_list = await self.bot.cxn.fetchrow(query, user.id)
-        name_list = name_list[0].split(',')
-        name_list = list(OrderedDict.fromkeys(name_list))
+    # @commands.command(brief="Show a user's avatars.", aliases=["avs"])
+    # @commands.guild_only()
+    # async def avatars(self, ctx, user: discord.Member = None):
+    #     """
+    #     Usage: -names [user]
+    #     Alias: -usernames
+    #     Output: Embed of all user's names.
+    #     Permission: Manage Messages
+    #     Notes:
+    #         Will default to yourself if no user is passed
+    #     """
+    #     if user is None:
+    #         user = ctx.author
+    #     query = '''SELECT avatars FROM useravatars WHERE user_id = $1'''
+    #     name_list = await self.bot.cxn.fetchrow(query, user.id)
+    #     name_list = name_list[0].split(',')
+    #     name_list = list(OrderedDict.fromkeys(name_list))
 
-        p = pagination.SimplePages(entries=[f"`{n}`" for n in name_list], per_page=5)
-        p.embed.title = f"Avatars for {user}"
+    #     p = pagination.SimplePages(entries=[f"`{n}`" for n in name_list], per_page=5)
+    #     p.embed.title = f"Avatars for {user}"
 
-        try:
-            await p.start(ctx)
-        except menus.MenuError as e:
-            await ctx.send(e)
+    #     try:
+    #         await p.start(ctx)
+    #     except menus.MenuError as e:
+    #         await ctx.send(e)
 
     
 
@@ -559,7 +557,7 @@ class Statistics(commands.Cog):
             unit = "month"
         query = '''SELECT COUNT(*) as c, author_id FROM commands WHERE server_id = $1 GROUP BY author_id ORDER BY c DESC LIMIT 25'''
         usage = await self.bot.cxn.fetch(query, ctx.guild.id)
-        e = discord.Embed(title=f"Bot usage for the last {unit}", description=f"{sum(x[0] for x in usage)} commands from {len(usage)} user{'' if len(usage) == 1 else 's'}", color=constants.embed)
+        e = discord.Embed(title=f"Bot usage for the last {unit}", description=f"{sum(x[0] for x in usage)} commands from {len(usage)} user{'' if len(usage) == 1 else 's'}", color=self.bot.constants.embed)
         for n, v in enumerate(usage[:24]):
             name = await self.bot.fetch_user(v[1])
             e.add_field(name=f"{n+1}. {name}", value=f"{v[0]} command{'' if int(v[0]) == 1 else 's'}")
@@ -590,7 +588,7 @@ class Statistics(commands.Cog):
         query = '''SELECT COUNT(*) as c, author_id FROM messages WHERE server_id = $1 AND unix > $2 GROUP BY author_id ORDER BY c DESC LIMIT 25'''
         stuff = await self.bot.cxn.fetch(query, ctx.guild.id, diff)
 
-        e = discord.Embed(title=f"Activity for the last {unit}", description=f"{sum(x[0] for x in stuff)} messages from {len(stuff)} user{'' if len(stuff) == 1 else 's'}", color=constants.embed)
+        e = discord.Embed(title=f"Activity for the last {unit}", description=f"{sum(x[0] for x in stuff)} messages from {len(stuff)} user{'' if len(stuff) == 1 else 's'}", color=self.bot.constants.embed)
         for n, v in enumerate(stuff[:24]):
             try:
                 name = ctx.guild.get_member(int(v[1])).name
@@ -604,7 +602,7 @@ class Statistics(commands.Cog):
     @activity.command(aliases=['characters'])
     @commands.guild_only()
     async def char(self, ctx, unit: str="day"):
-        if ctx.author.id not in constants.owners:
+        if ctx.author.id not in self.bot.constants.owners:
             return
         unit = unit.lower()
         time_dict = {
@@ -620,7 +618,7 @@ class Statistics(commands.Cog):
         diff = now - time_seconds
         query = '''SELECT SUM(LENGTH(content)) as c, author_id, COUNT(*) FROM messages WHERE server_id = $1 AND unix > $2 GROUP BY author_id ORDER BY c DESC LIMIT 25'''
         stuff = await self.bot.cxn.fetch(query, ctx.guild.id, diff)
-        e = discord.Embed(title="Current leaderboard", description=f"Activity for the last {unit}", color=constants.embed)
+        e = discord.Embed(title="Current leaderboard", description=f"Activity for the last {unit}", color=self.bot.constants.embed)
         for n, v in enumerate(stuff): 
             try:
                 name = ctx.guild.get_member(int(v[1])).name
@@ -790,7 +788,7 @@ class Statistics(commands.Cog):
 
 
     @commands.command(brief="Get stats on an emoji.")
-    async def emoji(self, ctx, emoji: discord.PartialEmoji = None):
+    async def emoji(self, ctx, emoji: converters.SearchEmojiConverter = None):
         """
         Usage: -emoji <custom emoji>
         Output: Usage stats on the passed emoji
@@ -815,7 +813,7 @@ class Statistics(commands.Cog):
 
             emoji_users = Counter(emoji_users).most_common()
 
-            matches = EMOJI_REGEX.findall(fat_msg)
+            matches = re.compile(f"<a?:.+?:{emoji_id}>").findall(fat_msg)
             total_uses = len(matches)
 
             p = pagination.SimplePages(entries = ['`{}`: Uses: {}'.format(await self.bot.fetch_user(u[0]), u[1]) for u in emoji_users], per_page = 15)

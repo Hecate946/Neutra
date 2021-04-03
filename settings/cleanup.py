@@ -33,10 +33,6 @@ async def destroy_server(guild_id, guild_name):
     """, guild_id)
 
     await conn.execute("""
-    DELETE FROM roleconfig WHERE server_id = $1
-    """, guild_id)
-
-    await conn.execute("""
     DELETE FROM mutes WHERE server_id = $1
     """, guild_id)
 
@@ -58,18 +54,6 @@ async def destroy_server(guild_id, guild_name):
 
     await conn.execute("""
     DELETE FROM ignored WHERE server_id = $1
-    """, guild_id)
-
-    await conn.execute("""
-    DELETE FROM snipe WHERE server_id = $1
-    """, guild_id)
-
-    await conn.execute("""
-    DELETE FROM profanity WHERE server_id = $1
-    """, guild_id)
-
-    await conn.execute("""
-    DELETE FROM moderation WHERE server_id = $1
     """, guild_id)
 
     log.info("Successfully destroyed server [{0}] Name: ({1})".format(guild_id, guild_name))

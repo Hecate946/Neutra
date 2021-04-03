@@ -5,9 +5,7 @@ import discord
 from datetime import datetime
 from discord.ext import commands
 
-from secret import constants
-
-COG_EXCEPTIONS = ['CONFIG','OWNER','MANAGER', 'HELP', 'TRACKER']
+COG_EXCEPTIONS = ['CONFIG','BOTADMIN','MANAGER', 'HELP', 'TRACKER', 'UPDATER', 'JISHAKU', 'TESTING', 'SLASH']
 COMMAND_EXCEPTIONS = ['EYECOUNT']
 
 
@@ -66,9 +64,9 @@ class Help(commands.Cog):
         the_cog = sorted(cog.get_commands(), key=lambda x:x.name)
         cog_commands = []
         for c in the_cog:
-            if c.hidden and ctx.author.id not in constants.owners:
+            if c.hidden and ctx.author.id not in self.bot.constants.owners:
                 continue
-            if str(c.name).upper() in COMMAND_EXCEPTIONS and ctx.author.id not in constants.owners:
+            if str(c.name).upper() in COMMAND_EXCEPTIONS and ctx.author.id not in self.bot.constants.admins:
                 await ctx.send(f"{self.emote_dict['error']} No command named `{name}` found.")
                 continue
             cog_commands.append(c)
@@ -83,13 +81,13 @@ class Help(commands.Cog):
     
     async def category_embed(self, ctx, cog, list, pm, delete_after):
         embed = discord.Embed(title=f"Category: `{cog}`",
-        description=f"**Bot Invite Link:** [https://ngc.discord.bot](https://discord.com/oauth2/authorize?client_id=810377376269205546&scope=bot&permissions=8)\n"
-                    f"**Support Server:**  [https://discord.gg/ngc](https://discord.gg/947ramn)\n", color=constants.embed)
+        description=f"**Bot Invite Link:** [https://ngc.discord.bot](https://discord.com/api/oauth2/authorize?client_id=810377376269205546&permissions=4294967287&scope=applications.commands%20bot)\n"
+                    f"**Support Server:**  [https://discord.gg/ngc](https://discord.gg/947ramn)\n", color=self.bot.constants.embed)
         embed.set_footer(text=f"Use \"{ctx.prefix}help command\" for information and usage examples on a command.\n")
 
         msg = ""
         for i in list:
-            if i.brief is None:
+            if i.brief is None or i.brief == "":
                 i.brief = "No description"
             line = f"\n`{i.name}` {i.brief}\n"
             msg += line
@@ -127,8 +125,8 @@ class Help(commands.Cog):
             ##########################
 
             embed = discord.Embed(title=f"{self.bot.user.name}'s Help Command", url="https://discord.gg/947ramn",
-            description=f"**Bot Invite Link:** [https://ngc.discord.bot](https://discord.com/oauth2/authorize?client_id=810377376269205546&scope=bot&permissions=8)\n"
-                        f"**Support Server:**  [https://discord.gg/ngc](https://discord.gg/947ramn)", color=constants.embed)
+            description=f"**Bot Invite Link:** [https://ngc.discord.bot](https://discord.com/api/oauth2/authorize?client_id=810377376269205546&permissions=4294967287&scope=applications.commands%20bot)\n"
+                        f"**Support Server:**  [https://discord.gg/ngc](https://discord.gg/947ramn)", color=self.bot.constants.embed)
 
             embed.set_footer(text=f"Use \"{ctx.prefix}help category\" for specific information on a category.")
 
@@ -136,7 +134,7 @@ class Help(commands.Cog):
             msg = ""
             for cog in sorted(self.bot.cogs):
                 c = self.bot.get_cog(cog)
-                if c.qualified_name.upper() in COG_EXCEPTIONS and ctx.author.id not in constants.owners: continue
+                if c.qualified_name.upper() in COG_EXCEPTIONS and ctx.author.id not in self.bot.constants.admins: continue
                 valid_cogs.append(c)
             for c in valid_cogs:
                 line = f"\n`{c.qualified_name}` {c.description}\n"
@@ -176,28 +174,33 @@ class Help(commands.Cog):
                 cog = self.bot.get_cog("Statistics")
                 return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
 
+            if invokercommand.lower() in ["dump","files","file","txt","txts"]:
+                cog = self.bot.get_cog("Utility")
+                return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
+
             if invokercommand.lower() in ["jsk","jish","jishaku"]:
-                if ctx.author.id not in constants.owners:
+                if ctx.author.id not in self.bot.constants.owners:
                     return await ctx.send(f"{self.emote_dict['error']} No command named `{invokercommand}` found.")
                 return await ctx.send_help("jishaku")
 
             if invokercommand.lower() in ["conf","config","configuration","bot"]:
-                if ctx.author.id not in constants.owners:
+                if ctx.author.id not in self.bot.constants.owners:
                     return await ctx.send(f"{self.emote_dict['error']} No command named `{invokercommand}` found.")
                 cog = self.bot.get_cog("Config")
                 return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
 
-            if invokercommand.lower() in ["own","owners","owner","creator","hidden"]:
-                if ctx.author.id not in constants.owners:
+            if invokercommand.lower() in ["own","owners","owner","hidden", "botadmin", "admins", "creator"]:
+                if ctx.author.id not in self.bot.constants.admins:
                     return await ctx.send(f"{self.emote_dict['error']} No command named `{invokercommand}` found.")
-                cog = self.bot.get_cog("Owner")
+                cog = self.bot.get_cog("BotAdmin")
                 return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
 
             if invokercommand.lower() in ["manage","manager","master","heart"]:
-                if ctx.author.id not in constants.owners:
+                if ctx.author.id not in self.bot.constants.owners:
                     return await ctx.send(f"{self.emote_dict['error']} No command named `{invokercommand}` found.")
                 cog = self.bot.get_cog("Manager")
                 return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
+
 
             else:
 
@@ -213,7 +216,7 @@ class Help(commands.Cog):
                     cog_commands = sorted(self.bot.get_cog(cog).get_commands(), key=lambda x:x.name)
                     for command in cog_commands:
                         if str(command.name) == invokercommand.lower() or invokercommand.lower() in command.aliases:
-                            if command.hidden and ctx.author.id not in constants.owners: continue
+                            if command.hidden and ctx.author.id not in self.bot.constants.owners: continue
                             valid_commands += (command.name)
                             valid_help += (command.help)
                             if not command.brief:
@@ -223,9 +226,9 @@ class Help(commands.Cog):
 
                 if valid_commands != "":
                     help_embed = discord.Embed(title=f"Category: `{valid_cog.title()}`", 
-                    description=f"**Bot Invite Link:** [https://ngc.discord.bot](https://discord.com/oauth2/authorize?client_id=810377376269205546&scope=bot&permissions=8)\n"
+                    description=f"**Bot Invite Link:** [https://ngc.discord.bot](https://discord.com/api/oauth2/authorize?client_id=810377376269205546&permissions=4294967287&scope=applications.commands%20bot)\n"
                                 f"**Support Server:**  [https://discord.gg/ngc](https://discord.gg/947ramn)", 
-                    color=constants.embed)
+                    color=self.bot.constants.embed)
                     help_embed.set_footer(text=f"Use \"{ctx.prefix}help command\" for information and usage examples on a command.")
                     help_embed.add_field(name=f"**Command Name:** `{valid_commands.title()}`", 
                     value=f"\n**Description:** `{valid_brief}`\n"
@@ -233,97 +236,6 @@ class Help(commands.Cog):
                     await self.send_help(ctx, help_embed, pm, delete_after)
                 else: 
                     await ctx.send(f"{self.emote_dict['error']} No command named `{invokercommand}` found.")
-
-
-    def _get_help(self, command, max_len = 0):
-        # A helper method to return the command help - or a placeholder if none
-        if max_len == 0:
-            # Get the whole thing
-            if command.help == None:
-                return "No description..."
-            else:
-                return command.help
-        else:
-            if command.help == None:
-                c_help = "No description..."
-            else:
-                c_help = command.help.split("\n")[0]
-            return (c_help[:max_len-3]+"...") if len(c_help) > max_len else c_help
-
-    def _is_submodule(self, parent, child):
-        return parent == child or child.startswith(parent + ".")
-
-    @commands.command(
-        brief   = "Dumps a timestamped, formatted list of commands and descriptions.", 
-        aliases = ["txthelp","helpfile"]
-    )
-    async def dumphelp(self, ctx):
-        """
-        Usage: -dumphelp
-        Aliases: -txthelp, -helpfile
-        Output: List of commands and descriptions
-        """
-        timestamp = datetime.today().strftime("%m-%d-%Y")
-
-        help_txt = './data/wastebin/Help-{}.txt'.format(timestamp)
-
-        message = await ctx.send('Uploading help list...')
-        msg = ''
-        prefix = ctx.prefix
-        
-        # Get and format the help
-        for cog in sorted(self.bot.cogs):
-            if cog.upper() in COG_EXCEPTIONS:
-                continue
-            cog_commands = sorted(self.bot.get_cog(cog).get_commands(), key=lambda x:x.name)
-            cog_string = ""
-            # Get the extension
-            the_cog = self.bot.get_cog(cog)
-            # Make sure there are non-hidden commands here
-            visible = []
-            for command in self.bot.get_cog(cog).get_commands():
-                if not command.hidden:
-                    visible.append(command)
-            if not len(visible):
-                # All hidden - skip
-                continue
-            cog_count = "1 command" if len(visible) == 1 else "{} commands".format(len(visible))
-            for e in self.bot.extensions:
-                b_ext = self.bot.extensions.get(e)
-                if self._is_submodule(b_ext.__name__, the_cog.__module__):
-                    # It's a submodule
-                    cog_string += "{}{} Cog ({}) - {}.py Extension:\n".format(
-                        "    ",
-                        cog,
-                        cog_count,
-                        e[5:]
-                    )
-                    break
-            if cog_string == "":
-                cog_string += "{}{} Cog ({}):\n".format(
-                    "    ",
-                    cog,
-                    cog_count
-                )
-            for command in cog_commands:
-                cog_string += "{}  {}\n".format("    ", prefix + command.name + " " + command.signature)
-                cog_string += "\n{}  {}  {}\n\n".format(
-                    "\t",
-                    " "*len(prefix),
-                    self._get_help(command, 80)
-                )
-            cog_string += "\n"
-            msg += cog_string
-        
-        # Encode to binary
-        # Trim the last 2 newlines
-        msg = msg[:-2].encode("utf-8")
-        with open(help_txt, "wb") as myfile:
-            myfile.write(msg)
-
-        await ctx.send(file=discord.File(help_txt))
-        await message.edit(content=f"{self.emote_dict['success']} Uploaded Help-{timestamp}.txt")
-        os.remove(help_txt)
 
 
 

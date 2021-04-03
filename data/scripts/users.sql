@@ -22,3 +22,12 @@ CREATE TABLE IF NOT EXISTS userroles (
     roles TEXT
 );
 
+CREATE TABLE IF NOT EXISTS usertime (
+    user_id BIGINT PRIMARY KEY,
+    timezone VARCHAR(100)
+);
+
+CREATE TABLE IF NOT EXISTS tracker (
+    user_id BIGINT PRIMARY KEY,
+    unix BIGINT
+);
