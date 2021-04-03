@@ -1,0 +1,33 @@
+apps:
+    script   : ./starter.py
+    name     : NGC0000
+    args     : -- tester
+    interpreter: python3
+    interpreter_args: -u
+    exec_mode: fork
+    instances: 1
+    watch  : false
+    log_date_format: YYYY-MM-DD HH:mm
+    error_file: ./data/pm2/err.log
+    out_file: ./data/pm2/out.log'
+    pid_file: ./data/pm2/pid.pid
+    env:
+      PYTHON_ENV: tester
+    env_production:
+      PYTHON_ENV: production
+
+deploy:
+  tester:
+    host: localhost
+    #user: python3
+    ref: origin/main
+    repo: '.'
+    path: /Users/siamakasasi/Desktop/☃️☃️☃️/Python/Bots/NGC0000/tester
+    pre-setup: python3 -m pip install -U -r requirements.txt   
+  production:
+    #host: "144.202.2.35"
+    #user: python3
+    ref: origin/main
+    repo: git@github.com/Hecate946/NGC0000_production.git
+    #path: /root/root/NGC_production
+    pre-setup: python3 -m pip install -U -r requirements.txt
