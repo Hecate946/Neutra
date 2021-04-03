@@ -22,7 +22,7 @@ deploy:
     host: localhost
     ref: origin/main
     repo: '.'
-    path: ./source
+    path: '.'
     pre-setup: python3 -m pip install -U -r requirements.txt   
   production:
     #host: "144.202.2.35"
