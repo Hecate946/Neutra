@@ -21,7 +21,7 @@ deploy:
     user: Hecate946
     host: localhost
     ref: origin/main
-    repo: '.'
+    repo: './source'
     path: /var/NGC0000
     pre-setup: python3 -m pip install -U -r requirements.txt   
   production:
