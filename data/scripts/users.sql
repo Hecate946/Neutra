@@ -1,8 +1,3 @@
-CREATE TABLE IF NOT EXISTS useravatars (
-    user_id BIGINT PRIMARY KEY,
-    avatars TEXT
-);
-
 CREATE TABLE IF NOT EXISTS nicknames (
     serveruser VARCHAR(50) PRIMARY KEY,
     user_id BIGINT,
@@ -31,3 +26,9 @@ CREATE TABLE IF NOT EXISTS tracker (
     user_id BIGINT PRIMARY KEY,
     unix BIGINT
 );
+
+-- This table has been dropped and is no longer used.
+-- CREATE TABLE IF NOT EXISTS useravatars (
+--     user_id BIGINT PRIMARY KEY,
+--     avatars TEXT
+-- );
