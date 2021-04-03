@@ -18,11 +18,11 @@ apps:
 
 deploy:
   tester:
+    user: Hecate946
     host: localhost
-    #user: python3
     ref: origin/main
     repo: '.'
-    path: '.'
+    path: /var/NGC0000
     pre-setup: python3 -m pip install -U -r requirements.txt   
   production:
     #host: "144.202.2.35"
