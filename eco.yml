@@ -22,7 +22,7 @@ deploy:
     #user: python3
     ref: origin/main
     repo: '.'
-    path: /Users/siamakasasi/Desktop/☃️☃️☃️/Python/Bots/NGC0000/tester
+    path: /Users/siamakasasi/Desktop/☃️☃️☃️/Python/Bots/NGC0000
     pre-setup: python3 -m pip install -U -r requirements.txt   
   production:
     #host: "144.202.2.35"
