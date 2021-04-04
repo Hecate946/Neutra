@@ -1110,6 +1110,7 @@ class General(commands.Cog):
         embed.set_footer(text=f"Message ID: {message_id}")
         await ctx.send(embed=embed)
 
+
     @commands.command(description="Invite me to your server!", aliases=['bi', 'invite'])
     async def botinvite(self, ctx):
         """ Invite me to your server """

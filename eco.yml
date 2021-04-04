@@ -8,6 +8,6 @@ apps:
   instances       : 1
   watch           : false
   log_date_format : YYYY-MM-DD HH:mm
-  error_file      : ./data/pm2/err.log
-  out_file        : ./data/pm2/out.log'
+  error_file      : ./data/pm2/err.yml
+  out_file        : ./data/pm2/out.yml
   pid_file        : ./data/pm2/pid.pid
