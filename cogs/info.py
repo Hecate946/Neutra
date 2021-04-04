@@ -819,7 +819,7 @@ class General(commands.Cog):
                 await ctx.send(e)
 
 
-    @commands.command(name="status", brief="Change the bot status")
+    @commands.command(name="status", brief="Show a member's status")
     async def status_(self, ctx, *, member: discord.Member = None):
         """
         Usage: -status <member>
@@ -862,7 +862,7 @@ class General(commands.Cog):
             int(ts//60),
             ts % 60)
 
-    @commands.command(brief="Show the creation date a discord snowflake.", aliases=['id'])
+    @commands.command(brief="Show info on a discord snowflake.", aliases=['id'])
     async def snowflake(self, ctx, *, sid = None):
         """
         Usage: -snowflake <id>
@@ -880,7 +880,7 @@ class General(commands.Cog):
         return await ctx.send(msg)
 
 
-    @commands.command(brief="Show some info on the bot's developer and purpose.", aliases=['boss'])
+    @commands.command(brief="Show some info on the bot's developer.", aliases=['boss'])
     async def botowner(self, ctx):
         """
         Usage:  -botowner
@@ -911,7 +911,7 @@ class General(commands.Cog):
             await ctx.send("I don't know who my owner is ¯\_(ツ)_/¯.")
 
 
-    @commands.command(brief="Displays the source code.", aliases=['sourcecode'])
+    @commands.command(brief="Display the source code.", aliases=['sourcecode'])
     async def source(self, ctx, *, command: str = None):
         """
         Usage: -source [command]
@@ -946,7 +946,7 @@ class General(commands.Cog):
         msg = f"**__My source {'' if command is None else f'for {command}'} is located at:__**\n\n{final_url}"
         await ctx.send(msg)
 
-    @commands.command(name="permissions",brief="Show a user's permissions in a specific channel.")
+    @commands.command(name="permissions",brief="Show a user's permissions.")
     @commands.guild_only()
     async def _permissions(self, ctx, member: discord.Member = None, channel: discord.TextChannel = None):
         """

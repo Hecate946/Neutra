@@ -23,5 +23,33 @@ Her commands are fast and offer every opportunity for customization and utility.
 
 about: Show general statistics on the bot
 
+
 ```
 
+'`about` Display information about the bot.\n'
+                      '\n'
+                      '`admins` Show the server admins.\n'
+                      '\n'
+                      "`avatar` Display a user's avatar in an embed.\n"
+                      '\n'
+                      '`botinvite` No description\n'
+                      '\n'
+                      "`botowner` Show some info on the bot's developer.\n"
+                      '\n'
+                      '`bugreport` Send a bugreport to the bot creator.\n'
+                      '\n'
+                      "`defaultavatar` Show a user's default avatar.\n"
+                      '\n'
+                      '`find` Find any user using a search (Command Group).\n'
+                      '\n'
+                      "`hostinfo` Get info about the bot's host environment.\n"
+                      '\n'
+                      "`listchannels` Lists the server's channels in an "
+                      'embed.\n'
+                      '\n'
+                      '`mods` Show the server mods.\n'
+                      '\n'
+                      "`permissions` Show a user's permissions.\n"
+                      '\n'
+                      "`ping` Test the bot's response time.\n"
+                      '\n'
