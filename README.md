@@ -21,35 +21,52 @@ Her commands are fast and offer every opportunity for customization and utility.
 ###### Module for general information on users, servers, and bots. 
 ```yaml
 
-about: Show general statistics on the bot
+about: Display information about the bot.
+                      
+admins: Show the server admins.
 
+avatar: Display a user's avatar in an embed.
 
+botinvite: Invite me to your server!
+
+botowner: Show some info on the bot's developer.
+
+bugreport: Send a bugreport to the bot creator.
+
+defaultavatar: Show a user's default avatar.
+
+find: Find any user using a search (Command Group).
+
+hostinfo: Get info about the bot's host environment.
+
+listchannels: Lists the servers channels in an embed
+
+mods: Show the server mods.
+
+permissions: Show a user's permissions.
+
+ping: Test the bot's response time.
+
+platform: Show which discord platform a user is on.
+
+raw: Shows the raw content of a message
+
+serverinfo: Show server information.
+
+snipe: Snipe a message.
+
+snowflake: Show info on a discord snowflake.
+
+source: Display the source code.
+
+status: Show a member's status
+
+suggest: Send a suggestion to the bot creator.
+
+uptime: Show the bot's uptime.
+
+user: Get info on any discord user.
+
+userinfo: Display information on a passed member.
+                     
 ```
-
-'`about` Display information about the bot.\n'
-                      '\n'
-                      '`admins` Show the server admins.\n'
-                      '\n'
-                      "`avatar` Display a user's avatar in an embed.\n"
-                      '\n'
-                      '`botinvite` No description\n'
-                      '\n'
-                      "`botowner` Show some info on the bot's developer.\n"
-                      '\n'
-                      '`bugreport` Send a bugreport to the bot creator.\n'
-                      '\n'
-                      "`defaultavatar` Show a user's default avatar.\n"
-                      '\n'
-                      '`find` Find any user using a search (Command Group).\n'
-                      '\n'
-                      "`hostinfo` Get info about the bot's host environment.\n"
-                      '\n'
-                      "`listchannels` Lists the server's channels in an "
-                      'embed.\n'
-                      '\n'
-                      '`mods` Show the server mods.\n'
-                      '\n'
-                      "`permissions` Show a user's permissions.\n"
-                      '\n'
-                      "`ping` Test the bot's response time.\n"
-                      '\n'

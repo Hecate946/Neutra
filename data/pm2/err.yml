@@ -1,0 +1,9 @@
+2021-04-04 01:22: [38;5;196m
+2021-04-04 01:22: Command userinfo raised the error: AttributeError: 'coroutine' object has no attribute 'cog'[0m
+2021-04-04 01:22: /Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/asyncio/events.py:80: RuntimeWarning: coroutine 'General.user' was never awaited
+2021-04-04 01:22:   self._context.run(self._callback, *self._args)
+2021-04-04 01:22: RuntimeWarning: Enable tracemalloc to get the object allocation traceback
+2021-04-04 01:23: [38;5;196m
+2021-04-04 01:23: Command userinfo raised the error: AttributeError: 'NoneType' object has no attribute 'cog'[0m
+2021-04-04 01:24: [38;5;196m
+2021-04-04 01:24: Command userinfo raised the error: AttributeError: 'NoneType' object has no attribute 'cog'[0m

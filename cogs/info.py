@@ -322,9 +322,9 @@ class General(commands.Cog):
         await utils.prettyResults(ctx, "name", f"Found **{len(loop)}** on your search for weird names.", loop)
 
 
-    @commands.command(brief="Display information on a passed user.", aliases=["whois","ui","profile"])
+    @commands.command(brief="Display information on a passed user.", aliases=["whois","ui","profile", "user", "rawuser", "lookup"])
     @commands.guild_only()
-    async def userinfo(self, ctx, member: discord.Member = None):
+    async def userinfo(self, ctx, member: converters.DiscordUser = None):
         """
         Usage:    -userinfo <member>
         Aliases:  -profile, -ui, -whois
@@ -338,6 +338,9 @@ class General(commands.Cog):
 
         if member is None:
             member = ctx.author
+
+        if ctx.invoked_with in ['user', 'rawuser', 'lookup']:
+            return await ctx.invoke(await self.user(ctx, user=member))
 
 
         joinedList = []
@@ -725,7 +728,7 @@ class General(commands.Cog):
 
         await message.edit(content=msg)
 
-    @commands.command(brief="Get info on any discord user.", aliases=['lookup', 'rawuser'])
+
     async def user(self, ctx, *, user: converters.DiscordUser = None):
         """
         Usage:   -user <user>
@@ -1074,7 +1077,7 @@ class General(commands.Cog):
             await ctx.send(str(e))
 
 
-    @commands.command(brief="Snipe?", aliases=['retrieve'])
+    @commands.command(brief="Snipe a message.", aliases=['retrieve'])
     @commands.guild_only()
     async def snipe(self, ctx, *, member: discord.Member = None):
 
@@ -1111,7 +1114,7 @@ class General(commands.Cog):
         await ctx.send(embed=embed)
 
 
-    @commands.command(description="Invite me to your server!", aliases=['bi', 'invite'])
+    @commands.command(brief="Invite me to your server!", aliases=['bi', 'invite'])
     async def botinvite(self, ctx):
         """ Invite me to your server """
         await ctx.send(f"**{ctx.author.name}**, use this URL to invite me\n<https://discord.com/api/oauth2/authorize?client_id=810377376269205546&permissions=4294967287&scope=applications.commands%20bot>")
