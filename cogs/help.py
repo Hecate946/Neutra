@@ -150,7 +150,7 @@ class Help(commands.Cog):
              ## Manages Cog Help ##
             ######################
 
-            if invokercommand.lower() in ["info","general","information","utils","util","misc","utilities","utility"]:
+            if invokercommand.lower() in ["info","general","information", 'misc']:
                 cog = self.bot.get_cog("General")
                 return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
 
@@ -174,7 +174,7 @@ class Help(commands.Cog):
                 cog = self.bot.get_cog("Statistics")
                 return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
 
-            if invokercommand.lower() in ["dump","files","file","txt","txts"]:
+            if invokercommand.lower() in ["dump","files","file","txt","txts", 'timezones', 'utils', 'utility', 'utilities']:
                 cog = self.bot.get_cog("Utility")
                 return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
 

@@ -42,7 +42,7 @@ class Utility(commands.Cog):
         return parent == child or child.startswith(parent + ".")
 
     @commands.command(
-        brief   = "Sends a list of commands and descriptions to your DMs.", 
+        brief   = "DMs you a file of commands and descriptions.", 
         aliases = ["txthelp","helpfile"]
     )
     async def dumphelp(self, ctx):
@@ -147,7 +147,7 @@ class Utility(commands.Cog):
         await mess.add_reaction(self.bot.emote_dict['letter'])
 
 
-    @commands.command(brief="Sends a file to your DMs with the server's settings.", aliases=['serversettings'])
+    @commands.command(brief="DMs you a file with the server's settings.", aliases=['serversettings'])
     @commands.guild_only()
     @permissions.has_permissions(manage_guild=True)
     async def dumpsettings(self, ctx):
@@ -180,7 +180,7 @@ class Utility(commands.Cog):
         os.remove(settings_file)
 
 
-    @commands.command(brief="Sends a txt file to your DMs with a list of server roles.")
+    @commands.command(brief="DMs you a file of server roles.")
     @commands.guild_only()
     @permissions.has_permissions(manage_messages=True)
     async def dumproles(self, ctx):
@@ -213,7 +213,7 @@ class Utility(commands.Cog):
         await mess.add_reaction(self.bot.emote_dict['letter'])
 
 
-    @commands.command(brief="Sends a txt file to your DMs with a list of server emojis.", aliases=['dumpemojis'])
+    @commands.command(brief="DMs you a file of server emojis.", aliases=['dumpemojis'])
     @commands.guild_only()
     @permissions.has_permissions(manage_messages=True)
     async def dumpemotes(self, ctx):
@@ -246,7 +246,7 @@ class Utility(commands.Cog):
         await mess.add_reaction(self.bot.emote_dict['letter'])
 
 
-    @commands.command(aliases=['logmessages','messagedump'], brief="Dumps a formatted txt file of channel messages.")
+    @commands.command(aliases=['logmessages','messagedump'], brief="DMs you a file of channel messages.")
     @commands.guild_only()
     @permissions.has_permissions(manage_server=True)
     async def dumpmessages(self, ctx, messages : int = 25, *, chan : discord.TextChannel = None):
@@ -291,7 +291,7 @@ class Utility(commands.Cog):
         await mess.add_reaction(self.bot.emote_dict['letter'])
 
 
-    @commands.command(aliases=['timezonelist','listtimezones'], brief="Sends a formatted txt file of time zones.")
+    @commands.command(aliases=['timezonelist','listtimezones'], brief="DMs you a file of time zones.")
     @commands.guild_only()
     @permissions.has_permissions(manage_server=True)
     async def dumptimezones(self, ctx):
@@ -339,7 +339,7 @@ class Utility(commands.Cog):
             tzerror = True
         return datetime.now(a), tzerror
 
-    @commands.command()
+    @commands.command(brief="Show the current time.")
     async def timenow(self, ctx, twenty_four_hour_time = True):
         """Date time module."""
 
@@ -357,7 +357,7 @@ class Utility(commands.Cog):
         msg = '**Local Date and Time:** ```{:Time: %H:%M:%S\nDate: %Y-%m-%d```}'.format(dandt)
         await ctx.send(msg)
 
-    @commands.command(brief="Remove your timezone", aliases=['rmtz', 'removetz', 'removetimzone', 'rmtimezone', 'remtimezone'])
+    @commands.command(brief="Remove your timezone.", aliases=['rmtz', 'removetz', 'removetimzone', 'rmtimezone', 'remtimezone'])
     async def remtz(self, ctx):
         """Remove your timezone"""
 
@@ -406,7 +406,7 @@ class Utility(commands.Cog):
             else:
                 await ctx.send(msg)
 
-    @commands.command()
+    @commands.command(brief="See a member's timezone.")
     async def tz(self, ctx, *, member: converters.DiscordUser = None):
         """See a member's timezone."""
 
@@ -421,7 +421,7 @@ class Utility(commands.Cog):
         await ctx.send(f'`{member}\'` timezone is *{timezone}*')
 
 
-    @commands.command(brief="Get a members time")
+    @commands.command(brief="Show what time it is for a member.")
     async def time(self, ctx, *, member: discord.Member = None):
         """Get a members time"""
         timenow = utils.getClockForTime(datetime.utcnow().strftime("%I:%M %p"))
