@@ -3,7 +3,7 @@
 .ngcvenv
 .testervenv
 .vscode
-*.DS_store
+*.DS_Store
 *__pycache__
 *.0
 *.json
