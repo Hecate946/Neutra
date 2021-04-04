@@ -5,8 +5,8 @@
 ## [DiscordBots.gg](https://discord.bots.gg/bots/810377376269205546)
 ### Overview
 Hello there! NGC0000 is an awesome feature rich bot named after the Milky Way. She features 130 commands, all with extensive and easy to understand help.  
-Her commands are fast and offer every opportunity for customization and utility. 
-### Categories 
+Her commands are fast and offer every opportunity for customization and utility.  
+### Categories  
 
 #### Information
 #### Logging
@@ -14,10 +14,11 @@ Her commands are fast and offer every opportunity for customization and utility.
 #### Roles
 #### Settings
 #### Statistics
-#### Utility
+#### Utility  
+  
 
-
-#### Information
+#### Information (24 Commands)
+###### Module for general information on users, servers, and bots. 
 ```yaml
 
 about: Show general statistics on the bot
