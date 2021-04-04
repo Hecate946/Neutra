@@ -5,11 +5,12 @@
 .vscode
 *.DS_Store
 *__pycache__
-*.0
 *.json
 *.log
 *.txt
+# These are just pm2 stdout and stderr files.
+/data/pm2
 # This is a testing cog for trying out new commands.. 
 /cogs/testing.py
-# This just manages the loading and unloading of the cogs but contains some sensitive data
+# This just manages the loading and unloading of the cogs but contains some of my sensitive data
 /cogs/manager.py
