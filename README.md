@@ -6,18 +6,18 @@
 ### Overview
 Hello there! NGC0000 is an awesome feature rich bot named after the Milky Way. She features 130 commands, all with extensive and easy to understand help.  
 Her commands are fast and offer every opportunity for customization and utility.  
-### Categories  
+### Categories
 
-#### Information
-#### Logging
-#### Moderation
-#### Roles
-#### Settings
-#### Statistics
-#### Utility  
+##### [Information](#information)
+##### Logging
+##### Moderation
+##### Roles
+##### Settings
+##### Statistics
+##### Utility  
   
 
-#### Information (24 Commands)
+### Information (24 Commands)
 ###### Module for general information on users, servers, and bots. 
 ```yaml
 
