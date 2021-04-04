@@ -12,7 +12,7 @@ def main(mode):
     if mode.lower() == "tester":
         mode = "tester"
     else:
-        mode = "tester"
+        mode = "production"
 
     if mode == "tester":
         with open("./config_test.json", "r", encoding="utf-8") as fp:

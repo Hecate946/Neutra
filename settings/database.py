@@ -283,8 +283,6 @@ async def fix_server(server):
         settings[server_id]['logging']['logchannel'] = logchannel
         settings[server_id]['logging']['webhook_id'] = webhook_id
 
-    utils.write_json("./data/wastebin/someshit.txt", settings[server])
-
 
 async def fetch_prefix(server):
     try:
