@@ -70,6 +70,7 @@ userinfo: Display information on a passed member.
 ```
 ### Logging (4 Commands)
 ###### Module for logging all server events.
+
 ```yaml
 
 log: Customize the server's logging by enabling specific logging events
@@ -79,9 +80,10 @@ logchannel: Set the server's logging channel.
 unlog: Customize the server's logging by disabling specific logging events
 
 unlogchannel: Remove the server's logging channel.
+```
+
 ### Moderation (24 Commands)
 ###### Module for keeping the server under control.
-```
 
 ```yaml
 
