@@ -13,5 +13,3 @@
 /cogs/testing.py
 # This just manages the loading and unloading of the cogs but contains some sensitive data
 /cogs/manager.py
-# This is just too much of a mess at the moment to commit.
-/utilities/pagination.py
