@@ -14,7 +14,13 @@ Her commands are fast and offer every opportunity for customization and utility.
 #### Roles
 #### Settings
 #### Statistics
-  ```25 commands```
 #### Utility
 
+
+#### Information
+```yaml
+
+about: Show general statistics on the bot
+
+```
 
