@@ -7,13 +7,13 @@
 Hello there! NGC0000 is an awesome feature rich bot named after the Milky Way. She features over 100 commands, all with extensive and easy to understand help. Her commands are fast and offer every opportunity for customization and utility.  
 ## Categories
 
-##### [Information](#18)
-##### [Logging](#logging)
-##### [Moderation](#moderation)
-##### [Roles](roles)
-##### [Settings](#settings)
-##### [Statistics](#statistics)
-##### [Utility](#utility)
+##### [Information](#information-24-commands)
+##### [Logging](#logging-4-commands)
+##### [Moderation](#moderation-24-commands)
+##### [Roles](#roles-10-commands)
+##### [Settings](#settings-17-commands)
+##### [Statistics](#statistics-21-commands)
+##### [Utility](#utility-11-commands)
   
 ### Information (24 Commands)
 ###### Module for general information on users, servers, and bots. 
@@ -68,9 +68,21 @@ user: Get info on any discord user.
 userinfo: Display information on a passed member.
                      
 ```
+### Logging (4 Commands)
+###### Module for logging all server events.
+```yaml
 
+log: Customize the server's logging by enabling specific logging events
+
+logchannel: Set the server's logging channel.
+
+unlog: Customize the server's logging by disabling specific logging events
+
+unlogchannel: Remove the server's logging channel.
 ### Moderation (24 Commands)
 ###### Module for keeping the server under control.
+```
+
 ```yaml
 
 ban: Ban users from the server.
