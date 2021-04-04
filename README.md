@@ -4,8 +4,7 @@
 ### [Support Server](https://discord.gg/947ramn)
 ### [DiscordBots.gg](https://discord.bots.gg/bots/810377376269205546)
 ## Overview
-Hello there! NGC0000 is an awesome feature rich bot named after the Milky Way. She features 130 commands, all with extensive and easy to understand help.  
-Her commands are fast and offer every opportunity for customization and utility.  
+Hello there! NGC0000 is an awesome feature rich bot named after the Milky Way. She features over 100 commands, all with extensive and easy to understand help. Her commands are fast and offer every opportunity for customization and utility.  
 ## Categories
 
 ##### [Information](#information)
@@ -16,7 +15,6 @@ Her commands are fast and offer every opportunity for customization and utility.
 ##### [Statistics](#statistics)
 ##### [Utility](#utility)
   
-
 ### Information (24 Commands)
 ###### Module for general information on users, servers, and bots. 
 ```yaml
@@ -219,3 +217,30 @@ words: Show the most common words used by a user.
                      
 ```
 
+
+### Utility (11 Commands)
+###### Module for timezones and files.
+```yaml
+
+dumpemotes: DMs you a file of server emojis.
+
+dumphelp: DMs you a file of commands and descriptions.
+
+dumpmessages: DMs you a file of channel messages.
+
+dumproles: DMs you a file of server roles.
+
+dumpsettings: DMs you a file with the server's settings.
+
+dumptimezones: DMs you a file of time zones.
+
+remtz: Remove your timezone.
+
+settz: Set your timezone.
+
+time: Show what time it is for a member.
+
+timenow: Show the current time.
+
+timezone: See a member's timezone.
+```

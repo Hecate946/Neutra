@@ -406,8 +406,8 @@ class Utility(commands.Cog):
             else:
                 await ctx.send(msg)
 
-    @commands.command(brief="See a member's timezone.")
-    async def tz(self, ctx, *, member: converters.DiscordUser = None):
+    @commands.command(brief="See a member's timezone.", aliases=['tz'])
+    async def timezone(self, ctx, *, member: converters.DiscordUser = None):
         """See a member's timezone."""
 
         if member is None:
