@@ -33,7 +33,7 @@ import pytz
 import platform
 
 
-
+from PythonGists import PythonGists
 from discord.ext import commands, menus
 from utilities import permissions, pagination, converters
 
@@ -757,6 +757,7 @@ class BotAdmin(commands.Cog):
         except menus.MenuError as e:
             await ctx.send(e)
 
+
     @commands.command(brief="Who are the bot owners?", aliases=['owners'])
     async def botowners(self, ctx):
         our_list = []
@@ -777,3 +778,27 @@ class BotAdmin(commands.Cog):
             await p.start(ctx)
         except menus.MenuError as e:
             await ctx.send(e)
+
+
+    @commands.command(aliases=["emojicount", 'ec', 'botemojis'], brief="Bot emoji count.")
+    async def emotecount(self, ctx):
+        """bot emoji count"""
+        large_msg = False
+        msg = ""
+        totalecount = 0
+        for g in self.bot.guilds:
+            ecount = 0
+            for e in g.emojis:
+                ecount = ecount + 1
+                totalecount = totalecount + 1
+            msg = msg + (g.name + ": " + str(ecount)) + "\n"
+        if len(msg) > 1900:
+            msg = PythonGists.Gist(description='Emoji Count for ' + self.bot.user.name, content=msg, name='emoji.txt')
+            large_msg = True
+        embed = discord.Embed(title="Emoji count for " + self.bot.user.name, color = self.bot.constants.embed)
+        if large_msg:
+            embed.add_field(name="Individual Server Emote Count", value="[Gist of Server Emote Count]("+msg+")", inline = False)
+        else:
+            embed.add_field(name="Individual Server Emote Count", value=msg, inline = False)
+        embed.add_field(name="Total Emote Count", value=str(totalecount), inline = False)
+        await ctx.send(embed=embed)

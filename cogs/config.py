@@ -373,11 +373,19 @@ class Config(commands.Cog):
     async def leaveserver(self, ctx, *, target_server: converters.DiscordGuild = None):
         """Leaves a server - can take a name or id (owner only)."""
         if target_server is None:
-            return await ctx.send(f"Usage: `{ctx.prefix}leaveserver [id/name]`")
+            if ctx.guild:
+                target_server = ctx.guild
+            else:
+                return await ctx.send(f"Usage: `{ctx.prefix}leaveserver <server>`")
+        c = await pagination.Confirmation(
+            f"{self.bot.emote_dict['exclamation']} **This action will result in me leaving `{target_server.name}.` Do you wish to continue?**"
+        ).prompt(ctx)
 
-        await target_server.leave()
-        try:
-            await ctx.send(f"{self.emote_dict['success']} Successfully left server **{target_server.name}**")
-        except:
+        if c:
+            await target_server.leave()
+            try:
+                await ctx.send(f"{self.emote_dict['success']} Successfully left server **{target_server.name}**")
+            except:
+                return
             return
-        await ctx.send(f"{self.bot.emote_dict['failed']} I couldn't find that server.")
+        await ctx.send(f"{self.bot.emote_dict['exclamation']} **Cancelled.**")

@@ -332,8 +332,8 @@ class NGC0000(commands.AutoShardedBot):
             channel = self.get_channel(constants.reboot['channel'])
             msg = await channel.fetch_message(constants.reboot['message'])
             await msg.edit(content=self.emote_dict['success'] + " " + "{0}ed Successfully.".format(constants.reboot["invoker"]))
-        except Exception as e:
-            print(e)
+        except Exception:
+            pass
 
         from settings import cache
         cache.Settings(self)

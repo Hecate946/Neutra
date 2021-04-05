@@ -7,3 +7,17 @@
 2021-04-04 01:23: Command userinfo raised the error: AttributeError: 'NoneType' object has no attribute 'cog'[0m
 2021-04-04 01:24: [38;5;196m
 2021-04-04 01:24: Command userinfo raised the error: AttributeError: 'NoneType' object has no attribute 'cog'[0m
+2021-04-04 18:49: [38;5;196m
+2021-04-04 18:49: Command dumpemotes raised the error: TypeError: '<' not supported between instances of 'Emoji' and 'Emoji'[0m
+2021-04-04 18:52: [38;5;196m
+2021-04-04 18:52: Command dumpemotes raised the error: TypeError: '<' not supported between instances of 'Emoji' and 'Emoji'[0m
+2021-04-04 22:00: [38;5;196m
+2021-04-04 22:00: Command muterole raised the error: Forbidden: 403 Forbidden (error code: 50001): Missing Access[0m
+2021-04-04 22:05: [38;5;196m
+2021-04-04 22:05: Command muterole raised the error: Forbidden: 403 Forbidden (error code: 50001): Missing Access[0m
+2021-04-04 22:07: [38;5;196m
+2021-04-04 22:07: Command muterole raised the error: Forbidden: 403 Forbidden (error code: 50001): Missing Access[0m
+2021-04-04 22:07: [38;5;196m
+2021-04-04 22:07: Command muterole raised the error: Forbidden: 403 Forbidden (error code: 50001): Missing Access[0m
+2021-04-04 22:08: [38;5;196m
+2021-04-04 22:08: Command muterole raised the error: Forbidden: 403 Forbidden (error code: 50001): Missing Access[0m

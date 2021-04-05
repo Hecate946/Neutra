@@ -45,14 +45,21 @@ class Settings(commands.Cog):
             role = await ctx.guild.create_role(name="Muted", reason="For the server muting system")
         try:
             if ctx.guild.me.top_role.position < role.position:
-                return await ctx.send(f"{self.bot.emote_dict['failed']} The muted role is above my highest role.")
+                return await msg.edit(content=f"{self.bot.emote_dict['failed']} The muted role is above my highest role.")
             if ctx.author.top_role.position < role.position and ctx.author.id != ctx.guild.owner.id:
-                return await ctx.send(f"{self.bot.emote_dict['failed']} The muted role is above your highest role.")
+                return await msg.edit(content=f"{self.bot.emote_dict['failed']} The muted role is above your highest role.")
             await self.bot.cxn.execute("UPDATE servers SET muterole = $1 WHERE server_id = $2", role.id, ctx.guild.id)
         except Exception as e:
-            return await ctx.send(e)
-        for channel in ctx.guild.channels:
-            await channel.set_permissions(role, send_messages=False)
+            return await msg.edit(content=e)
+        channels = []
+        for channel in ctx.guild.text_channels:
+            try:
+                await channel.set_permissions(role, send_messages=False)
+            except discord.Forbidden:
+                channels.append(channel.name)
+                continue
+        if channels:
+            return await msg.edit(content=f"{self.bot.emote_dict['failed']} I do not have permission to edit channel{'' if len(channels) == 1 else 's'}: `{', '.join(channels)}`")
         # muted_channel = []
         # for channel in ctx.guild.channels:
         #     if channel.name == "muted":
@@ -64,6 +71,8 @@ class Settings(commands.Cog):
         #     }
         #     await ctx.guild.create_text_channel(name="muted", overwrites=overwrites, topic="Punishment Channel", slowmode_delay = 30)
         await msg.edit(content=f"{self.emote_dict['success']} Saved `{role.name}` as this server's mute role.")
+
+        
 
 
     @commands.command(aliases=["setprefix"], brief="Set your server's custom prefix.")

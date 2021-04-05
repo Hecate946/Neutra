@@ -1,6 +1,7 @@
 # File discord_bot.py & CorpBot
 
 import json
+import re
 import pytz
 import time
 import discord
@@ -13,6 +14,7 @@ import timeago as timesince
 
 from io import BytesIO
 
+URL_REGEX = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
 
 def config(filename: str = "config"):
     """ Fetch default config file """
@@ -310,3 +312,8 @@ def load_json(file):
     with open(file, 'r', encoding='utf-8') as fp:
         data = json.load(fp)
         return data
+
+def get_urls(message):
+    # Returns a list of valid urls from a passed message/context/string
+    message = message.content if isinstance(message,discord.Message) else message.message.content if isinstance(message,discord.ext.commands.Context) else str(message)
+    return [x.group(0) for x in re.finditer(URL_REGEX, message)]

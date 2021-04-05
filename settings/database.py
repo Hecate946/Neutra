@@ -77,9 +77,9 @@ async def update_db(guilds, member_list):
     ON CONFLICT (server_id) DO NOTHING""", ((server.id, None) for server in guilds))
 
 
-    await postgres.executemany("""INSERT INTO useravatars VALUES ($1, $2)
-    ON CONFLICT (user_id) DO NOTHING""",
-    ((member.id, str(member.avatar_url)) for member in member_list))
+    # await postgres.executemany("""INSERT INTO useravatars VALUES ($1, $2)
+    # ON CONFLICT (user_id) DO NOTHING""",
+    # ((member.id, str(member.avatar_url)) for member in member_list))
 
 
     await postgres.executemany("""INSERT INTO usernames VALUES ($1, $2) 

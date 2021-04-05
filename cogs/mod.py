@@ -304,6 +304,9 @@ class Moderation(commands.Cog):
             except Exception as e: return await ctx.send(e)
             muted = []
             for target in targets:
+                if target.bot:
+                    await ctx.send(f"{self.bot.emote_dict['failed']} I cannot mute bots.")
+                    continue
                 if not self.mute_role in target.roles:
                     role_ids = ",".join([str(r.id) for r in target.roles])
                     end_time = datetime.utcnow() + timedelta(seconds=minutes*60) if minutes else None
