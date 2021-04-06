@@ -46,12 +46,12 @@ class Utility(commands.Cog):
         # A helper method to return the command help - or a placeholder if none
         if max_len == 0:
             # Get the whole thing
-            if command.help == None:
+            if command.help is None:
                 return "No description..."
             else:
                 return command.help
         else:
-            if command.help == None:
+            if command.help is None:
                 c_help = "No description..."
             else:
                 c_help = command.help.split("\n")[0]
@@ -476,7 +476,7 @@ class Utility(commands.Cog):
             # We didn't find a complete match
             return None
         zone = pytz.timezone(tz_list[0]['result'])
-        if t == None:
+        if t is None:
             zone_now = datetime.now(zone)
         else:
             zone_now = t.astimezone(zone)
@@ -500,23 +500,21 @@ class Utility(commands.Cog):
         return "<{}:{}:{}>".format("a" if emoji.animated else "",emoji.name,emoji.id)
 
 
-    # @commands.command()
-    # async def bigemoji(self, ctx, emoji = None):
-    #     '''Outputs the passed emoji... but bigger!'''
-    #     if emoji is None:
-    #         await ctx.send("Usage: `{}emoji [emoji]`".format(ctx.prefix))
-    #         return
-    #     # Get the emoji
-    #     emoji_url = self._get_emoji_url(emoji)
-    #     if not emoji_url:
-    #         return await ctx.send("Usage: `{}emoji [emoji]`".format(ctx.prefix))
-    #     f = await image.download(emoji_url[0])
-    #     if not f: return await ctx.send("I could not access that emoji.")
-    #     await ctx.send(file=discord.File(f))
-    #     os.remove(f)
+    @commands.command(hidden=True)
+    async def be(self, ctx, emoji = None):
+        '''Outputs the passed emoji... but bigger!'''
+        if emoji is None:
+            await ctx.send("Usage: `{}emoji [emoji]`".format(ctx.prefix))
+            return
+        # Get the emoji
+        emoji_url = self._get_emoji_url(emoji)
+        if not emoji_url:
+            return await ctx.send("Usage: `{}emoji [emoji]`".format(ctx.prefix))
+        f = await image.download(emoji_url[0])
+        if not f: return await ctx.send("I could not access that emoji.")
+        await ctx.send(file=discord.File(f))
+        os.remove(f)
 
-
-    '''Tools relating to custom emoji manipulation and viewing.'''
 
     def find_emoji(self, msg):
         msg = re.sub("<a?:(.+):([0-9]+)>", "\\2", msg)
@@ -560,18 +558,15 @@ class Utility(commands.Cog):
         return name, url, "N/A", "Official"
 
 
-    @commands.command(brief="View enlarged emojis.")
+    @commands.command(brief="View enlarged emojis.", aliases=['bigemotes', 'bigemojis', 'bigemote', 'bem'])
     async def bigemoji(self, ctx, *, emojis = None):
-
         """
-        View, copy, add and remove emojis.
-        =================================
-        Usage:
-
-        emoji <emoji> - View a large version of a given emoji. (use emoji info for ID)
-        emoji copy <emoji> - Copy a custom emoji from another server and add it.
-        emoji add <url>|<attachment>|<emoji> - Add a new emoji to the current server.
-        emoji remove <emoji> - Remove an emoji from the current server.
+        Usage: bigemoji [info] <emojis>
+        Aliases: -bigemote, -bigemojis, -bigemotes, -be
+        Output: Large version of the passed emoji
+        Notes:
+            Pass the optional info argument to show
+            the emoji's server, name, and url.
         """
         if emojis is None:
             return await ctx.send(f"Usage: `{ctx.prefix}bigemoji [info] <emojis>`")
@@ -591,11 +586,12 @@ class Utility(commands.Cog):
         for emoji in emojis:
             name, url, id, guild = self.find_emoji(emoji)
             if url == "":
-                await ctx.send("Could not find {}. Skipping.".format(emoji))
-                continue
+                downloader = self.bot.get_command('be')
+                await downloader(ctx, emoji)
             response = requests.get(url, stream=True)
             if response.status_code == 404:
-                await ctx.send("Emoji {} not available.".format(emoji))
+                downloader = self.bot.get_command('be')
+                await downloader(ctx, emoji)
                 continue
 
             img = io.BytesIO()
@@ -654,23 +650,22 @@ class Utility(commands.Cog):
             await ctx.send(f"{self.bot.emote_dict['failed']} No available emoji slots.")
 
 
-    @commands.command(brief="Add an emoji to the server.")
+    @commands.command(brief="Add an emoji to the server.", aliases=['addemoji', 'addemote', 'emojiadd'])
     @commands.guild_only()
     @commands.bot_has_guild_permissions(manage_emojis = True)
     @permissions.has_permissions(manage_emojis = True)
     async def emoteadd(self, ctx, *, emoji = None, name = None):
         '''Adds the passed emoji, url, or attachment as a custom emoji.'''
-        # if not await Utils.is_bot_admin_reply(ctx): return
-        if not len(ctx.message.attachments) and emoji == name == None:
+
+        if not len(ctx.message.attachments) and emoji == name is None:
             return await ctx.send("Usage: `{}addemoji [emoji, url, attachment] [name]`".format(ctx.prefix))
-        # Let's find out if we have an attachment, emoji, or a url
-        # Check attachments first - as they'll have priority
+
         if len(ctx.message.attachments):
             name = emoji
             emoji = " ".join([x.url for x in ctx.message.attachments])
-            if name: # Add the name separated by a space
+            if name: 
                 emoji += " "+name
-        # Now we split the emoji string, and walk it, looking for urls, emojis, and names
+
         emojis_to_add = []
         last_name = []
         for x in emoji.split():
@@ -709,29 +704,31 @@ class Utility(commands.Cog):
         for emoji_to_add in emojis_to_add[:10]:
             # Let's try to download it
             emoji,e_name = emoji_to_add # Expand into the parts
-            print(emoji)
             f = await self.get(str(emoji), res_method="read")
             if not f:
+                await message.edit(content=f"{self.bot.emote_dict['failed']} Could not read emoji.")
                 continue
             # Clean up
-            if not e_name.replace("_",""): continue
+            if not e_name.replace("_",""):
+                continue
             # Create the emoji and save it
-            try: new_emoji = await ctx.guild.create_custom_emoji(name=e_name,image=f,roles=None,reason="Added by {}#{}".format(ctx.author.name,ctx.author.discriminator))
-            except: continue
+            try:
+                new_emoji = await ctx.guild.create_custom_emoji(name=e_name,image=f,roles=None,reason="Added by {}#{}".format(ctx.author.name,ctx.author.discriminator))
+            except discord.HTTPException:
+                await message.edit(content=f"{self.bot.emote_dict['failed']} Out of emoji slots.")
+                continue
+            except Exception:
+                continue
             added_emojis.append(new_emoji)
-        msg = "Created {} of {} emoji{}{}.".format(
-            len(added_emojis),
-            allowed,"" if allowed==1 else "s",
-            omitted
-            )
         if len(added_emojis):
+            msg = f"{self.bot.emote_dict['success']} Created {len(added_emojis)} emote{'' if len(added_emojis) == 1 else 's'}:"
             msg += "\n\n"
             emoji_text = ["{} - `:{}:`".format(self._get_emoji_mention(x),x.name) for x in added_emojis]
             msg += "\n".join(emoji_text)
-        await message.edit(content=msg)
+            await message.edit(content=msg)
 
 
-    @commands.command(aliases=['emoteremove'], brief="Remove an emoji from the server.")
+    @commands.command(aliases=['emoteremove', 'removeemoji', 'removeemote'], brief="Remove an emoji from the server.")
     @commands.guild_only()
     @commands.bot_has_guild_permissions(manage_emojis = True)
     @permissions.has_permissions(manage_emojis=True)
@@ -749,7 +746,7 @@ class Utility(commands.Cog):
             await ctx.send("Successfully removed {} emoji with the name {}.".format(emote_length, name))
 
 
-    @commands.command(aliases=['se'], brief="Send an emoji using the bot.")
+    @commands.command(aliases=['se', 'nitro'], brief="Send an emoji using the bot.")
     async def sendemoji(self, ctx, msg: str = None):
         '''Sends an emoji'''
         if msg is None:
@@ -791,32 +788,35 @@ class Utility(commands.Cog):
         except menus.MenuError as e:
             await ctx.send(e)
 
+    # TODO use TextPageSource and make this decent.
 
-    @commands.command(aliases=['es'], brief="Scan all servers for an emoji.")
-    async def emojiscan(self, ctx, msg):
-        """Scan all servers for a certain emote"""
-        bool = None
-        servers = ""
-        emote = msg.split(":")[1] if msg.startswith("<") else msg
-        for guild in self.bot.guilds:
-            if len(servers + "{}\n".format(guild.name)) > 2000:
-                bool = False
-                break
-            for emoji in guild.emojis:
-                if emoji.name == emote:
-                    servers += guild.name + "\n"
-        if servers is None:
-            await ctx.send("That emote is not on any of your servers.")
-        else:
-            if len(servers) <= 1964 and bool == False:
-                servers += "**Could not print the rest, sorry.**"
-            elif bool == False:
-                bool = True
-            try:
-                embed = discord.Embed(title="Servers with the {} emote".format(msg), color=ctx.guild.me.color)
-                embed.description = servers
-                await ctx.send(embed=embed)
-            except:
-                await ctx.send("```{}```".format(servers))
-            if bool == True:
-                await ctx.send("**Could not print the rest, sorry**")
+    # @commands.command(aliases=['es'], brief="Scan all servers for an emoji.")
+    # async def emojiscan(self, ctx, msg):
+    #     """Scan all servers for a certain emote"""
+    #     bool = None
+    #     servers = ""
+    #     emote = msg.split(":")[1] if msg.startswith("<") else msg
+    #     for guild in self.bot.guilds:
+    #         if ctx.author not in guild.members:
+    #             continue
+    #         if len(servers + "{}\n".format(guild.name)) > 2000:
+    #             bool = False
+    #             break
+    #         for emoji in guild.emojis:
+    #             if emoji.name == emote:
+    #                 servers += guild.name + "\n"
+    #     if servers is None:
+    #         await ctx.send("That emote is not on any of your servers.")
+    #     else:
+    #         if len(servers) <= 1964 and bool is False:
+    #             servers += "**Could not print the rest, sorry.**"
+    #         elif bool is False:
+    #             bool = True
+    #         try:
+    #             embed = discord.Embed(title="Servers with the {} emote".format(msg), color=ctx.guild.me.color)
+    #             embed.description = servers
+    #             await ctx.send(embed=embed)
+    #         except:
+    #             await ctx.send("```{}```".format(servers))
+    #         if bool is True:
+    #             await ctx.send("**Could not print the rest, sorry**")

@@ -36,7 +36,7 @@ class Updater(commands.Cog):
         self.bulk_inserter.stop()
 
 
-    @tasks.loop(seconds=10.0)
+    @tasks.loop(seconds=2.0)
     async def bulk_inserter(self):
 
         #============#

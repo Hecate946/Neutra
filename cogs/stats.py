@@ -401,6 +401,9 @@ class Stats(commands.Cog):
         """
         if user is None:
             user = ctx.author
+        if user.bot:
+            return await ctx.send(f"{self.bot.emote_dict['warning']} I do not track bots.")
+
         query = '''SELECT usernames FROM usernames WHERE user_id = $1'''
         name_list = await self.bot.cxn.fetchrow(query, user.id)
         name_list = name_list[0].split(',')
@@ -457,7 +460,10 @@ class Stats(commands.Cog):
         """
         if user is None:
             return await ctx.send(f"Usage: `{ctx.prefix}seen <user>`")
-        
+
+        if user.bot:
+            return await ctx.send(f"{self.bot.emote_dict['warning']} I do not track bots.")
+
         tracker = self.bot.get_cog('Tracker')
 
         data = await tracker.last_observed(user)
@@ -481,6 +487,8 @@ class Stats(commands.Cog):
             command_list = await self.bot.cxn.fetch(query, ctx.guild.id)
             premsg = f"Commands most frequently used in **{ctx.guild.name}**"
         else:
+            if user.bot:
+                return await ctx.send(f"{self.bot.emote_dict['warning']} I do not track bots.")
             query = '''SELECT command FROM commands WHERE server_id = $1 AND user_id = $2'''
             command_list = await self.bot.cxn.fetch(query, ctx.guild.id, user.id)
             premsg = f"Commands most frequently used by **{user}**"
@@ -519,7 +527,7 @@ class Stats(commands.Cog):
 
     @commands.command(name="commands", brief="Show how many commands have been run.")
     @commands.guild_only()
-    async def command_count(self, ctx, user: discord.Member = None):
+    async def commandcount(self, ctx, user: discord.Member = None):
         '''
         Usage:  -commands [user]
         Output: Command count for the user or server
@@ -532,6 +540,8 @@ class Stats(commands.Cog):
             command_count = await self.bot.cxn.fetchrow(query, ctx.guild.id)
             return await ctx.send(f"A total of **{command_count[0]:,}** command{' has' if int(command_count[0]) == 1 else 's have'} been executed on this server.")
         else:
+            if user.bot:
+                return await ctx.send(f"{self.bot.emote_dict['warning']} I do not track bots.")
             query = '''SELECT COUNT(*) as c FROM commands WHERE executor_id = $1 AND server_id = $2'''
             command_count = await self.bot.cxn.fetchrow(query, user.id, ctx.guild.id)
             return await ctx.send(f"User `{user}` has executed **{int(command_count[0]):,}** commands.")
@@ -644,6 +654,9 @@ class Stats(commands.Cog):
         if member is None:
             member = ctx.author
 
+        if member.bot:
+            return await ctx.send(f"{self.bot.emote_dict['warning']} I do not track bots.")
+
         all_msgs = await self.bot.cxn.fetch('''SELECT content FROM messages WHERE author_id = $1 AND server_id = $2''', member.id, ctx.guild.id)
         all_msgs = [x[0] for x in all_msgs]
         all_msgs = ' '.join(all_msgs).split()
@@ -674,6 +687,9 @@ class Stats(commands.Cog):
             return await ctx.send(f"Usage: `{ctx.prefix}word [user] <word>`")
         if member is None:
             member = ctx.author
+        if member.bot:
+            return await ctx.send(f"{self.bot.emote_dict['warning']} I do not track bots.")
+
         all_msgs = await self.bot.cxn.fetch('''SELECT content FROM messages WHERE author_id = $1 AND server_id = $2''', member.id, ctx.guild.id)
         all_msgs = [x[0] for x in all_msgs]
         all_msgs = ' '.join(all_msgs).split()
@@ -787,7 +803,7 @@ class Stats(commands.Cog):
     #                 await ctx.send(e)
 
 
-    @commands.command(brief="Get stats on an emoji.")
+    @commands.command(brief="Get usage stats on an emoji.")
     async def emoji(self, ctx, emoji: converters.SearchEmojiConverter = None):
         """
         Usage: -emoji <custom emoji>
@@ -828,7 +844,7 @@ class Stats(commands.Cog):
      ## Emoji Task Loop ##
     #####################
 
-    @tasks.loop(seconds=10.0)
+    @tasks.loop(seconds=2.0)
     async def bulk_inserter(self):
 
         #============#

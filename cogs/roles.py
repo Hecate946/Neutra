@@ -86,7 +86,7 @@ class Roles(commands.Cog):
         Permission: Manage Server, Manage Roles
         Output:     Adds multiple roles to multiple users
         """
-        if ctx.message.guild.me.permissions_in(ctx.message.channel).manage_roles == False: return await ctx.send("Sorry, I do not have the manage_roles permission")
+        if ctx.message.guild.me.permissions_in(ctx.message.channel).manage_roles is False: return await ctx.send("Sorry, I do not have the manage_roles permission")
 
         if len(targets) == 0: return await ctx.send(f"Usage: `{ctx.prefix}ar <user> [user] [user] <role> [role] [role]...`")
         if len(roles) == 0: return await ctx.send(f"Usage: `{ctx.prefix}ar <user> [user] [user] <role> [role] [role]...`")
@@ -127,7 +127,7 @@ class Roles(commands.Cog):
         Permission: Manage Server, Manage Roles
         Output:     Removes multiple roles from multiple users
         """
-        if ctx.message.guild.me.permissions_in(ctx.message.channel).manage_roles == False: return await ctx.send("Sorry, I do not have the manage_roles permission")
+        if ctx.message.guild.me.permissions_in(ctx.message.channel).manage_roles is False: return await ctx.send("Sorry, I do not have the manage_roles permission")
 
         if len(targets) == 0: return await ctx.send(f"Usage: `{ctx.prefix}rr <user> [user] [user] <role> [role] [role]...`")
         if len(roles) == 0: return await ctx.send(f"Usage: `{ctx.prefix}rr <user> [user] [user] <role> [role] [role]...`")

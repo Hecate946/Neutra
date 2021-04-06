@@ -286,22 +286,22 @@ class Settings(commands.Cog):
         Output:     Reassigns roles when past members rejoin the server.
         """
         current = self.bot.server_settings[ctx.guild.id]['reassign']
-        if current == False: 
+        if current is False: 
             reassign = False
         else:
-            current == True
+            current is True
             reassign = True
         if yes_no is None:
             # Output what we have
-            msg =  "{} currently **{}**.".format("Reassigning roles on member rejoin","enabled" if current == True else "disabled")
+            msg =  "{} currently **{}**.".format("Reassigning roles on member rejoin","enabled" if current is True else "disabled")
         elif yes_no.lower() in [ "yes", "on", "true", "enabled", "enable" ]:
             yes_no = True
             reassign = True
-            msg = "{} {} **enabled**.".format("Reassigning roles on member rejoin","remains" if current == True else "is now")
+            msg = "{} {} **enabled**.".format("Reassigning roles on member rejoin","remains" if current is True else "is now")
         elif yes_no.lower() in [ "no", "off", "false", "disabled", "disable" ]:
             yes_no = False
             reassign = False
-            msg = "{} {} **disabled**.".format("Reassigning roles on member rejoin","is now" if current == True else "remains")
+            msg = "{} {} **disabled**.".format("Reassigning roles on member rejoin","is now" if current is True else "remains")
         else:
             msg = f"{self.bot.emote_dict['error']} That is not a valid setting."
             yes_no = current

@@ -501,9 +501,9 @@ class BotAdmin(commands.Cog):
         if not nick:
             await ctx.send("I have no nicknames set!")
         else:
-            if len(nick) <= 1964 and bool == False:
+            if len(nick) <= 1964 and bool is False:
                 nick += "**Could not print the rest, sorry.**"
-            elif bool == False:
+            elif bool is False:
                 bool = True
             try:
                 embed = discord.Embed(title="Servers I Have Nicknames In", color = ctx.guild.me.color)
@@ -511,7 +511,7 @@ class BotAdmin(commands.Cog):
                 await ctx.send(embed=embed)
             except:
                 await ctx.send("```{}```".format(nick))
-            if bool == True:
+            if bool is True:
                 await ctx.send("**Could not print the rest, sorry.**")
 
 
@@ -603,7 +603,7 @@ class BotAdmin(commands.Cog):
 
     async def _send_embed(self, ctx, embed, pm = False):
         # Helper method to send embeds to their proper location
-        if pm == True and not ctx.channel == ctx.author.dm_channel:
+        if pm is True and not ctx.channel == ctx.author.dm_channel:
             # More than 2 pages, try to dm
             try:
                 await ctx.send(embed=embed)
@@ -621,7 +621,7 @@ class BotAdmin(commands.Cog):
     @commands.command(hidden=True, brief="Outputs the cogs attatched to the passed extension")
     async def extension(self, ctx, *, extension = None):
         """Outputs the cogs attatched to the passed extension."""
-        if extension == None:
+        if extension is None:
             # run the extensions command
             await ctx.invoke(self.extensions)
             return

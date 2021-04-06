@@ -265,7 +265,7 @@ class Message:
     async def _send_message(self, ctx, message, pm = False, file_path = None):
         # Helper method to send embeds to their proper location
         send_file = None
-        if not file_path == None:
+        if not file_path is None:
             dfile = self._get_file(file_path)
             if not dfile:
                 # File doesn't exist...
@@ -278,7 +278,7 @@ class Message:
             else:
                 # Setup our file
                 send_file = dfile[0]
-        if pm == True and type(ctx) is discord.ext.commands.Context and not ctx.channel == ctx.author.dm_channel:
+        if pm is True and type(ctx) is discord.ext.commands.Context and not ctx.channel == ctx.author.dm_channel:
             # More than 2 pages - try to dm
             try:
                 message = await ctx.author.send(message, file=send_file, delete_after=self.delete_after)
@@ -399,7 +399,7 @@ class Embed:
     async def _send_embed(self, ctx, embed, pm = False, file_path = None):
         # Helper method to send embeds to their proper location
         send_file = None
-        if not file_path == None:
+        if not file_path is None:
             dfile = self._get_file(file_path)
             if not dfile:
                 # File doesn't exist...
@@ -413,7 +413,7 @@ class Embed:
                 # Setup our file
                 send_file = dfile[0]
                 embed.set_image(url="attachment://" + str(dfile[1]))
-        if pm == True and type(ctx) is discord.ext.commands.Context and not ctx.channel == ctx.author.dm_channel:
+        if pm is True and type(ctx) is discord.ext.commands.Context and not ctx.channel == ctx.author.dm_channel:
             # More than 2 pages and targeting context - try to dm
             try:
                 if send_file:
@@ -457,7 +457,7 @@ class Embed:
         return tot
 
     def _embed_with_self(self):
-        if self.color == None:
+        if self.color is None:
             self.color = random.choice(self.colors)
         elif type(self.color) is discord.Member:
             self.color = self.color.color
@@ -512,7 +512,7 @@ class Embed:
         elif type(self.footer) is dict:
                 footer_text = self.footer.get("text", discord.Embed.Empty)
                 footer_icon = self.footer.get("icon_url", discord.Embed.Empty)
-        elif self.footer == None:
+        elif self.footer is None:
                 # Never setup
                 pass
         else:
@@ -523,7 +523,7 @@ class Embed:
     async def edit(self, ctx, message):
         # Edits the passed message - and sends any remaining pages
         # check if we can steal the color from the message
-        if self.color == None and len(message.embeds):
+        if self.color is None and len(message.embeds):
             self.color = message.embeds[0].color
         em = self._embed_with_self()
         footer_text, footer_icon = self._get_footer()
@@ -642,12 +642,12 @@ class EmbedText(Embed):
     async def edit(self, ctx, message):
         # Edits the passed message - and sends any remaining pages
         # check if we can steal the color from the message
-        if self.color == None and len(message.embeds):
+        if self.color is None and len(message.embeds):
             self.color = message.embeds[0].color
         em = self._embed_with_self()
         footer_text, footer_icon = self._get_footer()
 
-        if self.description == None or not len(self.description):
+        if self.description is None or not len(self.description):
             text_list = []
         else:
             text_list = textwrap.wrap(
@@ -692,7 +692,7 @@ class EmbedText(Embed):
 
         # First check if we have any fields at all - and try to send
         # as one page if not
-        if self.description == None or not len(self.description):
+        if self.description is None or not len(self.description):
             em.set_footer(
                 text=self._truncate_string(footer_text, self.foot_max),
                 icon_url=footer_icon
@@ -778,7 +778,7 @@ class Picker:
         # Returns a tuple of (return_code, message)
         # The return code is -1 for cancel, -2 for timeout, -3 for error, 0+ is index
         # Let's check our prerequisites first
-        if self.ctx == None or not len(self.list) or len(self.list) > self.max:
+        if self.ctx is None or not len(self.list) or len(self.list) > self.max:
             return (-3, None)
         msg = ""
         if self.title:
@@ -851,7 +851,7 @@ class PagePicker(Picker):
         # It will return a tuple of (last_page_seen, message)
         # The return code is -1 for cancel, -2 for timeout, -3 for error, 0+ is index
         # Let's check our prerequisites first
-        if self.ctx == None or not len(self.list):
+        if self.ctx is None or not len(self.list):
             return (-3, None)
         page  = 0 # Set the initial page index
         pages = int(math.ceil(len(self.list)/self.max))
