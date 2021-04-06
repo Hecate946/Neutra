@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from better_profanity import profanity
 
 from utilities import permissions, utils, converters, pagination
+from settings import database
 
 
 def setup(bot):
@@ -48,7 +49,7 @@ class Moderation(commands.Cog):
 
     @commands.command(aliases=["lockdown","lockchannel"], brief="Lock a channel")
     @commands.guild_only()
-    @commands.bot_has_guild_permissions(manage_channels=True)
+    @commands.bot_has_guild_permissions(manage_channels=True, manage_roles=True)
     @permissions.has_permissions(manage_channels=True)
     async def lock(self, ctx, channel_ = None, minutes_: int = None):
         """
@@ -1112,8 +1113,11 @@ class Moderation(commands.Cog):
         if immune:
             return
         msg = str(message.content)
-
-        filtered_words = self.bot.server_settings[message.guild.id]['profanities']
+        try:
+            filtered_words = self.bot.server_settings[message.guild.id]['profanities']
+        except KeyError:
+            await database.fix_server(message.guild.id)
+            print("fixed server")
 
         if filtered_words == []:
             return

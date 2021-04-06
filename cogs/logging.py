@@ -661,6 +661,7 @@ class Logging(commands.Cog):
 
     @commands.command(brief="Set your server's logging channel.", aliases=['logserver','setlogchannel'])
     @commands.guild_only()
+    @commands.bot_has_guild_permissions(manage_webhooks=True)
     @permissions.has_permissions(manage_guild=True)
     async def logchannel(self, ctx, channel: discord.TextChannel = None):
         if channel is None:

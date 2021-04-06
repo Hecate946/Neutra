@@ -16,9 +16,9 @@ EMOJI_NAME_REGEX = re.compile(r'[0-9a-zA-Z\_]{2,32}')
 
 
 def setup(bot):
-    bot.add_cog(Statistics(bot))
+    bot.add_cog(Stats(bot))
 
-class Statistics(commands.Cog):
+class Stats(commands.Cog):
     """
     Statistics on users, activity, and more.
     """

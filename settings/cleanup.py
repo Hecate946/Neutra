@@ -18,6 +18,12 @@ async def cleanup_servers(guilds):
         if x[0][0] not in server_list:
             await destroy_server(x[0][0], x[0][1])
 
+    query = '''SELECT (server_id) FROM logging;'''
+    servers = await conn.fetch(query)
+    for x in servers:
+        if x[0] not in server_list:
+            await destroy_server(x[0], "Unknown")
+
 
 async def destroy_server(guild_id, guild_name):
     await conn.execute("""

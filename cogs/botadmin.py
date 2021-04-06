@@ -345,10 +345,11 @@ class BotAdmin(commands.Cog):
         """Lists some info about the current or passed server."""
 
         if guild is None:
-            try:
+            if ctx.guild:
                 guild = ctx.guild
-            except Exception:
-                return await ctx.send(f"Couldn't find that server.")
+            else:
+                raise commands.NoPrivateMessage()
+
         if type(guild) is list:
             if len(guild) > 1:
                 my_dict = {}
@@ -358,7 +359,7 @@ class BotAdmin(commands.Cog):
                 the_list = [my_dict[x] for x in my_dict]
                 index, message = await pagination.Picker(embed_title="Multiple results. Please choose one.", list=the_list, ctx=ctx).pick(embed=True, syntax="py")
                 if index < 0:
-                    return await message.edit(content=f"{self.bot.emote_dict['info']} Server selection cancelled.", embed=None)
+                    return await message.edit(content=f"{self.bot.emote_dict['exclamation']} Server selection cancelled.", embed=None)
 
 
                 key_list = list(my_dict.keys())
@@ -366,13 +367,13 @@ class BotAdmin(commands.Cog):
 
                 try:
                     guild = self.bot.get_guild(int(selection))
-                except Exception as e:
-                    return await ctx.send(f"Couldn't find that server.")
+                except Exception:
+                    raise commands.BadArgument(f"Server `{guild}` not found.")
             else:
                 try:
                     guild = self.bot.get_guild(int(guild[0]))
                 except IndexError:
-                    return await ctx.send(f"Couldn't find that server.")
+                    raise commands.BadArgument(f"Server `{guild}` not found.")
         server_embed = discord.Embed(color=ctx.guild.me.color)
         server_embed.title = guild.name
         

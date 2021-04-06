@@ -5,6 +5,7 @@ import discord
 from datetime import datetime
 from discord.ext import commands
 
+USELESS_COGS = ['HELP', 'TESTING']
 COG_EXCEPTIONS = ['CONFIG','BOTADMIN','MANAGER', 'HELP', 'TRACKER', 'UPDATER', 'JISHAKU', 'TESTING', 'SLASH']
 COMMAND_EXCEPTIONS = ['EYECOUNT']
 
@@ -49,15 +50,14 @@ class Help(commands.Cog):
 
         try:
             await msg.add_reaction(self.emote_dict['trash'])
+        except discord.Forbidden:
+            return
+        
+        try:
             await self.bot.wait_for('raw_reaction_add', timeout=120.0, check=reaction_check)
             await msg.delete()
         except asyncio.TimeoutError:
-            try:
-                await msg.delete()
-            except discord.NotFound:
-                return
-        except discord.Forbidden:
-            return
+            pass
 
 
     async def helper_func(self, ctx, cog, name, pm, delete_after):
@@ -92,8 +92,10 @@ class Help(commands.Cog):
             line = f"\n`{i.name}` {i.brief}\n"
             msg += line
         embed.add_field(name=f"**{cog} Commands**", value=f"** **{msg}")
-        
-        await self.send_help(ctx, embed, pm, delete_after)
+        try:
+            await self.send_help(ctx, embed, pm, delete_after)
+        except discord.Forbidden:
+            pass
 
 
     @commands.command(name="help", brief="NGC0000's Help Command")
@@ -134,7 +136,11 @@ class Help(commands.Cog):
             msg = ""
             for cog in sorted(self.bot.cogs):
                 c = self.bot.get_cog(cog)
-                if c.qualified_name.upper() in COG_EXCEPTIONS and ctx.author.id not in self.bot.constants.admins: continue
+                command_list = c.get_commands()
+                if c.qualified_name.upper() in COG_EXCEPTIONS and ctx.author.id not in self.bot.constants.admins:
+                    continue
+                if c.qualified_name.upper() in USELESS_COGS or len(command_list) == 0:
+                    continue
                 valid_cogs.append(c)
             for c in valid_cogs:
                 line = f"\n`{c.qualified_name}` {c.description}\n"

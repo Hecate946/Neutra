@@ -310,7 +310,7 @@ class NGC0000(commands.AutoShardedBot):
         try:
             await database.initialize(self.guilds, member_list)
         except Exception as e:
-            print(e)
+            print(utils.traceback_maker(e))
         # Beautiful console logging on startup
 
         message = f'Client Name: {bot.user}'
@@ -450,7 +450,7 @@ class NGC0000(commands.AutoShardedBot):
     async def on_ready(self):
         # from discord_slash import utils
         # await utils.manage_commands.remove_all_commands_in(bot.user.id, bot.token, 740734113086177433)
-        pass
+        await cleanup.cleanup_servers(self.guilds)
 
     async def on_message(self, message):
         if self.bot_ready is False:

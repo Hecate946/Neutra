@@ -116,6 +116,7 @@ async def load_settings():
         antiinvite = x[0][4]
         reassign = x[0][5]
 
+
         if profanities is None:
             profanities = []
         else:
@@ -173,6 +174,7 @@ async def load_settings():
         ignored_channels = x[11]
         logchannel = x[12]
         webhook_id = x[13]
+
 
         if ignored_channels is None:
             ignored_channels = []

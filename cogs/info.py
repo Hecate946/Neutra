@@ -25,10 +25,10 @@ from utilities import permissions, utils, converters, pagination, speedtest
 
    
 def setup(bot):
-    bot.add_cog(General(bot))
+    bot.add_cog(Info(bot))
 
 
-class General(commands.Cog):
+class Info(commands.Cog):
     """
     Module for all information on users, bots etc.
     """

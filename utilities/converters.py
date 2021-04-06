@@ -147,7 +147,7 @@ class DiscordUser(commands.Converter):
 
         if not match:
             raise commands.BadArgument(
-                'User "{}" not found'.format(argument))
+                'User `{}` not found'.format(argument))
         return match
 
 class BotServer(commands.Converter):
@@ -156,17 +156,18 @@ class BotServer(commands.Converter):
             server_id = int(argument, base=10)
             try:
                 server = ctx.bot.get_guild(server_id)
-                return server
+                if server is None:
+                    raise commands.BadArgument('Server `{}` not found'.format(argument))
             except discord.HTTPException:
-                await ctx.send(f"Something went wrong.")
+                raise commands.BadArgument('Server `{}` not found'.format(argument))
             except discord.Forbidden:
-                return await ctx.send(f"I'm not in that server")
+                raise commands.BadArgument('Server `{}` not found'.format(argument))
             except discord.NotFound:
-                return await ctx.send("Server doesn't exist")
+                raise commands.BadArgument('Server `{}` not found'.format(argument))
             except Exception as e: await ctx.send(e)
         options = [f"{s.id}" for s in ctx.bot.guilds if argument.lower() in s.name.lower()]
-        if options is None:
-            return await ctx.send(f"Didn't find that server.")
+        if options == []:
+            raise commands.BadArgument('Server `{}` not found'.format(argument))
         return options
 
 # Similar to Botserver but does not return a list of findings
@@ -228,3 +229,4 @@ DiscordChannel = typing.Union[
     commands.converter.TextChannelConverter,
     commands.converter.VoiceChannelConverter,
     commands.converter.CategoryChannelConverter]
+

@@ -358,26 +358,25 @@ class Roles(commands.Cog):
 
     @commands.command(brief="Counts the number of members with a specific role.")
     @commands.guild_only()
-    async def rolecall(self, ctx, *, rolename):
+    async def rolecall(self, ctx, *, role: discord.Role = None):
         """
         Usage: -rolecall <role>
         Output: 
             Shows the number of people with the passed role.
         """
-        check_role = self.get_named_role(ctx.guild, rolename)
-        if not check_role:
-            return await ctx.send("<:fail:816521503554273320> I could not find that role!")
+        if role is None:
+            return await ctx.send(f"Usage: `{ctx.prefix}rolecall <role>`")
 
         count = 0
         online = 0
         for member in ctx.guild.members:
-            if check_role in member.roles:
+            if role in member.roles:
                 count += 1
                 if member.status != discord.Status.offline:
                     online += 1
 
-        embed = discord.Embed(title=check_role.name, description='{}/{} online'.format(online, count), color=self.bot.constants.embed)
-        embed.set_footer(text='ID: {}'.format(check_role.id))
+        embed = discord.Embed(title=role.name, description='{}/{} online'.format(online, count), color=self.bot.constants.embed)
+        embed.set_footer(text='ID: {}'.format(role.id))
         await ctx.send(embed=embed)
 
     @commands.command(brief="Lists the people who have the specified role.")
