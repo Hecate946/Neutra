@@ -58,11 +58,14 @@ class Warn(commands.Cog):
                 and not target.guild_permissions.administrator
             ):
                 try:
-                    warnings = await self.bot.cxn.fetchrow(
-                        "SELECT warnings FROM warn WHERE user_id = $1 AND server_id = $2",
-                        target.id,
-                        ctx.guild.id,
-                    ) or (None)
+                    warnings = (
+                        await self.bot.cxn.fetchrow(
+                            "SELECT warnings FROM warn WHERE user_id = $1 AND server_id = $2",
+                            target.id,
+                            ctx.guild.id,
+                        )
+                        or (None)
+                    )
                     if warnings is None:
                         warnings = 0
                         await self.bot.cxn.execute(

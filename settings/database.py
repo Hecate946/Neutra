@@ -262,7 +262,20 @@ async def load_settings():
 
 
 async def fix_server(server):
-    query = """SELECT (server_id, prefix, profanities, autoroles, antiinvite, reassign) FROM servers WHERE server_id = $1;"""
+    query = """ SELECT (
+                  server_id,
+                  prefix,
+                  profanities,
+                  autoroles,
+                  antiinvite,
+                  reassign,
+                  disabled_commands,
+                  admin_allow,
+                  react
+                )
+                FROM servers
+                WHERE server_id = $1;
+            """
     results = await postgres.fetch(query, server)
 
     # load everything from the servers table
@@ -273,6 +286,14 @@ async def fix_server(server):
         autoroles = x[0][3]
         antiinvite = x[0][4]
         reassign = x[0][5]
+        disabled_commands = x[0][6]
+        admin_allow = x[0][7]
+        react = x[0][8]
+
+        if disabled_commands is None:
+            disabled_commands = []
+        else:
+            disabled_commands = [x for x in disabled_commands.split(",")]
 
         if profanities is None:
             profanities = []
@@ -287,6 +308,9 @@ async def fix_server(server):
         settings[server_id] = {
             "prefix": prefix,
             "profanities": profanities,
+            "disabled_commands": disabled_commands,
+            "admin_allow": admin_allow,
+            "react": react,
             "autoroles": autoroles,
             "antiinvite": antiinvite,
             "reassign": reassign,

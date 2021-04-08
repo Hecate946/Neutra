@@ -708,3 +708,24 @@ class Admin(commands.Cog):
             await msg.edit(
                 content=f"{self.bot.emote_dict['failed']} I have insufficient permission to unlock channels."
             )
+
+    @commands.command(brief="Have the bot leave the server.", aliases=["kill", "die"])
+    @commands.guild_only()
+    @permissions.has_permissions(manage_guild=True)
+    async def leave(self, ctx):
+        """
+        Usage: -leave
+        Aliases: -kill, -die
+        Output: Clears all stored server data and kicks me.
+        Notes:
+            You will receive confirmation, upon executing this
+            command, all emoji stats, messages, last seen data
+            roles, nicknames, and usernames will be deleted.
+        """
+        c = await pagination.Confirmation(
+            f"{self.bot.emote_dict['exclamation']} **This action will remove me from this server and clear all my collected data. Do you wish to continue?**"
+        ).prompt(ctx)
+        if c:
+            await ctx.guild.leave()
+            return
+        await ctx.send(f"{self.bot.emote_dict['exclamation']} **Cancelled.**")

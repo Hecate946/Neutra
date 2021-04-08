@@ -94,10 +94,7 @@ class Roles(commands.Cog):
         Permission: Manage Server, Manage Roles
         Output:     Adds multiple roles to multiple users
         """
-        if (
-            ctx.guild.me.permissions_in(ctx.message.channel).manage_roles
-            is False
-        ):
+        if ctx.guild.me.permissions_in(ctx.message.channel).manage_roles is False:
             return await ctx.send("Sorry, I do not have the manage_roles permission")
 
         if len(targets) == 0:

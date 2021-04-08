@@ -68,19 +68,19 @@ class Moderation(commands.Cog):
             unmutes = []
             try:
                 self.mute_role = (
-                    await self.bot.cxn.fetchrow(
+                    await self.bot.cxn.fetchval(
                         "SELECT muterole FROM servers WHERE server_id = $1",
                         ctx.guild.id,
                     )
                     or None
                 )
-                self.mute_role = self.mute_role[0]
-                if str(self.mute_role) == "None":
+                if self.mute_role is None:
                     return await ctx.send(
                         f"use `{ctx.prefix}muterole <role>` to initialize the muted role."
                     )
                 self.mute_role = ctx.guild.get_role(int(self.mute_role))
             except Exception as e:
+                print("really?")
                 return await ctx.send(e)
             muted = []
             for target in targets:
@@ -97,7 +97,7 @@ class Moderation(commands.Cog):
                         else None
                     )
                     if target.id in self.bot.constants.owners:
-                        return await ctx.send("You cannot mute my master.")
+                        return await ctx.send("You cannot mute my developer.")
                     if target.id == ctx.author.id:
                         return await ctx.send(
                             "I don't think you really want to mute yourself..."
@@ -106,16 +106,17 @@ class Moderation(commands.Cog):
                         return await ctx.send("I don't think I want to mute myself...")
                     if (
                         target.guild_permissions.kick_members
-                        and ctx.author.id not in self.bot.constants.owners
                         and ctx.author.id != ctx.guild.owner.id
                     ):
                         return await ctx.send("You cannot punish other staff members.")
-                    if (
-                        ctx.guild.me.top_role.position < target.top_role.position
-                        and ctx.author.id not in self.bot.constants.owners
-                    ):
+                    if ctx.guild.me.top_role.position < target.top_role.position:
                         return await ctx.send(
-                            f"My highest role is below {target}'s highest role. Aborting mute."
+                            f"My highest role is below `{target}'s` highest role. Aborting mute."
+                        )
+
+                    if ctx.guild.me.top_role.position == target.top_role.position:
+                        return await ctx.send(
+                            f"I have the same permissions as `{target}`. Aborting mute."
                         )
                     if ctx.guild.me.top_role.position < self.mute_role.position:
                         return await ctx.send(

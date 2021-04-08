@@ -61,7 +61,10 @@ def has_permissions(*, check=all, **perms):
 
     async def pred(ctx):
         result = await check_permissions(ctx, perms, check=check)
-        perm_list = [x.title().replace("_", " ").replace("Tts", "TTS").replace('Guild', 'Server') for x in perms]
+        perm_list = [
+            x.title().replace("_", " ").replace("Tts", "TTS").replace("Guild", "Server")
+            for x in perms
+        ]
         if result is False:
             raise commands.BadArgument(
                 message=f"You are missing the following permission{'' if len(perm_list) == 1 else 's'}: `{', '.join(perm_list)}`"

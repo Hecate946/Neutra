@@ -20,10 +20,7 @@ class Users(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(
-        aliases=["mobile"],
-        brief="Show which platform a user is on."
-    )
+    @commands.command(aliases=["mobile"], brief="Show which platform a user is on.")
     @commands.guild_only()
     async def platform(self, ctx, members: commands.Greedy[discord.Member]):
         """
@@ -165,14 +162,12 @@ class Users(commands.Cog):
         if command_count is None:
             command_count = 0
 
-        query = (
-            '''
+        query = """
             SELECT COUNT(*)
             FROM messages
             WHERE author_id = $1
             AND server_id = $2;
-            '''
-        )
+            """
         messages = await self.bot.cxn.fetchrow(query, member.id, ctx.guild.id) or None
         if messages is None:
             messages = 0

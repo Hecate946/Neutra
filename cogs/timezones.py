@@ -117,13 +117,13 @@ class Timezones(commands.Cog):
                 edit = False
                 selection = tz_list[0]["result"]
 
-            query = '''
+            query = """
                     INSERT INTO usertime
                     VALUES ($1, $2)
                     ON CONFLICT (user_id)
                     DO UPDATE SET timezone = $2
                     WHERE usertime.user_id = $1;
-                    '''
+                    """
             await self.bot.cxn.execute(query, ctx.author.id, selection)
             msg = f"{self.bot.emote_dict['success']} Timezone set to `{selection}`"
             if edit:
@@ -138,11 +138,11 @@ class Timezones(commands.Cog):
         if member is None:
             member = ctx.author
 
-        query = '''
+        query = """
                 SELECT timezone
                 FROM usertime
                 WHERE user_id = $1;
-                '''
+                """
         timezone = await self.bot.cxn.fetchval(query, member.id) or None
         if timezone is None:
             return await ctx.send(
@@ -163,21 +163,18 @@ class Timezones(commands.Cog):
         if member is None:
             member = ctx.author
 
-        query = '''
+        query = """
                 SELECT timezone
                 FROM usertime
                 WHERE user_id = $1;
-                '''
-        tz = (
-            await self.bot.cxn.fetchval(
-                query, member.id
-            )
-            or None
-        )
+                """
+        tz = await self.bot.cxn.fetchval(query, member.id) or None
         if tz is None:
-            msg = f"`{member}` hasn't set their timezone yet. " \
-                  f"They can do so with `{ctx.prefix}settz [Region/City]` command.\n" \
-                  f"The current UTC time is **{timenow}**."
+            msg = (
+                f"`{member}` hasn't set their timezone yet. "
+                f"They can do so with `{ctx.prefix}settz [Region/City]` command.\n"
+                f"The current UTC time is **{timenow}**."
+            )
             await ctx.send(msg)
             return
 

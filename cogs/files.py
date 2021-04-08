@@ -1,17 +1,13 @@
 import io
 import os
-import re
 import pytz
 import discord
-import requests
+
 from datetime import datetime
 from discord.ext import commands
-from .help import COG_EXCEPTIONS
 
-from utilities import utils, permissions, pagination, converters, image
-import discord
-import pytz
-from discord.ext import commands, menus
+from .help import COG_EXCEPTIONS
+from utilities import utils, permissions
 
 
 def setup(bot):
@@ -223,13 +219,13 @@ class Files(commands.Cog):
 
     @commands.command(brief="DMs you a file of server roles.")
     @commands.guild_only()
-    @permissions.has_permissions(manage_messages=True)
+    @permissions.has_permissions(manage_roles=True)
     async def dumproles(self, ctx):
         """
         Usage:  -dumproles
         Alias:  -txtroles
         Output:  Sends a list of roles for the server to your DMs
-        Permission: Manage Messages
+        Permission: Manage Roles
         """
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
         role_file = "Roles-{}.txt".format(timestamp)
@@ -242,6 +238,146 @@ class Files(commands.Cog):
             allroles += f"[{str(num).zfill(2)}] {role.id}\t{role.name}\t[ Users: {len(role.members)} ]\r\n"
 
         data = io.BytesIO(allroles.encode("utf-8"))
+
+        await mess.edit(content="Uploading `{}`...".format(role_file))
+        try:
+            await ctx.author.send(file=discord.File(data, filename=role_file))
+        except Exception:
+            await ctx.send(file=discord.File(data, filename=role_file))
+            await mess.edit(
+                content="{} Uploaded `{}`.".format(
+                    self.bot.emote_dict["success"], role_file
+                )
+            )
+            return
+        await mess.edit(
+            content="{} Uploaded `{}`.".format(
+                self.bot.emote_dict["success"], role_file
+            )
+        )
+        await mess.add_reaction(self.bot.emote_dict["letter"])
+
+    @commands.command(
+        brief="DMs you a file of text channels.", aliases=["dumptc", "dumptextchannels"]
+    )
+    @commands.guild_only()
+    @permissions.has_permissions(manage_channels=True)
+    async def dumpchannels(self, ctx):
+        """
+        Usage:  -dumptextchannels
+        Alias:  -dumptc, -dumptextchannels
+        Output:  Sends a list of channels for the server to your DMs
+        Permission: Manage Channels
+        """
+        timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
+        role_file = "Channels-{}.txt".format(timestamp)
+
+        mess = await ctx.send("Saving channels to **{}**...".format(role_file))
+
+        allchannels = ""
+
+        channel_list = []
+        for c in ctx.guild.channels:
+            if type(c) == discord.TextChannel:
+                channel_list.append(c)
+        for num, chan in enumerate(
+            sorted(channel_list, key=lambda p: p.position), start=1
+        ):
+            allchannels += f"[{str(num).zfill(2)}] {chan.id}\t{chan.name}\t\r\n"
+
+        data = io.BytesIO(allchannels.encode("utf-8"))
+
+        await mess.edit(content="Uploading `{}`...".format(role_file))
+        try:
+            await ctx.author.send(file=discord.File(data, filename=role_file))
+        except Exception:
+            await ctx.send(file=discord.File(data, filename=role_file))
+            await mess.edit(
+                content="{} Uploaded `{}`.".format(
+                    self.bot.emote_dict["success"], role_file
+                )
+            )
+            return
+        await mess.edit(
+            content="{} Uploaded `{}`.".format(
+                self.bot.emote_dict["success"], role_file
+            )
+        )
+        await mess.add_reaction(self.bot.emote_dict["letter"])
+
+    @commands.command(brief="DMs you a file of voice channels.", aliases=["dumpvc"])
+    @commands.guild_only()
+    @permissions.has_permissions(manage_channels=True)
+    async def dumpvoicechannels(self, ctx):
+        """
+        Usage:  -dumpvoicechannels
+        Alias:  -dumpvc
+        Output:  Sends a list of voice channels to your DMs
+        Permission: Manage Channels
+        """
+        timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
+        role_file = "Channels-{}.txt".format(timestamp)
+
+        mess = await ctx.send("Saving channels to **{}**...".format(role_file))
+
+        allchannels = ""
+
+        channel_list = []
+        for c in ctx.guild.channels:
+            if type(c) == discord.VoiceChannel:
+                channel_list.append(c)
+        for num, chan in enumerate(
+            sorted(channel_list, key=lambda p: p.position), start=1
+        ):
+            allchannels += f"[{str(num).zfill(2)}] {chan.id}\t{chan.name}\t\r\n"
+
+        data = io.BytesIO(allchannels.encode("utf-8"))
+
+        await mess.edit(content="Uploading `{}`...".format(role_file))
+        try:
+            await ctx.author.send(file=discord.File(data, filename=role_file))
+        except Exception:
+            await ctx.send(file=discord.File(data, filename=role_file))
+            await mess.edit(
+                content="{} Uploaded `{}`.".format(
+                    self.bot.emote_dict["success"], role_file
+                )
+            )
+            return
+        await mess.edit(
+            content="{} Uploaded `{}`.".format(
+                self.bot.emote_dict["success"], role_file
+            )
+        )
+        await mess.add_reaction(self.bot.emote_dict["letter"])
+
+    @commands.command(brief="DMs you a file of voice channels.", aliases=["dumpcc"])
+    @commands.guild_only()
+    @permissions.has_permissions(manage_channels=True)
+    async def dumpcategories(self, ctx):
+        """
+        Usage:  -dumpcategories
+        Alias:  -dumpcc
+        Output:  Sends a list of categories to your DMs
+        Permission: Manage Channels
+        """
+        timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
+        role_file = "Channels-{}.txt".format(timestamp)
+
+        mess = await ctx.send("Saving channels to **{}**...".format(role_file))
+
+        allchannels = ""
+
+        channel_list = []
+        for c in ctx.guild.channels:
+            if type(c) == discord.CategoryChannel:
+                channel_list.append(c)
+        for num, chan in enumerate(
+            sorted(channel_list, key=lambda p: p.position), start=1
+        ):
+            allchannels += f"[{str(num).zfill(2)}] {chan.id}\t{chan.name}\t\r\n"
+
+        data = io.BytesIO(allchannels.encode("utf-8"))
 
         await mess.edit(content="Uploading `{}`...".format(role_file))
         try:
