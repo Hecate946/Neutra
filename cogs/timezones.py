@@ -117,7 +117,13 @@ class Timezones(commands.Cog):
                 edit = False
                 selection = tz_list[0]["result"]
 
-            query = """INSERT INTO usertime VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET timezone = $2 WHERE usertime.user_id = $1;"""
+            query = '''
+                    INSERT INTO usertime
+                    VALUES ($1, $2)
+                    ON CONFLICT (user_id)
+                    DO UPDATE SET timezone = $2
+                    WHERE usertime.user_id = $1;
+                    '''
             await self.bot.cxn.execute(query, ctx.author.id, selection)
             msg = f"{self.bot.emote_dict['success']} Timezone set to `{selection}`"
             if edit:
@@ -130,33 +136,48 @@ class Timezones(commands.Cog):
         """See a member's timezone."""
 
         if member is None:
-            member = ctx.message.author
+            member = ctx.author
 
-        query = """SELECT timezone FROM usertime WHERE user_id = $1"""
+        query = '''
+                SELECT timezone
+                FROM usertime
+                WHERE user_id = $1;
+                '''
         timezone = await self.bot.cxn.fetchval(query, member.id) or None
         if timezone is None:
             return await ctx.send(
-                f"{self.bot.emote_dict['error']} `{member}` has not set their timezone. Use the `{ctx.prefix}settz [Region/City]` command."
+                f"{self.bot.emote_dict['error']} `{member}` has not set their timezone. "
+                f"Use the `{ctx.prefix}settz [Region/City]` command."
             )
 
         await ctx.send(f"`{member}'` timezone is *{timezone}*")
 
-    @commands.command(brief="Show what time it is for a member.")
+    @commands.command(brief="Show a user's current time.")
     async def time(self, ctx, *, member: discord.Member = None):
-        """Get a members time"""
+        """
+        Usage: -time [member]
+        Output: Time for the passed user, if set.
+        Notes: Will default to you if no user is specified
+        """
         timenow = utils.getClockForTime(datetime.utcnow().strftime("%I:%M %p"))
-        timezone = None
         if member is None:
             member = ctx.author
 
+        query = '''
+                SELECT timezone
+                FROM usertime
+                WHERE user_id = $1;
+                '''
         tz = (
             await self.bot.cxn.fetchval(
-                """SELECT timezone FROM usertime WHERE user_id = $1;""", member.id
+                query, member.id
             )
             or None
         )
         if tz is None:
-            msg = f"`{member}` hasn't set their timezone or offset yet - they can do so with `{ctx.prefix}settz [Region/City]` command.\nThe current UTC time is **{timenow}**."
+            msg = f"`{member}` hasn't set their timezone yet. " \
+                  f"They can do so with `{ctx.prefix}settz [Region/City]` command.\n" \
+                  f"The current UTC time is **{timenow}**."
             await ctx.send(msg)
             return
 

@@ -1,26 +1,11 @@
-import discord
-from discord.ext import commands
-import io
-import os
-import re
-import sys
 import time
-import codecs
-import pprint
-from discord.ext.tasks import loop
-import psutil
-import struct
-import asyncio
-import inspect
 import discord
-import platform
-import datetime
-import subprocess
 
-from collections import Counter, OrderedDict
+from datetime import datetime
 from discord.ext import commands, menus
+from collections import Counter, OrderedDict
 
-from utilities import permissions, utils, converters, pagination, speedtest
+from utilities import permissions, utils, converters, pagination
 
 
 def setup(bot):
@@ -35,7 +20,10 @@ class Users(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(aliases=["mobile"], brief="Show which platform a user is on.")
+    @commands.command(
+        aliases=["mobile"],
+        brief="Show which platform a user is on."
+    )
     @commands.guild_only()
     async def platform(self, ctx, members: commands.Greedy[discord.Member]):
         """
@@ -159,7 +147,7 @@ class Users(commands.Cog):
         # sort the users by join date
         joinedList = sorted(
             joinedList,
-            key=lambda x: x["Joined"].timestamp() if x["Joined"] != None else -1,
+            key=lambda x: x["Joined"].timestamp() if x["Joined"] is not None else -1,
         )
 
         check_item = {"ID": member.id, "Joined": member.joined_at}
@@ -178,7 +166,12 @@ class Users(commands.Cog):
             command_count = 0
 
         query = (
-            """SELECT COUNT(*) FROM messages WHERE author_id = $1 AND server_id = $2"""
+            '''
+            SELECT COUNT(*)
+            FROM messages
+            WHERE author_id = $1
+            AND server_id = $2;
+            '''
         )
         messages = await self.bot.cxn.fetchrow(query, member.id, ctx.guild.id) or None
         if messages is None:
@@ -241,7 +234,7 @@ class Users(commands.Cog):
 
             sid = int(user.id)
             timestamp = ((sid >> 22) + 1420070400000) / 1000
-            cdate = datetime.datetime.utcfromtimestamp(timestamp)
+            cdate = datetime.utcfromtimestamp(timestamp)
             fdate = cdate.strftime("%A, %B %d, %Y at %H:%M:%S")
 
             try:
@@ -392,13 +385,14 @@ class Users(commands.Cog):
         Permission: Manage Messages
         """
 
-        query = """SELECT 
-                author_id, count(author_id) 
+        query = """
+                SELECT author_id,
+                count(author_id)
                 FROM messages
                 WHERE server_id = $1
                 GROUP BY author_id
-                ORDER BY COUNT(author_id) DESC
-                LIMIT $2
+                ORDER BY COUNT(author_id)
+                DESC LIMIT $2
                 """
         a = await self.bot.cxn.fetch(query, ctx.guild.id, limit)
         sum_query = """SELECT COUNT(*) FROM messages WHERE server_id = $1"""
@@ -555,7 +549,6 @@ class Users(commands.Cog):
                 """SELECT command FROM commands WHERE server_id = $1 AND user_id = $2"""
             )
             command_list = await self.bot.cxn.fetch(query, ctx.guild.id, user.id)
-            premsg = f"Commands most frequently used by **{user}**"
         formatted_list = []
         for c in command_list:
             formatted_list.append(c[0])
