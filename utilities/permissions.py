@@ -8,18 +8,6 @@ owners = constants.owners
 admins = constants.admins
 
 
-class NeedPerms(Exception):
-    pass
-
-    def __init__(
-        self, perms: list, message="You are missing the following permissions: "
-    ):
-        self.permissions = perms
-        self.message = message + str(perms)
-        super().__init__(self.message)
-        pass
-
-
 def is_owner(ctx):
     """ Checks if the author is one of the owners """
     return ctx.author.id in owners
@@ -73,7 +61,7 @@ def has_permissions(*, check=all, **perms):
 
     async def pred(ctx):
         result = await check_permissions(ctx, perms, check=check)
-        perm_list = [x.title().replace("_", " ").replace("Tts", "TTS") for x in perms]
+        perm_list = [x.title().replace("_", " ").replace("Tts", "TTS").replace('Guild', 'Server') for x in perms]
         if result is False:
             raise commands.BadArgument(
                 message=f"You are missing the following permission{'' if len(perm_list) == 1 else 's'}: `{', '.join(perm_list)}`"

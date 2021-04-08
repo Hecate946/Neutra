@@ -10,7 +10,7 @@ STATUSMAP1 = {
     discord.Status.online: "1",
     discord.Status.dnd: "2",
     discord.Status.idle: "3",
-}  ##for sorting
+}  # for sorting
 STATUSMAP2 = {
     discord.Status.online: "<:online:810650040838258711>",
     discord.Status.dnd: "<:dnd:810650845007708200>",
@@ -43,7 +43,6 @@ class Roles(commands.Cog):
         """
 
         owner = ctx.guild.owner
-        member = ctx.message.author
         guild = ctx.guild
 
         # perm_list = [Perm[0] for Perm in role.permissions if Perm[1]]
@@ -69,10 +68,9 @@ class Roles(commands.Cog):
             f"> **Hoisted:** {role.hoist}\n"
             f"> **Color:** {role.color}\n"
             f"> **Mentionable:** {role.mentionable}\n"
-            f"> **Managed:** {role.managed}\n"
+            f"> **Managed:** {role.managed}\n",
             # f"> **Bot Role:** {role.is_bot_managed()}\n"
             # f"> **Booster Role:** {role.is_premium_subscriber()}\n"
-            ,
             inline=False,
         )
         # embed.add_field(name="Permissions:", value=str(role.permissions), inline=False)
