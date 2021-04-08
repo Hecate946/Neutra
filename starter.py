@@ -1,12 +1,13 @@
 import json
 import click
 
+
 @click.command()
-@click.argument('mode', default='production')
+@click.argument("mode", default="production")
 def main(mode):
     """Launches the bot."""
 
-    block = '#' * (len(mode) + 19)
+    block = "#" * (len(mode) + 19)
     startmsg = f"{block}\n## Running {mode.capitalize()} Mode ## \n{block}"
     click.echo(startmsg)
     if mode.lower() == "tester":
@@ -27,9 +28,10 @@ def main(mode):
             json.dump(configuration, fp, indent=2)
 
     from core import bot
+
     # run the application ...
     bot.run(mode=mode)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

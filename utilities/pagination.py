@@ -21,37 +21,43 @@ FIELD_NAME_LIMIT = 256
 FIELD_VALUE_LIMIT = 1024
 TOTAL_lIMIT = 6000
 
+
 class MainMenu(menus.MenuPages):
     def __init__(self, source):
         super().__init__(source=source, check_embeds=False)
         EmojiB = namedtuple("EmojiB", "emoji position explain")
-        def_dict_emoji = {'\N{BLACK LEFT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}\ufe0f':
-                          EmojiB("<:backward2:816457785167314987>", menus.First(0),
-                                 "Goes to the first page."),
-
-                          '\N{BLACK LEFT-POINTING TRIANGLE}\ufe0f':
-                          EmojiB("<:backward:816458218145579049>", menus.First(1),
-                                 "Goes to the previous page."),
-
-                          '\N{BLACK RIGHT-POINTING TRIANGLE}\ufe0f':
-                          EmojiB("<:forward:816458167835820093>", menus.Last(0),
-                                 "Goes to the next page."),
-
-                          '\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}\ufe0f':
-                          EmojiB("<:forward2:816457685905440850>", menus.Last(1),
-                                 "Goes to the last page."),
-
-                          '\N{BLACK SQUARE FOR STOP}\ufe0f':
-                          EmojiB("<:trash:816463111958560819>", menus.Last(4),
-                                 "Remove this message.")
-                          }
+        def_dict_emoji = {
+            "\N{BLACK LEFT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}\ufe0f": EmojiB(
+                "<:backward2:816457785167314987>",
+                menus.First(0),
+                "Goes to the first page.",
+            ),
+            "\N{BLACK LEFT-POINTING TRIANGLE}\ufe0f": EmojiB(
+                "<:backward:816458218145579049>",
+                menus.First(1),
+                "Goes to the previous page.",
+            ),
+            "\N{BLACK RIGHT-POINTING TRIANGLE}\ufe0f": EmojiB(
+                "<:forward:816458167835820093>", menus.Last(0), "Goes to the next page."
+            ),
+            "\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}\ufe0f": EmojiB(
+                "<:forward2:816457685905440850>",
+                menus.Last(1),
+                "Goes to the last page.",
+            ),
+            "\N{BLACK SQUARE FOR STOP}\ufe0f": EmojiB(
+                "<:trash:816463111958560819>", menus.Last(4), "Remove this message."
+            ),
+        }
         self.dict_emoji = def_dict_emoji
         for emoji in self.buttons:
             callback = self.buttons[emoji].action
             if emoji.name not in self.dict_emoji:
                 continue
             new_but = self.dict_emoji[emoji.name]
-            new_button = menus.Button(new_but.emoji, callback, position=new_but.position)
+            new_button = menus.Button(
+                new_but.emoji, callback, position=new_but.position
+            )
             del self.dict_emoji[emoji.name]
             self.dict_emoji[new_but.emoji] = new_but
             self.add_button(new_button)
@@ -66,16 +72,18 @@ class MainMenu(menus.MenuPages):
         except discord.HTTPException:
             pass
 
-    @menus.button('<:info:827428282001260544>', position=menus.Last(5))
+    @menus.button("<:info:827428282001260544>", position=menus.Last(5))
     async def show_help(self, payload):
         """`shows this message`"""
-        embed = discord.Embed(title='Menu Help', color=constants.embed)
+        embed = discord.Embed(title="Menu Help", color=constants.embed)
         messages = []
         for (emoji, button) in self.buttons.items():
-            messages.append(f'{emoji}: `{button.action.__doc__}`')
+            messages.append(f"{emoji}: `{button.action.__doc__}`")
 
-        embed.add_field(name='Reaction Functions', value='\n'.join(messages), inline=False)
-        #embed.set_footer(text=f'Previously viewed page: {self.current_page + 1}')
+        embed.add_field(
+            name="Reaction Functions", value="\n".join(messages), inline=False
+        )
+        # embed.set_footer(text=f'Previously viewed page: {self.current_page + 1}')
         await self.message.edit(content=None, embed=embed)
 
         async def go_back_to_current_page():
@@ -90,17 +98,19 @@ class MainMenu(menus.MenuPages):
         channel = self.message.channel
         author_id = payload.user_id
         to_delete = []
-        to_delete.append(await channel.send('Enter the page number to jump to.'))
+        to_delete.append(await channel.send("Enter the page number to jump to."))
 
         def message_check(m):
-            return m.author.id == author_id and \
-                   channel == m.channel and \
-                   m.content.isdigit()
+            return (
+                m.author.id == author_id
+                and channel == m.channel
+                and m.content.isdigit()
+            )
 
         try:
-            msg = await self.bot.wait_for('message', check=message_check, timeout=30.0)
+            msg = await self.bot.wait_for("message", check=message_check, timeout=30.0)
         except asyncio.TimeoutError:
-            to_delete.append(await channel.send('Timer ended.'))
+            to_delete.append(await channel.send("Timer ended."))
             await asyncio.sleep(5)
         else:
             page = int(msg.content)
@@ -112,8 +122,10 @@ class MainMenu(menus.MenuPages):
         except Exception:
             pass
 
+
 class FieldPageSource(menus.ListPageSource):
     """A page source that requires (field_name, field_value) tuple items."""
+
     # TODO COME BACK TO THIS TOMORROW
     def __init__(self, entries, **kwargs):
         per_page = kwargs.get("per_page", 12)
@@ -128,7 +140,7 @@ class FieldPageSource(menus.ListPageSource):
     def enforce_limit(self, value, max):
         if not type(value) is str:
             return value
-        return (value[:max-3]+"...") if len(value) > max else value
+        return (value[: max - 3] + "...") if len(value) > max else value
 
     async def format_page(self, menu, entries):
         self.embed.clear_fields()
@@ -139,21 +151,24 @@ class FieldPageSource(menus.ListPageSource):
 
         maximum = self.get_max_pages()
         if maximum > 1:
-            text = f'Page {menu.current_page + 1}/{maximum} ({len(self.entries)} entries)'
+            text = (
+                f"Page {menu.current_page + 1}/{maximum} ({len(self.entries)} entries)"
+            )
             self.embed.set_footer(text=text)
 
-        self.embed.title=self.title
-        self.embed.color=self.color
+        self.embed.title = self.title
+        self.embed.color = self.color
         if self.desc_head and self.desc_foot and self.desc is not discord.Embed.Empty:
-            self.embed.description=f"{self.desc_head}\n{self.enforce_limit(self.desc, DESC_LIMIT)}\n{self.desc_foot}"
+            self.embed.description = f"{self.desc_head}\n{self.enforce_limit(self.desc, DESC_LIMIT)}\n{self.desc_foot}"
         else:
             self.embed.description = self.enforce_limit(self.desc, DESC_LIMIT)
         return self.embed
 
+
 class TextPageSource(menus.ListPageSource):
-    def __init__(self, text, *, prefix="```", suffix='```', max_size=2000):
+    def __init__(self, text, *, prefix="```", suffix="```", max_size=2000):
         pages = CommandPaginator(prefix=prefix, suffix=suffix, max_size=max_size - 200)
-        for line in text.split('\n'):
+        for line in text.split("\n"):
             pages.add_line(line)
 
         super().__init__(entries=pages.pages, per_page=1)
@@ -161,8 +176,9 @@ class TextPageSource(menus.ListPageSource):
     async def format_page(self, menu, content):
         maximum = self.get_max_pages()
         if maximum > 1:
-            return f'{content}\nPage {menu.current_page + 1}/{maximum}'
+            return f"{content}\nPage {menu.current_page + 1}/{maximum}"
         return content
+
 
 class SimplePageSource(menus.ListPageSource):
     def __init__(self, entries, **kwargs):
@@ -176,39 +192,52 @@ class SimplePageSource(menus.ListPageSource):
         pages = []
         if self.index is False:
             for entry in entries:
-                pages.append(f'{entry}')
+                pages.append(f"{entry}")
         else:
-            for index, entry in enumerate(entries, start=menu.current_page * self.per_page):
-                pages.append(f'{index + 1}. {entry}')
+            for index, entry in enumerate(
+                entries, start=menu.current_page * self.per_page
+            ):
+                pages.append(f"{index + 1}. {entry}")
 
         maximum = self.get_max_pages()
         if maximum > 1:
-            footer = f'Page {menu.current_page + 1}/{maximum} ({len(self.entries)} entries)'
+            footer = (
+                f"Page {menu.current_page + 1}/{maximum} ({len(self.entries)} entries)"
+            )
             menu.embed.set_footer(text=footer)
 
         if self.initial_page and self.is_paginating():
-            pages.append('')
-            menu.embed.add_field(name="Need help?", value="React with <:info:827428282001260544> for more info.")
+            pages.append("")
+            menu.embed.add_field(
+                name="Need help?",
+                value="React with <:info:827428282001260544> for more info.",
+            )
             self.initial_page = False
 
         formatted_pages = []
         for i in pages:
-            formatted_pages.append(str(i).replace("[","").replace("]","").replace("'",""))
+            formatted_pages.append(
+                str(i).replace("[", "").replace("]", "").replace("'", "")
+            )
 
         if self.desc_head and self.desc_foot:
-            menu.embed.description = self.desc_head + '\n'.join(formatted_pages) + self.desc_foot
+            menu.embed.description = (
+                self.desc_head + "\n".join(formatted_pages) + self.desc_foot
+            )
         else:
-            menu.embed.description = '\n'.join(formatted_pages)
+            menu.embed.description = "\n".join(formatted_pages)
         return menu.embed
+
 
 class SimplePages(MainMenu):
     def __init__(self, entries, **kwargs):
         super().__init__(
-            SimplePageSource(entries,
-            per_page=kwargs.get("per_page", 12),
-            desc_head=kwargs.get("desc_head", None),
-            desc_foot=kwargs.get("desc_foot", None),
-            index=kwargs.get("index", True)
+            SimplePageSource(
+                entries,
+                per_page=kwargs.get("per_page", 12),
+                desc_head=kwargs.get("desc_head", None),
+                desc_foot=kwargs.get("desc_foot", None),
+                index=kwargs.get("index", True),
             )
         )
         self.embed = discord.Embed(color=kwargs.get("color", constants.embed))
@@ -223,16 +252,15 @@ class Confirmation(menus.Menu):
     async def send_initial_message(self, ctx, channel):
         return await channel.send(self.msg)
 
-    @menus.button(constants.emotes['success'])
+    @menus.button(constants.emotes["success"])
     async def do_confirm(self, payload):
         self.result = True
         self.stop()
 
-    @menus.button(constants.emotes['failed'])
+    @menus.button(constants.emotes["failed"])
     async def do_deny(self, payload):
         self.result = False
         self.stop()
-
 
     async def prompt(self, ctx):
         await self.start(ctx, wait=True)
@@ -243,15 +271,15 @@ class Message:
     def __init__(self, **kwargs):
         # Creates a new message - with an optional setup dictionary
         self.max_chars = 2000
-        self.pm_after = kwargs.get("pm_after", 1) # -1 to disable, 0 to always pm
+        self.pm_after = kwargs.get("pm_after", 1)  # -1 to disable, 0 to always pm
         self.force_pm = kwargs.get("force_pm", False)
         self.header = kwargs.get("header", "")
         self.footer = kwargs.get("footer", "")
         self.pm_react = kwargs.get("pm_react", "📬")
         self.message = kwargs.get("message", None)
-        self.file = kwargs.get("file", None) # Accepts a file path
+        self.file = kwargs.get("file", None)  # Accepts a file path
         self.max_pages = 0
-        self.delete_after = kwargs.get("delete_after",None)
+        self.delete_after = kwargs.get("delete_after", None)
 
     def _get_file(self, file_path):
         if not os.path.exists(file_path):
@@ -262,7 +290,7 @@ class Message:
         file_handle = discord.File(fp=file_path, filename=fname)
         return (file_handle, fname)
 
-    async def _send_message(self, ctx, message, pm = False, file_path = None):
+    async def _send_message(self, ctx, message, pm=False, file_path=None):
         # Helper method to send embeds to their proper location
         send_file = None
         if not file_path is None:
@@ -270,7 +298,9 @@ class Message:
             if not dfile:
                 # File doesn't exist...
                 try:
-                    await ctx.send("An error occurred!\nThe file specified couldn't be sent :(")
+                    await ctx.send(
+                        "An error occurred!\nThe file specified couldn't be sent :("
+                    )
                 except:
                     # We tried...
                     pass
@@ -278,17 +308,25 @@ class Message:
             else:
                 # Setup our file
                 send_file = dfile[0]
-        if pm is True and type(ctx) is discord.ext.commands.Context and not ctx.channel == ctx.author.dm_channel:
+        if (
+            pm is True
+            and type(ctx) is discord.ext.commands.Context
+            and not ctx.channel == ctx.author.dm_channel
+        ):
             # More than 2 pages - try to dm
             try:
-                message = await ctx.author.send(message, file=send_file, delete_after=self.delete_after)
+                message = await ctx.author.send(
+                    message, file=send_file, delete_after=self.delete_after
+                )
                 await ctx.message.add_reaction(self.pm_react)
                 return message
             except discord.Forbidden:
                 if self.force_pm:
                     # send an error message
                     try:
-                        await ctx.send("An error occurred!\nCould not dm this message to you :(")
+                        await ctx.send(
+                            "An error occurred!\nCould not dm this message to you :("
+                        )
                     except:
                         # We tried...
                         pass
@@ -303,7 +341,8 @@ class Message:
             self.message,
             self.max_chars - len(self.header) - len(self.footer),
             break_long_words=True,
-            replace_whitespace=False)
+            replace_whitespace=False,
+        )
 
         # Only pm if our self.pm_after is above -1
         to_pm = len(text_list) > self.pm_after if self.pm_after > -1 else False
@@ -311,12 +350,15 @@ class Message:
         for m in text_list:
             if self.max_pages > 0 and page_count > self.max_pages:
                 break
-            message = await self._send_message(ctx, self.header + m + self.footer, to_pm)
+            message = await self._send_message(
+                ctx, self.header + m + self.footer, to_pm
+            )
             # Break if things didn't work
             if not message:
                 return None
             page_count += 1
         return message
+
 
 class Embed:
     def __init__(self, **kwargs):
@@ -344,9 +386,9 @@ class Embed:
         self.thumbnail = kwargs.get("thumbnail", None)
         self.author = kwargs.get("author", None)
         self.fields = kwargs.get("fields", [])
-        self.file = kwargs.get("file", None) # Accepts a file path
-        self.delete_after = kwargs.get("delete_after",None)
-        self.colors = [ 
+        self.file = kwargs.get("file", None)  # Accepts a file path
+        self.delete_after = kwargs.get("delete_after", None)
+        self.colors = [
             discord.Color.teal(),
             discord.Color.dark_teal(),
             discord.Color.green(),
@@ -369,16 +411,18 @@ class Embed:
             discord.Color.darker_grey(),
             discord.Color.blurple(),
             discord.Color.greyple(),
-            discord.Color.default()
+            discord.Color.default(),
         ]
         self.color = kwargs.get("color", None)
 
     def add_field(self, **kwargs):
-        self.fields.append({
-            "name" : kwargs.get("name", "None"),
-            "value" : kwargs.get("value", "None"),
-            "inline" : kwargs.get("inline", False)
-        })
+        self.fields.append(
+            {
+                "name": kwargs.get("name", "None"),
+                "value": kwargs.get("value", "None"),
+                "inline": kwargs.get("inline", False),
+            }
+        )
 
     def clear_fields(self):
         self.fields = []
@@ -391,12 +435,12 @@ class Embed:
         fname = "Upload." + ext[-1] if len(ext) > 1 else "Upload"
         file_handle = discord.File(fp=file_path, filename=fname)
         # Check if self.url = "attachment" and react
-        #if self.url and self.url.lower() == "attachment":
+        # if self.url and self.url.lower() == "attachment":
         #    self.url = "attachment://" + fname
         return (file_handle, fname)
 
     # Embed stuff!
-    async def _send_embed(self, ctx, embed, pm = False, file_path = None):
+    async def _send_embed(self, ctx, embed, pm=False, file_path=None):
         # Helper method to send embeds to their proper location
         send_file = None
         if not file_path is None:
@@ -404,7 +448,11 @@ class Embed:
             if not dfile:
                 # File doesn't exist...
                 try:
-                    await Embed(title="An error occurred!", description="The file specified couldn't be sent :(", color=self.color).send(ctx)
+                    await Embed(
+                        title="An error occurred!",
+                        description="The file specified couldn't be sent :(",
+                        color=self.color,
+                    ).send(ctx)
                 except:
                     # We tried...
                     pass
@@ -413,27 +461,41 @@ class Embed:
                 # Setup our file
                 send_file = dfile[0]
                 embed.set_image(url="attachment://" + str(dfile[1]))
-        if pm is True and type(ctx) is discord.ext.commands.Context and not ctx.channel == ctx.author.dm_channel:
+        if (
+            pm is True
+            and type(ctx) is discord.ext.commands.Context
+            and not ctx.channel == ctx.author.dm_channel
+        ):
             # More than 2 pages and targeting context - try to dm
             try:
                 if send_file:
-                    message = await ctx.author.send(embed=embed, file=send_file, delete_after=self.delete_after)
+                    message = await ctx.author.send(
+                        embed=embed, file=send_file, delete_after=self.delete_after
+                    )
                 else:
-                    message = await ctx.author.send(embed=embed, delete_after=self.delete_after)
+                    message = await ctx.author.send(
+                        embed=embed, delete_after=self.delete_after
+                    )
                 await ctx.message.add_reaction(self.pm_react)
                 return message
             except discord.Forbidden:
                 if self.force_pm:
                     # send an error embed
                     try:
-                        await Embed(title="An error occurred!", description="Could not dm this message to you :(", color=self.color).send(ctx)
+                        await Embed(
+                            title="An error occurred!",
+                            description="Could not dm this message to you :(",
+                            color=self.color,
+                        ).send(ctx)
                     except:
                         # We tried...
                         pass
                     return None
                 pass
         if send_file:
-            return await ctx.send(embed=embed, file=send_file, delete_after=self.delete_after)
+            return await ctx.send(
+                embed=embed, file=send_file, delete_after=self.delete_after
+            )
         else:
             return await ctx.send(embed=embed, delete_after=self.delete_after)
 
@@ -441,7 +503,7 @@ class Embed:
         if not type(value) is str:
             return value
         # Truncates the string to the max chars passed
-        return (value[:max_chars-3]+"...") if len(value) > max_chars else value
+        return (value[: max_chars - 3] + "...") if len(value) > max_chars else value
 
     def _total_chars(self, embed):
         # Returns how many chars are in the embed
@@ -466,7 +528,7 @@ class Embed:
         elif type(self.color) is tuple or type(self.color) is list:
             if len(self.color) == 3:
                 try:
-                    r, g, b = [ int(a) for a in self.color ]
+                    r, g, b = [int(a) for a in self.color]
                     self.color = discord.Color.from_rgb(r, g, b)
                 except:
                     self.color = random.choice(self.colors)
@@ -484,40 +546,50 @@ class Embed:
             em.set_thumbnail(url=self.thumbnail)
         if self.author:
             if type(self.author) is discord.Member or type(self.author) is discord.User:
-                name = self.author.nick if hasattr(self.author, "nick") and self.author.nick else self.author.name
+                name = (
+                    self.author.nick
+                    if hasattr(self.author, "nick") and self.author.nick
+                    else self.author.name
+                )
                 em.set_author(
-                    name    =self._truncate_string(name, self.auth_max),
+                    name=self._truncate_string(name, self.auth_max),
                     # Ignore the url here
-                    icon_url=self.author.avatar_url
-                )      
+                    icon_url=self.author.avatar_url,
+                )
             elif type(self.author) is dict:
                 if any(item in self.author for item in ["name", "url", "icon"]):
                     em.set_author(
-                        name    =self._truncate_string(self.author.get("name",     discord.Embed.Empty), self.auth_max),
-                        url     =self.author.get("url",      discord.Embed.Empty),
-                        icon_url=self.author.get("icon_url", discord.Embed.Empty)
+                        name=self._truncate_string(
+                            self.author.get("name", discord.Embed.Empty), self.auth_max
+                        ),
+                        url=self.author.get("url", discord.Embed.Empty),
+                        icon_url=self.author.get("icon_url", discord.Embed.Empty),
                     )
                 else:
-                    em.set_author(name=self._truncate_string(str(self.author), self.auth_max))
+                    em.set_author(
+                        name=self._truncate_string(str(self.author), self.auth_max)
+                    )
             else:
                 # Cast to string and hope for the best
-                em.set_author(name=self._truncate_string(str(self.author), self.auth_max))
+                em.set_author(
+                    name=self._truncate_string(str(self.author), self.auth_max)
+                )
         return em
 
     def _get_footer(self):
         # Get our footer if we have one
         footer_text = footer_icon = discord.Embed.Empty
         if type(self.footer) is str:
-                footer_text = self.footer
+            footer_text = self.footer
         elif type(self.footer) is dict:
-                footer_text = self.footer.get("text", discord.Embed.Empty)
-                footer_icon = self.footer.get("icon_url", discord.Embed.Empty)
+            footer_text = self.footer.get("text", discord.Embed.Empty)
+            footer_icon = self.footer.get("icon_url", discord.Embed.Empty)
         elif self.footer is None:
-                # Never setup
-                pass
+            # Never setup
+            pass
         else:
-                # Try to cast it
-                footer_text = str(self.footer)
+            # Try to cast it
+            footer_text = str(self.footer)
         return (footer_text, footer_icon)
 
     async def edit(self, ctx, message):
@@ -534,13 +606,17 @@ class Embed:
             # Edit in place, nothing else needs to happen
             for field in self.fields:
                 em.add_field(
-                    name=self._truncate_string(field.get("name", "None"), self.fname_max),
-                    value=self._truncate_string(field.get("value", "None"), self.fval_max),
-                    inline=field.get("inline", False)
+                    name=self._truncate_string(
+                        field.get("name", "None"), self.fname_max
+                    ),
+                    value=self._truncate_string(
+                        field.get("value", "None"), self.fval_max
+                    ),
+                    inline=field.get("inline", False),
                 )
             em.set_footer(
                 text=self._truncate_string(footer_text, self.foot_max),
-                icon_url=footer_icon
+                icon_url=footer_icon,
             )
             # Get the file if one exists
             send_file = None
@@ -553,8 +629,13 @@ class Embed:
             return message
         # Now we need to edit the first message to just a space - then send the rest
         new_message = await self.send(ctx)
-        if new_message.channel == ctx.author.dm_channel and not ctx.channel == ctx.author.dm_channel:
-            em = Embed(title=self.title, description="📬 Check your dm's", color=self.color)._embed_with_self()
+        if (
+            new_message.channel == ctx.author.dm_channel
+            and not ctx.channel == ctx.author.dm_channel
+        ):
+            em = Embed(
+                title=self.title, description="📬 Check your dm's", color=self.color
+            )._embed_with_self()
             await message.edit(content=None, embed=em, delete_after=self.delete_after)
         else:
             await message.delete()
@@ -564,7 +645,7 @@ class Embed:
     async def send(self, ctx):
         if not ctx:
             return
-        
+
         em = self._embed_with_self()
         footer_text, footer_icon = self._get_footer()
 
@@ -573,24 +654,27 @@ class Embed:
         if not len(self.fields):
             em.set_footer(
                 text=self._truncate_string(footer_text, self.foot_max),
-                icon_url=footer_icon
+                icon_url=footer_icon,
             )
             return await self._send_embed(ctx, em, False, self.file)
-        
+
         # Only pm if our self.pm_after is above -1
         to_pm = len(self.fields) > self.pm_after if self.pm_after > -1 else False
 
         page_count = 1
-        page_total = math.ceil(len(self.fields)/self.field_max)
+        page_total = math.ceil(len(self.fields) / self.field_max)
 
         if page_total > 1 and self.page_count and self.title:
             add_title = " (Page {:,} of {:,})".format(page_count, page_total)
-            em.title = self._truncate_string(self.title, self.title_max - len(add_title)) + add_title
+            em.title = (
+                self._truncate_string(self.title, self.title_max - len(add_title))
+                + add_title
+            )
         for field in self.fields:
             em.add_field(
                 name=self._truncate_string(field.get("name", "None"), self.fname_max),
                 value=self._truncate_string(field.get("value", "None"), self.fval_max),
-                inline=field.get("inline", False)
+                inline=field.get("inline", False),
             )
             # 25 field max - send the embed if we get there
             if len(em.fields) >= self.field_max:
@@ -600,7 +684,7 @@ class Embed:
                 if page_total == page_count:
                     em.set_footer(
                         text=self._truncate_string(footer_text, self.foot_max),
-                        icon_url=footer_icon
+                        icon_url=footer_icon,
                     )
                 if page_count == 1 and self.file:
                     message = await self._send_embed(ctx, em, to_pm, self.file)
@@ -615,12 +699,17 @@ class Embed:
                 page_count += 1
                 if page_total > 1 and self.page_count and self.title:
                     add_title = " (Page {:,} of {:,})".format(page_count, page_total)
-                    em.title = self._truncate_string(self.title, self.title_max - len(add_title)) + add_title
+                    em.title = (
+                        self._truncate_string(
+                            self.title, self.title_max - len(add_title)
+                        )
+                        + add_title
+                    )
 
         if len(em.fields):
             em.set_footer(
                 text=self._truncate_string(footer_text, self.foot_max),
-                icon_url=footer_icon
+                icon_url=footer_icon,
             )
             if page_total == 1 and self.file:
                 message = await self._send_embed(ctx, em, to_pm, self.file)
@@ -630,14 +719,15 @@ class Embed:
                 message = await self._send_embed(ctx, em, to_pm)
         return message
 
+
 class EmbedText(Embed):
     def __init__(self, **kwargs):
         Embed.__init__(self, **kwargs)
         # Creates a new embed - with an option setup dictionary
         self.pm_after = kwargs.get("pm_after", 1)
         self.max_pages = kwargs.get("max_pages", 0)
-        self.desc_head = kwargs.get("desc_head", "") # Header for description markdown
-        self.desc_foot = kwargs.get("desc_foot", "") # Footer for description markdown
+        self.desc_head = kwargs.get("desc_head", "")  # Header for description markdown
+        self.desc_foot = kwargs.get("desc_foot", "")  # Footer for description markdown
 
     async def edit(self, ctx, message):
         # Edits the passed message - and sends any remaining pages
@@ -654,7 +744,8 @@ class EmbedText(Embed):
                 self.description,
                 self.desc_max - len(self.desc_head) - len(self.desc_foot),
                 break_long_words=True,
-                replace_whitespace=False)
+                replace_whitespace=False,
+            )
         to_pm = len(text_list) > self.pm_after if self.pm_after > -1 else False
         if len(text_list) <= 1 and not to_pm:
             # Edit in place, nothing else needs to happen
@@ -662,7 +753,7 @@ class EmbedText(Embed):
                 em.description = self.desc_head + text_list[0] + self.desc_foot
             em.set_footer(
                 text=self._truncate_string(footer_text, self.foot_max),
-                icon_url=footer_icon
+                icon_url=footer_icon,
             )
             # Get the file if one exists
             send_file = None
@@ -675,8 +766,13 @@ class EmbedText(Embed):
             return message
         # Now we need to edit the first message to just a space - then send the rest
         new_message = await self.send(ctx)
-        if new_message.channel == ctx.author.dm_channel and not ctx.channel == ctx.author.dm_channel:
-            em = Embed(title=self.title, description="📬 Check your dm's", color=self.color)._embed_with_self()
+        if (
+            new_message.channel == ctx.author.dm_channel
+            and not ctx.channel == ctx.author.dm_channel
+        ):
+            em = Embed(
+                title=self.title, description="📬 Check your dm's", color=self.color
+            )._embed_with_self()
             await message.edit(content=None, embed=em, delete_after=self.delete_after)
         else:
             await message.delete()
@@ -686,7 +782,7 @@ class EmbedText(Embed):
     async def send(self, ctx):
         if not ctx:
             return
-        
+
         em = self._embed_with_self()
         footer_text, footer_icon = self._get_footer()
 
@@ -695,15 +791,16 @@ class EmbedText(Embed):
         if self.description is None or not len(self.description):
             em.set_footer(
                 text=self._truncate_string(footer_text, self.foot_max),
-                icon_url=footer_icon
+                icon_url=footer_icon,
             )
             return await self._send_embed(ctx, em, False, self.file)
-        
+
         text_list = textwrap.wrap(
             self.description,
             self.desc_max - len(self.desc_head) - len(self.desc_foot),
             break_long_words=True,
-            replace_whitespace=False)
+            replace_whitespace=False,
+        )
 
         # Only pm if our self.pm_after is above -1
         to_pm = len(text_list) > self.pm_after if self.pm_after > -1 else False
@@ -712,7 +809,10 @@ class EmbedText(Embed):
 
         if len(text_list) > 1 and self.page_count and self.title:
             add_title = " (Page {:,} of {:,})".format(page_count, page_total)
-            em.title = self._truncate_string(self.title, self.title_max - len(add_title)) + add_title
+            em.title = (
+                self._truncate_string(self.title, self.title_max - len(add_title))
+                + add_title
+            )
 
         i = 0
         for i in range(len(text_list)):
@@ -722,13 +822,15 @@ class EmbedText(Embed):
             # Strip the title if not the first page and not counting
             if i > 0 and not self.page_count:
                 em.title = None
-            if i == len(text_list)-1:
+            if i == len(text_list) - 1:
                 # Last item - apply footer
                 em.set_footer(
                     text=self._truncate_string(footer_text, self.foot_max),
-                    icon_url=footer_icon
+                    icon_url=footer_icon,
                 )
-            em.description = self.desc_head + m + self.desc_foot
+            em.description = (
+                self.desc_head.strip("\n") + "\n" + m.strip("\n") + self.desc_foot
+            )
             if i == 0 and self.file != None:
                 message = await self._send_embed(ctx, em, to_pm, self.file)
             else:
@@ -740,9 +842,13 @@ class EmbedText(Embed):
                 return None
             page_count += 1
             if len(text_list) > 1 and self.page_count and self.title:
-                    add_title = " (Page {:,} of {:,})".format(page_count, page_total)
-                    em.title = self._truncate_string(self.title, self.title_max - len(add_title)) + add_title
+                add_title = " (Page {:,} of {:,})".format(page_count, page_total)
+                em.title = (
+                    self._truncate_string(self.title, self.title_max - len(add_title))
+                    + add_title
+                )
         return message
+
 
 class Picker:
     def __init__(self, **kwargs):
@@ -750,10 +856,10 @@ class Picker:
         self.title = kwargs.get("title", None)
         self.timeout = kwargs.get("timeout", 60)
         self.ctx = kwargs.get("ctx", None)
-        self.message = kwargs.get("message", None) # message to edit
+        self.message = kwargs.get("message", None)  # message to edit
         self.self_message = None
-        self.max = 10 # Don't set programmatically - as we don't want this overridden
-        self.reactions = [constants.emotes['stop']]
+        self.max = 10  # Don't set programmatically - as we don't want this overridden
+        self.reactions = [constants.emotes["stop"]]
         self.color = kwargs.get("color", constants.embed)
         self.footer = kwargs.get("footer", discord.Embed.Empty)
         self.embed_title = kwargs.get("embed_title", discord.Embed.Empty)
@@ -762,7 +868,7 @@ class Picker:
         for r in react_list:
             await message.add_reaction(r)
 
-    async def _remove_reactions(self, react_list = []):
+    async def _remove_reactions(self, react_list=[]):
         # Try to remove all reactions - if that fails, iterate and remove our own
         try:
             await self.self_message.clear_reactions()
@@ -770,8 +876,8 @@ class Picker:
             pass
             # The following "works", but is super slow - and if we can't clear
             # all reactions, it's probably just best to leave them there and bail.
-            '''for r in react_list:
-                await message.remove_reaction(r,message.author)'''
+            """for r in react_list:
+                await message.remove_reaction(r,message.author)"""
 
     async def pick(self, embed=False, syntax=None):
         # This actually brings up the pick list and handles the nonsense
@@ -794,11 +900,13 @@ class Picker:
         for item in self.list:
             current += 1
             current_number = current if current < 10 else 0
-            current_reactions.append(constants.emotes[f'num{current_number}'])
+            current_reactions.append(constants.emotes[f"num{current_number}"])
             msg += "{}. {}\n".format(current, item)
         msg += "```"
         if embed is True:
-            msg = discord.Embed(title=self.embed_title, description=msg, color=self.color)
+            msg = discord.Embed(
+                title=self.embed_title, description=msg, color=self.color
+            )
             msg.set_footer(text=self.footer)
         # Add the stop reaction
         current_reactions.append(self.reactions[0])
@@ -814,37 +922,52 @@ class Picker:
         await self._add_reactions(self.self_message, current_reactions)
         # Now we would wait...
         def check(reaction, user):
-            return reaction.message.id == self.self_message.id and user == self.ctx.author and str(reaction.emoji) in current_reactions
+            return (
+                reaction.message.id == self.self_message.id
+                and user == self.ctx.author
+                and str(reaction.emoji) in current_reactions
+            )
+
         try:
-            reaction, user = await self.ctx.bot.wait_for('picklist_reaction', timeout=self.timeout, check=check)
+            reaction, user = await self.ctx.bot.wait_for(
+                "picklist_reaction", timeout=self.timeout, check=check
+            )
         except:
             # Didn't get a reaction
             await self._remove_reactions(current_reactions)
             return (-2, self.self_message)
-        
+
         await self._remove_reactions(current_reactions)
         # Get the adjusted index
         ind = current_reactions.index(str(reaction.emoji))
-        if ind == len(current_reactions)-1:
+        if ind == len(current_reactions) - 1:
             ind = -1
         return (ind, self.self_message)
-
 
 
 class PagePicker(Picker):
     def __init__(self, **kwargs):
         Picker.__init__(self, **kwargs)
         # Expects self.list to contain the fields needed - each a dict with {"name":name,"value":value,"inline":inline}
-        self.max = kwargs.get("max",10) # Must be between 1 and 25
+        self.max = kwargs.get("max", 10)  # Must be between 1 and 25
         self.max = 1 if self.max < 1 else 10 if self.max > 10 else self.max
-        self.reactions = ["⏪","◀","▶","⏩","🔢","🛑"] # These will always be in the same order
-        self.url = kwargs.get("url",None) # The URL the title of the embed will link to
+        self.reactions = [
+            "⏪",
+            "◀",
+            "▶",
+            "⏩",
+            "🔢",
+            "🛑",
+        ]  # These will always be in the same order
+        self.url = kwargs.get(
+            "url", None
+        )  # The URL the title of the embed will link to
         self.description = kwargs.get("description", None)
 
     def _get_page_contents(self, page_number):
         # Returns the contents of the page passed
-        start = self.max*page_number
-        return self.list[start:start+self.max]
+        start = self.max * page_number
+        return self.list[start : start + self.max]
 
     async def pick(self):
         # This brings up the page picker and handles the events
@@ -853,34 +976,41 @@ class PagePicker(Picker):
         # Let's check our prerequisites first
         if self.ctx is None or not len(self.list):
             return (-3, None)
-        page  = 0 # Set the initial page index
-        pages = int(math.ceil(len(self.list)/self.max))
+        page = 0  # Set the initial page index
+        pages = int(math.ceil(len(self.list) / self.max))
         # Setup the embed
         embed = {
-            "title":self.title,
-            "url":self.url,
-            "description":self.description,
-            "color":self.ctx.author,
-            "pm_after":25,
-            "fields":self._get_page_contents(page),
-            "footer":"Page {} of {}".format(page+1,pages)
+            "title": self.title,
+            "url": self.url,
+            "description": self.description,
+            "color": self.ctx.author,
+            "pm_after": 25,
+            "fields": self._get_page_contents(page),
+            "footer": "Page {} of {}".format(page + 1, pages),
         }
         if self.message:
             self.self_message = self.message
-            await Embed(**embed).edit(self.ctx,self.message)
+            await Embed(**embed).edit(self.ctx, self.message)
         else:
             self.self_message = await Embed(**embed).send(self.ctx)
         # First verify we have more than one page to display
         if pages <= 1:
-            return (0,self.self_message)
+            return (0, self.self_message)
         # Add our reactions
         await self._add_reactions(self.self_message, self.reactions)
         # Now we would wait...
         def check(reaction, user):
-            return reaction.message.id == self.self_message.id and user == self.ctx.author and str(reaction.emoji) in self.reactions
+            return (
+                reaction.message.id == self.self_message.id
+                and user == self.ctx.author
+                and str(reaction.emoji) in self.reactions
+            )
+
         while True:
             try:
-                reaction, user = await self.ctx.bot.wait_for('picklist_reaction', timeout=self.timeout, check=check)
+                reaction, user = await self.ctx.bot.wait_for(
+                    "picklist_reaction", timeout=self.timeout, check=check
+                )
             except:
                 # Didn't get a reaction
                 await self._remove_reactions(self.reactions)
@@ -891,19 +1021,40 @@ class PagePicker(Picker):
                 # We bailed - let's clear reactions and close it down
                 await self._remove_reactions(self.reactions)
                 return (page, self.self_message)
-            page = 0 if ind==0 else page-1 if ind==1 else page+1 if ind==2 else pages if ind==3 else page
+            page = (
+                0
+                if ind == 0
+                else page - 1
+                if ind == 1
+                else page + 1
+                if ind == 2
+                else pages
+                if ind == 3
+                else page
+            )
             if ind == 4:
                 # User selects a page
-                page_instruction = await self.ctx.send("Type the number of that page to go to from {} to {}.".format(1,pages))
+                page_instruction = await self.ctx.send(
+                    "Type the number of that page to go to from {} to {}.".format(
+                        1, pages
+                    )
+                )
+
                 def check_page(message):
                     try:
                         num = int(message.content)
                     except:
                         return False
-                    return message.channel == self.self_message.channel and user == message.author
+                    return (
+                        message.channel == self.self_message.channel
+                        and user == message.author
+                    )
+
                 try:
-                    page_message = await self.ctx.bot.wait_for('message', timeout=self.timeout, check=check_page)
-                    page = int(page_message.content)-1
+                    page_message = await self.ctx.bot.wait_for(
+                        "message", timeout=self.timeout, check=check_page
+                    )
+                    page = int(page_message.content) - 1
                 except:
                     # Didn't get a message
                     pass
@@ -914,14 +1065,13 @@ class PagePicker(Picker):
                     await page_message.delete()
                 except:
                     pass
-            page = 0 if page < 0 else pages-1 if page > pages-1 else page
+            page = 0 if page < 0 else pages - 1 if page > pages - 1 else page
             embed["fields"] = self._get_page_contents(page)
-            embed["footer"] = "Page {} of {}".format(page+1,pages)
-            await Embed(**embed).edit(self.ctx,self.self_message)
+            embed["footer"] = "Page {} of {}".format(page + 1, pages)
+            await Embed(**embed).edit(self.ctx, self.self_message)
         await self._remove_reactions(self.reactions)
         # Get the adjusted index
         return (page, self.self_message)
-
 
 
 class EmbedLimits:
@@ -934,7 +1084,14 @@ class EmbedLimits:
 
 
 class Paginator:
-    def __init__(self, title=None, description=None, page_count=True, init_page=True, color=constants.embed):
+    def __init__(
+        self,
+        title=None,
+        description=None,
+        page_count=True,
+        init_page=True,
+        color=constants.embed,
+    ):
         """
         Args:
             title: title of the embed
@@ -965,9 +1122,15 @@ class Paginator:
 
         total = len(self.pages)
         for idx, embed in enumerate(self.pages):
-            embed.set_footer(text=f'{idx+1}/{total}')
+            embed.set_footer(text=f"{idx+1}/{total}")
 
-    def add_page(self, title=None, description=None, color=constants.embed, paginate_description=False):
+    def add_page(
+        self,
+        title=None,
+        description=None,
+        color=constants.embed,
+        paginate_description=False,
+    ):
         """
         Args:
             title:
@@ -981,14 +1144,15 @@ class Paginator:
         overflow = None
         if description:
             if paginate_description:
-                description_ = description[:EmbedLimits.Description]
-                overflow = description[EmbedLimits.Description:]
+                description_ = description[: EmbedLimits.Description]
+                overflow = description[EmbedLimits.Description :]
                 description = description_
             else:
-                description = description[:EmbedLimits.Description]
-        
+                description = description[: EmbedLimits.Description]
 
-        self._pages.append(discord.Embed(title=title, description=description, color=constants.embed))
+        self._pages.append(
+            discord.Embed(title=title, description=description, color=constants.embed)
+        )
         self._current_page += 1
         self._fields = 0
         self._char_count = 0
@@ -999,7 +1163,12 @@ class Paginator:
         self.color = color
 
         if overflow:
-            self.add_page(title=title, description=overflow, color=color, paginate_description=True)
+            self.add_page(
+                title=title,
+                description=overflow,
+                color=color,
+                paginate_description=True,
+            )
 
     def edit_page(self, title=None, description=None, color=constants.embed):
         page = self.pages[self._current_page]
@@ -1019,21 +1188,23 @@ class Paginator:
         if not self._current_field:
             return
 
-        if not self._current_field['value']:
-            self._current_field['value'] = 'Emptiness'
+        if not self._current_field["value"]:
+            self._current_field["value"] = "Emptiness"
 
         self.pages[self._current_page].add_field(**self._current_field)
         self._fields += 1
-        self._char_count += len(self._current_field['name']) + len(self._current_field['value'])
+        self._char_count += len(self._current_field["name"]) + len(
+            self._current_field["value"]
+        )
         self._current_field = None
 
-    def add_field(self, name, value='', inline=False):
+    def add_field(self, name, value="", inline=False):
         if self._current_field is not None and self._fields < 25:
             self._add_field()
 
-        name = name[:EmbedLimits.Title]
-        leftovers = value[EmbedLimits.Field:]
-        value = value[:EmbedLimits.Field]
+        name = name[: EmbedLimits.Title]
+        leftovers = value[EmbedLimits.Field :]
+        value = value[: EmbedLimits.Field]
         length = len(name) + len(value)
 
         if self._fields == 25:
@@ -1050,14 +1221,14 @@ class Paginator:
             self._fields = 0
             self._char_count = len(self.title)
 
-        self._current_field = {'name': name, 'value': value, 'inline': inline}
+        self._current_field = {"name": name, "value": value, "inline": inline}
 
         if leftovers:
             self.add_field(name, leftovers, inline=inline)
 
     def add_to_field(self, value):
-        v = self._current_field['value']
+        v = self._current_field["value"]
         if len(v) + len(value) > EmbedLimits.Field:
-            self.add_field(self._current_field['name'], value)
+            self.add_field(self._current_field["name"], value)
         else:
-            self._current_field['value'] += value
+            self._current_field["value"] += value

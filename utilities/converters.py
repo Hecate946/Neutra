@@ -3,13 +3,14 @@ import typing
 import discord
 from discord.ext import commands
 
-EMOJI_REGEX = re.compile(r'<a?:.+?:([0-9]{15,21})>')
-EMOJI_NAME_REGEX = re.compile(r'[0-9a-zA-Z\_]{2,32}')
+EMOJI_REGEX = re.compile(r"<a?:.+?:([0-9]{15,21})>")
+EMOJI_NAME_REGEX = re.compile(r"[0-9a-zA-Z\_]{2,32}")
 
 
-tag_regex = re.compile(r'(.*)#(\d{4})')
-lax_id_regex = re.compile(r'([0-9]{15,21})$')
-mention_regex = re.compile(r'<@!?([0-9]+)>$')
+tag_regex = re.compile(r"(.*)#(\d{4})")
+lax_id_regex = re.compile(r"([0-9]{15,21})$")
+mention_regex = re.compile(r"<@!?([0-9]+)>$")
+
 
 class SearchEmojiConverter(commands.Converter):
     """Search for matching emoji."""
@@ -29,8 +30,10 @@ class SearchEmojiConverter(commands.Converter):
         """
 
         emoji_name = emoji_name.lower()
+
         def pred(emoji):
             return emoji.name.lower() == emoji_name
+
         return [e for e in ctx.bot.emojis if pred(e)]
 
     async def find_match(self, ctx, argument):
@@ -48,7 +51,7 @@ class SearchEmojiConverter(commands.Converter):
         results = await self.get_by_name(ctx, argument)
         if results:
             return results[0]
-            
+
     async def convert(self, ctx, argument):
         match = await self.find_match(ctx, argument)
 
@@ -67,11 +70,13 @@ class SearchEmojiConverter(commands.Converter):
 
         lax_id_match = lax_id_regex.match(argument)
         if lax_id_match:
-            return discord.PartialEmoji(name="unknown", id=int(lax_id_match.group(1)), animated=False)
+            return discord.PartialEmoji(
+                name="unknown", id=int(lax_id_match.group(1)), animated=False
+            )
 
-        raise commands.BadArgument(
-            'Emoji "{}" not found'.format(argument))
-            
+        raise commands.BadArgument('Emoji "{}" not found'.format(argument))
+
+
 class DiscordUser(commands.Converter):
     """Resolve users/members.
     If given a username only checks current server. (Ease of use)
@@ -103,21 +108,36 @@ class DiscordUser(commands.Converter):
         tag_match = tag_regex.match(user_name)
 
         if tag_match:
+
             def pred(member):
-                return member.name == tag_match.group(1) and member.discriminator == tag_match.group(2)
+                return member.name == tag_match.group(
+                    1
+                ) and member.discriminator == tag_match.group(2)
 
             result = None
             if ctx.guild:
-                result = discord.utils.get(ctx.guild.members, name=tag_match.group(1), discriminator=tag_match.group(2))
+                result = discord.utils.get(
+                    ctx.guild.members,
+                    name=tag_match.group(1),
+                    discriminator=tag_match.group(2),
+                )
             if not result:
-                result = discord.utils.get(ctx.bot.users, name=tag_match.group(1), discriminator=tag_match.group(2))
+                result = discord.utils.get(
+                    ctx.bot.users,
+                    name=tag_match.group(1),
+                    discriminator=tag_match.group(2),
+                )
             if result:
                 return [result]
 
         if ctx.guild:
             user_name = user_name.lower()
+
             def pred(member):
-                return (member.nick and member.nick.lower() == user_name) or member.name.lower() == user_name
+                return (
+                    member.nick and member.nick.lower() == user_name
+                ) or member.name.lower() == user_name
+
             return [m for m in ctx.guild.members if pred(m)]
         return []
 
@@ -146,9 +166,9 @@ class DiscordUser(commands.Converter):
         match = await self.find_match(ctx, argument)
 
         if not match:
-            raise commands.BadArgument(
-                'User `{}` not found'.format(argument))
+            raise commands.BadArgument("User `{}` not found".format(argument))
         return match
+
 
 class BotServer(commands.Converter):
     async def convert(self, ctx, argument):
@@ -157,18 +177,22 @@ class BotServer(commands.Converter):
             try:
                 server = ctx.bot.get_guild(server_id)
                 if server is None:
-                    raise commands.BadArgument('Server `{}` not found'.format(argument))
+                    raise commands.BadArgument("Server `{}` not found".format(argument))
             except discord.HTTPException:
-                raise commands.BadArgument('Server `{}` not found'.format(argument))
+                raise commands.BadArgument("Server `{}` not found".format(argument))
             except discord.Forbidden:
-                raise commands.BadArgument('Server `{}` not found'.format(argument))
+                raise commands.BadArgument("Server `{}` not found".format(argument))
             except discord.NotFound:
-                raise commands.BadArgument('Server `{}` not found'.format(argument))
-            except Exception as e: await ctx.send(e)
-        options = [f"{s.id}" for s in ctx.bot.guilds if argument.lower() in s.name.lower()]
+                raise commands.BadArgument("Server `{}` not found".format(argument))
+            except Exception as e:
+                await ctx.send(e)
+        options = [
+            f"{s.id}" for s in ctx.bot.guilds if argument.lower() in s.name.lower()
+        ]
         if options == []:
-            raise commands.BadArgument('Server `{}` not found'.format(argument))
+            raise commands.BadArgument("Server `{}` not found".format(argument))
         return options
+
 
 # Similar to Botserver but does not return a list of findings
 class DiscordGuild(commands.Converter):
@@ -184,14 +208,17 @@ class DiscordGuild(commands.Converter):
                 return await ctx.send(f"I'm not in that server")
             except discord.NotFound:
                 return await ctx.send("Server doesn't exist")
-            except Exception as e: await ctx.send(e)
-        server = discord.utils.find(lambda s: argument.lower() in str(s.name).lower(), ctx.bot.guilds)
+            except Exception as e:
+                await ctx.send(e)
+        server = discord.utils.find(
+            lambda s: argument.lower() in str(s.name).lower(), ctx.bot.guilds
+        )
         if server is None:
             return await ctx.send(f"Didn't find that server.")
         return server
 
 
-#converter from R.Danny
+# converter from R.Danny
 class BannedMember(commands.Converter):
     async def convert(self, ctx, argument):
         if argument.isdigit():
@@ -199,16 +226,18 @@ class BannedMember(commands.Converter):
             try:
                 return await ctx.guild.fetch_ban(discord.Object(id=member_id))
             except discord.NotFound:
-                raise commands.BadArgument('This member has not been banned before.') from None
+                raise commands.BadArgument(
+                    "This member has not been banned before."
+                ) from None
 
         ban_list = await ctx.guild.bans()
         entity = discord.utils.find(lambda u: str(u.user) == argument, ban_list)
 
         if entity is None:
-            raise commands.BadArgument('This member has not been banned before.')
+            raise commands.BadArgument("This member has not been banned before.")
         return entity
-    
-    
+
+
 class GlobalChannel(commands.Converter):
     async def convert(self, ctx, argument):
         try:
@@ -218,15 +247,20 @@ class GlobalChannel(commands.Converter):
             try:
                 channel_id = int(argument, base=10)
             except ValueError:
-                raise commands.BadArgument(f'Could not find a channel by ID {argument!r}.')
+                raise commands.BadArgument(
+                    f"Could not find a channel by ID {argument!r}."
+                )
             else:
                 channel = ctx.bot.get_channel(channel_id)
                 if channel is None:
-                    raise commands.BadArgument(f'Could not find a channel by ID {argument!r}.')
+                    raise commands.BadArgument(
+                        f"Could not find a channel by ID {argument!r}."
+                    )
                 return channel
-            
+
+
 DiscordChannel = typing.Union[
     commands.converter.TextChannelConverter,
     commands.converter.VoiceChannelConverter,
-    commands.converter.CategoryChannelConverter]
-
+    commands.converter.CategoryChannelConverter,
+]

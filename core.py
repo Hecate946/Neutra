@@ -1,13 +1,9 @@
-import asyncio
-import contextlib
 import os
+import re
 import sys
 import json
 import time
 
-from discord_slash.client import SlashCommand
-from discord_slash.context import SlashContext
-from utilities.permissions import has_permissions
 import aiohttp
 import discord
 import logging
@@ -15,82 +11,84 @@ import traceback
 import collections
 import tracemalloc
 
-from colr              import color
-from datetime          import datetime
-from discord.ext       import commands, tasks
-from logging.handlers  import RotatingFileHandler
+from colr import color
+from datetime import datetime
+from discord.ext import commands, tasks
+from discord_slash.client import SlashCommand
+from logging.handlers import RotatingFileHandler
 
-from settings          import database, cleanup
-from utilities         import utils
-from settings          import constants
+from settings import database, cleanup
+from utilities import utils
+from settings import constants
 
-MAX_LOGGING_BYTES = 32 * 1024 * 1024 # 32 MiB
-COGS              = [x[:-3] for x in sorted(os.listdir('././cogs')) if x.endswith('.py')]
 
-cxn               = database.postgres
+MAX_LOGGING_BYTES = 32 * 1024 * 1024  # 32 MiB
+COGS = [x[:-3] for x in sorted(os.listdir("././cogs")) if x.endswith(".py")]
+
+cxn = database.postgres
 
 # Set up our command logger
 command_logger = logging.getLogger("NGC0000")
 command_logger.setLevel(logging.DEBUG)
 command_logger_handler = RotatingFileHandler(
-        filename="./data/logs/commands.log",
-        encoding="utf-8",
-        mode="w",
-        maxBytes=MAX_LOGGING_BYTES,
-        backupCount=5
-    )
+    filename="./data/logs/commands.log",
+    encoding="utf-8",
+    mode="w",
+    maxBytes=MAX_LOGGING_BYTES,
+    backupCount=5,
+)
 command_logger.addHandler(command_logger_handler)
 command_logger_format = logging.Formatter(
-    '\n{asctime}: [{levelname}] {name} || {message}', '%Y-%m-%d %H:%M:%S', style='{'
+    "\n{asctime}: [{levelname}] {name} || {message}", "%Y-%m-%d %H:%M:%S", style="{"
 )
 command_logger_handler.setFormatter(command_logger_format)
 
-#Set up our basic info logger
+# Set up our basic info logger
 info_logger = logging.getLogger("INFO_LOGGER")
 info_logger.setLevel(logging.INFO)
 info_logger_handler = RotatingFileHandler(
-        filename="./data/logs/info.log",
-        encoding="utf-8",
-        mode="w",
-        maxBytes=MAX_LOGGING_BYTES,
-        backupCount=5
+    filename="./data/logs/info.log",
+    encoding="utf-8",
+    mode="w",
+    maxBytes=MAX_LOGGING_BYTES,
+    backupCount=5,
 )
 info_logger.addHandler(info_logger_handler)
 info_logger_format = logging.Formatter(
-    '{asctime}: [{levelname}] {name} || {message}', '%Y-%m-%d %H:%M:%S', style='{'    
+    "{asctime}: [{levelname}] {name} || {message}", "%Y-%m-%d %H:%M:%S", style="{"
 )
 info_logger_handler.setFormatter(info_logger_format)
 
-#Set up the error logger
+# Set up the error logger
 error_logger = logging.getLogger("ERROR_LOGGER")
 error_logger.setLevel(logging.WARNING)
 error_logger_handler = RotatingFileHandler(
-        filename="./data/logs/errors.log",
-        encoding="utf-8",
-        mode="w",
-        maxBytes=MAX_LOGGING_BYTES,
-        backupCount=5
+    filename="./data/logs/errors.log",
+    encoding="utf-8",
+    mode="w",
+    maxBytes=MAX_LOGGING_BYTES,
+    backupCount=5,
 )
 error_logger.addHandler(error_logger_handler)
 error_logger_format = logging.Formatter(
-    '{asctime}: [{levelname}] {name} || {message}', '%Y-%m-%d %H:%M:%S', style='{'
+    "{asctime}: [{levelname}] {name} || {message}", "%Y-%m-%d %H:%M:%S", style="{"
 )
 error_logger_handler.setFormatter(error_logger_format)
 
 
-#Set up the traceback logger this just dumps all the errors
+# Set up the traceback logger this just dumps all the errors
 traceback_logger = logging.getLogger("TRACEBACK_LOGGER")
 traceback_logger.setLevel(logging.WARNING)
 traceback_logger_handler = RotatingFileHandler(
-        filename="./data/logs/traceback.log",
-        encoding="utf-8",
-        mode="w",
-        maxBytes=MAX_LOGGING_BYTES,
-        backupCount=5
+    filename="./data/logs/traceback.log",
+    encoding="utf-8",
+    mode="w",
+    maxBytes=MAX_LOGGING_BYTES,
+    backupCount=5,
 )
 traceback_logger.addHandler(traceback_logger_handler)
 traceback_logger_format = logging.Formatter(
-    '{asctime}: [{levelname}] {name} || {message}', '%Y-%m-%d %H:%M:%S', style='{'
+    "{asctime}: [{levelname}] {name} || {message}", "%Y-%m-%d %H:%M:%S", style="{"
 )
 traceback_logger_handler.setFormatter(traceback_logger_format)
 
@@ -98,82 +96,93 @@ traceback_logger_handler.setFormatter(traceback_logger_format)
 async def get_prefix(bot, message):
     if not message.guild:
         prefix = constants.prefix
-        return commands.when_mentioned_or(prefix + ' ', prefix)(bot, message)
+        return commands.when_mentioned_or(prefix + " ", prefix)(bot, message)
     prefix = await database.fetch_prefix(message.guild.id)
     if prefix is None:
-        await database.update_server(message.guild.id, message.guild.members)
+        await database.update_server(message.guild, message.guild.members)
         await database.fix_server(message.guild.id)
         prefix = await database.fetch_prefix(message.guild.id)
-    return commands.when_mentioned_or(prefix + ' ', prefix)(bot, message)
+    return commands.when_mentioned_or(prefix + " ", prefix)(bot, message)
 
 
-#Main bot class. Heart of the application
+# Main bot class. Heart of the application
 class NGC0000(commands.AutoShardedBot):
     def __init__(self):
 
-        super().__init__(command_prefix=get_prefix, case_insensitive=True, owner_ids=constants.owners, intents=discord.Intents.all(),)
+        super().__init__(
+            command_prefix=get_prefix,
+            case_insensitive=True,
+            owner_ids=constants.owners,
+            intents=discord.Intents.all(),
+        )
 
         self.session = aiohttp.ClientSession(loop=self.loop)
-
+        # discord invite regex
+        self.dregex = re.compile(
+            r"(?:https?://)?discord(?:app)?\.(?:com/invite|gg)/[a-zA-Z0-9]+/?"
+        )
         # Start the task loop
         self.status_loop.start()
 
     def setup(self):
 
         # Sets up all the global bot variables
-        if not hasattr(self, 'bot_ready'):
+        if not hasattr(self, "bot_ready"):
             self.bot_ready = False
 
-        if not hasattr(self, 'command_stats'):
+        if not hasattr(self, "command_stats"):
             self.command_stats = collections.Counter()
 
-        if not hasattr(self, 'socket_events'):
+        if not hasattr(self, "socket_events"):
             self.socket_events = collections.Counter()
 
-        if not hasattr(self, 'batch_inserts'):
+        if not hasattr(self, "batch_inserts"):
             self.batch_inserts = int()
 
-        if not hasattr(self, 'messages'):
+        if not hasattr(self, "messages"):
             self.messages = int()
 
-        if not hasattr(self, 'emojis_seen'):
+        if not hasattr(self, "emojis_seen"):
             self.emojis_seen = int()
 
-        if not hasattr(self, 'nickchanges'):
+        if not hasattr(self, "nickchanges"):
             self.nickchanges = int()
 
-        if not hasattr(self, 'namechanges'):
+        if not hasattr(self, "namechanges"):
             self.namechanges = int()
 
-        if not hasattr(self, 'avchanges'):
+        if not hasattr(self, "avchanges"):
             self.avchanges = int()
 
-        if not hasattr(self, 'rolechanges'):
+        if not hasattr(self, "rolechanges"):
             self.rolechanges = int()
 
-        if not hasattr(self, 'uptime'):
+        if not hasattr(self, "uptime"):
             self.uptime = datetime.utcnow()
 
-        if not hasattr(self, 'starttime'):
+        if not hasattr(self, "starttime"):
             self.starttime = int(time.time())
 
-        if not hasattr(self, 'cxn'):
+        if not hasattr(self, "cxn"):
             self.cxn = cxn
 
-        if not hasattr(self, 'emote_dict'):
+        if not hasattr(self, "emote_dict"):
             self.emote_dict = constants.emotes
 
-        if not hasattr(self, 'server_settings'):
+        if not hasattr(self, "server_settings"):
             self.server_settings = database.settings
 
-        if not hasattr(self, 'session'):
+        if not hasattr(self, "session"):
             self.session = self.session
 
-        if not hasattr(self, 'constants'):
+        if not hasattr(self, "constants"):
             self.constants = constants
 
         if not hasattr(self, "slash"):
             self.slash = SlashCommand(self, sync_commands=True)
+
+        if not hasattr(self, "bot_settings"):
+            self.bot_settings = database.bot_settings
 
         # loads all the cogs in ./cogs and prints them on sys.stdout
         for cog in COGS:
@@ -182,24 +191,26 @@ class NGC0000(commands.AutoShardedBot):
 
     def run(self, mode="production"):
         # Startup function that gets called in starter.py
-        
-        self.setup()
+
+        self.setup()  # load the cogs
 
         self.token = constants.token
         try:
-            super().run(self.token, reconnect=True)
-        finally:
+            super().run(self.token, reconnect=True)  # Run the bot
+        finally:  # Write up our json files with the stats from the session.
             self.status_loop.stop()
             print("\nKilled")
-            with open("./data/json/commands.json", 'w', encoding='utf-8') as fp:
+            with open("./data/json/commands.json", "w", encoding="utf-8") as fp:
                 json.dump(self.command_stats, fp, indent=2)
-            with open("./data/json/sockets.json", 'w', encoding='utf-8') as fp:
+            with open("./data/json/sockets.json", "w", encoding="utf-8") as fp:
                 json.dump(self.socket_events, fp, indent=2)
-            with open("./data/json/stats.json", 'w', encoding='utf-8') as fp:
+            with open("./data/json/stats.json", "w", encoding="utf-8") as fp:
                 stats = {
                     "client name": self.user.name,
                     "client id": self.user.id,
-                    "client age": utils.time_between(self.user.created_at.timestamp(), time.time()),
+                    "client age": utils.time_between(
+                        self.user.created_at.timestamp(), time.time()
+                    ),
                     "client owner": f"{self.owner_ids[0]}, {self.get_user(self.owner_ids[0])}",
                     "last run": utils.timeago(datetime.utcnow() - self.uptime),
                     "commands run": len(self.command_stats),
@@ -215,15 +226,13 @@ class NGC0000(commands.AutoShardedBot):
 
                 json.dump(stats, fp, indent=2)
 
-            data = utils.load_json('config.json')
+            data = utils.load_json("config.json")
             if mode == "tester":
                 utils.write_json("config_test.json", data)
             else:
                 utils.write_json("config_prod.json", data)
-                
 
-
-    async def close(self):
+    async def close(self):  # Shutdown the bot cleanly
         await super().close()
         await self.session.close()
 
@@ -261,10 +270,14 @@ class NGC0000(commands.AutoShardedBot):
                 delete = True
             if check.get("Ignore", False):
                 ignore = True
-            try: respond = check['Respond']
-            except KeyError: pass
-            try: react = check['Reaction']
-            except KeyError: pass
+            try:
+                respond = check["Respond"]
+            except KeyError:
+                pass
+            try:
+                react = check["Reaction"]
+            except KeyError:
+                pass
         if delete:
             # Delete the message
             await message.delete()
@@ -278,10 +291,9 @@ class NGC0000(commands.AutoShardedBot):
                     await message.add_reaction(r)
             await self.invoke(ctx)
 
-
     @tasks.loop(minutes=10)
     async def status_loop(self):
-        # ( ͡° ͜ʖ ͡°) The real reason why I code ( ͡° ͜ʖ ͡°) 
+        # ( ͡° ͜ʖ ͡°) The real reason why I code ( ͡° ͜ʖ ͡°)
         # (っ´▽｀)っ So pretty...
         # self.index += 1
 
@@ -294,10 +306,9 @@ class NGC0000(commands.AutoShardedBot):
         # print(color(fore="#1EDA10", text=middle))
         # print(color(fore="#1EDA10", text=bottom))
 
-        # For some weird reason after awhile the status doesn't show up so... 
+        # For some weird reason after awhile the status doesn't show up so...
         # updating it with the task loop.
         await self.set_status()
-
 
     @status_loop.before_loop
     async def before_status_loop(self):
@@ -313,15 +324,15 @@ class NGC0000(commands.AutoShardedBot):
             print(utils.traceback_maker(e))
         # Beautiful console logging on startup
 
-        message = f'Client Name: {bot.user}'
-        uid_message = f'Client ID:   {bot.user.id}'
-        user_count_message = f'Users: {len([ x for x in self.get_all_members()])}   Servers: {len(self.guilds)}'
-        separator = '=' * max(len(message), len(uid_message), len(user_count_message))
+        message = f"Client Name: {bot.user}"
+        uid_message = f"Client ID:   {bot.user.id}"
+        user_count_message = f"Users: {len([ x for x in self.get_all_members()])}   Servers: {len(self.guilds)}"
+        separator = "=" * max(len(message), len(uid_message), len(user_count_message))
         print(color(fore="#ff008c", text=separator))
         try:
             print(color(fore="#ff008c", text=message))
         except:
-            print(color(fore="#ff008c", text=message.encode(errors='replace').decode()))
+            print(color(fore="#ff008c", text=message.encode(errors="replace").decode()))
         print(color(fore="#ff008c", text=uid_message))
         print(color(fore="#ff008c", text=user_count_message))
         print(color(fore="#ff008c", text=separator))
@@ -329,17 +340,21 @@ class NGC0000(commands.AutoShardedBot):
         await cleanup.cleanup_servers(self.guilds)
 
         try:
-            channel = self.get_channel(constants.reboot['channel'])
-            msg = await channel.fetch_message(constants.reboot['message'])
-            await msg.edit(content=self.emote_dict['success'] + " " + "{0}ed Successfully.".format(constants.reboot["invoker"]))
+            channel = self.get_channel(constants.reboot["channel"])
+            msg = await channel.fetch_message(constants.reboot["message"])
+            await msg.edit(
+                content=self.emote_dict["success"]
+                + " "
+                + "{0}ed Successfully.".format(constants.reboot["invoker"])
+            )
         except Exception:
             pass
 
         from settings import cache
+
         cache.Settings(self)
 
         self.bot_ready = True
-
 
     async def set_status(self):
         # This sets the bot's presence, status, and activity
@@ -372,10 +387,13 @@ class NGC0000(commands.AutoShardedBot):
 
         await self.change_presence(status=s, activity=activity)
 
-
     async def on_command_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
-            name = str(ctx.command.qualified_name) if ctx.command.parent is None else str(ctx.command.full_parent_name)
+            name = (
+                str(ctx.command.qualified_name)
+                if ctx.command.parent is None
+                else str(ctx.command.full_parent_name)
+            )
             help_command = self.get_command("help")
             await help_command(ctx, invokercommand=name)
 
@@ -384,14 +402,19 @@ class NGC0000(commands.AutoShardedBot):
 
         elif isinstance(error, commands.NoPrivateMessage):
             # Debating whether or not to ignore this.
-            await ctx.author.send(f"{self.emote_dict['failed']} This command cannot be used in private messages.")
+            await ctx.author.send(
+                f"{self.emote_dict['failed']} This command cannot be used in private messages."
+            )
 
         elif isinstance(error, commands.CommandOnCooldown):
-            await ctx.send(f"{self.emote_dict['error']} This command is on cooldown... retry in {error.retry_after:.2f} seconds.")
+            await ctx.send(
+                f"{self.emote_dict['error']} This command is on cooldown... retry in {error.retry_after:.2f} seconds."
+            )
 
         elif isinstance(error, commands.DisabledCommand):
             # This could get annoying so lets just comment out for now
-            # await ctx.author.send(f"{self.emote_dict['failed']} This command is disabled.")
+            ctx.message.add_reaction(self.bot.emote_dict["failed"])
+            await ctx.send(f"{self.emote_dict['failed']} This command is disabled.")
             pass
 
         elif isinstance(error, discord.errors.Forbidden):
@@ -400,13 +423,29 @@ class NGC0000(commands.AutoShardedBot):
         elif isinstance(error, commands.CommandInvokeError):
             err = utils.traceback_maker(error.original, advance=True)
             if "or fewer" in str(error):
-                return await ctx.send(f"{self.emote_dict['failed']} Result was greater than the character limit.")
-            print(color(fore="FF0000", text=f'\nCommand {ctx.command.qualified_name} raised the error: {error.original.__class__.__name__}: {error.original}'), file=sys.stderr)
+                return await ctx.send(
+                    f"{self.emote_dict['failed']} Result was greater than the character limit."
+                )
+            print(
+                color(
+                    fore="FF0000",
+                    text=f"\nCommand {ctx.command.qualified_name} raised the error: {error.original.__class__.__name__}: {error.original}",
+                ),
+                file=sys.stderr,
+            )
             if ctx.guild is None:
-                destination = 'Private Message'
+                destination = "Private Message"
             else:
-                destination = '#{0.channel} [{0.channel.id}] ({0.guild}) [{0.guild.id}]'.format(ctx)
-            error_logger.warning("{0.author} in {1}:\n\tCONTENT: {0.message.content}\n\tERROR : {2.original.__class__.__name__}:{2.original}".format(ctx, destination, error))
+                destination = (
+                    "#{0.channel} [{0.channel.id}] ({0.guild}) [{0.guild.id}]".format(
+                        ctx
+                    )
+                )
+            error_logger.warning(
+                "{0.author} in {1}:\n\tCONTENT: {0.message.content}\n\tERROR : {2.original.__class__.__name__}:{2.original}".format(
+                    ctx, destination, error
+                )
+            )
             traceback_logger.warning(err)
 
         elif isinstance(error, commands.BotMissingPermissions):
@@ -414,24 +453,31 @@ class NGC0000(commands.AutoShardedBot):
             await ctx.send(f"{self.emote_dict['error']} {error}")
 
         elif isinstance(error, commands.CheckFailure):
-            # Readable error so just send it to the channel where the error occurred. 
+            # Readable error so just send it to the channel where the error occurred.
             # Or not
             # await ctx.send(f"{self.emote_dict['error']} {error}")
             pass
 
         else:
-            # Ok so here we don't really know what the error is, so lets print the basic error. 
+            # Ok so here we don't really know what the error is, so lets print the basic error.
             # We can always check pm2.log for the full error later if necessary
             err = utils.traceback_maker(error, advance=True)
             print(color(fore="FF0000", text="Error"))
             print(error)
             if ctx.guild is None:
-                destination = 'Private Message'
+                destination = "Private Message"
             else:
-                destination = '#{0.channel} [{0.channel.id}] ({0.guild}) [{0.guild.id}]'.format(ctx)
-            error_logger.warning("{0.author} in {1}:\n\tCONTENT: {0.message.content}\n\tERROR : {2}\n".format(ctx, destination, error))
+                destination = (
+                    "#{0.channel} [{0.channel.id}] ({0.guild}) [{0.guild.id}]".format(
+                        ctx
+                    )
+                )
+            error_logger.warning(
+                "{0.author} in {1}:\n\tCONTENT: {0.message.content}\n\tERROR : {2}\n".format(
+                    ctx, destination, error
+                )
+            )
             traceback_logger.warning(str(err) + "\n")
-
 
     async def on_guild_join(self, guild):
         if self.bot_ready is False:
@@ -443,7 +489,7 @@ class NGC0000(commands.AutoShardedBot):
     async def on_guild_remove(self, guild):
         if self.bot_ready is False:
             return
-        # This happens when the bot gets kicked from a server. 
+        # This happens when the bot gets kicked from a server.
         # No need to waste any space storing their info anymore.
         await cleanup.cleanup_servers(self.guilds)
 
@@ -456,5 +502,11 @@ class NGC0000(commands.AutoShardedBot):
         if self.bot_ready is False:
             return
         await self.process_commands(message)
+        if isinstance(message.channel, discord.DMChannel):
+            if self.dregex.match(message.content):
+                await message.channel.send(
+                    f"Hey {message.author.mention}! if you're looking to invite me to your server, use this link:\n<{self.constants.oauth}>"
+                )
+
 
 bot = NGC0000()

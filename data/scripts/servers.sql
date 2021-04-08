@@ -6,8 +6,11 @@ CREATE TABLE IF NOT EXISTS servers (
     muterole BIGINT,
     profanities TEXT,
     autoroles TEXT,
-    antiinvite BOOLEAN DEFAULT False,
-    reassign BOOLEAN DEFAULT True
+    disabled_commands TEXT,
+    admin_allow BOOLEAN DEFAULT True,
+    react BOOLEAN DEFAULT True,
+    reassign BOOLEAN DEFAULT True,
+    antiinvite BOOLEAN DEFAULT False
 );
 
 CREATE TABLE IF NOT EXISTS logging (

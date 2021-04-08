@@ -1,14 +1,37 @@
 import discord
- 
+
 from discord.ext import commands
 
 from settings import constants
 
 owners = constants.owners
+admins = constants.admins
+
+
+class NeedPerms(Exception):
+    pass
+
+    def __init__(
+        self, perms: list, message="You are missing the following permissions: "
+    ):
+        self.permissions = perms
+        self.message = message + str(perms)
+        super().__init__(self.message)
+        pass
+
 
 def is_owner(ctx):
     """ Checks if the author is one of the owners """
     return ctx.author.id in owners
+
+
+def is_admin(ctx):
+    if (
+        ctx.author.id in ctx.bot.constants.admins
+        or ctx.author.id in ctx.bot.constants.owners
+    ):
+        return True
+    return
 
 
 async def check_permissions(ctx, perms, *, check=all):
@@ -16,19 +39,62 @@ async def check_permissions(ctx, perms, *, check=all):
     if ctx.author.id in owners:
         return True
 
-    #resolved = ctx.channel.permissions_for(ctx.author)
+    # resolved = ctx.channel.permissions_for(ctx.author)
     resolved = ctx.author.guild_permissions
-    guild_perm_checker = check(getattr(resolved, name, None) == value for name, value in perms.items())
+    guild_perm_checker = check(
+        getattr(resolved, name, None) == value for name, value in perms.items()
+    )
     if guild_perm_checker is False:
         # Try to see if the user has channel permissions that override
         resolved = ctx.channel.permissions_for(ctx.author)
-    return check(getattr(resolved, name, None) == value for name, value in perms.items())
+    return check(
+        getattr(resolved, name, None) == value for name, value in perms.items()
+    )
+
+
+async def check_bot_permissions(ctx, perms, *, check=all):
+    """ Checks if author has permissions to a permission """
+
+    # resolved = ctx.channel.permissions_for(ctx.author)
+    resolved = ctx.guild.me.guild_permissions
+    guild_perm_checker = check(
+        getattr(resolved, name, None) == value for name, value in perms.items()
+    )
+    if guild_perm_checker is False:
+        # Try to see if the user has channel permissions that override
+        resolved = ctx.channel.permissions_for(ctx.guild.me)
+    return check(
+        getattr(resolved, name, None) == value for name, value in perms.items()
+    )
 
 
 def has_permissions(*, check=all, **perms):
     """ discord.Commands method to check if author has permissions """
+
     async def pred(ctx):
-        return await check_permissions(ctx, perms, check=check)
+        result = await check_permissions(ctx, perms, check=check)
+        perm_list = [x.title().replace("_", " ").replace("Tts", "TTS") for x in perms]
+        if result is False:
+            raise commands.BadArgument(
+                message=f"You are missing the following permission{'' if len(perm_list) == 1 else 's'}: `{', '.join(perm_list)}`"
+            )
+        return result
+
+    return commands.check(pred)
+
+
+def bot_has_permissions(*, check=all, **perms):
+    """ discord.Commands method to check if bot has permissions """
+
+    async def pred(ctx):
+        result = await check_bot_permissions(ctx, perms, check=check)
+        perm_list = [x.title().replace("_", " ").replace("Tts", "TTS") for x in perms]
+        if result is False:
+            raise commands.BadArgument(
+                message=f"I require the following permission{'' if len(perm_list) == 1 else 's'}: `{', '.join(perm_list)}`"
+            )
+        return result
+
     return commands.check(pred)
 
 
@@ -38,9 +104,13 @@ async def check_priv(ctx, member):
     try:
         # Self checks
         if member == ctx.author:
-            return await ctx.send(f"<:failed:816521503554273320> You cannot {ctx.command.name} yourself.")
+            return await ctx.send(
+                f"<:failed:816521503554273320> You cannot {ctx.command.name} yourself."
+            )
         if member.id == ctx.bot.user.id:
-            return await ctx.send(f"Fuck off or I'll {ctx.command.name} you. Little piece of shit...")
+            return await ctx.send(
+                f"Fuck off or I'll {ctx.command.name} you. Little piece of shit..."
+            )
 
         # Check if user bypasses
         if ctx.author.id == ctx.guild.owner.id:
@@ -51,15 +121,23 @@ async def check_priv(ctx, member):
         # Now permission check
         if member.id in owners:
             if ctx.author.id not in owners:
-                return await ctx.send(f"<:failed:816521503554273320> I cannot {ctx.command.name} my creator.")
+                return await ctx.send(
+                    f"<:failed:816521503554273320> I cannot {ctx.command.name} my creator."
+                )
             else:
                 pass
         if member.id == ctx.guild.owner.id:
-            return await ctx.send(f"<:failed:816521503554273320> You cannot {ctx.command.name} the server owner.")
+            return await ctx.send(
+                f"<:failed:816521503554273320> You cannot {ctx.command.name} the server owner."
+            )
         if ctx.author.top_role == member.top_role:
-            return await ctx.send(f"<:failed:816521503554273320> You cannot {ctx.command.name} someone who has the same permissions as you.")
+            return await ctx.send(
+                f"<:failed:816521503554273320> You cannot {ctx.command.name} someone who has the same permissions as you."
+            )
         if ctx.author.top_role < member.top_role:
-            return await ctx.send(f"<:failed:816521503554273320> You cannot {ctx.command.name} someone with a higher role than you.")
+            return await ctx.send(
+                f"<:failed:816521503554273320> You cannot {ctx.command.name} someone with a higher role than you."
+            )
     except Exception:
         pass
 
@@ -84,16 +162,25 @@ async def voice_priv(ctx, member):
             return None
         if ctx.author.id in owners:
             return None
-        
+
         if member.id == ctx.guild.owner.id:
-            return await ctx.send(f"<:failed:816521503554273320> You cannot {ctx.command.name} the server owner.")
+            return await ctx.send(
+                f"<:failed:816521503554273320> You cannot {ctx.command.name} the server owner."
+            )
         if ctx.author.top_role == member.top_role:
-            return await ctx.send(f"<:failed:816521503554273320> You cannot {ctx.command.name} someone who has the same permissions as you.")
+            return await ctx.send(
+                f"<:failed:816521503554273320> You cannot {ctx.command.name} someone who has the same permissions as you."
+            )
         if ctx.author.top_role < member.top_role:
-            return await ctx.send(f"<:failed:816521503554273320> You cannot {ctx.command.name} someone who has a higher role than you.")
+            return await ctx.send(
+                f"<:failed:816521503554273320> You cannot {ctx.command.name} someone who has a higher role than you."
+            )
     except Exception as e:
         print(e)
 
+
 def can_handle(ctx, permission: str):
     """ Checks if bot has permissions or is in DMs right now """
-    return isinstance(ctx.channel, discord.DMChannel) or getattr(ctx.channel.permissions_for(ctx.guild.me), permission)
+    return isinstance(ctx.channel, discord.DMChannel) or getattr(
+        ctx.channel.permissions_for(ctx.guild.me), permission
+    )
