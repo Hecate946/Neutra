@@ -377,7 +377,7 @@ class Roles(commands.Cog):
     def get_user(message, user):
         try:
             member = message.mentions[0]
-        except:
+        except Exception:
             member = message.guild.get_member_named(user)
         if not member:
             try:
@@ -636,11 +636,11 @@ class Roles(commands.Cog):
             embed.description = permissions
             try:
                 await ctx.send(embed=embed)
-            except:
+            except Exception:
                 await ctx.send(
                     "```Permissions for role {}\n\n{}```".format(role, permissionsne)
                 )
-        except:
+        except Exception:
             await ctx.send(
                 "```Couldn't find role, are you sure you typed it correctly?\n\nYou typed: '{}'```".format(
                     role

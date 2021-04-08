@@ -554,7 +554,7 @@ class Emojis(commands.Cog):
     #             embed = discord.Embed(title="Servers with the {} emote".format(msg), color=self.bot.constants.embed)
     #             embed.description = servers
     #             await ctx.send(embed=embed)
-    #         except:
+    #         except Exception:
     #             await ctx.send("```{}```".format(servers))
     #         if bool is True:
     #             await ctx.send("**Could not print the rest, sorry**")

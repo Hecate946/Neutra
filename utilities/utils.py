@@ -245,7 +245,7 @@ def getClockForTime(time_string):
             return time_string
         hour = int(t[0])
         minute = int(t[1])
-    except:
+    except Exception:
         return time_string
     clock_string = ""
     if minute > 44:
@@ -286,11 +286,11 @@ def getTimeFromOffset(offset, t=None, strft="%Y-%m-%d %I:%M %p", clock=True):
     # Split time string by : and get hour/minute values
     try:
         hours, minutes = map(int, offset.split(":"))
-    except:
+    except Exception:
         try:
             hours = int(offset)
             minutes = 0
-        except:
+        except Exception:
             return None
     msg = "UTC"
     # Get the time

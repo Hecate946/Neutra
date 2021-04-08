@@ -22,7 +22,7 @@ async def download(
 
     try:
         r_image = await utils.async_dl(url, headers={"user-agent": ua})
-    except:
+    except Exception:
         pass
     if r_image is None:
         raise commands.BadArgument(f"Invalid emoji.")

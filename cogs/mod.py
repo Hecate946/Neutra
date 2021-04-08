@@ -141,7 +141,7 @@ class Moderation(commands.Cog):
                             await target.send(
                                 f"<:announce:807097933916405760> You have been muted in **{ctx.guild.name}** {reason}. Mute duration: `{minutes if minutes is not None else 'Infinite'} minute{'' if minutes == 1 else 's'}`"
                             )
-                        except:
+                        except Exception:
                             return
                     global unmutereason
                     unmutereason = reason
@@ -213,7 +213,7 @@ class Moderation(commands.Cog):
                         await target.send(
                             f"<:announce:807097933916405760> You have been unmuted in **{ctx.guild.name}**"
                         )
-                    except:
+                    except Exception:
                         return
 
             else:
@@ -299,7 +299,7 @@ class Moderation(commands.Cog):
                     target, send_messages=False
                 )  # gives back send messages permissions
                 blocked.append(target)
-            except:
+            except Exception:
                 await ctx.send("`{0}` could not me block".format(target))
         if blocked:
             blocked_users = []
@@ -359,7 +359,7 @@ class Moderation(commands.Cog):
                     target, send_messages=None
                 )  # gives back send messages permissions
                 unblocked.append(target)
-            except:
+            except Exception:
                 await ctx.send("`{0}` could not me unblock".format(target))
         if unblocked:
             unblocked_users = []
@@ -419,7 +419,7 @@ class Moderation(commands.Cog):
                     target, send_messages=False, read_messages=False
                 )  # gives back send messages permissions
                 blinded.append(target)
-            except:
+            except Exception:
                 await ctx.send("`{0}` could not me blinded".format(target))
         if blinded:
             blinded_users = []
@@ -479,7 +479,7 @@ class Moderation(commands.Cog):
                     target, send_messages=None, read_messages=None
                 )  # gives back send messages permissions
                 unblinded.append(target)
-            except:
+            except Exception:
                 await ctx.send("`{0}` could not me unblinded".format(target))
         if unblinded:
             unblinded_users = []
@@ -528,15 +528,10 @@ class Moderation(commands.Cog):
         kicked = []
         immune = []
         for target in users:
-            # if target.id in self.bot.constants.owners: return await ctx.send('You cannot kick my master.')
-            # if target.id == ctx.author.id: return await ctx.send('I don\'t think you really want to kick yourself...')
-            # if target.id == self.bot.user.id: return await ctx.send('I don\'t think I want to kick myself...')
-            # if target.guild_permissions.kick_members and ctx.author.id not in self.bot.constants.owners and ctx.author.id != ctx.guild.owner.id: return await ctx.send('You cannot punish other staff members.')
-            # if ctx.guild.me.top_role.position > target.top_role.position and not target.guild_permissions.administrator:
             try:
                 await ctx.guild.kick(target, reason=reason)
                 kicked.append(f"{target.name}#{target.discriminator}")
-            except:
+            except Exception:
                 immune.append(f"{target.name}#{target.discriminator}")
                 continue
         if kicked:
@@ -603,7 +598,7 @@ class Moderation(commands.Cog):
                     target, reason=reason, delete_message_days=delete_message_days
                 )
                 banned.append(f"{target.name}#{target.discriminator}")
-            except:
+            except Exception:
                 immune.append(f"{target.name}#{target.discriminator}")
                 continue
         if banned:
@@ -670,7 +665,7 @@ class Moderation(commands.Cog):
                 )
                 await ctx.guild.unban(target, reason=reason)
                 banned.append(f"{target.name}#{target.discriminator}")
-            except:
+            except Exception:
                 immune.append(f"{target.name}#{target.discriminator}")
                 continue
         if banned:
@@ -704,7 +699,7 @@ class Moderation(commands.Cog):
                     and ctx.author.id != ctx.guild.owner.id
                 ):
                     return await ctx.send("You cannot punish other staff members.")
-            except:
+            except Exception:
                 try:
                     u = discord.Object(id=user)
                 except TypeError:
@@ -735,7 +730,7 @@ class Moderation(commands.Cog):
                     delete_message_days=7,
                 )
                 banned.append(user)
-            except:
+            except Exception:
                 uu = ctx.message.guild.get_member(user)
                 if uu is None:
                     await ctx.send(

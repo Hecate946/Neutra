@@ -247,7 +247,7 @@ class Users(commands.Cog):
             try:
                 member = self.bot.get_member(sid)
                 user = member
-            except:
+            except Exception:
                 pass
 
             # em = discord.Embed(description=f"{user}'s information.", color=self.bot.constants.embed)

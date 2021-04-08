@@ -107,7 +107,7 @@ class Server(commands.Cog):
         try:
             position = int(position) - 1
             assert -1 < position < len(ctx.guild.members)
-        except:
+        except Exception:
             return await ctx.send(
                 "Position must be an int between 1 and {:,}".format(
                     len(ctx.guild.members)

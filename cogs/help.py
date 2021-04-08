@@ -40,9 +40,9 @@ class Help(commands.Cog):
                 msg = await ctx.author.send(embed=embed)
                 try:
                     await ctx.message.add_reaction(self.emote_dict["letter"])
-                except:
+                except Exception:
                     return
-            except:
+            except Exception:
                 msg = await ctx.send(embed=embed, delete_after=delete_after)
         else:
             msg = await ctx.send(embed=embed, delete_after=delete_after)
@@ -69,7 +69,7 @@ class Help(commands.Cog):
         except asyncio.TimeoutError:
             try:
                 await msg.clear_reactions()
-            except:
+            except Exception:
                 await msg.remove_reaction(self.bot.emote_dict["trash"], ctx.guild.me)
 
     async def helper_func(self, ctx, cog, name, pm, delete_after):

@@ -157,7 +157,7 @@ class Bot(commands.Cog):
             )
         except discord.errors.HTTPException:
             await ctx.send("Your bug report is too long.")
-        except:
+        except Exception:
             await ctx.send("I'm unable to deliver your bug report. Sorry.")
         else:
             await ctx.send("Your bug report has been sent.")

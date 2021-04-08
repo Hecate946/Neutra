@@ -156,7 +156,7 @@ class Files(commands.Cog):
         await mess.edit(content="Uploading `{}`...".format(server_file))
         try:
             await ctx.author.send(file=discord.File(data, filename=server_file))
-        except:
+        except Exception:
             await ctx.send(file=discord.File(data, filename=server_file))
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
@@ -200,7 +200,7 @@ class Files(commands.Cog):
                     settings_file, filename=settings_file.replace("json", "txt")
                 )
             )
-        except:
+        except Exception:
             await ctx.send(
                 file=discord.File(
                     settings_file, filename=settings_file.replace("json", "txt")
@@ -246,7 +246,7 @@ class Files(commands.Cog):
         await mess.edit(content="Uploading `{}`...".format(role_file))
         try:
             await ctx.author.send(file=discord.File(data, filename=role_file))
-        except:
+        except Exception:
             await ctx.send(file=discord.File(data, filename=role_file))
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
@@ -289,7 +289,7 @@ class Files(commands.Cog):
         await mess.edit(content="Uploading `{}`...".format(role_file))
         try:
             await ctx.author.send(file=discord.File(data, filename=role_file))
-        except:
+        except Exception:
             await ctx.send(file=discord.File(data, filename=role_file))
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
@@ -358,7 +358,7 @@ class Files(commands.Cog):
         await mess.edit(content="Uploading `{}`...".format(log_file))
         try:
             await ctx.author.send(file=discord.File(data, filename=log_file))
-        except:
+        except Exception:
             await ctx.send(file=discord.File(data, filename=log_file))
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
@@ -400,7 +400,7 @@ class Files(commands.Cog):
         await mess.edit(content="Uploading `{}`...".format(time_file))
         try:
             await ctx.author.send(file=discord.File(data, filename=time_file))
-        except:
+        except Exception:
             await ctx.send(file=discord.File(data, filename=time_file))
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
@@ -447,7 +447,7 @@ class Files(commands.Cog):
         await mess.edit(content="Uploading `{}`...".format(time_file))
         try:
             await ctx.author.send(file=discord.File(data, filename=time_file))
-        except:
+        except Exception:
             await ctx.send(file=discord.File(data, filename=time_file))
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
@@ -497,7 +497,7 @@ class Files(commands.Cog):
         await mess.edit(content="Uploading `{}`...".format(time_file))
         try:
             await ctx.author.send(file=discord.File(data, filename=time_file))
-        except:
+        except Exception:
             await ctx.send(file=discord.File(data, filename=time_file))
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
@@ -542,7 +542,7 @@ class Files(commands.Cog):
         await mess.edit(content="Uploading `{}`...".format(time_file))
         try:
             await ctx.author.send(file=discord.File(data, filename=time_file))
-        except:
+        except Exception:
             await ctx.send(file=discord.File(data, filename=time_file))
             await mess.edit(
                 content="{} Uploaded `{}`.".format(

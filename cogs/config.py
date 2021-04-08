@@ -465,7 +465,7 @@ class Config(commands.Cog):
                 await ctx.send(
                     f"{self.emote_dict['success']} Successfully left server **{target_server.name}**"
                 )
-            except:
+            except Exception:
                 return
             return
         await ctx.send(f"{self.bot.emote_dict['exclamation']} **Cancelled.**")

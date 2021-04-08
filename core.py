@@ -331,7 +331,7 @@ class NGC0000(commands.AutoShardedBot):
         print(color(fore="#ff008c", text=separator))
         try:
             print(color(fore="#ff008c", text=message))
-        except:
+        except Exception:
             print(color(fore="#ff008c", text=message.encode(errors="replace").decode()))
         print(color(fore="#ff008c", text=uid_message))
         print(color(fore="#ff008c", text=user_count_message))
