@@ -930,7 +930,7 @@ class Botadmin(commands.Cog):
         """
         our_list = []
         for user_id in self.bot.constants.admins:
-            user = await self.bot.fetch_user(user_id)
+            user = self.bot.get_user(user_id)
             our_list.append({"name": f"**{str(user)}**", "value": f"ID: `{user.id}`"})
         p = pagination.MainMenu(
             pagination.FieldPageSource(
@@ -957,7 +957,7 @@ class Botadmin(commands.Cog):
         """
         our_list = []
         for user_id in self.bot.constants.owners:
-            user = await self.bot.fetch_user(user_id)
+            user = self.bot.get_user(user_id)
             our_list.append({"name": f"**{str(user)}**", "value": f"ID: `{user.id}`"})
         p = pagination.MainMenu(
             pagination.FieldPageSource(

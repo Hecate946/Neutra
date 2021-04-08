@@ -29,14 +29,18 @@ class Emojis(commands.Cog):
             msg = await ctx.send(
                 f"{self.bot.emote_dict['loading']} **Collecting Emoji Statistics**"
             )
-            query = """SELECT (emoji_id, total) FROM emojistats WHERE server_id = $1 ORDER BY total DESC;"""
+            query = '''
+                    SELECT (emoji_id, total)
+                    FROM emojistats
+                    WHERE server_id = $1
+                    ORDER BY total DESC;
+                    '''
 
             emoji_list = []
             result = await self.bot.cxn.fetch(query, ctx.guild.id)
             for x in result:
-                print(x)
                 try:
-                    emoji = await ctx.guild.fetch_emoji(int(x[0][0]))
+                    emoji = await self.bot.get_emoji(int(x[0][0]))
                     emoji_list.append((emoji, x[0][1]))
 
                 except Exception:
@@ -146,7 +150,7 @@ class Emojis(commands.Cog):
 
             p = pagination.SimplePages(
                 entries=[
-                    "`{}`: Uses: {}".format(await self.bot.fetch_user(u[0]), u[1])
+                    "`{}`: Uses: {}".format(self.bot.get_user(u[0]), u[1])
                     for u in emoji_users
                 ],
                 per_page=15,

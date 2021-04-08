@@ -336,7 +336,7 @@ class Bot(commands.Cog):
         release = platform.release()
         version = platform.version()
         processor = platform.processor()
-        botOwner = await self.bot.fetch_user(self.bot.constants.owners[0])
+        botOwner = self.bot.get_user(self.bot.constants.owners[0])
         botName = ctx.guild.me
         currentTime = int(time.time())
         timeString = utils.time_between(self.bot.starttime, currentTime)
