@@ -703,8 +703,8 @@ class Logging(commands.Cog):
             channels = ['channels', 'chan', 'channel_updates', 'channel_edits', 'channel_changes']
             leaves = ['leaves', 'leave', 'left']
             joins = ['joins', 'join', 'joined', 'member_join']
-            all = ['all', '*']
-            types_of_logs = [deletes, edits, roles, names, voice, avatars, moderation, channels, leaves, joins, all]
+            all_option = ['all', '*']
+            types_of_logs = [deletes, edits, roles, names, voice, avatars, moderation, channels, leaves, joins, all_option]
             type_of_log = None
             # finding type of log from argument using aliases
             for log_type in types_of_logs:
@@ -715,11 +715,14 @@ class Logging(commands.Cog):
                 await ctx.send(f"{self.bot.emote_dict['failed']} `{log_arg.capitalize()}` is not a valid logging option. Use `{ctx.prefix}log help` for more info.")
                 return
             if type_of_log == "all":
-                list_of_log_types = ['message_deletions', 'message_edits', 'role_changes', 'name_updates', 'voice_state_updates', 'avatar_changes', 'moderation', 'channel_updates', 'leaves', 'joins']
+                list_of_log_types = ['message_deletions', 'message_edits', 'role_changes', 'name_updates', 'voice_state_updates', 'avatar_changes', 'bans', 'channel_updates', 'leaves', 'joins']
                 # first check if all logging is already enabled/disabled
+                log_dict = self.bot.server_settings[ctx.guild.id]['logging']
+                current_list = [log_dict[item] for item in list_of_log_types]
+                if all([item == log_bool for item in current_list]):
+                    return await ctx.send(f"{self.bot.emote_dict['success']} All logging events are already {'enabled' if log_bool else 'disabled'}.")
+            
                 for i in list_of_log_types:
-                    if self.bot.server_settings[ctx.guild.id]['logging'][i] is log_bool:
-                        return await ctx.send(f"{self.bot.emote_dict['success']} All logging events are already {'enabled' if log_bool else 'disabled'}.")
                     query = f'''
                             UPDATE logging
                             SET {i} = $1

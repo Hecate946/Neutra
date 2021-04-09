@@ -340,7 +340,7 @@ class Help(commands.Cog):
                 "userstats",
                 "user",
             ]:
-                cog = self.bot.get_cog("Timezones")
+                cog = self.bot.get_cog("Users")
                 return await self.helper_func(
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )

@@ -445,7 +445,7 @@ class Files(commands.Cog):
         brief="DMs you a file of channel messages.",
     )
     @commands.guild_only()
-    @permissions.has_permissions(manage_server=True)
+    @permissions.has_permissions(manage_guild=True)
     async def dumpmessages(
         self, ctx, messages: int = 25, *, chan: discord.TextChannel = None
     ):
@@ -511,7 +511,7 @@ class Files(commands.Cog):
         aliases=["timezonelist", "listtimezones"], brief="DMs you a file of time zones."
     )
     @commands.guild_only()
-    @permissions.has_permissions(manage_server=True)
+    @permissions.has_permissions(manage_guild=True)
     async def dumptimezones(self, ctx):
         """
         Usage:      -dumptimezones
@@ -553,7 +553,7 @@ class Files(commands.Cog):
 
     @commands.command(aliases=["humanlist"], brief="DMs you a file of server humans.")
     @commands.guild_only()
-    @permissions.has_permissions(manage_server=True)
+    @permissions.has_permissions(manage_guild=True)
     async def dumphumans(self, ctx):
         """
         Usage:      -dumphumans
@@ -603,7 +603,7 @@ class Files(commands.Cog):
         brief="DMs you a file of server bots.",
     )
     @commands.guild_only()
-    @permissions.has_permissions(manage_server=True)
+    @permissions.has_permissions(manage_guild=True)
     async def dumpbots(self, ctx):
         """
         Usage:      -dumphumans
@@ -653,7 +653,7 @@ class Files(commands.Cog):
         brief="DMs you a file of server members.",
     )
     @commands.guild_only()
-    @permissions.has_permissions(manage_server=True)
+    @permissions.has_permissions(manage_guild=True)
     async def dumpmembers(self, ctx):
         """
         Usage:      -dumpmembers
@@ -673,6 +673,52 @@ class Files(commands.Cog):
         msg = ""
         for x, y in enumerate(sorted(member_list, key=lambda m: str(m)), start=1):
             msg += f"{x}\t{y.id}\t{str(y)}\n"
+
+        data = io.BytesIO(msg.encode("utf-8"))
+        await mess.edit(content="Uploading `{}`...".format(time_file))
+        try:
+            await ctx.author.send(file=discord.File(data, filename=time_file))
+        except Exception:
+            await ctx.send(file=discord.File(data, filename=time_file))
+            await mess.edit(
+                content="{} Uploaded `{}`.".format(
+                    self.bot.emote_dict["success"], time_file
+                )
+            )
+            return
+        await mess.edit(
+            content="{} Uploaded `{}`.".format(
+                self.bot.emote_dict["success"], time_file
+            )
+        )
+        await mess.add_reaction(self.bot.emote_dict["letter"])
+
+    @commands.command(
+        aliases=["banlist", "txtbans"],
+        brief="DMs you a file of server members.",
+    )
+    @commands.guild_only()
+    @permissions.bot_has_permissions(ban_members=True)
+    @permissions.has_permissions(manage_guild=True)
+    async def dumpbans(self, ctx):
+        """
+        Usage:      -dumpbans
+        Aliases:    -banlist, txtbans
+        Output:
+            Sends a txt file to your DMs with all
+            server bans.
+        """
+
+        timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
+        time_file = "Bans-{}.txt".format(timestamp)
+
+        mess = await ctx.send("Saving bans to **{}**...".format(time_file))
+
+        ban_list = await ctx.guild.bans()
+
+        msg = ""
+        for x, y in enumerate(sorted(ban_list, key=lambda m: str(m.user)), start=1):
+            msg += f"{x}\t{y.user.id}\t{str(y.user)}\tReason: {y.reason}\n"
 
         data = io.BytesIO(msg.encode("utf-8"))
         await mess.edit(content="Uploading `{}`...".format(time_file))
