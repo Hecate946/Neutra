@@ -155,6 +155,18 @@ class Utility(commands.Cog):
                 )
             )
 
+    async def do_avatar(self, ctx, user, url):
+        embed = discord.Embed(
+            title=f"**{user.display_name}'s avatar.**",
+            description=f"Links to `{user}'s` avatar:  "
+            f"[webp]({(str(url))}) | "
+            f'[png]({(str(url).replace("webp", "png"))}) | '
+            f'[jpeg]({(str(url).replace("webp", "jpg"))})  ',
+            color=self.bot.constants.embed,
+        )
+        embed.set_image(url=url)
+        await ctx.send(embed=embed)
+
     @commands.command(brief="Show a user's avatar.", aliases=["av", "pfp"])
     async def avatar(self, ctx, *, user: converters.DiscordUser = None):
         """

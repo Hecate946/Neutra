@@ -22,6 +22,19 @@ class Emojis(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    async def query(self, url, method="get", res_method="text", *args, **kwargs):
+        async with getattr(self.bot.session, method.lower())(
+            url, *args, **kwargs
+        ) as res:
+            return await getattr(res, res_method)()
+
+    async def get(self, url, *args, **kwargs):
+        return await self.query(url, "get", *args, **kwargs)
+
+    async def post(self, url, *args, **kwargs):
+        return await self.query(url, "post", *args, **kwargs)
+
+
     @commands.command(brief="Emoji usage tracking.")
     @commands.guild_only()
     async def emojistats(self, ctx):
@@ -29,18 +42,18 @@ class Emojis(commands.Cog):
             msg = await ctx.send(
                 f"{self.bot.emote_dict['loading']} **Collecting Emoji Statistics**"
             )
-            query = '''
+            query = """
                     SELECT (emoji_id, total)
                     FROM emojistats
                     WHERE server_id = $1
                     ORDER BY total DESC;
-                    '''
+                    """
 
             emoji_list = []
             result = await self.bot.cxn.fetch(query, ctx.guild.id)
             for x in result:
                 try:
-                    emoji = await self.bot.get_emoji(int(x[0][0]))
+                    emoji = await ctx.guild.fetch_emoji(int(x[0][0]))
                     emoji_list.append((emoji, x[0][1]))
 
                 except Exception:

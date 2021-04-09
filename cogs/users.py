@@ -31,7 +31,7 @@ class Users(commands.Cog):
         """
         if not len(members):
             return await ctx.send(
-                f"Usage: `{ctx.prefix}mobile <member> [member] [member]...`"
+                f"Usage: `{ctx.prefix}platform <member> [member] [member]...`"
             )
         mobilestatus = []
         notmobilestatus = []
@@ -102,117 +102,113 @@ class Users(commands.Cog):
                 f"{self.bot.emote_dict['offline']} User{'' if len(mobile) == 1 else 's'} `{', '.join(mobile)}` {'is' if len(mobile) == 1 else 'are'} offline"
             )
 
-    async def do_avatar(self, ctx, user, url):
-        embed = discord.Embed(
-            title=f"**{user.display_name}'s avatar.**",
-            description=f"Links to `{user}'s` avatar:  "
-            f"[webp]({(str(url))}) | "
-            f'[png]({(str(url).replace("webp", "png"))}) | '
-            f'[jpeg]({(str(url).replace("webp", "jpg"))})  ',
-            color=self.bot.constants.embed,
-        )
-        embed.set_image(url=url)
-        await ctx.send(embed=embed)
 
+    # @commands.command(
+    #     brief="Show information on a user.",
+    #     aliases=["whois", "ui", "profile", "user", "rawuser", "lookup"],
+    # )
+    # async def userinfo(self, ctx, member: converters.DiscordUser = None):
+    #     """
+    #     Usage:    -userinfo <member>
+    #     Aliases:  -profile, -ui, -whois
+    #     Examples: -userinfo NGC0000, -userinfo 810377376269205546
+    #     Output:   Roles, permissions, and general stats on a user.
+    #     Notes:
+    #         Invoke command with -user, -rawuser, or -lookup
+    #         to see all information collected on the user.
+    #     """
+
+    # if member is None:
+    #     member = ctx.author
+
+    # if member is None:
+    #     member = ctx.author
+
+    # if ctx.invoked_with in ["user", "rawuser", "lookup"]:
+    #     return await self.user(ctx, user=member)
+
+    # joinedList = []
+    # for mem in ctx.guild.members:
+    #     joinedList.append({"ID": mem.id, "Joined": mem.joined_at})
+
+    # # sort the users by join date
+    # joinedList = sorted(
+    #     joinedList,
+    #     key=lambda x: x["Joined"].timestamp() if x["Joined"] is not None else -1,
+    # )
+
+    # check_item = {"ID": member.id, "Joined": member.joined_at}
+
+    # position = joinedList.index(check_item) + 1
+
+    # msg = "{:,}".format(position)
+
+    # query = '''
+    #         SELECT COUNT(*)
+    #         FROM commands
+    #         WHERE author_id = $1
+    #         AND server_id = $2;
+    #         '''
+    # command_count = (
+    #     await self.bot.cxn.fetchrow(query, member.id, ctx.guild.id) or None
+    # )
+    # if command_count is None:
+    #     command_count = 0
+
+    # query = """
+    #         SELECT COUNT(*)
+    #         FROM messages
+    #         WHERE author_id = $1
+    #         AND server_id = $2;
+    #         """
+    # messages = await self.bot.cxn.fetchrow(query, member.id, ctx.guild.id) or None
+    # if messages is None:
+    #     messages = 0
+
+    # status_dict = {
+    #     "online": f"{self.bot.emote_dict['online']} Online",
+    #     "offline": f"{self.bot.emote_dict['offline']} Offline",
+    #     "dnd": f"{self.bot.emote_dict['dnd']} Do Not Disturb",
+    #     "idle": f"{self.bot.emote_dict['idle']} Idle",
+    # }
+    # embed = discord.Embed(color=self.bot.constants.embed)
+    # embed.set_author(name=f"{member}", icon_url=member.avatar_url)
+    # embed.set_thumbnail(url=member.avatar_url)
+    # embed.set_footer(
+    #     text=f"User ID: {member.id} | Created on {member.created_at.__format__('%m/%d/%Y')}"
+    # )
+    # embed.add_field(
+    #     name="Nickname",
+    #     value=f"{self.bot.emote_dict['owner'] if member.id == ctx.guild.owner.id else self.bot.emote_dict['bot'] if member.bot else ''} {member.display_name}",
+    # )
+    # embed.add_field(
+    #     name="Messages", value=f"{self.bot.emote_dict['messages']}  {messages[0]}"
+    # )
+    # embed.add_field(
+    #     name="Commands",
+    #     value=f"{self.bot.emote_dict['commands']}  {command_count[0]}",
+    # )
+    # embed.add_field(name="Status", value=f"{status_dict[str(member.status)]}")
+    # embed.add_field(
+    #     name="Highest Role",
+    #     value=f"{self.bot.emote_dict['role']} {'@everyone' if member.top_role.name == '@everyone' else member.top_role.mention}",
+    # )
+    # embed.add_field(
+    #     name="Join Position", value=f"{self.bot.emote_dict['invite']} #{msg}"
+    # )
+    # # perm_list = [Perm[0] for Perm in member.guild_permissions if Perm[1]]
+    # # if len(member.roles) > 1:
+    # #    role_list = member.roles[::-1]
+    # #    role_list.remove(member.roles[0])
+    # #    embed.add_field(name=f"Roles: [{len(role_list)}]", value =" ".join([role.mention for role in role_list]), inline=False)
+    # # else:
+    # #    embed.add_field(name=f"Roles: [0]", value ="** **", inline=False)
+    # # embed.add_field(name="Permissions:", value=", ".join(perm_list).replace("_", " ").replace("guild", "server").title().replace("Tts", "TTS"), inline=False)
+    # await ctx.send(embed=embed)
     @commands.command(
         brief="Show information on a user.",
-        aliases=["whois", "ui", "profile", "user", "rawuser", "lookup"],
+        aliases=["whois", "ui", "profile", "userinfo", "rawuser", "lookup"],
     )
-    @commands.guild_only()
-    async def userinfo(self, ctx, member: converters.DiscordUser = None):
-        """
-        Usage:    -userinfo <member>
-        Aliases:  -profile, -ui, -whois
-        Examples: -userinfo NGC0000, -userinfo 810377376269205546
-        Output:   Roles, permissions, and general stats on a user.
-        Notes:    If user is not in the server, use -user <user id>.
-        """
-
-        if member is None:
-            member = ctx.message.author
-
-        if member is None:
-            member = ctx.author
-
-        if ctx.invoked_with in ["user", "rawuser", "lookup"]:
-            return await ctx.invoke(await self.user(ctx, user=member))
-
-        joinedList = []
-        for mem in ctx.message.guild.members:
-            joinedList.append({"ID": mem.id, "Joined": mem.joined_at})
-
-        # sort the users by join date
-        joinedList = sorted(
-            joinedList,
-            key=lambda x: x["Joined"].timestamp() if x["Joined"] is not None else -1,
-        )
-
-        check_item = {"ID": member.id, "Joined": member.joined_at}
-
-        position = joinedList.index(check_item) + 1
-
-        msg = "{:,}".format(position)
-
-        query = (
-            """SELECT COUNT(*) FROM commands WHERE author_id = $1 AND server_id = $2"""
-        )
-        command_count = (
-            await self.bot.cxn.fetchrow(query, member.id, ctx.guild.id) or None
-        )
-        if command_count is None:
-            command_count = 0
-
-        query = """
-            SELECT COUNT(*)
-            FROM messages
-            WHERE author_id = $1
-            AND server_id = $2;
-            """
-        messages = await self.bot.cxn.fetchrow(query, member.id, ctx.guild.id) or None
-        if messages is None:
-            messages = 0
-
-        status_dict = {
-            "online": f"{self.bot.emote_dict['online']} Online",
-            "offline": f"{self.bot.emote_dict['offline']} Offline",
-            "dnd": f"{self.bot.emote_dict['dnd']} Do Not Disturb",
-            "idle": f"{self.bot.emote_dict['idle']} Idle",
-        }
-        embed = discord.Embed(color=self.bot.constants.embed)
-        embed.set_author(name=f"{member}", icon_url=member.avatar_url)
-        embed.set_thumbnail(url=member.avatar_url)
-        embed.set_footer(
-            text=f"User ID: {member.id} | Created on {member.created_at.__format__('%m/%d/%Y')}"
-        )
-        embed.add_field(
-            name="Nickname",
-            value=f"{self.bot.emote_dict['owner'] if member.id == ctx.guild.owner.id else self.bot.emote_dict['bot'] if member.bot else ''} {member.display_name}",
-        )
-        embed.add_field(
-            name="Messages", value=f"{self.bot.emote_dict['messages']}  {messages[0]}"
-        )
-        embed.add_field(
-            name="Commands",
-            value=f"{self.bot.emote_dict['commands']}  {command_count[0]}",
-        )
-        embed.add_field(name="Status", value=f"{status_dict[str(member.status)]}")
-        embed.add_field(
-            name="Highest Role",
-            value=f"{self.bot.emote_dict['role']} {'@everyone' if member.top_role.name == '@everyone' else member.top_role.mention}",
-        )
-        embed.add_field(
-            name="Join Position", value=f"{self.bot.emote_dict['invite']} #{msg}"
-        )
-        # perm_list = [Perm[0] for Perm in member.guild_permissions if Perm[1]]
-        # if len(member.roles) > 1:
-        #    role_list = member.roles[::-1]
-        #    role_list.remove(member.roles[0])
-        #    embed.add_field(name=f"Roles: [{len(role_list)}]", value =" ".join([role.mention for role in role_list]), inline=False)
-        # else:
-        #    embed.add_field(name=f"Roles: [0]", value ="** **", inline=False)
-        # embed.add_field(name="Permissions:", value=", ".join(perm_list).replace("_", " ").replace("guild", "server").title().replace("Tts", "TTS"), inline=False)
-        await ctx.send(embed=embed)
-
     async def user(self, ctx, *, user: converters.DiscordUser = None):
         """
         Usage:   -user <user>
@@ -225,7 +221,7 @@ class Users(commands.Cog):
         """
         async with ctx.channel.typing():
             if user is None:
-                return await ctx.send(f"Usage: `-user <user>`")
+                user = ctx.author
 
             sid = int(user.id)
             timestamp = ((sid >> 22) + 1420070400000) / 1000
@@ -238,25 +234,14 @@ class Users(commands.Cog):
             except Exception:
                 pass
 
-            # em = discord.Embed(description=f"{user}'s information.", color=self.bot.constants.embed)
-            # em.set_author(name=user, icon_url=user.avatar_url)
-            # em.set_thumbnail(url=user.avatar_url)
-            # em.add_field(name="Mention", value=user.mention)
-            # em.add_field(name="Name", value=user.name)
-            # em.add_field(name="ID", value=user.id)
-            # em.add_field(name="Discriminator", value=user.discriminator)
-            # em.add_field(name="Default Avatar", value=user.default_avatar)
-            # em.add_field(name="Registered On", value=fdate)
-            # await ctx.send(embed=em)
-
             tracking = self.bot.get_cog("Tracker")
 
             title_str = f"Information on **{user}**"
             msg = ""
             msg += f"Username      : {user}\n"
             if ctx.guild:
-                if isinstance(user, discord.Member) and user.nick:
-                    msg += f"Nickname      : {user.nick}\n"
+                if isinstance(user, discord.Member):
+                    msg += f"Nickname      : {user.display_name}\n"
             msg += f"ID            : {user.id}\n"
             if tracking is not None:
                 names = (await tracking.user_data(ctx, user))["usernames"]
@@ -268,25 +253,72 @@ class Users(commands.Cog):
                     if isinstance(user, discord.Member):
                         nicknames = (await tracking.user_data(ctx, user))["nicknames"]
                         if nicknames:
-                            if nicknames != user.nick:
+                            if nicknames != user.display_name:
                                 msg += f"Nicknames     : {nicknames}\n"
             msg += f"Common Servers: {sum(g.get_member(user.id) is not None for g in ctx.bot.guilds)}\n"
             unix = user.created_at.timestamp()
-            msg += f"Created       : {utils.time_between(int(unix), int(time.time()))} ago\n"
+            msg += f"Created       : {utils.time_between(int(unix), int(time.time()))} ago - [{user.created_at.utcnow()} UTC]\n"
             if ctx.guild:
                 if isinstance(user, discord.Member):
                     unix = user.joined_at.timestamp()
-                    msg += f"Joined        : {utils.time_between(int(unix), int(time.time()))} ago\n"
+                    msg += f"Joined        : {utils.time_between(int(unix), int(time.time()))} ago - [{user.joined_at.utcnow()} UTC]\n"
+                    joined_list = []
+                    for mem in ctx.guild.members:
+                        joined_list.append({"ID": mem.id, "Joined": mem.joined_at})
+                    # sort the users by join date
+                    joined_list = sorted(
+                        joined_list,
+                        key=lambda x: x["Joined"].timestamp()
+                        if x["Joined"] is not None
+                        else -1,
+                    )
+                    check_item = {"ID": user.id, "Joined": user.joined_at}
+
+                    position = joined_list.index(check_item) + 1
+                    pos = "{:,}".format(position)
+                    msg += f"Join Position : {pos}/{len(user.guild.members)}\n"
             if tracking is not None:
                 last_observed = await tracking.last_observed(user)
                 if last_observed["last_seen"] is not None:
-                    msg += f"Last seen     : {last_observed['last_seen']} ago\n"
+                    msg += f"Last Seen     : {last_observed['last_seen']} ago\n"
                 if last_observed["last_spoke"] is not None:
-                    msg += f"Last spoke    : {last_observed['last_spoke']} ago\n"
+                    msg += f"Last Spoke    : {last_observed['last_spoke']} ago\n"
                 if ctx.guild:
                     if isinstance(user, discord.Member):
                         if last_observed["server_last_spoke"] is not None:
                             msg += f"Spoke here    : {last_observed['server_last_spoke']} ago\n"
+            if ctx.guild:
+                if isinstance(user, discord.Member):
+                    query = """
+                            SELECT COUNT(*)
+                            FROM commands
+                            WHERE author_id = $1
+                            AND server_id = $2;
+                            """
+                    command_count = (
+                        await self.bot.cxn.fetchrow(query, user.id, ctx.guild.id)
+                        or None
+                    )
+                    if command_count is None:
+                        command_count = 0
+
+                    msg += f"Commands Run  : {command_count[0]}\n"
+
+                    query = """
+                            SELECT COUNT(*)
+                            FROM messages
+                            WHERE author_id = $1
+                            AND server_id = $2;
+                            """
+                    message_count = (
+                        await self.bot.cxn.fetchrow(query, user.id, ctx.guild.id)
+                        or None
+                    )
+                    if message_count is None:
+                        message_count = 0
+
+                    msg += f"Messages Sent : {message_count[0]}\n"
+
             if ctx.guild:
                 if isinstance(user, discord.Member) and user.activities:
                     msg += "Status        : {}\n".format(

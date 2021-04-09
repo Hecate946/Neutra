@@ -167,6 +167,7 @@ class Moderation(commands.Cog):
                 else:
                     msg = f'{self.bot.emote_dict["success"]} Muted `{", ".join(allmuted)}` for {minutes:,} minute{"" if minutes == 1 else "s"}'
                 await ctx.send(msg)
+                self.bot.dispatch('mod_action', ctx, targets=allmuted)
             if len(unmutes):
                 await asyncio.sleep(minutes * 60)
                 await self.unmute(ctx, targets)
@@ -232,6 +233,7 @@ class Moderation(commands.Cog):
             await ctx.send(
                 f'{self.bot.emote_dict["success"]} Unmuted `{", ".join(allmuted)}`'
             )
+            self.bot.dispatch('mod_action', ctx, targets=allmuted)
 
     @commands.command(
         name="unmute", brief="Unmute previously muted members.", aliases=["endmute"]
@@ -316,6 +318,7 @@ class Moderation(commands.Cog):
                     ", ".join(blocked_users)
                 )
             )
+            self.bot.dispatch('mod_action', ctx, targets=blocked_users)
 
     @commands.command(brief="Reallow users to send messages.")
     @commands.guild_only()
@@ -376,6 +379,7 @@ class Moderation(commands.Cog):
                     ", ".join(unblocked_users)
                 )
             )
+            self.bot.dispatch('mod_action', ctx, targets=unblocked_users)
 
     @commands.command(brief="Hide a channel from a user.")
     @commands.guild_only()
@@ -436,6 +440,7 @@ class Moderation(commands.Cog):
                     ", ".join(blinded_users)
                 )
             )
+            self.bot.dispatch('mod_action', ctx, targets=blinded_users)
 
     @commands.command(brief="Reallow users see a channel.")
     @commands.guild_only()
@@ -496,6 +501,7 @@ class Moderation(commands.Cog):
                     ", ".join(unblinded_users)
                 )
             )
+            self.bot.dispatch('mod_action', ctx, targets=unblinded_users)
 
     ##################
     ## Kick Command ##
@@ -537,6 +543,7 @@ class Moderation(commands.Cog):
                 continue
         if kicked:
             await ctx.send(f"{self.emote_dict['success']} Kicked `{', '.join(kicked)}`")
+            self.bot.dispatch('mod_action', ctx, targets=kicked)
         if immune:
             await ctx.send(
                 f"{self.emote_dict['failed']} Failed to kick `{', '.join(immune)}`"
@@ -564,7 +571,6 @@ class Moderation(commands.Cog):
         Permission: Ban Members
         Output:     Ban passed members from the server.
         """
-
         if not len(targets):
             return await ctx.send(
                 f"Usage: `{ctx.prefix}ban <target1> [target2] [delete message days] [reason]`"
@@ -604,6 +610,7 @@ class Moderation(commands.Cog):
                 continue
         if banned:
             await ctx.send(f"{self.emote_dict['success']} Banned `{', '.join(banned)}`")
+            self.bot.dispatch('mod_action', ctx, targets=banned)
         if immune:
             await ctx.send(
                 f"{self.emote_dict['failed']} Failed to ban `{', '.join(immune)}`"
@@ -673,6 +680,7 @@ class Moderation(commands.Cog):
             await ctx.send(
                 f"{self.emote_dict['success']} Softbanned `{', '.join(banned)}`"
             )
+            self.bot.dispatch('mod_action', ctx, targets=banned)
         if immune:
             await ctx.send(
                 f"{self.emote_dict['failed']} Failed to softban `{', '.join(immune)}`"
@@ -756,6 +764,7 @@ class Moderation(commands.Cog):
                     ", ".join(hackbanned), self.bot.emote_dict["success"]
                 )
             )
+            self.bot.dispatch('mod_action', ctx, targets=hackbanned)
 
     @commands.command(brief="Unban a previously banned user.", aliases=["revokeban"])
     @commands.guild_only()
@@ -787,6 +796,7 @@ class Moderation(commands.Cog):
             await ctx.send(
                 f'{self.bot.emote_dict["success"]} Unbanned `{member.user} (ID: {member.user.id}).`'
             )
+        self.bot.dispatch('mod_action', ctx, targets=[str(member.user)])
 
     # https://github.com/AlexFlipnote/discord_bot.py
 
