@@ -1032,7 +1032,6 @@ class Moderation(commands.Cog):
             filtered_words = self.bot.server_settings[message.guild.id]["profanities"]
         except KeyError:
             await database.fix_server(message.guild.id)
-            print("fixed server")
 
         if filtered_words == []:
             return
@@ -1044,7 +1043,7 @@ class Moderation(commands.Cog):
                 try:
                     await message.delete()
                     return await message.author.send(
-                        f"Your message `{message.content}` was removed for containing a filtered word"
+                        f"Your message `{message.content}` was removed for containing a filtered word."
                     )
                 except Exception:
                     return

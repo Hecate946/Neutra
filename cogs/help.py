@@ -70,7 +70,7 @@ class Help(commands.Cog):
             try:
                 await msg.clear_reactions()
             except Exception:
-                await msg.remove_reaction(self.bot.emote_dict["trash"], ctx.guild.me)
+                await msg.remove_reaction(self.bot.emote_dict["trash"], self.bot.user)
 
     async def helper_func(self, ctx, cog, name, pm, delete_after):
         the_cog = sorted(cog.get_commands(), key=lambda x: x.name)
@@ -120,13 +120,17 @@ class Help(commands.Cog):
             if i.brief is None or i.brief == "":
                 i.brief = "No description"
             line = f"\n`{i.name}` {i.brief}\n"
-            if (
-                i.name
-                not in self.bot.server_settings[ctx.guild.id]["disabled_commands"]
-            ):
-                msg += line
+            if ctx.guild:
+                if (
+                    i.name
+                    not in self.bot.server_settings[ctx.guild.id]["disabled_commands"]
+                ):
+                    msg += line
+                else:
+                    msg += f"\n<:fail:812062765028081674> `{i.name}` ~~{i.brief}~~\n"
             else:
-                msg += f"\n<:fail:812062765028081674> `{i.name}` ~~{i.brief}~~\n"
+                msg += line
+            
         embed.add_field(name=f"**{cog} Commands**", value=f"** **{msg}")
         try:
             await self.send_help(ctx, embed, pm, delete_after)
@@ -185,12 +189,15 @@ class Help(commands.Cog):
                 valid_cogs.append(c)
             for c in valid_cogs:
                 line = f"\n`{c.qualified_name}` {c.description}\n"
-                disabled_comms = self.bot.server_settings[ctx.guild.id][
-                    "disabled_commands"
-                ]
-                cog_comms = [y.name for y in c.get_commands() if not y.hidden]
-                if all(x in disabled_comms for x in cog_comms):
-                    msg += f"\n:no_entry: `{c.qualified_name}` ~~{c.description}~~\n"
+                if ctx.guild:
+                    disabled_comms = self.bot.server_settings[ctx.guild.id][
+                        "disabled_commands"
+                    ]
+                    cog_comms = [y.name for y in c.get_commands() if not y.hidden]
+                    if all(x in disabled_comms for x in cog_comms):
+                        msg += f"\n:no_entry: `{c.qualified_name}` ~~{c.description}~~\n"
+                    else:
+                        msg += line
                 else:
                     msg += line
 
