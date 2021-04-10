@@ -102,7 +102,6 @@ class Users(commands.Cog):
                 f"{self.bot.emote_dict['offline']} User{'' if len(mobile) == 1 else 's'} `{', '.join(mobile)}` {'is' if len(mobile) == 1 else 'are'} offline"
             )
 
-
     # @commands.command(
     #     brief="Show information on a user.",
     #     aliases=["whois", "ui", "profile", "user", "rawuser", "lookup"],

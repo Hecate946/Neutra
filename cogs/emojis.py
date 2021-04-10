@@ -34,7 +34,6 @@ class Emojis(commands.Cog):
     async def post(self, url, *args, **kwargs):
         return await self.query(url, "post", *args, **kwargs)
 
-
     @commands.command(brief="Emoji usage tracking.")
     @commands.guild_only()
     async def emojistats(self, ctx):
@@ -70,16 +69,16 @@ class Emojis(commands.Cog):
             except menus.MenuError as e:
                 await ctx.send(e)
 
-    
-    # @commands.command(brief="Emoji usage tracking.")
-    # @commands.guild_only()
-    # async def emojistats(self, ctx, member: discord.Member = None):
+        # @commands.command(brief="Emoji usage tracking.")
+        # @commands.guild_only()
+        # async def emojistats(self, ctx, member: discord.Member = None):
         """
         This was how I used to do the emoji stats, 
         I would regex search the entire messages table
         It saves quite a bit of space on the db server, 
         but it takes far too long to be practical
         """
+
     #     async with ctx.channel.typing():
     #         if member is None:
     #             msg = await ctx.send(f"{self.bot.emote_dict['loading']} **Collecting Emoji Statistics**")
@@ -228,7 +227,7 @@ class Emojis(commands.Cog):
             "1f44c",
             "1f3fe",
             "1f3ff",
-        ] # these colors arent in twemoji
+        ]  # these colors arent in twemoji
 
         name = None
 
@@ -440,7 +439,7 @@ class Emojis(commands.Cog):
         )
         for emoji_to_add in emojis_to_add[:10]:
             # Let's try to download it
-            emoji, e_name = emoji_to_add 
+            emoji, e_name = emoji_to_add
             f = await self.get(str(emoji), res_method="read")
             if not f:
                 await message.edit(

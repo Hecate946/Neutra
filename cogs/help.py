@@ -130,7 +130,7 @@ class Help(commands.Cog):
                     msg += f"\n<:fail:812062765028081674> `{i.name}` ~~{i.brief}~~\n"
             else:
                 msg += line
-            
+
         embed.add_field(name=f"**{cog} Commands**", value=f"** **{msg}")
         try:
             await self.send_help(ctx, embed, pm, delete_after)
@@ -195,7 +195,9 @@ class Help(commands.Cog):
                     ]
                     cog_comms = [y.name for y in c.get_commands() if not y.hidden]
                     if all(x in disabled_comms for x in cog_comms):
-                        msg += f"\n:no_entry: `{c.qualified_name}` ~~{c.description}~~\n"
+                        msg += (
+                            f"\n:no_entry: `{c.qualified_name}` ~~{c.description}~~\n"
+                        )
                     else:
                         msg += line
                 else:

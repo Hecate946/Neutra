@@ -23,6 +23,140 @@ class Admin(commands.Cog):
             r"(?:https?://)?discord(?:app)?\.(?:com/invite|gg)/[a-zA-Z0-9]+/?"
         )
 
+    @commands.command(
+        brief="Add a custom server prefix.", aliases=["prefix", "setprefix"]
+    )
+    @commands.guild_only()
+    @permissions.has_permissions(manage_guild=True)
+    async def addprefix(self, ctx, new_prefix):
+        """
+        Usage: -addprefix
+        Aliases: -prefix, -setprefix
+        Output: Adds a custom prefix to your server.
+        """
+        if new_prefix is None:
+            await ctx.invoke(self.prefixes)
+        current_prefixes = self.bot.server_settings[ctx.guild.id]["prefixes"]
+        if new_prefix in current_prefixes:
+            return await ctx.send(
+                f"{self.bot.emote_dict['error']} Specified prefix is already a registered prefix."
+            )
+        if len(current_prefixes) == 10:
+            return await ctx.send(
+                f"{self.bot.emote_dict['failed']} Max prefix limit of 10 has been reached."
+            )
+        if len(new_prefix) > 20:
+            return await ctx.send(
+                f"{self.bot.emote_dict['failed']} Max prefix length is 20 characters."
+            )
+        query = """
+                INSERT INTO prefixes
+                VALUES ($1, $2);
+                """
+        await self.bot.cxn.execute(query, ctx.guild.id, new_prefix)
+        self.bot.server_settings[ctx.guild.id]["prefixes"].append(new_prefix)
+        await ctx.send(
+            f"{self.bot.emote_dict['success']} Successfully added prefix `{new_prefix}`"
+        )
+
+    @commands.command(
+        brief="Remove a custom server prefix.", aliases=["remprefix", "rmprefix"]
+    )
+    @commands.guild_only()
+    @permissions.has_permissions(manage_guild=True)
+    async def removeprefix(self, ctx, old_prefix):
+        """
+        Usage: -removeprefix
+        Aliases: -remprefix, -rmprefix
+        Output: Removes a custom prefix from your server.
+        """
+        if old_prefix is None:
+            return await ctx.send(f"Usage: `{ctx.prefix}addprefix <old prefix>`")
+        current_prefixes = self.bot.server_settings[ctx.guild.id]["prefixes"]
+        if old_prefix not in current_prefixes:
+            return await ctx.send(
+                f"{self.bot.emote_dict['error']} Specified prefix is not a registered prefix."
+            )
+        query = """
+                DELETE FROM prefixes
+                WHERE server_id = $1
+                AND prefix = $2
+                """
+        await self.bot.cxn.execute(query, ctx.guild.id, old_prefix)
+        self.bot.server_settings[ctx.guild.id]["prefixes"].remove(old_prefix)
+        await ctx.send(
+            f"{self.bot.emote_dict['success']} Successfully removed prefix `{old_prefix}`"
+        )
+
+    @commands.command(
+        brief="Clear all custom server prefixes.",
+        aliases=[
+            "clearprefixes",
+            "removeprefixes",
+            "remprefixes",
+            "rmprefixes",
+            "purgeprefixes",
+            "purgeprefix",
+        ],
+    )
+    @commands.guild_only()
+    @permissions.has_permissions(manage_guild=True)
+    async def clearprefix(self, ctx):
+        """
+        Usage: -clearprefix
+        Aliases:
+            -clearprefixes, -removeprefixes, -remprefixes,
+            -rmprefixes, -purgeprefixes, -purgeprefix
+        Output:
+            Clears all custom server prefixes and reverts to default "-"
+        """
+        c = await pagination.Confirmation(
+            msg=f"{self.bot.emote_dict['exclamation']} "
+            "**This action will clear all my set prefixes "
+            f"and revert back to my default {self.bot.constants.prefix}. "
+            "Do you wish to continue?**"
+        ).prompt(ctx)
+        if c:
+            # length = len(self.bot.server_settings[ctx.guild.id]['prefixes'].copy())
+            query = """
+                    DELETE FROM prefixes
+                    WHERE server_id = $1
+                    """
+            await self.bot.cxn.execute(query, ctx.guild.id)
+            self.bot.server_settings[ctx.guild.id]["prefixes"] = []
+            await ctx.send(
+                f"{self.bot.emote_dict['success']} **Successfully cleared all custom prefixes.**"
+            )
+            return
+        await ctx.send(f"{self.bot.emote_dict['exclamation']} **Cancelled.**")
+
+    @commands.command(
+        brief="Show all server prefixes.",
+        aliases=[
+            "showprefix",
+            "showprefixes",
+            "listprefixes",
+            "listprefix",
+            "displayprefix",
+            "displayprefixes",
+        ],
+    )
+    @commands.guild_only()
+    async def prefixes(self, ctx):
+        """
+        Usage: -prefixes
+        Aliases:
+            -showprefix, -showprefixes, -listprefixes,
+            -listprefix, -displayprefixes, -displayprefix
+        Output: Shows all the current server prefixes
+        """
+        current_prefixes = self.bot.server_settings[ctx.guild.id]["prefixes"]
+        if len(current_prefixes) == 0:
+            return await ctx.send(f"My current prefix is {self.bot.constants.prefix}")
+        await ctx.send(
+            f"{self.bot.emote_dict['info']} My current prefix{' is' if len(current_prefixes) == 1 else 'es are '} `{', '.join(current_prefixes)}`"
+        )
+
     @commands.command(brief="Setup server muting system.", aliases=["setmuterole"])
     @commands.guild_only()
     @permissions.bot_has_permissions(manage_roles=True)
@@ -79,41 +213,41 @@ class Admin(commands.Cog):
             content=f"{self.bot.emote_dict['success']} Saved `{role.name}` as this server's mute role."
         )
 
-    @commands.command(aliases=["setprefix"], brief="Set your server's custom prefix.")
-    @commands.guild_only()
-    @permissions.has_permissions(manage_guild=True)
-    async def prefix(self, ctx, new: str = None):
-        """
-        Usage: -prefix [new prefix]
-        Alias: -setprefix
-        Output: A new prefix for the server
-        Example: -prefix $
-        Permission: Manage Server
-        Notes:
-            The bot will always respond to @NGC0000 in addition
-            to the set prefix. The default prefix is -.
-            The bot will only respond to that prefix in DMs.
-            The new prefix set must be under 5 characters.
-        """
-        if new is None:
-            prefix = self.bot.server_settings[ctx.guild.id]["prefix"]
-            await ctx.reply(f"The current prefix is `{prefix}`")
-        else:
-            if len(new) > 5:
-                await ctx.send(
-                    f"{ctx.author.mention}, that prefix is too long. The prefix must be five characters maximum."
-                )
-            else:
-                self.bot.server_settings[ctx.guild.id]["prefix"] = new
-                query = """
-                        UPDATE servers
-                        SET prefix = $1
-                        WHERE server_id = $2
-                        """
-                await self.bot.cxn.execute(query, new, ctx.guild.id)
-                await ctx.reply(
-                    f"{self.bot.emote_dict['success']} The prefix has been set to `{new}`"
-                )
+    # @commands.command(aliases=["setprefix"], brief="Set your server's custom prefix.")
+    # @commands.guild_only()
+    # @permissions.has_permissions(manage_guild=True)
+    # async def prefix(self, ctx, new: str = None):
+    #     """
+    #     Usage: -prefix [new prefix]
+    #     Alias: -setprefix
+    #     Output: A new prefix for the server
+    #     Example: -prefix $
+    #     Permission: Manage Server
+    #     Notes:
+    #         The bot will always respond to @NGC0000 in addition
+    #         to the set prefix. The default prefix is -.
+    #         The bot will only respond to that prefix in DMs.
+    #         The new prefix set must be under 5 characters.
+    #     """
+    #     if new is None:
+    #         prefix = self.bot.server_settings[ctx.guild.id]["prefix"]
+    #         await ctx.reply(f"The current prefix is `{prefix}`")
+    #     else:
+    #         if len(new) > 5:
+    #             await ctx.send(
+    #                 f"{ctx.author.mention}, that prefix is too long. The prefix must be five characters maximum."
+    #             )
+    #         else:
+    #             self.bot.server_settings[ctx.guild.id]["prefix"] = new
+    #             query = """
+    #                     UPDATE servers
+    #                     SET prefix = $1
+    #                     WHERE server_id = $2
+    #                     """
+    #             await self.bot.cxn.execute(query, new, ctx.guild.id)
+    #             await ctx.reply(
+    #                 f"{self.bot.emote_dict['success']} The prefix has been set to `{new}`"
+    #             )
 
     @commands.command(
         brief="Enable or disable auto-deleting invite links",

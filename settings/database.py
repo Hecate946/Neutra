@@ -22,21 +22,20 @@ async def initialize(guilds, members):
     await scriptexec()
     await update_db(guilds, members)
     await load_settings()
+    await load_prefixes(guilds)
 
 
-# async def load_bot_settings():
-#     disabled_commands = await postgres.fetchval('''SELECT disabled_commands FROM settings;''')
-#     if disabled_commands is None:
-#         disabled_commands = []
-#     else:
-#         disabled_commands = [x for x in disabled_commands.split(',')]
-
-#     admin_allow = await postgres.fetchval('''SELECT admin_allow FROM settings;''')
-#     react = await postgres.fetchval('''SELECT react FROM settings;''')
-
-#     bot_settings['disabled_commands'] = disabled_commands
-#     bot_settings['admin_allow'] = admin_allow
-#     bot_settings['react'] = react
+async def load_prefixes(guilds):
+    query = """
+            SELECT prefix
+            FROM prefixes
+            WHERE server_id = $1;
+            """
+    for guild in guilds:
+        all_prefixes = await postgres.fetch(query, guild.id)
+        prefixes = settings[guild.id]["prefixes"] = []
+        for x in all_prefixes:
+            prefixes.append(x[0])
 
 
 async def scriptexec():
@@ -375,9 +374,17 @@ async def fix_server(server):
         settings[server_id]["logging"]["webhook_id"] = webhook_id
 
 
+# async def fetch_prefix(server):
+#     try:
+#         prefix = settings[server]["prefix"]
+#     except KeyError:
+#         return None
+#     return prefix
+
+
 async def fetch_prefix(server):
     try:
-        prefix = settings[server]["prefix"]
+        prefixes = settings[server]["prefixes"]
     except KeyError:
-        return None
-    return prefix
+        return []
+    return prefixes

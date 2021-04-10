@@ -13,6 +13,11 @@ CREATE TABLE IF NOT EXISTS servers (
     antiinvite BOOLEAN DEFAULT False
 );
 
+CREATE TABLE IF NOT EXISTS prefixes (
+    server_id BIGINT,
+    prefix VARCHAR(20)
+);
+
 CREATE TABLE IF NOT EXISTS logging (
     server_id BIGINT PRIMARY KEY,
     message_edits BOOLEAN DEFAULT True,

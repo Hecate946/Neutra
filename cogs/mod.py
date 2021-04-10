@@ -167,7 +167,7 @@ class Moderation(commands.Cog):
                 else:
                     msg = f'{self.bot.emote_dict["success"]} Muted `{", ".join(allmuted)}` for {minutes:,} minute{"" if minutes == 1 else "s"}'
                 await ctx.send(msg)
-                self.bot.dispatch('mod_action', ctx, targets=allmuted)
+                self.bot.dispatch("mod_action", ctx, targets=allmuted)
             if len(unmutes):
                 await asyncio.sleep(minutes * 60)
                 await self.unmute(ctx, targets)
@@ -233,7 +233,7 @@ class Moderation(commands.Cog):
             await ctx.send(
                 f'{self.bot.emote_dict["success"]} Unmuted `{", ".join(allmuted)}`'
             )
-            self.bot.dispatch('mod_action', ctx, targets=allmuted)
+            self.bot.dispatch("mod_action", ctx, targets=allmuted)
 
     @commands.command(
         name="unmute", brief="Unmute previously muted members.", aliases=["endmute"]
@@ -318,7 +318,7 @@ class Moderation(commands.Cog):
                     ", ".join(blocked_users)
                 )
             )
-            self.bot.dispatch('mod_action', ctx, targets=blocked_users)
+            self.bot.dispatch("mod_action", ctx, targets=blocked_users)
 
     @commands.command(brief="Reallow users to send messages.")
     @commands.guild_only()
@@ -379,7 +379,7 @@ class Moderation(commands.Cog):
                     ", ".join(unblocked_users)
                 )
             )
-            self.bot.dispatch('mod_action', ctx, targets=unblocked_users)
+            self.bot.dispatch("mod_action", ctx, targets=unblocked_users)
 
     @commands.command(brief="Hide a channel from a user.")
     @commands.guild_only()
@@ -440,7 +440,7 @@ class Moderation(commands.Cog):
                     ", ".join(blinded_users)
                 )
             )
-            self.bot.dispatch('mod_action', ctx, targets=blinded_users)
+            self.bot.dispatch("mod_action", ctx, targets=blinded_users)
 
     @commands.command(brief="Reallow users see a channel.")
     @commands.guild_only()
@@ -501,7 +501,7 @@ class Moderation(commands.Cog):
                     ", ".join(unblinded_users)
                 )
             )
-            self.bot.dispatch('mod_action', ctx, targets=unblinded_users)
+            self.bot.dispatch("mod_action", ctx, targets=unblinded_users)
 
     ##################
     ## Kick Command ##
@@ -543,7 +543,7 @@ class Moderation(commands.Cog):
                 continue
         if kicked:
             await ctx.send(f"{self.emote_dict['success']} Kicked `{', '.join(kicked)}`")
-            self.bot.dispatch('mod_action', ctx, targets=kicked)
+            self.bot.dispatch("mod_action", ctx, targets=kicked)
         if immune:
             await ctx.send(
                 f"{self.emote_dict['failed']} Failed to kick `{', '.join(immune)}`"
@@ -610,7 +610,7 @@ class Moderation(commands.Cog):
                 continue
         if banned:
             await ctx.send(f"{self.emote_dict['success']} Banned `{', '.join(banned)}`")
-            self.bot.dispatch('mod_action', ctx, targets=banned)
+            self.bot.dispatch("mod_action", ctx, targets=banned)
         if immune:
             await ctx.send(
                 f"{self.emote_dict['failed']} Failed to ban `{', '.join(immune)}`"
@@ -680,7 +680,7 @@ class Moderation(commands.Cog):
             await ctx.send(
                 f"{self.emote_dict['success']} Softbanned `{', '.join(banned)}`"
             )
-            self.bot.dispatch('mod_action', ctx, targets=banned)
+            self.bot.dispatch("mod_action", ctx, targets=banned)
         if immune:
             await ctx.send(
                 f"{self.emote_dict['failed']} Failed to softban `{', '.join(immune)}`"
@@ -764,7 +764,7 @@ class Moderation(commands.Cog):
                     ", ".join(hackbanned), self.bot.emote_dict["success"]
                 )
             )
-            self.bot.dispatch('mod_action', ctx, targets=hackbanned)
+            self.bot.dispatch("mod_action", ctx, targets=hackbanned)
 
     @commands.command(brief="Unban a previously banned user.", aliases=["revokeban"])
     @commands.guild_only()
@@ -796,7 +796,7 @@ class Moderation(commands.Cog):
             await ctx.send(
                 f'{self.bot.emote_dict["success"]} Unbanned `{member.user} (ID: {member.user.id}).`'
             )
-        self.bot.dispatch('mod_action', ctx, targets=[str(member.user)])
+        self.bot.dispatch("mod_action", ctx, targets=[str(member.user)])
 
     # https://github.com/AlexFlipnote/discord_bot.py
 
@@ -921,13 +921,9 @@ class Moderation(commands.Cog):
     async def _bots(self, ctx, search=100, prefix=None):
         """Removes a bot user's messages and messages with their optional prefix."""
 
-        getprefix = await self.bot.cxn.fetchrow(
-            "SELECT prefix FROM servers WHERE server_id = $1", ctx.guild.id
-        )
-
         def predicate(m):
-            return (m.webhook_id is None and m.author.bot) or m.content.startswith(
-                tuple(getprefix)
+            return (m.webhook_id is None and m.author.bot) or filter(
+                m.content.startswith, self.bot.server_settings[ctx.guild.id]["prefixes"]
             )
 
         await self.do_removal(ctx, search, predicate)
