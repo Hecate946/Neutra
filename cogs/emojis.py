@@ -70,9 +70,16 @@ class Emojis(commands.Cog):
             except menus.MenuError as e:
                 await ctx.send(e)
 
+    
     # @commands.command(brief="Emoji usage tracking.")
     # @commands.guild_only()
     # async def emojistats(self, ctx, member: discord.Member = None):
+        """
+        This was how I used to do the emoji stats, 
+        I would regex search the entire messages table
+        It saves quite a bit of space on the db server, 
+        but it takes far too long to be practical
+        """
     #     async with ctx.channel.typing():
     #         if member is None:
     #             msg = await ctx.send(f"{self.bot.emote_dict['loading']} **Collecting Emoji Statistics**")
@@ -189,11 +196,9 @@ class Emojis(commands.Cog):
         emojiparts = emoji.replace("<", "").replace(">", "").split(":") if emoji else []
         if not len(emojiparts) == 3:
             return None
-        # Build a custom emoji object
         emoji_obj = discord.PartialEmoji(
             animated=len(emojiparts[0]) > 0, name=emojiparts[1], id=emojiparts[2]
         )
-        # Return the url
         return (emoji_obj.url, emoji_obj.name)
 
     def _get_emoji_mention(self, emoji):
@@ -223,7 +228,7 @@ class Emojis(commands.Cog):
             "1f44c",
             "1f3fe",
             "1f3ff",
-        ]  # These color modifiers aren't in Twemoji
+        ] # these colors arent in twemoji
 
         name = None
 
@@ -241,7 +246,6 @@ class Emojis(commands.Cog):
         if name:
             return name, url, id, guild_name
 
-        # Here we check for a stock emoji before returning a failure
         codepoint_regex = re.compile("([\d#])?\\\\[xuU]0*([a-f\d]*)")
         unicode_raw = msg.encode("unicode-escape").decode("ascii")
         codepoints = codepoint_regex.findall(unicode_raw)
@@ -436,14 +440,14 @@ class Emojis(commands.Cog):
         )
         for emoji_to_add in emojis_to_add[:10]:
             # Let's try to download it
-            emoji, e_name = emoji_to_add  # Expand into the parts
+            emoji, e_name = emoji_to_add 
             f = await self.get(str(emoji), res_method="read")
             if not f:
                 await message.edit(
                     content=f"{self.bot.emote_dict['failed']} Could not read emoji."
                 )
                 continue
-            # Clean up
+            # format
             if not e_name.replace("_", ""):
                 continue
             # Create the emoji and save it
