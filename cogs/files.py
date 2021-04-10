@@ -695,7 +695,7 @@ class Files(commands.Cog):
 
     @commands.command(
         aliases=["banlist", "txtbans"],
-        brief="DMs you a file of server members.",
+        brief="DMs you a file of server bans.",
     )
     @commands.guild_only()
     @permissions.bot_has_permissions(ban_members=True)

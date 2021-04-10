@@ -94,7 +94,7 @@ class Logging(commands.Cog):
             return
 
         embed = discord.Embed(description=
-                                          f"**Channel:** {channel.mention} **Name:** `{channel.name}`\n"
+                                          f"**Channel:** `{channel.name}` **ID:** `{channel.id}`\n"
                                           f"**Server:** `{channel.guild.name}` **ID:** `{channel.guild.id},`\n\n"
         , color=self.bot.constants.embed, timestamp=datetime.utcnow())
         embed.set_author(name="Channel Created", icon_url="https://cdn.discordapp.com/emojis/810659118045331517.png?v=1")
@@ -114,7 +114,7 @@ class Logging(commands.Cog):
             return
 
         embed = discord.Embed(description=
-                                          f"**Channel:** {channel.mention} **Name:** `{channel.name}`\n"
+                                          f"**Channel:** `{channel.name}` **ID:** `{channel.id}`\n"
                                           f"**Server:** `{channel.guild.name}` **ID:** `{channel.guild.id},`\n\n"
         , color=self.bot.constants.embed, timestamp=datetime.utcnow())
         embed.set_author(name="Channel Deleted", icon_url="https://cdn.discordapp.com/emojis/810659118045331517.png?v=1")
@@ -632,7 +632,7 @@ class Logging(commands.Cog):
         else:
             return await ctx.send(f"{self.bot.emote_dict['error']} Logging is not enabled on this server.")
 
-    @commands.command(brief="Customize logging by enabling specific logging events.")
+    @commands.command(brief="Enable specific logging events.")
     @commands.guild_only()
     @permissions.has_permissions(manage_guild=True)
     async def log(self, ctx, log_arg):
@@ -661,7 +661,7 @@ class Logging(commands.Cog):
         """
         await self.log_or_unlog(ctx, log_arg)
 
-    @commands.command(brief="Customize your server's logging by disabling specific logging events")
+    @commands.command(brief="Disable specific logging events.")
     @commands.guild_only()
     @permissions.has_permissions(manage_guild=True)
     async def unlog(self, ctx, log_arg):
