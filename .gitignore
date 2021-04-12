@@ -14,3 +14,5 @@
 /cogs/testing.py
 # This just manages the loading and unloading of the cogs but contains some of my sensitive data
 /cogs/manager.py
+# Work in progress
+/html

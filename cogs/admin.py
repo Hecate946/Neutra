@@ -352,7 +352,7 @@ class Admin(commands.Cog):
 
     @commands.group(case_insensitive=True, aliases=["autoroles"])
     @permissions.bot_has_permissions(manage_roles=True)
-    @permissions.has_permissions(manage_server=True, manage_roles=True)
+    @permissions.has_permissions(manage_guild=True, manage_roles=True)
     async def autorole(self, ctx):
         """
         Usage: -autorole <option>

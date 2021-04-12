@@ -446,6 +446,7 @@ class NGC0000(commands.AutoShardedBot):
                 )
             )
             traceback_logger.warning(err)
+            print(err)
 
         elif isinstance(error, commands.BotMissingPermissions):
             # Readable error so just send it to the channel where the error occurred.
