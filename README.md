@@ -7,19 +7,19 @@
 Hello there! NGC0000 is an awesome feature rich bot named after the Milky Way. She features over 100 commands, all with extensive and easy to understand help. Her commands are fast and offer every opportunity for customization and utility.  
 ## Categories
 
-##### [Admin](#Admin)
-##### [Bot](#Bot)
-##### [Emojis](#Emojis)
-##### [Files](#Files)
-##### [Logging](#Logging)
-##### [Moderation](#Moderation)
-##### [Restrict](#Restrict)
-##### [Roles](#Roles)
-##### [Server](#Server)
-##### [Timezones](#Timezones)
-##### [Users](#Users)
-##### [Utility](#Utility)
-##### [Warn](#Warn)
+##### [Admin](#Admin)-1
+##### [Bot](#Bot)-1
+##### [Emojis](#Emojis)-1
+##### [Files](#Files)-1
+##### [Logging](#Logging)-1
+##### [Moderation](#Moderation)-1
+##### [Restrict](#Restrict)-1
+##### [Roles](#Roles)-1
+##### [Server](#Server)-1
+##### [Timezones](#Timezones)-1
+##### [Users](#Users)-1
+##### [Utility](#Utility)-1
+##### [Warn](#Warn)-1
 
 
 
@@ -51,7 +51,8 @@ removeprefix: Remove a custom server prefix.
 
 slowmode: Set the slowmode for a channel
 
-unlock: Unlock a channel.```
+unlock: Unlock a channel.
+```
 
 
 ### Bot
@@ -80,7 +81,8 @@ support: Join my support server!
 
 uptime: Show the bot's uptime.
 
-users: Shows all users I'm connected to.```
+users: Shows all users I'm connected to.
+```
 
 
 ### Emojis
@@ -101,7 +103,8 @@ emojistats: Emoji usage tracking.
 
 listemojis: Shows all server emojis
 
-sendemoji: Send an emoji using the bot.```
+sendemoji: Send an emoji using the bot.
+```
 
 
 ### Files
@@ -132,7 +135,8 @@ dumpsettings: DMs you a file of server settings.
 
 dumptimezones: DMs you a file of time zones.
 
-dumpvoicechannels: DMs you a file of voice channels.```
+dumpvoicechannels: DMs you a file of voice channels.
+```
 
 
 ### Logging
@@ -145,7 +149,8 @@ logchannel: Set your server's logging channel.
 
 unlog: Disable specific logging events.
 
-unlogchannel: Remove the logging channel.```
+unlogchannel: Remove the logging channel.
+```
 
 
 ### Moderation
@@ -174,7 +179,8 @@ unblind: Reallow users see a channel.
 
 unblock: Reallow users to send messages.
 
-unmute: Unmute previously muted members.```
+unmute: Unmute previously muted members.
+```
 
 
 ### Restrict
@@ -197,7 +203,8 @@ isdisabled: Show the status of a command.
 
 listdisabled: List disabled commands.
 
-unignore: Reallow users to use the bot.```
+unignore: Reallow users to use the bot.
+```
 
 
 ### Roles
@@ -222,7 +229,8 @@ roleinfo: Get info on a specific role.
 
 roleperms: Show the permissions for a role.
 
-whohas: Show the people who have a role.```
+whohas: Show the people who have a role.
+```
 
 
 ### Server
@@ -249,7 +257,8 @@ mods: Show the server mods.
 
 recentjoins: Show the latest users to join.
 
-serverinfo: Show server information.```
+serverinfo: Show server information.
+```
 
 
 ### Timezones
@@ -264,7 +273,8 @@ time: Show a user's current time.
 
 timenow: Show the current time.
 
-timezone: See a member's timezone.```
+timezone: See a member's timezone.
+```
 
 
 ### Users
@@ -295,7 +305,8 @@ user: Show information on a user.
 
 word: Usage for a specific word.
 
-words: Most used words from a user.```
+words: Most used words from a user.
+```
 
 
 ### Utility
@@ -322,7 +333,8 @@ vckick: Kick users from a voice channel.
 
 vcmove: Move a user from a voice channel.
 
-vcpurge: Kick all users from a voice channel.```
+vcpurge: Kick all users from a voice channel.
+```
 
 
 ### Warn
@@ -337,4 +349,5 @@ serverwarns: Display the server warnlist.
 
 warn: Warn users with an optional reason.
 
-warncount: Count the warnings a user has.```
+warncount: Count the warnings a user has.
+```
