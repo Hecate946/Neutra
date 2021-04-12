@@ -35,6 +35,13 @@ async def destroy_server(guild_id, guild_name):
 
     await conn.execute(
         """
+    DELETE FROM prefixes WHERE server_id = $1
+    """,
+        guild_id,
+    )
+
+    await conn.execute(
+        """
     DELETE FROM userroles WHERE server_id = $1
     """,
         guild_id,

@@ -22,21 +22,20 @@ async def initialize(guilds, members):
     await scriptexec()
     await update_db(guilds, members)
     await load_settings()
-    await load_prefixes(guilds)
+#     await load_prefixes(guilds)
 
 
-async def load_prefixes(guilds):
-    query = """
-            SELECT prefix
-            FROM prefixes
-            WHERE server_id = $1;
-            """
-    for guild in guilds:
-        all_prefixes = await postgres.fetch(query, guild.id)
-        prefixes = settings[guild.id]["prefixes"] = []
-        for x in all_prefixes:
-            prefixes.append(x[0])
-
+# async def load_prefixes(guilds):
+#     query = """
+#             SELECT prefix
+#             FROM prefixes
+#             WHERE server_id = $1;
+#             """
+#     for guild in guilds:
+#         all_prefixes = await postgres.fetch(query, guild.id)
+#         prefixes = settings[guild.id]["prefixes"] = []
+#         for x in all_prefixes:
+#             prefixes.append(x[0])
 
 async def scriptexec():
     # We execute the SQL script to make sure we have all our tables.
@@ -62,6 +61,14 @@ async def update_server(server, member_list):
         server.name,
         server.owner.id,
     )
+
+    # await postgres.execute(
+    #     """
+    # INSERT INTO prefixes(server_id, prefix) VALUES ($1, $2)
+    # ON CONFLICT DO NOTHING""",
+    #     server.id,
+    #     f"<@!{constants.client}>"
+    # )
 
     await postgres.execute(
         """INSERT INTO logging (server_id, logchannel) VALUES ($1, $2)
@@ -91,7 +98,7 @@ async def update_server(server, member_list):
     )
 
     await postgres.executemany(
-        """INSERT INTO userroles VALUES ($1, $2, $3, $4) 
+        """INSERT INTO userroles VALUES ($1, $2, $3, $4)
     ON CONFLICT (serveruser) DO NOTHING""",
         (
             (
@@ -113,6 +120,13 @@ async def update_db(guilds, member_list):
     ON CONFLICT DO NOTHING""",
         ((server.id, server.name, server.owner.id) for server in guilds),
     )
+
+    # await postgres.executemany(
+    #     """
+    # INSERT INTO prefixes(server_id, prefix) VALUES ($1, $2)
+    # ON CONFLICT DO NOTHING""",
+    #     ((server.id, f"<@!{constants.client}>") for server in guilds),
+    # )
 
     await postgres.executemany(
         """INSERT INTO logging (server_id, logchannel) VALUES ($1, $2)
@@ -192,6 +206,7 @@ async def load_settings():
 
         settings[server_id] = {
             "prefix": prefix,
+            "prefixes": [],
             "profanities": profanities,
             "disabled_commands": disabled_commands,
             "admin_allow": admin_allow,
@@ -203,8 +218,20 @@ async def load_settings():
             "logging": {},
         }
 
-    # Load the ignored users
+    # load the prefixes
+    query = """
+            SELECT server_id, array_agg(prefix) as prefix_list
+            FROM prefixes GROUP BY server_id;
+            """
+    all_prefixes = await postgres.fetch(query)
+    for x in all_prefixes:
+        server_id = x[0]
+        prefixes = x[1]
 
+        settings[server_id]["prefixes"] = prefixes
+
+
+    # Load the ignored users
     query = """SELECT (server_id, user_id, react) FROM ignored;"""
     results = await postgres.fetch(query)
 
@@ -306,6 +333,7 @@ async def fix_server(server):
 
         settings[server_id] = {
             "prefix": prefix,
+            "prefixes": [],
             "profanities": profanities,
             "disabled_commands": disabled_commands,
             "admin_allow": admin_allow,
@@ -317,8 +345,21 @@ async def fix_server(server):
             "logging": {},
         }
 
-    # Load the ignored users
+    # load the prefixes
+    query = """
+            SELECT server_id, array_agg(prefix) as prefix_list
+            FROM prefixes WHERE server_id = $1 GROUP BY server_id;
+            """
+    all_prefixes = await postgres.fetchrow(query, server)
+    if all_prefixes is None:
+        pass
 
+    server_id = all_prefixes[0]
+    prefixes = all_prefixes[1]
+
+    settings[server_id]["prefixes"] = prefixes
+
+    # Load the ignored users
     query = """SELECT (server_id, user_id, react) FROM ignored WHERE server_id = $1;"""
     results = await postgres.fetch(query, server)
 
@@ -332,7 +373,6 @@ async def fix_server(server):
         settings[server_id]["ignored_users"][user_id] = react
 
     # Load the logging configuration
-
     query = """SELECT * FROM logging WHERE server_id = $1;"""
     results = await postgres.fetch(query, server)
 
@@ -372,14 +412,6 @@ async def fix_server(server):
         settings[server_id]["logging"]["ignored_channels"] = ignored_channels
         settings[server_id]["logging"]["logchannel"] = logchannel
         settings[server_id]["logging"]["webhook_id"] = webhook_id
-
-
-# async def fetch_prefix(server):
-#     try:
-#         prefix = settings[server]["prefix"]
-#     except KeyError:
-#         return None
-#     return prefix
 
 
 async def fetch_prefix(server):

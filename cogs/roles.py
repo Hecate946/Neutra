@@ -540,30 +540,17 @@ class Roles(commands.Cog):
 
     @commands.command(brief="Show the people who have a role.")
     @commands.guild_only()
-    async def whohas(self, ctx, *, rolename=None):
+    async def whohas(self, ctx, *, role: discord.Role = None):
         """
         Usage: -whohas <role>
         Output:
             Lists the people who have the specified role with their status.
         Notes:
-            Can take a -nick or -username argument to enhance output.
         """
-        if rolename is None:
+        if role is None:
             return await ctx.send(f"Usage `{ctx.prefix}whohas <role>`")
-        mode = 0  # tells how to display: 0 = just mention, 1 = add nickname, 2 = add username
-        rolename = rolename.lower()
-        if "-nick" in rolename:
-            mode = 1
-            rolename = rolename.replace("-nick", "")
-        elif "-username" in rolename:
-            mode = 2
-            rolename = rolename.replace("-username", "")
 
-        check_role = discord.utils.find(ctx.guild.roles, rolename)
-        if not check_role:
-            return await ctx.send("I can't find that role!")
-
-        users = [member for member in ctx.guild.members if check_role in member.roles]
+        users = [member for member in ctx.guild.members if role in member.roles]
 
         sorted_list = sorted(
             users,
@@ -571,36 +558,16 @@ class Roles(commands.Cog):
             + (usr.nick.lower() if usr.nick else usr.name.lower()),
         )
 
-        if mode == 2:  # add full username
-            page = [
-                "{} {} ({}#{})".format(
-                    STATUSMAP2.get(member.status, self.emote_dict["offline"]),
-                    member.mention,
-                    member.name,
-                    member.discriminator,
-                )
-                for member in sorted_list
-            ]  # not bothering with multiple pages cause 30 members is way shorter than one embed
-        elif mode == 1:  # add nickname
-            page = [
-                "{} {} ({})".format(
-                    STATUSMAP2.get(member.status, self.emote_dict["offline"]),
-                    member.mention,
-                    member.display_name,
-                )
-                for member in sorted_list
-            ]
-        else:
-            page = [
-                "{} {}".format(
-                    STATUSMAP2.get(member.status, self.emote_dict["offline"]),
-                    member.mention,
-                )
-                for member in sorted_list
-            ]
+        page = [
+            "{} {}".format(
+                STATUSMAP2.get(member.status, self.emote_dict["offline"]),
+                member.mention,
+            )
+            for member in sorted_list
+        ]
 
         p = pagination.SimplePages(entries=page, per_page=20, index=False)
-        p.embed.title = "{:,} members with {}".format(len(users), check_role.name)
+        p.embed.title = "{:,} members with {}".format(len(users), role.name)
 
         try:
             await p.start(ctx)

@@ -267,7 +267,7 @@ class Tracker(commands.Cog):
             message = await channel_obj.fetch_message(payload.message_id)
         except (RuntimeError, RuntimeWarning):
             pass
-        except (discord.NotFound, discord.Forbidden):
+        except Exception:
             return
         if message.author.bot:
             return

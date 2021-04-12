@@ -372,7 +372,7 @@ class Logging(commands.Cog):
                     await webhook.execute(embed=embed, username=self.bot.user.name)
 
             elif before.discriminator != after.discriminator:
-                if await self.check(snowflake=after.guild.id, event="name_updates"):
+                if await self.check(snowflake=guild.id, event="name_updates"):
 
                     embed = discord.Embed(
                         description=f"**User:** {after.mention} **Name:** `{after}`\n"

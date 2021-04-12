@@ -15,7 +15,8 @@ CREATE TABLE IF NOT EXISTS servers (
 
 CREATE TABLE IF NOT EXISTS prefixes (
     server_id BIGINT,
-    prefix VARCHAR(20)
+    prefix VARCHAR(30),
+    UNIQUE (server_id, prefix)
 );
 
 CREATE TABLE IF NOT EXISTS logging (

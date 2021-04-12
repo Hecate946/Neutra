@@ -23,23 +23,28 @@ class Admin(commands.Cog):
             r"(?:https?://)?discord(?:app)?\.(?:com/invite|gg)/[a-zA-Z0-9]+/?"
         )
 
+
     @commands.command(
         brief="Add a custom server prefix.", aliases=["prefix", "setprefix"]
     )
     @commands.guild_only()
     @permissions.has_permissions(manage_guild=True)
-    async def addprefix(self, ctx, new_prefix):
+    async def addprefix(self, ctx, new_prefix = None):
         """
         Usage: -addprefix
         Aliases: -prefix, -setprefix
         Output: Adds a custom prefix to your server.
         """
         if new_prefix is None:
-            await ctx.invoke(self.prefixes)
-        current_prefixes = self.bot.server_settings[ctx.guild.id]["prefixes"]
+            return await self.prefixes(ctx)
+        current_prefixes = self.bot.server_settings[ctx.guild.id]["prefixes"].copy()
+        try:
+            current_prefixes.remove(f"<@!{self.bot.user.id}>")
+        except ValueError:
+            pass
         if new_prefix in current_prefixes:
             return await ctx.send(
-                f"{self.bot.emote_dict['error']} Specified prefix is already a registered prefix."
+                f"{self.bot.emote_dict['error']} `{new_prefix}` is already a registered prefix."
             )
         if len(current_prefixes) == 10:
             return await ctx.send(
@@ -49,12 +54,12 @@ class Admin(commands.Cog):
             return await ctx.send(
                 f"{self.bot.emote_dict['failed']} Max prefix length is 20 characters."
             )
+        self.bot.server_settings[ctx.guild.id]["prefixes"].append(new_prefix)
         query = """
                 INSERT INTO prefixes
                 VALUES ($1, $2);
                 """
         await self.bot.cxn.execute(query, ctx.guild.id, new_prefix)
-        self.bot.server_settings[ctx.guild.id]["prefixes"].append(new_prefix)
         await ctx.send(
             f"{self.bot.emote_dict['success']} Successfully added prefix `{new_prefix}`"
         )
@@ -72,21 +77,46 @@ class Admin(commands.Cog):
         """
         if old_prefix is None:
             return await ctx.send(f"Usage: `{ctx.prefix}addprefix <old prefix>`")
-        current_prefixes = self.bot.server_settings[ctx.guild.id]["prefixes"]
+        current_prefixes = self.bot.server_settings[ctx.guild.id]["prefixes"].copy()
+        try:
+            current_prefixes.remove(f"<@!{self.bot.user.id}>")
+        except ValueError:
+            pass
         if old_prefix not in current_prefixes:
             return await ctx.send(
-                f"{self.bot.emote_dict['error']} Specified prefix is not a registered prefix."
+                f"{self.bot.emote_dict['error']} `{old_prefix}` is not a registered prefix."
             )
-        query = """
-                DELETE FROM prefixes
-                WHERE server_id = $1
-                AND prefix = $2
-                """
-        await self.bot.cxn.execute(query, ctx.guild.id, old_prefix)
-        self.bot.server_settings[ctx.guild.id]["prefixes"].remove(old_prefix)
-        await ctx.send(
-            f"{self.bot.emote_dict['success']} Successfully removed prefix `{old_prefix}`"
-        )
+        if len(current_prefixes) == 1:
+            c = await pagination.Confirmation(
+                msg=f"{self.bot.emote_dict['exclamation']} "
+                "**This action will clear all my set prefixes "
+                f"I will only respond to <@!{self.bot.user.id}>. "
+                "Do you wish to continue?**"
+            ).prompt(ctx)
+            if c:
+                query = """
+                        DELETE FROM prefixes
+                        WHERE server_id = $1
+                        """
+                await self.bot.cxn.execute(query, ctx.guild.id)
+                query = '''
+                        INSERT INTO prefixes
+                        VALUES ($1, $2)
+                        '''
+                await self.bot.cxn.execute(query, ctx.guild.id, f'<@!{self.bot.user.id}>')
+                self.bot.server_settings[ctx.guild.id]["prefixes"] = [f'<@!{self.bot.user.id}>']
+                f"{self.bot.emote_dict['success']} Successfully cleared all prefixes."
+        else:
+            query = """
+                    DELETE FROM prefixes
+                    WHERE server_id = $1
+                    AND prefix = $2
+                    """
+            await self.bot.cxn.execute(query, ctx.guild.id, old_prefix)
+            self.bot.server_settings[ctx.guild.id]["prefixes"].remove(old_prefix)
+            await ctx.send(
+                f"{self.bot.emote_dict['success']} Successfully removed prefix `{old_prefix}`"
+            )
 
     @commands.command(
         brief="Clear all custom server prefixes.",
@@ -107,25 +137,39 @@ class Admin(commands.Cog):
         Aliases:
             -clearprefixes, -removeprefixes, -remprefixes,
             -rmprefixes, -purgeprefixes, -purgeprefix
-        Output:
-            Clears all custom server prefixes and reverts to default "-"
+        Output: Clears all custom server prefixes
+        Notes:
+
+
         """
+        current_prefixes = self.bot.server_settings[ctx.guild.id]["prefixes"].copy()
+        try:
+            current_prefixes.remove(f"<@!{self.bot.user.id}>")
+        except ValueError:
+            pass
+        if current_prefixes == []:
+            return await ctx.send(f"{self.bot.emote_dict['exclamation']} I currently have no prefixes set.")
         c = await pagination.Confirmation(
             msg=f"{self.bot.emote_dict['exclamation']} "
             "**This action will clear all my set prefixes "
-            f"and revert back to my default {self.bot.constants.prefix}. "
+            f"I will only respond to <@!{self.bot.user.id}>. "
             "Do you wish to continue?**"
         ).prompt(ctx)
         if c:
-            # length = len(self.bot.server_settings[ctx.guild.id]['prefixes'].copy())
             query = """
                     DELETE FROM prefixes
                     WHERE server_id = $1
                     """
             await self.bot.cxn.execute(query, ctx.guild.id)
-            self.bot.server_settings[ctx.guild.id]["prefixes"] = []
+            
+            query = '''
+                    INSERT INTO prefixes
+                    VALUES ($1, $2)
+                    '''
+            await self.bot.cxn.execute(query, ctx.guild.id, f'<@!{self.bot.user.id}>')
+            self.bot.server_settings[ctx.guild.id]["prefixes"] = [f'<@!{self.bot.user.id}>']
             await ctx.send(
-                f"{self.bot.emote_dict['success']} **Successfully cleared all custom prefixes.**"
+                f"{self.bot.emote_dict['success']} **Successfully cleared all prefixes.**"
             )
             return
         await ctx.send(f"{self.bot.emote_dict['exclamation']} **Cancelled.**")
@@ -150,7 +194,13 @@ class Admin(commands.Cog):
             -listprefix, -displayprefixes, -displayprefix
         Output: Shows all the current server prefixes
         """
-        current_prefixes = self.bot.server_settings[ctx.guild.id]["prefixes"]
+        current_prefixes = self.bot.server_settings[ctx.guild.id]["prefixes"].copy()
+        try:
+            current_prefixes.remove(f"<@!{self.bot.user.id}>")
+        except ValueError:
+            pass
+        if current_prefixes == []:
+            return await ctx.send(f"{self.bot.emote_dict['exclamation']} I currently have no prefixes set.")
         if len(current_prefixes) == 0:
             return await ctx.send(f"My current prefix is {self.bot.constants.prefix}")
         await ctx.send(

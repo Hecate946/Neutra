@@ -92,30 +92,16 @@ traceback_logger_format = logging.Formatter(
 )
 traceback_logger_handler.setFormatter(traceback_logger_format)
 
-
-# async def get_prefix(bot, message):
-#     if not message.guild:
-#         prefix = constants.prefix
-#         return commands.when_mentioned_or(prefix + " ", prefix)(bot, message)
-#     prefix = await database.fetch_prefix(message.guild.id)
-#     if prefix is None:
-#         await database.update_server(message.guild, message.guild.members)
-#         await database.fix_server(message.guild.id)
-#         prefix = await database.fetch_prefix(message.guild.id)
-#     return commands.when_mentioned_or(prefix + " ", prefix)(bot, message)
-
-
 async def get_prefix(bot, message):
     if not message.guild:
         prefix = constants.prefix
         return commands.when_mentioned_or(prefix + " ", prefix)(bot, message)
     prefixes = await database.fetch_prefix(message.guild.id)
     if prefixes == []:
-        prefix = constants.prefix
-        return commands.when_mentioned_or(prefix + " ", prefix)(bot, message)
-    else:
-        prefixes_and_spaces = [x + " " for x in prefixes] + prefixes
-        return commands.when_mentioned_or(*prefixes_and_spaces)(bot, message)
+        # Never set custom prefix, assign default
+        prefixes.append(constants.prefix)  # add default
+    prefixes_and_spaces = [x + " " for x in prefixes] + prefixes  # This adds spaces so that -help and - help will both work
+    return commands.when_mentioned_or(*prefixes_and_spaces)(bot, message)
 
 
 # Main bot class. Heart of the application
@@ -134,10 +120,10 @@ class NGC0000(commands.AutoShardedBot):
         self.dregex = re.compile(
             r"(?:https?://)?discord(?:app)?\.(?:com/invite|gg)/[a-zA-Z0-9]+/?"
         )
-        # Start the task loop
-        self.status_loop.start()
 
     def setup(self):
+        # Start the task loop
+        self.status_loop.start()
 
         # Sets up all the global bot variables
         if not hasattr(self, "bot_ready"):

@@ -995,7 +995,14 @@ class Moderation(commands.Cog):
             return
         msg = str(after.content)
 
-        filtered_words = self.bot.server_settings[after.guild.id]["profanities"]
+        try:
+            filtered_words = self.bot.server_settings[after.guild.id]["profanities"]
+        except KeyError:
+            await database.fix_server(after.guild.id)
+            try:
+                filtered_words = self.bot.server_settings[after.guild.id]["profanities"]
+            except Exception:
+                return
 
         if filtered_words == []:
             return
@@ -1028,6 +1035,10 @@ class Moderation(commands.Cog):
             filtered_words = self.bot.server_settings[message.guild.id]["profanities"]
         except KeyError:
             await database.fix_server(message.guild.id)
+            try:
+                filtered_words = self.bot.server_settings[message.guild.id]["profanities"]
+            except Exception:
+                return
 
         if filtered_words == []:
             return
