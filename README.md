@@ -7,19 +7,19 @@
 Hello there! NGC0000 is an awesome feature rich bot named after the Milky Way. She features over 100 commands, all with extensive and easy to understand help. Her commands are fast and offer every opportunity for customization and utility.  
 ## Categories
 
-##### [Admin](#Admin)-1
-##### [Bot](#Bot)-1
-##### [Emojis](#Emojis)-1
-##### [Files](#Files)-1
-##### [Logging](#Logging)-1
-##### [Moderation](#Moderation)-1
-##### [Restrict](#Restrict)-1
-##### [Roles](#Roles)-1
-##### [Server](#Server)-1
-##### [Timezones](#Timezones)-1
-##### [Users](#Users)-1
-##### [Utility](#Utility)-1
-##### [Warn](#Warn)-1
+##### [Admin](#Admin-1)
+##### [Bot](#Bot-1)
+##### [Emojis](#Emojis-1)
+##### [Files](#Files-1)
+##### [Logging](#Logging-1)
+##### [Moderation](#Moderation-1)
+##### [Restrict](#Restrict-1)
+##### [Roles](#Roles-1)
+##### [Server](#Server-1)
+##### [Timezones](#Timezones-1)
+##### [Users](#Users-1)
+##### [Utility](#Utility-1)
+##### [Warn](#Warn-1)
 
 
 
