@@ -22,6 +22,8 @@ async def initialize(guilds, members):
     await scriptexec()
     await update_db(guilds, members)
     await load_settings()
+
+
 #     await load_prefixes(guilds)
 
 
@@ -36,6 +38,7 @@ async def initialize(guilds, members):
 #         prefixes = settings[guild.id]["prefixes"] = []
 #         for x in all_prefixes:
 #             prefixes.append(x[0])
+
 
 async def scriptexec():
     # We execute the SQL script to make sure we have all our tables.
@@ -229,7 +232,6 @@ async def load_settings():
         prefixes = x[1]
 
         settings[server_id]["prefixes"] = prefixes
-
 
     # Load the ignored users
     query = """SELECT (server_id, user_id, react) FROM ignored;"""

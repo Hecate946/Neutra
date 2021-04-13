@@ -5,6 +5,7 @@ import asyncio
 import asyncpg
 import discord
 
+from collections import Counter
 from discord.ext import commands, menus
 from datetime import datetime, timedelta
 from better_profanity import profanity
@@ -805,7 +806,7 @@ class Moderation(commands.Cog):
     ###################
 
     @commands.group(
-        brief="Remove any type of content.", aliases=["cleanup", "purge", "clean"]
+        brief="Remove any type of content.", aliases=["purge", "delete", "remove"]
     )
     @commands.guild_only()
     @commands.max_concurrency(5, per=commands.BucketType.guild)
@@ -814,11 +815,11 @@ class Moderation(commands.Cog):
     async def prune(self, ctx):
         """
         Usage:      -prune <method> <amount>
-        Alias:      -purge, -cleanup, -clean
+        Alias:      -purge, -delete, -remove
         Examples:   -prune user Hecate, -prune bots
         Output:     Deletes messages that match your method criteria
         Permission: Manage Messages
-        Output:     Message cleanup within your search specification.
+        Output:     Message removal within your search specification.
         Methods:
             all       Prune all messages
             bots      Prunes bots and their invoked commands
@@ -917,18 +918,42 @@ class Moderation(commands.Cog):
         else:
             await self.do_removal(ctx, 100, lambda e: substr in e.content)
 
+    async def get_server_prefixes(self, guild):
+        prefixes = self.bot.server_settings[guild.id]["prefixes"]
+        if prefixes == []:
+            prefixes.append(self.bot.constants.prefix)
+        prefixes.append(f"<@{self.bot.constants.client}")
+        prefixes.append(f"<@!{self.bot.constants.client}")
+        return prefixes
+
     @prune.command(name="bots")
     async def _bots(self, ctx, search=100, prefix=None):
         """Removes a bot user's messages and messages with their optional prefix."""
 
-        def predicate(m):
-            return (m.webhook_id is None and m.author.bot) or filter(
-                m.content.startswith, self.bot.server_settings[ctx.guild.id]["prefixes"]
-            )
+        if prefix:
+
+            def predicate(m):
+                return (m.webhook_id is None and m.author.bot) or m.content.startswith(
+                    prefix
+                )
+
+        else:
+
+            def predicate(m):
+                return m.webhook_id is None and m.author.bot
 
         await self.do_removal(ctx, search, predicate)
 
-    @prune.command(name="humans")
+    @prune.command(name="webhooks", aliases=["webhook"])
+    async def webhooks(self, ctx, search=100):
+        """Removes a webhook's messages."""
+
+        def predicate(m):
+            return m.webhook_id
+
+        await self.do_removal(ctx, search, predicate)
+
+    @prune.command(name="humans", aliases=["users"])
     async def _users(self, ctx, search=100, prefix=None):
         """Removes only user messages. """
 
@@ -937,7 +962,7 @@ class Moderation(commands.Cog):
 
         await self.do_removal(ctx, search, predicate)
 
-    @prune.command(name="emojis")
+    @prune.command(name="emojis", aliases=["emotes"])
     async def _emojis(self, ctx, search=100):
         """Removes all messages containing custom emoji."""
         custom_emoji = re.compile(r"<a?:(.*?):(\d{17,21})>|[\u263a-\U0001f645]")
@@ -964,7 +989,7 @@ class Moderation(commands.Cog):
             delete_after=7,
         )
 
-    @prune.command(name="until")
+    @prune.command(name="until", aliases=["after"])
     async def _until(self, ctx, message_id: int):
         """Prune messages in a channel until the given message_id. Given ID is not deleted"""
         channel = ctx.message.channel
@@ -977,6 +1002,59 @@ class Moderation(commands.Cog):
         await ctx.message.delete()
         await channel.purge(after=message)
         return True
+
+    async def get_server_prefixes(self, guild):
+        prefixes = self.bot.server_settings[guild.id]["prefixes"].copy()
+        if prefixes == []:
+            prefixes.append(self.bot.constants.prefix)
+        prefixes.append(f"<@!{self.bot.constants.client}>")
+        prefixes.append(f"<@{self.bot.constants.client}>")
+        return prefixes
+
+    async def cleanup_strategy(self, ctx, search):
+        prefixes = tuple(await self.get_server_prefixes(ctx.guild))
+
+        def check(m):
+            return m.author == ctx.me or m.content.startswith(prefixes)
+
+        deleted = await ctx.channel.purge(limit=search, check=check, before=ctx.message)
+        return Counter(str(m.author) for m in deleted)
+
+    @commands.command(brief="Clean up command usage.", search=200, aliases=["clean"])
+    @commands.guild_only()
+    @permissions.bot_has_permissions(manage_messages=True)
+    @permissions.has_permissions(manage_messages=True)
+    async def cleanup(self, ctx, search=100):
+        """
+        Usage: -cleanup [search]
+        Alias: -clean
+        Output: Cleans up the bot's messages from the channel.
+        Permission: Manage Messages
+        Notes:
+            If a search number is specified, it searches that many messages to delete.
+            If the bot has Manage Messages permissions then it will try to delete
+            messages that look like they invoked the bot as well.
+            After the cleanup is completed, the bot will send you a message with
+            which people got their messages deleted and their count. This is useful
+            to see which users are spammers.
+        """
+        strategy = self.cleanup_strategy
+
+        spammers = await strategy(ctx, search)
+        deleted = sum(spammers.values())
+        messages = [
+            f'**{self.bot.emote_dict["trash"]} {deleted} message{" was" if deleted == 1 else "s were"} deleted.**'
+        ]
+        if deleted:
+            messages.append("")
+            spammers = sorted(spammers.items(), key=lambda t: t[1], reverse=True)
+            messages.extend(f"`{author}`: {count}" for author, count in spammers)
+        desc = "\n".join(messages)
+        em = discord.Embed()
+        em.color = self.bot.constants.embed
+        em.description = desc
+
+        await ctx.send(embed=em, delete_after=10)
 
     #########################
     ## Profanity Listeners ##
@@ -1036,7 +1114,9 @@ class Moderation(commands.Cog):
         except KeyError:
             await database.fix_server(message.guild.id)
             try:
-                filtered_words = self.bot.server_settings[message.guild.id]["profanities"]
+                filtered_words = self.bot.server_settings[message.guild.id][
+                    "profanities"
+                ]
             except Exception:
                 return
 

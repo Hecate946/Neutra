@@ -23,13 +23,12 @@ class Admin(commands.Cog):
             r"(?:https?://)?discord(?:app)?\.(?:com/invite|gg)/[a-zA-Z0-9]+/?"
         )
 
-
     @commands.command(
         brief="Add a custom server prefix.", aliases=["prefix", "setprefix"]
     )
     @commands.guild_only()
     @permissions.has_permissions(manage_guild=True)
-    async def addprefix(self, ctx, new_prefix = None):
+    async def addprefix(self, ctx, new_prefix=None):
         """
         Usage: -addprefix
         Aliases: -prefix, -setprefix
@@ -99,12 +98,16 @@ class Admin(commands.Cog):
                         WHERE server_id = $1
                         """
                 await self.bot.cxn.execute(query, ctx.guild.id)
-                query = '''
+                query = """
                         INSERT INTO prefixes
                         VALUES ($1, $2)
-                        '''
-                await self.bot.cxn.execute(query, ctx.guild.id, f'<@!{self.bot.user.id}>')
-                self.bot.server_settings[ctx.guild.id]["prefixes"] = [f'<@!{self.bot.user.id}>']
+                        """
+                await self.bot.cxn.execute(
+                    query, ctx.guild.id, f"<@!{self.bot.user.id}>"
+                )
+                self.bot.server_settings[ctx.guild.id]["prefixes"] = [
+                    f"<@!{self.bot.user.id}>"
+                ]
                 f"{self.bot.emote_dict['success']} Successfully cleared all prefixes."
         else:
             query = """
@@ -148,7 +151,9 @@ class Admin(commands.Cog):
         except ValueError:
             pass
         if current_prefixes == []:
-            return await ctx.send(f"{self.bot.emote_dict['exclamation']} I currently have no prefixes set.")
+            return await ctx.send(
+                f"{self.bot.emote_dict['exclamation']} I currently have no prefixes set."
+            )
         c = await pagination.Confirmation(
             msg=f"{self.bot.emote_dict['exclamation']} "
             "**This action will clear all my set prefixes "
@@ -161,13 +166,15 @@ class Admin(commands.Cog):
                     WHERE server_id = $1
                     """
             await self.bot.cxn.execute(query, ctx.guild.id)
-            
-            query = '''
+
+            query = """
                     INSERT INTO prefixes
                     VALUES ($1, $2)
-                    '''
-            await self.bot.cxn.execute(query, ctx.guild.id, f'<@!{self.bot.user.id}>')
-            self.bot.server_settings[ctx.guild.id]["prefixes"] = [f'<@!{self.bot.user.id}>']
+                    """
+            await self.bot.cxn.execute(query, ctx.guild.id, f"<@!{self.bot.user.id}>")
+            self.bot.server_settings[ctx.guild.id]["prefixes"] = [
+                f"<@!{self.bot.user.id}>"
+            ]
             await ctx.send(
                 f"{self.bot.emote_dict['success']} **Successfully cleared all prefixes.**"
             )
@@ -200,7 +207,9 @@ class Admin(commands.Cog):
         except ValueError:
             pass
         if current_prefixes == []:
-            return await ctx.send(f"{self.bot.emote_dict['exclamation']} I currently have no prefixes set.")
+            return await ctx.send(
+                f"{self.bot.emote_dict['exclamation']} I currently have no prefixes set."
+            )
         if len(current_prefixes) == 0:
             return await ctx.send(f"My current prefix is {self.bot.constants.prefix}")
         await ctx.send(
@@ -358,13 +367,12 @@ class Admin(commands.Cog):
         Usage: -autorole <option>
         Example: -autorole add <role1> <role2>
         Permission: Manage Server, Manage Roles
-        Output:     Assigns the roles to new users on server join.
+        Output: Assigns the roles to new users on server join.
         Options:
             add  <role1> <role2>... Adds autoroles
             remove <role1> <role2>... Removes autoroles
             clear Deletes all autoroles
             show Shows all current autoroles
-
         """
         if ctx.invoked_subcommand is None:
             await ctx.send_help(str(ctx.command))

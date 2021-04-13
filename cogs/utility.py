@@ -469,7 +469,13 @@ class Utility(commands.Cog):
     @commands.command(brief="Snipe a deleted message.", aliases=["retrieve"])
     @commands.guild_only()
     async def snipe(self, ctx, *, member: discord.Member = None):
-
+        """
+        Usage: -snipe [user]
+        Alias: -retrieve
+        Output: Fetches a deleted message
+        Notes:
+            Will fetch a messages sent by a specific user if specified
+        """
         if member is None:
             query = """SELECT author_id, message_id, content, timestamp FROM messages WHERE channel_id = $1 AND deleted = True ORDER BY unix DESC;"""
             result = await self.bot.cxn.fetchrow(query, ctx.channel.id) or None

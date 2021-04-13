@@ -37,6 +37,10 @@ class Emojis(commands.Cog):
     @commands.command(brief="Emoji usage tracking.")
     @commands.guild_only()
     async def emojistats(self, ctx):
+        """
+        Usage -emojistats
+        Output: Get detailed emoji usage stats.
+        """
         async with ctx.channel.typing():
             msg = await ctx.send(
                 f"{self.bot.emote_dict['loading']} **Collecting Emoji Statistics**"

@@ -495,49 +495,56 @@ class Bot(commands.Cog):
         Usage: -users
         Output: Detailed information on my user stats
         """
-        users = [x for x in self.bot.get_all_members() if not x.bot]
-        users_online = [x for x in users if x.status != discord.Status.offline]
-        unique_users = set([x.id for x in users])
-        bots = [x for x in self.bot.get_all_members() if x.bot]
-        bots_online = [x for x in bots if x.status != discord.Status.offline]
-        unique_bots = set([x.id for x in bots])
-        e = discord.Embed(title="User Stats", color=self.bot.constants.embed)
-        e.add_field(
-            name="Humans",
-            value="{:,}/{:,} online ({:,g}%) - {:,} unique ({:,g}%)".format(
-                len(users_online),
-                len(users),
-                round((len(users_online) / len(users)) * 100, 2),
-                len(unique_users),
-                round((len(unique_users) / len(users)) * 100, 2),
-            ),
-            inline=False,
-        )
-        e.add_field(
-            name="Bots",
-            value="{:,}/{:,} online ({:,g}%) - {:,} unique ({:,g}%)".format(
-                len(bots_online),
-                len(bots),
-                round((len(bots_online) / len(bots)) * 100, 2),
-                len(unique_bots),
-                round(len(unique_bots) / len(bots) * 100, 2),
-            ),
-            inline=False,
-        )
-        e.add_field(
-            name="Total",
-            value="{:,}/{:,} online ({:,g}%)".format(
-                len(users_online) + len(bots_online),
-                len(users) + len(bots),
-                round(
-                    ((len(users_online) + len(bots_online)) / (len(users) + len(bots)))
-                    * 100,
-                    2,
+        async with ctx.channel.typing():
+            msg = await ctx.send(
+                f"{self.bot.emote_dict['loading']} **Collecting User Statistics**"
+            )
+            users = [x for x in self.bot.get_all_members() if not x.bot]
+            users_online = [x for x in users if x.status != discord.Status.offline]
+            unique_users = set([x.id for x in users])
+            bots = [x for x in self.bot.get_all_members() if x.bot]
+            bots_online = [x for x in bots if x.status != discord.Status.offline]
+            unique_bots = set([x.id for x in bots])
+            e = discord.Embed(title="User Stats", color=self.bot.constants.embed)
+            e.add_field(
+                name="Humans",
+                value="{:,}/{:,} online ({:,g}%) - {:,} unique ({:,g}%)".format(
+                    len(users_online),
+                    len(users),
+                    round((len(users_online) / len(users)) * 100, 2),
+                    len(unique_users),
+                    round((len(unique_users) / len(users)) * 100, 2),
                 ),
-            ),
-            inline=False,
-        )
-        await ctx.send(embed=e)
+                inline=False,
+            )
+            e.add_field(
+                name="Bots",
+                value="{:,}/{:,} online ({:,g}%) - {:,} unique ({:,g}%)".format(
+                    len(bots_online),
+                    len(bots),
+                    round((len(bots_online) / len(bots)) * 100, 2),
+                    len(unique_bots),
+                    round(len(unique_bots) / len(bots) * 100, 2),
+                ),
+                inline=False,
+            )
+            e.add_field(
+                name="Total",
+                value="{:,}/{:,} online ({:,g}%)".format(
+                    len(users_online) + len(bots_online),
+                    len(users) + len(bots),
+                    round(
+                        (
+                            (len(users_online) + len(bots_online))
+                            / (len(users) + len(bots))
+                        )
+                        * 100,
+                        2,
+                    ),
+                ),
+                inline=False,
+            )
+            await msg.edit(content=None, embed=e)
 
     @commands.command(brief="Servers you and the bot share.")
     @commands.guild_only()

@@ -771,11 +771,9 @@ class Logging(commands.Cog):
             channels
             leaves
             joins
-
         Notes:
             After your server's log channel has been setup,
             all actions are enabled by default.
-            -----------------------------------------------
             Use 'all' as an option to enable all options.
         """
         await self.log_or_unlog(ctx, log_arg)

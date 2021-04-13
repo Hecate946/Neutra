@@ -92,6 +92,7 @@ traceback_logger_format = logging.Formatter(
 )
 traceback_logger_handler.setFormatter(traceback_logger_format)
 
+
 async def get_prefix(bot, message):
     if not message.guild:
         prefix = constants.prefix
@@ -100,7 +101,9 @@ async def get_prefix(bot, message):
     if prefixes == []:
         # Never set custom prefix, assign default
         prefixes.append(constants.prefix)  # add default
-    prefixes_and_spaces = [x + " " for x in prefixes] + prefixes  # This adds spaces so that -help and - help will both work
+    prefixes_and_spaces = [
+        x + " " for x in prefixes
+    ] + prefixes  # This adds spaces so that -help and - help will both work
     return commands.when_mentioned_or(*prefixes_and_spaces)(bot, message)
 
 
