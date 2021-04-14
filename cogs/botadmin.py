@@ -1085,7 +1085,7 @@ class Botadmin(commands.Cog):
             )
 
     @commands.command(
-        aliases=["listcogs"], hidden=True, brief="List all cogs in an embed."
+        aliases=["listcogs"], hidden=True, brief="List all my cogs in an embed."
     )
     @commands.is_owner()
     async def cogs(self, ctx):
