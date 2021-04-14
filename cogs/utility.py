@@ -21,6 +21,7 @@ class Utility(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.emote_dict = bot.emote_dict
 
     ####################
     ## VOICE COMMANDS ##

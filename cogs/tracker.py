@@ -80,9 +80,9 @@ class Tracker(commands.Cog):
                 await self.bot.cxn.execute(query, user_id, unix)
             self.tracker_batch.clear()
 
-        # ================#
+        #================#
         # On User Update #
-        # ================#
+        #================#
         # query = f"""UPDATE useravatars SET avatars = CONCAT_WS(',', avatars, cast($1 as text)) WHERE user_id = $2"""
         # async with self.batch_lock:
         #     for data in self.avatar_batch.items():
@@ -212,14 +212,14 @@ class Tracker(commands.Cog):
         async with self.batch_lock:
             self.tracker_batch[after.id] = {"unix": time.time(), "user_id": after.id}
 
-        if await self.avatar_changed(before, after):
-            print(before.avatar)
-            print(after.avatar)
-            async with self.batch_lock:
-                self.avatar_batch[after.id] = {
-                    "user_id": after.id,
-                    "avatar": after.avatar
-                }
+        # if await self.avatar_changed(before, after):
+        #     print(before.avatar)
+        #     print(after.avatar)
+        #     async with self.batch_lock:
+        #         self.avatar_batch[after.id] = {
+        #             "user_id": after.id,
+        #             "avatar": after.avatar
+        #         }
 
         if await self.username_changed(before, after):
             async with self.batch_lock:
