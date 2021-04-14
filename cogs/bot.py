@@ -1,3 +1,4 @@
+import asyncio
 import os
 import sys
 import time
@@ -9,12 +10,12 @@ import datetime
 import platform
 import subprocess
 
-from discord.ext import commands
+from discord.ext import commands, menus
 from discord import __version__ as discord_version
 from platform import python_version
 from psutil import Process, virtual_memory
 
-from utilities import utils, speedtest, converters
+from utilities import utils, speedtest, converters, pagination
 
 
 def setup(bot):
@@ -592,3 +593,31 @@ class Bot(commands.Cog):
                 targ, count, "" if count == 1 else "s"
             )
         )
+
+    async def run_process(self, command):
+        try:
+            process = await asyncio.create_subprocess_shell(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            result = await process.communicate()
+        except NotImplementedError:
+            process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            result = await self.bot.loop.run_in_executor(None, process.communicate)
+
+        return [str(output.decode()).replace('[?25l[?7l', '').replace('[?25h[?7h', '') for output in result]
+
+    @commands.command(hidden=True, brief="Run the neofetch command.")
+    async def neofetch(self, ctx):
+        async with ctx.typing():
+            stdout, stderr = await self.run_process("neofetch|sed 's/\x1B[[0-9;]*m//g'")
+
+        if stderr:
+            text = f'stdout:\n{stdout}\nstderr:\n{stderr}'
+        else:
+            text = stdout
+
+        text = text[:-3]        
+
+        pages = pagination.MainMenu(pagination.TextPageSource(text, prefix="```prolog"))
+        try:
+            await pages.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send(str(e))
