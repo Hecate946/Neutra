@@ -14,12 +14,12 @@
     
     <div class="helpbox">
         <h3>Antiinvite</h3>
-        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -antiinvite <yes|enable|true|on||no|disable|false|off><br>Aliases:&nbsp;&nbsp;&nbsp;&nbsp;-removeinvites, -deleteinvites, -antiinvites<br>Permission: Manage Server<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Removes invite links sent by users.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Users with the Manage Messages permission<br>&nbsp;&nbsp;&nbsp;&nbsp;are immune to the antiinviter.</p>
+        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -antiinvite &lt;yes|enable|true|on||no|disable|false|off&gt;<br>Aliases:&nbsp;&nbsp;&nbsp;&nbsp;-removeinvites, -deleteinvites, -antiinvites<br>Permission: Manage Server<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Removes invite links sent by users.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Users with the Manage Messages permission<br>&nbsp;&nbsp;&nbsp;&nbsp;are immune to the antiinviter.</p>
     </div>
     
     <div class="helpbox">
         <h3>Autorole</h3>
-        <p>Usage: -autorole &lt;option&gt;<br>Example: -autorole add <role1> <role2><br>Permission: Manage Server, Manage Roles<br>Output: Assigns the roles to new users on server join.<br>Options:<br>&nbsp;&nbsp;&nbsp;&nbsp;add  <role1> <role2>... Adds autoroles<br>&nbsp;&nbsp;&nbsp;&nbsp;remove <role1> <role2>... Removes autoroles<br>&nbsp;&nbsp;&nbsp;&nbsp;clear Deletes all autoroles<br>&nbsp;&nbsp;&nbsp;&nbsp;show Shows all current autoroles</p>
+        <p>Usage: -autorole &lt;option&gt;<br>Example: -autorole add &lt;role1&gt; &lt;role2&gt;<br>Permission: Manage Server, Manage Roles<br>Output: Assigns the roles to new users on server join.<br>Options:<br>&nbsp;&nbsp;&nbsp;&nbsp;add  &lt;role1&gt; &lt;role2&gt;... Adds autoroles<br>&nbsp;&nbsp;&nbsp;&nbsp;remove &lt;role1&gt; &lt;role2&gt;... Removes autoroles<br>&nbsp;&nbsp;&nbsp;&nbsp;clear Deletes all autoroles<br>&nbsp;&nbsp;&nbsp;&nbsp;show Shows all current autoroles</p>
     </div>
     
     <div class="helpbox">
@@ -29,7 +29,7 @@
     
     <div class="helpbox">
         <h3>Filter</h3>
-        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -filter <method><br>Alias:&nbsp;&nbsp;&nbsp;&nbsp;  -profanity<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-filter add <badwords><br>Permission: Manage Server<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Adds, removes, clears, or displays the filter.<br>Methods:<br>&nbsp;&nbsp;&nbsp;&nbsp;add<br>&nbsp;&nbsp;&nbsp;&nbsp;remove<br>&nbsp;&nbsp;&nbsp;&nbsp;display&nbsp;&nbsp;&nbsp;&nbsp; (Alias: show)<br>&nbsp;&nbsp;&nbsp;&nbsp;clear<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Words added the the filter list will delete all<br>&nbsp;&nbsp;&nbsp;&nbsp;messages containing that word. Users with the<br>&nbsp;&nbsp;&nbsp;&nbsp;Manage Messages permission are immune. To add or<br>&nbsp;&nbsp;&nbsp;&nbsp;remove multiple words with one command, separate<br>&nbsp;&nbsp;&nbsp;&nbsp;the words with a comma.<br>&nbsp;&nbsp;&nbsp;&nbsp;Example: -filter add badword1, badword2, badword3</p>
+        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -filter &lt;method&gt;<br>Alias:&nbsp;&nbsp;&nbsp;&nbsp;  -profanity<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-filter add &lt;badwords&gt;<br>Permission: Manage Server<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Adds, removes, clears, or displays the filter.<br>Methods:<br>&nbsp;&nbsp;&nbsp;&nbsp;add<br>&nbsp;&nbsp;&nbsp;&nbsp;remove<br>&nbsp;&nbsp;&nbsp;&nbsp;display&nbsp;&nbsp;&nbsp;&nbsp; (Alias: show)<br>&nbsp;&nbsp;&nbsp;&nbsp;clear<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Words added the the filter list will delete all<br>&nbsp;&nbsp;&nbsp;&nbsp;messages containing that word. Users with the<br>&nbsp;&nbsp;&nbsp;&nbsp;Manage Messages permission are immune. To add or<br>&nbsp;&nbsp;&nbsp;&nbsp;remove multiple words with one command, separate<br>&nbsp;&nbsp;&nbsp;&nbsp;the words with a comma.<br>&nbsp;&nbsp;&nbsp;&nbsp;Example: -filter add badword1, badword2, badword3</p>
     </div>
     
     <div class="helpbox">
@@ -44,7 +44,7 @@
     
     <div class="helpbox">
         <h3>Muterole</h3>
-        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -muterole <role><br>Alias:&nbsp;&nbsp;&nbsp;&nbsp;  -setmuterole<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-muterole @Muted<br>Permission: Manage Server<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;This command will set a role of your choice as the<br>&nbsp;&nbsp;&nbsp;&nbsp;"Muted" role. The bot will also create a channel<br>&nbsp;&nbsp;&nbsp;&nbsp;named "muted" specifically for muted members.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Channel "muted" may be deleted after command execution<br>&nbsp;&nbsp;&nbsp;&nbsp;if so desired.</p>
+        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -muterole &lt;role&gt;<br>Alias:&nbsp;&nbsp;&nbsp;&nbsp;  -setmuterole<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-muterole @Muted<br>Permission: Manage Server<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;This command will set a role of your choice as the<br>&nbsp;&nbsp;&nbsp;&nbsp;"Muted" role. The bot will also create a channel<br>&nbsp;&nbsp;&nbsp;&nbsp;named "muted" specifically for muted members.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Channel "muted" may be deleted after command execution<br>&nbsp;&nbsp;&nbsp;&nbsp;if so desired.</p>
     </div>
     
     <div class="helpbox">
@@ -54,7 +54,7 @@
     
     <div class="helpbox">
         <h3>Reassign</h3>
-        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -reassign <yes|enable|true|on||no|disable|false|off><br>Aliases:&nbsp;&nbsp;&nbsp;&nbsp;-stickyroles<br>Permission: Manage Server<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Reassigns roles when past members rejoin the server.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;This setting is enabled by default. The bot will attempt to<br>&nbsp;&nbsp;&nbsp;&nbsp;add the users their old roles unless it is missing permissions.</p>
+        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -reassign &lt;yes|enable|true|on||no|disable|false|off&gt;<br>Aliases:&nbsp;&nbsp;&nbsp;&nbsp;-stickyroles<br>Permission: Manage Server<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Reassigns roles when past members rejoin the server.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;This setting is enabled by default. The bot will attempt to<br>&nbsp;&nbsp;&nbsp;&nbsp;add the users their old roles unless it is missing permissions.</p>
     </div>
     
     <div class="helpbox">
@@ -90,7 +90,7 @@
     
     <div class="helpbox">
         <h3>Bugreport</h3>
-        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;-bugreport <report><br>Aliases:  -issuereport, -reportbug, -reportissue<br>Examples: -bugreport Hello! I found a bug with NGC0000<br>Output:   Confirmation that your bug report has been sent.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Do not hesitate to use this command,<br>&nbsp;&nbsp;&nbsp;&nbsp;but please be very specific when describing the bug so<br>&nbsp;&nbsp;&nbsp;&nbsp;that the developer may easily see the issue and<br>&nbsp;&nbsp;&nbsp;&nbsp;correct it as soon as possible.</p>
+        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;-bugreport &lt;report&gt;<br>Aliases:  -issuereport, -reportbug, -reportissue<br>Examples: -bugreport Hello! I found a bug with NGC0000<br>Output:   Confirmation that your bug report has been sent.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Do not hesitate to use this command,<br>&nbsp;&nbsp;&nbsp;&nbsp;but please be very specific when describing the bug so<br>&nbsp;&nbsp;&nbsp;&nbsp;that the developer may easily see the issue and<br>&nbsp;&nbsp;&nbsp;&nbsp;correct it as soon as possible.</p>
     </div>
     
     <div class="helpbox">
@@ -115,7 +115,7 @@
     
     <div class="helpbox">
         <h3>Suggest</h3>
-        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;-suggest <report><br>Aliases:  -suggestion<br>Examples: -suggest Hello! You should add this feature...<br>Output:   Confirmation that your suggestion has been sent.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Do not hesitate to use this command,<br>&nbsp;&nbsp;&nbsp;&nbsp;your feedback is valued immensly.<br>&nbsp;&nbsp;&nbsp;&nbsp;However, please be detailed and concise.</p>
+        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;-suggest &lt;report&gt;<br>Aliases:  -suggestion<br>Examples: -suggest Hello! You should add this feature...<br>Output:   Confirmation that your suggestion has been sent.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Do not hesitate to use this command,<br>&nbsp;&nbsp;&nbsp;&nbsp;your feedback is valued immensly.<br>&nbsp;&nbsp;&nbsp;&nbsp;However, please be detailed and concise.</p>
     </div>
     
     <div class="helpbox">
@@ -136,12 +136,12 @@
 <h2>Module for emoji functions</h2>
     <div class="helpbox">
         <h3>Bigemoji</h3>
-        <p>Usage: bigemoji [info] <emojis><br>Aliases: -bigemote, -bigemojis, -bigemotes, -be<br>Output: Large version of the passed emoji<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Pass the optional info argument to show<br>&nbsp;&nbsp;&nbsp;&nbsp;the emoji's server, name, and url.</p>
+        <p>Usage: bigemoji [info] &lt;emojis&gt;<br>Aliases: -bigemote, -bigemojis, -bigemotes, -be<br>Output: Large version of the passed emoji<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Pass the optional info argument to show<br>&nbsp;&nbsp;&nbsp;&nbsp;the emoji's server, name, and url.</p>
     </div>
     
     <div class="helpbox">
         <h3>Emoji</h3>
-        <p>Usage: -emoji <custom emoji><br>Output: Usage stats on the passed emoji</p>
+        <p>Usage: -emoji &lt;custom emoji&gt;<br>Output: Usage stats on the passed emoji</p>
     </div>
     
     <div class="helpbox">
@@ -243,7 +243,7 @@
 <h2>Log your server events</h2>
     <div class="helpbox">
         <h3>Log</h3>
-        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -log &lt;option&gt; <br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-log deletes <br>Permission: Manage Server<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Enables a specific logging event<br>Options:<br>&nbsp;&nbsp;&nbsp;&nbsp;deletes<br>&nbsp;&nbsp;&nbsp;&nbsp;edits<br>&nbsp;&nbsp;&nbsp;&nbsp;roles<br>&nbsp;&nbsp;&nbsp;&nbsp;names<br>&nbsp;&nbsp;&nbsp;&nbsp;voice<br>&nbsp;&nbsp;&nbsp;&nbsp;avatars<br>&nbsp;&nbsp;&nbsp;&nbsp;moderation<br>&nbsp;&nbsp;&nbsp;&nbsp;channels<br>&nbsp;&nbsp;&nbsp;&nbsp;leaves<br>&nbsp;&nbsp;&nbsp;&nbsp;joins<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;After your server's log channel has been setup,<br>&nbsp;&nbsp;&nbsp;&nbsp;all actions are enabled by default.<br>&nbsp;&nbsp;&nbsp;&nbsp;Use 'all' as an option to enable all options.</p>
+        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -log &lt;option&gt;<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-log deletes<br>Permission: Manage Server<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Enables a specific logging event<br>Options:<br>&nbsp;&nbsp;&nbsp;&nbsp;deletes<br>&nbsp;&nbsp;&nbsp;&nbsp;edits<br>&nbsp;&nbsp;&nbsp;&nbsp;roles<br>&nbsp;&nbsp;&nbsp;&nbsp;names<br>&nbsp;&nbsp;&nbsp;&nbsp;voice<br>&nbsp;&nbsp;&nbsp;&nbsp;avatars<br>&nbsp;&nbsp;&nbsp;&nbsp;moderation<br>&nbsp;&nbsp;&nbsp;&nbsp;channels<br>&nbsp;&nbsp;&nbsp;&nbsp;leaves<br>&nbsp;&nbsp;&nbsp;&nbsp;joins<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;After your server's log channel has been setup,<br>&nbsp;&nbsp;&nbsp;&nbsp;all actions are enabled by default.<br>&nbsp;&nbsp;&nbsp;&nbsp;Use 'all' as an option to enable all options.</p>
     </div>
     
     <div class="helpbox">
@@ -259,17 +259,17 @@
 <h2>Keep your server under control.</h2>
     <div class="helpbox">
         <h3>Ban</h3>
-        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -ban <target> [target]... [delete message days = 1] [reason]<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-ban @Jacob Sarah 4 for advertising<br>Permission: Ban Members<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Ban passed members from the server.</p>
+        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -ban &lt;target&gt; [target]... [delete message days = 1] [reason]<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-ban @Jacob Sarah 4 for advertising<br>Permission: Ban Members<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Ban passed members from the server.</p>
     </div>
     
     <div class="helpbox">
         <h3>Blind</h3>
-        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -blind <target> [target]...<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-blind Hecate 708584008065351681 @Elizabeth<br>Permission: Kick Members<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Prevents users from seeing the channel.</p>
+        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -blind &lt;target&gt; [target]...<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-blind Hecate 708584008065351681 @Elizabeth<br>Permission: Kick Members<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Prevents users from seeing the channel.</p>
     </div>
     
     <div class="helpbox">
         <h3>Block</h3>
-        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -block <target> [target]...<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-block Hecate 708584008065351681 @Elizabeth<br>Permission: Kick Members<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Stops users from messaging in the channel.</p>
+        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -block &lt;target&gt; [target]...<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-block Hecate 708584008065351681 @Elizabeth<br>Permission: Kick Members<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Stops users from messaging in the channel.</p>
     </div>
     
     <div class="helpbox">
@@ -279,47 +279,47 @@
     
     <div class="helpbox">
         <h3>Hackban</h3>
-        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -hackban <id> [id] [id]...<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-hackban 805871188462010398 243507089479579784<br>Permission: Manage Server<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Hackbans multiple users by ID.<br>Notes:&nbsp;&nbsp;&nbsp;&nbsp;  Users do not have to be in the server.</p>
+        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -hackban &lt;id&gt; [id] [id]...<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-hackban 805871188462010398 243507089479579784<br>Permission: Manage Server<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Hackbans multiple users by ID.<br>Notes:&nbsp;&nbsp;&nbsp;&nbsp;  Users do not have to be in the server.</p>
     </div>
     
     <div class="helpbox">
         <h3>Kick</h3>
-        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -kick <target> [target]... [reason]<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-kick @Jacob Sarah for advertising<br>Permission: Kick Members<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Kicks passed members from the server.</p>
+        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -kick &lt;target&gt; [target]... [reason]<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-kick @Jacob Sarah for advertising<br>Permission: Kick Members<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Kicks passed members from the server.</p>
     </div>
     
     <div class="helpbox">
         <h3>Mute</h3>
-        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp; -hardmute <target> [target]... [minutes] [reason]<br>Alias:&nbsp;&nbsp;&nbsp;&nbsp; -hackmute<br>Example:   -hardmute person1 person2 10 for spamming<br>Pemission: Kick Members<br>Output:&nbsp;&nbsp;&nbsp;&nbsp;Takes all roles from passed users and mutes them.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Command -muterole must be executed prior to usage of<br>&nbsp;&nbsp;&nbsp;&nbsp;this command. Upon usage, will not be able to read<br>&nbsp;&nbsp;&nbsp;&nbsp;messages in any channel except for messages in #muted<br>&nbsp;&nbsp;&nbsp;&nbsp;(if still exists). Roles will be given back to the user<br>&nbsp;&nbsp;&nbsp;&nbsp;upon -unmute, or when their timed mute ends.</p>
+        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp; -hardmute &lt;target&gt; [target]... [minutes] [reason]<br>Alias:&nbsp;&nbsp;&nbsp;&nbsp; -hackmute<br>Example:   -hardmute person1 person2 10 for spamming<br>Pemission: Kick Members<br>Output:&nbsp;&nbsp;&nbsp;&nbsp;Takes all roles from passed users and mutes them.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Command -muterole must be executed prior to usage of<br>&nbsp;&nbsp;&nbsp;&nbsp;this command. Upon usage, will not be able to read<br>&nbsp;&nbsp;&nbsp;&nbsp;messages in any channel except for messages in #muted<br>&nbsp;&nbsp;&nbsp;&nbsp;(if still exists). Roles will be given back to the user<br>&nbsp;&nbsp;&nbsp;&nbsp;upon -unmute, or when their timed mute ends.</p>
     </div>
     
     <div class="helpbox">
         <h3>Prune</h3>
-        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -prune <method> <amount><br>Alias:&nbsp;&nbsp;&nbsp;&nbsp;  -purge, -delete, -remove<br>Examples:   -prune user Hecate, -prune bots<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Deletes messages that match your method criteria<br>Permission: Manage Messages<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Message removal within your search specification.<br>Methods:<br>&nbsp;&nbsp;&nbsp;&nbsp;all&nbsp;&nbsp;&nbsp;&nbsp;   Prune all messages<br>&nbsp;&nbsp;&nbsp;&nbsp;bots&nbsp;&nbsp;&nbsp;&nbsp;  Prunes bots and their invoked commands<br>&nbsp;&nbsp;&nbsp;&nbsp;contains  Prune messages that contain a substring<br>&nbsp;&nbsp;&nbsp;&nbsp;embeds&nbsp;&nbsp;&nbsp;&nbsp;Prunes all embeds<br>&nbsp;&nbsp;&nbsp;&nbsp;files&nbsp;&nbsp;&nbsp;&nbsp; Prunes all attachments<br>&nbsp;&nbsp;&nbsp;&nbsp;humans&nbsp;&nbsp;&nbsp;&nbsp;Prunes human messages<br>&nbsp;&nbsp;&nbsp;&nbsp;images&nbsp;&nbsp;&nbsp;&nbsp;Prunes all images<br>&nbsp;&nbsp;&nbsp;&nbsp;mentions  Prunes all mentions<br>&nbsp;&nbsp;&nbsp;&nbsp;reactions Prune all reactions from messages<br>&nbsp;&nbsp;&nbsp;&nbsp;until&nbsp;&nbsp;&nbsp;&nbsp; Prune until a given message ID<br>&nbsp;&nbsp;&nbsp;&nbsp;user&nbsp;&nbsp;&nbsp;&nbsp;  Prune a user</p>
+        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -prune &lt;method&gt; &lt;amount&gt;<br>Alias:&nbsp;&nbsp;&nbsp;&nbsp;  -purge, -delete, -remove<br>Examples:   -prune user Hecate, -prune bots<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Deletes messages that match your method criteria<br>Permission: Manage Messages<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Message removal within your search specification.<br>Methods:<br>&nbsp;&nbsp;&nbsp;&nbsp;all&nbsp;&nbsp;&nbsp;&nbsp;   Prune all messages<br>&nbsp;&nbsp;&nbsp;&nbsp;bots&nbsp;&nbsp;&nbsp;&nbsp;  Prunes bots and their invoked commands<br>&nbsp;&nbsp;&nbsp;&nbsp;contains  Prune messages that contain a substring<br>&nbsp;&nbsp;&nbsp;&nbsp;embeds&nbsp;&nbsp;&nbsp;&nbsp;Prunes all embeds<br>&nbsp;&nbsp;&nbsp;&nbsp;files&nbsp;&nbsp;&nbsp;&nbsp; Prunes all attachments<br>&nbsp;&nbsp;&nbsp;&nbsp;humans&nbsp;&nbsp;&nbsp;&nbsp;Prunes human messages<br>&nbsp;&nbsp;&nbsp;&nbsp;images&nbsp;&nbsp;&nbsp;&nbsp;Prunes all images<br>&nbsp;&nbsp;&nbsp;&nbsp;mentions  Prunes all mentions<br>&nbsp;&nbsp;&nbsp;&nbsp;reactions Prune all reactions from messages<br>&nbsp;&nbsp;&nbsp;&nbsp;until&nbsp;&nbsp;&nbsp;&nbsp; Prune until a given message ID<br>&nbsp;&nbsp;&nbsp;&nbsp;user&nbsp;&nbsp;&nbsp;&nbsp;  Prune a user</p>
     </div>
     
     <div class="helpbox">
         <h3>Softban</h3>
-        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -softban <targets> [delete message = 7] [reason]<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-softban @Jacob Sarah 6 for advertising<br>Permission: Kick Members<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Softbans members from the server.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;A softban bans the member and immediately<br>&nbsp;&nbsp;&nbsp;&nbsp;unbans s/he in order to delete messages.<br>&nbsp;&nbsp;&nbsp;&nbsp;The days to delete messages is set to 7 days.</p>
+        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -softban &lt;targets&gt; [delete message = 7] [reason]<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-softban @Jacob Sarah 6 for advertising<br>Permission: Kick Members<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Softbans members from the server.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;A softban bans the member and immediately<br>&nbsp;&nbsp;&nbsp;&nbsp;unbans s/he in order to delete messages.<br>&nbsp;&nbsp;&nbsp;&nbsp;The days to delete messages is set to 7 days.</p>
     </div>
     
     <div class="helpbox">
         <h3>Unban</h3>
-        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -unban <user> [reason]<br>Alias:&nbsp;&nbsp;&nbsp;&nbsp;  -revokeban<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;Unban Hecate#3523 Because...<br>Permission: Ban Members<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Unbans a member from the server.<br>Notes:&nbsp;&nbsp;&nbsp;&nbsp;  Pass either the user's ID or their username</p>
+        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -unban &lt;user&gt; [reason]<br>Alias:&nbsp;&nbsp;&nbsp;&nbsp;  -revokeban<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;Unban Hecate#3523 Because...<br>Permission: Ban Members<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Unbans a member from the server.<br>Notes:&nbsp;&nbsp;&nbsp;&nbsp;  Pass either the user's ID or their username</p>
     </div>
     
     <div class="helpbox">
         <h3>Unblind</h3>
-        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -unblind <target> [target]...<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-unblind Hecate 708584008065351681 @Elizabeth<br>Permission: Kick Members<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Reallows blinded users to see the channel.</p>
+        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -unblind &lt;target&gt; [target]...<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-unblind Hecate 708584008065351681 @Elizabeth<br>Permission: Kick Members<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Reallows blinded users to see the channel.</p>
     </div>
     
     <div class="helpbox">
         <h3>Unblock</h3>
-        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -unblock <target> [target]...<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-unblock Hecate 708584008065351681 @Elizabeth<br>Permission: Kick Members<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Reallows blocked users to send messages.</p>
+        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -unblock &lt;target&gt; [target]...<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-unblock Hecate 708584008065351681 @Elizabeth<br>Permission: Kick Members<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Reallows blocked users to send messages.</p>
     </div>
     
     <div class="helpbox">
         <h3>Unmute</h3>
-        <p>Usage: -unmute <target> [target]...<br>Alias: -endmute<br>Example: -unmute Hecate @Elizabeth 708584008065351681<br>Permissiom: Kick Members<br>Output: Unmutes members muted by the -hardmute command.</p>
+        <p>Usage: -unmute &lt;target&gt; [target]...<br>Alias: -endmute<br>Example: -unmute Hecate @Elizabeth 708584008065351681<br>Permissiom: Kick Members<br>Output: Unmutes members muted by the -hardmute command.</p>
     </div>
     <h1>Restrict</h1>
 <h2>Module for disabling commands</h2>
@@ -350,7 +350,7 @@
     
     <div class="helpbox">
         <h3>Ignore</h3>
-        <p>Usage: -ignore <user> [react] [reason]<br>Output: Will not process commands from the passed user.<br>Permission: Administrator<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Specify the "react" to choose whether or not to<br>&nbsp;&nbsp;&nbsp;&nbsp;react to the user's attempted commands.</p>
+        <p>Usage: -ignore &lt;user&gt; [react] [reason]<br>Output: Will not process commands from the passed user.<br>Permission: Administrator<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Specify the "react" to choose whether or not to<br>&nbsp;&nbsp;&nbsp;&nbsp;react to the user's attempted commands.</p>
     </div>
     
     <div class="helpbox">
@@ -365,7 +365,7 @@
     
     <div class="helpbox">
         <h3>Unignore</h3>
-        <p>Usage: -unignore <user><br>Alias: -listen<br>Output: Will delete the passed user from the ignored list<br>Permission: Administrator</p>
+        <p>Usage: -unignore &lt;user&gt;<br>Alias: -listen<br>Output: Will delete the passed user from the ignored list<br>Permission: Administrator</p>
     </div>
     <h1>Roles</h1>
 <h2>Manage all actions regarding roles.</h2>
@@ -386,7 +386,7 @@
     
     <div class="helpbox">
         <h3>Massrole</h3>
-        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -massrole <method> <role1> <role2><br>Alias:&nbsp;&nbsp;&nbsp;&nbsp;  -multirole<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-massrole add @everyone Verified<br>Permission: Manage Server, Manage Roles<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Adds or removes a role to all users with a given role<br>Methods:<br>&nbsp;&nbsp;&nbsp;&nbsp;add<br>&nbsp;&nbsp;&nbsp;&nbsp;remove (Aliases: rem, rm)<br><br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Command may take a few minutes to complete its execution.<br>&nbsp;&nbsp;&nbsp;&nbsp;Please be patient.</p>
+        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -massrole &lt;method&gt; &lt;role1&gt; &lt;role2&gt;<br>Alias:&nbsp;&nbsp;&nbsp;&nbsp;  -multirole<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-massrole add @everyone Verified<br>Permission: Manage Server, Manage Roles<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Adds or removes a role to all users with a given role<br>Methods:<br>&nbsp;&nbsp;&nbsp;&nbsp;add<br>&nbsp;&nbsp;&nbsp;&nbsp;remove (Aliases: rem, rm)<br><br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Command may take a few minutes to complete its execution.<br>&nbsp;&nbsp;&nbsp;&nbsp;Please be patient.</p>
     </div>
     
     <div class="helpbox">
@@ -396,7 +396,7 @@
     
     <div class="helpbox">
         <h3>Rolecall</h3>
-        <p>Usage: -rolecall <role><br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Shows the number of people with the passed role.</p>
+        <p>Usage: -rolecall &lt;role&gt;<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Shows the number of people with the passed role.</p>
     </div>
     
     <div class="helpbox">
@@ -406,17 +406,17 @@
     
     <div class="helpbox">
         <h3>Roleinfo</h3>
-        <p>Usage:  -roleinfo <role><br>Alias:  -ri<br>Output: Info on the passed role</p>
+        <p>Usage:  -roleinfo &lt;role&gt;<br>Alias:  -ri<br>Output: Info on the passed role</p>
     </div>
     
     <div class="helpbox">
         <h3>Roleperms</h3>
-        <p>Usage:  -roleperms <role><br>Alias:  -rp<br>Output: Embed with all the permissions granted to that role</p>
+        <p>Usage:  -roleperms &lt;role&gt;<br>Alias:  -rp<br>Output: Embed with all the permissions granted to that role</p>
     </div>
     
     <div class="helpbox">
         <h3>Whohas</h3>
-        <p>Usage: -whohas <role><br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Lists the people who have the specified role with their status.<br>Notes:</p>
+        <p>Usage: -whohas &lt;role&gt;<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Lists the people who have the specified role with their status.<br>Notes:</p>
     </div>
     <h1>Server</h1>
 <h2>Module for all server stats</h2>
@@ -437,17 +437,17 @@
     
     <div class="helpbox">
         <h3>Joinedat</h3>
-        <p>Usage: -joinedat <member><br>Output: Shows when the passed user joined the server<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Will default to youself if no member is passed.</p>
+        <p>Usage: -joinedat &lt;member&gt;<br>Output: Shows when the passed user joined the server<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Will default to youself if no member is passed.</p>
     </div>
     
     <div class="helpbox">
         <h3>Joinedatpos</h3>
-        <p>Usage: -joinedatpos <integer><br>Alias: -joinedatposition<br>Example: -joinedatpos 34<br>Output: Shows the user that joined at the passed position.</p>
+        <p>Usage: -joinedatpos &lt;integer&gt;<br>Alias: -joinedatposition<br>Example: -joinedatpos 34<br>Output: Shows the user that joined at the passed position.</p>
     </div>
     
     <div class="helpbox">
         <h3>Joinpos</h3>
-        <p>Usage: -joinpos <member><br>Alias: -joinposition<br>Example: -joinpos @Hecate<br>Output: Tells when a user joined compared to other users.</p>
+        <p>Usage: -joinpos &lt;member&gt;<br>Alias: -joinposition<br>Example: -joinpos @Hecate<br>Output: Tells when a user joined compared to other users.</p>
     </div>
     
     <div class="helpbox">
@@ -534,7 +534,7 @@
     
     <div class="helpbox">
         <h3>Platform</h3>
-        <p>Usage:  -mobile <member> [member] [member]...<br>Alias:  -platform<br>Output: Shows whether a user is on desktop or mobile.<br>Notes:  Cannot determine platform when users are offline.</p>
+        <p>Usage:  -mobile &lt;member&gt; [member] [member]...<br>Alias:  -platform<br>Output: Shows whether a user is on desktop or mobile.<br>Notes:  Cannot determine platform when users are offline.</p>
     </div>
     
     <div class="helpbox">
@@ -544,7 +544,7 @@
     
     <div class="helpbox">
         <h3>Status</h3>
-        <p>Usage: -status <member></p>
+        <p>Usage: -status &lt;member&gt;</p>
     </div>
     
     <div class="helpbox">
@@ -554,7 +554,7 @@
     
     <div class="helpbox">
         <h3>User</h3>
-        <p>Usage:   -user <user><br>Alias:   -lookup<br>Example: -user 810377376269205546<br>Output:  General information on any discord user.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Accepts nickname, ID, mention, username, and username+discrim<br>&nbsp;&nbsp;&nbsp;&nbsp;Neither you nor the bot must share a server with the user.</p>
+        <p>Usage:   -user &lt;user&gt;<br>Alias:   -lookup<br>Example: -user 810377376269205546<br>Output:  General information on any discord user.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Accepts nickname, ID, mention, username, and username+discrim<br>&nbsp;&nbsp;&nbsp;&nbsp;Neither you nor the bot must share a server with the user.</p>
     </div>
     
     <div class="helpbox">
@@ -580,12 +580,12 @@
     
     <div class="helpbox">
         <h3>Find</h3>
-        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -find <method> <search><br>Alias:&nbsp;&nbsp;&nbsp;&nbsp;  -search<br>Examples:   -find name Hecate, -find id 708584008065351681<br>Permission: Manage Messages<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; User within your search specification.<br>Methods:<br>&nbsp;&nbsp;&nbsp;&nbsp;discriminator (Ex: 3523)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;   (Alias: discrim)<br>&nbsp;&nbsp;&nbsp;&nbsp;nickname&nbsp;&nbsp;&nbsp;&nbsp;  (Ex: Heca)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;   (Alias: nick)<br>&nbsp;&nbsp;&nbsp;&nbsp;playing&nbsp;&nbsp;&nbsp;&nbsp;   (Ex: Minecraft)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  (Alias: status)<br>&nbsp;&nbsp;&nbsp;&nbsp;snowflake&nbsp;&nbsp;&nbsp;&nbsp; (Ex: 708584008065351681) (Alias: id)<br>&nbsp;&nbsp;&nbsp;&nbsp;username&nbsp;&nbsp;&nbsp;&nbsp;  (Ex: Hec)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Alias: name)</p>
+        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -find &lt;method&gt; &lt;search&gt;<br>Alias:&nbsp;&nbsp;&nbsp;&nbsp;  -search<br>Examples:   -find name Hecate, -find id 708584008065351681<br>Permission: Manage Messages<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; User within your search specification.<br>Methods:<br>&nbsp;&nbsp;&nbsp;&nbsp;discriminator (Ex: 3523)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;   (Alias: discrim)<br>&nbsp;&nbsp;&nbsp;&nbsp;nickname&nbsp;&nbsp;&nbsp;&nbsp;  (Ex: Heca)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;   (Alias: nick)<br>&nbsp;&nbsp;&nbsp;&nbsp;playing&nbsp;&nbsp;&nbsp;&nbsp;   (Ex: Minecraft)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  (Alias: status)<br>&nbsp;&nbsp;&nbsp;&nbsp;snowflake&nbsp;&nbsp;&nbsp;&nbsp; (Ex: 708584008065351681) (Alias: id)<br>&nbsp;&nbsp;&nbsp;&nbsp;username&nbsp;&nbsp;&nbsp;&nbsp;  (Ex: Hec)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Alias: name)</p>
     </div>
     
     <div class="helpbox">
         <h3>Nickname</h3>
-        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -nickname <member> [nickname]<br>Aliases:&nbsp;&nbsp;&nbsp;&nbsp;-nick, -setnick<br>Examples:   -nickname NGC0000 NGC, -nickname NGC0000<br>Permission: Manage Nicknames<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Edits a member's nickname on the server.<br>Notes:&nbsp;&nbsp;&nbsp;&nbsp;  Nickname will reset if no member is passed.</p>
+        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -nickname &lt;member&gt; [nickname]<br>Aliases:&nbsp;&nbsp;&nbsp;&nbsp;-nick, -setnick<br>Examples:   -nickname NGC0000 NGC, -nickname NGC0000<br>Permission: Manage Nicknames<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Edits a member's nickname on the server.<br>Notes:&nbsp;&nbsp;&nbsp;&nbsp;  Nickname will reset if no member is passed.</p>
     </div>
     
     <div class="helpbox">
@@ -605,22 +605,22 @@
     
     <div class="helpbox">
         <h3>Snowflake</h3>
-        <p>Usage: -snowflake <id><br>Alias: -id<br>Example: -snowflake 810377376269205546<br>Output: Date and time of the snowflake's creation</p>
+        <p>Usage: -snowflake &lt;id&gt;<br>Alias: -id<br>Example: -snowflake 810377376269205546<br>Output: Date and time of the snowflake's creation</p>
     </div>
     
     <div class="helpbox">
         <h3>Vckick</h3>
-        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -vckick <target> <target><br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Kicks passed members from their channel<br>Permission: Move Members</p>
+        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -vckick &lt;target&gt; &lt;target&gt;<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Kicks passed members from their channel<br>Permission: Move Members</p>
     </div>
     
     <div class="helpbox">
         <h3>Vcmove</h3>
-        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -vcmove <target> <target>... <channel><br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Moves members into a new voice channel<br>Permission: Move Members</p>
+        <p>Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -vcmove &lt;target&gt; &lt;target&gt;... &lt;channel&gt;<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Moves members into a new voice channel<br>Permission: Move Members</p>
     </div>
     
     <div class="helpbox">
         <h3>Vcpurge</h3>
-        <p>Usage: -vcpurge <voice channel><br>Output: Kicks all members from the channel<br>Permission: Move Members</p>
+        <p>Usage: -vcpurge &lt;voice channel&gt;<br>Output: Kicks all members from the channel<br>Permission: Move Members</p>
     </div>
     <h1>Warn</h1>
 <h2>Manage the server warning system</h2>

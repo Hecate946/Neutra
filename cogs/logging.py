@@ -321,6 +321,9 @@ class Logging(commands.Cog):
             await webhook.execute(embed=embed, username=self.bot.user.name)
 
         elif before.roles != after.roles:
+            if "@everyone" not in [x.name for x in before.roles]:
+                print("New Member")
+                return
 
             if not await self.check(snowflake=after.guild.id, event="role_changes"):
                 return
@@ -436,7 +439,7 @@ class Logging(commands.Cog):
                 colour=self.bot.constants.embed,
                 timestamp=datetime.utcnow(),
             )
-            embed.set_author(name=f"Membed Left Channel {before.channel.name}")
+            embed.set_author(name=f"Member Left Channel {before.channel.name}")
             embed.set_footer(text=f"User ID: {member.id}")
 
             await webhook.execute(embed=embed, username=self.bot.user.name)
@@ -725,6 +728,13 @@ class Logging(commands.Cog):
     @commands.guild_only()
     @permissions.has_permissions(manage_guild=True)
     async def unlogchannel(self, ctx):
+        """
+        Usage: -unlogchannel
+        Alias: -unlogserver
+        Permission: Manage Server
+        Output:
+            Removes the server's logging channel
+        """
         server_webhook_list = await ctx.guild.webhooks()
         found = []
         for webhook in server_webhook_list:

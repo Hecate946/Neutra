@@ -27,7 +27,6 @@ class Roles(commands.Cog):
     """
     Manage all actions regarding roles.
     """
-
     def __init__(self, bot):
         self.bot = bot
 
@@ -83,7 +82,7 @@ class Roles(commands.Cog):
     )
     @commands.guild_only()
     @permissions.bot_has_permissions(manage_roles=True)
-    @permissions.has_permissions(manage_guild=True, manage_roles=True)
+    @permissions.has_permissions(manage_roles=True)
     async def addrole(
         self, ctx, targets: commands.Greedy[discord.Member], *roles: discord.Role
     ):
@@ -91,7 +90,7 @@ class Roles(commands.Cog):
         Usage:      -addrole [user] [user...] [role] [role]...
         Aliases:    -ar, -adrole, -adrl, -addrl
         Example:    -ar Hecate#3523 @NGC0000 @Verified Member
-        Permission: Manage Server, Manage Roles
+        Permission: Manage Roles
         Output:     Adds multiple roles to multiple users
         """
         if ctx.guild.me.permissions_in(ctx.message.channel).manage_roles is False:
@@ -144,7 +143,7 @@ class Roles(commands.Cog):
     )
     @commands.guild_only()
     @permissions.bot_has_permissions(manage_roles=True)
-    @permissions.has_permissions(manage_guild=True, manage_roles=True)
+    @permissions.has_permissions(manage_roles=True)
     async def removerole(
         self, ctx, targets: commands.Greedy[discord.Member], *roles: discord.Role
     ):
@@ -152,7 +151,7 @@ class Roles(commands.Cog):
         Usage:      -removerole [user] [user...] [role] [role]...
         Aliases:    -rr, -remrole, -rmrole, -rmrl
         Example:    -rr Hecate#3523 @NGC0000 @Verified Member
-        Permission: Manage Server, Manage Roles
+        Permission: Manage Roles
         Output:     Removes multiple roles from multiple users
         """
         if (
@@ -215,13 +214,13 @@ class Roles(commands.Cog):
     )
     @commands.guild_only()
     @permissions.bot_has_permissions(manage_guild=True, manage_roles=True)
-    @permissions.has_permissions(manage_guild=True, manage_roles=True)
+    @permissions.has_permissions(manage_roles=True)
     async def massrole(self, ctx):
         """
         Usage:      -massrole <method> <role1> <role2>
         Alias:      -multirole
         Example:    -massrole add @everyone Verified
-        Permission: Manage Server, Manage Roles
+        Permission: Manage Roles
         Output:     Adds or removes a role to all users with a given role
         Methods:
             add
@@ -236,7 +235,6 @@ class Roles(commands.Cog):
             await help_command(ctx, invokercommand="massrole")
 
     @massrole.command(brief="Adds all members with a certain role a new role.")
-    @permissions.has_permissions(manage_guild=True)
     async def add(self, ctx, role1: discord.Role = None, role2: discord.Role = None):
         if role1 is None:
             return await ctx.send("Usage: `{ctx.prefix}massrole add <role1> <role2> ")
@@ -369,43 +367,6 @@ class Roles(commands.Cog):
             content=f"{self.emote_dict['success']} Removed role `{role2.name}` from `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}"
         )
 
-    def get_user(message, user):
-        try:
-            member = message.mentions[0]
-        except Exception:
-            member = message.guild.get_member_named(user)
-        if not member:
-            try:
-                member = message.guild.get_member(int(user))
-            except ValueError:
-                pass
-        if not member:
-            return None
-        return member
-
-    def role_check(self, user, role_query):
-        # returns True or False if a user has named role
-        return any((role.name in role_query for role in user.roles))
-
-    def alphanum_filter(self, text):
-        # filter for searching a role by name without having to worry about case or punctuation
-        return "".join(i for i in text if i.isalnum()).lower()
-
-    def rolelist_filter(self, roles, id_list):
-        # filters the full role hierarchy based on the predefined lists above
-        return [role for role in roles if int(role.id) in id_list]
-
-    def get_named_role(self, server, rolename):
-        # finds a role in a server by name
-        check_name = self.alphanum_filter(rolename)
-        return next(
-            (
-                role
-                for role in server.roles
-                if self.alphanum_filter(role.name) == check_name
-            ),
-            None,
-        )
 
     def role_accumulate(self, check_roles, members):
         ## iterate over the members to accumulate a count of each role
@@ -614,6 +575,7 @@ class Roles(commands.Cog):
     async def rolecount(self, ctx):
         """
         Usage: -rolecount
+        Output: Counts all server roles
         """
         await ctx.send(
             "This server has {:,} total roles.".format(len(ctx.guild.roles) - 1)
@@ -624,6 +586,7 @@ class Roles(commands.Cog):
     async def emptyroles(self, ctx):
         """
         Usage: -emptyroles
+        Output: Shows all roles with zero users
         """
 
         check_roles = (
@@ -639,6 +602,6 @@ class Roles(commands.Cog):
                 sorted_list.append((role, rolecounts.get(role, 0)))
 
         if not sorted_list:  # another failsafe
-            return await ctx.send("Seems there are no empty roles...")
+            return await ctx.send(f"{self.bot.emote_dict['error']} No empty roles found.")
 
         await self.rolelist_paginate(ctx, sorted_list, title="Empty Roles")

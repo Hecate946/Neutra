@@ -28,13 +28,14 @@ class Restrict(commands.Cog):
             or ctx.author.id in self.bot.constants.owners
         ):
             return True
-        elif ctx.author.guild_permissions.manage_guild:
-            return True
-        else:
-            perm_list = ["Manage Server"]
-            raise commands.BadArgument(
-                message=f"You are missing the following permission{'' if len(perm_list) == 1 else 's'}: `{', '.join(perm_list)}`"
-            )
+        return
+        # elif ctx.author.guild_permissions.manage_guild:
+        #     return True
+        # else:
+        #     perm_list = ["Manage Server"]
+        #     raise commands.BadArgument(
+        #         message=f"You are missing the following permission{'' if len(perm_list) == 1 else 's'}: `{', '.join(perm_list)}`"
+        #     )
 
     def _get_our_comms(self):
         # Get our cog

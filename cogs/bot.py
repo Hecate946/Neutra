@@ -1,17 +1,18 @@
-import discord
-from discord.ext import commands
+import os
+import sys
 import time
 import psutil
-import os
 import struct
-import subprocess
-import sys
-import platform
+import discord
 import inspect
 import datetime
+import platform
+import subprocess
+
+from discord.ext import commands
+from discord import __version__ as discord_version
 from platform import python_version
 from psutil import Process, virtual_memory
-from discord import __version__ as discord_version
 
 from utilities import utils, speedtest, converters
 
@@ -24,7 +25,6 @@ class Bot(commands.Cog):
     """
     Module for bot information
     """
-
     def __init__(self, bot):
         self.bot = bot
         self.emote_dict = bot.emote_dict
@@ -125,7 +125,7 @@ class Bot(commands.Cog):
         aliases=["reportbug", "reportissue", "issuereport"],
     )
     @commands.cooldown(2, 60, commands.BucketType.user)
-    async def bugreport(self, ctx, *, bug: str):
+    async def bugreport(self, ctx, *, bug: str  = None):
         """
         Usage:    -bugreport <report>
         Aliases:  -issuereport, -reportbug, -reportissue
@@ -137,6 +137,8 @@ class Bot(commands.Cog):
             that the developer may easily see the issue and
             correct it as soon as possible.
         """
+        if bug is None:
+            return await ctx.send(f"Usage: `{ctx.prefix}bugreport <bug>`")
 
         owner = discord.utils.get(self.bot.get_all_members(), id=708584008065351681)
         author = ctx.message.author
@@ -166,7 +168,7 @@ class Bot(commands.Cog):
         brief="Send a suggestion to the developer.", aliases=["suggestion"]
     )
     @commands.cooldown(2, 60, commands.BucketType.user)
-    async def suggest(self, ctx, *, suggestion: str):
+    async def suggest(self, ctx, *, suggestion: str = None):
         """
         Usage:    -suggest <report>
         Aliases:  -suggestion
@@ -177,6 +179,8 @@ class Bot(commands.Cog):
             your feedback is valued immensly.
             However, please be detailed and concise.
         """
+        if suggestion is None:
+            return await ctx.send(f"Usage `{ctx.prefix}suggest <suggestion>`")
         owner = discord.utils.get(self.bot.get_all_members(), id=708584008065351681)
         author = ctx.author
         if ctx.guild:
@@ -200,11 +204,11 @@ class Bot(commands.Cog):
         else:
             await ctx.send("Your message has been sent.")
 
-    @commands.command(brief="Show the bot's uptime.", aliases=["runningtime"])
+    @commands.command(brief="Show the bot's uptime.", aliases=["runtime"])
     async def uptime(self, ctx):
         """
         Usage:  -uptime
-        Alias:  -runningtime
+        Alias:  -runtime
         Output: Time since last reboot.
         """
         await ctx.send(
@@ -222,7 +226,7 @@ class Bot(commands.Cog):
         Output: Bot speed statistics.
         Notes:
             Invoke command with speedtest, network, speed, download, upload
-            and the bot will attempt to run an internet speedtest.
+            and the bot will attempt to run an internet speedtest. May fail.
         """
         async with ctx.channel.typing():
             start = time.time()
@@ -238,8 +242,12 @@ class Bot(commands.Cog):
                 "download",
                 "upload",
             ]:
-
-                st = speedtest.Speedtest()
+                try:
+                    st = speedtest.Speedtest()
+                except Exception as e:
+                    await message.edit(content=f"{self.bot.emote_dict['failed']} **Failed**")
+                    print(f"Speedtest error: {e}")
+                    return
                 st.get_best_server()
                 d = await self.bot.loop.run_in_executor(None, st.download)
                 u = await self.bot.loop.run_in_executor(None, st.upload)
@@ -486,7 +494,7 @@ class Bot(commands.Cog):
         Output: An invite link to my support server
         """
         await ctx.send(
-            f"**{ctx.author.name}**, use this URL to invite me\n{self.bot.constants.support}"
+            f"**{ctx.author.name}**, use this URL to join my support server\n{self.bot.constants.support}"
         )
 
     @commands.command(brief="Shows all users I'm connected to.")

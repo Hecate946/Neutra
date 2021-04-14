@@ -6,7 +6,7 @@ import asyncpg
 import discord
 
 from collections import Counter
-from discord.ext import commands, menus
+from discord.ext import commands
 from datetime import datetime, timedelta
 from better_profanity import profanity
 
@@ -736,7 +736,7 @@ class Moderation(commands.Cog):
             try:
                 await ctx.guild.ban(
                     u,
-                    reason=f"Hackban executed by `{ctx.author}`",
+                    reason=f"Hackban executed by {ctx.author}",
                     delete_message_days=7,
                 )
                 banned.append(user)

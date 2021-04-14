@@ -6,7 +6,7 @@ import discord
 from datetime import datetime
 from discord.ext import commands
 
-from .help import COG_EXCEPTIONS
+from cogs.help import COG_EXCEPTIONS, USELESS_COGS
 from utilities import utils, permissions
 
 
@@ -63,23 +63,20 @@ class Files(commands.Cog):
         """
         Usage: -dumphelp
         Aliases: -txthelp, -helpfile
-        Output: List of commands and descriptions
+        Output:
+            DMs you a file with all my commands
+            and their descriptions.
         """
-        timestamp = datetime.today().strftime("%m-%d-%Y")
+        timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
+        help_file = "Help-{}.txt".format(timestamp)
 
-        if not os.path.exists("./data/wastebin"):
-            # Create it
-            os.makedirs("./data/wastebin")
-
-        help_txt = "./data/wastebin/Help-{}.txt".format(timestamp)
-
-        message = await ctx.send("Uploading help list...")
+        mess = await ctx.send("Saving servers to **{}**...".format(help_file))
         msg = ""
         prefix = ctx.prefix
 
         # Get and format the help
         for cog in sorted(self.bot.cogs):
-            if cog.upper() in COG_EXCEPTIONS:
+            if cog.upper() in COG_EXCEPTIONS + USELESS_COGS:
                 continue
             cog_commands = sorted(
                 self.bot.get_cog(cog).get_commands(), key=lambda x: x.name
@@ -121,19 +118,38 @@ class Files(commands.Cog):
         # Encode to binary
         # Trim the last 2 newlines
         msg = msg[:-2].encode("utf-8")
-        with open(help_txt, "wb") as myfile:
-            myfile.write(msg)
+        data = io.BytesIO(msg)
 
-        await ctx.send(file=discord.File(help_txt))
-        await message.edit(
-            content=f"{self.bot.emote_dict['success']} Uploaded Help-{timestamp}.txt"
+        await mess.edit(content="Uploading `{}`...".format(help_file))
+        try:
+            await ctx.author.send(file=discord.File(data, filename=help_file))
+        except Exception:
+            await ctx.send(file=discord.File(data, filename=help_file))
+            await mess.edit(
+                content="{} Uploaded `{}`.".format(
+                    self.bot.emote_dict["success"], help_file
+                )
+            )
+            return
+        await mess.edit(
+            content="{} Uploaded `{}`.".format(
+                self.bot.emote_dict["success"], help_file
+            )
         )
-        os.remove(help_txt)
+        await mess.add_reaction(self.bot.emote_dict["letter"])
+
 
     @commands.command(hidden=True, brief="DMs you a list of my servers.")
-    @commands.is_owner()
     async def dumpservers(self, ctx):
-        """Dumps a timestamped list of servers."""
+        """
+        Usage: -dumpservers
+        Permission: Bot Admin
+        Output:
+            DMs you a file with all my servers,
+            their member count, owners, and their IDs
+        """
+        if not permissions.is_admin(ctx):
+            return
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
         server_file = "Servers-{}.txt".format(timestamp)
 
@@ -224,8 +240,8 @@ class Files(commands.Cog):
         """
         Usage:  -dumproles
         Alias:  -txtroles
-        Output:  Sends a list of roles for the server to your DMs
         Permission: Manage Roles
+        Output:  Sends a list of roles for the server to your DMs
         """
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
         role_file = "Roles-{}.txt".format(timestamp)
@@ -358,8 +374,8 @@ class Files(commands.Cog):
         """
         Usage:  -dumpcategories
         Alias:  -dumpcc
-        Output:  Sends a list of categories to your DMs
         Permission: Manage Channels
+        Output:  Sends a list of categories to your DMs
         """
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
         role_file = "Channels-{}.txt".format(timestamp)
@@ -399,13 +415,13 @@ class Files(commands.Cog):
 
     @commands.command(brief="DMs you a file of server emojis.", aliases=["dumpemojis"])
     @commands.guild_only()
-    @permissions.has_permissions(manage_messages=True)
+    @permissions.has_permissions(manage_emojis=True)
     async def dumpemotes(self, ctx):
         """
         Usage:  -dumpemotes
         Alias:  -dumpemojis
+        Permission: Manage Emojis
         Output:  Sends a list of server emojis to your DMs
-        Permission: Manage Messages
         """
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
         role_file = "Emotes-{}.txt".format(timestamp)
@@ -445,14 +461,14 @@ class Files(commands.Cog):
         brief="DMs you a file of channel messages.",
     )
     @commands.guild_only()
-    @permissions.has_permissions(manage_guild=True)
+    @permissions.has_permissions(manage_messages=True)
     async def dumpmessages(
         self, ctx, messages: int = 25, *, chan: discord.TextChannel = None
     ):
         """
         Usage:      -dumpmessages [message amount] [channel]
         Aliases:    -messagedump, -dumpmessages, logmessages
-        Permission: Manage Server
+        Permission: Manage Messages
         Output:
             Logs a passed number of messages from a specified channel
             - 25 by default.
@@ -511,7 +527,6 @@ class Files(commands.Cog):
         aliases=["timezonelist", "listtimezones"], brief="DMs you a file of time zones."
     )
     @commands.guild_only()
-    @permissions.has_permissions(manage_guild=True)
     async def dumptimezones(self, ctx):
         """
         Usage:      -dumptimezones
@@ -553,11 +568,12 @@ class Files(commands.Cog):
 
     @commands.command(aliases=["humanlist"], brief="DMs you a file of server humans.")
     @commands.guild_only()
-    @permissions.has_permissions(manage_guild=True)
+    @permissions.has_permissions(manage_messages=True)
     async def dumphumans(self, ctx):
         """
         Usage:      -dumphumans
         Aliases:    -humanlist
+        Permission: Manage Messages
         Output:
             Sends a txt file to your DMs with all
             server humans
@@ -603,11 +619,12 @@ class Files(commands.Cog):
         brief="DMs you a file of server bots.",
     )
     @commands.guild_only()
-    @permissions.has_permissions(manage_guild=True)
+    @permissions.has_permissions(manage_messages=True)
     async def dumpbots(self, ctx):
         """
         Usage:      -dumphumans
         Aliases:    -botlist, -robotlist, dumprobots
+        Permission: Manage Messages
         Output:
             Sends a txt file to your DMs with all
             server bots
@@ -653,11 +670,12 @@ class Files(commands.Cog):
         brief="DMs you a file of server members.",
     )
     @commands.guild_only()
-    @permissions.has_permissions(manage_guild=True)
+    @permissions.has_permissions(manage_messages=True)
     async def dumpmembers(self, ctx):
         """
         Usage:      -dumpmembers
         Aliases:    -dumpusers, -memberlist, -userlist
+        Permission: Manage Messages
         Output:
             Sends a txt file to your DMs with all
             server members.
@@ -699,11 +717,12 @@ class Files(commands.Cog):
     )
     @commands.guild_only()
     @permissions.bot_has_permissions(ban_members=True)
-    @permissions.has_permissions(manage_guild=True)
+    @permissions.has_permissions(ban_members=True)
     async def dumpbans(self, ctx):
         """
         Usage:      -dumpbans
         Aliases:    -banlist, txtbans
+        Permission: Ban Members
         Output:
             Sends a txt file to your DMs with all
             server bans.
@@ -738,3 +757,47 @@ class Files(commands.Cog):
             )
         )
         await mess.add_reaction(self.bot.emote_dict["letter"])
+
+    @commands.command(aliases=['md'], brief="DMs you my readme file.")
+    async def readme(self, ctx):
+        """
+        Usage: -readme
+        Alias: -md
+        Output: Sends my readme file on github to your DMs
+        Notes:
+            This command actually updates the readme file
+            to include all the current command descriptions
+            for each registered category.
+        """ 
+        premsg = ""
+        premsg += f"# NGC0000 Moderation & Stat Tracking Discord Bot\n"
+        "![6010fc1cf1ae9c815f9b09168dbb65a7-1](https://user-images.githubusercontent.com/74381783/108671227-f6d3f580-7494-11eb-9a77-9478f5a39684.png)"
+        f"### [Bot Invite Link]({self.bot.constants.oauth})\n"
+        f"### [Support Server]({self.bot.constants.support})\n"
+        "### [DiscordBots.gg](https://discord.bots.gg/bots/810377376269205546)\n"
+        "## Overview\n"
+        "Hello there! NGC0000 is an awesome feature rich bot named after the Milky Way. She features over 100 commands, all with extensive and easy to understand help. Her commands are fast and offer every opportunity for customization and utility.\n"
+        "## Categories"   
+        msg = ""
+
+        cog_list = [self.bot.get_cog(cog) for cog in self.bot.cogs]
+        for cog in cog_list:
+            if cog.qualified_name.upper() in COG_EXCEPTIONS + USELESS_COGS:
+                continue
+            premsg += f"##### [{cog.qualified_name}](#{cog.qualified_name}-1)\n"
+            cmds = [c for c in cog.get_commands() if not c.hidden]
+
+
+            msg += "\n\n### {}\n#### {} ({} Commands)\n\n```yaml\n{}\n```""".format(
+                cog.qualified_name,
+                cog.description, len(cmds),
+                '\n\n'.join([f"{cmd.name}: {cmd.brief}" for cmd in sorted(cmds, key=lambda c: c.name)])
+            )
+        final = premsg + msg
+        data = io.BytesIO(final.encode("utf-8"))
+        import codecs
+
+        with codecs.open("./README.md", 'w', encoding='utf-8') as fp:
+            fp.write(final)
+
+            await ctx.send(file=discord.File(data, filename="README.md"))

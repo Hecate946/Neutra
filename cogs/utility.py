@@ -1,10 +1,11 @@
-import discord
-from discord.ext import commands, menus
-import codecs
 import re
-import datetime
+import pytz
+import codecs
 import pprint
+import discord
+import datetime
 from collections import Counter
+from discord.ext import commands, menus
 
 from utilities import utils, permissions, pagination, converters
 
@@ -517,3 +518,232 @@ class Utility(commands.Cog):
         )
         embed.set_footer(text=f"Message ID: {message_id}")
         await ctx.send(embed=embed)
+
+    @commands.command(brief="Emoji usage tracking.")
+    @commands.guild_only()
+    async def emojistats(self, ctx):
+        """
+        Usage -emojistats
+        Output: Get detailed emoji usage stats.
+        """
+        async with ctx.channel.typing():
+            msg = await ctx.send(
+                f"{self.bot.emote_dict['loading']} **Collecting Emoji Statistics**"
+            )
+            query = """
+                    SELECT (emoji_id, total)
+                    FROM emojistats
+                    WHERE server_id = $1
+                    ORDER BY total DESC;
+                    """
+
+            emoji_list = []
+            result = await self.bot.cxn.fetch(query, ctx.guild.id)
+            for x in result:
+                try:
+                    emoji = await ctx.guild.fetch_emoji(int(x[0][0]))
+                    emoji_list.append((emoji, x[0][1]))
+
+                except Exception:
+                    continue
+
+            p = pagination.SimplePages(
+                entries=["{}: Uses: {}".format(e[0], e[1]) for e in emoji_list],
+                per_page=15,
+            )
+            p.embed.title = f"Emoji usage stats in **{ctx.guild.name}**"
+            await msg.delete()
+            try:
+                await p.start(ctx)
+            except menus.MenuError as e:
+                await ctx.send(e)
+
+    @commands.command(brief="Get usage stats on an emoji.")
+    async def emoji(self, ctx, emoji: converters.SearchEmojiConverter = None):
+        """
+        Usage: -emoji <custom emoji>
+        Output: Usage stats on the passed emoji
+        """
+        async with ctx.channel.typing():
+            if emoji is None:
+                return await ctx.send(f"Usage: `{ctx.prefix}emoji <custom emoji>`")
+            emoji_id = emoji.id
+
+            msg = await ctx.send(
+                f"{self.bot.emote_dict['loading']} **Collecting Emoji Statistics**"
+            )
+            query = f"""SELECT (author_id, content) FROM messages WHERE content ~ '<a?:.+?:{emoji_id}>';"""
+
+            stuff = await self.bot.cxn.fetch(query)
+
+            emoji_users = []
+            for x in stuff:
+                emoji_users.append(x[0][0])
+
+            fat_msg = ""
+            for x in stuff:
+                fat_msg += x[0][1]
+
+            emoji_users = Counter(emoji_users).most_common()
+
+            matches = re.compile(f"<a?:.+?:{emoji_id}>").findall(fat_msg)
+            total_uses = len(matches)
+
+            p = pagination.SimplePages(
+                entries=[
+                    "`{}`: Uses: {}".format(self.bot.get_user(u[0]), u[1])
+                    for u in emoji_users
+                ],
+                per_page=15,
+            )
+            p.embed.title = f"Emoji usage stats for {emoji} (Total: {total_uses})"
+            await msg.delete()
+            try:
+                await p.start(ctx)
+            except menus.MenuError as e:
+                await ctx.send(e)
+
+    @commands.command(
+        brief="Remove your timezone.",
+        aliases=["rmtz", "removetz", "removetimzone", "rmtimezone", "remtimezone"],
+    )
+    async def remtz(self, ctx):
+        """Remove your timezone"""
+
+        await self.bot.cxn.execute(
+            "DELETE FROM usertime WHERE user_id = $1;", ctx.author.id
+        )
+        await ctx.send(
+            f"{self.bot.emote_dict['success']} Your timezone has been removed."
+        )
+
+    @commands.command(brief="Set your timezone.", aliases=["settimezone", "settime"])
+    async def settz(self, ctx, *, tz_search=None):
+        """List all the supported timezones."""
+
+        msg = ""
+        if tz_search is None:
+            title = "Available Timezones"
+            entry = [x for x in pytz.all_timezones]
+            p = pagination.SimplePages(
+                entry,
+                per_page=20,
+                index=False,
+                desc_head="```prolog\n",
+                desc_foot="```",
+            )
+            p.embed.title = title
+            try:
+                await p.start(ctx)
+            except menus.MenuError as e:
+                await ctx.send(e)
+        else:
+            tz_list = utils.disambiguate(tz_search, pytz.all_timezones, None, 5)
+            if not tz_list[0]["ratio"] == 1:
+                edit = True
+                tz_list = [x["result"] for x in tz_list]
+                index, message = await pagination.Picker(
+                    embed_title="Select one of the 5 closest matches.",
+                    list=tz_list,
+                    ctx=ctx,
+                ).pick(embed=True, syntax="prolog")
+
+                if index < 0:
+                    return await message.edit(
+                        content=f"{self.bot.emote_dict['info']} Timezone selection cancelled.",
+                        embed=None,
+                    )
+
+                selection = tz_list[index]
+            else:
+                edit = False
+                selection = tz_list[0]["result"]
+
+            query = """
+                    INSERT INTO usertime
+                    VALUES ($1, $2)
+                    ON CONFLICT (user_id)
+                    DO UPDATE SET timezone = $2
+                    WHERE usertime.user_id = $1;
+                    """
+            await self.bot.cxn.execute(query, ctx.author.id, selection)
+            msg = f"{self.bot.emote_dict['success']} Timezone set to `{selection}`"
+            if edit:
+                await message.edit(content=msg, embed=None)
+            else:
+                await ctx.send(msg)
+
+    @commands.command(brief="See a member's timezone.", aliases=["tz"])
+    async def timezone(self, ctx, *, member: converters.DiscordUser = None):
+        """See a member's timezone."""
+
+        if member is None:
+            member = ctx.author
+
+        query = """
+                SELECT timezone
+                FROM usertime
+                WHERE user_id = $1;
+                """
+        timezone = await self.bot.cxn.fetchval(query, member.id) or None
+        if timezone is None:
+            return await ctx.send(
+                f"{self.bot.emote_dict['error']} `{member}` has not set their timezone. "
+                f"Use the `{ctx.prefix}settz [Region/City]` command."
+            )
+
+        await ctx.send(f"`{member}'` timezone is *{timezone}*")
+
+    @commands.command(brief="Show a user's current time.")
+    async def time(self, ctx, *, member: discord.Member = None):
+        """
+        Usage: -time [member]
+        Output: Time for the passed user, if set.
+        Notes: Will default to you if no user is specified
+        """
+        timenow = utils.getClockForTime(datetime.utcnow().strftime("%I:%M %p"))
+        if member is None:
+            member = ctx.author
+
+        query = """
+                SELECT timezone
+                FROM usertime
+                WHERE user_id = $1;
+                """
+        tz = await self.bot.cxn.fetchval(query, member.id) or None
+        if tz is None:
+            msg = (
+                f"`{member}` hasn't set their timezone yet. "
+                f"They can do so with `{ctx.prefix}settz [Region/City]` command.\n"
+                f"The current UTC time is **{timenow}**."
+            )
+            await ctx.send(msg)
+            return
+
+        t = self.getTimeFromTZ(tz)
+        if t is None:
+            await ctx.send(
+                f"{self.bot.emote_dict['failed']} I couldn't find that timezone."
+            )
+            return
+        t["time"] = utils.getClockForTime(t["time"])
+        if member:
+            msg = f'It\'s currently **{t["time"]}** where {member.display_name} is.'
+        else:
+            msg = "{} is currently **{}**".format(t["zone"], t["time"])
+
+        await ctx.send(msg)
+
+    def getTimeFromTZ(self, tz, t=None):
+        # Assume sanitized zones - as they're pulled from pytz
+        # Let's get the timezone list
+        tz_list = utils.disambiguate(tz, pytz.all_timezones, None, 3)
+        if not tz_list[0]["ratio"] == 1:
+            # We didn't find a complete match
+            return None
+        zone = pytz.timezone(tz_list[0]["result"])
+        if t is None:
+            zone_now = datetime.now(zone)
+        else:
+            zone_now = t.astimezone(zone)
+        return {"zone": tz_list[0]["result"], "time": zone_now.strftime("%I:%M %p")}

@@ -212,12 +212,14 @@ class Tracker(commands.Cog):
         async with self.batch_lock:
             self.tracker_batch[after.id] = {"unix": time.time(), "user_id": after.id}
 
-        # if await self.avatar_changed(before, after):
-        #     async with self.batch_lock:
-        #         self.avatar_batch[after.id] = {
-        #             "user_id": after.id,
-        #             "avatar": after.avatar_url
-        #         }
+        if await self.avatar_changed(before, after):
+            print(before.avatar)
+            print(after.avatar)
+            async with self.batch_lock:
+                self.avatar_batch[after.id] = {
+                    "user_id": after.id,
+                    "avatar": after.avatar
+                }
 
         if await self.username_changed(before, after):
             async with self.batch_lock:

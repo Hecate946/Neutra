@@ -1,12 +1,4 @@
-# NGC0000 Moderation & Stat Tracking Discord Bot                                
-![6010fc1cf1ae9c815f9b09168dbb65a7-1](https://user-images.githubusercontent.com/74381783/108671227-f6d3f580-7494-11eb-9a77-9478f5a39684.png) 
-### [Bot Invite Link](https://discord.com/oauth2/authorize?client_id=810377376269205546&permissions=8589934591&scope=applications.commands%20bot) 
-### [Support Server](https://discord.gg/947ramn)
-### [DiscordBots.gg](https://discord.bots.gg/bots/810377376269205546)
-## Overview
-Hello there! NGC0000 is an awesome feature rich bot named after the Milky Way. She features over 100 commands, all with extensive and easy to understand help. Her commands are fast and offer every opportunity for customization and utility.  
-## Categories
-
+# NGC0000 Moderation & Stat Tracking Discord Bot
 ##### [Admin](#Admin-1)
 ##### [Bot](#Bot-1)
 ##### [Emojis](#Emojis-1)
@@ -20,7 +12,6 @@ Hello there! NGC0000 is an awesome feature rich bot named after the Milky Way. S
 ##### [Users](#Users-1)
 ##### [Utility](#Utility-1)
 ##### [Warn](#Warn-1)
-
 
 
 ### Admin
@@ -54,7 +45,6 @@ slowmode: Set the slowmode for a channel
 unlock: Unlock a channel.
 ```
 
-
 ### Bot
 #### Module for bot information (12 Commands)
 
@@ -84,7 +74,6 @@ uptime: Show the bot's uptime.
 users: Shows all users I'm connected to.
 ```
 
-
 ### Emojis
 #### Module for emoji functions (8 Commands)
 
@@ -106,9 +95,8 @@ listemojis: Shows all server emojis
 sendemoji: Send an emoji using the bot.
 ```
 
-
 ### Files
-#### Module for downloading files. (13 Commands)
+#### Module for downloading files. (14 Commands)
 
 ```yaml
 dumpbans: DMs you a file of server bans.
@@ -136,8 +124,9 @@ dumpsettings: DMs you a file of server settings.
 dumptimezones: DMs you a file of time zones.
 
 dumpvoicechannels: DMs you a file of voice channels.
-```
 
+readme: DMs you my readme file.
+```
 
 ### Logging
 #### Log your server events (4 Commands)
@@ -152,9 +141,8 @@ unlog: Disable specific logging events.
 unlogchannel: Remove the logging channel.
 ```
 
-
 ### Moderation
-#### Keep your server under control. (12 Commands)
+#### Keep your server under control. (13 Commands)
 
 ```yaml
 ban: Ban users from the server.
@@ -162,6 +150,8 @@ ban: Ban users from the server.
 blind: Hide a channel from a user.
 
 block: Restrict users from sending messages.
+
+cleanup: Clean up command usage.
 
 hackban: Hackban multiple users by ID.
 
@@ -181,7 +171,6 @@ unblock: Reallow users to send messages.
 
 unmute: Unmute previously muted members.
 ```
-
 
 ### Restrict
 #### Module for disabling commands (9 Commands)
@@ -205,7 +194,6 @@ listdisabled: List disabled commands.
 
 unignore: Reallow users to use the bot.
 ```
-
 
 ### Roles
 #### Manage all actions regarding roles. (10 Commands)
@@ -231,7 +219,6 @@ roleperms: Show the permissions for a role.
 
 whohas: Show the people who have a role.
 ```
-
 
 ### Server
 #### Module for all server stats (11 Commands)
@@ -260,7 +247,6 @@ recentjoins: Show the latest users to join.
 serverinfo: Show server information.
 ```
 
-
 ### Timezones
 #### Module for all timezone data (5 Commands)
 
@@ -275,7 +261,6 @@ timenow: Show the current time.
 
 timezone: See a member's timezone.
 ```
-
 
 ### Users
 #### Module for all user stats (13 Commands)
@@ -308,7 +293,6 @@ word: Usage for a specific word.
 words: Most used words from a user.
 ```
 
-
 ### Utility
 #### Module for general utilities (11 Commands)
 
@@ -335,7 +319,6 @@ vcmove: Move a user from a voice channel.
 
 vcpurge: Kick all users from a voice channel.
 ```
-
 
 ### Warn
 #### Manage the server warning system (5 Commands)

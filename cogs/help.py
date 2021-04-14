@@ -127,7 +127,7 @@ class Help(commands.Cog):
                 ):
                     msg += line
                 else:
-                    msg += f"\n<:fail:812062765028081674> `{i.name}` ~~{i.brief}~~\n"
+                    msg += f"\n:no_entry: `{i.name}` ~~{i.brief}~~\n"
             else:
                 msg += line
 
@@ -215,6 +215,8 @@ class Help(commands.Cog):
                     if c.qualified_name.upper() in COG_EXCEPTIONS:
                         hidden_cogs.append(c)
                 for c in hidden_cogs:
+                    if c.qualified_name.upper() == "JISHAKU":
+                        continue  # Honestly we don't need jishaku showing up in help
                     line = f"\n`{c.qualified_name}` {c.description}\n"
                     msg += line
                 embed.add_field(

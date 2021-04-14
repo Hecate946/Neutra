@@ -569,10 +569,11 @@ class Admin(commands.Cog):
                     role = member.guild.get_role(int(role_id))
                 except ValueError:
                     continue
-                try:
-                    await member.add_roles(role)
-                except Exception as e:
-                    print(e)
+                if role not in member.roles:
+                    try:
+                        await member.add_roles(role)
+                    except Exception as e:
+                        print(e)
 
         query = """SELECT autoroles FROM servers WHERE server_id = $1"""
         autoroles = await self.bot.cxn.fetchrow(query, member.guild.id) or None
@@ -585,10 +586,11 @@ class Admin(commands.Cog):
                     role = member.guild.get_role(int(role_id))
                 except ValueError:
                     continue
-                try:
-                    await member.add_roles(role)
-                except Exception as e:
-                    print(e)
+                if role not in member.roles:
+                    try:
+                        await member.add_roles(role)
+                    except Exception as e:
+                        print(e)
 
     @commands.group(
         invoke_without_command=True,

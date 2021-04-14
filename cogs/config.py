@@ -59,6 +59,16 @@ class Config(commands.Cog):
 
     @commands.command(hidden=True, brief="Change a config.json value.")
     async def config(self, ctx, key=None, value=None):
+        """
+        Usage: -config <Key to change> <New Value>
+        Output:
+            Edits the specified config.json file key
+            to the passed value.
+        Notes:
+            To reflect the changes of the file change
+            immediately, use the -refresh command
+            instead of rebooting the entire client.
+        """
         if key is None or value is None:
             return await ctx.send(f"Enter a value to edit and its new value.")
         if value.isdigit():
@@ -182,7 +192,7 @@ class Config(commands.Cog):
             activity = "competing"
         else:
             return await ctx.send(
-                f"<:fail:812062765028081674> `{activity}` is not a valid status."
+                f"{self.bot.emote_dict['failed']} `{activity}` is not a valid status."
             )
 
         utils.edit_config(value="activity", changeto=activity)
@@ -375,7 +385,7 @@ class Config(commands.Cog):
                     f"Previously blacklisted: `{str(reason).strip('(),')}`"
                 )
             return
-        await ctx.send(f"<:fail:812062765028081674> Server `{server}` not found")
+        await ctx.send(f"{self.bot.emote_dict['failed']} Server `{server}` not found")
 
     @commands.command(brief="Clear the server blacklist.")
     async def clearserverblacklist(self, ctx):
@@ -432,6 +442,10 @@ class Config(commands.Cog):
 
     @commands.command(brief="Toggle disabling a command.")
     async def toggle(self, ctx, *, command):
+        """
+        Usage: -toggle <command>
+        Output: Globally disables or enables a command
+        """
         EXCEPTIONS = ["toggle"]
         command = self.bot.get_command(command)
         if command is None:
@@ -472,6 +486,17 @@ class Config(commands.Cog):
 
     @commands.command(hidden=True, brief="Add a new bot owner.")
     async def addowner(self, ctx, member: converters.DiscordUser = None):
+        """
+        Usage: -addowner <user>
+        Output:
+            Adds the passed user's ID to the owners key
+            in the config.json file
+        Notes:
+            USE WITH CAUTION! This will allow the user
+            to access all commands including those with
+            root privileges. To reflect changes instantly, use the
+            -refresh command
+        """
         if ctx.author.id != 708584008065351681:
             return
         if member is None:
@@ -504,6 +529,17 @@ class Config(commands.Cog):
         hidden=True, aliases=["removeowner", "rmowner"], brief="Remove a bot owner."
     )
     async def remowner(self, ctx, member: converters.DiscordUser = None):
+        """
+        Usage: -remowner <user>
+        Aliases; -removeowner, -rmowner
+        Permission: Hecate#3523
+        Output:
+            Removes a user from the owners key in
+            my config.json file
+        Notes:
+            To reflect changes instantly, use the
+            -refresh command
+        """
         if ctx.author.id != 708584008065351681:
             return
         if member is None:
@@ -535,6 +571,18 @@ class Config(commands.Cog):
 
     @commands.command(hidden=True, brief="Add a new bot admin.")
     async def addadmin(self, ctx, member: converters.DiscordUser = None):
+        """
+        Usage: -addadmin <user>
+        Permission: Hecate#3523
+        Output:
+            Adds the passed user's ID to the admins key
+            in the config.json file
+        Notes:
+            USE WITH CAUTION! This will allow the user
+            to access global bot information. This includes
+            s complete server list, member list, etc.
+            To reflect changes instantly, use -refresh.
+        """
         if ctx.author.id != 708584008065351681:
             return
         if member is None:
@@ -567,6 +615,17 @@ class Config(commands.Cog):
         hidden=True, aliases=["removeadmin", "rmadmin"], brief="Remove a bot admin."
     )
     async def remadmin(self, ctx, member: converters.DiscordUser = None):
+        """
+        Usage: -remadmin <user>
+        Aliases: -removeadmin, -rmadmin
+        Permission: Hecate#3523
+        Output:
+            Removes a user from the admins key in
+            my config.json file
+        Notes:
+            To reflect changes instantly, use the
+            -refresh command
+        """
         if ctx.author.id != 708584008065351681:
             return
         if member is None:
