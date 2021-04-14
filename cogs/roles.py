@@ -27,6 +27,7 @@ class Roles(commands.Cog):
     """
     Manage all actions regarding roles.
     """
+
     def __init__(self, bot):
         self.bot = bot
 
@@ -367,7 +368,6 @@ class Roles(commands.Cog):
             content=f"{self.emote_dict['success']} Removed role `{role2.name}` from `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}"
         )
 
-
     def role_accumulate(self, check_roles, members):
         ## iterate over the members to accumulate a count of each role
         rolecounts = {}
@@ -602,6 +602,8 @@ class Roles(commands.Cog):
                 sorted_list.append((role, rolecounts.get(role, 0)))
 
         if not sorted_list:  # another failsafe
-            return await ctx.send(f"{self.bot.emote_dict['error']} No empty roles found.")
+            return await ctx.send(
+                f"{self.bot.emote_dict['error']} No empty roles found."
+            )
 
         await self.rolelist_paginate(ctx, sorted_list, title="Empty Roles")

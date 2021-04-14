@@ -80,9 +80,9 @@ class Tracker(commands.Cog):
                 await self.bot.cxn.execute(query, user_id, unix)
             self.tracker_batch.clear()
 
-        #================#
+        # ================#
         # On User Update #
-        #================#
+        # ================#
         # query = f"""UPDATE useravatars SET avatars = CONCAT_WS(',', avatars, cast($1 as text)) WHERE user_id = $2"""
         # async with self.batch_lock:
         #     for data in self.avatar_batch.items():

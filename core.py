@@ -238,6 +238,13 @@ class NGC0000(commands.AutoShardedBot):
         await super().close()
         await self.session.close()
 
+    @staticmethod
+    def rep_ref(ctx):
+        ref = ctx.message.reference
+        if ref and isinstance(ref.resolved, discord.Message):
+            return ref.resolved.to_reference()
+        return None
+
     async def process_commands(self, message):
         await self.wait_until_ready()
         ctx = await self.get_context(message, cls=commands.Context)

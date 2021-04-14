@@ -74,7 +74,7 @@ class Config(commands.Cog):
         if value.isdigit():
             utils.modify_config(key=key, value=int(value))
         else:
-            utils.modify_config(value=key, changeto=str(value))
+            utils.modify_config(key=key, value=str(value))
         await ctx.send(
             f"{self.bot.emote_dict['success']} Edited key `{key}` to `{value}`"
         )

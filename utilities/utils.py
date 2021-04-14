@@ -7,11 +7,12 @@ import time
 import discord
 import difflib
 import aiohttp
-import datetime
+import humanize
 import calendar
 import traceback
 import timeago as timesince
 
+from datetime import datetime, timedelta, timezone
 from io import BytesIO
 
 URL_REGEX = (
@@ -105,7 +106,7 @@ def get_months(timeBetween, year, month, reverse):
 def time_between(first, last, reverse=False):
     # A helper function to make a readable string between two times
     timeBetween = int(last - first)
-    now = datetime.datetime.now()
+    now = datetime.now()
     year = now.year
     month = now.month
 
@@ -295,17 +296,17 @@ def getTimeFromOffset(offset, t=None, strft="%Y-%m-%d %I:%M %p", clock=True):
     msg = "UTC"
     # Get the time
     if t is None:
-        t = datetime.datetime.utcnow()
+        t = datetime.utcnow()
     # Apply offset
     if hours > 0:
         # Apply positive offset
         msg += "+{}".format(offset)
-        td = datetime.timedelta(hours=hours, minutes=minutes)
+        td = timedelta(hours=hours, minutes=minutes)
         newTime = t + td
     elif hours < 0:
         # Apply negative offset
         msg += "{}".format(offset)
-        td = datetime.timedelta(hours=(-1 * hours), minutes=(-1 * minutes))
+        td = timedelta(hours=(-1 * hours), minutes=(-1 * minutes))
         newTime = t - td
     else:
         # No offset
@@ -326,7 +327,7 @@ def getTimeFromTZ(tz, t=None, strft="%Y-%m-%d %I:%M %p", clock=True):
     if zone is None:
         return None
     zone_now = (
-        datetime.datetime.now(zone)
+        datetime.now(zone)
         if t is None
         else pytz.utc.localize(t, is_dst=None).astimezone(zone)
     )
@@ -421,3 +422,28 @@ async def async_json(url, headers=None):
         return json.loads(data.decode("utf-8", "replace"))
     else:
         return data
+
+
+UNKNOWN_CUTOFF = datetime.utcfromtimestamp(1420070400.000)
+UNKNOWN_CUTOFF_TZ = UNKNOWN_CUTOFF.replace(tzinfo=timezone.utc)
+
+
+def format_time(time):
+    if time is None or time < UNKNOWN_CUTOFF:
+        return "Unknown"
+    return "{} ({}+00:00)".format(
+        humanize.naturaltime(time + (datetime.now() - datetime.utcnow())), time
+    )
+
+
+def format_time_tz(time):
+    if time is None or time < UNKNOWN_CUTOFF_TZ:
+        return "Unknown"
+    return "{} ({})".format(
+        humanize.naturaltime(time.astimezone(tz=None).replace(tzinfo=None)), time
+    )
+
+
+def format_timedelta(td):
+    ts = td.total_seconds()
+    return "{:02d}:{:06.3f}".format(int(ts // 60), ts % 60)

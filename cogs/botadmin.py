@@ -790,7 +790,7 @@ class Botadmin(commands.Cog):
     def _is_submodule(self, parent, child):
         return parent == child or child.startswith(parent + ".")
 
-    @commands.command(hidden=True, brief="Show info on an extension.", aliases=['ext'])
+    @commands.command(hidden=True, brief="Show info on an extension.", aliases=["ext"])
     async def extension(self, ctx, *, extension=None):
         """
         Usage: -extension <extension>
@@ -847,7 +847,9 @@ class Botadmin(commands.Cog):
             return
         await ctx.send("I couldn't find that extension.")
 
-    @commands.command(hidden=True, brief="List all extensions and cogs.", aliases=['exts'])
+    @commands.command(
+        hidden=True, brief="List all extensions and cogs.", aliases=["exts"]
+    )
     async def extensions(self, ctx):
         """
         Usage: -extensions

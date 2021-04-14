@@ -138,7 +138,6 @@ class Files(commands.Cog):
         )
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
-
     @commands.command(hidden=True, brief="DMs you a list of my servers.")
     async def dumpservers(self, ctx):
         """
@@ -758,7 +757,7 @@ class Files(commands.Cog):
         )
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
-    @commands.command(aliases=['md'], brief="DMs you my readme file.")
+    @commands.command(aliases=["md"], brief="DMs you my readme file.")
     async def readme(self, ctx):
         """
         Usage: -readme
@@ -768,7 +767,7 @@ class Files(commands.Cog):
             This command actually updates the readme file
             to include all the current command descriptions
             for each registered category.
-        """ 
+        """
         premsg = ""
         premsg += f"# NGC0000 Moderation & Stat Tracking Discord Bot\n"
         "![6010fc1cf1ae9c815f9b09168dbb65a7-1](https://user-images.githubusercontent.com/74381783/108671227-f6d3f580-7494-11eb-9a77-9478f5a39684.png)"
@@ -777,7 +776,7 @@ class Files(commands.Cog):
         "### [DiscordBots.gg](https://discord.bots.gg/bots/810377376269205546)\n"
         "## Overview\n"
         "Hello there! NGC0000 is an awesome feature rich bot named after the Milky Way. She features over 100 commands, all with extensive and easy to understand help. Her commands are fast and offer every opportunity for customization and utility.\n"
-        "## Categories"   
+        "## Categories"
         msg = ""
 
         cog_list = [self.bot.get_cog(cog) for cog in self.bot.cogs]
@@ -787,17 +786,22 @@ class Files(commands.Cog):
             premsg += f"##### [{cog.qualified_name}](#{cog.qualified_name}-1)\n"
             cmds = [c for c in cog.get_commands() if not c.hidden]
 
-
-            msg += "\n\n### {}\n#### {} ({} Commands)\n\n```yaml\n{}\n```""".format(
+            msg += "\n\n### {}\n#### {} ({} Commands)\n\n```yaml\n{}\n```" "".format(
                 cog.qualified_name,
-                cog.description, len(cmds),
-                '\n\n'.join([f"{cmd.name}: {cmd.brief}" for cmd in sorted(cmds, key=lambda c: c.name)])
+                cog.description,
+                len(cmds),
+                "\n\n".join(
+                    [
+                        f"{cmd.name}: {cmd.brief}"
+                        for cmd in sorted(cmds, key=lambda c: c.name)
+                    ]
+                ),
             )
         final = premsg + msg
         data = io.BytesIO(final.encode("utf-8"))
         import codecs
 
-        with codecs.open("./README.md", 'w', encoding='utf-8') as fp:
+        with codecs.open("./README.md", "w", encoding="utf-8") as fp:
             fp.write(final)
 
             await ctx.send(file=discord.File(data, filename="README.md"))

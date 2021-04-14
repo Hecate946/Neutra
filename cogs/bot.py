@@ -25,6 +25,7 @@ class Bot(commands.Cog):
     """
     Module for bot information
     """
+
     def __init__(self, bot):
         self.bot = bot
         self.emote_dict = bot.emote_dict
@@ -125,7 +126,7 @@ class Bot(commands.Cog):
         aliases=["reportbug", "reportissue", "issuereport"],
     )
     @commands.cooldown(2, 60, commands.BucketType.user)
-    async def bugreport(self, ctx, *, bug: str  = None):
+    async def bugreport(self, ctx, *, bug: str = None):
         """
         Usage:    -bugreport <report>
         Aliases:  -issuereport, -reportbug, -reportissue
@@ -245,7 +246,9 @@ class Bot(commands.Cog):
                 try:
                     st = speedtest.Speedtest()
                 except Exception as e:
-                    await message.edit(content=f"{self.bot.emote_dict['failed']} **Failed**")
+                    await message.edit(
+                        content=f"{self.bot.emote_dict['failed']} **Failed**"
+                    )
                     print(f"Speedtest error: {e}")
                     return
                 st.get_best_server()

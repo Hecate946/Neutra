@@ -552,3 +552,39 @@ class Server(commands.Cog):
             e.add_field(name=f"{n+1}. {name}", value=f"{v[0]:,} chars")
 
         await ctx.send(embed=e)
+
+    @commands.command()
+    @commands.guild_only()
+    async def channelinfo(self, ctx, *, channel: converters.DiscordChannel = None):
+        """Get info about a channel."""
+        channel = channel or ctx.message.channel
+        em = discord.Embed()
+        em.color = self.bot.constants.embed
+        em.add_field(
+            name="Channel", value="{0.name} ({0.id})".format(channel), inline=False
+        )
+        em.add_field(
+            name="Server",
+            value="{0.guild.name} ({0.guild.id})".format(channel),
+            inline=False,
+        )
+        em.add_field(
+            name="Type", value="{}".format(type(channel).__name__), inline=False
+        )
+        em.add_field(
+            name="Created", value=utils.format_time(channel.created_at), inline=False
+        )
+        await ctx.send(embed=em)
+
+    @commands.command()
+    @commands.guild_only()
+    async def topic(self, ctx, *, channel: converters.DiscordChannel = None):
+        """Quote the channel topic at people."""
+        if channel is None:
+            channel = ctx.message.channel
+        await ctx.send(
+            content=("**Channel topic:** " + channel.topic)
+            if channel.topic
+            else "No topic set.",
+            reference=self.bot.rep_ref(ctx),
+        )
