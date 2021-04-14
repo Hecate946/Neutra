@@ -790,10 +790,11 @@ class Botadmin(commands.Cog):
     def _is_submodule(self, parent, child):
         return parent == child or child.startswith(parent + ".")
 
-    @commands.command(hidden=True, brief="Show info on an extension.")
+    @commands.command(hidden=True, brief="Show info on an extension.", aliases=['ext'])
     async def extension(self, ctx, *, extension=None):
         """
         Usage: -extension <extension>
+        Alias: -ext
         Outputs the cogs attatched to the passed extension.
         """
         if extension is None:
@@ -815,34 +816,42 @@ class Botadmin(commands.Cog):
                     # Submodule - add it to the list
                     cog_list.append(str(cog))
             # build the embed
-            if isinstance(ctx.author, discord.Member):
-                help_embed = discord.Embed(color=self.bot.constants.embed)
-            else:
-                help_embed = discord.Embed(color=random.choice(self.colors))
-            help_embed.title = str(e[5:]) + " Extension"
+            help_embed = discord.Embed(color=self.bot.constants.embed)
+
+            help_embed.title = str(e[5:]) + ".py" + " Extension"
             if len(cog_list):
                 total_commands = 0
+                total_listeners = 0
                 for cog in cog_list:
                     total_commands += len(self.bot.get_cog(cog).get_commands())
+                    total_listeners += len(self.bot.get_cog(cog).get_listeners())
                 if len(cog_list) > 1:
                     comm = "total command"
+                    event = "total event"
                 else:
                     comm = "command"
+                    event = "event"
                 if total_commands == 1:
                     comm = "> 1 " + comm
                 else:
                     comm = "> {:,} {}s".format(total_commands, comm)
+                if total_listeners == 1:
+                    event = "> 1 " + event
+                else:
+                    event = "> {:,} {}s".format(total_listeners, event)
                 help_embed.add_field(name=", ".join(cog_list), value=comm, inline=True)
+                help_embed.add_field(name=", ".join(cog_list), value=event, inline=True)
             else:
                 help_embed.add_field(name="No Cogs", value="> 0 commands", inline=True)
             await ctx.send(embed=help_embed)
             return
         await ctx.send("I couldn't find that extension.")
 
-    @commands.command(hidden=True, brief="List all extensions and cogs.")
+    @commands.command(hidden=True, brief="List all extensions and cogs.", aliases=['exts'])
     async def extensions(self, ctx):
         """
         Usage: -extensions
+        Alias: -exts
         Output: Lists all extensions and their corresponding cogs.
         """
         # Build the embed
