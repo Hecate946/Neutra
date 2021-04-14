@@ -264,12 +264,6 @@ class Help(commands.Cog):
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )
 
-            if invokercommand.lower() in ["emojis", "emoji", "emote", "emotes"]:
-                cog = self.bot.get_cog("Emojis")
-                return await self.helper_func(
-                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
-                )
-
             if invokercommand.lower() in [
                 "dump",
                 "files",
@@ -308,6 +302,7 @@ class Help(commands.Cog):
                 "utils",
                 "util",
                 "utilities",
+                "timezones",
             ]:
                 cog = self.bot.get_cog("Utility")
                 return await self.helper_func(
@@ -338,11 +333,6 @@ class Help(commands.Cog):
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )
 
-            if invokercommand.lower() in ["timezones"]:
-                cog = self.bot.get_cog("Timezones")
-                return await self.helper_func(
-                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
-                )
 
             if invokercommand.lower() in [
                 "track",
