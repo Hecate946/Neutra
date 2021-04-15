@@ -140,7 +140,10 @@ class Bot(commands.Cog):
             correct it as soon as possible.
         """
         if bug is None:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}bugreport <bug>`")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}bugreport <bug>`",
+            )
 
         owner = discord.utils.get(self.bot.get_all_members(), id=708584008065351681)
         author = ctx.message.author
@@ -160,11 +163,19 @@ class Bot(commands.Cog):
                 "I cannot send your bug report, I'm unable to find my owner."
             )
         except discord.errors.HTTPException:
-            await ctx.send(reference=self.bot.rep_ref(ctx), content="Your bug report is too long.")
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx), content="Your bug report is too long."
+            )
         except Exception:
-            await ctx.send(reference=self.bot.rep_ref(ctx), content="I'm unable to deliver your bug report. Sorry.")
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="I'm unable to deliver your bug report. Sorry.",
+            )
         else:
-            await ctx.send(reference=self.bot.rep_ref(ctx), content="Your bug report has been sent.")
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="Your bug report has been sent.",
+            )
 
     @commands.command(
         brief="Send a suggestion to the developer.", aliases=["suggestion"]
@@ -182,7 +193,10 @@ class Bot(commands.Cog):
             However, please be detailed and concise.
         """
         if suggestion is None:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage `{ctx.prefix}suggest <suggestion>`")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage `{ctx.prefix}suggest <suggestion>`",
+            )
         owner = discord.utils.get(self.bot.get_all_members(), id=708584008065351681)
         author = ctx.author
         if ctx.guild:
@@ -197,14 +211,23 @@ class Bot(commands.Cog):
         try:
             await owner.send(message)
         except discord.errors.InvalidArgument:
-            await ctx.send(reference=self.bot.rep_ref(ctx), content="I cannot send your message")
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx), content="I cannot send your message"
+            )
         except discord.errors.HTTPException:
-            await ctx.send(reference=self.bot.rep_ref(ctx), content="Your message is too long.")
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx), content="Your message is too long."
+            )
         except Exception as e:
-            await ctx.send(reference=self.bot.rep_ref(ctx), content="I failed to send your message.")
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="I failed to send your message.",
+            )
             print(e)
         else:
-            await ctx.send(reference=self.bot.rep_ref(ctx), content="Your message has been sent.")
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx), content="Your message has been sent."
+            )
 
     @commands.command(brief="Show the bot's uptime.", aliases=["runtime"])
     async def uptime(self, ctx):
@@ -434,7 +457,10 @@ class Bot(commands.Cog):
             embed.set_author(name=owner, icon_url=owner.avatar_url)
             await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)
         else:
-            await ctx.send(reference=self.bot.rep_ref(ctx), content="I don't know who my owner is ¯\_(ツ)_/¯.")
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="I don't know who my owner is ¯\_(ツ)_/¯.",
+            )
 
     @commands.command(brief="Display the source code.", aliases=["sourcecode"])
     async def source(self, ctx, *, command: str = None):
@@ -596,13 +622,20 @@ class Bot(commands.Cog):
 
     async def run_process(self, command):
         try:
-            process = await asyncio.create_subprocess_shell(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            process = await asyncio.create_subprocess_shell(
+                command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
             result = await process.communicate()
         except NotImplementedError:
-            process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            process = subprocess.Popen(
+                command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
             result = await self.bot.loop.run_in_executor(None, process.communicate)
 
-        return [str(output.decode()).replace('[?25l[?7l', '').replace('[?25h[?7h', '') for output in result]
+        return [
+            str(output.decode()).replace("[?25l[?7l", "").replace("[?25h[?7h", "")
+            for output in result
+        ]
 
     @commands.command(hidden=True, brief="Run the neofetch command.")
     async def neofetch(self, ctx):
@@ -610,11 +643,11 @@ class Bot(commands.Cog):
             stdout, stderr = await self.run_process("neofetch|sed 's/\x1B[[0-9;]*m//g'")
 
         if stderr:
-            text = f'stdout:\n{stdout}\nstderr:\n{stderr}'
+            text = f"stdout:\n{stdout}\nstderr:\n{stderr}"
         else:
             text = stdout
 
-        text = text[:-3]        
+        text = text[:-3]
 
         pages = pagination.MainMenu(pagination.TextPageSource(text, prefix="```prolog"))
         try:

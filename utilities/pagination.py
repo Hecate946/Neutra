@@ -497,7 +497,11 @@ class Embed:
                 embed=embed, file=send_file, delete_after=self.delete_after
             )
         else:
-            return await ctx.send(reference=ctx.bot.rep_ref(ctx), embed=embed, delete_after=self.delete_after)
+            return await ctx.send(
+                reference=ctx.bot.rep_ref(ctx),
+                embed=embed,
+                delete_after=self.delete_after,
+            )
 
     def _truncate_string(self, value, max_chars):
         if not type(value) is str:
@@ -915,7 +919,9 @@ class Picker:
             await self.self_message.edit(content=msg, embed=None)
         else:
             if type(msg) is discord.Embed:
-                self.self_message = await self.ctx.send(reference=self.ctx.bot.rep_ref(self.ctx), embed=msg)
+                self.self_message = await self.ctx.send(
+                    reference=self.ctx.bot.rep_ref(self.ctx), embed=msg
+                )
             else:
                 self.self_message = await self.ctx.send(msg)
         # Add our reactions

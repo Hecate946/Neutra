@@ -98,18 +98,27 @@ class Moderation(commands.Cog):
                         else None
                     )
                     if target.id in self.bot.constants.owners:
-                        return await ctx.send(reference=self.bot.rep_ref(ctx), content="You cannot mute my developer.")
+                        return await ctx.send(
+                            reference=self.bot.rep_ref(ctx),
+                            content="You cannot mute my developer.",
+                        )
                     if target.id == ctx.author.id:
                         return await ctx.send(
                             "I don't think you really want to mute yourself..."
                         )
                     if target.id == self.bot.user.id:
-                        return await ctx.send(reference=self.bot.rep_ref(ctx), content="I don't think I want to mute myself...")
+                        return await ctx.send(
+                            reference=self.bot.rep_ref(ctx),
+                            content="I don't think I want to mute myself...",
+                        )
                     if (
                         target.guild_permissions.kick_members
                         and ctx.author.id != ctx.guild.owner.id
                     ):
-                        return await ctx.send(reference=self.bot.rep_ref(ctx), content="You cannot punish other staff members.")
+                        return await ctx.send(
+                            reference=self.bot.rep_ref(ctx),
+                            content="You cannot punish other staff members.",
+                        )
                     if ctx.guild.me.top_role.position < target.top_role.position:
                         return await ctx.send(
                             f"My highest role is below `{target}'s` highest role. Aborting mute."
@@ -220,7 +229,10 @@ class Moderation(commands.Cog):
                         return
 
             else:
-                return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.emote_dict['error']} Member is not muted")
+                return await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content=f"{self.emote_dict['error']} Member is not muted",
+                )
 
         if unmuted:
             allmuted = []
@@ -251,7 +263,10 @@ class Moderation(commands.Cog):
         Output: Unmutes members muted by the -hardmute command.
         """
         if not len(targets):
-            await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}unmute <target> [target]...`")
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}unmute <target> [target]...`",
+            )
 
         else:
             await self.unmute(ctx, targets)
@@ -285,26 +300,38 @@ class Moderation(commands.Cog):
                     "You have insufficient permission to execute that command."
                 )
             if target.id in self.bot.constants.owners:
-                return await ctx.send(reference=self.bot.rep_ref(ctx), content="You cannot block my master.")
+                return await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content="You cannot block my master.",
+                )
             if target.id == ctx.author.id:
                 return await ctx.send(
                     "I don't think you really want to block yourself..."
                 )
             if target.id == self.bot.user.id:
-                return await ctx.send(reference=self.bot.rep_ref(ctx), content="I don't think I want to block myself...")
+                return await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content="I don't think I want to block myself...",
+                )
             if (
                 target.guild_permissions.kick_members
                 and ctx.author.id not in self.bot.constants.owners
                 and ctx.author.id != ctx.guild.owner.id
             ):
-                return await ctx.send(reference=self.bot.rep_ref(ctx), content="You cannot punish other staff members.")
+                return await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content="You cannot punish other staff members.",
+                )
             try:
                 await ctx.channel.set_permissions(
                     target, send_messages=False
                 )  # gives back send messages permissions
                 blocked.append(target)
             except Exception:
-                await ctx.send(reference=self.bot.rep_ref(ctx), content="`{0}` could not me block".format(target))
+                await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content="`{0}` could not me block".format(target),
+                )
         if blocked:
             blocked_users = []
             for unblind in blocked:
@@ -346,26 +373,38 @@ class Moderation(commands.Cog):
                     "You have insufficient permission to execute that command."
                 )
             if target.id in self.bot.constants.owners:
-                return await ctx.send(reference=self.bot.rep_ref(ctx), content="You cannot unblock my master.")
+                return await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content="You cannot unblock my master.",
+                )
             if target.id == ctx.author.id:
                 return await ctx.send(
                     "I don't think you really want to unblock yourself..."
                 )
             if target.id == self.bot.user.id:
-                return await ctx.send(reference=self.bot.rep_ref(ctx), content="I don't think I want to unblock myself...")
+                return await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content="I don't think I want to unblock myself...",
+                )
             if (
                 target.guild_permissions.kick_members
                 and ctx.author.id not in self.bot.constants.owners
                 and ctx.author.id != ctx.guild.owner.id
             ):
-                return await ctx.send(reference=self.bot.rep_ref(ctx), content="You cannot punish other staff members.")
+                return await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content="You cannot punish other staff members.",
+                )
             try:
                 await ctx.channel.set_permissions(
                     target, send_messages=None
                 )  # gives back send messages permissions
                 unblocked.append(target)
             except Exception:
-                await ctx.send(reference=self.bot.rep_ref(ctx), content="`{0}` could not me unblock".format(target))
+                await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content="`{0}` could not me unblock".format(target),
+                )
         if unblocked:
             unblocked_users = []
             for unblind in unblocked:
@@ -407,26 +446,38 @@ class Moderation(commands.Cog):
                     "You have insufficient permission to execute that command."
                 )
             if target.id in self.bot.constants.owners:
-                return await ctx.send(reference=self.bot.rep_ref(ctx), content="You cannot blind my master.")
+                return await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content="You cannot blind my master.",
+                )
             if target.id == ctx.author.id:
                 return await ctx.send(
                     "I don't think you really want to blind yourself..."
                 )
             if target.id == self.bot.user.id:
-                return await ctx.send(reference=self.bot.rep_ref(ctx), content="I don't think I want to blind myself...")
+                return await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content="I don't think I want to blind myself...",
+                )
             if (
                 target.guild_permissions.kick_members
                 and ctx.author.id not in self.bot.constants.owners
                 and ctx.author.id != ctx.guild.owner.id
             ):
-                return await ctx.send(reference=self.bot.rep_ref(ctx), content="You cannot punish other staff members.")
+                return await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content="You cannot punish other staff members.",
+                )
             try:
                 await ctx.channel.set_permissions(
                     target, send_messages=False, read_messages=False
                 )  # gives back send messages permissions
                 blinded.append(target)
             except Exception:
-                await ctx.send(reference=self.bot.rep_ref(ctx), content="`{0}` could not me blinded".format(target))
+                await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content="`{0}` could not me blinded".format(target),
+                )
         if blinded:
             blinded_users = []
             for unblind in blinded:
@@ -468,26 +519,38 @@ class Moderation(commands.Cog):
                     "You have insufficient permission to execute that command."
                 )
             if target.id in self.bot.constants.owners:
-                return await ctx.send(reference=self.bot.rep_ref(ctx), content="You cannot unblind my master.")
+                return await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content="You cannot unblind my master.",
+                )
             if target.id == ctx.author.id:
                 return await ctx.send(
                     "I don't think you really want to unblind yourself..."
                 )
             if target.id == self.bot.user.id:
-                return await ctx.send(reference=self.bot.rep_ref(ctx), content="I don't think I want to unblind myself...")
+                return await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content="I don't think I want to unblind myself...",
+                )
             if (
                 target.guild_permissions.kick_members
                 and ctx.author.id not in self.bot.constants.owners
                 and ctx.author.id != ctx.guild.owner.id
             ):
-                return await ctx.send(reference=self.bot.rep_ref(ctx), content="You cannot punish other staff members.")
+                return await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content="You cannot punish other staff members.",
+                )
             try:
                 await ctx.channel.set_permissions(
                     target, send_messages=None, read_messages=None
                 )  # gives back send messages permissions
                 unblinded.append(target)
             except Exception:
-                await ctx.send(reference=self.bot.rep_ref(ctx), content="`{0}` could not me unblinded".format(target))
+                await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content="`{0}` could not me unblinded".format(target),
+                )
         if unblinded:
             unblinded_users = []
             for unblind in unblinded:
@@ -543,7 +606,10 @@ class Moderation(commands.Cog):
                 immune.append(f"{target.name}#{target.discriminator}")
                 continue
         if kicked:
-            await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.emote_dict['success']} Kicked `{', '.join(kicked)}`")
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.emote_dict['success']} Kicked `{', '.join(kicked)}`",
+            )
             self.bot.dispatch("mod_action", ctx, targets=kicked)
         if immune:
             await ctx.send(
@@ -610,7 +676,10 @@ class Moderation(commands.Cog):
                 immune.append(f"{target.name}#{target.discriminator}")
                 continue
         if banned:
-            await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.emote_dict['success']} Banned `{', '.join(banned)}`")
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.emote_dict['success']} Banned `{', '.join(banned)}`",
+            )
             self.bot.dispatch("mod_action", ctx, targets=banned)
         if immune:
             await ctx.send(
@@ -698,7 +767,10 @@ class Moderation(commands.Cog):
         Output:     Hackbans multiple users by ID.
         Notes:      Users do not have to be in the server."""
         if not users:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}hackban <id> [id] [id]...`")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}hackban <id> [id] [id]...`",
+            )
         banned = []
         for user in users:
             try:
@@ -708,7 +780,10 @@ class Moderation(commands.Cog):
                     and ctx.author.id not in self.bot.constants.owners
                     and ctx.author.id != ctx.guild.owner.id
                 ):
-                    return await ctx.send(reference=self.bot.rep_ref(ctx), content="You cannot punish other staff members.")
+                    return await ctx.send(
+                        reference=self.bot.rep_ref(ctx),
+                        content="You cannot punish other staff members.",
+                    )
             except Exception:
                 try:
                     u = discord.Object(id=user)
@@ -732,7 +807,10 @@ class Moderation(commands.Cog):
                     f"I don't think you really want to hackban yourself..."
                 )
             if u.id == self.bot.user.id:
-                return await ctx.send(reference=self.bot.rep_ref(ctx), content="I don't think I want to hackban myself...")
+                return await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content="I don't think I want to hackban myself...",
+                )
             try:
                 await ctx.guild.ban(
                     u,
@@ -846,7 +924,10 @@ class Moderation(commands.Cog):
         self, ctx, limit, predicate, *, before=None, after=None, message=True
     ):
         if limit > 2000:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Too many messages to search given ({limit}/2000)")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Too many messages to search given ({limit}/2000)",
+            )
 
         if not before:
             before = ctx.message
@@ -861,9 +942,15 @@ class Moderation(commands.Cog):
                 limit=limit, before=before, after=after, check=predicate
             )
         except discord.Forbidden:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content="I do not have permissions to delete messages.")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="I do not have permissions to delete messages.",
+            )
         except discord.HTTPException as e:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Error: {e} (try a smaller search?)")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Error: {e} (try a smaller search?)",
+            )
 
         deleted = len(deleted)
         if message is True:
@@ -914,7 +1001,10 @@ class Moderation(commands.Cog):
         The substring must be at least 2 characters long.
         """
         if len(substr) < 2:
-            await ctx.send(reference=self.bot.rep_ref(ctx), content="The substring length must be at least 3 characters.")
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="The substring length must be at least 3 characters.",
+            )
         else:
             await self.do_removal(ctx, 100, lambda e: substr in e.content)
 
@@ -977,7 +1067,10 @@ class Moderation(commands.Cog):
         """Removes all reactions from messages that have them."""
 
         if search > 2000:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Too many messages to search for ({search}/2000)")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Too many messages to search for ({search}/2000)",
+            )
 
         total_reactions = 0
         async for message in ctx.history(limit=search, before=ctx.message):
@@ -996,7 +1089,10 @@ class Moderation(commands.Cog):
         try:
             message = await channel.fetch_message(message_id)
         except commands.errors.NotFound:
-            await ctx.send(reference=self.bot.rep_ref(ctx), content="Message could not be found in this channel")
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="Message could not be found in this channel",
+            )
             return
 
         await ctx.message.delete()

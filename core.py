@@ -250,9 +250,7 @@ class NGC0000(commands.AutoShardedBot):
     ##############################
 
     async def query(self, url, method="get", res_method="text", *args, **kwargs):
-        async with getattr(self.session, method.lower())(
-            url, *args, **kwargs
-        ) as res:
+        async with getattr(self.session, method.lower())(url, *args, **kwargs) as res:
             return await getattr(res, res_method)()
 
     async def get(self, url, *args, **kwargs):
@@ -260,7 +258,6 @@ class NGC0000(commands.AutoShardedBot):
 
     async def post(self, url, *args, **kwargs):
         return await self.query(url, "post", *args, **kwargs)
-
 
     async def process_commands(self, message):
         await self.wait_until_ready()
@@ -424,7 +421,10 @@ class NGC0000(commands.AutoShardedBot):
             await help_command(ctx, invokercommand=name)
 
         elif isinstance(error, commands.BadArgument):
-            await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.emote_dict['failed']} {error}")
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.emote_dict['failed']} {error}",
+            )
 
         elif isinstance(error, commands.NoPrivateMessage):
             # Debating whether or not to ignore this.
@@ -440,7 +440,10 @@ class NGC0000(commands.AutoShardedBot):
         elif isinstance(error, commands.DisabledCommand):
             # This could get annoying so lets just comment out for now
             ctx.message.add_reaction(self.bot.emote_dict["failed"])
-            await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.emote_dict['failed']} This command is disabled.")
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.emote_dict['failed']} This command is disabled.",
+            )
             pass
 
         elif isinstance(error, discord.errors.Forbidden):
@@ -477,7 +480,10 @@ class NGC0000(commands.AutoShardedBot):
 
         elif isinstance(error, commands.BotMissingPermissions):
             # Readable error so just send it to the channel where the error occurred.
-            await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.emote_dict['error']} {error}")
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.emote_dict['error']} {error}",
+            )
 
         elif isinstance(error, commands.CheckFailure):
             # Readable error so just send it to the channel where the error occurred.

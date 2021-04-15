@@ -42,18 +42,27 @@ class Warn(commands.Cog):
         warned = []
         for target in targets:
             if target.id in self.bot.constants.owners:
-                return await ctx.send(reference=self.bot.rep_ref(ctx), content="You cannot warn my developer.")
+                return await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content="You cannot warn my developer.",
+                )
             if target.id == ctx.author.id:
                 return await ctx.send(
                     "I don't think you really want to warn yourself..."
                 )
             if target.id == self.bot.user.id:
-                return await ctx.send(reference=self.bot.rep_ref(ctx), content="I don't think I want to warn myself...")
+                return await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content="I don't think I want to warn myself...",
+                )
             if (
                 target.guild_permissions.manage_messages
                 and ctx.author.id not in self.bot.constants.owners
             ):
-                return await ctx.send(reference=self.bot.rep_ref(ctx), content="You cannot punish other staff members.")
+                return await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content="You cannot punish other staff members.",
+                )
             if (
                 ctx.guild.me.top_role.position > target.top_role.position
                 and not target.guild_permissions.administrator
@@ -159,7 +168,10 @@ class Warn(commands.Cog):
         Output: Clears all warnings for that user
         """
         if target is None:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}deletewarn <target>`")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}deletewarn <target>`",
+            )
         try:
             warnings = (
                 await self.bot.cxn.fetchrow(
@@ -205,7 +217,10 @@ class Warn(commands.Cog):
         Output: Revokes a warning from a user
         """
         if target is None:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}revokewarn <target>`")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}revokewarn <target>`",
+            )
         try:
             warnings = (
                 await self.bot.cxn.fetchrow(

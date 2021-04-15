@@ -95,7 +95,10 @@ class Roles(commands.Cog):
         Output:     Adds multiple roles to multiple users
         """
         if ctx.guild.me.permissions_in(ctx.message.channel).manage_roles is False:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content="Sorry, I do not have the manage_roles permission")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="Sorry, I do not have the manage_roles permission",
+            )
 
         if len(targets) == 0:
             return await ctx.send(
@@ -114,16 +117,25 @@ class Roles(commands.Cog):
                     role.permissions.administrator
                     and ctx.author.id not in self.bot.constants.owners
                 ):
-                    return await ctx.send(reference=self.bot.rep_ref(ctx), content="I cannot manipulate an admin role")
+                    return await ctx.send(
+                        reference=self.bot.rep_ref(ctx),
+                        content="I cannot manipulate an admin role",
+                    )
                 if (
                     role.position >= ctx.author.top_role.position
                     and ctx.author.id not in self.bot.constants.owners
                 ):
-                    return await ctx.send(reference=self.bot.rep_ref(ctx), content="That role is higher than your highest role")
+                    return await ctx.send(
+                        reference=self.bot.rep_ref(ctx),
+                        content="That role is higher than your highest role",
+                    )
                 try:
                     await target.add_roles(role)
                 except discord.Forbidden:
-                    return await ctx.send(reference=self.bot.rep_ref(ctx), content="I do not have permission to do that")
+                    return await ctx.send(
+                        reference=self.bot.rep_ref(ctx),
+                        content="I do not have permission to do that",
+                    )
                 role_list.append(role)
                 target_list.append(target)
             if role_list:
@@ -159,7 +171,10 @@ class Roles(commands.Cog):
             ctx.message.guild.me.permissions_in(ctx.message.channel).manage_roles
             is False
         ):
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content="Sorry, I do not have the manage_roles permission")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="Sorry, I do not have the manage_roles permission",
+            )
 
         if len(targets) == 0:
             return await ctx.send(
@@ -178,23 +193,35 @@ class Roles(commands.Cog):
                     role.permissions.administrator
                     and ctx.author.id not in self.bot.constants.owners
                 ):
-                    return await ctx.send(reference=self.bot.rep_ref(ctx), content="I cannot manipulate an admin role")
+                    return await ctx.send(
+                        reference=self.bot.rep_ref(ctx),
+                        content="I cannot manipulate an admin role",
+                    )
                 if (
                     role.position > ctx.author.top_role.position
                     and ctx.author.id not in self.bot.constants.owners
                     and ctx.author.id != ctx.guild.owner.id
                 ):
-                    return await ctx.send(reference=self.bot.rep_ref(ctx), content="That role is higher than your highest role")
+                    return await ctx.send(
+                        reference=self.bot.rep_ref(ctx),
+                        content="That role is higher than your highest role",
+                    )
                 if (
                     role.position == ctx.author.top_role.position
                     and ctx.author.id not in self.bot.constants.owners
                     and ctx.author.id != ctx.guild.owner.id
                 ):
-                    return await ctx.send(reference=self.bot.rep_ref(ctx), content="That role is your highest role")
+                    return await ctx.send(
+                        reference=self.bot.rep_ref(ctx),
+                        content="That role is your highest role",
+                    )
                 try:
                     await target.remove_roles(role)
                 except discord.Forbidden:
-                    return await ctx.send(reference=self.bot.rep_ref(ctx), content="I do not have permission to do that")
+                    return await ctx.send(
+                        reference=self.bot.rep_ref(ctx),
+                        content="I do not have permission to do that",
+                    )
                 role_list.append(role)
                 target_list.append(target)
             if role_list:
@@ -238,9 +265,15 @@ class Roles(commands.Cog):
     @massrole.command(brief="Adds all members with a certain role a new role.")
     async def add(self, ctx, role1: discord.Role = None, role2: discord.Role = None):
         if role1 is None:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content="Usage: `{ctx.prefix}massrole add <role1> <role2> ")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="Usage: `{ctx.prefix}massrole add <role1> <role2> ",
+            )
         if role2 is None:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content="Usage: `{ctx.prefix}massrole add <role1> <role2> ")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="Usage: `{ctx.prefix}massrole add <role1> <role2> ",
+            )
         if (
             ctx.author.top_role.position < role1.position
             and ctx.author.id not in self.bot.constants.owners
@@ -252,31 +285,46 @@ class Roles(commands.Cog):
             role2.permissions.administrator
             and ctx.author.id not in self.bot.constants.owners
         ):
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content="I cannot manipulate an admin role")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="I cannot manipulate an admin role",
+            )
         if (
             role2.position > ctx.author.top_role.position
             and ctx.author.id not in self.bot.constants.owners
             and ctx.author.id != ctx.guild.owner.id
         ):
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content="That role is higher than your highest role")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="That role is higher than your highest role",
+            )
         if (
             role2.position == ctx.author.top_role.position
             and ctx.author.id not in self.bot.constants.owners
             and ctx.author.id != ctx.guild.owner.id
         ):
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content="That role is your highest role")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="That role is your highest role",
+            )
         if (
             role1.position > ctx.author.top_role.position
             and ctx.author.id not in self.bot.constants.owners
             and ctx.author.id != ctx.guild.owner.id
         ):
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content="That role is higher than your highest role")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="That role is higher than your highest role",
+            )
         if (
             role1.position == ctx.author.top_role.position
             and ctx.author.id not in self.bot.constants.owners
             and ctx.author.id != ctx.guild.owner.id
         ):
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content="That role is your highest role")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="That role is your highest role",
+            )
         number_of_members = []
         for member in ctx.guild.members:
             if role1 in member.roles and not role2 in member.roles:
@@ -294,7 +342,10 @@ class Roles(commands.Cog):
             try:
                 await member.add_roles(role2)
             except discord.Forbidden:
-                return await ctx.send(reference=self.bot.rep_ref(ctx), content="I do not have permission to do that")
+                return await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content="I do not have permission to do that",
+                )
         # we made it
         await msg.edit(
             content=f"{self.emote_dict['success']} Added role `{role2.name}` to `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}"
@@ -306,9 +357,15 @@ class Roles(commands.Cog):
     )
     async def remove(self, ctx, role1: discord.Role, role2: discord.Role):
         if role1 is None:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content="Usage: `{ctx.prefix}massrole add <role1> <role2> ")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="Usage: `{ctx.prefix}massrole add <role1> <role2> ",
+            )
         if role2 is None:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content="Usage: `{ctx.prefix}massrole add <role1> <role2> ")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="Usage: `{ctx.prefix}massrole add <role1> <role2> ",
+            )
         if (
             ctx.author.top_role.position < role1.position
             and ctx.author.id not in self.bot.constants.owners
@@ -320,31 +377,46 @@ class Roles(commands.Cog):
             role2.permissions.administrator
             and ctx.author.id not in self.bot.constants.owners
         ):
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content="I cannot manipulate an admin role")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="I cannot manipulate an admin role",
+            )
         if (
             role2.position > ctx.author.top_role.position
             and ctx.author.id not in self.bot.constants.owners
             and ctx.author.id != ctx.guild.owner.id
         ):
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content="That role is higher than your highest role")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="That role is higher than your highest role",
+            )
         if (
             role2.position == ctx.author.top_role.position
             and ctx.author.id not in self.bot.constants.owners
             and ctx.author.id != ctx.guild.owner.id
         ):
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content="That role is your highest role")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="That role is your highest role",
+            )
         if (
             role1.position > ctx.author.top_role.position
             and ctx.author.id not in self.bot.constants.owners
             and ctx.author.id != ctx.guild.owner.id
         ):
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content="That role is higher than your highest role")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="That role is higher than your highest role",
+            )
         if (
             role1.position == ctx.author.top_role.position
             and ctx.author.id not in self.bot.constants.owners
             and ctx.author.id != ctx.guild.owner.id
         ):
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content="That role is your highest role")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="That role is your highest role",
+            )
         number_of_members = []
         for member in ctx.guild.members:
             if role1 in member.roles and role2 in member.roles:
@@ -362,7 +434,10 @@ class Roles(commands.Cog):
             try:
                 await member.remove_roles(role2)
             except discord.Forbidden:
-                return await ctx.send(reference=self.bot.rep_ref(ctx), content="I do not have permission to do that")
+                return await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content="I do not have permission to do that",
+                )
         # we made it
         await msg.edit(
             content=f"{self.emote_dict['success']} Removed role `{role2.name}` from `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}"
@@ -481,7 +556,10 @@ class Roles(commands.Cog):
             Shows the number of people with the passed role.
         """
         if role is None:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}rolecall <role>`")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}rolecall <role>`",
+            )
 
         count = 0
         online = 0
@@ -509,7 +587,10 @@ class Roles(commands.Cog):
         Notes:
         """
         if role is None:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage `{ctx.prefix}whohas <role>`")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage `{ctx.prefix}whohas <role>`",
+            )
 
         users = [member for member in ctx.guild.members if role in member.roles]
 
@@ -544,7 +625,10 @@ class Roles(commands.Cog):
         Output: Embed with all the permissions granted to that role
         """
         if role is None:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}roleperms <role>`")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}roleperms <role>`",
+            )
 
         permissions = ""
         permissionsne = ""

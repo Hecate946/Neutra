@@ -43,9 +43,15 @@ class Help(commands.Cog):
                 except Exception:
                     return
             except Exception:
-                msg = await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed, delete_after=delete_after)
+                msg = await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    embed=embed,
+                    delete_after=delete_after,
+                )
         else:
-            msg = await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed, delete_after=delete_after)
+            msg = await ctx.send(
+                reference=self.bot.rep_ref(ctx), embed=embed, delete_after=delete_after
+            )
 
         def reaction_check(m):
             if (
@@ -332,7 +338,6 @@ class Help(commands.Cog):
                 return await self.helper_func(
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )
-
 
             if invokercommand.lower() in [
                 "track",

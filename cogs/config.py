@@ -70,7 +70,10 @@ class Config(commands.Cog):
             instead of rebooting the entire client.
         """
         if key is None or value is None:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Enter a value to edit and its new value.")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Enter a value to edit and its new value.",
+            )
         if value.isdigit():
             utils.modify_config(key=key, value=int(value))
         else:
@@ -101,7 +104,10 @@ class Config(commands.Cog):
     async def change_username(self, ctx, *, name: str):
         try:
             await self.bot.user.edit(username=name)
-            await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Successfully changed username to **{name}**")
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Successfully changed username to **{name}**",
+            )
         except discord.HTTPException as err:
             await ctx.send(err)
 
@@ -110,16 +116,25 @@ class Config(commands.Cog):
         try:
             await ctx.guild.me.edit(nick=name)
             if name:
-                await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Successfully changed nickname to **{name}**")
+                await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content=f"Successfully changed nickname to **{name}**",
+                )
             else:
-                await ctx.send(reference=self.bot.rep_ref(ctx), content="Successfully removed nickname")
+                await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content="Successfully removed nickname",
+                )
         except Exception as err:
             await ctx.send(err)
 
     @change.command(name="avatar", hidden=True, brief="Change avatar.")
     async def change_avatar(self, ctx, url: str = None):
         if url is None and len(ctx.message.attachments) == 0:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}change avatar <avatar>`")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}change avatar <avatar>`",
+            )
         if url is None and len(ctx.message.attachments) == 1:
             url = ctx.message.attachments[0].url
         else:
@@ -137,11 +152,17 @@ class Config(commands.Cog):
         except aiohttp.InvalidURL:
             await ctx.send(reference=self.bot.rep_ref(ctx), content="Invalid URL.")
         except discord.InvalidArgument:
-            await ctx.send(reference=self.bot.rep_ref(ctx), content="This URL does not contain a useable image.")
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="This URL does not contain a useable image.",
+            )
         except discord.HTTPException as err:
             await ctx.send(err)
         except TypeError:
-            await ctx.send(reference=self.bot.rep_ref(ctx), content="Provide an attachment or a valid URL.")
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="Provide an attachment or a valid URL.",
+            )
 
     @change.command(brief="Change the bot default presence", aliases=["pres"])
     async def presence(self, ctx, *, presence: str = ""):
@@ -177,7 +198,10 @@ class Config(commands.Cog):
         utils.edit_config(value="status", changeto=status)
         self.bot.constants.status = status
         await self.bot.set_status()
-        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.emote_dict['success']} status now set as `{status}`")
+        await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"{self.emote_dict['success']} status now set as `{status}`",
+        )
 
     @change.command(brief="Set the bot's default activity type.", aliases=["action"])
     async def activity(self, ctx, activity: str = None):
@@ -198,7 +222,10 @@ class Config(commands.Cog):
         utils.edit_config(value="activity", changeto=activity)
         self.bot.constants.activity = activity
         await self.bot.set_status()
-        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.emote_dict['success']} status now set as `{activity}`")
+        await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"{self.emote_dict['success']} status now set as `{activity}`",
+        )
 
     @commands.command(brief="Blacklist users from using the bot.")
     async def blacklist(
@@ -234,13 +261,19 @@ class Config(commands.Cog):
                 react,
             )
         except asyncpg.exceptions.UniqueViolationError:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f":warning: User `{user}` already blacklisted.")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f":warning: User `{user}` already blacklisted.",
+            )
         if reason is not None:
             await ctx.send(
                 f"{self.emote_dict['success']} Blacklisted `{user}` {reason}"
             )
         else:
-            await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.emote_dict['success']} Blacklisted `{user}`")
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.emote_dict['success']} Blacklisted `{user}`",
+            )
 
     @commands.command(brief="Removes users from the blacklist.")
     async def unblacklist(self, ctx, user: converters.DiscordUser = None):
@@ -258,7 +291,10 @@ class Config(commands.Cog):
         query = """SELECT user_id FROM blacklist WHERE user_id = $1"""
         blacklisted = await self.bot.cxn.fetchrow(query, user.id) or None
         if blacklisted is None:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f":warning: User was not blacklisted")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f":warning: User was not blacklisted",
+            )
 
         query = """SELECT reason FROM blacklist WHERE user_id = $1"""
         reason = await self.bot.cxn.fetchrow(query, user.id) or None
@@ -288,7 +324,10 @@ class Config(commands.Cog):
             await self.bot.cxn.execute(query)
         except Exception as e:
             return await ctx.send(e)
-        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.emote_dict['success']} Cleared the blacklist.")
+        await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"{self.emote_dict['success']} Cleared the blacklist.",
+        )
 
     @commands.command(brief="Blacklist a server.")
     async def serverblacklist(
@@ -342,7 +381,10 @@ class Config(commands.Cog):
                 )
             return
 
-        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"<:failed:812062765028081674> Server `{server}` not found")
+        await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"<:failed:812062765028081674> Server `{server}` not found",
+        )
 
     @commands.command(brief="Unblacklist a server.")
     async def serverunblacklist(self, ctx, server=None):
@@ -367,7 +409,10 @@ class Config(commands.Cog):
             query = """SELECT server_id FROM serverblacklist WHERE server_id = $1"""
             blacklisted = await self.bot.cxn.fetchrow(query, guild.id) or None
             if blacklisted is None:
-                return await ctx.send(reference=self.bot.rep_ref(ctx), content=f":warning: Server was not blacklisted")
+                return await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content=f":warning: Server was not blacklisted",
+                )
 
             query = """SELECT reason FROM serverblacklist WHERE server_id = $1"""
             reason = await self.bot.cxn.fetchrow(query, guild.id) or None
@@ -385,7 +430,10 @@ class Config(commands.Cog):
                     f"Previously blacklisted: `{str(reason).strip('(),')}`"
                 )
             return
-        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.bot.emote_dict['failed']} Server `{server}` not found")
+        await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"{self.bot.emote_dict['failed']} Server `{server}` not found",
+        )
 
     @commands.command(brief="Clear the server blacklist.")
     async def clearserverblacklist(self, ctx):
@@ -398,7 +446,10 @@ class Config(commands.Cog):
             await self.bot.cxn.execute("""DELETE FROM serverblacklist""")
         except Exception as e:
             return await ctx.send(e)
-        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.emote_dict['success']} Cleared the server blacklist.")
+        await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"{self.emote_dict['success']} Cleared the server blacklist.",
+        )
 
     async def message(self, message):
         # Check the message and see if we should allow it
@@ -449,7 +500,10 @@ class Config(commands.Cog):
         EXCEPTIONS = ["toggle"]
         command = self.bot.get_command(command)
         if command is None:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}toggle <command>`")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}toggle <command>`",
+            )
         if command.name in EXCEPTIONS:
             return await ctx.send(
                 f"{self.emote_dict['error']} command {command.qualified_name} cannot be disabled."
@@ -468,7 +522,10 @@ class Config(commands.Cog):
             if ctx.guild:
                 target_server = ctx.guild
             else:
-                return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}leaveserver <server>`")
+                return await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content=f"Usage: `{ctx.prefix}leaveserver <server>`",
+                )
         c = await pagination.Confirmation(
             f"{self.bot.emote_dict['exclamation']} **This action will result in me leaving `{target_server.name}.` Do you wish to continue?**"
         ).prompt(ctx)
@@ -482,7 +539,10 @@ class Config(commands.Cog):
             except Exception:
                 return
             return
-        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**")
+        await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
+        )
 
     @commands.command(hidden=True, brief="Add a new bot owner.")
     async def addowner(self, ctx, member: converters.DiscordUser = None):
@@ -500,9 +560,15 @@ class Config(commands.Cog):
         if ctx.author.id != 708584008065351681:
             return
         if member is None:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}addowner <new owner>`")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}addowner <new owner>`",
+            )
         if member.bot:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}addowner <new owner>`")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}addowner <new owner>`",
+            )
 
         data = utils.load_json("config.json")
         current_owners = data["owners"]
@@ -523,7 +589,10 @@ class Config(commands.Cog):
                 f"{self.bot.emote_dict['success']} **`{member}` is now officially one of my owners.**"
             )
             return
-        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**")
+        await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
+        )
 
     @commands.command(
         hidden=True, aliases=["removeowner", "rmowner"], brief="Remove a bot owner."
@@ -543,9 +612,15 @@ class Config(commands.Cog):
         if ctx.author.id != 708584008065351681:
             return
         if member is None:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}remowner <owner>`")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}remowner <owner>`",
+            )
         if member.bot:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}remowner <owner>`")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}remowner <owner>`",
+            )
 
         data = utils.load_json("config.json")
         current_owners = data["owners"]
@@ -567,7 +642,10 @@ class Config(commands.Cog):
                 f"{self.bot.emote_dict['success']} **Successfully removed `{member}` from my owner list.**"
             )
             return
-        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**")
+        await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
+        )
 
     @commands.command(hidden=True, brief="Add a new bot admin.")
     async def addadmin(self, ctx, member: converters.DiscordUser = None):
@@ -586,9 +664,15 @@ class Config(commands.Cog):
         if ctx.author.id != 708584008065351681:
             return
         if member is None:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}addadmin <new admin>`")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}addadmin <new admin>`",
+            )
         if member.bot:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}addadmin <new admin>`")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}addadmin <new admin>`",
+            )
 
         data = utils.load_json("config.json")
         current_admins = data["admins"]
@@ -609,7 +693,10 @@ class Config(commands.Cog):
                 f"{self.bot.emote_dict['success']} **`{member}` is now officially one of my admins.**"
             )
             return
-        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**")
+        await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
+        )
 
     @commands.command(
         hidden=True, aliases=["removeadmin", "rmadmin"], brief="Remove a bot admin."
@@ -629,9 +716,15 @@ class Config(commands.Cog):
         if ctx.author.id != 708584008065351681:
             return
         if member is None:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}remadmin <admin>`")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}remadmin <admin>`",
+            )
         if member.bot:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}remadmin <admin>`")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}remadmin <admin>`",
+            )
 
         data = utils.load_json("config.json")
         current_admins = data["admins"]
@@ -653,4 +746,7 @@ class Config(commands.Cog):
                 f"{self.bot.emote_dict['success']} **Successfully removed `{member}` from my admin list.**"
             )
             return
-        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**")
+        await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
+        )

@@ -414,7 +414,10 @@ class Server(commands.Cog):
                     f"{all_status[g]['emoji']} `{', '.join(all_status[g]['users'])}`\n"
                 )
 
-        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Mods in **{ctx.guild.name}:**\n\n{message}")
+        await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"Mods in **{ctx.guild.name}:**\n\n{message}",
+        )
 
     @commands.command(brief="Show the server admins.", aliases=["administrators"])
     @commands.guild_only()
@@ -444,7 +447,10 @@ class Server(commands.Cog):
                     f"{all_status[g]['emoji']} `{', '.join(all_status[g]['users'])}`\n"
                 )
 
-        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Admins in **{ctx.guild.name}:**\n\n{message}")
+        await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"Admins in **{ctx.guild.name}:**\n\n{message}",
+        )
 
     @commands.command(brief="Shows all the server's bots.")
     @commands.guild_only()
@@ -458,7 +464,9 @@ class Server(commands.Cog):
         list_of_bots = [x for x in guild.members if x.bot]
         if not len(list_of_bots):
             # No bots - should... never... happen.
-            await ctx.send(reference=self.bot.rep_ref(ctx), content=f"This server has no bots.")
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx), content=f"This server has no bots."
+            )
         else:
             # Got some bots!
             bot_list = []
