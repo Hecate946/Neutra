@@ -34,7 +34,7 @@ class Help(commands.Cog):
     async def send_help(self, ctx, embed, pm, delete_after):
         if pm is True:
             if not ctx.guild:
-                msg = await ctx.send(embed=embed)
+                msg = await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)
                 return
             try:
                 msg = await ctx.author.send(embed=embed)
@@ -43,9 +43,9 @@ class Help(commands.Cog):
                 except Exception:
                     return
             except Exception:
-                msg = await ctx.send(embed=embed, delete_after=delete_after)
+                msg = await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed, delete_after=delete_after)
         else:
-            msg = await ctx.send(embed=embed, delete_after=delete_after)
+            msg = await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed, delete_after=delete_after)
 
         def reaction_check(m):
             if (

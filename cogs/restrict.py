@@ -447,7 +447,7 @@ class Restrict(commands.Cog):
         """
 
         if user is None:
-            return await ctx.send(f"Usage: `{ctx.prefix}ignore <user> [react]`")
+            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}ignore <user> [react]`")
 
         if user.guild_permissions.administrator:
             return await ctx.send(
@@ -494,7 +494,7 @@ class Restrict(commands.Cog):
 
         self.bot.server_settings[ctx.guild.id]["ignored_users"][user.id] = react
 
-        await ctx.send(f"{self.emote_dict['success']} Ignored `{user}`")
+        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.emote_dict['success']} Ignored `{user}`")
 
     @commands.command(brief="Reallow users to use the bot.", aliases=["listen"])
     @commands.guild_only()
@@ -508,12 +508,12 @@ class Restrict(commands.Cog):
         """
 
         if user is None:
-            return await ctx.send(f"Usage: `{ctx.prefix}unignore <user>`")
+            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}unignore <user>`")
 
         query = """SELECT user_id FROM ignored WHERE user_id = $1 AND server_id = $2"""
         blacklisted = await self.bot.cxn.fetchval(query, user.id, ctx.guild.id) or None
         if blacklisted is None:
-            return await ctx.send(f"{self.emote_dict['error']} User was not ignored.")
+            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.emote_dict['error']} User was not ignored.")
 
         query = """DELETE FROM ignored WHERE user_id = $1 AND server_id = $2"""
         await self.bot.cxn.execute(query, user.id, ctx.guild.id)

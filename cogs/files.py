@@ -70,7 +70,7 @@ class Files(commands.Cog):
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
         help_file = "Help-{}.txt".format(timestamp)
 
-        mess = await ctx.send("Saving servers to **{}**...".format(help_file))
+        mess = await ctx.send(reference=self.bot.rep_ref(ctx), content="Saving servers to **{}**...".format(help_file))
         msg = ""
         prefix = ctx.prefix
 
@@ -124,7 +124,7 @@ class Files(commands.Cog):
         try:
             await ctx.author.send(file=discord.File(data, filename=help_file))
         except Exception:
-            await ctx.send(file=discord.File(data, filename=help_file))
+            await ctx.send(reference=self.bot.rep_ref(ctx), file=discord.File(data, filename=help_file))
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
                     self.bot.emote_dict["success"], help_file
@@ -152,7 +152,7 @@ class Files(commands.Cog):
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
         server_file = "Servers-{}.txt".format(timestamp)
 
-        mess = await ctx.send("Saving servers to **{}**...".format(server_file))
+        mess = await ctx.send(reference=self.bot.rep_ref(ctx), content="Saving servers to **{}**...".format(server_file))
 
         msg = ""
         for server in self.bot.guilds:
@@ -168,7 +168,7 @@ class Files(commands.Cog):
         try:
             await ctx.author.send(file=discord.File(data, filename=server_file))
         except Exception:
-            await ctx.send(file=discord.File(data, filename=server_file))
+            await ctx.send(reference=self.bot.rep_ref(ctx), file=discord.File(data, filename=server_file))
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
                     self.bot.emote_dict["success"], server_file
@@ -198,7 +198,7 @@ class Files(commands.Cog):
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
         settings_file = "Settings-{}.json".format(timestamp)
 
-        mess = await ctx.send("Saving settings to **{}**...".format(settings_file))
+        mess = await ctx.send(reference=self.bot.rep_ref(ctx), content="Saving settings to **{}**...".format(settings_file))
 
         settings = self.bot.server_settings[ctx.guild.id]
 
@@ -245,7 +245,7 @@ class Files(commands.Cog):
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
         role_file = "Roles-{}.txt".format(timestamp)
 
-        mess = await ctx.send("Saving roles to **{}**...".format(role_file))
+        mess = await ctx.send(reference=self.bot.rep_ref(ctx), content="Saving roles to **{}**...".format(role_file))
 
         allroles = ""
 
@@ -258,7 +258,7 @@ class Files(commands.Cog):
         try:
             await ctx.author.send(file=discord.File(data, filename=role_file))
         except Exception:
-            await ctx.send(file=discord.File(data, filename=role_file))
+            await ctx.send(reference=self.bot.rep_ref(ctx), file=discord.File(data, filename=role_file))
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
                     self.bot.emote_dict["success"], role_file
@@ -287,7 +287,7 @@ class Files(commands.Cog):
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
         role_file = "Channels-{}.txt".format(timestamp)
 
-        mess = await ctx.send("Saving channels to **{}**...".format(role_file))
+        mess = await ctx.send(reference=self.bot.rep_ref(ctx), content="Saving channels to **{}**...".format(role_file))
 
         allchannels = ""
 
@@ -306,7 +306,7 @@ class Files(commands.Cog):
         try:
             await ctx.author.send(file=discord.File(data, filename=role_file))
         except Exception:
-            await ctx.send(file=discord.File(data, filename=role_file))
+            await ctx.send(reference=self.bot.rep_ref(ctx), file=discord.File(data, filename=role_file))
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
                     self.bot.emote_dict["success"], role_file
@@ -333,7 +333,7 @@ class Files(commands.Cog):
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
         role_file = "Channels-{}.txt".format(timestamp)
 
-        mess = await ctx.send("Saving channels to **{}**...".format(role_file))
+        mess = await ctx.send(reference=self.bot.rep_ref(ctx), content="Saving channels to **{}**...".format(role_file))
 
         allchannels = ""
 
@@ -352,7 +352,7 @@ class Files(commands.Cog):
         try:
             await ctx.author.send(file=discord.File(data, filename=role_file))
         except Exception:
-            await ctx.send(file=discord.File(data, filename=role_file))
+            await ctx.send(reference=self.bot.rep_ref(ctx), file=discord.File(data, filename=role_file))
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
                     self.bot.emote_dict["success"], role_file
@@ -379,7 +379,7 @@ class Files(commands.Cog):
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
         role_file = "Channels-{}.txt".format(timestamp)
 
-        mess = await ctx.send("Saving channels to **{}**...".format(role_file))
+        mess = await ctx.send(reference=self.bot.rep_ref(ctx), content="Saving channels to **{}**...".format(role_file))
 
         allchannels = ""
 
@@ -398,7 +398,7 @@ class Files(commands.Cog):
         try:
             await ctx.author.send(file=discord.File(data, filename=role_file))
         except Exception:
-            await ctx.send(file=discord.File(data, filename=role_file))
+            await ctx.send(reference=self.bot.rep_ref(ctx), file=discord.File(data, filename=role_file))
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
                     self.bot.emote_dict["success"], role_file
@@ -425,7 +425,7 @@ class Files(commands.Cog):
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
         role_file = "Emotes-{}.txt".format(timestamp)
 
-        mess = await ctx.send("Saving emotes to **{}**...".format(role_file))
+        mess = await ctx.send(reference=self.bot.rep_ref(ctx), content="Saving emotes to **{}**...".format(role_file))
 
         allemotes = ""
         emote_list = sorted(ctx.guild.emojis, key=lambda e: str(e.name))
@@ -441,7 +441,7 @@ class Files(commands.Cog):
         try:
             await ctx.author.send(file=discord.File(data, filename=role_file))
         except Exception:
-            await ctx.send(file=discord.File(data, filename=role_file))
+            await ctx.send(reference=self.bot.rep_ref(ctx), file=discord.File(data, filename=role_file))
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
                     self.bot.emote_dict["success"], role_file
@@ -479,7 +479,7 @@ class Files(commands.Cog):
         if not chan:
             chan = ctx
 
-        mess = await ctx.send("Saving logs to **{}**...".format(log_file))
+        mess = await ctx.send(reference=self.bot.rep_ref(ctx), content="Saving logs to **{}**...".format(log_file))
 
         counter = 0
         msg = ""
@@ -510,7 +510,7 @@ class Files(commands.Cog):
         try:
             await ctx.author.send(file=discord.File(data, filename=log_file))
         except Exception:
-            await ctx.send(file=discord.File(data, filename=log_file))
+            await ctx.send(reference=self.bot.rep_ref(ctx), file=discord.File(data, filename=log_file))
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
                     self.bot.emote_dict["success"], log_file
@@ -538,7 +538,7 @@ class Files(commands.Cog):
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
         time_file = "Timezones-{}.txt".format(timestamp)
 
-        mess = await ctx.send("Saving logs to **{}**...".format(time_file))
+        mess = await ctx.send(reference=self.bot.rep_ref(ctx), content="Saving logs to **{}**...".format(time_file))
 
         all_tz = pytz.all_timezones
 
@@ -551,7 +551,7 @@ class Files(commands.Cog):
         try:
             await ctx.author.send(file=discord.File(data, filename=time_file))
         except Exception:
-            await ctx.send(file=discord.File(data, filename=time_file))
+            await ctx.send(reference=self.bot.rep_ref(ctx), file=discord.File(data, filename=time_file))
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
                     self.bot.emote_dict["success"], time_file
@@ -581,7 +581,7 @@ class Files(commands.Cog):
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
         time_file = "Humans-{}.txt".format(timestamp)
 
-        mess = await ctx.send("Saving logs to **{}**...".format(time_file))
+        mess = await ctx.send(reference=self.bot.rep_ref(ctx), content="Saving logs to **{}**...".format(time_file))
 
         member_list = ctx.guild.members
 
@@ -599,7 +599,7 @@ class Files(commands.Cog):
         try:
             await ctx.author.send(file=discord.File(data, filename=time_file))
         except Exception:
-            await ctx.send(file=discord.File(data, filename=time_file))
+            await ctx.send(reference=self.bot.rep_ref(ctx), file=discord.File(data, filename=time_file))
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
                     self.bot.emote_dict["success"], time_file
@@ -632,7 +632,7 @@ class Files(commands.Cog):
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
         time_file = "Bots-{}.txt".format(timestamp)
 
-        mess = await ctx.send("Saving logs to **{}**...".format(time_file))
+        mess = await ctx.send(reference=self.bot.rep_ref(ctx), content="Saving logs to **{}**...".format(time_file))
 
         member_list = ctx.guild.members
 
@@ -650,7 +650,7 @@ class Files(commands.Cog):
         try:
             await ctx.author.send(file=discord.File(data, filename=time_file))
         except Exception:
-            await ctx.send(file=discord.File(data, filename=time_file))
+            await ctx.send(reference=self.bot.rep_ref(ctx), file=discord.File(data, filename=time_file))
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
                     self.bot.emote_dict["success"], time_file
@@ -683,7 +683,7 @@ class Files(commands.Cog):
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
         time_file = "Members-{}.txt".format(timestamp)
 
-        mess = await ctx.send("Saving logs to **{}**...".format(time_file))
+        mess = await ctx.send(reference=self.bot.rep_ref(ctx), content="Saving logs to **{}**...".format(time_file))
 
         member_list = ctx.guild.members
 
@@ -696,7 +696,7 @@ class Files(commands.Cog):
         try:
             await ctx.author.send(file=discord.File(data, filename=time_file))
         except Exception:
-            await ctx.send(file=discord.File(data, filename=time_file))
+            await ctx.send(reference=self.bot.rep_ref(ctx), file=discord.File(data, filename=time_file))
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
                     self.bot.emote_dict["success"], time_file
@@ -730,7 +730,7 @@ class Files(commands.Cog):
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
         time_file = "Bans-{}.txt".format(timestamp)
 
-        mess = await ctx.send("Saving bans to **{}**...".format(time_file))
+        mess = await ctx.send(reference=self.bot.rep_ref(ctx), content="Saving bans to **{}**...".format(time_file))
 
         ban_list = await ctx.guild.bans()
 
@@ -743,7 +743,7 @@ class Files(commands.Cog):
         try:
             await ctx.author.send(file=discord.File(data, filename=time_file))
         except Exception:
-            await ctx.send(file=discord.File(data, filename=time_file))
+            await ctx.send(reference=self.bot.rep_ref(ctx), file=discord.File(data, filename=time_file))
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
                     self.bot.emote_dict["success"], time_file
@@ -804,4 +804,4 @@ class Files(commands.Cog):
         with codecs.open("./README.md", "w", encoding="utf-8") as fp:
             fp.write(final)
 
-            await ctx.send(file=discord.File(data, filename="README.md"))
+            await ctx.send(reference=self.bot.rep_ref(ctx), file=discord.File(data, filename="README.md"))

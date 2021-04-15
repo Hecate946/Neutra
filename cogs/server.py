@@ -33,7 +33,7 @@ class Server(commands.Cog):
         embed.description = (
             f"**{user}** joined **{ctx.guild.name}**\n{utils.date(user.joined_at)}"
         )
-        await ctx.send(embed=embed)
+        await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)
 
     @commands.command(
         brief="Show the join position of a user.", aliases=["joinposition"]
@@ -274,7 +274,7 @@ class Server(commands.Cog):
         paginator.finalize()
 
         for page in paginator.pages:
-            await ctx.send(embed=page)
+            await ctx.send(reference=self.bot.rep_ref(ctx), embed=page)
 
     @commands.command(
         brief="Show server information.", aliases=["si", "serverstats", "ss", "server"]
@@ -384,7 +384,7 @@ class Server(commands.Cog):
             value=f"<:voicechannel:810659257296879684> {total_voice_channels}",
             inline=True,
         )
-        await ctx.send(embed=em)
+        await ctx.send(reference=self.bot.rep_ref(ctx), embed=em)
 
     @commands.command(brief="Show the server mods.", aliases=["moderators"])
     @commands.guild_only()
@@ -414,7 +414,7 @@ class Server(commands.Cog):
                     f"{all_status[g]['emoji']} `{', '.join(all_status[g]['users'])}`\n"
                 )
 
-        await ctx.send(f"Mods in **{ctx.guild.name}:**\n\n{message}")
+        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Mods in **{ctx.guild.name}:**\n\n{message}")
 
     @commands.command(brief="Show the server admins.", aliases=["administrators"])
     @commands.guild_only()
@@ -444,7 +444,7 @@ class Server(commands.Cog):
                     f"{all_status[g]['emoji']} `{', '.join(all_status[g]['users'])}`\n"
                 )
 
-        await ctx.send(f"Admins in **{ctx.guild.name}:**\n\n{message}")
+        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Admins in **{ctx.guild.name}:**\n\n{message}")
 
     @commands.command(brief="Shows all the server's bots.")
     @commands.guild_only()
@@ -458,7 +458,7 @@ class Server(commands.Cog):
         list_of_bots = [x for x in guild.members if x.bot]
         if not len(list_of_bots):
             # No bots - should... never... happen.
-            await ctx.send(f"This server has no bots.")
+            await ctx.send(reference=self.bot.rep_ref(ctx), content=f"This server has no bots.")
         else:
             # Got some bots!
             bot_list = []
@@ -521,7 +521,7 @@ class Server(commands.Cog):
                 value=f"{v[0]} message{'' if int(v[0]) == 1 else 's'}",
             )
 
-        await ctx.send(embed=e)
+        await ctx.send(reference=self.bot.rep_ref(ctx), embed=e)
 
     @activity.command(aliases=["characters"])
     @commands.guild_only()
@@ -551,13 +551,20 @@ class Server(commands.Cog):
             # e.add_field(name=f"{n+1}. {name}", value=f"{v[0]:,} chars ({ratio} chars/minute)")
             e.add_field(name=f"{n+1}. {name}", value=f"{v[0]:,} chars")
 
-        await ctx.send(embed=e)
+        await ctx.send(reference=self.bot.rep_ref(ctx), embed=e)
 
-    @commands.command()
+    @commands.command(brief="Get info about a channel.")
     @commands.guild_only()
     async def channelinfo(self, ctx, *, channel: converters.DiscordChannel = None):
-        """Get info about a channel."""
-        channel = channel or ctx.message.channel
+        """
+        Usage: -channelinfo
+        Output:
+            Specific info on a given channel
+        Notes:
+            If no channel is specified,
+            current channel will be used.
+        """
+        channel = channel or ctx.channel
         em = discord.Embed()
         em.color = self.bot.constants.embed
         em.add_field(
@@ -574,14 +581,14 @@ class Server(commands.Cog):
         em.add_field(
             name="Created", value=utils.format_time(channel.created_at), inline=False
         )
-        await ctx.send(embed=em)
+        await ctx.send(reference=self.bot.rep_ref(ctx), embed=em)
 
-    @commands.command()
+    @commands.command(brief="Show a channel topic.")
     @commands.guild_only()
     async def topic(self, ctx, *, channel: converters.DiscordChannel = None):
         """Quote the channel topic at people."""
         if channel is None:
-            channel = ctx.message.channel
+            channel = ctx.channel
         await ctx.send(
             content=("**Channel topic:** " + channel.topic)
             if channel.topic

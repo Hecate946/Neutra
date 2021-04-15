@@ -140,7 +140,7 @@ class Bot(commands.Cog):
             correct it as soon as possible.
         """
         if bug is None:
-            return await ctx.send(f"Usage: `{ctx.prefix}bugreport <bug>`")
+            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}bugreport <bug>`")
 
         owner = discord.utils.get(self.bot.get_all_members(), id=708584008065351681)
         author = ctx.message.author
@@ -160,11 +160,11 @@ class Bot(commands.Cog):
                 "I cannot send your bug report, I'm unable to find my owner."
             )
         except discord.errors.HTTPException:
-            await ctx.send("Your bug report is too long.")
+            await ctx.send(reference=self.bot.rep_ref(ctx), content="Your bug report is too long.")
         except Exception:
-            await ctx.send("I'm unable to deliver your bug report. Sorry.")
+            await ctx.send(reference=self.bot.rep_ref(ctx), content="I'm unable to deliver your bug report. Sorry.")
         else:
-            await ctx.send("Your bug report has been sent.")
+            await ctx.send(reference=self.bot.rep_ref(ctx), content="Your bug report has been sent.")
 
     @commands.command(
         brief="Send a suggestion to the developer.", aliases=["suggestion"]
@@ -182,7 +182,7 @@ class Bot(commands.Cog):
             However, please be detailed and concise.
         """
         if suggestion is None:
-            return await ctx.send(f"Usage `{ctx.prefix}suggest <suggestion>`")
+            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage `{ctx.prefix}suggest <suggestion>`")
         owner = discord.utils.get(self.bot.get_all_members(), id=708584008065351681)
         author = ctx.author
         if ctx.guild:
@@ -197,14 +197,14 @@ class Bot(commands.Cog):
         try:
             await owner.send(message)
         except discord.errors.InvalidArgument:
-            await ctx.send("I cannot send your message")
+            await ctx.send(reference=self.bot.rep_ref(ctx), content="I cannot send your message")
         except discord.errors.HTTPException:
-            await ctx.send("Your message is too long.")
+            await ctx.send(reference=self.bot.rep_ref(ctx), content="Your message is too long.")
         except Exception as e:
-            await ctx.send("I failed to send your message.")
+            await ctx.send(reference=self.bot.rep_ref(ctx), content="I failed to send your message.")
             print(e)
         else:
-            await ctx.send("Your message has been sent.")
+            await ctx.send(reference=self.bot.rep_ref(ctx), content="Your message has been sent.")
 
     @commands.command(brief="Show the bot's uptime.", aliases=["runtime"])
     async def uptime(self, ctx):
@@ -432,9 +432,9 @@ class Bot(commands.Cog):
                 color=self.bot.constants.embed,
             )
             embed.set_author(name=owner, icon_url=owner.avatar_url)
-            await ctx.send(embed=embed)
+            await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)
         else:
-            await ctx.send("I don't know who my owner is ¯\_(ツ)_/¯.")
+            await ctx.send(reference=self.bot.rep_ref(ctx), content="I don't know who my owner is ¯\_(ツ)_/¯.")
 
     @commands.command(brief="Display the source code.", aliases=["sourcecode"])
     async def source(self, ctx, *, command: str = None):

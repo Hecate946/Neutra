@@ -166,14 +166,14 @@ async def prettyResults(
 ):
     """ A prettier way to show loop results """
     if not loop:
-        return await ctx.send("The result was empty...")
+        return await ctx.send(reference=self.bot.rep_ref(ctx), content="The result was empty...")
 
     pretty = "\r\n".join(
         [f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)]
     )
 
     if len(loop) < 15:
-        return await ctx.send(f"{resultmsg}```ini\n{pretty}```")
+        return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{resultmsg}```ini\n{pretty}```")
 
     data = BytesIO(pretty.encode("utf-8"))
     await ctx.send(

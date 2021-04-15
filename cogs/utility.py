@@ -1,10 +1,13 @@
 import re
+import json
 import pytz
 import codecs
 import pprint
 import discord
-import datetime
+
+from datetime import datetime
 from collections import Counter
+from geopy import geocoders
 from discord.ext import commands, menus
 
 from utilities import utils, permissions, pagination, converters
@@ -22,6 +25,7 @@ class Utility(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.emote_dict = bot.emote_dict
+        self.geo = geocoders.Nominatim(user_agent="NGC0000")
 
     ####################
     ## VOICE COMMANDS ##
@@ -57,12 +61,12 @@ class Utility(commands.Cog):
                 await ctx.send(e)
         for target in targets:
             if target.id in self.bot.constants.owners:
-                return await ctx.send("You cannot move my master.")
+                return await ctx.send(reference=self.bot.rep_ref(ctx), content="You cannot move my master.")
             if (
                 ctx.author.top_role.position < target.top_role.position
                 and ctx.author.id not in self.bot.constants.owners
             ):
-                return await ctx.send("You cannot move other staff members")
+                return await ctx.send(reference=self.bot.rep_ref(ctx), content="You cannot move other staff members")
             try:
                 await target.edit(voice_channel=voicechannel)
             except discord.HTTPException:
@@ -110,7 +114,7 @@ class Utility(commands.Cog):
                 await member.edit(voice_channel=None)
             except Exception:
                 continue
-        await ctx.send(f"{self.emote_dict['success']} Purged {channel.mention}.")
+        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.emote_dict['success']} Purged {channel.mention}.")
 
     @commands.command(brief="Kick users from a voice channel.")
     @commands.guild_only()
@@ -123,7 +127,7 @@ class Utility(commands.Cog):
         Permission: Move Members
         """
         if not len(targets):
-            return await ctx.send(f"Usage: `{ctx.prefix}vckick <target> [target]...`")
+            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}vckick <target> [target]...`")
         voice = []
         for target in targets:
             if (
@@ -167,7 +171,7 @@ class Utility(commands.Cog):
             color=self.bot.constants.embed,
         )
         embed.set_image(url=url)
-        await ctx.send(embed=embed)
+        await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)
 
     @commands.command(brief="Show a user's avatar.", aliases=["av", "pfp"])
     async def avatar(self, ctx, *, user: converters.DiscordUser = None):
@@ -224,7 +228,7 @@ class Utility(commands.Cog):
         Notes:      Nickname will reset if no member is passed.
         """
         if user is None:
-            return await ctx.send(f"Usage: `{ctx.prefix}nickname <user> <nickname>`")
+            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}nickname <user> <nickname>`")
         if user.id == ctx.guild.owner.id:
             return await ctx.send(
                 f"{self.emote_dict['failed']} User `{user}` is the server owner. I cannot edit the nickname of the server owner."
@@ -323,7 +327,7 @@ class Utility(commands.Cog):
     @find.command(name="discrim", aliases=["discriminator"])
     async def find_discrim(self, ctx, *, search: str):
         if not len(search) == 4 or not re.compile("^[0-9]*$").search(search):
-            return await ctx.send("You must provide exactly 4 digits")
+            return await ctx.send(reference=self.bot.rep_ref(ctx), content="You must provide exactly 4 digits")
 
         loop = [f"{i} ({i.id})" for i in ctx.guild.members if search == i.discriminator]
         await utils.prettyResults(
@@ -370,7 +374,6 @@ class Utility(commands.Cog):
             for member in ctx.message.guild.members
             if self._is_hard_to_mention(member.name)
         ]
-        print(loop)
         await utils.prettyResults(
             ctx, "name", f"Found **{len(loop)}** on your search for weird names.", loop
         )
@@ -384,13 +387,13 @@ class Utility(commands.Cog):
         Output: Date and time of the snowflake's creation
         """
         if not sid.isdigit():
-            return await ctx.send(f"Usage: {ctx.prefix}snowflake <id>")
+            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: {ctx.prefix}snowflake <id>")
 
         sid = int(sid)
         timestamp = (
             (sid >> 22) + 1420070400000
         ) / 1000  # python uses seconds not milliseconds
-        cdate = datetime.datetime.utcfromtimestamp(timestamp)
+        cdate = datetime.utcfromtimestamp(timestamp)
         msg = "Snowflake created {}".format(
             cdate.strftime("%A, %B %d, %Y at %H:%M:%S UTC")
         )
@@ -429,7 +432,7 @@ class Utility(commands.Cog):
 
         e.add_field(name="Allowed", value="\n".join(allowed))
         e.add_field(name="Denied", value="\n".join(denied))
-        await ctx.send(embed=e)
+        await ctx.send(reference=self.bot.rep_ref(ctx), embed=e)
 
     @commands.command(brief="Shows the raw content of a message.")
     async def raw(self, ctx, *, message: discord.Message):
@@ -511,14 +514,14 @@ class Utility(commands.Cog):
             f"**Sent at:** `{timestamp}`\n\n"
             f"{content}",
             color=self.bot.constants.embed,
-            timestamp=datetime.datetime.utcnow(),
+            timestamp=datetime.utcnow(),
         )
         embed.set_author(
             name="Deleted Message Retrieved",
             icon_url="https://media.discordapp.net/attachments/506838906872922145/603642595419357190/messagedelete.png",
         )
         embed.set_footer(text=f"Message ID: {message_id}")
-        await ctx.send(embed=embed)
+        await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)
 
     @commands.command(brief="Emoji usage tracking.")
     @commands.guild_only()
@@ -567,7 +570,7 @@ class Utility(commands.Cog):
         """
         async with ctx.channel.typing():
             if emoji is None:
-                return await ctx.send(f"Usage: `{ctx.prefix}emoji <custom emoji>`")
+                return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}emoji <custom emoji>`")
             emoji_id = emoji.id
 
             msg = await ctx.send(
@@ -693,7 +696,7 @@ class Utility(commands.Cog):
                 f"Use the `{ctx.prefix}settz [Region/City]` command."
             )
 
-        await ctx.send(f"`{member}'` timezone is *{timezone}*")
+        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"`{member}'` timezone is *{timezone}*")
 
     @commands.command(brief="Show a user's current time.")
     async def time(self, ctx, *, member: discord.Member = None):
@@ -748,3 +751,72 @@ class Utility(commands.Cog):
         else:
             zone_now = t.astimezone(zone)
         return {"zone": tz_list[0]["result"], "time": zone_now.strftime("%I:%M %p")}
+
+
+    @commands.command(brief="Shorten a URL.")
+    async def shorten(self, ctx, url = None):
+        """
+        Usage: -shorten <url>
+        Output:
+            A short url that will redirect to
+            the url that was passed.
+        """
+        if url is None:
+            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}shorten <url>`")
+        params = {
+            "access_token": self.bot.constants.bitly,
+            "longUrl": url
+        }
+
+        response = await self.bot.get("https://api-ssl.bitly.com/v3/shorten", params=params)
+        resp = json.loads(response)
+        if resp['status_code'] != 200:
+            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.bot.emote_dict['failed']} Invalid URL received.")
+        else:
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['success']} Successfully shortened URL:\t"
+                "<{}>".format(resp["data"]["url"]),
+            )
+
+    @commands.command(brief="Get the time of any location", aliases=['worldclock', 'worldtime'])
+    async def clock(self, ctx, *, place = None):
+        """
+        Usage: -clock <location>
+        Aliases: -worldclock, -worldtime
+        Examples:
+            -clock Los Angeles
+            -clock Netherlands
+        Output:
+            The current time in the specified location
+        Notes:
+            Can accept cities, states, provinces,
+            and countries as valid locations
+        """
+        if place is None:
+            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}clock <location>`")
+        try:
+            city_name = re.sub(r'([^\s\w]|_)+', '', place)
+            location = self.geo.geocode(city_name)
+            if location == None:
+                await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.bot.emote_dict['failed']} Invalid location.")
+
+            r = await self.bot.get(
+                "http://api.timezonedb.com/v2.1/get-time-zone?key={}&format=json&by=position&lat={}&lng={}".format(
+                    self.bot.constants.timezonedb, location.latitude, location.longitude
+                    )
+                )
+            request = json.loads(r)
+
+            if request['status'] != "OK":
+                await ctx.send(reference=self.bot.rep_ref(ctx), content="Fuck.")
+            else:
+                time = datetime.fromtimestamp(request['timestamp'])
+                em = discord.Embed(
+                    title=f'Time in {location}',
+                    description="**{}**\n\t{} ({})\n {} ({})".format(request['formatted'], request['abbreviation'], request['zoneName'], request['countryName'], request['countryCode']),
+                    color=self.bot.constants.embed
+                )
+                await ctx.send(reference=self.bot.rep_ref(ctx), embed=em)
+        except Exception as e:
+            await ctx.send(e)

@@ -75,7 +75,7 @@ class Admin(commands.Cog):
         Output: Removes a custom prefix from your server.
         """
         if old_prefix is None:
-            return await ctx.send(f"Usage: `{ctx.prefix}addprefix <old prefix>`")
+            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}addprefix <old prefix>`")
         current_prefixes = self.bot.server_settings[ctx.guild.id]["prefixes"].copy()
         try:
             current_prefixes.remove(f"<@!{self.bot.user.id}>")
@@ -179,7 +179,7 @@ class Admin(commands.Cog):
                 f"{self.bot.emote_dict['success']} **Successfully cleared all prefixes.**"
             )
             return
-        await ctx.send(f"{self.bot.emote_dict['exclamation']} **Cancelled.**")
+        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**")
 
     @commands.command(
         brief="Show all server prefixes.",
@@ -211,7 +211,7 @@ class Admin(commands.Cog):
                 f"{self.bot.emote_dict['exclamation']} I currently have no prefixes set."
             )
         if len(current_prefixes) == 0:
-            return await ctx.send(f"My current prefix is {self.bot.constants.prefix}")
+            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"My current prefix is {self.bot.constants.prefix}")
         await ctx.send(
             f"{self.bot.emote_dict['info']} My current prefix{' is' if len(current_prefixes) == 1 else 'es are '} `{', '.join(current_prefixes)}`"
         )
@@ -380,7 +380,7 @@ class Admin(commands.Cog):
     @autorole.command()
     async def add(self, ctx, roles: commands.Greedy[discord.Role] = None):
         if roles is None:
-            return await ctx.send(f"Usage: `{ctx.prefix}autorole <roles>`")
+            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}autorole <roles>`")
         for role in roles:
             self.bot.server_settings[ctx.guild.id]["autoroles"].append(role.id)
         query = f"""UPDATE servers
@@ -391,12 +391,12 @@ class Admin(commands.Cog):
             [str(x) for x in self.bot.server_settings[ctx.guild.id]["autoroles"]]
         )
         await self.bot.cxn.execute(query, autoroles, ctx.guild.id)
-        await ctx.send(f"{self.bot.emote_dict['success']} Updated autorole settings.")
+        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.bot.emote_dict['success']} Updated autorole settings.")
 
     @autorole.command(aliases=["rem", "rm"])
     async def remove(self, ctx, roles: commands.Greedy[discord.Role] = None):
         if roles is None:
-            return await ctx.send(f"Usage: `{ctx.prefix}autorole <roles>`")
+            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}autorole <roles>`")
         autoroles = self.bot.server_settings[ctx.guild.id]["autoroles"]
         for role in roles:
             index = autoroles.index(str(role.id))
@@ -406,7 +406,7 @@ class Admin(commands.Cog):
             [str(x) for x in self.bot.server_settings[ctx.guild.id]["autoroles"]]
         )
         await self.bot.cxn.execute(query, autoroles, ctx.guild.id)
-        await ctx.send(f"{self.bot.emote_dict['success']} Updated autorole settings.")
+        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.bot.emote_dict['success']} Updated autorole settings.")
 
     @autorole.command()
     async def clear(self, ctx):
@@ -416,7 +416,7 @@ class Admin(commands.Cog):
                    WHERE server_id = $1;
                 """
         await self.bot.cxn.execute(query, ctx.guild.id)
-        await ctx.send(f"{self.bot.emote_dict['success']} Cleared all autoroles.")
+        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.bot.emote_dict['success']} Cleared all autoroles.")
 
     @autorole.command()
     async def show(self, ctx):
@@ -668,7 +668,7 @@ class Admin(commands.Cog):
     @permissions.has_permissions(manage_guild=True)
     async def remove_words(self, ctx, *, words: str = None):
         if words is None:
-            return await ctx.send(f"Usage: `{ctx.prefix}filter remove <word>`")
+            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}filter remove <word>`")
 
         words_to_remove = words.lower().split(",")
 
@@ -736,7 +736,7 @@ class Admin(commands.Cog):
         await self.bot.cxn.execute(query, ctx.guild.id)
         self.bot.server_settings[ctx.guild.id]["profanities"] = []
 
-        await ctx.send(f"{self.bot.emote_dict['success']} Removed all filtered words.")
+        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.bot.emote_dict['success']} Removed all filtered words.")
 
     @commands.command(brief="Set the slowmode for a channel")
     @commands.guild_only()
@@ -796,7 +796,7 @@ class Admin(commands.Cog):
             overwrites_everyone = channel.overwrites_for(ctx.guild.default_role)
             my_overwrites = channel.overwrites_for(ctx.guild.me)
             everyone_overwrite_current = overwrites_everyone.send_messages
-            msg = await ctx.send(f"Locking channel {channel.mention}...")
+            msg = await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Locking channel {channel.mention}...")
             try:
                 await self.bot.cxn.execute(
                     "INSERT INTO lockedchannels VALUES ($1, $2, $3, $4)",
@@ -867,7 +867,7 @@ class Admin(commands.Cog):
                         f"<:lock:817168229712527360> Channel {channel.mention} is already unlocked. ID: `{channel.id}`"
                     )
 
-            msg = await ctx.send(f"Unlocking channel {channel.mention}...")
+            msg = await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Unlocking channel {channel.mention}...")
             old_overwrites = await self.bot.cxn.fetchrow(
                 "SELECT everyone_perms FROM lockedchannels WHERE channel_id = $1",
                 channel.id,
@@ -922,4 +922,4 @@ class Admin(commands.Cog):
         if c:
             await ctx.guild.leave()
             return
-        await ctx.send(f"{self.bot.emote_dict['exclamation']} **Cancelled.**")
+        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**")

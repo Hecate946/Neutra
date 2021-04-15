@@ -203,7 +203,7 @@ class Users(commands.Cog):
     # # else:
     # #    embed.add_field(name=f"Roles: [0]", value ="** **", inline=False)
     # # embed.add_field(name="Permissions:", value=", ".join(perm_list).replace("_", " ").replace("guild", "server").title().replace("Tts", "TTS"), inline=False)
-    # await ctx.send(embed=embed)
+    # await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)
     @commands.command(
         brief="Show information on a user.",
         aliases=["whois", "ui", "profile", "userinfo", "rawuser", "lookup"],
@@ -349,7 +349,7 @@ class Users(commands.Cog):
             member = ctx.author
         status = "\n".join(self.activity_string(a) for a in member.activities)
         if status == "":
-            return await ctx.send(f"**{member.display_name}** has no current status.")
+            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"**{member.display_name}** has no current status.")
         msg = f"**{member.display_name}'s** Status: {status}\n"
         await ctx.send(msg)
 
@@ -396,10 +396,10 @@ class Users(commands.Cog):
         a = await self.bot.cxn.fetchrow(query, user.id, ctx.guild.id) or None
         if a is None:
             # await self.fix_member(ctx.author)
-            return await ctx.send("`{}` has sent **0** messages.".format(user))
+            return await ctx.send(reference=self.bot.rep_ref(ctx), content="`{}` has sent **0** messages.".format(user))
         else:
             a = int(a[0])
-            await ctx.send(f"`{user}` has sent **{a}** message{'' if a == 1 else 's'}")
+            await ctx.send(reference=self.bot.rep_ref(ctx), content=f"`{user}` has sent **{a}** message{'' if a == 1 else 's'}")
 
     @commands.command(brief="Show the top message senders.", aliases=["top"])
     @commands.guild_only()
@@ -538,7 +538,7 @@ class Users(commands.Cog):
             Will default to yourself if no user is passed
         """
         if user is None:
-            return await ctx.send(f"Usage: `{ctx.prefix}seen <user>`")
+            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}seen <user>`")
 
         if user.bot:
             return await ctx.send(
@@ -550,9 +550,9 @@ class Users(commands.Cog):
         data = await tracker.last_observed(user)
 
         if data["last_seen"] is None:
-            return await ctx.send(f"I have not seen `{user}`")
+            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"I have not seen `{user}`")
 
-        await ctx.send(f"User `{user}` was last seen {data['last_seen']} ago.")
+        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"User `{user}` was last seen {data['last_seen']} ago.")
 
     @commands.command(brief="Bot commands listed by popularity.")
     @commands.guild_only()
@@ -666,7 +666,7 @@ class Users(commands.Cog):
                 value=f"{v[0]} command{'' if int(v[0]) == 1 else 's'}",
             )
 
-        await ctx.send(embed=e)
+        await ctx.send(reference=self.bot.rep_ref(ctx), embed=e)
 
     @commands.command(brief="Most used words from a user.")
     @commands.guild_only()
@@ -701,7 +701,7 @@ class Users(commands.Cog):
         pages = pagination.MainMenu(
             pagination.TextPageSource(msg, prefix="```ini", max_size=1000)
         )
-        await ctx.send(f"Most common words sent by **{member.display_name}**")
+        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Most common words sent by **{member.display_name}**")
         try:
             await pages.start(ctx)
         except menus.MenuError as e:
@@ -718,7 +718,7 @@ class Users(commands.Cog):
             Will default to you if no user is passed.
         """
         if word is None:
-            return await ctx.send(f"Usage: `{ctx.prefix}word [user] <word>`")
+            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}word [user] <word>`")
         if member is None:
             member = ctx.author
         if member.bot:

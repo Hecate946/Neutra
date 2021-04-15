@@ -97,11 +97,11 @@ class Botadmin(commands.Cog):
         """
         user = self.bot.get_user(user_id)
         if not user:
-            return await ctx.send(f"Could not find any UserID matching **{user_id}**")
+            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Could not find any UserID matching **{user_id}**")
 
         try:
             await user.send(message)
-            await ctx.send(f"✉️ Sent a DM to **{user_id}**")
+            await ctx.send(reference=self.bot.rep_ref(ctx), content=f"✉️ Sent a DM to **{user_id}**")
         except discord.Forbidden:
             await ctx.send(
                 "This user might be having DMs blocked or it's a bot account..."
@@ -121,7 +121,7 @@ class Botadmin(commands.Cog):
                 for x in server:
                     guild = self.bot.get_guild(int(x))
                     msg += f"ID: {guild.id} Name: {guild.name}\n"
-                await ctx.send(f"Multiple results. Please use the server ID instead")
+                await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Multiple results. Please use the server ID instead")
                 t = pagination.MainMenu(
                     pagination.TextPageSource(text=msg, max_size=500)
                 )
@@ -133,7 +133,7 @@ class Botadmin(commands.Cog):
                 try:
                     server = self.bot.get_guild(int(server[0]))
                 except IndexError:
-                    return await ctx.send(f"Couldn't find that server.")
+                    return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Couldn't find that server.")
 
         s = random.choice(server.text_channels)
         try:
@@ -174,12 +174,12 @@ class Botadmin(commands.Cog):
                 try:
                     server = self.bot.get_guild(int(selection))
                 except Exception as e:
-                    return await ctx.send(f"Couldn't find that server.")
+                    return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Couldn't find that server.")
             else:
                 try:
                     server = self.bot.get_guild(int(server[0]))
                 except IndexError:
-                    return await ctx.send(f"Couldn't find that server.")
+                    return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Couldn't find that server.")
         members = server.members
         member_list = []
         for entity in members:
@@ -430,7 +430,7 @@ class Botadmin(commands.Cog):
             common = counter.most_common()[limit:]
         output = "\n".join("{0:<{1}} : {2}".format(k, width, c) for k, c in common)
 
-        await ctx.send("```yaml\n{}\n```".format(output))
+        await ctx.send(reference=self.bot.rep_ref(ctx), content="```yaml\n{}\n```".format(output))
 
     @commands.command(aliases=["guildinfo", "gi"], brief="Get stats on a bot server.")
     async def guild(self, ctx, *, guild: converters.BotServer = None):
@@ -620,7 +620,7 @@ class Botadmin(commands.Cog):
             server_embed.add_field(name=name, value=e, inline=True)
             if len(server_embed) > 6000:  # too big
                 server_embed.remove_field(len(server_embed.fields) - 1)
-                await ctx.send(embed=server_embed)
+                await ctx.send(reference=self.bot.rep_ref(ctx), embed=server_embed)
                 server_embed = discord.Embed(color=self.bot.constants.embed)
                 server_embed.title = guild.name
                 server_embed.set_thumbnail(
@@ -635,7 +635,7 @@ class Botadmin(commands.Cog):
             try:
                 await message.edit(embed=server_embed)
             except BaseException:
-                await ctx.send(embed=server_embed)
+                await ctx.send(reference=self.bot.rep_ref(ctx), embed=server_embed)
 
     @commands.command(aliases=["ns"], brief="List all bot nicknames.")
     async def nickscan(self, ctx):
@@ -664,7 +664,7 @@ class Botadmin(commands.Cog):
                     guild.name, guild.get_member(self.bot.user.id).nick
                 )
         if not nick:
-            await ctx.send("I have no nicknames set!")
+            await ctx.send(reference=self.bot.rep_ref(ctx), content="I have no nicknames set!")
         else:
             if len(nick) <= 1964 and bool is False:
                 nick += "**Could not print the rest, sorry.**"
@@ -675,11 +675,11 @@ class Botadmin(commands.Cog):
                     title="Servers I Have Nicknames In", color=self.bot.constants.embed
                 )
                 embed.description = nick
-                await ctx.send(embed=embed)
+                await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)
             except BaseException:
-                await ctx.send("```{}```".format(nick))
+                await ctx.send(reference=self.bot.rep_ref(ctx), content="```{}```".format(nick))
             if bool is True:
-                await ctx.send("**Could not print the rest, sorry.**")
+                await ctx.send(reference=self.bot.rep_ref(ctx), content="**Could not print the rest, sorry.**")
 
     @commands.command(
         aliases=["code", "cloc"], brief="Count the lines in the source code."
@@ -779,13 +779,13 @@ class Botadmin(commands.Cog):
         if pm is True and not ctx.channel == ctx.author.dm_channel:
             # More than 2 pages, try to dm
             try:
-                await ctx.send(embed=embed)
+                await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)
                 # await ctx.author.send(embed=embed)
                 # await ctx.message.add_reaction("📬")
             except discord.Forbidden:
-                await ctx.send(embed=embed)
+                await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)
             return
-        await ctx.send(embed=embed)
+        await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)
 
     def _is_submodule(self, parent, child):
         return parent == child or child.startswith(parent + ".")
@@ -843,9 +843,9 @@ class Botadmin(commands.Cog):
                 help_embed.add_field(name=", ".join(cog_list), value=event, inline=True)
             else:
                 help_embed.add_field(name="No Cogs", value="> 0 commands", inline=True)
-            await ctx.send(embed=help_embed)
+            await ctx.send(reference=self.bot.rep_ref(ctx), embed=help_embed)
             return
-        await ctx.send("I couldn't find that extension.")
+        await ctx.send(reference=self.bot.rep_ref(ctx), content="I couldn't find that extension.")
 
     @commands.command(
         hidden=True, brief="List all extensions and cogs.", aliases=["exts"]
@@ -1028,7 +1028,7 @@ class Botadmin(commands.Cog):
                 name="Individual Server Emote Count", value=msg, inline=False
             )
         embed.add_field(name="Total Emote Count", value=str(totalecount), inline=False)
-        await ctx.send(embed=embed)
+        await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)
 
     @commands.command(hidden=True, brief="Generate an oauth url for a bot ID.")
     async def genoauth(self, ctx, client_id: int, perms=None):
@@ -1070,7 +1070,7 @@ class Botadmin(commands.Cog):
         """
         url = str(discord.utils.oauth_url(bot.id))
         if not bot.bot:
-            await ctx.send("User is not a bot.")
+            await ctx.send(reference=self.bot.rep_ref(ctx), content="User is not a bot.")
             return
         if perms == "all":
             await ctx.send(
@@ -1116,4 +1116,4 @@ class Botadmin(commands.Cog):
             description="```css\n" + "\n".join(cog_list) + "```",
             color=self.bot.constants.embed,
         )
-        await ctx.send(embed=embed)
+        await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)

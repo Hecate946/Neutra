@@ -203,18 +203,18 @@ class DiscordGuild(commands.Converter):
                 server = ctx.bot.get_guild(server_id)
                 return server
             except discord.HTTPException:
-                await ctx.send(f"Something went wrong.")
+                await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Something went wrong.")
             except discord.Forbidden:
-                return await ctx.send(f"I'm not in that server")
+                return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"I'm not in that server")
             except discord.NotFound:
-                return await ctx.send("Server doesn't exist")
+                return await ctx.send(reference=self.bot.rep_ref(ctx), content="Server doesn't exist")
             except Exception as e:
                 await ctx.send(e)
         server = discord.utils.find(
             lambda s: argument.lower() in str(s.name).lower(), ctx.bot.guilds
         )
         if server is None:
-            return await ctx.send(f"Didn't find that server.")
+            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Didn't find that server.")
         return server
 
 
