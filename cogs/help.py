@@ -351,6 +351,19 @@ class Help(commands.Cog):
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )
 
+            if invokercommand.lower() in [
+                "conversions",
+                "conversion",
+                "encoding",
+                "encryption",
+                "decryption",
+                "decrypt",
+            ]:
+                cog = self.bot.get_cog("Conversion")
+                return await self.helper_func(
+                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
+                )
+
             if invokercommand.lower() in ["jsk", "jish", "jishaku"]:
                 if not permissions.is_owner(ctx):
                     return await ctx.send(

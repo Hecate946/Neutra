@@ -639,6 +639,10 @@ class Bot(commands.Cog):
 
     @commands.command(hidden=True, brief="Run the neofetch command.")
     async def neofetch(self, ctx):
+        """
+        Usage: -neofetch
+        Output: Some stats on the bot's server
+        """
         async with ctx.typing():
             stdout, stderr = await self.run_process("neofetch|sed 's/\x1B[[0-9;]*m//g'")
 

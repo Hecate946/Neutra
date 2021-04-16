@@ -368,7 +368,7 @@ class Admin(commands.Cog):
             await self.bot.cxn.execute(query, removeinvitelinks, ctx.guild.id)
         await ctx.send(msg)
 
-    @commands.group(case_insensitive=True, aliases=["autoroles"])
+    @commands.group(case_insensitive=True, aliases=["autoroles"], brief="Assign roles to new members.")
     @permissions.bot_has_permissions(manage_roles=True)
     @permissions.has_permissions(manage_guild=True, manage_roles=True)
     async def autorole(self, ctx):

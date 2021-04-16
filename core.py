@@ -1,3 +1,4 @@
+import asyncio
 import os
 import re
 import sys
@@ -17,6 +18,7 @@ from discord.ext import commands, tasks
 from discord_slash.client import SlashCommand
 from logging.handlers import RotatingFileHandler
 
+from alive_progress import alive_bar
 from settings import database, cleanup
 from utilities import utils
 from settings import constants
@@ -189,7 +191,7 @@ class NGC0000(commands.AutoShardedBot):
         # loads all the cogs in ./cogs and prints them on sys.stdout
         for cog in COGS:
             self.load_extension(f"cogs.{cog}")
-            print(color(fore="#3EC4CD", text=f"Loaded: {str(cog).upper()}"))
+            print(color(fore="#88ABB4", text=f"Loaded: {str(cog).upper()}"))
 
     def run(self, mode="production"):
         # Startup function that gets called in starter.py
@@ -335,30 +337,43 @@ class NGC0000(commands.AutoShardedBot):
 
     @status_loop.before_loop
     async def before_status_loop(self):
-        await self.wait_until_ready()
+        st = time.time()
+        while not self.is_ready():
+            with alive_bar(title="Initializing Cache", spinner="waves2") as bar:   # default setting
+                for i in range(100):
+                    await asyncio.sleep(0.05)
+                    bar()
+        #print(color(fore="#FFFFFF", text=f"Elapsed time: {str(time.time() - st)[:10]} s"))
+        SEPARATOR = "=" * 33
+        print(color(fore="#46648F", text=SEPARATOR))
+        st = time.time()
         await self.set_status()
-
+        print(color(fore="#46648F", text=f"Status initialized : {str(time.time() - st)[:10]} s"))
+        st = time.time()
         member_list = []
         for member in self.get_all_members():
             member_list.append(member)
+        print(color(fore="#46648F", text=f"Member   iteration : {str(time.time() - st)[:10]} s"))
         try:
             await database.initialize(self.guilds, member_list)
         except Exception as e:
             print(utils.traceback_maker(e))
-        # Beautiful console logging on startup
 
-        message = f"Client Name: {bot.user}"
-        uid_message = f"Client ID:   {bot.user.id}"
-        user_count_message = f"Users: {len([ x for x in self.get_all_members()])}   Servers: {len(self.guilds)}"
-        separator = "=" * max(len(message), len(uid_message), len(user_count_message))
-        print(color(fore="#ff008c", text=separator))
-        try:
-            print(color(fore="#ff008c", text=message))
-        except Exception:
-            print(color(fore="#ff008c", text=message.encode(errors="replace").decode()))
-        print(color(fore="#ff008c", text=uid_message))
-        print(color(fore="#ff008c", text=user_count_message))
-        print(color(fore="#ff008c", text=separator))
+        # Maybe delete this altogether, basically does some json storing.
+        from settings import cache
+        cache.Settings(self)
+
+        self.bot_ready = True
+
+
+
+        # Beautiful console logging on startup
+        hostinfo = await utils.get_hostinfo(self, member_list)
+        hostinfo = hostinfo[0].replace(" final","").split('\n')[1:][:-2]
+        separator = "=" * max([len(x) for x in hostinfo])
+        print(color(fore="#E4C1DD", text=separator))
+        print(color(fore="#E4C1DD", text="\n".join(hostinfo)))
+        print(color(fore="#E4C1DD", text=separator))
 
         await cleanup.cleanup_servers(self.guilds)
 
@@ -373,11 +388,6 @@ class NGC0000(commands.AutoShardedBot):
         except Exception:
             pass
 
-        from settings import cache
-
-        cache.Settings(self)
-
-        self.bot_ready = True
 
     async def set_status(self):
         # This sets the bot's presence, status, and activity
@@ -409,6 +419,9 @@ class NGC0000(commands.AutoShardedBot):
             s = discord.Status.online
 
         await self.change_presence(status=s, activity=activity)
+
+    async def on_command(self, ctx):
+        await ctx.trigger_typing()
 
     async def on_command_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):

@@ -536,12 +536,26 @@ class Logging(commands.Cog):
         if webhook is None:
             return
 
+        if before.content == "":
+            before_content = f"**__Old Message Content__**\n ```fix\nNo Content```\n"
+        elif before.content.startswith("```"):
+            before_content = f"**__Old Message Content__**\n {before.clean_content}\n"
+        else:
+            before_content = f"**__Old Message Content__**\n ```fix\n{before.clean_content}```\n"
+
+        if after.content == "":
+            after_content = f"**__New Message Content__**\n ```fix\nNo Content```\n"
+        elif after.content.startswith("```"):
+            after_content = f"**__New Message Content__**\n {after.clean_content}\n"
+        else:
+            after_content = f"**__New Message Content__**\n ```fix\n{after.clean_content}```\n"
+
         embed = discord.Embed(
             description=f"**Author:**  {after.author.mention}, **ID:** `{after.author.id}`\n"
             f"**Channel:** {after.channel.mention} **ID:** `{after.channel.id}`\n"
             f"**Server:** `{after.guild.name}` **ID:** `{after.guild.id},`\n\n"
-            f"**__Old Message Content__**\n ```fix\n{before.clean_content}```\n"
-            f"**__New Message Content__**\n ```fix\n{after.clean_content}```\n"
+            f"{before_content}"
+            f"{after_content}"
             f"**[Jump to message](https://discord.com/channels/{after.guild.id}/{after.channel.id}/{after.id})**",
             color=self.bot.constants.embed,
             timestamp=datetime.utcnow(),
@@ -564,23 +578,31 @@ class Logging(commands.Cog):
         if message.author.bot:
             return
 
-        if not await self.check(snowflake=message.guild.id, event="message_edits"):
+        if not await self.check(snowflake=message.guild.id, event="message_deletions"):
             return
 
         webhook = await self.get_webhook(guild=message.guild)
         if webhook is None:
             return
 
-        if message.content.startswith("```"):
+        if message.content == "":
+            content = ""
+        elif message.content.startswith("```"):
             content = f"**__Message Content__**\n {message.clean_content}"
         else:
             content = f"**__Message Content__**\n ```fix\n{message.clean_content}```"
 
+        if len(message.attachments):
+            attachment_list = '\n'.join([f'[**`{x.filename}`**]({x.url})' for x in message.attachments])
+            attachments = f"**__Attachment{'' if len(message.attachments) == 1 else 's'}__**\n {attachment_list}"
+            if message.content != "":
+                content = content + "\n"
         embed = discord.Embed(
             description=f"**Author:**  {message.author.mention}, **ID:** `{message.author.id}`\n"
             f"**Channel:** {message.channel.mention} **ID:** `{message.channel.id}`\n"
             f"**Server:** `{message.guild.name}` **ID:** `{message.guild.id},`\n\n"
-            f"{content}",
+            f"{content}"
+            f"{attachments}",
             color=self.bot.constants.embed,
             timestamp=datetime.utcnow(),
         )
@@ -598,7 +620,7 @@ class Logging(commands.Cog):
 
         if not messages[0].guild:
             return
-        if not await self.check(snowflake=messages[0].guild.id, event="message_edits"):
+        if not await self.check(snowflake=messages[0].guild.id, event="message_deletions"):
             return
 
         webhook = await self.get_webhook(guild=messages[0].guild)

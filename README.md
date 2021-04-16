@@ -1,14 +1,13 @@
 # NGC0000 Moderation & Stat Tracking Discord Bot
 ##### [Admin](#Admin-1)
 ##### [Bot](#Bot-1)
-##### [Emojis](#Emojis-1)
+##### [Conversion](#Conversion-1)
 ##### [Files](#Files-1)
 ##### [Logging](#Logging-1)
 ##### [Moderation](#Moderation-1)
 ##### [Restrict](#Restrict-1)
 ##### [Roles](#Roles-1)
 ##### [Server](#Server-1)
-##### [Timezones](#Timezones-1)
 ##### [Users](#Users-1)
 ##### [Utility](#Utility-1)
 ##### [Warn](#Warn-1)
@@ -22,7 +21,7 @@ addprefix: Add a custom server prefix.
 
 antiinvite: Enable or disable auto-deleting invite links
 
-autorole: None
+autorole: Assign roles to new members.
 
 clearprefix: Clear all custom server prefixes.
 
@@ -74,25 +73,41 @@ uptime: Show the bot's uptime.
 users: Shows all users I'm connected to.
 ```
 
-### Emojis
-#### Module for emoji functions (8 Commands)
+### Conversion
+#### Module for unit conversions (16 Commands)
 
 ```yaml
-bigemoji: View enlarged emojis.
+binint: Convert binary to an integer.
 
-emoji: Get usage stats on an emoji.
+binstr: Convert binary to a string
 
-emojiadd: Add an emoji to the server.
+cm: Convert centimeters to feet and inches.
 
-emojicopy: Copy an emoji from another server.
+color: Show a given color and its values.
 
-emojiremove: Remove an emoji from the server.
+dechex: Convert decimal into hex.
 
-emojistats: Emoji usage tracking.
+decode: Decode from b32, b64, b85, rot13, hex.
 
-listemojis: Shows all server emojis
+encode: Encode to: b32, b64, b85, rot13, hex.
 
-sendemoji: Send an emoji using the bot.
+ft: Convert feet.inches to centimeters
+
+hexdec: Convert hex to decimal.
+
+intbin: Convert an integer to binary.
+
+kg: Convert kilograms to pounds.
+
+lb: Convert pounds to kilograms
+
+morse: Converts ascii to morse code.
+
+morsetable: Show the morse lookup table
+
+strbin: Convert a string to binary.
+
+unmorse: Converts morse code to ascii.
 ```
 
 ### Files
@@ -221,12 +236,14 @@ whohas: Show the people who have a role.
 ```
 
 ### Server
-#### Module for all server stats (11 Commands)
+#### Module for all server stats (13 Commands)
 
 ```yaml
 activity: Show the most active server users.
 
 admins: Show the server admins.
+
+channelinfo: Get info about a channel.
 
 firstjoins: Show the first users to join.
 
@@ -245,21 +262,8 @@ mods: Show the server mods.
 recentjoins: Show the latest users to join.
 
 serverinfo: Show server information.
-```
 
-### Timezones
-#### Module for all timezone data (5 Commands)
-
-```yaml
-remtz: Remove your timezone.
-
-settz: Set your timezone.
-
-time: Show a user's current time.
-
-timenow: Show the current time.
-
-timezone: See a member's timezone.
+topic: Show a channel topic.
 ```
 
 ### Users
@@ -294,12 +298,18 @@ words: Most used words from a user.
 ```
 
 ### Utility
-#### Module for general utilities (11 Commands)
+#### Module for general utilities (19 Commands)
 
 ```yaml
 avatar: Show a user's avatar.
 
+clock: Get the time of any location
+
 defaultavatar: Show a user's default avatar.
+
+emoji: Get usage stats on an emoji.
+
+emojistats: Emoji usage tracking.
 
 find: Find any user using a search.
 
@@ -309,9 +319,19 @@ permissions: Show a user's permissions.
 
 raw: Shows the raw content of a message.
 
+remtz: Remove your timezone.
+
+settz: Set your timezone.
+
+shorten: Shorten a URL.
+
 snipe: Snipe a deleted message.
 
 snowflake: Show info on a discord snowflake.
+
+time: Show a user's current time.
+
+timezone: See a member's timezone.
 
 vckick: Kick users from a voice channel.
 

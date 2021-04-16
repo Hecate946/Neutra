@@ -167,7 +167,7 @@ async def prettyResults(
     """ A prettier way to show loop results """
     if not loop:
         return await ctx.send(
-            reference=self.bot.rep_ref(ctx), content="The result was empty..."
+            reference=ctx.bot.rep_ref(ctx), content="The result was empty..."
         )
 
     pretty = "\r\n".join(
@@ -176,7 +176,7 @@ async def prettyResults(
 
     if len(loop) < 15:
         return await ctx.send(
-            reference=self.bot.rep_ref(ctx), content=f"{resultmsg}```ini\n{pretty}```"
+            reference=ctx.bot.rep_ref(ctx), content=f"{resultmsg}```ini\n{pretty}```"
         )
 
     data = BytesIO(pretty.encode("utf-8"))
@@ -451,3 +451,98 @@ def format_time_tz(time):
 def format_timedelta(td):
     ts = td.total_seconds()
     return "{:02d}:{:06.3f}".format(int(ts // 60), ts % 60)
+
+async def get_hostinfo(bot, members):
+    import subprocess
+    import struct
+    import psutil
+    import platform
+    import os
+    import sys
+    process = psutil.Process(os.getpid())
+    with process.oneshot():
+        process_ = process.name
+    swap = psutil.swap_memory()
+
+    processName = process.name()
+    pid = process.ppid()
+    swapUsage = "{0:.1f}".format(((swap[1] / 1024) / 1024) / 1024)
+    swapTotal = "{0:.1f}".format(((swap[0] / 1024) / 1024) / 1024)
+    swapPerc = swap[3]
+    cpuCores = psutil.cpu_count(logical=False)
+    cpuThread = psutil.cpu_count()
+    cpuUsage = psutil.cpu_percent(interval=1)
+    memStats = psutil.virtual_memory()
+    memPerc = memStats.percent
+    memUsed = memStats.used
+    memTotal = memStats.total
+    memUsedGB = "{0:.1f}".format(((memUsed / 1024) / 1024) / 1024)
+    memTotalGB = "{0:.1f}".format(((memTotal / 1024) / 1024) / 1024)
+    currentOS = platform.platform()
+    system = platform.system()
+    release = platform.release()
+    version = platform.version()
+    processor = platform.processor()
+    botOwner = bot.get_user(bot.constants.owners[0])
+    botOwnerId = bot.constants.owners[0]
+    botName = str(bot.user)
+    botId = bot.user.id
+    currentTime = int(time.time())
+    timeString = time_between(bot.starttime, currentTime)
+    pythonMajor = sys.version_info.major
+    pythonMinor = sys.version_info.minor
+    pythonMicro = sys.version_info.micro
+    pythonRelease = sys.version_info.releaselevel
+    pyBit = struct.calcsize("P") * 8
+    process = subprocess.Popen(
+        ["git", "rev-parse", "--short", "HEAD"], shell=False, stdout=subprocess.PIPE
+    )
+    git_head_hash = process.communicate()[0].strip()
+
+    threadString = "thread"
+    if not cpuThread == 1:
+        threadString += "s"
+    msg = ""
+    msg += "OS        : {}\n".format(currentOS)
+    msg += "Owner     : {}\n".format(botOwner)
+    msg += "Owner ID  : {}\n".format(botOwnerId)
+    msg += "Client    : {}\n".format(botName)
+    msg += "Client ID : {}\n".format(botId)
+    msg += "Servers   : {}\n".format(len(bot.guilds))
+    msg += "Members   : {}\n".format(len(members))
+    msg += "Commit    : {}\n".format(git_head_hash.decode("utf-8"))
+    msg += "Uptime    : {}\n".format(timeString)
+    msg += "Process   : {}\n".format(processName)
+    msg += "PID       : {}\n".format(pid)
+    msg += "Hostname  : {}\n".format(platform.node())
+    msg += "Language  : Python {}.{}.{} {} ({} bit)\n".format(
+        pythonMajor, pythonMinor, pythonMicro, pythonRelease, pyBit
+    )
+    msg += "Processor : {}\n".format(processor)
+    msg += "System    : {}\n".format(system)
+    msg += "Release   : {}\n".format(release)
+    msg += "CPU Core  : {} Threads\n\n".format(cpuCores)
+    bars = ""
+    bars += (
+        center(
+            "{}% of {} {}".format(cpuUsage, cpuThread, threadString), "CPU"
+        )
+        + "\n"
+    )
+    bars += makeBar(int(round(cpuUsage))) + "\n\n"
+    bars += (
+        center(
+            "{} ({}%) of {}GB used".format(memUsedGB, memPerc, memTotalGB), "RAM"
+        )
+        + "\n"
+    )
+    bars += makeBar(int(round(memPerc))) + "\n\n"
+    bars += (
+        center(
+            "{} ({}%) of {}GB used".format(swapUsage, swapPerc, swapTotal), "Swap"
+        )
+        + "\n"
+    )
+    bars += makeBar(int(round(swapPerc))) + "\n"
+    # msg += 'Processor Version: {}\n\n'.format(version)
+    return (msg, bars)
