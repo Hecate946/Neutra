@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 
 from utilities import pagination, permissions
-from .help import COG_EXCEPTIONS, COMMAND_EXCEPTIONS, USELESS_COGS
+from core import COG_EXCEPTIONS, USELESS_COGS
 
 
 def setup(bot):

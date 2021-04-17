@@ -26,6 +26,8 @@ from settings import constants
 
 MAX_LOGGING_BYTES = 32 * 1024 * 1024  # 32 MiB
 COGS = [x[:-3] for x in sorted(os.listdir("././cogs")) if x.endswith(".py")]
+USELESS_COGS = ["HELP", "TESTING", "TRACKER", "UPDATER", "SLASH"]
+COG_EXCEPTIONS = ["CONFIG", "BOTADMIN", "MANAGER", "JISHAKU"]
 
 cxn = database.postgres
 
@@ -260,6 +262,13 @@ class Hypernova(commands.AutoShardedBot):
 
     async def post(self, url, *args, **kwargs):
         return await self.query(url, "post", *args, **kwargs)
+
+    def public_stats(self):
+
+        owner = discord.utils.get(self.get_all_members(), id=708584008065351681)
+        command_list = [x.name for x in self.commands if not x.hidden and x.cog.qualified_name.upper not in USELESS_COGS + COG_EXCEPTIONS]
+        category_list = [x.qualified_name.capitalize() for x in [self.get_cog(cog) for cog in self.cogs] if x.qualified_name.upper() not in USELESS_COGS + COG_EXCEPTIONS]
+        return (owner, command_list, category_list)
 
     async def process_commands(self, message):
         await self.wait_until_ready()

@@ -6,7 +6,7 @@ import discord
 from datetime import datetime
 from discord.ext import commands
 
-from cogs.help import COG_EXCEPTIONS, USELESS_COGS
+from core import COG_EXCEPTIONS, USELESS_COGS
 from utilities import utils, permissions
 
 
@@ -849,15 +849,17 @@ class Files(commands.Cog):
             to include all the current command descriptions
             for each registered category.
         """
+        owner, cmds, cogs = self.bot.public_stats()
+        overview = open("./data/txts/overview.txt").read().format("Hypernova", len(cmds), len(cogs))
         premsg = ""
         premsg += f"# Hypernova Moderation & Stat Tracking Discord Bot\n"
-        "![6010fc1cf1ae9c815f9b09168dbb65a7-1](https://user-images.githubusercontent.com/74381783/108671227-f6d3f580-7494-11eb-9a77-9478f5a39684.png)"
-        f"### [Bot Invite Link]({self.bot.constants.oauth})\n"
-        f"### [Support Server]({self.bot.constants.support})\n"
-        "### [DiscordBots.gg](https://discord.bots.gg/bots/810377376269205546)\n"
-        "## Overview\n"
-        "Hello there! Hypernova is an awesome feature rich bot named after the Milky Way. She features over 100 commands, all with extensive and easy to understand help. Her commands are fast and offer every opportunity for customization and utility.\n"
-        "## Categories"
+        premsg += "![6010fc1cf1ae9c815f9b09168dbb65a7-1](https://user-images.githubusercontent.com/74381783/108671227-f6d3f580-7494-11eb-9a77-9478f5a39684.png)"
+        premsg += f"### [Bot Invite Link]({self.bot.constants.oauth})\n"
+        premsg += f"### [Support Server]({self.bot.constants.support})\n"
+        premsg += "### [DiscordBots.gg](https://discord.bots.gg/bots/810377376269205546)\n"
+        premsg += "## Overview\n"
+        premsg += overview
+        premsg += "## Categories"
         msg = ""
 
         cog_list = [self.bot.get_cog(cog) for cog in self.bot.cogs]

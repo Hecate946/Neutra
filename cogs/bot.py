@@ -15,6 +15,7 @@ from discord import __version__ as discord_version
 from platform import python_version
 from psutil import Process, virtual_memory
 
+from core import USELESS_COGS, COG_EXCEPTIONS
 from utilities import utils, speedtest, converters, pagination
 
 
@@ -432,35 +433,23 @@ class Bot(commands.Cog):
 
         await message.edit(content=msg)
 
-    @commands.command(brief="Show some info on the developer.", aliases=["boss"])
-    async def botowner(self, ctx):
+    @commands.command(brief="Show some info on the developer.", aliases=["boss","botowner"])
+    async def overview(self, ctx):
         """
-        Usage:  -botowner
-        Alias:  -boss
-        Output: Try it and see
+        Usage:  -overview
+        Alias:  -boss, botowner
+        Output: Me and my purpose
         """
-        owner = discord.utils.get(self.bot.get_all_members(), id=708584008065351681)
-        if owner is not None:
-            embed = discord.Embed(
-                description="Hello all! My name is Hecate, and I make discord bots. "
-                "If you want to get to know me, are too a bot lover, or simply are looking for an active fun-loving server to join, "
-                "here's a link to my discord server, where I'm most active. <https://discord.gg/947ramn>\n"
-                "Hypernova is a bot made specifically for server moderation and stat tracking. "
-                "She is meant to offer every imaginable feature to server owners and administrators "
-                "so that they may manage their server efficiently, and without need for multiple bots. "
-                "Her commands are fast, efficient, and offer every opportunity for custom and fair punishments. "
-                f"Her help command shows extensive usage examples and explanations of all {len([x.name for x in self.bot.commands if not x.hidden])} commands, "
-                "but if you need further assistance, have questions, or are simply looking for a great community to join, "
-                "look no further and join the [support server](https://discord.gg/947ramn).",
-                color=self.bot.constants.embed,
-            )
-            embed.set_author(name=owner, icon_url=owner.avatar_url)
-            await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)
-        else:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content="I don't know who my owner is ¯\_(ツ)_/¯.",
-            )
+
+        owner, command_list, category_list = self.bot.public_stats()
+        with open("./data/txts/overview.txt", "r", encoding="utf-8") as fp:
+            overview = fp.read()
+        embed = discord.Embed(
+            description=overview.format(self.bot.user.name, len(command_list), len(category_list)),
+            color=self.bot.constants.embed,
+        )
+        embed.set_author(name=owner, icon_url=owner.avatar_url)
+        await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)
 
     @commands.command(brief="Display the source code.", aliases=["sourcecode"])
     async def source(self, ctx, *, command: str = None):

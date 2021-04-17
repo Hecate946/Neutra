@@ -1,5 +1,16 @@
-# Hypernova Discord Bot
-##### [Admin](#Admin-1)
+# Hypernova Moderation & Stat Tracking Discord Bot
+![6010fc1cf1ae9c815f9b09168dbb65a7-1](https://user-images.githubusercontent.com/74381783/108671227-f6d3f580-7494-11eb-9a77-9478f5a39684.png)### [Bot Invite Link](https://discord.com/oauth2/authorize?client_id=810377376269205546&permissions=8589934591&scope=applications.commands%20bot)
+### [Support Server](https://discord.gg/947ramn)
+### [DiscordBots.gg](https://discord.bots.gg/bots/810377376269205546)
+## Overview
+Hello! I'm Hypernova, and I specialize in tracking and moderation.
+I was designed to collect all sorts of data on servers, users,
+messages, emojis, online time, and more! I also come with a fast
+and clean moderation system that offers every opportunity for effective
+server management. Apart from moderation and tracking, I feature 173
+commands across 12 categories that provide awesome utilities!
+Some examples include managing user timezones, role management, and logging.
+## Categories##### [Admin](#Admin-1)
 ##### [Bot](#Bot-1)
 ##### [Conversion](#Conversion-1)
 ##### [Files](#Files-1)
@@ -52,11 +63,11 @@ about: Display information about the bot.
 
 botinvite: Invite me to your server!
 
-botowner: Show some info on the developer.
-
 bugreport: Send a bugreport to the developer.
 
 hostinfo: Show the bot's host environment.
+
+overview: Show some info on the developer.
 
 ping: Test the bot's response time.
 

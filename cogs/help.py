@@ -5,10 +5,9 @@ import discord
 from datetime import datetime
 from discord.ext import commands
 
+from core import USELESS_COGS, COG_EXCEPTIONS
 from utilities import permissions
 
-USELESS_COGS = ["HELP", "TESTING", "TRACKER", "UPDATER", "SLASH"]
-COG_EXCEPTIONS = ["CONFIG", "BOTADMIN", "MANAGER", "JISHAKU"]
 COMMAND_EXCEPTIONS = ["EYECOUNT"]
 
 
