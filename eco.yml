@@ -1,7 +1,7 @@
 apps:
   script          : ./starter.py
   args            : tester
-  name            : NGC0000
+  name            : Hypernova
   interpreter     : python3
   interpreter_args: -u
   exec_mode       : fork

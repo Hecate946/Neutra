@@ -850,13 +850,13 @@ class Files(commands.Cog):
             for each registered category.
         """
         premsg = ""
-        premsg += f"# NGC0000 Moderation & Stat Tracking Discord Bot\n"
+        premsg += f"# Hypernova Moderation & Stat Tracking Discord Bot\n"
         "![6010fc1cf1ae9c815f9b09168dbb65a7-1](https://user-images.githubusercontent.com/74381783/108671227-f6d3f580-7494-11eb-9a77-9478f5a39684.png)"
         f"### [Bot Invite Link]({self.bot.constants.oauth})\n"
         f"### [Support Server]({self.bot.constants.support})\n"
         "### [DiscordBots.gg](https://discord.bots.gg/bots/810377376269205546)\n"
         "## Overview\n"
-        "Hello there! NGC0000 is an awesome feature rich bot named after the Milky Way. She features over 100 commands, all with extensive and easy to understand help. Her commands are fast and offer every opportunity for customization and utility.\n"
+        "Hello there! Hypernova is an awesome feature rich bot named after the Milky Way. She features over 100 commands, all with extensive and easy to understand help. Her commands are fast and offer every opportunity for customization and utility.\n"
         "## Categories"
         msg = ""
 

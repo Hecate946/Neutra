@@ -143,7 +143,7 @@ class Help(commands.Cog):
         except discord.Forbidden:
             pass
 
-    @commands.command(name="help", brief="NGC0000's Help Command")
+    @commands.command(name="help", brief="Hypernova's Help Command")
     async def _help(self, ctx, invokercommand: str = None, pm=False, delete_after=None):
         """
         Usage:  -help [command/category] [pm = true]

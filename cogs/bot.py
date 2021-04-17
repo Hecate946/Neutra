@@ -131,7 +131,7 @@ class Bot(commands.Cog):
         """
         Usage:    -bugreport <report>
         Aliases:  -issuereport, -reportbug, -reportissue
-        Examples: -bugreport Hello! I found a bug with NGC0000
+        Examples: -bugreport Hello! I found a bug with Hypernova
         Output:   Confirmation that your bug report has been sent.
         Notes:
             Do not hesitate to use this command,
@@ -445,7 +445,7 @@ class Bot(commands.Cog):
                 description="Hello all! My name is Hecate, and I make discord bots. "
                 "If you want to get to know me, are too a bot lover, or simply are looking for an active fun-loving server to join, "
                 "here's a link to my discord server, where I'm most active. <https://discord.gg/947ramn>\n"
-                "NGC0000 is a bot made specifically for server moderation and stat tracking. "
+                "Hypernova is a bot made specifically for server moderation and stat tracking. "
                 "She is meant to offer every imaginable feature to server owners and administrators "
                 "so that they may manage their server efficiently, and without need for multiple bots. "
                 "Her commands are fast, efficient, and offer every opportunity for custom and fair punishments. "
@@ -470,7 +470,7 @@ class Bot(commands.Cog):
         Notes:
             If no command is specified, shows full repository
         """
-        source_url = "https://github.com/Hecate946/NGC0000"
+        source_url = "https://github.com/Hecate946/Hypernova"
         branch = "main"
         if command is None:
             return await ctx.send(source_url)
@@ -496,7 +496,7 @@ class Bot(commands.Cog):
             location = os.path.relpath(filename).replace("\\", "/")
         else:
             location = module.replace(".", "/") + ".py"
-            source_url = "https://github.com/Hecate946/NGC0000"
+            source_url = "https://github.com/Hecate946/Hypernova"
             branch = "main"
 
         final_url = f"<{source_url}/blob/{branch}/{location}#L{firstlineno}-L{firstlineno + len(lines) - 1}>"

@@ -187,14 +187,14 @@ async def prettyResults(
 
 def makeBar(progress):
     return "[{0}{1}] {2}%".format(
-        "#" * (int(round(progress / 2))),
-        " " * (50 - (int(round(progress / 2)))),
+        "#" * (int(round(progress / 3))),
+        " " * (33 - (int(round(progress / 3)))),
         progress,
     )
 
 
 def center(string, header=None):
-    leftPad = " " * (int(round((50 - len(string)) / 2)))
+    leftPad = " " * (int(round((40 - len(string)) / 3)))
     leftPad += string
     if header:
         output = header + leftPad[len(header) :]
@@ -529,20 +529,20 @@ async def get_hostinfo(bot, members):
         )
         + "\n"
     )
-    bars += makeBar(int(round(cpuUsage))) + "\n\n"
+    bars += makeBar(int(round(cpuUsage))) + "\n"
     bars += (
         center(
             "{} ({}%) of {}GB used".format(memUsedGB, memPerc, memTotalGB), "RAM"
         )
         + "\n"
     )
-    bars += makeBar(int(round(memPerc))) + "\n\n"
+    bars += makeBar(int(round(memPerc))) + "\n"
     bars += (
         center(
             "{} ({}%) of {}GB used".format(swapUsage, swapPerc, swapTotal), "Swap"
         )
         + "\n"
     )
-    bars += makeBar(int(round(swapPerc))) + "\n"
+    bars += makeBar(int(round(swapPerc)))
     # msg += 'Processor Version: {}\n\n'.format(version)
     return (msg, bars)

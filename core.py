@@ -30,7 +30,7 @@ COGS = [x[:-3] for x in sorted(os.listdir("././cogs")) if x.endswith(".py")]
 cxn = database.postgres
 
 # Set up our command logger
-command_logger = logging.getLogger("NGC0000")
+command_logger = logging.getLogger("HYPERNOVA")
 command_logger.setLevel(logging.DEBUG)
 command_logger_handler = RotatingFileHandler(
     filename="./data/logs/commands.log",
@@ -110,7 +110,7 @@ async def get_prefix(bot, message):
 
 
 # Main bot class. Heart of the application
-class NGC0000(commands.AutoShardedBot):
+class Hypernova(commands.AutoShardedBot):
     def __init__(self):
 
         super().__init__(
@@ -365,16 +365,18 @@ class NGC0000(commands.AutoShardedBot):
 
         self.bot_ready = True
 
-
-
         # Beautiful console logging on startup
         hostinfo = await utils.get_hostinfo(self, member_list)
+        bars = hostinfo[1]
         hostinfo = hostinfo[0].replace(" final","").split('\n')[1:][:-2]
         separator = "=" * max([len(x) for x in hostinfo])
         print(color(fore="#E4C1DD", text=separator))
         print(color(fore="#E4C1DD", text="\n".join(hostinfo)))
         print(color(fore="#E4C1DD", text=separator))
 
+        print(color(fore="#8FBBC7", text=bars))
+
+        # Delete all records of servers that kicked the bot
         await cleanup.cleanup_servers(self.guilds)
 
         try:
@@ -542,7 +544,7 @@ class NGC0000(commands.AutoShardedBot):
     async def on_ready(self):
         # from discord_slash import utils
         # await utils.manage_commands.remove_all_commands_in(bot.user.id, bot.token, 740734113086177433)
-        await cleanup.cleanup_servers(self.guilds)
+        pass
 
     async def on_message(self, message):
         if self.bot_ready is False:
@@ -555,4 +557,4 @@ class NGC0000(commands.AutoShardedBot):
                 )
 
 
-bot = NGC0000()
+bot = Hypernova()

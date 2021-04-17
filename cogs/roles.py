@@ -90,7 +90,7 @@ class Roles(commands.Cog):
         """
         Usage:      -addrole [user] [user...] [role] [role]...
         Aliases:    -ar, -adrole, -adrl, -addrl
-        Example:    -ar Hecate#3523 @NGC0000 @Verified Member
+        Example:    -ar Hecate#3523 @Hypernova @Verified Member
         Permission: Manage Roles
         Output:     Adds multiple roles to multiple users
         """
@@ -163,7 +163,7 @@ class Roles(commands.Cog):
         """
         Usage:      -removerole [user] [user...] [role] [role]...
         Aliases:    -rr, -remrole, -rmrole, -rmrl
-        Example:    -rr Hecate#3523 @NGC0000 @Verified Member
+        Example:    -rr Hecate#3523 @Hypernova @Verified Member
         Permission: Manage Roles
         Output:     Removes multiple roles from multiple users
         """

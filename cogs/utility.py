@@ -25,7 +25,7 @@ class Utility(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.emote_dict = bot.emote_dict
-        self.geo = geocoders.Nominatim(user_agent="NGC0000")
+        self.geo = geocoders.Nominatim(user_agent="Hypernova")
 
     ####################
     ## VOICE COMMANDS ##
@@ -190,7 +190,7 @@ class Utility(commands.Cog):
         """
         Usage:    -avatar [user]
         Aliases:  -av, -pfp
-        Examples: -avatar 810377376269205546, -avatar NGC0000
+        Examples: -avatar 810377376269205546, -avatar Hypernova
         Output:   Shows an enlarged embed of a user's avatar.
         Notes:    Will default to yourself if no user is passed.
         """
@@ -211,7 +211,7 @@ class Utility(commands.Cog):
         """
         Usage:    -defaultavatar [user]
         Aliases:  -dav, -dpfp, davatar
-        Examples: -defaultavatar 810377376269205546, -davatar NGC0000
+        Examples: -defaultavatar 810377376269205546, -davatar Hypernova
         Output:   Shows an enlarged embed of a user's default avatar.
         Notes:    Will default to yourself if no user is passed.
         """
@@ -234,7 +234,7 @@ class Utility(commands.Cog):
         """
         Usage:      -nickname <member> [nickname]
         Aliases:    -nick, -setnick
-        Examples:   -nickname NGC0000 NGC, -nickname NGC0000
+        Examples:   -nickname Hypernova NGC, -nickname Hypernova
         Permission: Manage Nicknames
         Output:     Edits a member's nickname on the server.
         Notes:      Nickname will reset if no member is passed.

@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 
 
 async def download(
-    url, ext: str = "jpg", sizeLimit: int = 8000000, ua: str = "NGC0000"
+    url, ext: str = "jpg", sizeLimit: int = 8000000, ua: str = "Hypernova"
 ):
     """Download the passed URL and return the file path."""
     url = str(url).strip("<>")

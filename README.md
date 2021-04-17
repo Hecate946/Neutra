@@ -1,4 +1,4 @@
-# NGC0000 Moderation & Stat Tracking Discord Bot
+# Hypernova Discord Bot
 ##### [Admin](#Admin-1)
 ##### [Bot](#Bot-1)
 ##### [Conversion](#Conversion-1)

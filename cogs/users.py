@@ -110,7 +110,7 @@ class Users(commands.Cog):
     #     """
     #     Usage:    -userinfo <member>
     #     Aliases:  -profile, -ui, -whois
-    #     Examples: -userinfo NGC0000, -userinfo 810377376269205546
+    #     Examples: -userinfo Hypernova, -userinfo 810377376269205546
     #     Output:   Roles, permissions, and general stats on a user.
     #     Notes:
     #         Invoke command with -user, -rawuser, or -lookup
