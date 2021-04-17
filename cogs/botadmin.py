@@ -1,3 +1,4 @@
+import io
 import os
 import dis
 import math
@@ -5,6 +6,9 @@ import random
 import discord
 import fnmatch
 import datetime
+import textwrap
+import traceback
+import contextlib
 
 from PythonGists import PythonGists
 from discord.ext import commands, menus
@@ -28,7 +32,6 @@ class Botadmin(commands.Cog):
         self.socket_event_total = 0
 
     # This is a bot admin only cog
-
     async def cog_check(self, ctx):
         if (
             ctx.author.id in self.bot.constants.admins

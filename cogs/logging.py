@@ -597,6 +597,8 @@ class Logging(commands.Cog):
             attachments = f"**__Attachment{'' if len(message.attachments) == 1 else 's'}__**\n {attachment_list}"
             if message.content != "":
                 content = content + "\n"
+        else:
+            attachments = ""
         embed = discord.Embed(
             description=f"**Author:**  {message.author.mention}, **ID:** `{message.author.id}`\n"
             f"**Channel:** {message.channel.mention} **ID:** `{message.channel.id}`\n"
