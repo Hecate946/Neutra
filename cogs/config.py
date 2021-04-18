@@ -227,9 +227,9 @@ class Config(commands.Cog):
         Usage: -todo <method>
         Alias: -to-do
         Methods:
-            None: shows the todo list
-            Add: Adds an entry to the todo list
-            Remove: Removes an entry from the todo list
+            no subcommand: shows the todo list
+            add: Adds an entry to the todo list
+            remove|rm|rem: Removes an entry from the todo list
         """
         if ctx.invoked_subcommand is None:
             try:
@@ -267,7 +267,7 @@ class Config(commands.Cog):
             f"{self.bot.emote_dict['success']} Successfully added `{todo}` to the todo list."
         )
 
-    @todo.command()
+    @todo.command(aliases=['rm','rem'])
     async def remove(self, ctx, *, index_or_todo: str = None):
         if index_or_todo is None:
             return await ctx.send(
