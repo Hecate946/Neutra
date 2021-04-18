@@ -1,5 +1,6 @@
 # Hypernova Moderation & Stat Tracking Discord Bot
-![6010fc1cf1ae9c815f9b09168dbb65a7-1](https://user-images.githubusercontent.com/74381783/108671227-f6d3f580-7494-11eb-9a77-9478f5a39684.png)### [Bot Invite Link](https://discord.com/oauth2/authorize?client_id=810377376269205546&permissions=8589934591&scope=applications.commands%20bot)
+![6010fc1cf1ae9c815f9b09168dbb65a7-1](https://user-images.githubusercontent.com/74381783/108671227-f6d3f580-7494-11eb-9a77-9478f5a39684.png)
+### [Bot Invite Link](https://discord.com/oauth2/authorize?client_id=810377376269205546&permissions=8589934591&scope=applications.commands%20bot)
 ### [Support Server](https://discord.gg/947ramn)
 ### [DiscordBots.gg](https://discord.bots.gg/bots/810377376269205546)
 ## Overview
@@ -7,10 +8,11 @@ Hello! I'm Hypernova, and I specialize in tracking and moderation.
 I was designed to collect all sorts of data on servers, users,
 messages, emojis, online time, and more! I also come with a fast
 and clean moderation system that offers every opportunity for effective
-server management. Apart from moderation and tracking, I feature 173
+server management. Apart from moderation and tracking, I feature 176
 commands across 12 categories that provide awesome utilities!
 Some examples include managing user timezones, role management, and logging.
-## Categories##### [Admin](#Admin-1)
+## Categories
+##### [Admin](#Admin-1)
 ##### [Bot](#Bot-1)
 ##### [Conversion](#Conversion-1)
 ##### [Files](#Files-1)
@@ -36,7 +38,7 @@ autorole: Assign roles to new members.
 
 clearprefix: Clear all custom server prefixes.
 
-filter: Manage the server's word filter list (Command Group).
+filter: Manage the server's word filter.
 
 leave: Have the bot leave the server.
 
@@ -56,7 +58,7 @@ unlock: Unlock a channel.
 ```
 
 ### Bot
-#### Module for bot information (12 Commands)
+#### Module for bot information (14 Commands)
 
 ```yaml
 about: Display information about the bot.
@@ -65,15 +67,19 @@ botinvite: Invite me to your server!
 
 bugreport: Send a bugreport to the developer.
 
+changelog: Show my changelog.
+
 hostinfo: Show the bot's host environment.
 
-overview: Show some info on the developer.
+overview: Show some info on the bot's purpose.
 
-ping: Test the bot's response time.
+ping: Test the bot's response latency.
 
 sharedservers: Servers you and the bot share.
 
 source: Display the source code.
+
+speed: Bot network speed.
 
 suggest: Send a suggestion to the developer.
 
@@ -168,7 +174,7 @@ unlogchannel: Remove the logging channel.
 ```
 
 ### Moderation
-#### Keep your server under control. (13 Commands)
+#### Keep your server under control. (16 Commands)
 
 ```yaml
 ban: Ban users from the server.
@@ -196,6 +202,12 @@ unblind: Reallow users see a channel.
 unblock: Reallow users to send messages.
 
 unmute: Unmute previously muted members.
+
+vckick: Kick users from a voice channel.
+
+vcmove: Move a user from a voice channel.
+
+vcpurge: Kick all users from a voice channel.
 ```
 
 ### Restrict
@@ -309,10 +321,12 @@ words: Most used words from a user.
 ```
 
 ### Utility
-#### Module for general utilities (19 Commands)
+#### Module for general utilities (18 Commands)
 
 ```yaml
 avatar: Show a user's avatar.
+
+calculate: Calculate a math formula.
 
 clock: Get the time of any location
 
@@ -340,15 +354,11 @@ snipe: Snipe a deleted message.
 
 snowflake: Show info on a discord snowflake.
 
+stopwatch: None
+
 time: Show a user's current time.
 
 timezone: See a member's timezone.
-
-vckick: Kick users from a voice channel.
-
-vcmove: Move a user from a voice channel.
-
-vcpurge: Kick all users from a voice channel.
 ```
 
 ### Warn
