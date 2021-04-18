@@ -1,6 +1,6 @@
 apps:
   script          : ./starter.py
-  args            : tester
+  args            : production
   name            : Hypernova
   interpreter     : python3
   interpreter_args: -u
