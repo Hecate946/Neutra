@@ -420,7 +420,7 @@ class Logging(commands.Cog):
         if webhook is None:
             return
 
-        if not before.channel:
+        if not before.channel and after.channel:
 
             embed = discord.Embed(
                 description= f"**User:** {member.mention} **Name:** `{member}`\n**Channel:** {after.channel.mention} ID: `{after.channel.id}`\n",
