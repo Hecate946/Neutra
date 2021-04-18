@@ -25,9 +25,157 @@ class Moderation(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.mregex = re.compile(r"[0-9]{17,21}")
 
-        self.emote_dict = bot.emote_dict
-        self.mention_re = re.compile(r"[0-9]{17,21}")
+    ####################
+    ## VOICE COMMANDS ##
+    ####################
+
+    @commands.command(brief="Move a user from a voice channel.")
+    @commands.guild_only()
+    @permissions.bot_has_permissions(move_members=True)
+    @permissions.has_permissions(move_members=True)
+    async def vcmove(
+        self, ctx, targets: commands.Greedy[discord.Member] = None, channel: str = None
+    ):
+        """
+        Usage:      -vcmove <target> <target>... <channel>
+        Output:     Moves members into a new voice channel
+        Permission: Move Members
+        """
+        if not targets:
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}vc move <to channel> <target> [target]...`",
+            )
+        if not channel:
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}vc move <to channel> <target> [target]...`",
+            )
+        voice = []
+        try:
+            voicechannel = ctx.guild.get_channel(int(channel))
+        except Exception as e:
+            try:
+                voicechannel = discord.utils.get(ctx.guild.voice_channels, name=channel)
+            except Exception as e:
+                await ctx.send(e)
+        for target in targets:
+            if target.id in self.bot.constants.owners:
+                return await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content="You cannot move my master.",
+                )
+            if (
+                ctx.author.top_role.position < target.top_role.position
+                and ctx.author.id not in self.bot.constants.owners
+            ):
+                return await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content="You cannot move other staff members",
+                )
+            try:
+                await target.edit(voice_channel=voicechannel)
+            except discord.HTTPException:
+                await ctx.send(
+                    f"{self.bot.emote_dict['error']} Target is not connected to a voice channel"
+                )
+            voice.append(target)
+        if voice:
+            vckicked = []
+            for member in voice:
+                users = []
+                people = await self.bot.fetch_user(int(member.id))
+                users.append(people)
+                for user in users:
+                    username = f"{user.name}#{user.discriminator}"
+                    vckicked += [username]
+            await ctx.send(
+                "<:checkmark:816534984676081705> VC Moved `{0}`".format(
+                    ", ".join(vckicked)
+                )
+            )
+
+    @commands.command(brief="Kick all users from a voice channel.")
+    @commands.guild_only()
+    @permissions.has_permissions(move_members=True)
+    @permissions.bot_has_permissions(move_members=True)
+    async def vcpurge(self, ctx, channel: discord.VoiceChannel = None):
+        """
+        Usage: -vcpurge <voice channel>
+        Output: Kicks all members from the channel
+        Permission: Move Members
+        """
+        if channel is None:
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}vcpurge <voice channel name/id>`",
+            )
+        if channel.members is None:
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['error']} No members in voice channel.",
+            )
+        for member in channel.members:
+            try:
+                if await permissions.voice_priv(ctx, member):
+                    continue
+                await member.edit(voice_channel=None)
+            except Exception:
+                continue
+        await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"{self.bot.emote_dict['success']} Purged {channel.mention}.",
+        )
+
+    @commands.command(brief="Kick users from a voice channel.")
+    @commands.guild_only()
+    @permissions.has_permissions(move_members=True)
+    @permissions.bot_has_permissions(move_members=True)
+    async def vckick(self, ctx, targets: commands.Greedy[discord.Member]):
+        """
+        Usage:      -vckick <target> <target>
+        Output:     Kicks passed members from their channel
+        Permission: Move Members
+        """
+        if not len(targets):
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}vckick <target> [target]...`",
+            )
+        voice = []
+        for target in targets:
+            if (
+                ctx.author.top_role.position <= target.top_role.position
+                and ctx.author.id not in self.bot.constants.owners
+                or ctx.author.id != ctx.guild.owner.id
+                and target.id != ctx.author.id
+            ):
+                return await ctx.send(
+                    "<:fail:816521503554273320> You cannot move other staff members"
+                )
+            try:
+                await target.edit(voice_channel=None)
+            except discord.HTTPException:
+                await ctx.send(
+                    f"{self.bot.emote_dict['error']} Target is not connected to a voice channel"
+                )
+            voice.append(target)
+        if voice:
+            vckicked = []
+            for member in voice:
+                users = []
+                people = await self.bot.fetch_user(int(member.id))
+                users.append(people)
+                for user in users:
+                    username = f"{user.name}#{user.discriminator}"
+                    vckicked += [username]
+            await ctx.send(
+                "<:checkmark:816534984676081705> VC Kicked `{0}`".format(
+                    ", ".join(vckicked)
+                )
+            )
 
     ###################
     ## Mute Commands ##
@@ -162,7 +310,7 @@ class Moderation(commands.Cog):
                         unmutes.append(target)
                 else:
                     await ctx.send(
-                        f"{self.emote_dict['error']} Member `{target.display_name}` is already muted."
+                        f"{self.bot.emote_dict['error']} Member `{target.display_name}` is already muted."
                     )
             if muted:
                 allmuted = []
@@ -232,7 +380,7 @@ class Moderation(commands.Cog):
             else:
                 return await ctx.send(
                     reference=self.bot.rep_ref(ctx),
-                    content=f"{self.emote_dict['error']} Member is not muted",
+                    content=f"{self.bot.emote_dict['error']} Member is not muted",
                 )
 
         if unmuted:
@@ -615,13 +763,13 @@ class Moderation(commands.Cog):
         if kicked:
             await ctx.send(
                 reference=self.bot.rep_ref(ctx),
-                content=f"{self.emote_dict['success']} Kicked `{', '.join(kicked)}`",
+                content=f"{self.bot.emote_dict['success']} Kicked `{', '.join(kicked)}`",
             )
             self.bot.dispatch("mod_action", ctx, targets=kicked)
         if immune:
             await ctx.send(
                 reference=self.bot.rep_ref(ctx),
-                content=f"{self.emote_dict['failed']} Failed to kick `{', '.join(immune)}`",
+                content=f"{self.bot.emote_dict['failed']} Failed to kick `{', '.join(immune)}`",
             )
 
     ##################
@@ -687,13 +835,13 @@ class Moderation(commands.Cog):
         if banned:
             await ctx.send(
                 reference=self.bot.rep_ref(ctx),
-                content=f"{self.emote_dict['success']} Banned `{', '.join(banned)}`",
+                content=f"{self.bot.emote_dict['success']} Banned `{', '.join(banned)}`",
             )
             self.bot.dispatch("mod_action", ctx, targets=banned)
         if immune:
             await ctx.send(
                 reference=self.bot.rep_ref(ctx),
-                content=f"{self.emote_dict['failed']} Failed to ban `{', '.join(immune)}`",
+                content=f"{self.bot.emote_dict['failed']} Failed to ban `{', '.join(immune)}`",
             )
 
     @commands.command(brief="Softban users from the server.")
@@ -760,13 +908,13 @@ class Moderation(commands.Cog):
         if banned:
             await ctx.send(
                 reference=self.bot.rep_ref(ctx),
-                content=f"{self.emote_dict['success']} Softbanned `{', '.join(banned)}`",
+                content=f"{self.bot.emote_dict['success']} Softbanned `{', '.join(banned)}`",
             )
             self.bot.dispatch("mod_action", ctx, targets=banned)
         if immune:
             await ctx.send(
                 reference=self.bot.rep_ref(ctx),
-                content=f"{self.emote_dict['failed']} Failed to softban `{', '.join(immune)}`",
+                content=f"{self.bot.emote_dict['failed']} Failed to softban `{', '.join(immune)}`",
             )
 
     @commands.command(brief="Hackban multiple users by ID.")

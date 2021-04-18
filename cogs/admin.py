@@ -633,7 +633,7 @@ class Admin(commands.Cog):
         invoke_without_command=True,
         name="filter",
         aliases=["profanity"],
-        brief="Manage the server's word filter list (Command Group).",
+        brief="Manage the server's word filter.",
     )
     @commands.guild_only()
     @permissions.has_permissions(manage_guild=True)
