@@ -423,11 +423,11 @@ class Logging(commands.Cog):
         if not before.channel:
 
             embed = discord.Embed(
-                description=f"**User:** {member.mention} **Name:** `{member}`\n",
+                description= f"**User:** {member.mention} **Name:** `{member}`\n**Channel:** {after.channel.mention} ID: `{after.channel.id}`\n",
                 colour=self.bot.constants.embed,
                 timestamp=datetime.utcnow(),
             )
-            embed.set_author(name=f"Member Joined {after.channel.name}")
+            embed.set_author(name=f"User Joined Voice Channel")
             embed.set_footer(text=f"User ID: {member.id}")
 
             await webhook.execute(embed=embed, username=self.bot.user.name)
@@ -435,11 +435,11 @@ class Logging(commands.Cog):
         if before.channel and not after.channel:
 
             embed = discord.Embed(
-                description=f"**User:** {member.mention} **Name:** `{member}`\n",
+                description=f"**User:** {member.mention} **Name:** `{member}`\n**Channel:** {before.channel.mention} ID: `{before.channel.id}`\n",
                 colour=self.bot.constants.embed,
                 timestamp=datetime.utcnow(),
             )
-            embed.set_author(name=f"Member Left Channel {before.channel.name}")
+            embed.set_author(name=f"User Left Voice Channel")
             embed.set_footer(text=f"User ID: {member.id}")
 
             await webhook.execute(embed=embed, username=self.bot.user.name)
