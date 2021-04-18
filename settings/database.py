@@ -5,10 +5,8 @@ import asyncpg
 import logging
 
 from colr import color
-from colr.colr import disabled
 
 from settings import constants
-from utilities import utils
 
 info_logger = logging.getLogger("INFO_LOGGER")
 scripts = [x[:-4] for x in sorted(os.listdir("./data/scripts")) if x.endswith(".sql")]

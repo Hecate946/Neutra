@@ -1,4 +1,4 @@
-# Module for deleting useless entries in both postgres and possibly redis in the future
+# Module for deleting useless entries in postgres
 import logging
 from . import database
 

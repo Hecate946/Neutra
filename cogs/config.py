@@ -32,14 +32,11 @@ class Config(commands.Cog):
     # TODO rework this cog. this is out of date and still uses postgres instead of local cache.
     def __init__(self, bot):
         self.bot = bot
+        self.todo = './data/txts/todo.txt'
 
-        self.emote_dict = bot.emote_dict
-
-    # This cog is owner only
+    # this cog is botadmin only
     async def cog_check(self, ctx):
-        if not await self.bot.is_owner(ctx.author):
-            return
-        return True
+        return permissions.is_admin(ctx)
 
     ##############################
     ## Aiohttp Helper Functions ##
@@ -171,7 +168,7 @@ class Config(commands.Cog):
         if presence == "":
             msg = "<:checkmark:816534984676081705> presence has been reset."
         else:
-            msg = f"{self.emote_dict['success']} presence now set to `{presence}`"
+            msg = f"{self.bot.emote_dict['success']} presence now set to `{presence}`"
         utils.edit_config(value="presence", changeto=presence)
         await self.bot.set_status()
         self.bot.constants.presence = presence
@@ -200,7 +197,7 @@ class Config(commands.Cog):
         await self.bot.set_status()
         await ctx.send(
             reference=self.bot.rep_ref(ctx),
-            content=f"{self.emote_dict['success']} status now set as `{status}`",
+            content=f"{self.bot.emote_dict['success']} status now set as `{status}`",
         )
 
     @change.command(brief="Set the bot's default activity type.", aliases=["action"])
@@ -224,8 +221,116 @@ class Config(commands.Cog):
         await self.bot.set_status()
         await ctx.send(
             reference=self.bot.rep_ref(ctx),
-            content=f"{self.emote_dict['success']} status now set as `{activity}`",
+            content=f"{self.bot.emote_dict['success']} status now set as `{activity}`",
         )
+
+    @commands.group(case_insensitive=True, aliases=['to-do'], invoke_without_subcommand=True, brief="Show, add, or remove from the bot's todo list.")
+    async def todo(self, ctx):
+        """
+        Usage: -todo <method>
+        Alias: -to-do
+        Methods:
+            None: shows the todo list
+            Add: Adds an entry to the todo list
+            Remove: Removes an entry from the todo list
+        """
+        if ctx.invoked_subcommand is None:
+            try:
+                with open(self.todo) as fp:
+                    data = fp.readlines()
+            except FileNotFoundError:
+                return await ctx.send(f"{self.bot.emote_dict['exclamation']} No current todos.")
+            if data is None or data == "":
+                return await ctx.send(f"{self.bot.emote_dict['exclamation']} No current todos.")
+            msg = ""
+            for index, line in enumerate(data, start=1):
+                msg += f"{index}. {line}\n"
+            p = pagination.MainMenu(pagination.TextPageSource(msg, prefix="```prolog\n"))
+            try:
+                await p.start(ctx)
+            except menus.MenuError as e:
+                await ctx.send(e)
+
+    @todo.command()
+    async def add(self, ctx, *, todo: str = None):
+        if todo is None:
+            return await ctx.send(f"Usage: `{ctx.prefix}todo add <todo>`")
+        with open(self.todo, "a", encoding="utf-8") as fp:
+            fp.write(todo + "\n")
+        await ctx.send(f"{self.bot.emote_dict['success']} Successfully added `{todo}` to the todo list.")
+
+    @todo.command()
+    async def remove(self, ctx, *, index_or_todo: str = None):
+        if index_or_todo is None:
+            return await ctx.send(f"Usage: `{ctx.prefix}todo remove <todo>`")
+        with open(self.todo, mode="r", encoding="utf-8") as fp:
+            lines = fp.readlines()
+            print(lines)
+        found = False
+        for index, line in enumerate(lines, start=1):
+            if str(index) == index_or_todo:
+                lines.remove(line)
+                found = True
+                break
+            elif line.lower().strip('\n') == index_or_todo.lower():
+                lines.remove(line)
+                found = True
+                break
+        if found is True:
+            with open(self.todo, mode="w", encoding="utf-8") as fp:
+                print(lines)
+                fp.write(''.join(lines))
+            await ctx.send(f"{self.bot.emote_dict['success']} Successfully removed todo `{index_or_todo}` from the todo list.")
+        else:
+            await ctx.send(f"{self.bot.emote_dict['failed']} Could not find todo `{index_or_todo}` in the todo list.")
+    
+    @todo.command()
+    async def clear(self, ctx):
+        try:
+            os.remove(self.todo)
+        except FileNotFoundError:
+            return await ctx.send(f"{self.bot.emote_dict['success']} Successfully cleared the todo list.")
+        await ctx.send(f"{self.bot.emote_dict['success']} Successfully cleared the todo list.")
+
+    @commands.group(case_insensitive=True, aliases=['set','add'], invoke_without_subcommand=True, brief="Write to the bot's overview or changelog.")
+    async def write(self, ctx):
+        """
+        Usage: -write <method>
+        Aliases: -set, -add
+        Methods:
+            overview: Edit the bot's overview
+            changelog: Post an entry to the changelog
+        """
+        if ctx.invoked_subcommand is None:
+            return await ctx.send_help(str(ctx.command))
+        
+    @write.command()
+    async def overview(self, ctx, *, overview:str = None):
+        if overview is None:
+            return await ctx.invoke(self.bot.get_command('overview'))
+        c = await pagination.Confirmation(
+            f"**{self.bot.emote_dict['exclamation']} This action will overwrite my current overview. Do you wish to continue?**"
+        ).prompt(ctx)
+        if c:
+            with open("./data/txts/overview.txt", "w", encoding="utf-8") as fp:
+                fp.write(overview)
+            await ctx.send(f"{self.bot.emote_dict['success']} **Successfully updated overview.**")
+        else:
+            await ctx.send(f"{self.bot.emote_dict['exclamation']} **Cancelled.**")
+
+    @write.command()
+    async def changelog(self, ctx, *, entry:str = None):
+        if entry is None:
+            return await ctx.send(f"Usage: `{ctx.prefix}write changelog <entry>`")
+        c = await pagination.Confirmation(
+            f"**{self.bot.emote_dict['exclamation']} This action will post to my changelog. Do you wish to continue?**"
+        ).prompt(ctx)
+        if c:
+            with open("./data/txts/changelog.txt", "a", encoding="utf-8") as fp:
+                fp.write(f"({datetime.utcnow()}+00:00) " + entry + "\n")
+            await ctx.send(f"{self.bot.emote_dict['success']} **Successfully posted to the changelog.**")
+        else:
+            await ctx.send(f"{self.bot.emote_dict['exclamation']} **Cancelled.**")
 
     @commands.command(brief="Blacklist users from using the bot.")
     async def blacklist(
@@ -267,12 +372,12 @@ class Config(commands.Cog):
             )
         if reason is not None:
             await ctx.send(
-                f"{self.emote_dict['success']} Blacklisted `{user}` {reason}"
+                f"{self.bot.emote_dict['success']} Blacklisted `{user}` {reason}"
             )
         else:
             await ctx.send(
                 reference=self.bot.rep_ref(ctx),
-                content=f"{self.emote_dict['success']} Blacklisted `{user}`",
+                content=f"{self.bot.emote_dict['success']} Blacklisted `{user}`",
             )
 
     @commands.command(brief="Removes users from the blacklist.")
@@ -304,11 +409,11 @@ class Config(commands.Cog):
 
         if "None" in str(reason):
             await ctx.send(
-                f"{self.emote_dict['success']} Removed `{user}` from the blacklist."
+                f"{self.bot.emote_dict['success']} Removed `{user}` from the blacklist."
             )
         else:
             await ctx.send(
-                f"{self.emote_dict['success']} Removed `{user}`from the blacklist. "
+                f"{self.bot.emote_dict['success']} Removed `{user}`from the blacklist. "
                 f"Previously blacklisted: `{str(reason).strip('(),')}`"
             )
 
@@ -326,7 +431,7 @@ class Config(commands.Cog):
             return await ctx.send(e)
         await ctx.send(
             reference=self.bot.rep_ref(ctx),
-            content=f"{self.emote_dict['success']} Cleared the blacklist.",
+            content=f"{self.bot.emote_dict['success']} Cleared the blacklist.",
         )
 
     @commands.command(brief="Blacklist a server.")
@@ -373,11 +478,11 @@ class Config(commands.Cog):
                 )
             if reason is None:
                 await ctx.send(
-                    f"{self.emote_dict['success']} Blacklisted `{guild.name}`"
+                    f"{self.bot.emote_dict['success']} Blacklisted `{guild.name}`"
                 )
             else:
                 await ctx.send(
-                    f"{self.emote_dict['success']} Blacklisted `{guild.name}`. {reason}"
+                    f"{self.bot.emote_dict['success']} Blacklisted `{guild.name}`. {reason}"
                 )
             return
 
@@ -422,11 +527,11 @@ class Config(commands.Cog):
 
             if "None" in str(reason):
                 await ctx.send(
-                    f"{self.emote_dict['success']} Removed `{guild.name}` from the blacklist."
+                    f"{self.bot.emote_dict['success']} Removed `{guild.name}` from the blacklist."
                 )
             else:
                 await ctx.send(
-                    f"{self.emote_dict['success']} Removed `{guild.name}`from the blacklist. "
+                    f"{self.bot.emote_dict['success']} Removed `{guild.name}`from the blacklist. "
                     f"Previously blacklisted: `{str(reason).strip('(),')}`"
                 )
             return
@@ -448,7 +553,7 @@ class Config(commands.Cog):
             return await ctx.send(e)
         await ctx.send(
             reference=self.bot.rep_ref(ctx),
-            content=f"{self.emote_dict['success']} Cleared the server blacklist.",
+            content=f"{self.bot.emote_dict['success']} Cleared the server blacklist.",
         )
 
     async def message(self, message):
@@ -506,13 +611,13 @@ class Config(commands.Cog):
             )
         if command.name in EXCEPTIONS:
             return await ctx.send(
-                f"{self.emote_dict['error']} command {command.qualified_name} cannot be disabled."
+                f"{self.bot.emote_dict['error']} command {command.qualified_name} cannot be disabled."
             )
 
         command.enabled = not command.enabled
         ternary = "Enabled" if command.enabled else "Disabled"
         await ctx.send(
-            f"{self.emote_dict['success']} {ternary} {command.qualified_name}."
+            f"{self.bot.emote_dict['success']} {ternary} {command.qualified_name}."
         )
 
     @commands.command(hidden=True, brief="Have the bot leave a server.")
@@ -534,7 +639,7 @@ class Config(commands.Cog):
             await target_server.leave()
             try:
                 await ctx.send(
-                    f"{self.emote_dict['success']} Successfully left server **{target_server.name}**"
+                    f"{self.bot.emote_dict['success']} Successfully left server **{target_server.name}**"
                 )
             except Exception:
                 return
