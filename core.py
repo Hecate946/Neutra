@@ -202,8 +202,11 @@ class Hypernova(commands.AutoShardedBot):
             self.bot_settings = database.bot_settings
 
         # load all blacklisted discord objects
-        mode = 'r' if os.path.exists("./data/json/blacklist.json") else 'w'
-        with open("./data/json/blacklist.json", mode=mode, encoding="utf-8") as fp:
+        if not os.path.exists("./data/json/blacklist.json"):
+            with open("./data/json/blacklist.json", mode='w', encoding="utf-8") as fp:
+                fp.write(r"{}")
+                
+        with open("./data/json/blacklist.json", mode="r", encoding="utf-8") as fp:
             data = json.load(fp)
         blacklist = {}
         for key, value in data.items():
