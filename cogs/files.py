@@ -865,7 +865,7 @@ class Files(commands.Cog):
         )
         premsg += "## Overview\n"
         premsg += overview
-        premsg += "## Categories"
+        premsg += "\n## Categories\n"
         msg = ""
 
         cog_list = [self.bot.get_cog(cog) for cog in self.bot.cogs]
