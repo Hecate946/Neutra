@@ -241,43 +241,41 @@ class Bot(commands.Cog):
         )
 
     @commands.command(
-        brief="Test the bot's response time.",
-        aliases=["latency", "speedtest", "network", "speed", "download", "upload"],
+        brief="Bot network speed.",
+        aliases=["speedtest", "network", "wifi", "download", "upload"],
     )
-    async def ping(self, ctx):
+    @commands.cooldown(1, 30, commands.BucketType.guild)
+    async def speed(self, ctx):
         """
-        Usage: -ping
-        Aliases: -latency, -speedtest, -network, -speed, -download, -upload
-        Output: Bot speed statistics.
+        Usage: -speed
+        Aliases:
+            -speedtest, -network, -speed,
+            -wifi, -download, -upload
+        Output: Internet speed statistics
         Notes:
-            Invoke command with speedtest, network, speed, download, upload
-            and the bot will attempt to run an internet speedtest. May fail.
+            The speedtest takes around 30 seconds
+            to complete. Please be patient. This
+            command is heavily rate limited.
         """
         async with ctx.channel.typing():
             start = time.time()
             message = await ctx.send(
-                f'{self.bot.emote_dict["loading"]} **Calculating Speed...**'
+                reference=self.bot.rep_ref(ctx),
+                content=f'{self.bot.emote_dict["loading"]} **Calculating Speed...**',
             )
             end = time.time()
 
-            if ctx.invoked_with in [
-                "speedtest",
-                "network",
-                "speed",
-                "download",
-                "upload",
-            ]:
-                try:
-                    st = speedtest.Speedtest()
-                except Exception as e:
-                    await message.edit(
-                        content=f"{self.bot.emote_dict['failed']} **Failed**"
-                    )
-                    print(f"Speedtest error: {e}")
-                    return
-                st.get_best_server()
-                d = await self.bot.loop.run_in_executor(None, st.download)
-                u = await self.bot.loop.run_in_executor(None, st.upload)
+            try:
+                st = speedtest.Speedtest()
+            except Exception as e:
+                await message.edit(
+                    content=f"{self.bot.emote_dict['failed']} **Failed**"
+                )
+                print(f"Speedtest error: {e}")
+                return
+            st.get_best_server()
+            d = await self.bot.loop.run_in_executor(None, st.download)
+            u = await self.bot.loop.run_in_executor(None, st.upload)
 
             db_start = time.time()
             await self.bot.cxn.fetch("SELECT 1;")
@@ -285,56 +283,72 @@ class Bot(commands.Cog):
 
             p = str(round((end - start) * 1000, 2))
             q = str(round(self.bot.latency * 1000, 2))
-            if ctx.invoked_with in [
-                "speedtest",
-                "network",
-                "speed",
-                "download",
-                "upload",
-            ]:
-                r = str(round(st.results.ping, 2))
-                s = str(round(d / 1024 / 1024, 2))
-                t = str(round(u / 1024 / 1024, 2))
+            r = str(round(st.results.ping, 2))
+            s = str(round(d / 1024 / 1024, 2))
+            t = str(round(u / 1024 / 1024, 2))
             v = str(round((elapsed) * 1000, 2))
 
             formatter = []
             formatter.append(p)
             formatter.append(q)
-            if ctx.invoked_with in [
-                "speedtest",
-                "network",
-                "speed",
-                "download",
-                "upload",
-            ]:
-                formatter.append(r)
-                formatter.append(s)
-                formatter.append(t)
+            formatter.append(r)
+            formatter.append(s)
+            formatter.append(t)
             formatter.append(v)
             width = max(len(a) for a in formatter)
 
             msg = "**Results:**\n"
             msg += "```yaml\n"
             msg += " Latency: {} ms\n".format(q.ljust(width, " "))
-            if ctx.invoked_with in [
-                "speedtest",
-                "network",
-                "speed",
-                "download",
-                "upload",
-            ]:
-                msg += " Network: {} ms\n".format(r.ljust(width, " "))
+            msg += " Network: {} ms\n".format(r.ljust(width, " "))
             msg += "Response: {} ms\n".format(p.ljust(width, " "))
             msg += "Database: {} ms\n".format(v.ljust(width, " "))
-            if ctx.invoked_with in [
-                "speedtest",
-                "network",
-                "speed",
-                "download",
-                "upload",
-            ]:
-                msg += "Download: {} Mb/s\n".format(s.ljust(width, " "))
-                msg += "  Upload: {} Mb/s\n".format(t.ljust(width, " "))
+            msg += "Download: {} Mb/s\n".format(s.ljust(width, " "))
+            msg += "  Upload: {} Mb/s\n".format(t.ljust(width, " "))
+            msg += "```"
+        await message.edit(content=msg)
+
+    @commands.command(
+        brief="Test the bot's response latency.",
+        aliases=["latency", "response"],
+    )
+    async def ping(self, ctx):
+        """
+        Usage: -ping
+        Aliases: -latency, -response
+        Output: Bot latency statistics.
+        Notes:
+            Use -speed and the bot will attempt
+            to run an internet speedtest. May fail.
+        """
+        async with ctx.channel.typing():
+            start = time.time()
+            message = await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f'{self.bot.emote_dict["loading"]} **Calculating Latency...**',
+            )
+            end = time.time()
+
+            db_start = time.time()
+            await self.bot.cxn.fetch("SELECT 1;")
+            elapsed = time.time() - db_start
+
+            p = str(round((end - start) * 1000, 2))
+            q = str(round(self.bot.latency * 1000, 2))
+
+            v = str(round((elapsed) * 1000, 2))
+
+            formatter = []
+            formatter.append(p)
+            formatter.append(q)
+            formatter.append(v)
+            width = max(len(a) for a in formatter)
+
+            msg = "**Results:**\n"
+            msg += "```yaml\n"
+            msg += " Latency: {} ms\n".format(q.ljust(width, " "))
+            msg += "Response: {} ms\n".format(p.ljust(width, " "))
+            msg += "Database: {} ms\n".format(v.ljust(width, " "))
             msg += "```"
         await message.edit(content=msg)
 
@@ -458,7 +472,10 @@ class Bot(commands.Cog):
     async def changelog(self, ctx):
         with open("./data/txts/changelog.txt", "r", encoding="utf-8") as fp:
             changelog = fp.read()
-        await ctx.send(f"**{self.bot.user.name}'s Changelog**")
+        await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"**{self.bot.user.name}'s Changelog**",
+        )
         p = pagination.MainMenu(
             pagination.TextPageSource(changelog, prefix="```prolog")
         )
@@ -540,7 +557,8 @@ class Bot(commands.Cog):
         """
         async with ctx.channel.typing():
             msg = await ctx.send(
-                f"{self.bot.emote_dict['loading']} **Collecting User Statistics**"
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['loading']} **Collecting User Statistics**",
             )
             users = [x for x in self.bot.get_all_members() if not x.bot]
             users_online = [x for x in users if x.status != discord.Status.offline]

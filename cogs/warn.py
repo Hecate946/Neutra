@@ -37,7 +37,8 @@ class Warn(commands.Cog):
         """
         if not len(targets):
             return await ctx.send(
-                f"Usage: `{ctx.prefix}warn <target> [target]... [reason]`"
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}warn <target> [target]... [reason]`",
             )
         warned = []
         for target in targets:
@@ -114,7 +115,8 @@ class Warn(commands.Cog):
                 )
         if warned:
             await ctx.send(
-                f'{self.bot.emote_dict["success"]} Warned `{", ".join(warned)}`'
+                reference=self.bot.rep_ref(ctx),
+                content=f'{self.bot.emote_dict["success"]} Warned `{", ".join(warned)}`',
             )
 
     @commands.command(brief="Count the warnings a user has.", aliases=["listwarns"])
@@ -143,7 +145,8 @@ class Warn(commands.Cog):
                 )
             warnings = int(warnings[0])
             await ctx.send(
-                f"<:announce:807097933916405760> User `{target}` currently has **{warnings}** warning{'' if int(warnings) == 1 else 's'} in this server."
+                reference=self.bot.rep_ref(ctx),
+                content=f"<:announce:807097933916405760> User `{target}` currently has **{warnings}** warning{'' if int(warnings) == 1 else 's'} in this server.",
             )
         except Exception as e:
             return await ctx.send(e)
@@ -192,7 +195,8 @@ class Warn(commands.Cog):
                 ctx.guild.id,
             )
             await ctx.send(
-                f"{self.emote_dict['success']} Cleared all warnings for `{target}` in this server."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.emote_dict['success']} Cleared all warnings for `{target}` in this server.",
             )
             try:
                 await target.send(
@@ -278,7 +282,8 @@ class Warn(commands.Cog):
         records = await self.bot.cxn.fetch(query, ctx.guild.id) or None
         if records is None:
             return await ctx.send(
-                f"{self.emote_dict['error']} No current warnings exist on this server."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.emote_dict['error']} No current warnings exist on this server.",
             )
 
         p = pagination.SimplePages(

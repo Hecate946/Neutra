@@ -63,11 +63,13 @@ class Utility(commands.Cog):
         """
         if not targets:
             return await ctx.send(
-                f"Usage: `{ctx.prefix}vc move <to channel> <target> [target]...`"
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}vc move <to channel> <target> [target]...`",
             )
         if not channel:
             return await ctx.send(
-                f"Usage: `{ctx.prefix}vc move <to channel> <target> [target]...`"
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}vc move <to channel> <target> [target]...`",
             )
         voice = []
         try:
@@ -125,11 +127,13 @@ class Utility(commands.Cog):
         """
         if channel is None:
             return await ctx.send(
-                f"Usage: `{ctx.prefix}vcpurge <voice channel name/id>`"
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}vcpurge <voice channel name/id>`",
             )
         if channel.members is None:
             return await ctx.send(
-                f"{self.emote_dict['error']} No members in voice channel."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.emote_dict['error']} No members in voice channel.",
             )
         for member in channel.members:
             try:
@@ -218,7 +222,8 @@ class Utility(commands.Cog):
             await self.bot.fetch_user(user.id)
         except AttributeError:
             return await ctx.send(
-                f"{self.bot.emote_dict['failed']} User `{user}` does not exist."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['failed']} User `{user}` does not exist.",
             )
         await self.do_avatar(ctx, user, url=user.avatar_url)
 
@@ -239,7 +244,8 @@ class Utility(commands.Cog):
             await self.bot.fetch_user(user.id)
         except AttributeError:
             return await ctx.send(
-                f"{self.bot.emote_dict['failed']} User `{user}` does not exist."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['failed']} User `{user}` does not exist.",
             )
         await self.do_avatar(ctx, user, user.default_avatar_url)
 
@@ -264,7 +270,8 @@ class Utility(commands.Cog):
             )
         if user.id == ctx.guild.owner.id:
             return await ctx.send(
-                f"{self.emote_dict['failed']} User `{user}` is the server owner. I cannot edit the nickname of the server owner."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.emote_dict['failed']} User `{user}` is the server owner. I cannot edit the nickname of the server owner.",
             )
         try:
             await user.edit(
@@ -279,7 +286,8 @@ class Utility(commands.Cog):
             await ctx.send(message)
         except discord.Forbidden:
             await ctx.send(
-                f"{self.emote_dict['failed']} I do not have permission to edit `{user}'s` nickname."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.emote_dict['failed']} I do not have permission to edit `{user}'s` nickname.",
             )
 
     # command mostly from Alex Flipnote's discord_bot.py bot
@@ -531,7 +539,8 @@ class Utility(commands.Cog):
 
         if result is None:
             return await ctx.send(
-                f"{self.bot.emote_dict['error']} There is nothing to snipe."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['error']} There is nothing to snipe.",
             )
 
         author = result[0]
@@ -571,7 +580,8 @@ class Utility(commands.Cog):
         """
         async with ctx.channel.typing():
             msg = await ctx.send(
-                f"{self.bot.emote_dict['loading']} **Collecting Emoji Statistics**"
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['loading']} **Collecting Emoji Statistics**",
             )
             query = """
                     SELECT (emoji_id, total)
@@ -616,7 +626,8 @@ class Utility(commands.Cog):
             emoji_id = emoji.id
 
             msg = await ctx.send(
-                f"{self.bot.emote_dict['loading']} **Collecting Emoji Statistics**"
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['loading']} **Collecting Emoji Statistics**",
             )
             query = f"""SELECT (author_id, content) FROM messages WHERE content ~ '<a?:.+?:{emoji_id}>';"""
 
@@ -734,8 +745,9 @@ class Utility(commands.Cog):
         timezone = await self.bot.cxn.fetchval(query, member.id) or None
         if timezone is None:
             return await ctx.send(
-                f"{self.bot.emote_dict['error']} `{member}` has not set their timezone. "
-                f"Use the `{ctx.prefix}settz [Region/City]` command."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['error']} `{member}` has not set their timezone. "
+                f"Use the `{ctx.prefix}settz [Region/City]` command.",
             )
 
         await ctx.send(
@@ -772,7 +784,8 @@ class Utility(commands.Cog):
         t = self.getTimeFromTZ(tz)
         if t is None:
             await ctx.send(
-                f"{self.bot.emote_dict['failed']} I couldn't find that timezone."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['failed']} I couldn't find that timezone.",
             )
             return
         t["time"] = utils.getClockForTime(t["time"])
@@ -890,32 +903,39 @@ class Utility(commands.Cog):
         author = ctx.author
         if author.id not in self.stopwatches:
             self.stopwatches[author.id] = int(time.perf_counter())
-            await ctx.send(f"{self.bot.emote_dict['stopwatch']} Stopwatch started!")
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['stopwatch']} Stopwatch started!",
+            )
         else:
             tmp = abs(self.stopwatches[author.id] - int(time.perf_counter()))
             tmp = str(timedelta(seconds=tmp))
             await ctx.send(
-                f"{self.bot.emote_dict['stopwatch']} Stopwatch stopped! Time: **{tmp}**"
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['stopwatch']} Stopwatch stopped! Time: **{tmp}**",
             )
             self.stopwatches.pop(author.id, None)
 
-    @commands.command(aliases=["math","calc"], brief="Calculate a math formula.")
+    @commands.command(aliases=["math", "calc"], brief="Calculate a math formula.")
     async def calculate(self, ctx, *, formula=None):
         """
         Usage: -calculate <formula>
         Aliases: -calc, -math
         """
         if formula is None:
-            return await ctx.send("Usage: `{}calculate <formula>`".format(ctx.prefix))
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="Usage: `{}calculate <formula>`".format(ctx.prefix),
+            )
         formula = formula.replace("*", "x")
 
         try:
             answer = NumericStringParser().eval(formula)
-            await ctx.message.add_reaction(self.bot.emote_dict['success'])
+            await ctx.message.add_reaction(self.bot.emote_dict["success"])
         except Exception:
             msg = '{} I couldn\'t parse "{}"\n\n'.format(
-                self.bot.emote_dict['failed'],
-                formula.replace("*", "\\*").replace("`", "\\`").replace("_", "\\_")
+                self.bot.emote_dict["failed"],
+                formula.replace("*", "\\*").replace("`", "\\`").replace("_", "\\_"),
             )
             msg += "I understand the following syntax:\n```fix\n"
             msg += "expop   :: '^'\n"
@@ -933,7 +953,9 @@ class Utility(commands.Cog):
             answer = int(answer)
 
         # Say message
-        await ctx.send("{} = {}".format(formula, answer))
+        await ctx.send(
+            reference=self.bot.rep_ref(ctx), content="{} = {}".format(formula, answer)
+        )
 
 
 class NumericStringParser(object):

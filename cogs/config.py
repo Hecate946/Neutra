@@ -1,5 +1,6 @@
 import os
-import aiohttp 
+import typing
+import aiohttp
 import asyncpg
 import discord
 
@@ -23,9 +24,9 @@ class Config(commands.Cog):
         self.bot = bot
         self.todo = "./data/txts/todo.txt"
 
-    # this cog is botadmin only
+    # this cog is owner only
     async def cog_check(self, ctx):
-        return permissions.is_admin(ctx)
+        return permissions.is_owner(ctx)
 
     ##############################
     ## Aiohttp Helper Functions ##
@@ -178,7 +179,8 @@ class Config(commands.Cog):
             status = "offline"
         else:
             return await ctx.send(
-                f"{self.bot.emote_dict['failed']} `{status}` is not a valid status."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['failed']} `{status}` is not a valid status.",
             )
 
         utils.edit_config(value="status", changeto=status)
@@ -202,7 +204,8 @@ class Config(commands.Cog):
             activity = "competing"
         else:
             return await ctx.send(
-                f"{self.bot.emote_dict['failed']} `{activity}` is not a valid status."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['failed']} `{activity}` is not a valid status.",
             )
 
         utils.edit_config(value="activity", changeto=activity)
@@ -254,7 +257,10 @@ class Config(commands.Cog):
     @todo.command()
     async def add(self, ctx, *, todo: str = None):
         if todo is None:
-            return await ctx.send(f"Usage: `{ctx.prefix}todo add <todo>`")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}todo add <todo>`",
+            )
         with open(self.todo, "a", encoding="utf-8") as fp:
             fp.write(todo + "\n")
         await ctx.send(
@@ -264,7 +270,10 @@ class Config(commands.Cog):
     @todo.command()
     async def remove(self, ctx, *, index_or_todo: str = None):
         if index_or_todo is None:
-            return await ctx.send(f"Usage: `{ctx.prefix}todo remove <todo>`")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}todo remove <todo>`",
+            )
         with open(self.todo, mode="r", encoding="utf-8") as fp:
             lines = fp.readlines()
             print(lines)
@@ -283,11 +292,13 @@ class Config(commands.Cog):
                 print(lines)
                 fp.write("".join(lines))
             await ctx.send(
-                f"{self.bot.emote_dict['success']} Successfully removed todo `{index_or_todo}` from the todo list."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['success']} Successfully removed todo `{index_or_todo}` from the todo list.",
             )
         else:
             await ctx.send(
-                f"{self.bot.emote_dict['failed']} Could not find todo `{index_or_todo}` in the todo list."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['failed']} Could not find todo `{index_or_todo}` in the todo list.",
             )
 
     @todo.command()
@@ -296,7 +307,8 @@ class Config(commands.Cog):
             os.remove(self.todo)
         except FileNotFoundError:
             return await ctx.send(
-                f"{self.bot.emote_dict['success']} Successfully cleared the todo list."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['success']} Successfully cleared the todo list.",
             )
         await ctx.send(
             f"{self.bot.emote_dict['success']} Successfully cleared the todo list."
@@ -330,15 +342,22 @@ class Config(commands.Cog):
             with open("./data/txts/overview.txt", "w", encoding="utf-8") as fp:
                 fp.write(overview)
             await ctx.send(
-                f"{self.bot.emote_dict['success']} **Successfully updated overview.**"
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['success']} **Successfully updated overview.**",
             )
         else:
-            await ctx.send(f"{self.bot.emote_dict['exclamation']} **Cancelled.**")
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
+            )
 
     @write.command()
     async def changelog(self, ctx, *, entry: str = None):
         if entry is None:
-            return await ctx.send(f"Usage: `{ctx.prefix}write changelog <entry>`")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}write changelog <entry>`",
+            )
         c = await pagination.Confirmation(
             f"**{self.bot.emote_dict['exclamation']} This action will post to my changelog. Do you wish to continue?**"
         ).prompt(ctx)
@@ -346,274 +365,74 @@ class Config(commands.Cog):
             with open("./data/txts/changelog.txt", "a", encoding="utf-8") as fp:
                 fp.write(f"({datetime.utcnow()}+00:00) " + entry + "\n")
             await ctx.send(
-                f"{self.bot.emote_dict['success']} **Successfully posted to the changelog.**"
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['success']} **Successfully posted to the changelog.**",
             )
         else:
-            await ctx.send(f"{self.bot.emote_dict['exclamation']} **Cancelled.**")
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
+            )
 
-    @commands.command(brief="Blacklist users from using the bot.")
+    @commands.command()
     async def blacklist(
         self,
         ctx,
-        user: converters.DiscordUser = None,
-        react: str = "",
+        _objects: commands.Greedy[
+            typing.Union[discord.User, converters.DiscordGuild]
+        ] = None,
         *,
-        reason: str = None,
+        reason: typing.Optional[str] = None,
     ):
-        """
-        Usage: -blacklist <user> [react] [reason]
-        """
-        if ctx.author.id not in self.bot.constants.owners:
-            return None
-        if user is None:
-            return await ctx.send(
-                f"Usage: `{ctx.prefix}blacklist <user> [react] [reason]`"
+        if _objects is None:
+            p = pagination.MainMenu(
+                pagination.TextPageSource(str(self.bot.blacklist), prefix="```json")
             )
-        if react.upper() == "REACT":
-            react = True
-        else:
-            react = False
-        try:
-            query = """INSERT INTO blacklist VALUES ($1, $2, $3, $4, $5, $6)"""
-            await self.bot.cxn.execute(
-                query,
-                user.id,
-                str(user),
-                reason,
-                ctx.message.created_at.utcnow(),
-                str(ctx.author),
-                react,
-            )
-        except asyncpg.exceptions.UniqueViolationError:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f":warning: User `{user}` already blacklisted.",
-            )
-        if reason is not None:
-            await ctx.send(
-                f"{self.bot.emote_dict['success']} Blacklisted `{user}` {reason}"
-            )
-        else:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['success']} Blacklisted `{user}`",
-            )
-
-    @commands.command(brief="Removes users from the blacklist.")
-    async def unblacklist(self, ctx, user: converters.DiscordUser = None):
-        """
-        Usage: -unblacklist [user]
-        """
-        if ctx.author.id not in self.bot.constants.owners:
-            return None
-
-        if user is None:
-            return await ctx.send(
-                f"Usage: `{ctx.prefix}blacklist <user> [react = (true/enable/yes/on)] [reason]`"
-            )
-
-        query = """SELECT user_id FROM blacklist WHERE user_id = $1"""
-        blacklisted = await self.bot.cxn.fetchrow(query, user.id) or None
-        if blacklisted is None:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f":warning: User was not blacklisted",
-            )
-
-        query = """SELECT reason FROM blacklist WHERE user_id = $1"""
-        reason = await self.bot.cxn.fetchrow(query, user.id) or None
-
-        query = """DELETE FROM blacklist WHERE user_id = $1"""
-        await self.bot.cxn.execute(query, user.id)
-
-        if "None" in str(reason):
-            await ctx.send(
-                f"{self.bot.emote_dict['success']} Removed `{user}` from the blacklist."
-            )
-        else:
-            await ctx.send(
-                f"{self.bot.emote_dict['success']} Removed `{user}`from the blacklist. "
-                f"Previously blacklisted: `{str(reason).strip('(),')}`"
-            )
-
-    @commands.command(brief="Clear the user blacklist")
-    async def clearblacklist(self, ctx):
-        """
-        Usage: -clearblacklist
-        """
-        if ctx.author.id not in self.bot.constants.owners:
-            return None
-        try:
-            query = """DELETE FROM blacklist"""
-            await self.bot.cxn.execute(query)
-        except Exception as e:
-            return await ctx.send(e)
-        await ctx.send(
-            reference=self.bot.rep_ref(ctx),
-            content=f"{self.bot.emote_dict['success']} Cleared the blacklist.",
-        )
-
-    @commands.command(brief="Blacklist a server.")
-    async def serverblacklist(
-        self, ctx, server=None, react: str = "", *, reason: str = None
-    ):
-        """
-        Usage: -serverblacklist [server] [react] [reason]
-        """
-        if ctx.author.id not in self.bot.constants.owners:
-            return None
-        if server is None:
-            return await ctx.send(
-                f"Usage: `{ctx.prefix}serverblacklist <server> [react] [reason]`"
-            )
-
-        if react.upper() == "REACT":
-            react = True
-        else:
-            react = False
-        # Check id first, then name
-        guild = next((x for x in self.bot.guilds if str(x.id) == str(server)), None)
-        if not guild:
-            guild = next(
-                (x for x in self.bot.guilds if x.name.lower() == server.lower()), None
-            )
-        if guild:
             try:
-                query = (
-                    """INSERT INTO serverblacklist VALUES ($1, $2, $3, $4, $5, $6)"""
-                )
-                await self.bot.cxn.execute(
-                    query,
-                    guild.id,
-                    str(guild.name),
-                    reason,
-                    ctx.message.created_at.utcnow(),
-                    str(ctx.author),
-                    react,
-                )
-            except asyncpg.exceptions.UniqueViolationError:
-                return await ctx.send(
-                    f":warning: Server `{server}` is already blacklisted"
-                )
-            if reason is None:
-                await ctx.send(
-                    f"{self.bot.emote_dict['success']} Blacklisted `{guild.name}`"
-                )
-            else:
-                await ctx.send(
-                    f"{self.bot.emote_dict['success']} Blacklisted `{guild.name}`. {reason}"
-                )
+                await p.start(ctx)
+            except menus.MenuError as e:
+                await ctx.send(e)
             return
-
-        await ctx.send(
-            reference=self.bot.rep_ref(ctx),
-            content=f"<:failed:812062765028081674> Server `{server}` not found",
-        )
-
-    @commands.command(brief="Unblacklist a server.")
-    async def serverunblacklist(self, ctx, server=None):
-        """
-        Usage: -serverunblacklist <server name/server id>
-        """
-        if ctx.author.id not in self.bot.constants.owners:
-            return None
-
-        if server is None:
-            return await ctx.send(
-                f"Usage: `{ctx.prefix}serverunblacklist <server name/server id>`"
+        blacklisted = []
+        already_blacklisted = []
+        for obj in _objects:
+            if obj.id == 708584008065351681:
+                continue
+            if obj.id in self.bot.blacklist:
+                already_blacklisted.append(str(obj))
+                continue
+            self.bot.blacklist[str(obj.id)] = reason if reason else "No reason"
+            blacklisted.append(str(obj))
+        if blacklisted:
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['success']} Blacklisted `{', '.join(blacklisted)}`",
+            )
+        if already_blacklisted:
+            ternary = "was" if len(already_blacklisted) == 1 else "were"
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['success']} `{', '.join(already_blacklisted)}` {ternary} already blacklisted",
             )
 
-        guild = next((x for x in self.bot.guilds if str(x.id) == str(server)), None)
-        if not guild:
-            guild = next(
-                (x for x in self.bot.guilds if x.name.lower() == server.lower()), None
-            )
-        if guild:
-
-            query = """SELECT server_id FROM serverblacklist WHERE server_id = $1"""
-            blacklisted = await self.bot.cxn.fetchrow(query, guild.id) or None
-            if blacklisted is None:
-                return await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
-                    content=f":warning: Server was not blacklisted",
-                )
-
-            query = """SELECT reason FROM serverblacklist WHERE server_id = $1"""
-            reason = await self.bot.cxn.fetchrow(query, guild.id) or None
-
-            query = """DELETE FROM serverblacklist WHERE server_id = $1"""
-            await self.bot.cxn.execute(query, guild.id)
-
-            if "None" in str(reason):
-                await ctx.send(
-                    f"{self.bot.emote_dict['success']} Removed `{guild.name}` from the blacklist."
-                )
-            else:
-                await ctx.send(
-                    f"{self.bot.emote_dict['success']} Removed `{guild.name}`from the blacklist. "
-                    f"Previously blacklisted: `{str(reason).strip('(),')}`"
-                )
-            return
-        await ctx.send(
-            reference=self.bot.rep_ref(ctx),
-            content=f"{self.bot.emote_dict['failed']} Server `{server}` not found",
-        )
-
-    @commands.command(brief="Clear the server blacklist.")
-    async def clearserverblacklist(self, ctx):
-        """
-        Usage: -clearserverblacklist
-        """
-        if ctx.author.id not in self.bot.constants.owners:
-            return None
+    @commands.command()
+    async def unblacklist(
+        self, ctx, _object: typing.Union[discord.User, converters.DiscordGuild] = None
+    ):
+        if _object is None:
+            return await ctx.send(f"Usage: `{ctx.prefix}unblacklist <object>`")
         try:
-            await self.bot.cxn.execute("""DELETE FROM serverblacklist""")
-        except Exception as e:
-            return await ctx.send(e)
+            self.bot.blacklist.pop(str(_object.id))
+        except KeyError:
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['success']} `{str(_object)}` was not blacklisted.",
+            )
+            return
         await ctx.send(
             reference=self.bot.rep_ref(ctx),
-            content=f"{self.bot.emote_dict['success']} Cleared the server blacklist.",
+            content=f"{self.bot.emote_dict['success']} Removed `{str(_object)}` from the blacklist.",
         )
-
-    async def message(self, message):
-        # Check the message and see if we should allow it
-        if message.author.id in self.bot.constants.owners:
-            return
-        ctx = await self.bot.get_context(message)
-
-        if not ctx.command:
-            return
-        # Get the list of blacklisted users
-
-        query = """SELECT server_id FROM serverblacklist WHERE server_id = $1"""
-        ignored_servers = await self.bot.cxn.fetchrow(query, message.guild.id) or None
-
-        if "None" not in str(ignored_servers):
-            if int(str(ignored_servers).strip("(),'")) == message.guild.id:
-
-                query = """SELECT react FROM serverblacklist WHERE server_id = $1"""
-                to_react = await self.bot.cxn.fetchrow(query, message.guild.id)
-                to_react = int(to_react[0])
-
-                if to_react == 1:
-                    await message.add_reaction("<:fail:812062765028081674>")
-                return {"Ignore": True, "Delete": False}
-
-        query = """SELECT user_id FROM blacklist WHERE user_id = $1"""
-        ignored_users = await self.bot.cxn.fetchrow(query, message.author.id) or None
-
-        if "None" in str(ignored_users):
-            return
-        if int(ignored_users[0]) != message.author.id:
-            return
-        else:
-            query = """SELECT react FROM blacklist WHERE user_id = $1"""
-            to_react = await self.bot.cxn.fetchrow(query, message.author.id)
-            to_react = int(to_react[0])
-            if to_react == 1:
-                await message.add_reaction(self.bot.emote_dict["failed"])
-            # We have a disabled command - ignore it
-            return {"Ignore": True, "Delete": False}
 
     @commands.command(brief="Toggle disabling a command.")
     async def toggle(self, ctx, *, command):
@@ -630,7 +449,8 @@ class Config(commands.Cog):
             )
         if command.name in EXCEPTIONS:
             return await ctx.send(
-                f"{self.bot.emote_dict['error']} command {command.qualified_name} cannot be disabled."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['error']} command {command.qualified_name} cannot be disabled.",
             )
 
         command.enabled = not command.enabled
@@ -699,7 +519,8 @@ class Config(commands.Cog):
 
         if member.id in current_owners:
             return await ctx.send(
-                f"{self.bot.emote_dict['error']} **`{member}` is already an owner.**"
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['error']} **`{member}` is already an owner.**",
             )
 
         c = await pagination.Confirmation(
@@ -710,7 +531,8 @@ class Config(commands.Cog):
             current_owners.append(member.id)
             utils.modify_config("owners", current_owners)
             await ctx.send(
-                f"{self.bot.emote_dict['success']} **`{member}` is now officially one of my owners.**"
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['success']} **`{member}` is now officially one of my owners.**",
             )
             return
         await ctx.send(
@@ -751,7 +573,8 @@ class Config(commands.Cog):
 
         if member.id not in current_owners:
             return await ctx.send(
-                f"{self.bot.emote_dict['error']} **`{member}` is not an owner.**"
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['error']} **`{member}` is not an owner.**",
             )
 
         c = await pagination.Confirmation(
@@ -763,7 +586,8 @@ class Config(commands.Cog):
             current_owners.pop(index)
             utils.modify_config("owners", current_owners)
             await ctx.send(
-                f"{self.bot.emote_dict['success']} **Successfully removed `{member}` from my owner list.**"
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['success']} **Successfully removed `{member}` from my owner list.**",
             )
             return
         await ctx.send(
@@ -803,7 +627,8 @@ class Config(commands.Cog):
 
         if member.id in current_admins:
             return await ctx.send(
-                f"{self.bot.emote_dict['error']} **`{member}` is already an admin.**"
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['error']} **`{member}` is already an admin.**",
             )
 
         c = await pagination.Confirmation(
@@ -814,7 +639,8 @@ class Config(commands.Cog):
             current_admins.append(member.id)
             utils.modify_config("admins", current_admins)
             await ctx.send(
-                f"{self.bot.emote_dict['success']} **`{member}` is now officially one of my admins.**"
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['success']} **`{member}` is now officially one of my admins.**",
             )
             return
         await ctx.send(
@@ -855,7 +681,8 @@ class Config(commands.Cog):
 
         if member.id not in current_admins:
             return await ctx.send(
-                f"{self.bot.emote_dict['error']} **`{member}` is not an admin.**"
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['error']} **`{member}` is not an admin.**",
             )
 
         c = await pagination.Confirmation(
@@ -867,7 +694,8 @@ class Config(commands.Cog):
             current_admins.pop(index)
             utils.modify_config("admins", current_admins)
             await ctx.send(
-                f"{self.bot.emote_dict['success']} **Successfully removed `{member}` from my admin list.**"
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['success']} **Successfully removed `{member}` from my admin list.**",
             )
             return
         await ctx.send(

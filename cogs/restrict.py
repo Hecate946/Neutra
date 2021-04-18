@@ -418,7 +418,8 @@ class Restrict(commands.Cog):
         # Give some output
         if len(dis_com) == 0:
             return await ctx.send(
-                f"{self.bot.emote_dict['success']} All commands already enabled."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['success']} All commands already enabled.",
             )
         msg = ", ".join(sorted(dis_com))
         title = (
@@ -454,15 +455,18 @@ class Restrict(commands.Cog):
 
         if user.guild_permissions.administrator:
             return await ctx.send(
-                f"{self.emote_dict['failed']} You cannot punish other staff members"
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.emote_dict['failed']} You cannot punish other staff members",
             )
         if user.id in self.bot.constants.owners:
             return await ctx.send(
-                f"{self.emote_dict['failed']} You cannot punish my creator."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.emote_dict['failed']} You cannot punish my creator.",
             )
         if user.top_role.position > ctx.author.top_role.position:
             return await ctx.send(
-                f"{self.emote_dict['failed']} User `{user}` is higher in the role hierarchy than you."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.emote_dict['failed']} User `{user}` is higher in the role hierarchy than you.",
             )
 
         if react is None:
@@ -482,7 +486,8 @@ class Restrict(commands.Cog):
 
         if already_ignored is not None:
             return await ctx.send(
-                f"{self.emote_dict['error']} User `{user}` is already being ignored."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.emote_dict['error']} User `{user}` is already being ignored.",
             )
 
         query = """INSERT INTO ignored VALUES ($1, $2, $3, $4, $5)"""

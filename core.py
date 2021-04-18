@@ -201,6 +201,16 @@ class Hypernova(commands.AutoShardedBot):
         if not hasattr(self, "bot_settings"):
             self.bot_settings = database.bot_settings
 
+        # load all blacklisted discord objects
+        with open("./data/json/blacklist.json", mode="r", encoding="utf-8") as fp:
+            data = json.load(fp)
+        blacklist = {}
+        for key, value in data.items():
+            blacklist[key] = value
+
+        if not hasattr(self, "blacklist"):
+            self.blacklist = blacklist
+
         # loads all the cogs in ./cogs and prints them on sys.stdout
         for cog in COGS:
             self.load_extension(f"cogs.{cog}")
@@ -217,6 +227,8 @@ class Hypernova(commands.AutoShardedBot):
         finally:  # Write up our json files with the stats from the session.
             self.status_loop.stop()
             print("\nKilled")
+            with open("./data/json/blacklist.json", "w", encoding="utf-8") as fp:
+                json.dump(self.blacklist, fp, indent=2)
             with open("./data/json/commands.json", "w", encoding="utf-8") as fp:
                 json.dump(self.command_stats, fp, indent=2)
             with open("./data/json/sockets.json", "w", encoding="utf-8") as fp:
@@ -297,6 +309,12 @@ class Hypernova(commands.AutoShardedBot):
             return
         if message.author.bot:
             return
+        if str(message.author.id) in self.blacklist:
+            try:
+                await message.add_reaction(self.emote_dict["failed"])
+            except Exception:
+                pass
+            return
         if not message.guild:
             # These are DM commands
             await self.invoke(ctx)
@@ -308,6 +326,12 @@ class Hypernova(commands.AutoShardedBot):
             await self.invoke(ctx)
             return
 
+        if str(message.guild.id) in self.blacklist:
+            try:
+                await message.add_reaction(self.emote_dict["failed"])
+            except Exception:
+                pass
+            return
         # Check if we need to ignore, delete or react to the message
         ignore, delete, react = False, False, False
         respond = None
@@ -478,7 +502,13 @@ class Hypernova(commands.AutoShardedBot):
 
         elif isinstance(error, commands.BadArgument):
             await ctx.send(
-                reference=self.bot.rep_ref(ctx),
+                reference=self.rep_ref(ctx),
+                content=f"{self.emote_dict['failed']} {error}",
+            )
+
+        elif isinstance(error, commands.BadUnionArgument):
+            await ctx.send(
+                reference=self.rep_ref(ctx),
                 content=f"{self.emote_dict['failed']} {error}",
             )
 
@@ -490,14 +520,15 @@ class Hypernova(commands.AutoShardedBot):
 
         elif isinstance(error, commands.CommandOnCooldown):
             await ctx.send(
-                f"{self.emote_dict['error']} This command is on cooldown... retry in {error.retry_after:.2f} seconds."
+                reference=self.rep_ref(ctx),
+                content=f"{self.emote_dict['error']} This command is on cooldown... retry in {error.retry_after:.2f} seconds.",
             )
 
         elif isinstance(error, commands.DisabledCommand):
             # This could get annoying so lets just comment out for now
-            ctx.message.add_reaction(self.bot.emote_dict["failed"])
+            ctx.message.add_reaction(self.emote_dict["failed"])
             await ctx.send(
-                reference=self.bot.rep_ref(ctx),
+                reference=self.rep_ref(ctx),
                 content=f"{self.emote_dict['failed']} This command is disabled.",
             )
             pass
@@ -537,14 +568,14 @@ class Hypernova(commands.AutoShardedBot):
         elif isinstance(error, commands.BotMissingPermissions):
             # Readable error so just send it to the channel where the error occurred.
             await ctx.send(
-                reference=self.bot.rep_ref(ctx),
+                reference=self.rep_ref(ctx),
                 content=f"{self.emote_dict['error']} {error}",
             )
 
         elif isinstance(error, commands.CheckFailure):
             # Readable error so just send it to the channel where the error occurred.
             # Or not
-            # await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.emote_dict['error']} {error}")
+            # await ctx.send(reference=self.rep_ref(ctx), content=f"{self.emote_dict['error']} {error}")
             pass
 
         else:

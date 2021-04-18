@@ -102,11 +102,13 @@ class Roles(commands.Cog):
 
         if len(targets) == 0:
             return await ctx.send(
-                f"Usage: `{ctx.prefix}ar <user> [user] [user] <role> [role] [role]...`"
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}ar <user> [user] [user] <role> [role] [role]...`",
             )
         if len(roles) == 0:
             return await ctx.send(
-                f"Usage: `{ctx.prefix}ar <user> [user] [user] <role> [role] [role]...`"
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}ar <user> [user] [user] <role> [role] [role]...`",
             )
         target_list = []
         target_names = []
@@ -178,11 +180,13 @@ class Roles(commands.Cog):
 
         if len(targets) == 0:
             return await ctx.send(
-                f"Usage: `{ctx.prefix}rr <user> [user] [user] <role> [role] [role]...`"
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}rr <user> [user] [user] <role> [role] [role]...`",
             )
         if len(roles) == 0:
             return await ctx.send(
-                f"Usage: `{ctx.prefix}rr <user> [user] [user] <role> [role] [role]...`"
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}rr <user> [user] [user] <role> [role] [role]...`",
             )
         target_list = []
         target_names = []
@@ -333,7 +337,8 @@ class Roles(commands.Cog):
         members_to_add_roles = len(number_of_members)
         if members_to_add_roles < 1:
             return await ctx.send(
-                f"{self.emote_dict['error']} No members to add roles to"
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.emote_dict['error']} No members to add roles to",
             )
         msg = await ctx.send(
             f"{self.emote_dict['error']} Adding role `{role2.name}` to `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}. This process may take several minutes."
@@ -425,7 +430,8 @@ class Roles(commands.Cog):
         members_to_add_roles = len(number_of_members)
         if members_to_add_roles < 1:
             return await ctx.send(
-                f"{self.emote_dict['error']} No members to remove roles from"
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.emote_dict['error']} No members to remove roles from",
             )
         msg = await ctx.send(
             f"{self.emote_dict['error']} Removing role `{role2.name}` from `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}. This process may take several minutes."
@@ -687,7 +693,8 @@ class Roles(commands.Cog):
 
         if not sorted_list:  # another failsafe
             return await ctx.send(
-                f"{self.bot.emote_dict['error']} No empty roles found."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['error']} No empty roles found.",
             )
 
         await self.rolelist_paginate(ctx, sorted_list, title="Empty Roles")

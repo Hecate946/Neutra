@@ -96,11 +96,13 @@ async def check_priv(ctx, member):
         # Self checks
         if member == ctx.author:
             return await ctx.send(
-                f"<:failed:816521503554273320> You cannot {ctx.command.name} yourself."
+                reference=self.bot.rep_ref(ctx),
+                content=f"<:failed:816521503554273320> You cannot {ctx.command.name} yourself.",
             )
         if member.id == ctx.bot.user.id:
             return await ctx.send(
-                f"Fuck off or I'll {ctx.command.name} you. Little piece of shit..."
+                reference=self.bot.rep_ref(ctx),
+                content=f"Fuck off or I'll {ctx.command.name} you. Little piece of shit...",
             )
 
         # Check if user bypasses
@@ -119,15 +121,18 @@ async def check_priv(ctx, member):
                 pass
         if member.id == ctx.guild.owner.id:
             return await ctx.send(
-                f"<:failed:816521503554273320> You cannot {ctx.command.name} the server owner."
+                reference=self.bot.rep_ref(ctx),
+                content=f"<:failed:816521503554273320> You cannot {ctx.command.name} the server owner.",
             )
         if ctx.author.top_role == member.top_role:
             return await ctx.send(
-                f"<:failed:816521503554273320> You cannot {ctx.command.name} someone who has the same permissions as you."
+                reference=self.bot.rep_ref(ctx),
+                content=f"<:failed:816521503554273320> You cannot {ctx.command.name} someone who has the same permissions as you.",
             )
         if ctx.author.top_role < member.top_role:
             return await ctx.send(
-                f"<:failed:816521503554273320> You cannot {ctx.command.name} someone with a higher role than you."
+                reference=self.bot.rep_ref(ctx),
+                content=f"<:failed:816521503554273320> You cannot {ctx.command.name} someone with a higher role than you.",
             )
     except Exception:
         pass
@@ -156,15 +161,18 @@ async def voice_priv(ctx, member):
 
         if member.id == ctx.guild.owner.id:
             return await ctx.send(
-                f"<:failed:816521503554273320> You cannot {ctx.command.name} the server owner."
+                reference=self.bot.rep_ref(ctx),
+                content=f"<:failed:816521503554273320> You cannot {ctx.command.name} the server owner.",
             )
         if ctx.author.top_role == member.top_role:
             return await ctx.send(
-                f"<:failed:816521503554273320> You cannot {ctx.command.name} someone who has the same permissions as you."
+                reference=self.bot.rep_ref(ctx),
+                content=f"<:failed:816521503554273320> You cannot {ctx.command.name} someone who has the same permissions as you.",
             )
         if ctx.author.top_role < member.top_role:
             return await ctx.send(
-                f"<:failed:816521503554273320> You cannot {ctx.command.name} someone who has a higher role than you."
+                reference=self.bot.rep_ref(ctx),
+                content=f"<:failed:816521503554273320> You cannot {ctx.command.name} someone who has a higher role than you.",
             )
     except Exception as e:
         print(e)

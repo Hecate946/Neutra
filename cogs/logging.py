@@ -785,12 +785,14 @@ class Logging(commands.Cog):
                 ctx.guild.id,
             )
             await ctx.send(
-                f"{self.bot.emote_dict['success']} Logging is now disabled on this server"
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['success']} Logging is now disabled on this server",
             )
             return
         else:
             return await ctx.send(
-                f"{self.bot.emote_dict['error']} Logging is not enabled on this server."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['error']} Logging is not enabled on this server.",
             )
 
     @commands.command(brief="Enable specific logging events.")

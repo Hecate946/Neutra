@@ -66,7 +66,10 @@ class Manager(commands.Cog):
         try:
             exec(to_compile, env)
         except Exception as e:
-            return await ctx.send(f"```py\n{e.__class__.__name__}: {e}\n```")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"```py\n{e.__class__.__name__}: {e}\n```",
+            )
 
         func = env["func"]
         try:
@@ -74,7 +77,10 @@ class Manager(commands.Cog):
                 ret = await func()
         except Exception as e:
             value = stdout.getvalue()
-            await ctx.send(f"```py\n{value}{traceback.format_exc()}\n```")
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"```py\n{value}{traceback.format_exc()}\n```",
+            )
         else:
             value = stdout.getvalue()
             try:
@@ -84,10 +90,14 @@ class Manager(commands.Cog):
 
             if ret is None:
                 if value:
-                    await ctx.send(f"```py\n{value}\n```")
+                    await ctx.send(
+                        reference=self.bot.rep_ref(ctx), content=f"```py\n{value}\n```"
+                    )
             else:
                 self._last_result = ret
-                await ctx.send(f"```py\n{value}{ret}\n```")
+                await ctx.send(
+                    reference=self.bot.rep_ref(ctx), content=f"```py\n{value}{ret}\n```"
+                )
 
     def cleanup_code(self, content):
         """Automatically removes code blocks from the code."""
@@ -196,8 +206,9 @@ class Manager(commands.Cog):
                 [f"**{g[0]}** ```diff\n- {g[1]}```" for g in error_collection]
             )
             return await ctx.send(
-                f"Attempted to reload all extensions, was able to reload, "
-                f"however the following failed...\n\n{output}"
+                reference=self.bot.rep_ref(ctx),
+                content=f"Attempted to reload all extensions, was able to reload, "
+                f"however the following failed...\n\n{output}",
             )
 
         await ctx.send(
@@ -249,8 +260,9 @@ class Manager(commands.Cog):
                 [f"**{g[0]}** ```diff\n- {g[1]}```" for g in error_collection]
             )
             return await ctx.send(
-                f"Attempted to reload all utilties, was able to reload, "
-                f"however the following failed...\n\n{output}"
+                reference=self.bot.rep_ref(ctx),
+                content=f"Attempted to reload all utilties, was able to reload, "
+                f"however the following failed...\n\n{output}",
             )
 
         await ctx.send(

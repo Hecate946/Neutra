@@ -62,7 +62,8 @@ class Moderation(commands.Cog):
         global target
         if not len(targets):
             return await ctx.send(
-                f"Usage: `{ctx.prefix}mute <target> [target]... [minutes] [reason]`"
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}mute <target> [target]... [minutes] [reason]`",
             )
 
         else:
@@ -244,7 +245,8 @@ class Moderation(commands.Cog):
                     username = f"{user.name}#{user.discriminator}"
                     allmuted += [username]
             await ctx.send(
-                f'{self.bot.emote_dict["success"]} Unmuted `{", ".join(allmuted)}`'
+                reference=self.bot.rep_ref(ctx),
+                content=f'{self.bot.emote_dict["success"]} Unmuted `{", ".join(allmuted)}`',
             )
             self.bot.dispatch("mod_action", ctx, targets=allmuted)
 
@@ -287,7 +289,8 @@ class Moderation(commands.Cog):
         """
         if not len(targets):  # checks if there is user
             return await ctx.send(
-                f"Usage: `{ctx.prefix}block <target> [target] [target]...`"
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}block <target> [target] [target]...`",
             )
         blocked = []
         for target in targets:
@@ -360,7 +363,8 @@ class Moderation(commands.Cog):
         """
         if not targets:  # checks if there is user
             return await ctx.send(
-                f"Usage: `{ctx.prefix}unblock <target> [target] [target]...`"
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}unblock <target> [target] [target]...`",
             )
         unblocked = []
         for target in targets:
@@ -433,7 +437,8 @@ class Moderation(commands.Cog):
         """
         if not targets:  # checks if there is user
             return await ctx.send(
-                f"Usage: `{ctx.prefix}blind <target> [target] [target]...`"
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}blind <target> [target] [target]...`",
             )
         blinded = []
         for target in targets:
@@ -506,7 +511,8 @@ class Moderation(commands.Cog):
         """
         if not targets:  # checks if there is user
             return await ctx.send(
-                f"Usage: `{ctx.prefix}unblind <target> [target] [target]...`"
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}unblind <target> [target] [target]...`",
             )
         unblinded = []
         for target in targets:
@@ -591,7 +597,8 @@ class Moderation(commands.Cog):
         """
         if not len(users):
             return await ctx.send(
-                f"Usage: `{ctx.prefix}kick <target> [target]... [reason]`"
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}kick <target> [target]... [reason]`",
             )
 
         if await permissions.checker(ctx, value=users):
@@ -613,7 +620,8 @@ class Moderation(commands.Cog):
             self.bot.dispatch("mod_action", ctx, targets=kicked)
         if immune:
             await ctx.send(
-                f"{self.emote_dict['failed']} Failed to kick `{', '.join(immune)}`"
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.emote_dict['failed']} Failed to kick `{', '.join(immune)}`",
             )
 
     ##################
@@ -640,7 +648,8 @@ class Moderation(commands.Cog):
         """
         if not len(targets):
             return await ctx.send(
-                f"Usage: `{ctx.prefix}ban <target1> [target2] [delete message days] [reason]`"
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}ban <target1> [target2] [delete message days] [reason]`",
             )
 
         if await permissions.checker(ctx, value=targets):
@@ -683,7 +692,8 @@ class Moderation(commands.Cog):
             self.bot.dispatch("mod_action", ctx, targets=banned)
         if immune:
             await ctx.send(
-                f"{self.emote_dict['failed']} Failed to ban `{', '.join(immune)}`"
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.emote_dict['failed']} Failed to ban `{', '.join(immune)}`",
             )
 
     @commands.command(brief="Softban users from the server.")
@@ -710,7 +720,8 @@ class Moderation(commands.Cog):
         """
         if not len(targets):
             return await ctx.send(
-                f"Usage: `{ctx.prefix}softban <member> [days to delete messages] [reason]`"
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}softban <member> [days to delete messages] [reason]`",
             )
 
         if await permissions.checker(ctx, value=targets):
@@ -748,12 +759,14 @@ class Moderation(commands.Cog):
                 continue
         if banned:
             await ctx.send(
-                f"{self.emote_dict['success']} Softbanned `{', '.join(banned)}`"
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.emote_dict['success']} Softbanned `{', '.join(banned)}`",
             )
             self.bot.dispatch("mod_action", ctx, targets=banned)
         if immune:
             await ctx.send(
-                f"{self.emote_dict['failed']} Failed to softban `{', '.join(immune)}`"
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.emote_dict['failed']} Failed to softban `{', '.join(immune)}`",
             )
 
     @commands.command(brief="Hackban multiple users by ID.")
@@ -859,7 +872,8 @@ class Moderation(commands.Cog):
         """
         if not member:
             return await ctx.send(
-                f"Usage: `{ctx.prefix}unban <id/name#discriminator> [reason]`"
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}unban <id/name#discriminator> [reason]`",
             )
         if reason is None:
             reason = utils.responsible(
@@ -869,11 +883,13 @@ class Moderation(commands.Cog):
         await ctx.guild.unban(member.user, reason=reason)
         if member.reason:
             await ctx.send(
-                f'{self.bot.emote_dict["success"]} Unbanned `{member.user} (ID: {member.user.id})`, previously banned for `{member.reason}.`'
+                reference=self.bot.rep_ref(ctx),
+                content=f'{self.bot.emote_dict["success"]} Unbanned `{member.user} (ID: {member.user.id})`, previously banned for `{member.reason}.`',
             )
         else:
             await ctx.send(
-                f'{self.bot.emote_dict["success"]} Unbanned `{member.user} (ID: {member.user.id}).`'
+                reference=self.bot.rep_ref(ctx),
+                content=f'{self.bot.emote_dict["success"]} Unbanned `{member.user} (ID: {member.user.id}).`',
             )
         self.bot.dispatch("mod_action", ctx, targets=[str(member.user)])
 
@@ -955,7 +971,8 @@ class Moderation(commands.Cog):
         deleted = len(deleted)
         if message is True:
             msg = await ctx.send(
-                f'{self.bot.emote_dict["trash"]} Deleted {deleted} message{"" if deleted == 1 else "s"}'
+                reference=self.bot.rep_ref(ctx),
+                content=f'{self.bot.emote_dict["trash"]} Deleted {deleted} message{"" if deleted == 1 else "s"}',
             )
             await asyncio.sleep(7)
             await ctx.message.delete()

@@ -20,7 +20,9 @@ class Slash(commands.Cog):
         current_prefixes = self.bot.server_settings[ctx.guild.id]["prefixes"]
         if len(current_prefixes) == 0:
             return await ctx.send(
-                f"My current prefix is {self.bot.constants.prefix}", hidden=True
+                reference=self.bot.rep_ref(ctx),
+                content=f"My current prefix is {self.bot.constants.prefix}",
+                hidden=True,
             )
         await ctx.send(
             f"My current prefix{' is' if len(current_prefixes) == 1 else 'es are '} `{', '.join(current_prefixes)}`",

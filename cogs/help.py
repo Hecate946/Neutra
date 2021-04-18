@@ -102,7 +102,8 @@ class Help(commands.Cog):
             return
         else:
             return await ctx.send(
-                f"{self.emote_dict['error']} No command named `{name}` found."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.emote_dict['error']} No command named `{name}` found.",
             )
 
     ##########################

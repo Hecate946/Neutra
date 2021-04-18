@@ -43,15 +43,18 @@ class Admin(commands.Cog):
             pass
         if new_prefix in current_prefixes:
             return await ctx.send(
-                f"{self.bot.emote_dict['error']} `{new_prefix}` is already a registered prefix."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['error']} `{new_prefix}` is already a registered prefix.",
             )
         if len(current_prefixes) == 10:
             return await ctx.send(
-                f"{self.bot.emote_dict['failed']} Max prefix limit of 10 has been reached."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['failed']} Max prefix limit of 10 has been reached.",
             )
         if len(new_prefix) > 20:
             return await ctx.send(
-                f"{self.bot.emote_dict['failed']} Max prefix length is 20 characters."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['failed']} Max prefix length is 20 characters.",
             )
         self.bot.server_settings[ctx.guild.id]["prefixes"].append(new_prefix)
         query = """
@@ -86,7 +89,8 @@ class Admin(commands.Cog):
             pass
         if old_prefix not in current_prefixes:
             return await ctx.send(
-                f"{self.bot.emote_dict['error']} `{old_prefix}` is not a registered prefix."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['error']} `{old_prefix}` is not a registered prefix.",
             )
         if len(current_prefixes) == 1:
             c = await pagination.Confirmation(
@@ -121,7 +125,8 @@ class Admin(commands.Cog):
             await self.bot.cxn.execute(query, ctx.guild.id, old_prefix)
             self.bot.server_settings[ctx.guild.id]["prefixes"].remove(old_prefix)
             await ctx.send(
-                f"{self.bot.emote_dict['success']} Successfully removed prefix `{old_prefix}`"
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['success']} Successfully removed prefix `{old_prefix}`",
             )
 
     @commands.command(
@@ -155,7 +160,8 @@ class Admin(commands.Cog):
             pass
         if current_prefixes == []:
             return await ctx.send(
-                f"{self.bot.emote_dict['exclamation']} I currently have no prefixes set."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['exclamation']} I currently have no prefixes set.",
             )
         c = await pagination.Confirmation(
             msg=f"{self.bot.emote_dict['exclamation']} "
@@ -179,7 +185,8 @@ class Admin(commands.Cog):
                 f"<@!{self.bot.user.id}>"
             ]
             await ctx.send(
-                f"{self.bot.emote_dict['success']} **Successfully cleared all prefixes.**"
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['success']} **Successfully cleared all prefixes.**",
             )
             return
         await ctx.send(
@@ -214,7 +221,8 @@ class Admin(commands.Cog):
             pass
         if current_prefixes == []:
             return await ctx.send(
-                f"{self.bot.emote_dict['exclamation']} I currently have no prefixes set."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['exclamation']} I currently have no prefixes set.",
             )
         if len(current_prefixes) == 0:
             return await ctx.send(
@@ -452,7 +460,8 @@ class Admin(commands.Cog):
 
         if autoroles == []:
             return await ctx.send(
-                f"No autoroles yet, use `{ctx.prefix}autorole add <roles>`"
+                reference=self.bot.rep_ref(ctx),
+                content=f"No autoroles yet, use `{ctx.prefix}autorole add <roles>`",
             )
 
         p = pagination.SimplePages(
@@ -678,14 +687,16 @@ class Admin(commands.Cog):
 
         if existing:
             await ctx.send(
-                f"{self.bot.emote_dict['error']} The word{'' if len(existing) == 1 else 's'} `{', '.join(existing)}` "
-                f"{'was' if len(existing) == 1 else 'were'} already in the word filter."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['error']} The word{'' if len(existing) == 1 else 's'} `{', '.join(existing)}` "
+                f"{'was' if len(existing) == 1 else 'were'} already in the word filter.",
             )
 
         if added:
             await ctx.send(
-                f"{self.bot.emote_dict['success']} The word{'' if len(added) == 1 else 's'} `{', '.join(added)}` "
-                f"{'was' if len(added) == 1 else 'were'} successfully added to the word filter."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['success']} The word{'' if len(added) == 1 else 's'} `{', '.join(added)}` "
+                f"{'was' if len(added) == 1 else 'were'} successfully added to the word filter.",
             )
 
     @_filter.command(
@@ -706,7 +717,8 @@ class Admin(commands.Cog):
         word_list = self.bot.server_settings[ctx.guild.id]["profanities"]
         if word_list == []:
             return await ctx.send(
-                f"{self.bot.emote_dict['error']} This server has no filtered words."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['error']} This server has no filtered words.",
             )
 
         removed = []
@@ -727,14 +739,16 @@ class Admin(commands.Cog):
 
         if not_found:
             await ctx.send(
-                f"{self.bot.emote_dict['error']} The word{'' if len(not_found) == 1 else 's'} `{', '.join(not_found)}` "
-                f"{'was' if len(not_found) == 1 else 'were'} not in the word filter."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['error']} The word{'' if len(not_found) == 1 else 's'} `{', '.join(not_found)}` "
+                f"{'was' if len(not_found) == 1 else 'were'} not in the word filter.",
             )
 
         if removed:
             await ctx.send(
-                f"{self.bot.emote_dict['success']} The word{'' if len(removed) == 1 else 's'} `{', '.join(removed)}` "
-                f"{'was' if len(removed) == 1 else 'were'} successfully removed from the word filter."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['success']} The word{'' if len(removed) == 1 else 's'} `{', '.join(removed)}` "
+                f"{'was' if len(removed) == 1 else 'were'} successfully removed from the word filter.",
             )
 
     @_filter.command(
@@ -746,7 +760,8 @@ class Admin(commands.Cog):
 
         if words == []:
             return await ctx.send(
-                f"No filtered words yet, use `{ctx.prefix}filter add <word>` to filter words"
+                reference=self.bot.rep_ref(ctx),
+                content=f"No filtered words yet, use `{ctx.prefix}filter add <word>` to filter words",
             )
 
         p = pagination.SimplePages(entries=[f"`{x}`" for x in words], per_page=20)
@@ -786,11 +801,13 @@ class Admin(commands.Cog):
             await ctx.channel.edit(slowmode_delay=time)
         except discord.HTTPException as e:
             await ctx.send(
-                f'{self.bot.emote_dict["failed"]} Failed to set slowmode because of an error\n{e}'
+                reference=self.bot.rep_ref(ctx),
+                content=f'{self.bot.emote_dict["failed"]} Failed to set slowmode because of an error\n{e}',
             )
         else:
             await ctx.send(
-                f'{self.bot.emote_dict["success"]} Slowmode set to `{time}s`'
+                reference=self.bot.rep_ref(ctx),
+                content=f'{self.bot.emote_dict["success"]} Slowmode set to `{time}s`',
             )
 
     @commands.command(aliases=["lockdown", "lockchannel"], brief="Lock a channel")

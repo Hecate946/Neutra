@@ -31,7 +31,8 @@ class Users(commands.Cog):
         """
         if not len(members):
             return await ctx.send(
-                f"Usage: `{ctx.prefix}platform <member> [member] [member]...`"
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}platform <member> [member] [member]...`",
             )
         mobilestatus = []
         notmobilestatus = []
@@ -63,7 +64,8 @@ class Users(commands.Cog):
                     username = f"{user.name}#{user.discriminator}"
                     notmobile += [username]
             await ctx.send(
-                f"{self.bot.emote_dict['desktop']} User{'' if len(notmobile) == 1 else 's'} `{', '.join(notmobile)}` {'is' if len(notmobile) == 1 else 'are'} on discord desktop."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['desktop']} User{'' if len(notmobile) == 1 else 's'} `{', '.join(notmobile)}` {'is' if len(notmobile) == 1 else 'are'} on discord desktop.",
             )
         if mobilestatus:
             mobile = []
@@ -75,7 +77,8 @@ class Users(commands.Cog):
                     username = f"{user.name}#{user.discriminator}"
                     mobile += [username]
             await ctx.send(
-                f"{self.bot.emote_dict['mobile']} User{'' if len(mobile) == 1 else 's'} `{', '.join(mobile)}` {'is' if len(mobile) == 1 else 'are'} on discord mobile."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['mobile']} User{'' if len(mobile) == 1 else 's'} `{', '.join(mobile)}` {'is' if len(mobile) == 1 else 'are'} on discord mobile.",
             )
         if web_status:
             mobile = []
@@ -87,7 +90,8 @@ class Users(commands.Cog):
                     username = f"{user.name}#{user.discriminator}"
                     mobile += [username]
             await ctx.send(
-                f"{self.bot.emote_dict['web']} User{'' if len(mobile) == 1 else 's'} `{', '.join(mobile)}` {'is' if len(mobile) == 1 else 'are'} on discord web."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['web']} User{'' if len(mobile) == 1 else 's'} `{', '.join(mobile)}` {'is' if len(mobile) == 1 else 'are'} on discord web.",
             )
         if offline:
             mobile = []
@@ -99,7 +103,8 @@ class Users(commands.Cog):
                     username = f"{user.name}#{user.discriminator}"
                     mobile += [username]
             await ctx.send(
-                f"{self.bot.emote_dict['offline']} User{'' if len(mobile) == 1 else 's'} `{', '.join(mobile)}` {'is' if len(mobile) == 1 else 'are'} offline"
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['offline']} User{'' if len(mobile) == 1 else 's'} `{', '.join(mobile)}` {'is' if len(mobile) == 1 else 'are'} offline",
             )
 
     # @commands.command(
@@ -489,7 +494,8 @@ class Users(commands.Cog):
             user = ctx.author
         if user.bot:
             return await ctx.send(
-                f"{self.bot.emote_dict['error']} I do not track bots."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['error']} I do not track bots.",
             )
 
         query = """SELECT usernames FROM usernames WHERE user_id = $1"""
@@ -555,7 +561,8 @@ class Users(commands.Cog):
 
         if user.bot:
             return await ctx.send(
-                f"{self.bot.emote_dict['error']} I do not track bots."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['error']} I do not track bots.",
             )
 
         tracker = self.bot.get_cog("Tracker")
@@ -602,7 +609,8 @@ class Users(commands.Cog):
             width = len(max(counter, key=len))
         except ValueError:
             return await ctx.send(
-                f"{self.bot.emote_dict['error']} User `{user}` has not run any commands."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['error']} User `{user}` has not run any commands.",
             )
         total = sum(counter.values())
 
@@ -644,7 +652,8 @@ class Users(commands.Cog):
             query = """SELECT COUNT(*) as c FROM commands WHERE server_id = $1"""
             command_count = await self.bot.cxn.fetchrow(query, ctx.guild.id)
             return await ctx.send(
-                f"A total of **{command_count[0]:,}** command{' has' if int(command_count[0]) == 1 else 's have'} been executed on this server."
+                reference=self.bot.rep_ref(ctx),
+                content=f"A total of **{command_count[0]:,}** command{' has' if int(command_count[0]) == 1 else 's have'} been executed on this server.",
             )
         else:
             if user.bot:
@@ -654,7 +663,8 @@ class Users(commands.Cog):
             query = """SELECT COUNT(*) as c FROM commands WHERE executor_id = $1 AND server_id = $2"""
             command_count = await self.bot.cxn.fetchrow(query, user.id, ctx.guild.id)
             return await ctx.send(
-                f"User `{user}` has executed **{int(command_count[0]):,}** commands."
+                reference=self.bot.rep_ref(ctx),
+                content=f"User `{user}` has executed **{int(command_count[0]):,}** commands.",
             )
 
     @commands.command(brief="Show the top bot users.", aliases=["botusage"])
@@ -701,7 +711,8 @@ class Users(commands.Cog):
 
         if member.bot:
             return await ctx.send(
-                f"{self.bot.emote_dict['error']} I do not track bots."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['error']} I do not track bots.",
             )
 
         all_msgs = await self.bot.cxn.fetch(
@@ -747,7 +758,8 @@ class Users(commands.Cog):
             member = ctx.author
         if member.bot:
             return await ctx.send(
-                f"{self.bot.emote_dict['error']} I do not track bots."
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['error']} I do not track bots.",
             )
 
         all_msgs = await self.bot.cxn.fetch(
@@ -768,7 +780,8 @@ class Users(commands.Cog):
                 found.append(int(all_words.index(x)) + 1)
         if found == []:
             return await ctx.send(
-                f"The word `{word}` has never been used by **{member.display_name}**"
+                reference=self.bot.rep_ref(ctx),
+                content=f"The word `{word}` has never been used by **{member.display_name}**",
             )
         if str(found[1]).endswith("1") and found[1] != 11:
             common = str(found[1]) + "st"
