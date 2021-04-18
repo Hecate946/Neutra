@@ -11,7 +11,6 @@
 /data/json
 /data/logs
 /data/pm2
-/data/txts
 /data/wastebin
 # This is a testing cog for trying out new commands.. 
 /cogs/testing.py

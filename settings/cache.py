@@ -62,9 +62,9 @@ class Settings:
         # Restore curr dir
         os.chdir(retval)
         if num_to_remove:
-            log.info(
-                "Settings Backed Up ({} removed): {}".format(num_to_remove, timestamp)
-            )
+            pass
+            # log.info("Settings Backed Up ({} removed): {}".format(num_to_remove, timestamp))
         else:
-            log.info("Settings Backed Up: {}".format(timestamp))
+            pass
+            # log.info("Settings Backed Up: {}".format(timestamp))
         await asyncio.sleep(self.backup_interval)

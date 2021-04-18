@@ -11,9 +11,6 @@ def checker():
 class Master(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        if not os.path.exists('./data/txts'):
-            os.mkdir('./data/txts')
-
         self.todo = './data/txts/todo.txt'
 
     async def cog_check(self, ctx):
