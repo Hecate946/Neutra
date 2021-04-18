@@ -21,6 +21,7 @@ from collections import defaultdict
 from utilities import utils, pagination, formatting, converters
 from settings import constants
 
+
 def setup(bot):
     bot.add_cog(Manager(bot))
 
@@ -29,6 +30,7 @@ class Manager(commands.Cog):
     """
     Manage bot processes and cogs
     """
+
     def __init__(self, bot):
         self.bot = bot
         self.process = psutil.Process()
@@ -40,18 +42,18 @@ class Manager(commands.Cog):
             return
         return True
 
-    @commands.command(name='eval', aliases=['evaluate','e'])
+    @commands.command(name="eval", aliases=["evaluate", "e"])
     async def _eval(self, ctx, *, body: str):
         """Evaluates a code"""
 
         env = {
-            'bot': self.bot,
-            'ctx': ctx,
-            'channel': ctx.channel,
-            'author': ctx.author,
-            'guild': ctx.guild,
-            'message': ctx.message,
-            '_': self._last_result
+            "bot": self.bot,
+            "ctx": ctx,
+            "channel": ctx.channel,
+            "author": ctx.author,
+            "guild": ctx.guild,
+            "message": ctx.message,
+            "_": self._last_result,
         }
 
         env.update(globals())
@@ -64,39 +66,37 @@ class Manager(commands.Cog):
         try:
             exec(to_compile, env)
         except Exception as e:
-            return await ctx.send(f'```py\n{e.__class__.__name__}: {e}\n```')
+            return await ctx.send(f"```py\n{e.__class__.__name__}: {e}\n```")
 
-        func = env['func']
+        func = env["func"]
         try:
             with contextlib.redirect_stdout(stdout):
                 ret = await func()
         except Exception as e:
             value = stdout.getvalue()
-            await ctx.send(f'```py\n{value}{traceback.format_exc()}\n```')
+            await ctx.send(f"```py\n{value}{traceback.format_exc()}\n```")
         else:
             value = stdout.getvalue()
             try:
-                await ctx.message.add_reaction(self.bot.emote_dict['success'])
+                await ctx.message.add_reaction(self.bot.emote_dict["success"])
             except:
                 pass
 
             if ret is None:
                 if value:
-                    await ctx.send(f'```py\n{value}\n```')
+                    await ctx.send(f"```py\n{value}\n```")
             else:
                 self._last_result = ret
-                await ctx.send(f'```py\n{value}{ret}\n```')
-
+                await ctx.send(f"```py\n{value}{ret}\n```")
 
     def cleanup_code(self, content):
         """Automatically removes code blocks from the code."""
         # remove ```py\n```
-        if content.startswith('```') and content.endswith('```'):
-            return '\n'.join(content.split('\n')[1:-1])
+        if content.startswith("```") and content.endswith("```"):
+            return "\n".join(content.split("\n")[1:-1])
 
         # remove `foo`
-        return content.strip('` \n')
-
+        return content.strip("` \n")
 
     @commands.command(brief="Refresh the bot variables.")
     async def refresh(self, ctx):
@@ -106,29 +106,31 @@ class Manager(commands.Cog):
         Permission: Bot owner
         Notes:
             Useful to use this command as an
-            alternative to restarting the bot when 
+            alternative to restarting the bot when
             changes are made to the config.json file
         """
-        config = utils.config().copy()  
-        constants.token    = config['token'   ]
-        constants.postgres = config['postgres']
-        constants.github   = config['github'  ]
-        constants.webhook  = config['webhook' ]
-        constants.imgur    = config['imgur'   ]
-        constants.prefix   = config['prefix'  ]
-        constants.owners   = config['owners'  ]
-        constants.admins   = config['admins'  ]
-        constants.embed    = config['embed'   ]
-        constants.status   = config['status'  ]
-        constants.activity = config['activity']
-        constants.presence = config['presence']
-        constants.version  = config['version' ]
-        constants.reboot   = config['reboot'  ]
+        config = utils.config().copy()
+        constants.token = config["token"]
+        constants.postgres = config["postgres"]
+        constants.github = config["github"]
+        constants.webhook = config["webhook"]
+        constants.imgur = config["imgur"]
+        constants.prefix = config["prefix"]
+        constants.owners = config["owners"]
+        constants.admins = config["admins"]
+        constants.embed = config["embed"]
+        constants.status = config["status"]
+        constants.activity = config["activity"]
+        constants.presence = config["presence"]
+        constants.version = config["version"]
+        constants.reboot = config["reboot"]
 
         self.bot.owner_ids = constants.owners
 
-        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.bot.emote_dict['success']} **Refreshed Configuration.**")
-
+        await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"{self.bot.emote_dict['success']} **Refreshed Configuration.**",
+        )
 
     @commands.command(hidden=True, brief="Load an extension.")
     async def load(self, ctx, name: str):
@@ -139,9 +141,11 @@ class Manager(commands.Cog):
             try:
                 self.bot.load_extension(f"{name}")
             except Exception as e:
-                return await ctx.send(str(e).replace("'","**"))
-        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.bot.emote_dict['success']} Loaded extension **{name}**")
-
+                return await ctx.send(str(e).replace("'", "**"))
+        await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"{self.bot.emote_dict['success']} Loaded extension **{name}**",
+        )
 
     @commands.command(hidden=True, brief="Unload an extension.")
     async def unload(self, ctx, name: str):
@@ -150,11 +154,13 @@ class Manager(commands.Cog):
             self.bot.unload_extension(f"cogs.{name}")
         except Exception:
             try:
-                self.bot.unload_extension(f"{name}")    
+                self.bot.unload_extension(f"{name}")
             except Exception as e:
-                return await ctx.send(str(e).replace("'","**"))
-        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.bot.emote_dict['success']} Unloaded extension **{name}**")
-
+                return await ctx.send(str(e).replace("'", "**"))
+        await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"{self.bot.emote_dict['success']} Unloaded extension **{name}**",
+        )
 
     @commands.command(name="reload", hidden=True, brief="Reload an extension.")
     async def _reload(self, ctx, name: str):
@@ -165,9 +171,11 @@ class Manager(commands.Cog):
             try:
                 self.bot.reload_extension(f"{name}")
             except Exception as e:
-                return await ctx.send(str(e).replace("'","**"))
-        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.bot.emote_dict['success']} Reloaded extension **{name}.py**")
-
+                return await ctx.send(str(e).replace("'", "**"))
+        await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"{self.bot.emote_dict['success']} Reloaded extension **{name}.py**",
+        )
 
     @commands.command(hidden=True, brief="Reload all extensions.")
     async def reloadall(self, ctx):
@@ -184,14 +192,18 @@ class Manager(commands.Cog):
                     )
 
         if error_collection:
-            output = "\n".join([f"**{g[0]}** ```diff\n- {g[1]}```" for g in error_collection])
+            output = "\n".join(
+                [f"**{g[0]}** ```diff\n- {g[1]}```" for g in error_collection]
+            )
             return await ctx.send(
                 f"Attempted to reload all extensions, was able to reload, "
                 f"however the following failed...\n\n{output}"
             )
 
-        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.bot.emote_dict['success']} Successfully reloaded all extensions")
-
+        await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"{self.bot.emote_dict['success']} Successfully reloaded all extensions",
+        )
 
     @commands.command(hidden=True, brief="Reload a utilities module.")
     async def reloadutils(self, ctx, name: str):
@@ -201,18 +213,28 @@ class Manager(commands.Cog):
             module_name = importlib.import_module(f"./utilities.{name}")
             importlib.reload(module_name)
         except ModuleNotFoundError:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Couldn't find module named **{name_maker}**")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Couldn't find module named **{name_maker}**",
+            )
         except Exception as e:
             error = utils.traceback_maker(e)
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Module **{name_maker}** returned error and was not reloaded...\n{error}")
-        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.bot.emote_dict['success']} Reloaded module **{name_maker}**")
-
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Module **{name_maker}** returned error and was not reloaded...\n{error}",
+            )
+        await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"{self.bot.emote_dict['success']} Reloaded module **{name_maker}**",
+        )
 
     @commands.command(hidden=True, brief="Reload all utilities modules.")
     async def reloadallutils(self, ctx):
         """ Reloads a utils module. """
         error_collection = []
-        utilities = [x[:-3] for x in sorted(os.listdir('utilities')) if x.endswith('.py')]
+        utilities = [
+            x[:-3] for x in sorted(os.listdir("utilities")) if x.endswith(".py")
+        ]
         for module in utilities:
             try:
                 module_name = importlib.import_module(f"utilities.{module}")
@@ -223,14 +245,18 @@ class Manager(commands.Cog):
                 )
 
         if error_collection:
-            output = "\n".join([f"**{g[0]}** ```diff\n- {g[1]}```" for g in error_collection])
+            output = "\n".join(
+                [f"**{g[0]}** ```diff\n- {g[1]}```" for g in error_collection]
+            )
             return await ctx.send(
                 f"Attempted to reload all utilties, was able to reload, "
                 f"however the following failed...\n\n{output}"
             )
 
-        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.bot.emote_dict['success']} Successfully reloaded all utilities.")
-
+        await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"{self.bot.emote_dict['success']} Successfully reloaded all utilities.",
+        )
 
     @commands.command(hidden=True, aliases=["restart"], brief="Reboot the bot.")
     async def reboot(self, ctx):
@@ -239,23 +265,31 @@ class Manager(commands.Cog):
         Alias:       -restart
         Permissions: Bot Owner
         """
-        msg = await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.bot.emote_dict['loading']} {ctx.invoked_with.capitalize()}ing...")
-        utils.modify_config(key="reboot", value={
-            "invoker": ctx.invoked_with.capitalize(),
-            "message": msg.id,
-            "channel": msg.channel.id
-        })
+        msg = await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"{self.bot.emote_dict['loading']} {ctx.invoked_with.capitalize()}ing...",
+        )
+        utils.modify_config(
+            key="reboot",
+            value={
+                "invoker": ctx.invoked_with.capitalize(),
+                "message": msg.id,
+                "channel": msg.channel.id,
+            },
+        )
         self.bot.loop.stop()
         self.bot.loop.close()
         await self.bot.close()
         # Kill the process
         sys.exit(0)
 
-      ####################
-     ## Shell Commands ##
+    ####################
+    ## Shell Commands ##
     ####################
 
-    @commands.group(hidden=True, brief="View log files.", aliases=['l'], case_insensitive=True)
+    @commands.group(
+        hidden=True, brief="View log files.", aliases=["l"], case_insensitive=True
+    )
     async def logger(self, ctx):
         """
         Usage: -logger <option>
@@ -271,7 +305,7 @@ class Manager(commands.Cog):
         if ctx.invoked_subcommand is None:
             await ctx.send_help(str(ctx.command))
 
-    @logger.command(name="commands", aliases=['cmds'])
+    @logger.command(name="commands", aliases=["cmds"])
     async def _get_cmds(self, ctx):
         sh = self.bot.get_command("sh")
         await ctx.invoke(sh, prefix="prolog", command="cat ./data/logs/commands.log")
@@ -304,32 +338,37 @@ class Manager(commands.Cog):
         if ctx.invoked_subcommand is None:
             await ctx.send_help(str(ctx.command))
 
-    @pm2.command(aliases=['out', 'output'])
+    @pm2.command(aliases=["out", "output"])
     async def stdout(self, ctx):
         sh = self.bot.get_command("sh")
-        pm2dir = os.listdir('./data/pm2/')
+        pm2dir = os.listdir("./data/pm2/")
         for filename in pm2dir:
             print(filename)
-            if filename.startswith('out'):
+            if filename.startswith("out"):
                 await ctx.invoke(sh, prefix="yml", command=f"cat ./data/pm2/{filename}")
 
-    @pm2.command(aliases=['err', 'error', 'errors'])
+    @pm2.command(aliases=["err", "error", "errors"])
     async def stderr(self, ctx):
         sh = self.bot.get_command("sh")
-        pm2dir = os.listdir('./data/pm2/')
+        pm2dir = os.listdir("./data/pm2/")
         for filename in pm2dir:
-            if filename.startswith('err'):
+            if filename.startswith("err"):
                 await ctx.invoke(sh, prefix="yml", command=f"cat ./data/pm2/{filename}")
 
-    @pm2.command(aliases=['process', 'processid'])
+    @pm2.command(aliases=["process", "processid"])
     async def pid(self, ctx):
         sh = self.bot.get_command("sh")
-        pm2dir = os.listdir('./data/pm2/')
+        pm2dir = os.listdir("./data/pm2/")
         for filename in pm2dir:
-            if filename.startswith('pid'):
+            if filename.startswith("pid"):
                 await ctx.invoke(sh, prefix="yml", command=f"cat ./data/pm2/{filename}")
 
-    @commands.group(hidden=True, brief="View ./data/json files.", aliases=['j'], case_insensitive=True)
+    @commands.group(
+        hidden=True,
+        brief="View ./data/json files.",
+        aliases=["j"],
+        case_insensitive=True,
+    )
     async def json(self, ctx):
         """
         Usage: -json <option>
@@ -344,50 +383,52 @@ class Manager(commands.Cog):
         if ctx.invoked_subcommand is None:
             await ctx.send_help(str(ctx.command))
 
-    @json.command(name="commands", aliases=['commandstats', "command"])
+    @json.command(name="commands", aliases=["commandstats", "command"])
     async def _commands(self, ctx):
         sh = self.bot.get_command("sh")
         await ctx.invoke(sh, prefix="json", command="cat ./data/json/commands.json")
 
-    @json.command(name="socket", aliases=['sockets', 'socketstats'])
+    @json.command(name="socket", aliases=["sockets", "socketstats"])
     async def _sockets(self, ctx):
         sh = self.bot.get_command("sh")
         await ctx.invoke(sh, prefix="json", command="cat ./data/json/sockets.json")
 
-    @json.command(name="stats", aliases=['statistics'])
+    @json.command(name="stats", aliases=["statistics"])
     async def _stats(self, ctx):
         sh = self.bot.get_command("sh")
         await ctx.invoke(sh, prefix="json", command="cat ./data/json/stats.json")
 
-    @json.command(name="settings", aliases=['config'])
+    @json.command(name="settings", aliases=["config"])
     async def _settings(self, ctx):
         sh = self.bot.get_command("sh")
         await ctx.invoke(sh, prefix="json", command="cat ./data/json/settings.log")
-
 
     @commands.command(hidden=True, brief="Update the database.", aliases=["update_db"])
     async def update(self, ctx):
         """
         Usage: -update
         Permission: Bot owner
-        Output: 
+        Output:
             Performs the mass database insertion
             that normally occurs on bot startup
         """
         from settings.database import initialize
+
         members = self.bot.get_all_members()
         await initialize(self.bot.guilds, members)
-        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.bot.emote_dict['success']} Updated Database")        
-
+        await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"{self.bot.emote_dict['success']} Updated Database",
+        )
 
     def cleanup_code(self, content):
         """Automatically removes code blocks from the code."""
         # remove ```py\n```
-        if content.startswith('```') and content.endswith('```'):
-            return '\n'.join(content.split('\n')[1:-1])
+        if content.startswith("```") and content.endswith("```"):
+            return "\n".join(content.split("\n")[1:-1])
 
         # remove `foo`
-        return content.strip('` \n')
+        return content.strip("` \n")
 
     # Thank you R. Danny
     @commands.command(hidden=True, brief="Run sql and get results in rst fmt.")
@@ -397,11 +438,14 @@ class Manager(commands.Cog):
         """
 
         if query is None:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}sql <query>`")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}sql <query>`",
+            )
 
         query = self.cleanup_code(query)
 
-        is_multistatement = query.count(';') > 1
+        is_multistatement = query.count(";") > 1
         if is_multistatement:
             # fetch does not support multiple statements
             strategy = self.bot.cxn.execute
@@ -413,11 +457,16 @@ class Manager(commands.Cog):
             results = await strategy(query)
             dt = (time.perf_counter() - start) * 1000.0
         except Exception:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f'```py\n{traceback.format_exc()}\n```')
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"```py\n{traceback.format_exc()}\n```",
+            )
 
         rows = len(results)
         if is_multistatement or rows == 0:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f'`{dt:.2f}ms: {results}`')
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx), content=f"`{dt:.2f}ms: {results}`"
+            )
 
         headers = list(results[0].keys())
         table = formatting.TabularData()
@@ -425,19 +474,22 @@ class Manager(commands.Cog):
         table.add_rows(list(r.values()) for r in results)
         render = table.render()
 
-        fmt = f'```\n{render}\n```\n*Returned {formatting.plural(rows):row} in {dt:.2f}ms*'
+        fmt = f"```\n{render}\n```\n*Returned {formatting.plural(rows):row} in {dt:.2f}ms*"
         if len(fmt) > 2000:
-            fp = io.BytesIO(fmt.encode('utf-8'))
-            await ctx.send(reference=self.bot.rep_ref(ctx), file=discord.File(fp, 'results.txt'))
+            fp = io.BytesIO(fmt.encode("utf-8"))
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx), file=discord.File(fp, "results.txt")
+            )
         else:
             await ctx.send(reference=self.bot.rep_ref(ctx), content=fmt)
 
-
-    @commands.command(hidden=True, brief="Show info on a sql table.", aliases=['tables','database'])
+    @commands.command(
+        hidden=True, brief="Show info on a sql table.", aliases=["tables", "database"]
+    )
     async def table(self, ctx, *, table_name: str = None):
         """Runs a query describing the table schema."""
 
-        if ctx.invoked_with in ["tables","database"]:
+        if ctx.invoked_with in ["tables", "database"]:
             query = """SELECT table_schema, table_name FROM INFORMATION_SCHEMA.TABLES
                        WHERE table_schema = 'public'
                        ORDER BY table_schema, table_name;
@@ -452,21 +504,27 @@ class Manager(commands.Cog):
         try:
             headers = list(results[0].keys())
         except IndexError:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Usage: `{ctx.prefix}table <table name>`")
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"Usage: `{ctx.prefix}table <table name>`",
+            )
         table = formatting.TabularData()
         table.set_columns(headers)
         table.add_rows(list(r.values()) for r in results)
         render = table.render()
 
-        fmt = f'```\n{render}\n```'
+        fmt = f"```\n{render}\n```"
         if len(fmt) > 2000:
-            fp = io.BytesIO(fmt.encode('utf-8'))
-            await ctx.send(reference=self.bot.rep_ref(ctx), content='Too many results...', file=discord.File(fp, 'results.txt'))
+            fp = io.BytesIO(fmt.encode("utf-8"))
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="Too many results...",
+                file=discord.File(fp, "results.txt"),
+            )
         else:
             await ctx.send(reference=self.bot.rep_ref(ctx), content=fmt)
 
-
-    @commands.group(hidden=True, brief="Show info on the database.", aliases=['pg'])
+    @commands.group(hidden=True, brief="Show info on the database.", aliases=["pg"])
     async def postgres(self, ctx):
         """
         Usage: -postgres <option>
@@ -482,22 +540,30 @@ class Manager(commands.Cog):
         if ctx.invoked_subcommand is None:
             return await ctx.send_help(str(ctx.command))
 
-    @postgres.command(brief='Get the size of the total db or a table.')
+    @postgres.command(brief="Get the size of the total db or a table.")
     async def size(self, ctx, *, table_name: str = None):
         """Runs a query describing the table schema."""
 
         if table_name is None:
-            query = '''SELECT pg_size_pretty(pg_database_size($1));'''
+            query = """SELECT pg_size_pretty(pg_database_size($1));"""
             try:
-                results = await self.bot.cxn.fetch(query, self.bot.constants.postgres.split('/')[-1])
+                results = await self.bot.cxn.fetch(
+                    query, self.bot.constants.postgres.split("/")[-1]
+                )
             except asyncpg.UndefinedTableError:
-                return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.bot.emote_dict['failed']} Table `{table_name}` does not exist.")
+                return await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content=f"{self.bot.emote_dict['failed']} Table `{table_name}` does not exist.",
+                )
         else:
-            query = '''SELECT pg_size_pretty( pg_total_relation_size($1));'''
+            query = """SELECT pg_size_pretty( pg_total_relation_size($1));"""
             try:
                 results = await self.bot.cxn.fetch(query, table_name)
             except asyncpg.UndefinedTableError:
-                return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.bot.emote_dict['failed']} Table `{table_name}` does not exist.")
+                return await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content=f"{self.bot.emote_dict['failed']} Table `{table_name}` does not exist.",
+                )
 
         headers = list(results[0].keys())
         table = formatting.TabularData()
@@ -505,19 +571,22 @@ class Manager(commands.Cog):
         table.add_rows(list(r.values()) for r in results)
         render = table.render()
 
-        fmt = f'```\n{render}\n```'
+        fmt = f"```\n{render}\n```"
         if len(fmt) > 2000:
-            fp = io.BytesIO(fmt.encode('utf-8'))
-            await ctx.send(reference=self.bot.rep_ref(ctx), content='Too many results...', file=discord.File(fp, 'results.txt'))
+            fp = io.BytesIO(fmt.encode("utf-8"))
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="Too many results...",
+                file=discord.File(fp, "results.txt"),
+            )
         else:
             await ctx.send(reference=self.bot.rep_ref(ctx), content=fmt)
 
-
-    @postgres.command(aliases=['largest'], brief='Get the largest tables.')
+    @postgres.command(aliases=["largest"], brief="Get the largest tables.")
     async def lb(self, ctx):
         """Runs a query describing the table schema."""
 
-        query = ''' WITH RECURSIVE pg_inherit(inhrelid, inhparent) AS
+        query = """ WITH RECURSIVE pg_inherit(inhrelid, inhparent) AS
                     (select inhrelid, inhparent
                     FROM pg_inherits
                     UNION
@@ -559,7 +628,7 @@ class Manager(commands.Cog):
                             WHERE oid = parent
                             ) a
                             WHERE table_schema = 'public'
-                            ORDER BY total_bytes DESC;'''
+                            ORDER BY total_bytes DESC;"""
         results = await self.bot.cxn.fetch(query)
 
         headers = list(results[0].keys())
@@ -568,19 +637,22 @@ class Manager(commands.Cog):
         table.add_rows(list(r.values()) for r in results)
         render = table.render()
 
-        fmt = f'```\n{render}\n```'
+        fmt = f"```\n{render}\n```"
         if len(fmt) > 2000:
-            fp = io.BytesIO(fmt.encode('utf-8'))
-            await ctx.send(reference=self.bot.rep_ref(ctx), content='Too many results...', file=discord.File(fp, 'results.txt'))
+            fp = io.BytesIO(fmt.encode("utf-8"))
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="Too many results...",
+                file=discord.File(fp, "results.txt"),
+            )
         else:
             await ctx.send(reference=self.bot.rep_ref(ctx), content=fmt)
 
-
-    @postgres.command(aliases=['t'], brief='Show some info on postgres datatypes.')
+    @postgres.command(aliases=["t"], brief="Show some info on postgres datatypes.")
     async def types(self, ctx):
         """Runs a query describing the table schema."""
 
-        query = '''SELECT typname, typlen from pg_type where typtype='b';'''
+        query = """SELECT typname, typlen from pg_type where typtype='b';"""
         results = await self.bot.cxn.fetch(query)
 
         headers = list(results[0].keys())
@@ -589,15 +661,18 @@ class Manager(commands.Cog):
         table.add_rows(list(r.values()) for r in results)
         render = table.render()
 
-        fmt = f'```\n{render}\n```'
+        fmt = f"```\n{render}\n```"
         if len(fmt) > 2000:
-            fp = io.BytesIO(fmt.encode('utf-8'))
-            await ctx.send(reference=self.bot.rep_ref(ctx), content='Too many results...', file=discord.File(fp, 'results.txt'))
+            fp = io.BytesIO(fmt.encode("utf-8"))
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="Too many results...",
+                file=discord.File(fp, "results.txt"),
+            )
         else:
             await ctx.send(reference=self.bot.rep_ref(ctx), content=fmt)
 
-
-    @postgres.command(aliases=['info'], brief='Show some info on postgres table sizes.')
+    @postgres.command(aliases=["info"], brief="Show some info on postgres table sizes.")
     async def i(self, ctx):
         """Runs a query describing the table schema."""
         query = """ 
@@ -627,15 +702,20 @@ class Manager(commands.Cog):
         table.add_rows(list(r.values()) for r in results)
         render = table.render()
 
-        fmt = f'```\n{render}\n```'
+        fmt = f"```\n{render}\n```"
         if len(fmt) > 2000:
-            fp = io.BytesIO(fmt.encode('utf-8'))
-            await ctx.send(reference=self.bot.rep_ref(ctx), content='Too many results...', file=discord.File(fp, 'results.txt'))
+            fp = io.BytesIO(fmt.encode("utf-8"))
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="Too many results...",
+                file=discord.File(fp, "results.txt"),
+            )
         else:
             await ctx.send(reference=self.bot.rep_ref(ctx), content=fmt)
 
-
-    @postgres.command(aliases=['relation', 'relations'], brief='Show some info on postgres relations.')
+    @postgres.command(
+        aliases=["relation", "relations"], brief="Show some info on postgres relations."
+    )
     async def r(self, ctx):
         """Runs a query describing the table schema."""
         query = """ 
@@ -654,26 +734,35 @@ class Manager(commands.Cog):
         table.add_rows(list(r.values()) for r in results)
         render = table.render()
 
-        fmt = f'```\n{render}\n```'
+        fmt = f"```\n{render}\n```"
         if len(fmt) > 2000:
-            fp = io.BytesIO(fmt.encode('utf-8'))
-            await ctx.send(reference=self.bot.rep_ref(ctx), content='Too many results...', file=discord.File(fp, 'results.txt'))
+            fp = io.BytesIO(fmt.encode("utf-8"))
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="Too many results...",
+                file=discord.File(fp, "results.txt"),
+            )
         else:
             await ctx.send(reference=self.bot.rep_ref(ctx), content=fmt)
 
-
     async def run_process(self, command):
         try:
-            process = await asyncio.create_subprocess_shell(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            process = await asyncio.create_subprocess_shell(
+                command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
             result = await process.communicate()
         except NotImplementedError:
-            process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            process = subprocess.Popen(
+                command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
             result = await self.bot.loop.run_in_executor(None, process.communicate)
 
         return [output.decode() for output in result]
 
     # https://github.com/Rapptz/RoboDanny
-    @commands.command(hidden=True, aliases=['shell', 'bash'], brief="Run a shell command.")
+    @commands.command(
+        hidden=True, aliases=["shell", "bash"], brief="Run a shell command."
+    )
     async def sh(self, ctx, prefix=None, *, command):
         """Runs a shell command."""
 
@@ -681,18 +770,19 @@ class Manager(commands.Cog):
             stdout, stderr = await self.run_process(command)
 
         if stderr:
-            text = f'stdout:\n{stdout}\nstderr:\n{stderr}'
+            text = f"stdout:\n{stdout}\nstderr:\n{stderr}"
         else:
             text = stdout
 
-        pages = pagination.MainMenu(pagination.TextPageSource(text, prefix="```"+prefix))
+        pages = pagination.MainMenu(
+            pagination.TextPageSource(text, prefix="```" + prefix)
+        )
         try:
             await pages.start(ctx)
         except menus.MenuError as e:
             await ctx.send(str(e))
 
-
-    @commands.command(hidden=True, aliases=['repeat'], brief="Repeat a command.")
+    @commands.command(hidden=True, aliases=["repeat"], brief="Repeat a command.")
     async def do(self, ctx, times: int, *, command):
         """Repeats a command a specified number of times."""
         msg = copy.copy(ctx.message)
@@ -705,14 +795,17 @@ class Manager(commands.Cog):
             try:
                 await new_ctx.reinvoke()
             except ValueError:
-                return await ctx.send(reference=self.bot.rep_ref(ctx), content=f"Invalid Context")
-
+                return await ctx.send(
+                    reference=self.bot.rep_ref(ctx), content=f"Invalid Context"
+                )
 
     async def tabulate_query(self, ctx, query, *args):
         records = await self.bot.cxn.fetch(query, *args)
 
         if len(records) == 0:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content='No results found.')
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx), content="No results found."
+            )
 
         headers = list(records[0].keys())
         table = formatting.TabularData()
@@ -720,14 +813,20 @@ class Manager(commands.Cog):
         table.add_rows(list(r.values()) for r in records)
         render = table.render()
 
-        fmt = f'```\n{render}\n```'
+        fmt = f"```\n{render}\n```"
         if len(fmt) > 2000:
-            fp = io.BytesIO(fmt.encode('utf-8'))
-            await ctx.send(reference=self.bot.rep_ref(ctx), content='Too many results...', file=discord.File(fp, 'results.txt'))
+            fp = io.BytesIO(fmt.encode("utf-8"))
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content="Too many results...",
+                file=discord.File(fp, "results.txt"),
+            )
         else:
             await ctx.send(reference=self.bot.rep_ref(ctx), content=fmt)
 
-    @commands.group(hidden=True, invoke_without_command=True, brief="Show command history.")
+    @commands.group(
+        hidden=True, invoke_without_command=True, brief="Show command history."
+    )
     @commands.is_owner()
     async def command_history(self, ctx):
         """Command history."""
@@ -745,9 +844,11 @@ class Manager(commands.Cog):
                 """
         await self.tabulate_query(ctx, query)
 
-    @command_history.command(name='for')
+    @command_history.command(name="for")
     @commands.is_owner()
-    async def command_history_for(self, ctx, days: typing.Optional[int] = 7, *, command: str):
+    async def command_history_for(
+        self, ctx, days: typing.Optional[int] = 7, *, command: str
+    ):
         """Command history for a command."""
 
         query = """SELECT *, t.success + t.failed AS "total"
@@ -766,7 +867,7 @@ class Manager(commands.Cog):
 
         await self.tabulate_query(ctx, query, command, datetime.timedelta(days=days))
 
-    @command_history.command(name='guild', aliases=['server'])
+    @command_history.command(name="guild", aliases=["server"])
     @commands.is_owner()
     async def command_history_guild(self, ctx, server_id: int):
         """Command history for a guild."""
@@ -786,7 +887,7 @@ class Manager(commands.Cog):
                 """
         await self.tabulate_query(ctx, query, server_id)
 
-    @command_history.command(name='user', aliases=['member'])
+    @command_history.command(name="user", aliases=["member"])
     @commands.is_owner()
     async def command_history_user(self, ctx, user_id: int):
         """Command history for a user."""
@@ -805,7 +906,7 @@ class Manager(commands.Cog):
                 """
         await self.tabulate_query(ctx, query, user_id)
 
-    @command_history.command(name='log')
+    @command_history.command(name="log")
     @commands.is_owner()
     async def command_history_log(self, ctx, days=7):
         """Command history log for the last N days."""
@@ -817,10 +918,7 @@ class Manager(commands.Cog):
                    ORDER BY 2 DESC
                 """
 
-        all_commands = {
-            c.qualified_name: 0
-            for c in self.bot.walk_commands()
-        }
+        all_commands = {c.qualified_name: 0 for c in self.bot.walk_commands()}
 
         records = await self.bot.cxn.fetch(query, datetime.timedelta(days=days))
         for name, uses in records:
@@ -829,37 +927,46 @@ class Manager(commands.Cog):
 
         as_data = sorted(all_commands.items(), key=lambda t: t[1], reverse=True)
         table = formatting.TabularData()
-        table.set_columns(['Command', 'Uses'])
+        table.set_columns(["Command", "Uses"])
         table.add_rows(tup for tup in as_data)
         render = table.render()
 
-        embed = discord.Embed(title='Summary', color=self.bot.constants.embed)
-        embed.set_footer(text='Since').timestamp = datetime.datetime.utcnow() - datetime.timedelta(days=days)
+        embed = discord.Embed(title="Summary", color=self.bot.constants.embed)
+        embed.set_footer(
+            text="Since"
+        ).timestamp = datetime.datetime.utcnow() - datetime.timedelta(days=days)
 
-        top_ten = '\n'.join(f'{command}: {uses}' for command, uses in records[:10])
-        bottom_ten = '\n'.join(f'{command}: {uses}' for command, uses in records[-10:])
-        embed.add_field(name='Top 10', value=top_ten)
-        embed.add_field(name='Bottom 10', value=bottom_ten)
+        top_ten = "\n".join(f"{command}: {uses}" for command, uses in records[:10])
+        bottom_ten = "\n".join(f"{command}: {uses}" for command, uses in records[-10:])
+        embed.add_field(name="Top 10", value=top_ten)
+        embed.add_field(name="Bottom 10", value=bottom_ten)
 
-        unused = ', '.join(name for name, uses in as_data if uses == 0)
+        unused = ", ".join(name for name, uses in as_data if uses == 0)
         if len(unused) > 1024:
-            unused = 'Way too many...'
+            unused = "Way too many..."
 
-        embed.add_field(name='Unused', value=unused, inline=False)
+        embed.add_field(name="Unused", value=unused, inline=False)
 
-        await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed, file=discord.File(io.BytesIO(render.encode()), filename='full_results.txt'))
+        await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            embed=embed,
+            file=discord.File(io.BytesIO(render.encode()), filename="full_results.txt"),
+        )
 
-
-    @command_history.command(name='cog')
+    @command_history.command(name="cog")
     @commands.is_owner()
-    async def command_history_cog(self, ctx, days: typing.Optional[int] = 7, *, cog: str = None):
+    async def command_history_cog(
+        self, ctx, days: typing.Optional[int] = 7, *, cog: str = None
+    ):
         """Command history for a cog or grouped by a cog."""
 
         interval = datetime.timedelta(days=days)
         if cog is not None:
             cog = self.bot.get_cog(cog)
             if cog is None:
-                return await ctx.send(reference=self.bot.rep_ref(ctx), content=f'Unknown cog: {cog}')
+                return await ctx.send(
+                    reference=self.bot.rep_ref(ctx), content=f"Unknown cog: {cog}"
+                )
 
             query = """SELECT *, t.success + t.failed AS "total"
                        FROM (
@@ -874,7 +981,9 @@ class Manager(commands.Cog):
                        ORDER BY "total" DESC
                        LIMIT 30;
                     """
-            return await self.tabulate_query(ctx, query, [c.qualified_name for c in cog.walk_commands()], interval)
+            return await self.tabulate_query(
+                ctx, query, [c.qualified_name for c in cog.walk_commands()], interval
+            )
 
         # A more manual query with a manual grouper.
         query = """SELECT *, t.success + t.failed AS "total"
@@ -889,37 +998,38 @@ class Manager(commands.Cog):
                 """
 
         class Count:
-            __slots__ = ('success', 'failed', 'total')
+            __slots__ = ("success", "failed", "total")
+
             def __init__(self):
                 self.success = 0
                 self.failed = 0
                 self.total = 0
 
             def add(self, record):
-                self.success += record['success']
-                self.failed += record['failed']
-                self.total += record['total']
+                self.success += record["success"]
+                self.failed += record["failed"]
+                self.total += record["total"]
 
         data = defaultdict(Count)
         records = await self.bot.cxn.fetch(query, interval)
         for record in records:
-            command = self.bot.get_command(record['command'])
+            command = self.bot.get_command(record["command"])
             if command is None or command.cog is None:
-                data['No Cog'].add(record)
+                data["No Cog"].add(record)
             else:
                 data[command.cog.qualified_name].add(record)
 
         table = formatting.TabularData()
-        table.set_columns(['Cog', 'Success', 'Failed', 'Total'])
-        data = sorted([
-            (cog, e.success, e.failed, e.total)
-            for cog, e in data.items()
-        ], key=lambda t: t[-1], reverse=True)
+        table.set_columns(["Cog", "Success", "Failed", "Total"])
+        data = sorted(
+            [(cog, e.success, e.failed, e.total) for cog, e in data.items()],
+            key=lambda t: t[-1],
+            reverse=True,
+        )
 
         table.add_rows(data)
         render = table.render()
-        await ctx.safe_send(f'```\n{render}\n```')
-
+        await ctx.safe_send(f"```\n{render}\n```")
 
     @commands.command(hidden=True, brief="Bot health monitoring tools.")
     @commands.is_owner()
@@ -934,7 +1044,7 @@ class Manager(commands.Cog):
         WARNING = discord.Colour(value=0xF09E47)
         total_warnings = 0
 
-        embed = discord.Embed(title='Bot Health Report', colour=HEALTHY)
+        embed = discord.Embed(title="Bot Health Report", colour=HEALTHY)
 
         # Check the connection pool health.
         pool = self.bot.cxn
@@ -942,9 +1052,9 @@ class Manager(commands.Cog):
         current_generation = pool._generation
 
         description = [
-            f'Total `Pool.acquire` Waiters: {total_waiting}',
-            f'Current Pool Generation: {current_generation}',
-            f'Connections In Use: {len(pool._holders) - pool._queue.qsize()}'
+            f"Total `Pool.acquire` Waiters: {total_waiting}",
+            f"Current Pool Generation: {current_generation}",
+            f"Connections In Use: {len(pool._holders) - pool._queue.qsize()}",
         ]
 
         questionable_connections = 0
@@ -953,55 +1063,68 @@ class Manager(commands.Cog):
             generation = holder._generation
             in_use = holder._in_use is not None
             is_closed = holder._con is None or holder._con.is_closed()
-            display = f'gen={holder._generation} in_use={in_use} closed={is_closed}'
+            display = f"gen={holder._generation} in_use={in_use} closed={is_closed}"
             questionable_connections += any((in_use, generation != current_generation))
-            connection_value.append(f'<Holder i={index} {display}>')
+            connection_value.append(f"<Holder i={index} {display}>")
 
-        joined_value = '\n'.join(connection_value)
-        embed.add_field(name='Connections', value=f'```py\n{joined_value}\n```', inline=False)
+        joined_value = "\n".join(connection_value)
+        embed.add_field(
+            name="Connections", value=f"```py\n{joined_value}\n```", inline=False
+        )
 
-        description.append(f'Questionable Connections: {questionable_connections}')
+        description.append(f"Questionable Connections: {questionable_connections}")
 
         total_warnings += questionable_connections
-
 
         task_retriever = asyncio.all_tasks
 
         all_tasks = task_retriever(loop=self.bot.loop)
 
         event_tasks = [
-            t for t in all_tasks
-            if 'Client._run_event' in repr(t) and not t.done()
+            t for t in all_tasks if "Client._run_event" in repr(t) and not t.done()
         ]
 
         cogs_directory = os.path.dirname(__file__)
-        tasks_directory = os.path.join('discord', 'ext', 'tasks', '__init__.py')
+        tasks_directory = os.path.join("discord", "ext", "tasks", "__init__.py")
         inner_tasks = [
-            t for t in all_tasks
+            t
+            for t in all_tasks
             if cogs_directory in repr(t) or tasks_directory in repr(t)
         ]
 
-        bad_inner_tasks = ", ".join(hex(id(t)) for t in inner_tasks if t.done() and t._exception is not None)
+        bad_inner_tasks = ", ".join(
+            hex(id(t)) for t in inner_tasks if t.done() and t._exception is not None
+        )
         total_warnings += bool(bad_inner_tasks)
-        embed.add_field(name='Inner Tasks', value=f'Total: {len(inner_tasks)}\nFailed: {bad_inner_tasks or "None"}')
-        embed.add_field(name='Events Waiting', value=f'Total: {len(event_tasks)}', inline=False)
+        embed.add_field(
+            name="Inner Tasks",
+            value=f'Total: {len(inner_tasks)}\nFailed: {bad_inner_tasks or "None"}',
+        )
+        embed.add_field(
+            name="Events Waiting", value=f"Total: {len(event_tasks)}", inline=False
+        )
 
-        memory_usage = self.process.memory_full_info().uss / 1024**2
+        memory_usage = self.process.memory_full_info().uss / 1024 ** 2
         cpu_usage = self.process.cpu_percent() / psutil.cpu_count()
-        embed.add_field(name='Process', value=f'{memory_usage:.2f} MiB\n{cpu_usage:.2f}% CPU', inline=False)
+        embed.add_field(
+            name="Process",
+            value=f"{memory_usage:.2f} MiB\n{cpu_usage:.2f}% CPU",
+            inline=False,
+        )
 
         global_rate_limit = not self.bot.http._global_over.is_set()
-        description.append(f'Global Rate Limit: {global_rate_limit}')
+        description.append(f"Global Rate Limit: {global_rate_limit}")
 
         if global_rate_limit or total_warnings >= 9:
             embed.colour = UNHEALTHY
 
-        embed.set_footer(text=f'{total_warnings} warning(s)')
-        embed.description = '\n'.join(description)
+        embed.set_footer(text=f"{total_warnings} warning(s)")
+        embed.description = "\n".join(description)
         await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)
 
-
-    @commands.command(hidden=True, aliases=['perf','elapsed'], brief="Time a command response.")
+    @commands.command(
+        hidden=True, aliases=["perf", "elapsed"], brief="Time a command response."
+    )
     async def elapse(self, ctx, *, command):
         """Checks the timing of a command, attempting to suppress HTTP and DB calls."""
 
@@ -1016,7 +1139,9 @@ class Manager(commands.Cog):
         new_ctx.channel = PerformanceMocker()
 
         if new_ctx.command is None:
-            return await ctx.send(reference=self.bot.rep_ref(ctx), content='No command found')
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx), content="No command found"
+            )
 
         start = time.perf_counter()
         try:
@@ -1025,48 +1150,69 @@ class Manager(commands.Cog):
             end = time.perf_counter()
             success = False
             try:
-                await ctx.send(reference=self.bot.rep_ref(ctx), content=f'```py\n{traceback.format_exc()}\n```')
+                await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content=f"```py\n{traceback.format_exc()}\n```",
+                )
             except discord.HTTPException:
                 pass
         else:
             end = time.perf_counter()
             success = True
-        
+
         if success is True:
-            emote = self.bot.emote_dict['success']
+            emote = self.bot.emote_dict["success"]
         else:
-            emote = self.bot.emote_dict['failed']
+            emote = self.bot.emote_dict["failed"]
 
-        await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{emote} `{(end - start) * 1000:.2f}ms`")
+        await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"{emote} `{(end - start) * 1000:.2f}ms`",
+        )
 
-
-    @commands.command(aliases=['github'], brief="Update to and from github repo.")
+    @commands.command(aliases=["github"], brief="Update to and from github repo.")
     async def git(self, ctx, subcommand):
         """Updates from git."""
         if subcommand is None:
             return await ctx.send_help(str(ctx.command))
 
         url = self.bot.constants.github
-        
+
         # Let's find out if we *have* git first
-        if os.name == 'nt':
+        if os.name == "nt":
             # Check for git
             command = "where"
         else:
             command = "which"
         try:
-            p = subprocess.run(command + " git", shell=True, check=True, stderr=subprocess.DEVNULL, stdout=subprocess.PIPE)
+            p = subprocess.run(
+                command + " git",
+                shell=True,
+                check=True,
+                stderr=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+            )
             git_location = p.stdout.decode("utf-8").split("\n")[0].split("\r")[0]
         except:
             git_location = None
-            
+
         if not git_location:
-            await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.bot.emote_dict['error']} Git not found.")
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['error']} Git not found.",
+            )
             return
         # Try to update
-        message = await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.bot.emote_dict['loading']} **Updating...**")
+        message = await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"{self.bot.emote_dict['loading']} **Updating...**",
+        )
         try:
-            u = subprocess.Popen([git_location, subcommand, url], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            u = subprocess.Popen(
+                [git_location, subcommand, url],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
             out, err = u.communicate()
             msg = "```\n"
             if len(out.decode("utf-8")):
@@ -1075,13 +1221,24 @@ class Manager(commands.Cog):
                 msg += err.decode("utf-8").replace("`", "\`") + "\n"
             msg += "```"
             await ctx.send(msg)
-            await message.edit(content=f"{self.bot.emote_dict['success']} **Completed.**")
+            await message.edit(
+                content=f"{self.bot.emote_dict['success']} **Completed.**"
+            )
         except:
-            await message.edit(content=f"{self.bot.emote_dict['failed']} Git not installed.")
+            await message.edit(
+                content=f"{self.bot.emote_dict['failed']} Git not installed."
+            )
             return
 
     @commands.command(hidden=True, brief="Run a command as another user.")
-    async def sudo(self, ctx, channel: typing.Optional[converters.GlobalChannel], who: typing.Union[discord.Member, discord.User], *, command: str):
+    async def sudo(
+        self,
+        ctx,
+        channel: typing.Optional[converters.GlobalChannel],
+        who: typing.Union[discord.Member, discord.User],
+        *,
+        command: str,
+    ):
         """Run a command as another user optionally in another channel."""
         msg = copy.copy(ctx.message)
         channel = channel or ctx.channel
@@ -1117,7 +1274,7 @@ class PerformanceMocker:
         return self
 
     def __repr__(self):
-        return '<PerformanceMocker>'
+        return "<PerformanceMocker>"
 
     def __await__(self):
         future = self.loop.create_future()

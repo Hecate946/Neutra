@@ -1,20 +1,9 @@
-import subprocess
-import asyncio
+import os
+import aiohttp 
 import asyncpg
 import discord
-import random
-import os
-import csv
-import io
-import sys
-import copy
-import time
-import importlib
-import aiohttp
-import datetime
-import traceback
-import json
 
+from datetime import datetime
 from discord.ext import commands, menus
 
 from utilities import utils, permissions, pagination, converters
@@ -32,7 +21,7 @@ class Config(commands.Cog):
     # TODO rework this cog. this is out of date and still uses postgres instead of local cache.
     def __init__(self, bot):
         self.bot = bot
-        self.todo = './data/txts/todo.txt'
+        self.todo = "./data/txts/todo.txt"
 
     # this cog is botadmin only
     async def cog_check(self, ctx):
@@ -224,7 +213,12 @@ class Config(commands.Cog):
             content=f"{self.bot.emote_dict['success']} status now set as `{activity}`",
         )
 
-    @commands.group(case_insensitive=True, aliases=['to-do'], invoke_without_subcommand=True, brief="Show, add, or remove from the bot's todo list.")
+    @commands.group(
+        case_insensitive=True,
+        aliases=["to-do"],
+        invoke_without_subcommand=True,
+        brief="Show, add, or remove from the bot's todo list.",
+    )
     async def todo(self, ctx):
         """
         Usage: -todo <method>
@@ -239,13 +233,19 @@ class Config(commands.Cog):
                 with open(self.todo) as fp:
                     data = fp.readlines()
             except FileNotFoundError:
-                return await ctx.send(f"{self.bot.emote_dict['exclamation']} No current todos.")
+                return await ctx.send(
+                    f"{self.bot.emote_dict['exclamation']} No current todos."
+                )
             if data is None or data == "":
-                return await ctx.send(f"{self.bot.emote_dict['exclamation']} No current todos.")
+                return await ctx.send(
+                    f"{self.bot.emote_dict['exclamation']} No current todos."
+                )
             msg = ""
             for index, line in enumerate(data, start=1):
                 msg += f"{index}. {line}\n"
-            p = pagination.MainMenu(pagination.TextPageSource(msg, prefix="```prolog\n"))
+            p = pagination.MainMenu(
+                pagination.TextPageSource(msg, prefix="```prolog\n")
+            )
             try:
                 await p.start(ctx)
             except menus.MenuError as e:
@@ -257,7 +257,9 @@ class Config(commands.Cog):
             return await ctx.send(f"Usage: `{ctx.prefix}todo add <todo>`")
         with open(self.todo, "a", encoding="utf-8") as fp:
             fp.write(todo + "\n")
-        await ctx.send(f"{self.bot.emote_dict['success']} Successfully added `{todo}` to the todo list.")
+        await ctx.send(
+            f"{self.bot.emote_dict['success']} Successfully added `{todo}` to the todo list."
+        )
 
     @todo.command()
     async def remove(self, ctx, *, index_or_todo: str = None):
@@ -272,27 +274,40 @@ class Config(commands.Cog):
                 lines.remove(line)
                 found = True
                 break
-            elif line.lower().strip('\n') == index_or_todo.lower():
+            elif line.lower().strip("\n") == index_or_todo.lower():
                 lines.remove(line)
                 found = True
                 break
         if found is True:
             with open(self.todo, mode="w", encoding="utf-8") as fp:
                 print(lines)
-                fp.write(''.join(lines))
-            await ctx.send(f"{self.bot.emote_dict['success']} Successfully removed todo `{index_or_todo}` from the todo list.")
+                fp.write("".join(lines))
+            await ctx.send(
+                f"{self.bot.emote_dict['success']} Successfully removed todo `{index_or_todo}` from the todo list."
+            )
         else:
-            await ctx.send(f"{self.bot.emote_dict['failed']} Could not find todo `{index_or_todo}` in the todo list.")
-    
+            await ctx.send(
+                f"{self.bot.emote_dict['failed']} Could not find todo `{index_or_todo}` in the todo list."
+            )
+
     @todo.command()
     async def clear(self, ctx):
         try:
             os.remove(self.todo)
         except FileNotFoundError:
-            return await ctx.send(f"{self.bot.emote_dict['success']} Successfully cleared the todo list.")
-        await ctx.send(f"{self.bot.emote_dict['success']} Successfully cleared the todo list.")
+            return await ctx.send(
+                f"{self.bot.emote_dict['success']} Successfully cleared the todo list."
+            )
+        await ctx.send(
+            f"{self.bot.emote_dict['success']} Successfully cleared the todo list."
+        )
 
-    @commands.group(case_insensitive=True, aliases=['set','add'], invoke_without_subcommand=True, brief="Write to the bot's overview or changelog.")
+    @commands.group(
+        case_insensitive=True,
+        aliases=["set", "add"],
+        invoke_without_subcommand=True,
+        brief="Write to the bot's overview or changelog.",
+    )
     async def write(self, ctx):
         """
         Usage: -write <method>
@@ -303,23 +318,25 @@ class Config(commands.Cog):
         """
         if ctx.invoked_subcommand is None:
             return await ctx.send_help(str(ctx.command))
-        
+
     @write.command()
-    async def overview(self, ctx, *, overview:str = None):
+    async def overview(self, ctx, *, overview: str = None):
         if overview is None:
-            return await ctx.invoke(self.bot.get_command('overview'))
+            return await ctx.invoke(self.bot.get_command("overview"))
         c = await pagination.Confirmation(
             f"**{self.bot.emote_dict['exclamation']} This action will overwrite my current overview. Do you wish to continue?**"
         ).prompt(ctx)
         if c:
             with open("./data/txts/overview.txt", "w", encoding="utf-8") as fp:
                 fp.write(overview)
-            await ctx.send(f"{self.bot.emote_dict['success']} **Successfully updated overview.**")
+            await ctx.send(
+                f"{self.bot.emote_dict['success']} **Successfully updated overview.**"
+            )
         else:
             await ctx.send(f"{self.bot.emote_dict['exclamation']} **Cancelled.**")
 
     @write.command()
-    async def changelog(self, ctx, *, entry:str = None):
+    async def changelog(self, ctx, *, entry: str = None):
         if entry is None:
             return await ctx.send(f"Usage: `{ctx.prefix}write changelog <entry>`")
         c = await pagination.Confirmation(
@@ -328,7 +345,9 @@ class Config(commands.Cog):
         if c:
             with open("./data/txts/changelog.txt", "a", encoding="utf-8") as fp:
                 fp.write(f"({datetime.utcnow()}+00:00) " + entry + "\n")
-            await ctx.send(f"{self.bot.emote_dict['success']} **Successfully posted to the changelog.**")
+            await ctx.send(
+                f"{self.bot.emote_dict['success']} **Successfully posted to the changelog.**"
+            )
         else:
             await ctx.send(f"{self.bot.emote_dict['exclamation']} **Cancelled.**")
 

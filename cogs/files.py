@@ -850,13 +850,19 @@ class Files(commands.Cog):
             for each registered category.
         """
         owner, cmds, cogs = self.bot.public_stats()
-        overview = open("./data/txts/overview.txt").read().format("Hypernova", len(cmds), len(cogs))
+        overview = (
+            open("./data/txts/overview.txt")
+            .read()
+            .format("Hypernova", len(cmds), len(cogs))
+        )
         premsg = ""
         premsg += f"# Hypernova Moderation & Stat Tracking Discord Bot\n"
         premsg += "![6010fc1cf1ae9c815f9b09168dbb65a7-1](https://user-images.githubusercontent.com/74381783/108671227-f6d3f580-7494-11eb-9a77-9478f5a39684.png)\n"
         premsg += f"### [Bot Invite Link]({self.bot.constants.oauth})\n"
         premsg += f"### [Support Server]({self.bot.constants.support})\n"
-        premsg += "### [DiscordBots.gg](https://discord.bots.gg/bots/810377376269205546)\n"
+        premsg += (
+            "### [DiscordBots.gg](https://discord.bots.gg/bots/810377376269205546)\n"
+        )
         premsg += "## Overview\n"
         premsg += overview
         premsg += "## Categories"

@@ -204,6 +204,7 @@ class Users(commands.Cog):
     # #    embed.add_field(name=f"Roles: [0]", value ="** **", inline=False)
     # # embed.add_field(name="Permissions:", value=", ".join(perm_list).replace("_", " ").replace("guild", "server").title().replace("Tts", "TTS"), inline=False)
     # await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)
+
     @commands.command(
         brief="Show information on a user.",
         aliases=["whois", "ui", "profile", "userinfo", "rawuser", "lookup"],

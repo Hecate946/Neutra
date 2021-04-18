@@ -277,8 +277,17 @@ class Hypernova(commands.AutoShardedBot):
     def public_stats(self):
 
         owner = discord.utils.get(self.get_all_members(), id=708584008065351681)
-        command_list = [x.name for x in self.commands if not x.hidden and x.cog.qualified_name.upper not in USELESS_COGS + COG_EXCEPTIONS]
-        category_list = [x.qualified_name.capitalize() for x in [self.get_cog(cog) for cog in self.cogs] if x.qualified_name.upper() not in USELESS_COGS + COG_EXCEPTIONS]
+        command_list = [
+            x.name
+            for x in self.commands
+            if not x.hidden
+            and x.cog.qualified_name.upper not in USELESS_COGS + COG_EXCEPTIONS
+        ]
+        category_list = [
+            x.qualified_name.capitalize()
+            for x in [self.get_cog(cog) for cog in self.cogs]
+            if x.qualified_name.upper() not in USELESS_COGS + COG_EXCEPTIONS
+        ]
         return (owner, command_list, category_list)
 
     async def process_commands(self, message):
@@ -359,21 +368,33 @@ class Hypernova(commands.AutoShardedBot):
     async def before_status_loop(self):
         st = time.time()
         while not self.is_ready():
-            with alive_bar(title="Initializing Cache", spinner="waves2") as bar:   # default setting
+            with alive_bar(
+                title="Initializing Cache", spinner="waves2"
+            ) as bar:  # default setting
                 for i in range(100):
                     await asyncio.sleep(0.05)
                     bar()
-        #print(color(fore="#FFFFFF", text=f"Elapsed time: {str(time.time() - st)[:10]} s"))
+        # print(color(fore="#FFFFFF", text=f"Elapsed time: {str(time.time() - st)[:10]} s"))
         SEPARATOR = "=" * 33
         print(color(fore="#46648F", text=SEPARATOR))
         st = time.time()
         await self.set_status()
-        print(color(fore="#46648F", text=f"Status initialized : {str(time.time() - st)[:10]} s"))
+        print(
+            color(
+                fore="#46648F",
+                text=f"Status initialized : {str(time.time() - st)[:10]} s",
+            )
+        )
         st = time.time()
         member_list = []
         for member in self.get_all_members():
             member_list.append(member)
-        print(color(fore="#46648F", text=f"Member   iteration : {str(time.time() - st)[:10]} s"))
+        print(
+            color(
+                fore="#46648F",
+                text=f"Member   iteration : {str(time.time() - st)[:10]} s",
+            )
+        )
         try:
             await database.initialize(self.guilds, member_list)
         except Exception as e:
@@ -381,6 +402,7 @@ class Hypernova(commands.AutoShardedBot):
 
         # Maybe delete this altogether, basically does some json storing.
         from settings import cache
+
         cache.Settings(self)
 
         self.bot_ready = True
@@ -388,7 +410,7 @@ class Hypernova(commands.AutoShardedBot):
         # Beautiful console logging on startup
         hostinfo = await utils.get_hostinfo(self, member_list)
         bars = hostinfo[1]
-        hostinfo = hostinfo[0].replace(" final","").split('\n')[1:][:-2]
+        hostinfo = hostinfo[0].replace(" final", "").split("\n")[1:][:-2]
         separator = "=" * max([len(x) for x in hostinfo])
         print(color(fore="#E4C1DD", text=separator))
         print(color(fore="#E4C1DD", text="\n".join(hostinfo)))
@@ -409,7 +431,6 @@ class Hypernova(commands.AutoShardedBot):
             )
         except Exception:
             pass
-
 
     async def set_status(self):
         # This sets the bot's presence, status, and activity

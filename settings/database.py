@@ -40,6 +40,8 @@ async def initialize(guilds, members):
 
 
 SEPARATOR = "=" * 33
+
+
 async def scriptexec():
     # We execute the SQL script to make sure we have all our tables.
     st = time.time()
@@ -49,10 +51,13 @@ async def scriptexec():
                 await postgres.execute(script.read())
             except Exception as e:
                 print(e)
-    
-    # print(color(fore="#46648F", text=SEPARATOR))
-    print(color(fore="#46648F", text=f"Script   execution : {str(time.time() - st)[:10]} s"))
 
+    # print(color(fore="#46648F", text=SEPARATOR))
+    print(
+        color(
+            fore="#46648F", text=f"Script   execution : {str(time.time() - st)[:10]} s"
+        )
+    )
 
 
 async def update_server(server, member_list):
@@ -66,7 +71,9 @@ async def update_server(server, member_list):
         server.name,
         server.owner.id,
     )
-    print(color(fore="#46648F", text=f"Server insertion : {str(time.time() - st)[:10]} s"))
+    print(
+        color(fore="#46648F", text=f"Server insertion : {str(time.time() - st)[:10]} s")
+    )
 
     # await postgres.execute(
     #     """
@@ -82,7 +89,11 @@ async def update_server(server, member_list):
         server.id,
         None,
     )
-    print(color(fore="#46648F", text=f"Logging insertion : {str(time.time() - st)[:10]} s"))
+    print(
+        color(
+            fore="#46648F", text=f"Logging insertion : {str(time.time() - st)[:10]} s"
+        )
+    )
 
     st = time.time()
     await postgres.executemany(
@@ -90,7 +101,11 @@ async def update_server(server, member_list):
     ON CONFLICT (user_id) DO NOTHING""",
         ((member.id, str(member)) for member in member_list),
     )
-    print(color(fore="#46648F", text=f"Username insertion : {str(time.time() - st)[:10]} s"))
+    print(
+        color(
+            fore="#46648F", text=f"Username insertion : {str(time.time() - st)[:10]} s"
+        )
+    )
 
     st = time.time()
     await postgres.executemany(
@@ -106,7 +121,11 @@ async def update_server(server, member_list):
             for member in member_list
         ),
     )
-    print(color(fore="#46648F", text=f"Nickname insertion : {str(time.time() - st)[:10]} s"))
+    print(
+        color(
+            fore="#46648F", text=f"Nickname insertion : {str(time.time() - st)[:10]} s"
+        )
+    )
 
     st = time.time()
     await postgres.executemany(
@@ -122,7 +141,10 @@ async def update_server(server, member_list):
             for member in member_list
         ),
     )
-    print(color(fore="#46648F", text=f"Role insertion : {str(time.time() - st)[:10]} s"))
+    print(
+        color(fore="#46648F", text=f"Role insertion : {str(time.time() - st)[:10]} s")
+    )
+
 
 async def update_db(guilds, member_list):
     # Main database updater. This is mostly just for updating new servers and members that the bot joined when offline.
@@ -133,7 +155,11 @@ async def update_db(guilds, member_list):
     ON CONFLICT DO NOTHING""",
         ((server.id, server.name, server.owner.id) for server in guilds),
     )
-    print(color(fore="#46648F", text=f"Servers  insertion : {str(time.time() - st)[:10]} s"))
+    print(
+        color(
+            fore="#46648F", text=f"Servers  insertion : {str(time.time() - st)[:10]} s"
+        )
+    )
 
     # await postgres.executemany(
     #     """
@@ -147,7 +173,11 @@ async def update_db(guilds, member_list):
     ON CONFLICT (server_id) DO NOTHING""",
         ((server.id, None) for server in guilds),
     )
-    print(color(fore="#46648F", text=f"Logging  insertion : {str(time.time() - st)[:10]} s"))
+    print(
+        color(
+            fore="#46648F", text=f"Logging  insertion : {str(time.time() - st)[:10]} s"
+        )
+    )
     # await postgres.executemany("""INSERT INTO useravatars VALUES ($1, $2)
     # ON CONFLICT (user_id) DO NOTHING""",
     # ((member.id, str(member.avatar)) for member in member_list))
@@ -158,7 +188,11 @@ async def update_db(guilds, member_list):
     ON CONFLICT (user_id) DO NOTHING""",
         ((member.id, str(member)) for member in member_list),
     )
-    print(color(fore="#46648F", text=f"Username insertion : {str(time.time() - st)[:10]} s"))
+    print(
+        color(
+            fore="#46648F", text=f"Username insertion : {str(time.time() - st)[:10]} s"
+        )
+    )
 
     st = time.time()
     await postgres.executemany(
@@ -174,7 +208,11 @@ async def update_db(guilds, member_list):
             for member in member_list
         ),
     )
-    print(color(fore="#46648F", text=f"Nickname insertion : {str(time.time() - st)[:10]} s"))
+    print(
+        color(
+            fore="#46648F", text=f"Nickname insertion : {str(time.time() - st)[:10]} s"
+        )
+    )
 
     st = time.time()
     await postgres.executemany(
@@ -190,8 +228,14 @@ async def update_db(guilds, member_list):
             for member in member_list
         ),
     )
-    print(color(fore="#46648F", text=f"Userrole insertion : {str(time.time() - st)[:10]} s"))
+    print(
+        color(
+            fore="#46648F", text=f"Userrole insertion : {str(time.time() - st)[:10]} s"
+        )
+    )
     print(color(fore="#46648F", text=SEPARATOR))
+
+
 async def load_settings():
     query = """SELECT (server_id, prefix, profanities, autoroles, antiinvite, reassign, disabled_commands, admin_allow, react) FROM servers"""
     results = await postgres.fetch(query)

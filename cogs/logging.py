@@ -541,14 +541,18 @@ class Logging(commands.Cog):
         elif before.content.startswith("```"):
             before_content = f"**__Old Message Content__**\n {before.clean_content}\n"
         else:
-            before_content = f"**__Old Message Content__**\n ```fix\n{before.clean_content}```\n"
+            before_content = (
+                f"**__Old Message Content__**\n ```fix\n{before.clean_content}```\n"
+            )
 
         if after.content == "":
             after_content = f"**__New Message Content__**\n ```fix\nNo Content```\n"
         elif after.content.startswith("```"):
             after_content = f"**__New Message Content__**\n {after.clean_content}\n"
         else:
-            after_content = f"**__New Message Content__**\n ```fix\n{after.clean_content}```\n"
+            after_content = (
+                f"**__New Message Content__**\n ```fix\n{after.clean_content}```\n"
+            )
 
         embed = discord.Embed(
             description=f"**Author:**  {after.author.mention}, **ID:** `{after.author.id}`\n"
@@ -593,7 +597,9 @@ class Logging(commands.Cog):
             content = f"**__Message Content__**\n ```fix\n{message.clean_content}```"
 
         if len(message.attachments):
-            attachment_list = '\n'.join([f'[**`{x.filename}`**]({x.url})' for x in message.attachments])
+            attachment_list = "\n".join(
+                [f"[**`{x.filename}`**]({x.url})" for x in message.attachments]
+            )
             attachments = f"**__Attachment{'' if len(message.attachments) == 1 else 's'}__**\n {attachment_list}"
             if message.content != "":
                 content = content + "\n"
@@ -622,7 +628,9 @@ class Logging(commands.Cog):
 
         if not messages[0].guild:
             return
-        if not await self.check(snowflake=messages[0].guild.id, event="message_deletions"):
+        if not await self.check(
+            snowflake=messages[0].guild.id, event="message_deletions"
+        ):
             return
 
         webhook = await self.get_webhook(guild=messages[0].guild)

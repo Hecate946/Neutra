@@ -432,7 +432,9 @@ class Bot(commands.Cog):
 
         await message.edit(content=msg)
 
-    @commands.command(brief="Show some info on the bot's purpose.", aliases=["boss","botowner"])
+    @commands.command(
+        brief="Show some info on the bot's purpose.", aliases=["boss", "botowner"]
+    )
     async def overview(self, ctx):
         """
         Usage:  -overview
@@ -444,7 +446,9 @@ class Bot(commands.Cog):
         with open("./data/txts/overview.txt", "r", encoding="utf-8") as fp:
             overview = fp.read()
         embed = discord.Embed(
-            description=overview.format(self.bot.user.name, len(command_list), len(category_list)),
+            description=overview.format(
+                self.bot.user.name, len(command_list), len(category_list)
+            ),
             color=self.bot.constants.embed,
         )
         embed.set_author(name=owner, icon_url=owner.avatar_url)
@@ -455,7 +459,9 @@ class Bot(commands.Cog):
         with open("./data/txts/changelog.txt", "r", encoding="utf-8") as fp:
             changelog = fp.read()
         await ctx.send(f"**{self.bot.user.name}'s Changelog**")
-        p = pagination.MainMenu(pagination.TextPageSource(changelog, prefix="```prolog"))
+        p = pagination.MainMenu(
+            pagination.TextPageSource(changelog, prefix="```prolog")
+        )
         try:
             await p.start(ctx)
         except menus.MenuError as e:

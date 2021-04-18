@@ -452,6 +452,7 @@ def format_timedelta(td):
     ts = td.total_seconds()
     return "{:02d}:{:06.3f}".format(int(ts // 60), ts % 60)
 
+
 async def get_hostinfo(bot, members):
     import subprocess
     import struct
@@ -459,6 +460,7 @@ async def get_hostinfo(bot, members):
     import platform
     import os
     import sys
+
     process = psutil.Process(os.getpid())
     with process.oneshot():
         process_ = process.name
@@ -524,23 +526,16 @@ async def get_hostinfo(bot, members):
     msg += "CPU Core  : {} Threads\n\n".format(cpuCores)
     bars = ""
     bars += (
-        center(
-            "{}% of {} {}".format(cpuUsage, cpuThread, threadString), "CPU"
-        )
-        + "\n"
+        center("{}% of {} {}".format(cpuUsage, cpuThread, threadString), "CPU") + "\n"
     )
     bars += makeBar(int(round(cpuUsage))) + "\n"
     bars += (
-        center(
-            "{} ({}%) of {}GB used".format(memUsedGB, memPerc, memTotalGB), "RAM"
-        )
+        center("{} ({}%) of {}GB used".format(memUsedGB, memPerc, memTotalGB), "RAM")
         + "\n"
     )
     bars += makeBar(int(round(memPerc))) + "\n"
     bars += (
-        center(
-            "{} ({}%) of {}GB used".format(swapUsage, swapPerc, swapTotal), "Swap"
-        )
+        center("{} ({}%) of {}GB used".format(swapUsage, swapPerc, swapTotal), "Swap")
         + "\n"
     )
     bars += makeBar(int(round(swapPerc)))
