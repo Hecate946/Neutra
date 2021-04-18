@@ -10,7 +10,6 @@ import discord
 import logging
 import traceback
 import collections
-import tracemalloc
 
 from colr import color
 from datetime import datetime
@@ -27,9 +26,21 @@ from settings import constants
 MAX_LOGGING_BYTES = 32 * 1024 * 1024  # 32 MiB
 COGS = [x[:-3] for x in sorted(os.listdir("././cogs")) if x.endswith(".py")]
 USELESS_COGS = ["HELP", "TESTING", "TRACKER", "UPDATER", "SLASH"]
-COG_EXCEPTIONS = ["CONFIG", "BOTADMIN", "MANAGER", "JISHAKU"]
+COG_EXCEPTIONS = ["CONFIG", "BOTADMIN", "MANAGER", "JISHAKU", "MASTER"]
 
 cxn = database.postgres
+
+# Set up our data folders
+if not os.path.exists("./data/txts"):
+    os.mkdir("./data/txts")
+if not os.path.exists("./data/logs"):
+    os.mkdir("./data/logs")
+if not os.path.exists("./data/pm2"):
+    os.mkdir("./data/pm2")
+if not os.path.exists("./data/json"):
+    os.mkdir("./data/json")
+if not os.path.exists("./data/wastebin"):
+    os.mkdir("./data/wastebin")
 
 # Set up our command logger
 command_logger = logging.getLogger("HYPERNOVA")

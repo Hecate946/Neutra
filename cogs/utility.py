@@ -1,11 +1,12 @@
 import re
 import json
 import pytz
+import time
 import codecs
 import pprint
 import discord
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from collections import Counter
 from geopy import geocoders
 from discord.ext import commands, menus
@@ -21,10 +22,10 @@ class Utility(commands.Cog):
     """
     Module for general utilities
     """
-
     def __init__(self, bot):
         self.bot = bot
         self.emote_dict = bot.emote_dict
+        self.stopwatches = {}
         self.geo = geocoders.Nominatim(user_agent="Hypernova")
 
     ####################
@@ -865,3 +866,18 @@ class Utility(commands.Cog):
                 await ctx.send(reference=self.bot.rep_ref(ctx), embed=em)
         except Exception as e:
             await ctx.send(e)
+
+    @commands.command(aliases=["sw"])
+    async def stopwatch(self, ctx):
+        """Start or stop a stopwatch."""
+        author = ctx.author
+        if author.id not in self.stopwatches:
+            self.stopwatches[author.id] = int(time.perf_counter())
+            await ctx.send(f"{self.bot.emote_dict['stopwatch']} Stopwatch started!")
+        else:
+            tmp = abs(self.stopwatches[author.id] - int(time.perf_counter()))
+            tmp = str(timedelta(seconds=tmp))
+            await ctx.send(
+                f"{self.bot.emote_dict['stopwatch']} Stopwatch stopped! Time: **{tmp}**"
+            )
+            self.stopwatches.pop(author.id, None)

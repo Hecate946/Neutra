@@ -15,7 +15,6 @@ from discord import __version__ as discord_version
 from platform import python_version
 from psutil import Process, virtual_memory
 
-from core import USELESS_COGS, COG_EXCEPTIONS
 from utilities import utils, speedtest, converters, pagination
 
 
@@ -433,7 +432,7 @@ class Bot(commands.Cog):
 
         await message.edit(content=msg)
 
-    @commands.command(brief="Show some info on the developer.", aliases=["boss","botowner"])
+    @commands.command(brief="Show some info on the bot's purpose.", aliases=["boss","botowner"])
     async def overview(self, ctx):
         """
         Usage:  -overview
@@ -450,6 +449,17 @@ class Bot(commands.Cog):
         )
         embed.set_author(name=owner, icon_url=owner.avatar_url)
         await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)
+
+    @commands.command(brief="Show my changelog.")
+    async def changelog(self, ctx):
+        with open("./data/txts/changelog.txt", "r", encoding="utf-8") as fp:
+            changelog = fp.read()
+        await ctx.send(f"**{self.bot.user.name}'s Changelog**")
+        p = pagination.MainMenu(pagination.TextPageSource(changelog, prefix="```prolog"))
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send(e)
 
     @commands.command(brief="Display the source code.", aliases=["sourcecode"])
     async def source(self, ctx, *, command: str = None):
