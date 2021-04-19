@@ -396,7 +396,8 @@ class Admin(commands.Cog):
             show Shows all current autoroles
         """
         if ctx.invoked_subcommand is None:
-            await ctx.send_help(str(ctx.command))
+            help_cmd = self.bot.get_command('help')
+            await help_cmd(ctx, invokercommand='autorole')
 
     @autorole.command()
     async def add(self, ctx, roles: commands.Greedy[discord.Role] = None):
@@ -791,14 +792,29 @@ class Admin(commands.Cog):
     @commands.guild_only()
     @permissions.bot_has_permissions(manage_channels=True)
     @permissions.has_permissions(manage_channels=True)
-    async def slowmode(self, ctx, time: float):
+    async def slowmode(self, ctx, channel = None, time: float = None):
         """
-        Usage:      -slowmode [seconds]
-        Output:     Sets the channel's slowmode to your input value.
+        Usage: -slowmode [channel] [seconds]
         Permission: Manage Channels
+        Output:
+            Sets the channel's slowmode to your input value.
+        Notes:
+            If no slowmode is passed, will reset the slowmode.
         """
+        if channel is None:
+            channel_obj = ctx.channel
+            time = 0.0
+        else:
+            try:
+                channel_obj = await commands.TextChannelConverter().convert(ctx, channel)
+            except commands.ChannelNotFound:
+                channel_obj = ctx.channel
+                if channel.isdigit():
+                    time = float(channel)
+                else:
+                    time = 0.0
         try:
-            await ctx.channel.edit(slowmode_delay=time)
+            await channel_obj.edit(slowmode_delay=time)
         except discord.HTTPException as e:
             await ctx.send(
                 reference=self.bot.rep_ref(ctx),
@@ -807,43 +823,36 @@ class Admin(commands.Cog):
         else:
             await ctx.send(
                 reference=self.bot.rep_ref(ctx),
-                content=f'{self.bot.emote_dict["success"]} Slowmode set to `{time}s`',
+                content=f'{self.bot.emote_dict["success"]} Slowmode for {channel_obj.mention} set to `{time}s`',
             )
 
     @commands.command(aliases=["lockdown", "lockchannel"], brief="Lock a channel")
     @commands.guild_only()
     @permissions.bot_has_permissions(manage_channels=True, manage_roles=True)
     @permissions.has_permissions(administrator=True)
-    async def lock(self, ctx, channel_=None, minutes_: int = None):
+    async def lock(self, ctx, channel = None, minutes_: int = None):
         """
-        Usage:      -lock [channel] [minutes]
-        Output:     Locked channel for the specified time. Infinite if not specified
+        Usage: -lock [channel] [minutes]
+        Aliases: -lockdown, -lockchannel
         Permission: Administrator
+        Output:
+            Locked channel for the specified time. Infinite if not specified
+        Notes:
+            Max timed lock is 2 hours
         """
-        channel_id = 0
-
-        minutes = 0
-        if channel_ is None:
-            channel_id += ctx.channel.id
-
-        elif channel_.isdigit() or str(channel_).strip("<#>").isdigit():
-            try:
-                channel = ctx.guild.get_channel(int(str(channel_).strip("<#>")))
-                channel_id += int(channel.id)
-            except TypeError:
-                minutes += int(channel_)
-                channel_id += ctx.channel.id
+        if channel is None:
+            channel_obj = ctx.channel
         else:
             try:
-                channel_obj = discord.utils.get(ctx.guild.text_channels, name=channel_)
-                if channel_obj is None:
-                    channel_id += ctx.channel.id
+                channel_obj = await commands.TextChannelConverter().convert(ctx, channel)
+            except commands.ChannelNotFound:
+                channel_obj = ctx.channel
+                if channel.isdigit():
+                    minutes_ = int(channel)
                 else:
-                    channel_id += channel_obj.id
-            except Exception as e:
-                return await ctx.send(e)
-        channel = ctx.guild.get_channel(channel_id)
+                    minutes_ = None
         try:
+            channel = channel_obj
             overwrites_everyone = channel.overwrites_for(ctx.guild.default_role)
             my_overwrites = channel.overwrites_for(ctx.guild.me)
             everyone_overwrite_current = overwrites_everyone.send_messages
@@ -873,21 +882,22 @@ class Admin(commands.Cog):
                     utils.responsible(ctx.author, "Channel locked by command execution")
                 ),
             )
-            if minutes_ is not None:
+            if minutes_:
                 if minutes_ > 120:
-                    minutes_ = 120
-                elif minutes_ < 1:
-                    minutes_ = 0
-                minutes += minutes_
-            if minutes != 0:
+                    raise commands.BadArgument("Max timed lock is 120 minutes.")
+                elif minutes_ < 0:
+                    raise commands.BadArgument("Minutes must be greater than 0.")
+                minutes = minutes_
+            
                 await msg.edit(
-                    content=f"<:lock:817168229712527360> Channel {channel.mention} locked for `{minutes}` minute{'' if minutes == 1 else 's'}. ID: `{channel.id}`"
+                    content=f"{self.bot.emote_dict['lock']} Channel {channel.mention} locked for `{minutes}` minute{'' if minutes == 1 else 's'}. ID: `{channel.id}`"
                 )
                 await asyncio.sleep(minutes * 60)
                 await self.unlock(ctx, channel=channel, surpress=True)
-            await msg.edit(
-                content=f"<:lock:817168229712527360> Channel {channel.mention} locked. ID: `{channel.id}`"
-            )
+            else:
+                await msg.edit(
+                    content=f"{self.bot.emote_dict['lock']} Channel {channel.mention} locked. ID: `{channel.id}`"
+                )
         except discord.Forbidden:
             await msg.edit(
                 content=f"{self.bot.emote_dict['failed']} I have insufficient permission to lock channels."
@@ -899,9 +909,10 @@ class Admin(commands.Cog):
     @permissions.has_permissions(administrator=True)
     async def unlock(self, ctx, channel: discord.TextChannel = None, surpress=False):
         """
-        Usage:      -unlock [channel]
-        Output:     Unlocks a previously locked channel
+        Usage: -unlock [channel]
+        Alias: -unlockchannel
         Permission: Administrator
+        Output: Unlocks a previously locked channel
         """
         if channel is None:
             channel = ctx.channel
@@ -918,7 +929,7 @@ class Admin(commands.Cog):
                     return
                 else:
                     return await ctx.send(
-                        f"<:lock:817168229712527360> Channel {channel.mention} is already unlocked. ID: `{channel.id}`"
+                        f"{self.bot.emote_dict['lock']} Channel {channel.mention} is already unlocked. ID: `{channel.id}`"
                     )
 
             msg = await ctx.send(
@@ -953,7 +964,7 @@ class Admin(commands.Cog):
                 "DELETE FROM lockedchannels WHERE channel_id = $1", channel.id
             )
             await msg.edit(
-                content=f"<:unlock:817168258825846815> Channel {channel.mention} unlocked. ID: `{channel.id}`"
+                content=f"{self.bot.emote_dict['unlock']} Channel {channel.mention} unlocked. ID: `{channel.id}`"
             )
         except discord.errors.Forbidden:
             await msg.edit(
