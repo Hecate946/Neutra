@@ -597,7 +597,7 @@ class Users(commands.Cog):
                     f"{self.bot.emote_dict['error']} I do not track bots."
                 )
             query = (
-                """SELECT command FROM commands WHERE server_id = $1 AND user_id = $2"""
+                """SELECT command FROM commands WHERE server_id = $1 AND author_id = $2"""
             )
             command_list = await self.bot.cxn.fetch(query, ctx.guild.id, user.id)
         formatted_list = []
@@ -660,7 +660,7 @@ class Users(commands.Cog):
                 return await ctx.send(
                     f"{self.bot.emote_dict['error']} I do not track bots."
                 )
-            query = """SELECT COUNT(*) as c FROM commands WHERE executor_id = $1 AND server_id = $2"""
+            query = """SELECT COUNT(*) as c FROM commands WHERE author_id = $1 AND server_id = $2"""
             command_count = await self.bot.cxn.fetchrow(query, user.id, ctx.guild.id)
             return await ctx.send(
                 reference=self.bot.rep_ref(ctx),
