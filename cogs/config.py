@@ -23,6 +23,7 @@ class Config(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.todo = "./data/txts/todo.txt"
+        self.is_ownerlocked = utils.config()['ownerlocked']
 
     # this cog is owner only
     async def cog_check(self, ctx):
@@ -63,6 +64,8 @@ class Config(commands.Cog):
             )
         if value.isdigit():
             utils.modify_config(key=key, value=int(value))
+        elif type(value) is bool:
+            utils.modify_config(key=key, value=bool(value))
         else:
             utils.modify_config(key=key, value=str(value))
         await ctx.send(
@@ -702,3 +705,36 @@ class Config(commands.Cog):
             reference=self.bot.rep_ref(ctx),
             content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
         )
+
+    @commands.command(brief="Toggle locking the bot to owners.")
+    async def ownerlock(self, ctx):
+        if self.is_ownerlocked is True:
+            self.is_ownerlocked = False
+            utils.modify_config("ownerlocked", False)
+            return await ctx.send(f"{self.bot.emote_dict['success']} **Ownerlock Disabled.**")
+        else:
+            c = await pagination.Confirmation(
+                f"**{self.bot.emote_dict['exclamation']} This action will prevent usage from all except my owners. Do you wish to continue?**"
+            ).prompt(ctx)
+            if c:
+                self.is_ownerlocked = True
+                utils.modify_config("ownerlocked", True)
+                await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content=f"{self.bot.emote_dict['success']} **Ownerlock Enabled.**",
+                )
+            else:
+                await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
+                )
+
+    async def message(self, message):
+        # Check the message and see if we should allow it
+        ctx = await self.bot.get_context(message)
+        if not ctx.command:
+            # No command - no need to check
+            return
+        if self.is_ownerlocked is True:
+            if not permissions.is_owner(ctx):
+                return {"Ignore": True, "Delete": False}

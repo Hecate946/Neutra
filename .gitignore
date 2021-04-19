@@ -12,6 +12,8 @@
 /data/logs
 /data/pm2
 /data/wastebin
+# This is just a bot todo list file
+/data/txts/todo.txt
 # This is a testing cog for trying out new commands.. 
 /cogs/testing.py
 # Work in progress
