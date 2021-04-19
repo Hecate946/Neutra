@@ -50,6 +50,7 @@ class Bot(commands.Cog):
         Alias:  -info
         Output: Version Information, Bot Statistics
         """
+        msg = await ctx.send(reference=self.bot.rep_ref(ctx), content="**Collecting Info...**")
         total_members = sum(1 for x in self.bot.get_all_members())
         voice_channels = []
         text_channels = []
@@ -62,7 +63,7 @@ class Bot(commands.Cog):
 
         ramUsage = self.process.memory_full_info().rss / 1024 ** 2
         avgmembers = round(len(self.bot.users) / len(self.bot.guilds))
-        currentTime = int(time.time())
+        current_time = int(time.time())
         proc = Process()
         with proc.oneshot():
             # This could be used, but I thought most people are not interested in stuff like CPU Time
@@ -117,7 +118,7 @@ class Bot(commands.Cog):
         embed.add_field(name="RAM", value=f"{ramUsage:.2f} MB", inline=True)
         # embed.add_field(name="CPU", value=f"{cpu_time} MB", inline=True)
 
-        await ctx.send(
+        await msg.edit(
             content=f"About **{ctx.bot.user}** | **{self.bot.constants.version}**",
             embed=embed,
         )
