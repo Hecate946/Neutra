@@ -262,6 +262,8 @@ class Hypernova(commands.AutoShardedBot):
             data = utils.load_json("config.json")
             if mode == "tester":
                 utils.write_json("config_test.json", data)
+            elif mode == "watcher":
+                utils.write_json("config_watch.json", data)
             else:
                 utils.write_json("config_prod.json", data)
 

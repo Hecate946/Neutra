@@ -21,7 +21,14 @@ def main(mode):
         with open("./config.json", "w", encoding="utf-8") as fp:
             json.dump(configuration, fp, indent=2)
 
+    elif mode == "watcher":
+        with open("./config_watch.json", "r", encoding="utf-8") as fp:
+            configuration = json.load(fp)
+        with open("./config.json", "w", encoding="utf-8") as fp:
+            json.dump(configuration, fp, indent=2)
+
     else:
+        mode = "production"
         with open("./config_prod.json", "r", encoding="utf-8") as fp:
             configuration = json.load(fp)
         with open("./config.json", "w", encoding="utf-8") as fp:
