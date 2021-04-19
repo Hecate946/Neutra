@@ -747,9 +747,17 @@ class Utility(commands.Cog):
         except Exception as e:
             await ctx.send(e)
 
-    @commands.command(aliases=["sw"])
+    @commands.command(aliases=["sw"],brief="Start or stop a stopwatch.")
     async def stopwatch(self, ctx):
-        """Start or stop a stopwatch."""
+        """
+        Usage: -stopwatch
+        Alias: -sw
+        Output: Starts or ends a stopwatch
+        Notes:
+             One stopwatch is available per user.
+             Your stopwatch will not be interrupted
+             if another user executes the command.
+        """
         author = ctx.author
         if author.id not in self.stopwatches:
             self.stopwatches[author.id] = int(time.perf_counter())
