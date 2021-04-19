@@ -494,7 +494,7 @@ class Hypernova(commands.AutoShardedBot):
         await self.change_presence(status=s, activity=activity)
 
     async def on_command(self, ctx):
-        await ctx.trigger_typing()
+        pass
 
     async def on_command_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):

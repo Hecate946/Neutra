@@ -503,10 +503,11 @@ class Bot(commands.Cog):
                 return await ctx.send(
                     f'{self.bot.emote_dict["failed"]} Command `{command}` does not exist.'
                 )
-            elif obj.hidden:
-                return await ctx.send(
-                    f'{self.bot.emote_dict["failed"]} Command `{command}` does not exist.'
-                )
+            # Show source for all commands so comment this out.
+            # elif obj.hidden:
+            #     return await ctx.send(
+            #         f'{self.bot.emote_dict["failed"]} Command `{command}` does not exist.'
+            #     )
 
             src = obj.callback.__code__
             module = obj.callback.__module__
