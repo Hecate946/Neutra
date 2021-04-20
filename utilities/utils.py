@@ -1,19 +1,19 @@
 # File discord_bot.py & CorpBot
 
+import calendar
+import difflib
 import json
 import re
-import pytz
 import time
-import discord
-import difflib
-import aiohttp
-import humanize
-import calendar
 import traceback
-import timeago as timesince
-
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
+
+import aiohttp
+import discord
+import humanize
+import pytz
+import timeago as timesince
 
 URL_REGEX = (
     r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
@@ -461,12 +461,13 @@ def format_timedelta(td):
 
 
 async def get_hostinfo(bot, members):
-    import subprocess
-    import struct
-    import psutil
-    import platform
     import os
+    import platform
+    import struct
+    import subprocess
     import sys
+
+    import psutil
 
     process = psutil.Process(os.getpid())
     with process.oneshot():

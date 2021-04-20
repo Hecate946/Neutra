@@ -1,5 +1,6 @@
 # Module for deleting useless entries in postgres
 import logging
+
 from . import database
 
 log = logging.getLogger("INFO_LOGGER")

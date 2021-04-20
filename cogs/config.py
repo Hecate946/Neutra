@@ -1,13 +1,13 @@
 import os
 import typing
+from datetime import datetime
+
 import aiohttp
 import asyncpg
 import discord
-
-from datetime import datetime
 from discord.ext import commands, menus
 
-from utilities import utils, permissions, pagination, converters
+from utilities import converters, pagination, permissions, utils
 
 
 def setup(bot):

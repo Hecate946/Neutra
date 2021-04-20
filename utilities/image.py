@@ -1,11 +1,12 @@
 import os
 import uuid
 from os.path import splitext
-from PIL import Image
-from discord.ext import commands
-from utilities import utils, pagination
 from urllib.parse import urlparse
 
+from discord.ext import commands
+from PIL import Image
+
+from utilities import pagination, utils
 
 # A helper module for images
 

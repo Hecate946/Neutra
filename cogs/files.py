@@ -1,13 +1,13 @@
 import io
 import os
-import pytz
-import discord
-
 from datetime import datetime
+
+import discord
+import pytz
 from discord.ext import commands
 
 from core import COG_EXCEPTIONS, USELESS_COGS
-from utilities import utils, permissions
+from utilities import permissions, utils
 
 
 def setup(bot):

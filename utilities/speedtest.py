@@ -15,18 +15,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
-import re
 import csv
-import sys
-import math
+import datetime
 import errno
+import math
+import os
+import platform
+import re
 import signal
 import socket
-import timeit
-import datetime
-import platform
+import sys
 import threading
+import timeit
 import xml.parsers.expat
 
 try:
@@ -82,35 +82,35 @@ except ImportError:
 
 try:
     from urllib2 import (
-        urlopen,
-        Request,
-        HTTPError,
-        URLError,
         AbstractHTTPHandler,
-        ProxyHandler,
         HTTPDefaultErrorHandler,
-        HTTPRedirectHandler,
+        HTTPError,
         HTTPErrorProcessor,
+        HTTPRedirectHandler,
         OpenerDirector,
+        ProxyHandler,
+        Request,
+        URLError,
+        urlopen,
     )
 except ImportError:
     from urllib.request import (
-        urlopen,
-        Request,
-        HTTPError,
-        URLError,
         AbstractHTTPHandler,
-        ProxyHandler,
         HTTPDefaultErrorHandler,
-        HTTPRedirectHandler,
+        HTTPError,
         HTTPErrorProcessor,
+        HTTPRedirectHandler,
         OpenerDirector,
+        ProxyHandler,
+        Request,
+        URLError,
+        urlopen,
     )
 
 try:
-    from httplib import HTTPConnection, BadStatusLine
+    from httplib import BadStatusLine, HTTPConnection
 except ImportError:
-    from http.client import HTTPConnection, BadStatusLine
+    from http.client import BadStatusLine, HTTPConnection
 
 try:
     from httplib import HTTPSConnection
@@ -149,15 +149,15 @@ except ImportError:
     from md5 import md5
 
 try:
-    from argparse import ArgumentParser as ArgParser
     from argparse import SUPPRESS as ARG_SUPPRESS
+    from argparse import ArgumentParser as ArgParser
 
     PARSER_TYPE_INT = int
     PARSER_TYPE_STR = str
     PARSER_TYPE_FLOAT = float
 except ImportError:
-    from optparse import OptionParser as ArgParser
     from optparse import SUPPRESS_HELP as ARG_SUPPRESS
+    from optparse import OptionParser as ArgParser
 
     PARSER_TYPE_INT = "int"
     PARSER_TYPE_STR = "string"
@@ -173,13 +173,13 @@ except ImportError:
 
         BytesIO = None
     except ImportError:
-        from io import StringIO, BytesIO
+        from io import BytesIO, StringIO
 
 try:
     import __builtin__
 except ImportError:
     import builtins
-    from io import TextIOWrapper, FileIO
+    from io import FileIO, TextIOWrapper
 
     class _Py3Utf8Output(TextIOWrapper):
         """UTF-8 encoded wrapper around stdout for py3, to override

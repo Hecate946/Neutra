@@ -1,27 +1,24 @@
 import asyncio
+import collections
+import json
+import logging
 import os
 import re
 import sys
-import json
 import time
+import traceback
+from datetime import datetime
+from logging.handlers import RotatingFileHandler
 
 import aiohttp
 import discord
-import logging
-import traceback
-import collections
-
+from alive_progress import alive_bar
 from colr import color
-from datetime import datetime
 from discord.ext import commands, tasks
 from discord_slash.client import SlashCommand
-from logging.handlers import RotatingFileHandler
 
-from alive_progress import alive_bar
-from settings import database, cleanup
+from settings import cleanup, constants, database
 from utilities import utils
-from settings import constants
-
 
 MAX_LOGGING_BYTES = 32 * 1024 * 1024  # 32 MiB
 COGS = [x[:-3] for x in sorted(os.listdir("././cogs")) if x.endswith(".py")]
@@ -397,14 +394,18 @@ class Hypernova(commands.AutoShardedBot):
     @status_loop.before_loop
     async def before_status_loop(self):
         st = time.time()
-        while not self.is_ready():
-            with alive_bar(
-                title="Initializing Cache", spinner="waves2"
-            ) as bar:  # default setting
-                for i in range(100):
-                    await asyncio.sleep(0.05)
-                    bar()
-        # print(color(fore="#FFFFFF", text=f"Elapsed time: {str(time.time() - st)[:10]} s"))
+        print(color(fore="#FFFFFF", text="Initializing Cache..."))
+        await self.wait_until_ready()
+        # while not self.is_ready():
+        #     with alive_bar(
+        #         title="Initializing Cache", spinner="waves2"
+        #     ) as bar:  # default setting
+        #         for i in range(100):
+        #             await asyncio.sleep(0.05)
+        #             bar()
+        print(
+            color(fore="#FFFFFF", text=f"Elapsed time: {str(time.time() - st)[:10]} s")
+        )
         SEPARATOR = "=" * 33
         print(color(fore="#46648F", text=SEPARATOR))
         st = time.time()

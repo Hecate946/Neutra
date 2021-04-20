@@ -1,9 +1,9 @@
+import asyncio
+import logging
 import os
 import time
-import asyncio
-import asyncpg
-import logging
 
+import asyncpg
 from colr import color
 
 from settings import constants
@@ -175,7 +175,7 @@ async def update_db(guilds, member_list):
     # ON CONFLICT DO NOTHING""",
     #     ((server.id, f"<@!{constants.client}>") for server in guilds),
     # )
-    
+
     st = time.time()
     await postgres.executemany(
         """INSERT INTO logging (server_id, logchannel) VALUES ($1, $2)
@@ -192,9 +192,14 @@ async def update_db(guilds, member_list):
     # ((member.id, str(member.avatar)) for member in member_list))
 
     st = time.time()
+    query = """
+            INSERT INTO (usernames)
+            VALUES ($1, $2)
+            ON CONFLICT (user_id)
+            DO NOTHING;
+            """
     await postgres.executemany(
-        """INSERT INTO usernames VALUES ($1, $2) 
-    ON CONFLICT (user_id) DO NOTHING""",
+        query,
         ((member.id, str(member)) for member in member_list),
     )
     print(

@@ -1,33 +1,33 @@
-import re
-import json
-import pytz
-import math
-import time
 import codecs
-import pprint
-import discord
+import json
+import math
 import operator
-
-from datetime import datetime, timedelta
+import pprint
+import re
+import time
 from collections import Counter
+from datetime import datetime, timedelta
 from functools import cmp_to_key
+
+import discord
+import pytz
+from discord.ext import commands, menus
+from geopy import geocoders
 from pyparsing import (
-    Literal,
     CaselessLiteral,
-    Word,
     Combine,
-    Group,
-    Optional,
-    ZeroOrMore,
     Forward,
-    nums,
+    Group,
+    Literal,
+    Optional,
+    Word,
+    ZeroOrMore,
     alphas,
+    nums,
     oneOf,
 )
-from geopy import geocoders
-from discord.ext import commands, menus
 
-from utilities import utils, permissions, pagination, converters
+from utilities import converters, pagination, permissions, utils
 
 
 def setup(bot):

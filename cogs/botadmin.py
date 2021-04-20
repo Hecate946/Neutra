@@ -1,19 +1,19 @@
-import io
-import os
-import dis
-import math
-import random
-import discord
-import fnmatch
+import contextlib
 import datetime
+import dis
+import fnmatch
+import io
+import math
+import os
+import random
 import textwrap
 import traceback
-import contextlib
 
-from PythonGists import PythonGists
+import discord
 from discord.ext import commands, menus
+from PythonGists import PythonGists
 
-from utilities import pagination, converters
+from utilities import converters, pagination
 
 
 def setup(bot):

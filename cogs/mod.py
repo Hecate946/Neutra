@@ -1,17 +1,17 @@
+import asyncio
 import io
 import re
 import typing
-import asyncio
+from collections import Counter
+from datetime import datetime, timedelta
+
 import asyncpg
 import discord
-
-from collections import Counter
-from discord.ext import commands
-from datetime import datetime, timedelta
 from better_profanity import profanity
+from discord.ext import commands
 
-from utilities import permissions, utils, converters, pagination
 from settings import database
+from utilities import converters, pagination, permissions, utils
 
 
 def setup(bot):

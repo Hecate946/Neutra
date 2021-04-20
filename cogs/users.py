@@ -1,12 +1,12 @@
-from re import M
 import time
-import discord
-
-from datetime import datetime
-from discord.ext import commands, menus
 from collections import Counter, OrderedDict
+from datetime import datetime
+from re import M
 
-from utilities import permissions, utils, converters, pagination
+import discord
+from discord.ext import commands, menus
+
+from utilities import converters, pagination, permissions, utils
 
 
 def setup(bot):

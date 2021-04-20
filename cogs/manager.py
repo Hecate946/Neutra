@@ -1,25 +1,25 @@
+import asyncio
+import contextlib
+import copy
+import datetime
+import importlib
 import io
 import os
-import sys
-import copy
-import time
-import psutil
-import typing
-import asyncio
-import asyncpg
-import discord
-import datetime
-import textwrap
-import importlib
-import traceback
-import contextlib
 import subprocess
-
-from discord.ext import commands, menus
+import sys
+import textwrap
+import time
+import traceback
+import typing
 from collections import defaultdict
 
-from utilities import utils, pagination, formatting, converters
+import asyncpg
+import discord
+import psutil
+from discord.ext import commands, menus
+
 from settings import constants
+from utilities import converters, formatting, pagination, utils
 
 
 def setup(bot):

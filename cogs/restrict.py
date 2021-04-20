@@ -1,8 +1,8 @@
 import discord
 from discord.ext import commands
 
-from utilities import pagination, permissions
 from core import COG_EXCEPTIONS, USELESS_COGS
+from utilities import pagination, permissions
 
 
 def setup(bot):

@@ -1,14 +1,14 @@
 APIKEY = "e496bdab84f5bcc82ce7"
-import os
-import json
 import base64
 import binascii
 import codecs
-import discord
-import re
+import json
 import math
-
+import os
+import re
 from io import BytesIO
+
+import discord
 from discord.ext import commands
 from PIL import Image
 

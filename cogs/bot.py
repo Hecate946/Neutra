@@ -1,21 +1,21 @@
 import asyncio
+import datetime
+import inspect
 import os
+import platform
+import struct
+import subprocess
 import sys
 import time
-import psutil
-import struct
-import discord
-import inspect
-import datetime
-import platform
-import subprocess
-
-from discord.ext import commands, menus
-from discord import __version__ as discord_version
 from platform import python_version
+
+import discord
+import psutil
+from discord import __version__ as discord_version
+from discord.ext import commands, menus
 from psutil import Process, virtual_memory
 
-from utilities import utils, speedtest, converters, pagination
+from utilities import converters, pagination, speedtest, utils
 
 
 def setup(bot):

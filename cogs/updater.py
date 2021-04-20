@@ -1,12 +1,12 @@
-import time
-import discord
 import asyncio
-import logging
 import datetime
+import logging
 import re
+import time
+from collections import Counter, defaultdict
 
+import discord
 from discord.ext import commands, tasks
-from collections import defaultdict, Counter
 
 from settings import database
 from utilities import permissions

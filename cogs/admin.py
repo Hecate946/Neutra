@@ -1,11 +1,11 @@
-import re
 import asyncio
+import re
+
 import asyncpg
 import discord
-
 from discord.ext import commands, menus
 
-from utilities import permissions, pagination, utils
+from utilities import pagination, permissions, utils
 
 
 def setup(bot):

@@ -1,9 +1,9 @@
 import io
 import re
-import discord
-
-from discord.ext import commands
 from datetime import datetime
+
+import discord
+from discord.ext import commands
 
 from utilities import permissions
 

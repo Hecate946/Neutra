@@ -1,13 +1,13 @@
-import os
-import math
-import random
 import asyncio
-import discord
+import math
+import os
+import random
 import textwrap
+from collections import namedtuple
 
+import discord
 from discord.ext import menus
 from discord.ext.commands import Paginator as CommandPaginator
-from collections import namedtuple
 
 from settings import constants
 

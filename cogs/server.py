@@ -1,8 +1,9 @@
-import discord
-from discord.ext import commands, menus
 import datetime
 
-from utilities import pagination, utils, permissions, converters
+import discord
+from discord.ext import commands, menus
+
+from utilities import converters, pagination, permissions, utils
 
 
 def setup(bot):

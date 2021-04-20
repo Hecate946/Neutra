@@ -1,10 +1,12 @@
-import time
-import discord
 import asyncio
 import datetime
-from discord.ext import commands, tasks
+import time
 from collections import defaultdict
-from utilities import utils, converters
+
+import discord
+from discord.ext import commands, tasks
+
+from utilities import converters, utils
 
 
 def setup(bot):
