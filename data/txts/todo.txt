@@ -1,1 +1,0 @@
-cmd confirmation for words (takes too long to respond)
