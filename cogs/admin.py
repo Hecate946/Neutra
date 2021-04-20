@@ -396,8 +396,8 @@ class Admin(commands.Cog):
             show Shows all current autoroles
         """
         if ctx.invoked_subcommand is None:
-            help_cmd = self.bot.get_command('help')
-            await help_cmd(ctx, invokercommand='autorole')
+            help_cmd = self.bot.get_command("help")
+            await help_cmd(ctx, invokercommand="autorole")
 
     @autorole.command()
     async def add(self, ctx, roles: commands.Greedy[discord.Role] = None):
@@ -792,7 +792,7 @@ class Admin(commands.Cog):
     @commands.guild_only()
     @permissions.bot_has_permissions(manage_channels=True)
     @permissions.has_permissions(manage_channels=True)
-    async def slowmode(self, ctx, channel = None, time: float = None):
+    async def slowmode(self, ctx, channel=None, time: float = None):
         """
         Usage: -slowmode [channel] [seconds]
         Permission: Manage Channels
@@ -806,7 +806,9 @@ class Admin(commands.Cog):
             time = 0.0
         else:
             try:
-                channel_obj = await commands.TextChannelConverter().convert(ctx, channel)
+                channel_obj = await commands.TextChannelConverter().convert(
+                    ctx, channel
+                )
             except commands.ChannelNotFound:
                 channel_obj = ctx.channel
                 if channel.isdigit():
@@ -830,7 +832,7 @@ class Admin(commands.Cog):
     @commands.guild_only()
     @permissions.bot_has_permissions(manage_channels=True, manage_roles=True)
     @permissions.has_permissions(administrator=True)
-    async def lock(self, ctx, channel = None, minutes_: int = None):
+    async def lock(self, ctx, channel=None, minutes_: int = None):
         """
         Usage: -lock [channel] [minutes]
         Aliases: -lockdown, -lockchannel
@@ -844,7 +846,9 @@ class Admin(commands.Cog):
             channel_obj = ctx.channel
         else:
             try:
-                channel_obj = await commands.TextChannelConverter().convert(ctx, channel)
+                channel_obj = await commands.TextChannelConverter().convert(
+                    ctx, channel
+                )
             except commands.ChannelNotFound:
                 channel_obj = ctx.channel
                 if channel.isdigit():
@@ -888,7 +892,7 @@ class Admin(commands.Cog):
                 elif minutes_ < 0:
                     raise commands.BadArgument("Minutes must be greater than 0.")
                 minutes = minutes_
-            
+
                 await msg.edit(
                     content=f"{self.bot.emote_dict['lock']} Channel {channel.mention} locked for `{minutes}` minute{'' if minutes == 1 else 's'}. ID: `{channel.id}`"
                 )

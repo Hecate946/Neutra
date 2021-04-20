@@ -27,6 +27,7 @@ def main(mode):
             json.dump(configuration, fp, indent=2)
 
     from core import bot
+
     block = "#" * (len(mode) + 19)
     startmsg = f"{block}\n## Running {mode.capitalize()} Mode ## \n{block}"
     click.echo(startmsg)

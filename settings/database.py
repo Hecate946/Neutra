@@ -108,12 +108,16 @@ async def update_server(server, member_list):
     )
 
     st = time.time()
+    query = """
+            INSERT INTO nicknames
+            VALUES ($1, $2, $3)
+            ON CONFLICT (user_id, server_id)
+            DO NOTHING;
+            """
     await postgres.executemany(
-        """INSERT INTO nicknames VALUES ($1, $2, $3, $4) 
-    ON CONFLICT (serveruser) DO NOTHING""",
+        query,
         (
             (
-                f"{member.guild.id}:{member.id}",
                 member.id,
                 member.guild.id,
                 member.display_name,
@@ -128,12 +132,16 @@ async def update_server(server, member_list):
     )
 
     st = time.time()
+    query = """
+            INSERT INTO userroles
+            VALUES ($1, $2, $3)
+            ON CONFLICT (user_id, server_id)
+            DO NOTHING;
+            """
     await postgres.executemany(
-        """INSERT INTO userroles VALUES ($1, $2, $3, $4)
-    ON CONFLICT (serveruser) DO NOTHING""",
+        query,
         (
             (
-                f"{member.guild.id}:{member.id}",
                 member.id,
                 member.guild.id,
                 ",".join(str(x.id) for x in member.roles),
@@ -167,6 +175,7 @@ async def update_db(guilds, member_list):
     # ON CONFLICT DO NOTHING""",
     #     ((server.id, f"<@!{constants.client}>") for server in guilds),
     # )
+    
     st = time.time()
     await postgres.executemany(
         """INSERT INTO logging (server_id, logchannel) VALUES ($1, $2)
@@ -195,12 +204,16 @@ async def update_db(guilds, member_list):
     )
 
     st = time.time()
+    query = """
+            INSERT INTO nicknames
+            VALUES ($1, $2, $3)
+            ON CONFLICT (user_id, server_id)
+            DO NOTHING;
+            """
     await postgres.executemany(
-        """INSERT INTO nicknames VALUES ($1, $2, $3, $4) 
-    ON CONFLICT (serveruser) DO NOTHING""",
+        query,
         (
             (
-                f"{member.guild.id}:{member.id}",
                 member.id,
                 member.guild.id,
                 member.display_name,
@@ -215,12 +228,16 @@ async def update_db(guilds, member_list):
     )
 
     st = time.time()
+    query = """
+            INSERT INTO userroles
+            VALUES ($1, $2, $3)
+            ON CONFLICT (user_id, server_id)
+            DO NOTHING;
+            """
     await postgres.executemany(
-        """INSERT INTO userroles VALUES ($1, $2, $3, $4) 
-    ON CONFLICT (serveruser) DO NOTHING""",
+        query,
         (
             (
-                f"{member.guild.id}:{member.id}",
                 member.id,
                 member.guild.id,
                 ",".join(str(x.id) for x in member.roles),

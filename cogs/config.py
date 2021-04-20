@@ -23,7 +23,7 @@ class Config(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.todo = "./data/txts/todo.txt"
-        self.is_ownerlocked = utils.config()['ownerlocked']
+        self.is_ownerlocked = utils.config()["ownerlocked"]
 
     # this cog is owner only
     async def cog_check(self, ctx):
@@ -270,7 +270,7 @@ class Config(commands.Cog):
             f"{self.bot.emote_dict['success']} Successfully added `{todo}` to the todo list."
         )
 
-    @todo.command(aliases=['rm','rem'])
+    @todo.command(aliases=["rm", "rem"])
     async def remove(self, ctx, *, index_or_todo: str = None):
         if index_or_todo is None:
             return await ctx.send(
@@ -711,7 +711,9 @@ class Config(commands.Cog):
         if self.is_ownerlocked is True:
             self.is_ownerlocked = False
             utils.modify_config("ownerlocked", False)
-            return await ctx.send(f"{self.bot.emote_dict['success']} **Ownerlock Disabled.**")
+            return await ctx.send(
+                f"{self.bot.emote_dict['success']} **Ownerlock Disabled.**"
+            )
         else:
             c = await pagination.Confirmation(
                 f"**{self.bot.emote_dict['exclamation']} This action will prevent usage from all except my owners. Do you wish to continue?**"

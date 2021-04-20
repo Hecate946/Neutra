@@ -747,7 +747,7 @@ class Utility(commands.Cog):
         except Exception as e:
             await ctx.send(e)
 
-    @commands.command(aliases=["sw"],brief="Start or stop a stopwatch.")
+    @commands.command(aliases=["sw"], brief="Start or stop a stopwatch.")
     async def stopwatch(self, ctx):
         """
         Usage: -stopwatch

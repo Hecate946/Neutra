@@ -231,7 +231,7 @@ class Users(commands.Cog):
 
             message = await ctx.send(
                 reference=self.bot.rep_ref(ctx),
-                content=f"**{self.bot.emote_dict['loading']} Collecting User Data...**"
+                content=f"**{self.bot.emote_dict['loading']} Collecting User Data...**",
             )
 
             sid = int(user.id)
@@ -602,9 +602,7 @@ class Users(commands.Cog):
                 return await ctx.send(
                     f"{self.bot.emote_dict['error']} I do not track bots."
                 )
-            query = (
-                """SELECT command FROM commands WHERE server_id = $1 AND author_id = $2"""
-            )
+            query = """SELECT command FROM commands WHERE server_id = $1 AND author_id = $2"""
             command_list = await self.bot.cxn.fetch(query, ctx.guild.id, user.id)
         formatted_list = []
         for c in command_list:
@@ -720,7 +718,10 @@ class Users(commands.Cog):
                 reference=self.bot.rep_ref(ctx),
                 content=f"{self.bot.emote_dict['error']} I do not track bots.",
             )
-        message = await ctx.send(reference=self.bot.rep_ref(ctx), content=f"**{self.bot.emote_dict['loading']} Collecting Word Statistics...**")
+        message = await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"**{self.bot.emote_dict['loading']} Collecting Word Statistics...**",
+        )
         all_msgs = await self.bot.cxn.fetch(
             """SELECT content FROM messages WHERE author_id = $1 AND server_id = $2""",
             member.id,
@@ -767,7 +768,10 @@ class Users(commands.Cog):
                 content=f"{self.bot.emote_dict['error']} I do not track bots.",
             )
 
-        message = await ctx.send(reference=self.bot.rep_ref(ctx), content=f"**{self.bot.emote_dict['loading']} Collecting Word Statistics...**")
+        message = await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"**{self.bot.emote_dict['loading']} Collecting Word Statistics...**",
+        )
         all_msgs = await self.bot.cxn.fetch(
             """SELECT content FROM messages WHERE author_id = $1 AND server_id = $2""",
             member.id,
@@ -796,5 +800,6 @@ class Users(commands.Cog):
             common = str(found[1]) + "rd"
         else:
             common = str(found[1]) + "th"
-        await message.edit(content=f"The word `{word}` has been used {found[0][1]} time{'' if found[0][1] == 1 else 's'} and is the {common} most common word used by **{member.display_name}**"
+        await message.edit(
+            content=f"The word `{word}` has been used {found[0][1]} time{'' if found[0][1] == 1 else 's'} and is the {common} most common word used by **{member.display_name}**"
         )

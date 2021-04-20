@@ -97,16 +97,22 @@ class Updater(commands.Cog):
                 await self.bot.cxn.execute(query, message_id, author_id, channel_id)
             self.snipe_batch.clear()
 
-        query = """WITH username_insert AS (
+        query = """
+                WITH username_insert AS (
                     INSERT INTO usernames(user_id, usernames)
-                    VALUES ($1, $2) ON CONFLICT (user_id) DO NOTHING RETURNING user_id
-                   ),
-                   nickname_insert AS (
-                       INSERT INTO nicknames(serveruser, user_id, server_id, nicknames)
-                       VALUES ($3, $1, $4, $5) ON CONFLICT (serveruser) DO NOTHING RETURNING user_id
-                   )
-                   INSERT INTO userroles(serveruser, user_id, server_id, roles)
-                   VALUES ($3, $1, $4, $6) ON CONFLICT (serveruser) DO NOTHING
+                    VALUES ($1, $2)
+                    ON CONFLICT (user_id)
+                    DO NOTHING RETURNING user_id
+                ),
+                nickname_insert AS (
+                    INSERT INTO nicknames(user_id, server_id, nicknames)
+                    VALUES ($1, $3, $4)
+                    ON CONFLICT (user_id, server_id)
+                    DO NOTHING RETURNING user_id
+                )
+                   INSERT INTO userroles(user_id, server_id, roles)
+                   VALUES ($1, $3, $5)
+                   ON CONFLICT (user_id, server_id) DO NOTHING;
                 """
 
         async with self.batch_lock:
@@ -121,7 +127,6 @@ class Updater(commands.Cog):
                     query,
                     user_id,
                     username,
-                    f"{server_id}:{user_id}",
                     server_id,
                     nickname,
                     roles,

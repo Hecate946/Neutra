@@ -140,11 +140,14 @@ def time_between(first, last, reverse=False):
     if msg == "":
         return "0 seconds"
     else:
-        msg_args = msg[:-2].split(' ')
-        msg_args[-2] = 'and ' + msg_args[-2]
-        msg_args[-3] = msg_args[-3][:-1]
-        msg = ' '.join(msg_args)
-        return msg
+        try:
+            msg_args = msg[:-2].split(" ")
+            msg_args[-3] = msg_args[-3][:-1]
+            msg_args[-2] = "and " + msg_args[-2]
+            msg = " ".join(msg_args)
+            return msg
+        except IndexError:
+            return msg
 
 
 def responsible(target, reason):

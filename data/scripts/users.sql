@@ -1,8 +1,8 @@
 CREATE TABLE IF NOT EXISTS nicknames (
-    serveruser VARCHAR(50) PRIMARY KEY,
     user_id BIGINT,
     server_id BIGINT,
-    nicknames TEXT
+    nicknames TEXT,
+    UNIQUE(user_id, server_id)
 );
 
 CREATE TABLE IF NOT EXISTS usernames (
@@ -11,10 +11,10 @@ CREATE TABLE IF NOT EXISTS usernames (
 );
 
 CREATE TABLE IF NOT EXISTS userroles (
-    serveruser VARCHAR(50) PRIMARY KEY,
     user_id BIGINT,
     server_id BIGINT,
-    roles TEXT
+    roles TEXT,
+    UNIQUE(user_id, server_id)
 );
 
 CREATE TABLE IF NOT EXISTS usertime (
