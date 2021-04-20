@@ -1,3 +1,4 @@
+from re import M
 import time
 import discord
 
@@ -228,6 +229,11 @@ class Users(commands.Cog):
             if user is None:
                 user = ctx.author
 
+            message = await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"**{self.bot.emote_dict['loading']} Collecting User Data...**"
+            )
+
             sid = int(user.id)
             timestamp = ((sid >> 22) + 1420070400000) / 1000
             cdate = datetime.utcfromtimestamp(timestamp)
@@ -241,7 +247,7 @@ class Users(commands.Cog):
 
             tracking = self.bot.get_cog("Tracker")
 
-            title_str = f"Information on **{user}**"
+            title_str = f"{self.bot.emote_dict['info']} Information on **{user}**"
             msg = ""
             msg += f"Username      : {user}\n"
             if ctx.guild:
@@ -262,11 +268,11 @@ class Users(commands.Cog):
                                 msg += f"Nicknames     : {nicknames}\n"
             msg += f"Common Servers: {sum(g.get_member(user.id) is not None for g in ctx.bot.guilds)}\n"
             unix = user.created_at.timestamp()
-            msg += f"Created       : {utils.time_between(int(unix), int(time.time()))} ago - [{user.created_at.utcnow()} UTC]\n"
+            msg += f"Created       : {utils.format_time(user.created_at)}\n"
             if ctx.guild:
                 if isinstance(user, discord.Member):
                     unix = user.joined_at.timestamp()
-                    msg += f"Joined        : {utils.time_between(int(unix), int(time.time()))} ago - [{user.joined_at.utcnow()} UTC]\n"
+                    msg += f"Joined        : {utils.format_time(user.joined_at)}\n"
                     joined_list = []
                     for mem in ctx.guild.members:
                         joined_list.append({"ID": mem.id, "Joined": mem.joined_at})
@@ -337,7 +343,7 @@ class Users(commands.Cog):
                     perm_list = [Perm[0] for Perm in user.guild_permissions if Perm[1]]
                     msg += f'Permissions   : {", ".join(perm_list).replace("_", " ").replace("guild", "server").title().replace("Tts", "TTS")}'
 
-            await ctx.send(title_str)
+            await message.edit(content=title_str)
             t = pagination.MainMenu(
                 pagination.TextPageSource(msg, prefix="```yaml\n", suffix="```")
             )
@@ -714,7 +720,7 @@ class Users(commands.Cog):
                 reference=self.bot.rep_ref(ctx),
                 content=f"{self.bot.emote_dict['error']} I do not track bots.",
             )
-
+        message = await ctx.send(reference=self.bot.rep_ref(ctx), content=f"**{self.bot.emote_dict['loading']} Collecting Word Statistics...**")
         all_msgs = await self.bot.cxn.fetch(
             """SELECT content FROM messages WHERE author_id = $1 AND server_id = $2""",
             member.id,
@@ -730,8 +736,7 @@ class Users(commands.Cog):
         pages = pagination.MainMenu(
             pagination.TextPageSource(msg, prefix="```ini", max_size=1000)
         )
-        await ctx.send(
-            reference=self.bot.rep_ref(ctx),
+        await message.edit(
             content=f"Most common words sent by **{member.display_name}**",
         )
         try:
@@ -743,7 +748,7 @@ class Users(commands.Cog):
     @commands.guild_only()
     async def word(self, ctx, word: str = None, member: discord.Member = None):
         """
-        Usage: -word [user] [word]
+        Usage: -word <word> [user]
         Output: Number of times a word has been used by a user
         Permission: Manage Messages
         Notes:
@@ -752,7 +757,7 @@ class Users(commands.Cog):
         if word is None:
             return await ctx.send(
                 reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}word [user] <word>`",
+                content=f"Usage: `{ctx.prefix}word <word> [user]`",
             )
         if member is None:
             member = ctx.author
@@ -762,6 +767,7 @@ class Users(commands.Cog):
                 content=f"{self.bot.emote_dict['error']} I do not track bots.",
             )
 
+        message = await ctx.send(reference=self.bot.rep_ref(ctx), content=f"**{self.bot.emote_dict['loading']} Collecting Word Statistics...**")
         all_msgs = await self.bot.cxn.fetch(
             """SELECT content FROM messages WHERE author_id = $1 AND server_id = $2""",
             member.id,
@@ -779,8 +785,7 @@ class Users(commands.Cog):
                 found.append(x)
                 found.append(int(all_words.index(x)) + 1)
         if found == []:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
+            return await message.edit(
                 content=f"The word `{word}` has never been used by **{member.display_name}**",
             )
         if str(found[1]).endswith("1") and found[1] != 11:
@@ -791,6 +796,5 @@ class Users(commands.Cog):
             common = str(found[1]) + "rd"
         else:
             common = str(found[1]) + "th"
-        await ctx.send(
-            f"The word `{word}` has been used {found[0][1]} time{'' if found[0][1] == 1 else 's'} and is the {common} most common word used by **{member.display_name}**"
+        await message.edit(content=f"The word `{word}` has been used {found[0][1]} time{'' if found[0][1] == 1 else 's'} and is the {common} most common word used by **{member.display_name}**"
         )

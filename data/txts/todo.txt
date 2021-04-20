@@ -1,1 +1,1 @@
-make not suck
+cmd confirmation for words (takes too long to respond)

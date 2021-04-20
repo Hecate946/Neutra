@@ -358,6 +358,7 @@ class Tracker(commands.Cog):
             server_last_spoke = None
 
         if last_seen:
+            # last_seen = utils.format_time(datetime.datetime.utcfromtimestamp(last_seen))
             last_seen = utils.time_between(int(last_seen), int(time.time()))
         if last_spoke:
             last_spoke = utils.time_between(int(last_spoke), int(time.time()))
