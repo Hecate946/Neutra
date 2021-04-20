@@ -2,3 +2,4 @@
 (2021-04-18 04:47:58.615907+00:00) Add stopwatch command
 (2021-04-18 05:52:34.945789+00:00) Add calculate command
 (2021-04-18 18:17:55.180723+00:00) Rewrite blacklisting system
+(2021-04-20 18:12:58.939397+00:00) Add dehoist command
