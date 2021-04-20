@@ -444,10 +444,13 @@ class Utility(commands.Cog):
             result = await self.bot.cxn.fetch(query, ctx.guild.id)
             for x in result:
                 try:
-                    emoji = await ctx.guild.fetch_emoji(int(x[0][0]))
+                    emoji = self.bot.get_emoji(int(x[0][0]))
+                    if emoji is None:
+                        continue
                     emoji_list.append((emoji, x[0][1]))
 
-                except Exception:
+                except Exception as e:
+                    print(e)
                     continue
 
             p = pagination.SimplePages(

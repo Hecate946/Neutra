@@ -1,8 +1,10 @@
 import asyncio
+import copy
 import re
 
 import asyncpg
 import discord
+from discord import user
 from discord.ext import commands, menus
 
 from utilities import pagination, permissions, utils
@@ -998,3 +1000,98 @@ class Admin(commands.Cog):
             reference=self.bot.rep_ref(ctx),
             content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
         )
+
+    
+    @commands.command()
+    @permissions.bot_has_permissions(manage_nicknames=True)
+    @permissions.has_permissions(manage_guild=True)
+    async def dehoist(self, ctx, symbol: str = None):
+        """
+        Usage: -dehoist [symbol]
+        Permission: Manage Server
+        Output:
+            Re nicknames all users who hoist
+            their names with characters like "!"
+        Notes:
+            Pass an optional symbol to only nickname
+            users who's names begin with that symbol.
+            By default, all hoisting symbols will be
+            removed. If a user's name is made up entirely
+            of hoisting characters, their nickname will be
+            changed to "Dehoisted." The bot will inform you
+            of the number of users it was able to edit
+            and the number of users that have superior
+            permissions and are immune to nickname editing.
+        """
+        if symbol is None:
+            characters = [
+                "!",
+                '"',
+                "#",
+                "$",
+                "%",
+                "&",
+                "'",
+                "(",
+                ")",
+                "*",
+                "+",
+                ",",
+                "-",
+                ".",
+                "/",
+            ]
+        else:
+            characters = [symbol]
+        
+        c = await pagination.Confirmation(
+            msg=f"{self.bot.emote_dict['exclamation']} **This command will attempt to nickname all users with hoisting symbols in their names. Do you wish to continue?**"
+        ).prompt(ctx)
+        if c:
+            hoisted = []
+            for user in ctx.guild.members:
+                if user.display_name.startswith(tuple(characters)):
+                    hoisted.append(user)
+            
+            if len(hoisted) == 0:
+                await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content=f"{self.bot.emote_dict['exclamation']} No users to dehoist."
+                )
+                return
+            message = await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['loading']} **Dehoisting {len(hoisted)} user{'' if len(hoisted) == 1 else 's'}...**"
+            )
+            edited = []
+            failed = []
+            for user in hoisted:
+                name = copy.copy(user.display_name)
+                while name.startswith(tuple(characters)):
+                    name = name[1:]
+                print(name)
+                if name.strip(' ') == "":
+                    name = "Dehoisted"
+                try:
+                    await user.edit(
+                        nick=name,
+                        reason=utils.responsible(
+                            ctx.author, "Nickname edited by dehoist command."
+                        )
+                    )
+                    edited.append(str(user))
+                except Exception as e:
+                    failed.append(str(user))
+                    print(e)
+            msg = ""
+            if edited:
+                msg += f"{self.bot.emote_dict['success']} Dehoisted {len(edited)} user{'' if len(edited) == 1 else 's'}."
+            if failed:
+                msg += f"\n{self.bot.emote_dict['failed']} Failed to dehoist {len(failed)} user{'' if len(failed) == 1 else 's'}."
+            await message.edit(content=msg)
+        else:
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**"
+            )
+            

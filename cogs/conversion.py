@@ -256,7 +256,7 @@ class Conversion(commands.Cog):
             try:
                 role = await commands.RoleConverter().convert(ctx, value)
                 color_values = [role.color.value]
-                original_type = color_values
+                original_type = "hex"
             except Exception:
                 # Let's replace commas, and parethesis with spaces, then split on whitespace
                 values = (
@@ -314,14 +314,16 @@ class Conversion(commands.Cog):
             em = discord.Embed()
             # Organize the data into the Message format expectations
             if original_type == "hex":
-                hex_value = "#"+hex(color_values[0]).replace("0x","").rjust(6,"0").upper()
+                hex_value = (
+                    "#" + hex(color_values[0]).replace("0x", "").rjust(6, "0").upper()
+                )
                 color = color_values[0]
             elif original_type == "rgb":
                 hex_value = self._rgb_to_hex(*color_values)
-                color = int(self._rgb_to_hex(*color_values).replace("#",""),16)
+                color = int(self._rgb_to_hex(*color_values).replace("#", ""), 16)
             else:
                 hex_value = self._cmyk_to_hex(*color_values)
-                color = int(self._cmyk_to_hex(*color_values).replace("#",""),16)
+                color = int(self._cmyk_to_hex(*color_values).replace("#", ""), 16)
 
             em.add_field(name="HEX", value=hex_value, inline=False)
             em.add_field(

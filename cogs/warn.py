@@ -125,7 +125,7 @@ class Warn(commands.Cog):
         """
         Usage: -warncount [member]
         Alias: -listwarns
-        Output: Show how many warnings the member has on the server
+        Output: Show how many warnings the user has
         """
         if target is None:
             target = ctx.author
@@ -303,3 +303,4 @@ class Warn(commands.Cog):
             await p.start(ctx)
         except menus.MenuError as e:
             await ctx.send(e)
+        

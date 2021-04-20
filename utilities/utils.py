@@ -147,7 +147,7 @@ def time_between(first, last, reverse=False):
             msg = " ".join(msg_args)
             return msg
         except IndexError:
-            return msg
+            return msg[:-2]
 
 
 def responsible(target, reason):
