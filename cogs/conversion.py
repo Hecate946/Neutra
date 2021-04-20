@@ -293,10 +293,10 @@ class Conversion(commands.Cog):
                     if len(color_values) == 4
                     else None
                 )
-                if original_type == None:
+                if original_type is None:
                     return await ctx.send(
                         reference=self.bot.rep_ref(ctx),
-                        content="Incorrect number of color values!  Hex takes 1, RGB takes 3, CMYK takes 4.",
+                        content=f"{self.bot.emote_dict['failed']} Incorrect number of color values!  Hex takes 1, RGB takes 3, CMYK takes 4.",
                     )
                 # Verify values
                 max_val = (
@@ -313,28 +313,33 @@ class Conversion(commands.Cog):
                     )
             em = discord.Embed()
             # Organize the data into the Message format expectations
-            if original_type:
-                hex_value = (
-                    "#" + hex(color_values[0]).replace("0x", "").rjust(6, "0").upper()
-                )
+            if original_type == "hex":
+                hex_value = "#"+hex(color_values[0]).replace("0x","").rjust(6,"0").upper()
                 color = color_values[0]
-                em.add_field(name="HEX", value=hex_value, inline=False)
-                em.add_field(
-                    name="DECIMAL",
-                    value=int(self._check_hex(hex_value), 16),
-                    inline=False,
-                )
-                em.add_field(
-                    name="RGB",
-                    value="rgb({}, {}, {})".format(*self._hex_to_rgb(hex_value)),
-                    inline=False,
-                )
-                em.add_field(
-                    name="CMYK",
-                    value="cmyk({}, {}, {}, {})".format(*self._hex_to_cmyk(hex_value)),
-                    inline=False,
-                )
-                em.color = color
+            elif original_type == "rgb":
+                hex_value = self._rgb_to_hex(*color_values)
+                color = int(self._rgb_to_hex(*color_values).replace("#",""),16)
+            else:
+                hex_value = self._cmyk_to_hex(*color_values)
+                color = int(self._cmyk_to_hex(*color_values).replace("#",""),16)
+
+            em.add_field(name="HEX", value=hex_value, inline=False)
+            em.add_field(
+                name="DECIMAL",
+                value=int(self._check_hex(hex_value), 16),
+                inline=False,
+            )
+            em.add_field(
+                name="RGB",
+                value="rgb({}, {}, {})".format(*self._hex_to_rgb(hex_value)),
+                inline=False,
+            )
+            em.add_field(
+                name="CMYK",
+                value="cmyk({}, {}, {}, {})".format(*self._hex_to_cmyk(hex_value)),
+                inline=False,
+            )
+            em.color = color
             # Create the image
             file_path = "././data/wastebin/color.png"
             try:
