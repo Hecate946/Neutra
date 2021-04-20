@@ -173,17 +173,18 @@ class Logging(commands.Cog):
             embed.set_footer(text=f"Channel ID: {after.id}")
             await webhook.execute(embed=embed, username=self.bot.user.name)
 
-        elif isinstance(before, discord.TextChannel) and before.topic != after.topic:
-            embed = discord.Embed(
-                description=f"**Channel:** {after.mention} **Name:** `{after}`\n"
-                f"**Old Topic:** `{before.topic}`\n"
-                f"**New Topic:** `{after.topic}`\n",
-                colour=self.bot.constants.embed,
-                timestamp=datetime.utcnow(),
-            )
-            embed.set_author(name=f"Channel Update")
-            embed.set_footer(text=f"Channel ID: {after.id}")
-            await webhook.execute(embed=embed, username=self.bot.user.name)
+        if isinstance(before, discord.TextChannel):
+            if before.topic != after.topic:
+                embed = discord.Embed(
+                    description=f"**Channel:** {after.mention} **Name:** `{after}`\n"
+                    f"**Old Topic:** `{before.topic}`\n"
+                    f"**New Topic:** `{after.topic}`\n",
+                    colour=self.bot.constants.embed,
+                    timestamp=datetime.utcnow(),
+                )
+                embed.set_author(name=f"Channel Update")
+                embed.set_footer(text=f"Channel ID: {after.id}")
+                await webhook.execute(embed=embed, username=self.bot.user.name)
 
         # elif before.position != after.position:
         #     embed = discord.Embed(
@@ -197,35 +198,31 @@ class Logging(commands.Cog):
         #     embed.set_footer(text=f"Channel ID: {after.id}")
         #     await webhook.execute(embed=embed, username=self.bot.user.name)
 
-        elif (
-            isinstance(before, discord.TextChannel)
-            and before.slowmode_delay != after.slowmode_delay
-        ):
-            embed = discord.Embed(
-                description=f"**Channel:** {after.mention} **Name:** `{after}`\n"
-                f"**Old Slowmode:** `{before.slowmode_delay}`\n"
-                f"**New Slowmode:** `{after.slowmode_delay}`\n",
-                colour=self.bot.constants.embed,
-                timestamp=datetime.utcnow(),
-            )
-            embed.set_author(name=f"Channel Update")
-            embed.set_footer(text=f"Channel ID: {after.id}")
-            await webhook.execute(embed=embed, username=self.bot.user.name)
+        if isinstance(before, discord.TextChannel):
+            if before.slowmode_delay != after.slowmode_delay:
+                embed = discord.Embed(
+                    description=f"**Channel:** {after.mention} **Name:** `{after}`\n"
+                    f"**Old Slowmode:** `{before.slowmode_delay}`\n"
+                    f"**New Slowmode:** `{after.slowmode_delay}`\n",
+                    colour=self.bot.constants.embed,
+                    timestamp=datetime.utcnow(),
+                )
+                embed.set_author(name=f"Channel Update")
+                embed.set_footer(text=f"Channel ID: {after.id}")
+                await webhook.execute(embed=embed, username=self.bot.user.name)
 
-        elif (
-            isinstance(before, discord.VoiceChannel)
-            and before.user_limit != after.user_limit
-        ):
-            embed = discord.Embed(
-                description=f"**Channel:** {after.mention} **Name:** `{after}`\n"
-                f"**Old User Limit:** `{before.user_limit}`\n"
-                f"**New User Limit:** `{after.user_limit}`\n",
-                colour=self.bot.constants.embed,
-                timestamp=datetime.utcnow(),
-            )
-            embed.set_author(name=f"Channel Update")
-            embed.set_footer(text=f"Channel ID: {after.id}")
-            await webhook.execute(embed=embed, username=self.bot.user.name)
+        if isinstance(before, discord.VoiceChannel):
+            if before.user_limit != after.user_limit:
+                embed = discord.Embed(
+                    description=f"**Channel:** {after.mention} **Name:** `{after}`\n"
+                    f"**Old User Limit:** `{before.user_limit}`\n"
+                    f"**New User Limit:** `{after.user_limit}`\n",
+                    colour=self.bot.constants.embed,
+                    timestamp=datetime.utcnow(),
+                )
+                embed.set_author(name=f"Channel Update")
+                embed.set_footer(text=f"Channel ID: {after.id}")
+                await webhook.execute(embed=embed, username=self.bot.user.name)
 
         elif before.changed_roles != after.changed_roles:
             old_overwrites = (
