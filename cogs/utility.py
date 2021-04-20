@@ -398,7 +398,7 @@ class Utility(commands.Cog):
         content = result[2]
         timestamp = result[3]
 
-        author = await self.bot.fetch_user(author)
+        author = self.bot.get_user(author)
 
         if str(content).startswith("```"):
             content = f"**__Message Content__**\n {str(content)}"

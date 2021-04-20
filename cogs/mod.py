@@ -86,7 +86,7 @@ class Moderation(commands.Cog):
             vckicked = []
             for member in voice:
                 users = []
-                people = await self.bot.fetch_user(int(member.id))
+                people = self.bot.get_user(int(member.id))
                 users.append(people)
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
@@ -166,7 +166,7 @@ class Moderation(commands.Cog):
             vckicked = []
             for member in voice:
                 users = []
-                people = await self.bot.fetch_user(int(member.id))
+                people = self.bot.get_user(int(member.id))
                 users.append(people)
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
@@ -316,7 +316,7 @@ class Moderation(commands.Cog):
                 allmuted = []
                 for member in muted:
                     users = []
-                    people = await self.bot.fetch_user(int(member.id))
+                    people = self.bot.get_user(int(member.id))
                     users.append(people)
                     for user in users:
                         username = f"{user.name}#{user.discriminator}"
@@ -387,7 +387,7 @@ class Moderation(commands.Cog):
             allmuted = []
             for member in unmuted:
                 users = []
-                people = await self.bot.fetch_user(int(member.id))
+                people = self.bot.get_user(int(member.id))
                 users.append(people)
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
@@ -487,7 +487,7 @@ class Moderation(commands.Cog):
             blocked_users = []
             for unblind in blocked:
                 users = []
-                people = await self.bot.fetch_user(int(unblind.id))
+                people = self.bot.get_user(int(unblind.id))
                 users.append(people)
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
@@ -561,7 +561,7 @@ class Moderation(commands.Cog):
             unblocked_users = []
             for unblind in unblocked:
                 users = []
-                people = await self.bot.fetch_user(int(unblind.id))
+                people = self.bot.get_user(int(unblind.id))
                 users.append(people)
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
@@ -635,7 +635,7 @@ class Moderation(commands.Cog):
             blinded_users = []
             for unblind in blinded:
                 users = []
-                people = await self.bot.fetch_user(int(unblind.id))
+                people = self.bot.get_user(int(unblind.id))
                 users.append(people)
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
@@ -709,7 +709,7 @@ class Moderation(commands.Cog):
             unblinded_users = []
             for unblind in unblinded:
                 users = []
-                people = await self.bot.fetch_user(int(unblind.id))
+                people = self.bot.get_user(int(unblind.id))
                 users.append(people)
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
@@ -994,7 +994,7 @@ class Moderation(commands.Cog):
             hackbanned = []
             for ban in banned:
                 users = []
-                people = await self.bot.fetch_user(ban)
+                people = self.bot.get_user(ban)
                 users.append(people)
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"

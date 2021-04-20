@@ -83,7 +83,7 @@ class Updater(commands.Cog):
                 else:
                     destination = f"#{self.bot.get_channel(channel_id)} [{channel_id}] ({self.bot.get_guild(server_id)}) [{server_id}]"
                 command_logger.info(
-                    f"{await self.bot.fetch_user(author_id)} in {destination}: {content}"
+                    f"{self.bot.get_user(author_id)} in {destination}: {content}"
                 )
             self.command_batch.clear()
 

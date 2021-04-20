@@ -59,7 +59,7 @@ class Users(commands.Cog):
             notmobile = []
             for member in notmobilestatus:
                 users = []
-                people = await self.bot.fetch_user(int(member.id))
+                people = self.bot.get_user(int(member.id))
                 users.append(people)
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
@@ -72,7 +72,7 @@ class Users(commands.Cog):
             mobile = []
             for member in mobilestatus:
                 users = []
-                people = await self.bot.fetch_user(int(member.id))
+                people = self.bot.get_user(int(member.id))
                 users.append(people)
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
@@ -85,7 +85,7 @@ class Users(commands.Cog):
             mobile = []
             for member in web_status:
                 users = []
-                people = await self.bot.fetch_user(int(member.id))
+                people = self.bot.get_user(int(member.id))
                 users.append(people)
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
@@ -98,7 +98,7 @@ class Users(commands.Cog):
             mobile = []
             for member in offline:
                 users = []
-                people = await self.bot.fetch_user(int(member.id))
+                people = self.bot.get_user(int(member.id))
                 users.append(people)
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
@@ -692,7 +692,7 @@ class Users(commands.Cog):
             color=self.bot.constants.embed,
         )
         for n, v in enumerate(usage[:24]):
-            name = await self.bot.fetch_user(v[1])
+            name = self.bot.get_user(v[1])
             e.add_field(
                 name=f"{n+1}. {name}",
                 value=f"{v[0]} command{'' if int(v[0]) == 1 else 's'}",

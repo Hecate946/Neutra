@@ -454,13 +454,14 @@ class Hypernova(commands.AutoShardedBot):
 
         try:
             channel = self.get_channel(constants.reboot["channel"])
-            msg = await channel.fetch_message(constants.reboot["message"])
+            msg = channel.get_partial_message(constants.reboot["message"])
             await msg.edit(
                 content=self.emote_dict["success"]
                 + " "
                 + "{0}ed Successfully.".format(constants.reboot["invoker"])
             )
-        except Exception:
+        except Exception as e:
+            print(e)
             pass
 
     async def set_status(self):
