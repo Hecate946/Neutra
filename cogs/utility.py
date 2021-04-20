@@ -780,9 +780,39 @@ class Utility(commands.Cog):
     @commands.command(aliases=["math", "calc"], brief="Calculate a math formula.")
     async def calculate(self, ctx, *, formula=None):
         """
-        Usage: -calculate <formula>
-        Aliases: -calc, -math
-        """
+        Usage: calculate <expression>
+        Aliases: -math, -calc
+        Output: The result of your input
+        Examples:
+            -calc 2 + 2 + 4 + 5
+            -calc sqrt(532)
+            -calc log(2)
+            -calc sin(PI * E)
+        exponentiation: '^'
+        multiplication: 'x' | '*' 
+        division: '/'
+        addition: '+' | '-'
+        integer: ['+' | '-'] '0'..'9'+
+        constants: PI | E
+        Functions:  # To be used in the form -calc function(expression)
+            sqrt
+            log
+            sin
+            cos
+            tan
+            arcsin
+            arccos
+            arctan
+            sinh
+            cosh
+            tanh
+            arcsinh
+            arccosh
+            arctanh
+            abs
+            trunc
+            round
+            sgn"""
         if formula is None:
             return await ctx.send(
                 reference=self.bot.rep_ref(ctx),
@@ -794,19 +824,11 @@ class Utility(commands.Cog):
             answer = NumericStringParser().eval(formula)
             await ctx.message.add_reaction(self.bot.emote_dict["success"])
         except Exception:
-            msg = '{} I couldn\'t parse "{}"\n\n'.format(
+            msg = '{} I couldn\'t parse "{}"\n'.format(
                 self.bot.emote_dict["failed"],
                 formula.replace("*", "\\*").replace("`", "\\`").replace("_", "\\_"),
             )
-            msg += "I understand the following syntax:\n```fix\n"
-            msg += "expop   :: '^'\n"
-            msg += "multop  :: 'x' | '*' | '/'\n"
-            msg += "addop   :: '+' | '-'\n"
-            msg += "integer :: ['+' | '-'] '0'..'9'+\n"
-            msg += "atom    :: PI | E | real | fn '(' expr ')' | '(' expr ')'\n"
-            msg += "factor  :: atom [ expop factor ]*\n"
-            msg += "term    :: factor [ multop factor ]*\n"
-            msg += "expr    :: term [ addop term ]*```"
+            msg +=  "```yaml\n" + ctx.command.help + "```"
             return await ctx.send(msg)
 
         if int(answer) == answer:
@@ -833,14 +855,39 @@ class NumericStringParser(object):
 
     def __init__(self):
         """
-        expop   :: '^'
-        multop  :: 'x' | '*' | '/'
-        addop   :: '+' | '-'
-        integer :: ['+' | '-'] '0'..'9'+
-        atom    :: PI | E | real | fn '(' expr ')' | '(' expr ')'
-        factor  :: atom [ expop factor ]*
-        term    :: factor [ multop factor ]*
-        expr    :: term [ addop term ]*
+        Usage: calculate <expression>
+        Aliases: -math, -calc
+        Output: The result of your input
+        Examples:
+            -calc 2 + 2 + 4 + 5
+            -calc sqrt(532)
+            -calc log(2)
+            -calc sin(PI * E)
+        exponentiation: '^'
+        multiplication: 'x' | '*' 
+        division: '/'
+        addition: '+' | '-'
+        integer: ['+' | '-'] '0'..'9'+
+        constants: PI | E
+        Functions:  # To be used in the form -calc function(expression)
+            sqrt
+            log
+            sin
+            cos
+            tan
+            arcsin
+            arccos
+            arctan
+            sinh
+            cosh
+            tanh
+            arcsinh
+            arccosh
+            arctanh
+            abs
+            trunc
+            round
+            sgn
         """
         point = Literal(".")
         e = CaselessLiteral("E")
@@ -891,9 +938,20 @@ class NumericStringParser(object):
             "^": operator.pow,
         }
         self.fn = {
+            "sqrt": math.sqrt,
+            "log": math.log,
             "sin": math.sin,
             "cos": math.cos,
             "tan": math.tan,
+            "arcsin": math.asin,
+            "arccos": math.acos,
+            "arctan": math.atan,
+            "sinh": math.sinh,
+            "cosh": math.cosh,
+            "tanh": math.tanh,
+            "arcsinh": math.asinh,
+            "arccosh": math.acosh,
+            "arctanh": math.atanh,
             "abs": abs,
             "trunc": lambda a: int(a),
             "round": round,
