@@ -193,7 +193,7 @@ async def update_db(guilds, member_list):
 
     st = time.time()
     query = """
-            INSERT INTO (usernames)
+            INSERT INTO usernames
             VALUES ($1, $2)
             ON CONFLICT (user_id)
             DO NOTHING;
