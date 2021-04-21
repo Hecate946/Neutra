@@ -66,12 +66,13 @@ class Utility(commands.Cog):
         """
 
         def to_string(c):
-            digit = f'{ord(c):x}'
-            name = unicodedata.name(c, 'Name not found.')
+            digit = f"{ord(c):x}"
+            name = unicodedata.name(c, "Name not found.")
             return f'{self.bot.emote_dict["success"]} `\\U{digit:>08}`: {name} - {c} \N{EM DASH} <http://www.fileformat.info/info/unicode/char/{digit}>'
-        msg = '\n'.join(map(to_string, characters))
+
+        msg = "\n".join(map(to_string, characters))
         if len(msg) > 2000:
-            return await ctx.send('Output too long to display.')
+            return await ctx.send("Output too long to display.")
         await ctx.send(msg)
 
     @commands.command(brief="Show a user's avatar.", aliases=["av", "pfp"])
@@ -806,7 +807,7 @@ class Utility(commands.Cog):
             -calc log(2)
             -calc sin(PI * E)
         exponentiation: '^'
-        multiplication: 'x' | '*' 
+        multiplication: 'x' | '*'
         division: '/'
         addition: '+' | '-'
         integer: ['+' | '-'] '0'..'9'+
@@ -845,7 +846,7 @@ class Utility(commands.Cog):
                 self.bot.emote_dict["failed"],
                 formula.replace("*", "\\*").replace("`", "\\`").replace("_", "\\_"),
             )
-            msg +=  "```yaml\n" + ctx.command.help + "```"
+            msg += "```yaml\n" + ctx.command.help + "```"
             return await ctx.send(msg)
 
         if int(answer) == answer:
@@ -881,7 +882,7 @@ class NumericStringParser(object):
             -calc log(2)
             -calc sin(PI * E)
         exponentiation: '^'
-        multiplication: 'x' | '*' 
+        multiplication: 'x' | '*'
         division: '/'
         addition: '+' | '-'
         integer: ['+' | '-'] '0'..'9'+

@@ -1001,7 +1001,6 @@ class Admin(commands.Cog):
             content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
         )
 
-    
     @commands.command()
     @permissions.bot_has_permissions(manage_nicknames=True)
     @permissions.has_permissions(manage_guild=True)
@@ -1043,7 +1042,7 @@ class Admin(commands.Cog):
             ]
         else:
             characters = [symbol]
-        
+
         c = await pagination.Confirmation(
             msg=f"{self.bot.emote_dict['exclamation']} **This command will attempt to nickname all users with hoisting symbols in their names. Do you wish to continue?**"
         ).prompt(ctx)
@@ -1052,16 +1051,16 @@ class Admin(commands.Cog):
             for user in ctx.guild.members:
                 if user.display_name.startswith(tuple(characters)):
                     hoisted.append(user)
-            
+
             if len(hoisted) == 0:
                 await ctx.send(
                     reference=self.bot.rep_ref(ctx),
-                    content=f"{self.bot.emote_dict['exclamation']} No users to dehoist."
+                    content=f"{self.bot.emote_dict['exclamation']} No users to dehoist.",
                 )
                 return
             message = await ctx.send(
                 reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['loading']} **Dehoisting {len(hoisted)} user{'' if len(hoisted) == 1 else 's'}...**"
+                content=f"{self.bot.emote_dict['loading']} **Dehoisting {len(hoisted)} user{'' if len(hoisted) == 1 else 's'}...**",
             )
             edited = []
             failed = []
@@ -1070,14 +1069,14 @@ class Admin(commands.Cog):
                 while name.startswith(tuple(characters)):
                     name = name[1:]
                 print(name)
-                if name.strip(' ') == "":
+                if name.strip(" ") == "":
                     name = "Dehoisted"
                 try:
                     await user.edit(
                         nick=name,
                         reason=utils.responsible(
                             ctx.author, "Nickname edited by dehoist command."
-                        )
+                        ),
                     )
                     edited.append(str(user))
                 except Exception as e:
@@ -1092,6 +1091,5 @@ class Admin(commands.Cog):
         else:
             await ctx.send(
                 reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**"
+                content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
             )
-            

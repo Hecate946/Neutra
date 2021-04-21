@@ -10,7 +10,8 @@ import subprocess
 import sys
 import time
 from platform import python_version
-
+import codecs
+import pathlib
 import discord
 import psutil
 from discord import __version__ as discord_version
@@ -688,72 +689,72 @@ class Bot(commands.Cog):
         except menus.MenuError as e:
             await ctx.send(str(e))
 
-
     @commands.command(
-        aliases=["code", "cloc"], brief="Count the lines in the source code."
+        aliases=["code", "cloc", 'codeinfo'], brief="Show sourcecode statistics."
     )
     async def lines(self, ctx):
         """
         Usage: -lines
-        Aliases: -cloc, -code
+        Aliases: -cloc, -code, codeinfo
         Output:
-            Gives the number of lines in the source code"""
+            Gives lines, characters, imports, functions,
+            classes, comments, and files in the source code
+        """
         async with ctx.channel.typing():
-            # Script from
-            # https://github.com/kyco/python-count-lines-of-code/blob/python3/cloc.py
+            msg = "```fix\n"
+            lines = 0
+            file_amount = 0
+            comments = 0
+            funcs = 0
+            classes = 0
+            chars = 0
+            imports = 0
+            exclude = set([".testervenv", ".git", "__pycache__", ".vscode"])
+            for path, subdirs, files in os.walk("."):
+                [subdirs.remove(d) for d in list(subdirs) if d in exclude]
+                for name in files:
+                    if name.endswith(".py"):
+                        file_amount += 1
+                        with codecs.open(
+                            "./" + str(pathlib.PurePath(path, name)), "r", "utf-8"
+                        ) as f:
+                            for l in f:
+                                chars += len(l.strip())
+                                if l.strip().startswith("#"):
+                                    comments += 1
+                                elif len(l.strip()) == 0:
+                                    pass
+                                else:
+                                    lines += 1
+                                    if l.strip().startswith(
+                                        "def"
+                                    ) or l.strip().startswith("async"):
+                                        funcs += 1
+                                    elif l.strip().startswith("class"):
+                                        classes += 1
+                                    elif l.strip().startswith(
+                                        "import"
+                                    ) or l.strip().startswith("from"):
+                                        imports += 1
+            width = max(
+                len(f"{lines:,}"),
+                len(f"{file_amount:,}"),
+                len(f"{chars:,}"),
+                len(f"{imports:,}"),
+                len(f"{classes:,}"),
+                len(f"{funcs:,}"),
+                len(f"{comments:,}"),
+            )
+            msg += f"{file_amount:,} Files\n"
+            msg += f"{lines:,} Lines\n"
+            msg += f"{chars:,} Characters\n"
+            msg += f"{imports:,} Imports\n"
+            msg += f"{classes:,} Classes\n"
+            msg += f"{funcs:,} Functions\n"
+            msg += f"{funcs:,} Comments"
 
-            # Get our current working directory
-            path = os.getcwd()
-
-            # Set up some lists
-            extensions = []
-            code_count = []
-            include = ["py", "sql", "json", "yml"]
-
-            # Get the extensions - include our include list
-            extensions = self.get_extensions(path, include)
-            
-
-            for run in extensions:
-                from utilities import info
-                info.get_files(os.getcwd())
-                extension = "*." + run
-                temp = 0
-                for root, dir, files in os.walk(path):
-                    for items in fnmatch.filter(files, extension):
-                        value = root + "/" + items
-                        temp += sum(+1 for line in open(value, "rb"))
-                code_count.append(temp)
-                pass
-
-            # Set up our output
-            msg = f"{self.bot.emote_dict['info']} Info on home directory:\n```fix\n"
-            padTo = 0
-            for idx, val in enumerate(code_count):
-                # Find out which has the longest
-                tempLen = len(str("{:,}".format(code_count[idx])))
-                if tempLen > padTo:
-                    padTo = tempLen
-            for idx, val in enumerate(code_count):
-                lineWord = "lines"
-                if code_count[idx] == 1:
-                    lineWord = "line"
-
-                numString = str("{:,}".format(code_count[idx])).ljust(padTo, " ")
-                msg += numString + " " + lineWord + " of " + extensions[idx] + "\n"
-                pass
             msg += "```"
-            await ctx.send(msg)
-
-    # Helper function to get extensions
-    def get_extensions(self, path, excl):
-        extensions = []
-        for root, dir, files in os.walk(path):
-            for items in fnmatch.filter(files, "*"):
-                temp_extensions = items.rfind(".")
-                ext = items[temp_extensions + 1 :]
-                if ext not in extensions:
-                    if ext in excl:
-                        extensions.append(ext)
-                        pass
-        return extensions
+            em = discord.Embed(color=self.bot.constants.embed)
+            em.title = f"{self.bot.emote_dict['info']} Source information"
+            em.description = msg
+            await ctx.send(embed=em)

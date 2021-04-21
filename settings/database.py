@@ -22,7 +22,10 @@ async def initialize(guilds, members):
     await update_db(guilds, members)
     await load_settings()
 
+
 SEPARATOR = "=" * 33
+
+
 async def scriptexec():
     # We execute the SQL script to make sure we have all our tables.
     st = time.time()
