@@ -8,7 +8,7 @@ Hello! I'm Hypernova, and I specialize in tracking and moderation.
 I was designed to collect all sorts of data on servers, users,
 messages, emojis, online time, and more! I also come with a fast
 and clean moderation system that offers every opportunity for effective
-server management. Apart from moderation and tracking, I feature 176
+server management. Apart from moderation and tracking, I feature 175
 commands across 12 categories that provide awesome utilities!
 Some examples include managing user timezones, role management, and logging.
 ## Categories
@@ -27,7 +27,7 @@ Some examples include managing user timezones, role management, and logging.
 
 
 ### Admin
-#### Module for server administration. (13 Commands)
+#### Module for server administration. (15 Commands)
 
 ```yaml
 addprefix: Add a custom server prefix.
@@ -44,6 +44,10 @@ leave: Have the bot leave the server.
 
 lock: Lock a channel
 
+massascify: Mass nickname users with odd names.
+
+massdehoist: Dehoist all server users.
+
 muterole: Setup server muting system.
 
 prefixes: Show all server prefixes.
@@ -58,7 +62,7 @@ unlock: Unlock a channel.
 ```
 
 ### Bot
-#### Module for bot information (14 Commands)
+#### Module for bot information (15 Commands)
 
 ```yaml
 about: Display information about the bot.
@@ -70,6 +74,8 @@ bugreport: Send a bugreport to the developer.
 changelog: Show my changelog.
 
 hostinfo: Show the bot's host environment.
+
+lines: Show sourcecode statistics.
 
 overview: Show some info on the bot's purpose.
 
@@ -321,16 +327,22 @@ words: Most used words from a user.
 ```
 
 ### Utility
-#### Module for general utilities (18 Commands)
+#### Module for general utilities (21 Commands)
 
 ```yaml
+ascify: Convert special characters to ascii.
+
 avatar: Show a user's avatar.
 
 calculate: Calculate a math formula.
 
+charinfo: Show information on a character.
+
 clock: Get the time of any location
 
 defaultavatar: Show a user's default avatar.
+
+dehoist: Dehoist a specified user.
 
 emoji: Get usage stats on an emoji.
 
@@ -354,7 +366,7 @@ snipe: Snipe a deleted message.
 
 snowflake: Show info on a discord snowflake.
 
-stopwatch: None
+stopwatch: Start or stop a stopwatch.
 
 time: Show a user's current time.
 
