@@ -60,6 +60,70 @@ class Utility(commands.Cog):
         embed.set_image(url=url)
         await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)
 
+
+    @commands.command(brief="Dehoist a specified user.")
+    @permissions.bot_has_permissions(manage_nicknames=True)
+    @permissions.has_permissions(manage_nicknames=True)
+    async def dehoist(self, ctx, user: discord.Member = None):
+        """
+        Usage: -dehoist <user>
+        Permission: Manage Nicknames
+        Output:
+            Re nicknames a single user who hoists
+            themselves at the top of the member
+            list by using special characters
+        Notes:
+            To dehoist all users, use -massdehoist
+            instead.
+        """
+        if user is None:
+            return await ctx.send(f"Usage: `{ctx.prefix}dehoist <user>`")
+        characters = [
+            "!",
+            '"',
+            "#",
+            "$",
+            "%",
+            "&",
+            "'",
+            "(",
+            ")",
+            "*",
+            "+",
+            ",",
+            "-",
+            ".",
+            "/",
+        ]
+        if user.display_name.startswith(tuple(characters)):
+            name = copy.copy(user.display_name)
+            while name.startswith(tuple(characters)):
+                name = name[1:]
+            if name.strip() == "":
+                name = "Dehoisted"
+            try:
+                await user.edit(
+                    nick=name,
+                    reason=utils.responsible(
+                        ctx.author, "Nickname edited by dehoist command."
+                    ),
+                )
+                return await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content=f"{self.bot.emote_dict['success']} Successfully dehoisted `{user}`",
+                )
+            except Exception:
+                await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content=f"{self.bot.emote_dict['failed']} Failed to dehoist `{user}`",
+                )
+
+        else:
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['failed']} User `{user}` is not hoisting.",
+            )
+
     @commands.command(brief="Convert special characters to ascii.")
     async def ascify(self, ctx, *, str_or_member=None):
         """
