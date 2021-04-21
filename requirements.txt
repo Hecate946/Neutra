@@ -50,5 +50,6 @@ toml==0.10.2
 typed-ast==1.4.2
 typing-extensions==3.7.4.3
 tzlocal==2.1
+Unidecode==1.2.0
 urllib3==1.26.4
 yarl==1.6.3
