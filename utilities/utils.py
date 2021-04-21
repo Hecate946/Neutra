@@ -266,7 +266,34 @@ def getClockForTime(time_string):
         clock_string = str(hour) + "30"
     else:
         clock_string = str(hour)
-    return time_string + " :clock" + clock_string + ":"
+
+    clock_dict = {
+        ":clock1:": "\U0001f550",
+        ":clock130:": "\U0001f55c",
+        ":clock2:": "\U0001f551",
+        ":clock230:": "\U0001f55d",
+        ":clock3:": "\U0001f552",
+        ":clock330:": "\U0001f55e",
+        ":clock4:": "\U0001f553",
+        ":clock430:": "\U0001f55f",
+        ":clock5:": "\U0001f554",
+        ":clock530:": "\U0001f560",
+        ":clock6:": "\U0001f555",
+        ":clock630:": "\U0001f561",
+        ":clock7:": "\U0001f556",
+        ":clock730:": "\U0001f562",
+        ":clock8:": "\U0001f557",
+        ":clock830:": "\U0001f563",
+        ":clock9:": "\U0001f558",
+        ":clock930:": "\U0001f564",
+        ":clock10:": "\U0001f559",
+        ":clock1030:": "\U0001f565",
+        ":clock11:": "\U0001f55a",
+        ":clock1130:": "\U0001f566",
+        ":clock12:": "\U0001f55b",
+        ":clock1230:": "\U0001f567",
+    }
+    return time_string + " " + clock_dict[":clock" + clock_string + ":"]
 
 
 def getUserTime(

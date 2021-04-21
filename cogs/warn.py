@@ -10,7 +10,7 @@ def setup(bot):
 
 class Warn(commands.Cog):
     """
-    Manage the server warning system
+    Manage the server warning system.
     """
 
     def __init__(self, bot):
@@ -103,7 +103,7 @@ class Warn(commands.Cog):
                 if reason:
                     try:
                         await target.send(
-                            f"<:announce:807097933916405760> You have been warned in **{ctx.guild.name}** `{reason}`."
+                            f"{self.bot.emote_dict['announce']} You have been warned in **{ctx.guild.name}** `{reason}`."
                         )
                     except Exception:
                         return
@@ -146,7 +146,7 @@ class Warn(commands.Cog):
             warnings = int(warnings[0])
             await ctx.send(
                 reference=self.bot.rep_ref(ctx),
-                content=f"<:announce:807097933916405760> User `{target}` currently has **{warnings}** warning{'' if int(warnings) == 1 else 's'} in this server.",
+                content=f"{self.bot.emote_dict['announce']} User `{target}` currently has **{warnings}** warning{'' if int(warnings) == 1 else 's'} in this server.",
             )
         except Exception as e:
             return await ctx.send(e)
@@ -200,7 +200,7 @@ class Warn(commands.Cog):
             )
             try:
                 await target.send(
-                    f"<:announce:807097933916405760> All your warnings have been cleared in **{ctx.guild.name}**."
+                    f"{self.bot.emote_dict['announce']} All your warnings have been cleared in **{ctx.guild.name}**."
                 )
             except Exception:
                 return
@@ -259,7 +259,7 @@ class Warn(commands.Cog):
                 )
             try:
                 await target.send(
-                    f"<:announce:807097933916405760> You last warning has been revoked in **{ctx.guild.name}**."
+                    f"{self.bot.emote_dict['announce']} You last warning has been revoked in **{ctx.guild.name}**."
                 )
             except Exception:
                 return

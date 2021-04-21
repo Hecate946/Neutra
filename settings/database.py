@@ -417,13 +417,13 @@ async def fix_server(server):
             FROM prefixes WHERE server_id = $1 GROUP BY server_id;
             """
     all_prefixes = await postgres.fetchrow(query, server)
-    if all_prefixes is None:
+    try:
+        server_id = all_prefixes[0]
+        prefixes = all_prefixes[1]
+
+        settings[server_id]["prefixes"] = prefixes
+    except TypeError:  # No custom prefixes, must be new server
         pass
-
-    server_id = all_prefixes[0]
-    prefixes = all_prefixes[1]
-
-    settings[server_id]["prefixes"] = prefixes
 
     # Load the ignored users
     query = """SELECT (server_id, user_id, react) FROM ignored WHERE server_id = $1;"""

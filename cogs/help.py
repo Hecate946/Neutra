@@ -296,7 +296,7 @@ class Help(commands.Cog):
                 "moderation",
                 "punish",
             ]:
-                cog = self.bot.get_cog("Moderation")
+                cog = self.bot.get_cog("Mod")
                 return await self.helper_func(
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )
@@ -308,9 +308,18 @@ class Help(commands.Cog):
                 "utils",
                 "util",
                 "utilities",
-                "timezones",
             ]:
                 cog = self.bot.get_cog("Utility")
+                return await self.helper_func(
+                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
+                )
+
+            if invokercommand.lower() in [
+                "times",
+                "time",
+                "timezones",
+            ]:
+                cog = self.bot.get_cog("Time")
                 return await self.helper_func(
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )

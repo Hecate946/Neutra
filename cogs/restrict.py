@@ -11,7 +11,7 @@ def setup(bot):
 
 class Restrict(commands.Cog):
     """
-    Module for disabling commands
+    Module for disabling commands.
     """
 
     def __init__(self, bot):

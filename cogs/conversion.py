@@ -23,7 +23,7 @@ def setup(bot):
 
 class Conversion(commands.Cog):
     """
-    Module for unit conversions
+    Module for unit conversions.
     """
 
     def __init__(self, bot, settings):

@@ -27,7 +27,7 @@ def setup(bot):
 
 class Bot(commands.Cog):
     """
-    Module for bot information
+    Module for bot information.
     """
 
     def __init__(self, bot):

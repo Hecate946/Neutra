@@ -27,7 +27,7 @@ emotes = {
     "success": "<:checkmark:816534984676081705>",
     "failed": "<:failed:816521503554273320>",
     "error": "<:error:816456396735905844>",
-    "announce": "<:announce:807097933916405760>",
+    "announce": "<:announce:834495346058067998>",
     "1234button": "<:1234:816460247777411092>",
     "info": "<:info:827428282001260544>",
     "exclamation": "<:exclamation:827753511395000351>",

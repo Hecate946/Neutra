@@ -15,10 +15,10 @@ from utilities import converters, pagination, permissions, utils
 
 
 def setup(bot):
-    bot.add_cog(Moderation(bot))
+    bot.add_cog(Mod(bot))
 
 
-class Moderation(commands.Cog):
+class Mod(commands.Cog):
     """
     Keep your server under control.
     """
@@ -299,7 +299,7 @@ class Moderation(commands.Cog):
                     if reason:
                         try:
                             await target.send(
-                                f"<:announce:807097933916405760> You have been muted in **{ctx.guild.name}** {reason}. Mute duration: `{minutes if minutes is not None else 'Infinite'} minute{'' if minutes == 1 else 's'}`"
+                                f"{self.bot.emote_dict['announce']} You have been muted in **{ctx.guild.name}** {reason}. Mute duration: `{minutes if minutes is not None else 'Infinite'} minute{'' if minutes == 1 else 's'}`"
                             )
                         except Exception:
                             return
@@ -372,7 +372,7 @@ class Moderation(commands.Cog):
                 if unmutereason:
                     try:
                         await target.send(
-                            f"<:announce:807097933916405760> You have been unmuted in **{ctx.guild.name}**"
+                            f"{self.bot.emote_dict['announce']} You have been unmuted in **{ctx.guild.name}**"
                         )
                     except Exception:
                         return

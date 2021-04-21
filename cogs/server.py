@@ -12,7 +12,7 @@ def setup(bot):
 
 class Server(commands.Cog):
     """
-    Module for all server stats
+    Module for all server stats.
     """
 
     def __init__(self, bot):
@@ -361,7 +361,7 @@ class Server(commands.Cog):
         )
         em.add_field(
             name="Role Count",
-            value=f"<:announce:807097933916405760> {str(role_count)}",
+            value=f"{self.bot.emote_dict['announce']} {str(role_count)}",
             inline=True,
         )
         em.add_field(name="Region", value=region, inline=True)

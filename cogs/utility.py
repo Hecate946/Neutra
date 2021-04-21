@@ -39,14 +39,12 @@ def setup(bot):
 
 class Utility(commands.Cog):
     """
-    Module for general utilities
+    Module for general utilities.
     """
 
     def __init__(self, bot):
         self.bot = bot
         self.emote_dict = bot.emote_dict
-        self.stopwatches = {}
-        self.geo = geocoders.Nominatim(user_agent="Hypernova")
 
     async def do_avatar(self, ctx, user, url):
         embed = discord.Embed(
@@ -59,7 +57,6 @@ class Utility(commands.Cog):
         )
         embed.set_image(url=url)
         await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)
-
 
     @commands.command(brief="Dehoist a specified user.")
     @permissions.bot_has_permissions(manage_nicknames=True)
@@ -640,156 +637,6 @@ class Utility(commands.Cog):
             except menus.MenuError as e:
                 await ctx.send(e)
 
-    @commands.command(
-        brief="Remove your timezone.",
-        aliases=["rmtz", "removetz", "removetimzone", "rmtimezone", "remtimezone"],
-    )
-    async def remtz(self, ctx):
-        """Remove your timezone"""
-
-        await self.bot.cxn.execute(
-            "DELETE FROM usertime WHERE user_id = $1;", ctx.author.id
-        )
-        await ctx.send(
-            f"{self.bot.emote_dict['success']} Your timezone has been removed."
-        )
-
-    @commands.command(brief="Set your timezone.", aliases=["settimezone", "settime"])
-    async def settz(self, ctx, *, tz_search=None):
-        """List all the supported timezones."""
-
-        msg = ""
-        if tz_search is None:
-            title = "Available Timezones"
-            entry = [x for x in pytz.all_timezones]
-            p = pagination.SimplePages(
-                entry,
-                per_page=20,
-                index=False,
-                desc_head="```prolog\n",
-                desc_foot="```",
-            )
-            p.embed.title = title
-            try:
-                await p.start(ctx)
-            except menus.MenuError as e:
-                await ctx.send(e)
-        else:
-            tz_list = utils.disambiguate(tz_search, pytz.all_timezones, None, 5)
-            if not tz_list[0]["ratio"] == 1:
-                edit = True
-                tz_list = [x["result"] for x in tz_list]
-                index, message = await pagination.Picker(
-                    embed_title="Select one of the 5 closest matches.",
-                    list=tz_list,
-                    ctx=ctx,
-                ).pick(embed=True, syntax="prolog")
-
-                if index < 0:
-                    return await message.edit(
-                        content=f"{self.bot.emote_dict['info']} Timezone selection cancelled.",
-                        embed=None,
-                    )
-
-                selection = tz_list[index]
-            else:
-                edit = False
-                selection = tz_list[0]["result"]
-
-            query = """
-                    INSERT INTO usertime
-                    VALUES ($1, $2)
-                    ON CONFLICT (user_id)
-                    DO UPDATE SET timezone = $2
-                    WHERE usertime.user_id = $1;
-                    """
-            await self.bot.cxn.execute(query, ctx.author.id, selection)
-            msg = f"{self.bot.emote_dict['success']} Timezone set to `{selection}`"
-            if edit:
-                await message.edit(content=msg, embed=None)
-            else:
-                await ctx.send(msg)
-
-    @commands.command(brief="See a member's timezone.", aliases=["tz"])
-    async def timezone(self, ctx, *, member: converters.DiscordUser = None):
-        """See a member's timezone."""
-
-        if member is None:
-            member = ctx.author
-
-        query = """
-                SELECT timezone
-                FROM usertime
-                WHERE user_id = $1;
-                """
-        timezone = await self.bot.cxn.fetchval(query, member.id) or None
-        if timezone is None:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['error']} `{member}` has not set their timezone. "
-                f"Use the `{ctx.prefix}settz [Region/City]` command.",
-            )
-
-        await ctx.send(
-            reference=self.bot.rep_ref(ctx),
-            content=f"`{member}'` timezone is *{timezone}*",
-        )
-
-    @commands.command(brief="Show a user's current time.")
-    async def time(self, ctx, *, member: discord.Member = None):
-        """
-        Usage: -time [member]
-        Output: Time for the passed user, if set.
-        Notes: Will default to you if no user is specified
-        """
-        timenow = utils.getClockForTime(datetime.utcnow().strftime("%I:%M %p"))
-        if member is None:
-            member = ctx.author
-
-        query = """
-                SELECT timezone
-                FROM usertime
-                WHERE user_id = $1;
-                """
-        tz = await self.bot.cxn.fetchval(query, member.id) or None
-        if tz is None:
-            msg = (
-                f"`{member}` hasn't set their timezone yet. "
-                f"They can do so with `{ctx.prefix}settz [Region/City]` command.\n"
-                f"The current UTC time is **{timenow}**."
-            )
-            await ctx.send(msg)
-            return
-
-        t = self.getTimeFromTZ(tz)
-        if t is None:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['failed']} I couldn't find that timezone.",
-            )
-            return
-        t["time"] = utils.getClockForTime(t["time"])
-        if member:
-            msg = f'It\'s currently **{t["time"]}** where {member.display_name} is.'
-        else:
-            msg = "{} is currently **{}**".format(t["zone"], t["time"])
-
-        await ctx.send(msg)
-
-    def getTimeFromTZ(self, tz, t=None):
-        # Assume sanitized zones - as they're pulled from pytz
-        # Let's get the timezone list
-        tz_list = utils.disambiguate(tz, pytz.all_timezones, None, 3)
-        if not tz_list[0]["ratio"] == 1:
-            # We didn't find a complete match
-            return None
-        zone = pytz.timezone(tz_list[0]["result"])
-        if t is None:
-            zone_now = datetime.now(zone)
-        else:
-            zone_now = t.astimezone(zone)
-        return {"zone": tz_list[0]["result"], "time": zone_now.strftime("%I:%M %p")}
-
     @commands.command(brief="Shorten a URL.")
     async def shorten(self, ctx, url=None):
         """
@@ -820,89 +667,6 @@ class Utility(commands.Cog):
                 content=f"{self.bot.emote_dict['success']} Successfully shortened URL:\t"
                 "<{}>".format(resp["data"]["url"]),
             )
-
-    @commands.command(
-        brief="Get the time of any location", aliases=["worldclock", "worldtime"]
-    )
-    async def clock(self, ctx, *, place=None):
-        """
-        Usage: -clock <location>
-        Aliases: -worldclock, -worldtime
-        Examples:
-            -clock Los Angeles
-            -clock Netherlands
-        Output:
-            The current time in the specified location
-        Notes:
-            Can accept cities, states, provinces,
-            and countries as valid locations
-        """
-        if place is None:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}clock <location>`",
-            )
-        try:
-            city_name = re.sub(r"([^\s\w]|_)+", "", place)
-            location = self.geo.geocode(city_name)
-            if location == None:
-                await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
-                    content=f"{self.bot.emote_dict['failed']} Invalid location.",
-                )
-
-            r = await self.bot.get(
-                "http://api.timezonedb.com/v2.1/get-time-zone?key={}&format=json&by=position&lat={}&lng={}".format(
-                    self.bot.constants.timezonedb, location.latitude, location.longitude
-                )
-            )
-            request = json.loads(r)
-
-            if request["status"] != "OK":
-                await ctx.send(reference=self.bot.rep_ref(ctx), content="Fuck.")
-            else:
-                time = datetime.fromtimestamp(request["timestamp"])
-                em = discord.Embed(
-                    title=f"Time in {location}",
-                    description="**{}**\n\t{} ({})\n {} ({})".format(
-                        request["formatted"],
-                        request["abbreviation"],
-                        request["zoneName"],
-                        request["countryName"],
-                        request["countryCode"],
-                    ),
-                    color=self.bot.constants.embed,
-                )
-                await ctx.send(reference=self.bot.rep_ref(ctx), embed=em)
-        except Exception as e:
-            await ctx.send(e)
-
-    @commands.command(aliases=["sw"], brief="Start or stop a stopwatch.")
-    async def stopwatch(self, ctx):
-        """
-        Usage: -stopwatch
-        Alias: -sw
-        Output: Starts or ends a stopwatch
-        Notes:
-             One stopwatch is available per user.
-             Your stopwatch will not be interrupted
-             if another user executes the command.
-        """
-        author = ctx.author
-        if author.id not in self.stopwatches:
-            self.stopwatches[author.id] = int(time.perf_counter())
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['stopwatch']} Stopwatch started!",
-            )
-        else:
-            tmp = abs(self.stopwatches[author.id] - int(time.perf_counter()))
-            tmp = str(timedelta(seconds=tmp))
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['stopwatch']} Stopwatch stopped! Time: **{tmp}**",
-            )
-            self.stopwatches.pop(author.id, None)
 
     @commands.command(aliases=["math", "calc"], brief="Calculate a math formula.")
     async def calculate(self, ctx, *, formula=None):

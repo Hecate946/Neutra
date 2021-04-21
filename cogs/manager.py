@@ -28,7 +28,7 @@ def setup(bot):
 
 class Manager(commands.Cog):
     """
-    Manage bot processes and cogs
+    Manage bot processes and cogs.
     """
 
     def __init__(self, bot):

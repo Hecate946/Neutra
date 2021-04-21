@@ -14,7 +14,7 @@ def setup(bot):
 
 class Logging(commands.Cog):
     """
-    Log your server events
+    Log all server events.
     """
 
     def __init__(self, bot):
