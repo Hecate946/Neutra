@@ -108,8 +108,15 @@ class Time(commands.Cog):
             else:
                 await ctx.send(msg)
 
-    @commands.command(brief="Show times for all users.")
-    async def alltime(self, ctx):
+    @commands.command(brief="Show times for all users.", aliases=['alltime','alltimes'])
+    async def usertimes(self, ctx):
+        """
+        Usage: -usertimes
+        Aliases: -alltime, -alltimes
+        Output:
+            Shows the current time for all
+            users who set their timezone
+        """
         query = """
                 SELECT *
                 FROM usertime;
