@@ -61,7 +61,7 @@ class Utility(commands.Cog):
         await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)
 
     @commands.command(brief="Convert special characters to ascii.")
-    async def ascify(self, ctx, *, str_or_member = None):
+    async def ascify(self, ctx, *, str_or_member=None):
         """
         Usage: -ascify <string/member>
         Aliases: -ascii, -normalize
@@ -90,7 +90,7 @@ class Utility(commands.Cog):
                             await member.edit(nick=ascified)
                             return await ctx.send(
                                 reference=self.bot.rep_ref(ctx),
-                                content=f"{self.bot.emote_dict['success']} Ascified **{current_name}** to **{ascified}**"
+                                content=f"{self.bot.emote_dict['success']} Ascified **{current_name}** to **{ascified}**",
                             )
                 except Exception:
                     pass
@@ -100,9 +100,8 @@ class Utility(commands.Cog):
             ascified = unidecode(str_or_member)
         await ctx.send(
             reference=self.bot.rep_ref(ctx),
-            content=f"{self.bot.emote_dict['success']} Result: **{ascified}**"
+            content=f"{self.bot.emote_dict['success']} Result: **{ascified}**",
         )
-
 
     @commands.command(brief="Show information on a character.")
     async def charinfo(self, ctx, *, characters: str):

@@ -6,6 +6,7 @@ import asyncpg
 import discord
 from discord import user
 from discord.ext import commands, menus
+from unidecode import unidecode
 
 from utilities import pagination, permissions, utils
 
@@ -1003,10 +1004,73 @@ class Admin(commands.Cog):
 
     @commands.command()
     @permissions.bot_has_permissions(manage_nicknames=True)
-    @permissions.has_permissions(manage_guild=True)
-    async def dehoist(self, ctx, symbol: str = None):
+    @permissions.has_permissions(manage_nicknames=True)
+    async def dehoist(self, ctx, user: discord.Member = None):
         """
-        Usage: -dehoist [symbol]
+        Usage: -dehoist <user>
+        Permission: Manage Nicknames
+        Output:
+            Re nicknames a single user who hoists
+            themselves at the top of the member
+            list by using special characters
+        Notes:
+            To dehoist all users, use -massdehoist
+            instead.
+        """
+        if user is None:
+            return await ctx.send(f"Usage: `{ctx.prefix}dehoist <user>`")
+        characters = [
+            "!",
+            '"',
+            "#",
+            "$",
+            "%",
+            "&",
+            "'",
+            "(",
+            ")",
+            "*",
+            "+",
+            ",",
+            "-",
+            ".",
+            "/",
+        ]
+        if user.display_name.startswith(tuple(characters)):
+            name = copy.copy(user.display_name)
+            while name.startswith(tuple(characters)):
+                name = name[1:]
+            if name.strip() == "":
+                name = "Dehoisted"
+            try:
+                await user.edit(
+                    nick=name,
+                    reason=utils.responsible(
+                        ctx.author, "Nickname edited by dehoist command."
+                    ),
+                )
+                return await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content=f"{self.bot.emote_dict['success']} Successfully dehoisted `{user}`",
+                )
+            except Exception:
+                await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content=f"{self.bot.emote_dict['failed']} Failed to dehoist `{user}`",
+                )
+
+        else:
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['failed']} User `{user}` is not hoisting.",
+            )
+
+    @commands.command()
+    @permissions.bot_has_permissions(manage_nicknames=True)
+    @permissions.has_permissions(manage_guild=True)
+    async def massdehoist(self, ctx, symbol: str = None):
+        """
+        Usage: -massdehoist [symbol]
         Permission: Manage Server
         Output:
             Re nicknames all users who hoist
@@ -1040,6 +1104,7 @@ class Admin(commands.Cog):
                 ".",
                 "/",
             ]
+
         else:
             characters = [symbol]
 
@@ -1068,8 +1133,7 @@ class Admin(commands.Cog):
                 name = copy.copy(user.display_name)
                 while name.startswith(tuple(characters)):
                     name = name[1:]
-                print(name)
-                if name.strip(" ") == "":
+                if name.strip() == "":
                     name = "Dehoisted"
                 try:
                     await user.edit(
@@ -1087,6 +1151,67 @@ class Admin(commands.Cog):
                 msg += f"{self.bot.emote_dict['success']} Dehoisted {len(edited)} user{'' if len(edited) == 1 else 's'}."
             if failed:
                 msg += f"\n{self.bot.emote_dict['failed']} Failed to dehoist {len(failed)} user{'' if len(failed) == 1 else 's'}."
+            await message.edit(content=msg)
+        else:
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
+            )
+
+    @commands.command(brief="Mass nickname users with odd names.")
+    @permissions.bot_has_permissions(manage_nicknames=True)
+    @permissions.has_permissions(manage_guild=True)
+    async def massascify(self, ctx):
+        """
+        Usage: -massascify
+        Permission: Manage Server
+        Output:
+            The bot will attempt to edit the
+            nicknames of all users with
+            special characters in their names.
+        Notes:
+            May take several minutes on larger servers
+        """
+
+        c = await pagination.Confirmation(
+            msg=f"{self.bot.emote_dict['exclamation']} **This command will attempt to nickname all users with special symbols in their names. Do you wish to continue?**"
+        ).prompt(ctx)
+        if c:
+            odd_names = []
+            for user in ctx.guild.members:
+                current_name = copy.copy(user.display_name)
+                ascified = unidecode(user.display_name)
+                if current_name != ascified:
+                    odd_names.append(user)
+
+            if len(odd_names) == 0:
+                await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content=f"{self.bot.emote_dict['exclamation']} No users to ascify.",
+                )
+                return
+
+            message = await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['loading']} **Ascifying {len(odd_names)} user{'' if len(odd_names) == 1 else 's'}...**",
+            )
+            edited = []
+            failed = []
+            for user in odd_names:
+                try:
+                    ascified = unidecode(user.display_name)
+                    await user.edit(
+                        nick=ascified, reason="Nickname changed by massascify command."
+                    )
+                    edited.append(user)
+                except Exception as e:
+                    print(e)
+                    failed.append(user)
+            msg = ""
+            if edited:
+                msg += f"{self.bot.emote_dict['success']} Ascified {len(edited)} user{'' if len(edited) == 1 else 's'}."
+            if failed:
+                msg += f"\n{self.bot.emote_dict['failed']} Failed to ascify {len(failed)} user{'' if len(failed) == 1 else 's'}."
             await message.edit(content=msg)
         else:
             await ctx.send(

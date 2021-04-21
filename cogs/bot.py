@@ -690,7 +690,7 @@ class Bot(commands.Cog):
             await ctx.send(str(e))
 
     @commands.command(
-        aliases=["code", "cloc", 'codeinfo'], brief="Show sourcecode statistics."
+        aliases=["code", "cloc", "codeinfo"], brief="Show sourcecode statistics."
     )
     async def lines(self, ctx):
         """
