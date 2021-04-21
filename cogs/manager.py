@@ -216,12 +216,12 @@ class Manager(commands.Cog):
             content=f"{self.bot.emote_dict['success']} Successfully reloaded all extensions",
         )
 
-    @commands.command(hidden=True, brief="Reload a utilities module.")
+    @commands.command(hidden=True, brief="Reload a utilities module.", aliases=['reloadutil', 'reloadutility'])
     async def reloadutils(self, ctx, name: str):
         """ Reloads a utils module. """
         name_maker = f"./utilities/{name}.py"
         try:
-            module_name = importlib.import_module(f"./utilities.{name}")
+            module_name = importlib.import_module(f".{name}", package="utilities")
             importlib.reload(module_name)
         except ModuleNotFoundError:
             return await ctx.send(
