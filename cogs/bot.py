@@ -474,8 +474,13 @@ class Bot(commands.Cog):
         embed.set_author(name=owner, icon_url=owner.avatar_url)
         await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)
 
-    @commands.command(brief="Show my changelog.")
+    @commands.command(brief="Show my changelog.", aliases=["updates"])
     async def changelog(self, ctx):
+        """
+        Usage: -changelog
+        Alias: -updates
+        Output: My changelog
+        """
         with open("./data/txts/changelog.txt", "r", encoding="utf-8") as fp:
             changelog = fp.read()
         await ctx.send(

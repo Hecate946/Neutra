@@ -41,6 +41,12 @@ class Time(commands.Cog):
 
     @commands.command(brief="List all available timezones.")
     async def listtz(self, ctx):
+        """
+        Usage: -listtz
+        Output:
+            A pagination session that shows
+            all available timezones.
+        """
         await ctx.invoke(self.settz, tz_search=None)
 
     @commands.command(brief="Set your timezone.", aliases=["settimezone", "settime"])
@@ -52,7 +58,7 @@ class Time(commands.Cog):
         Notes:
             Will provide you with the 5 closest
             timezone matches if the supplied timezone
-            is invalid. Invoke with no arguments to 
+            is invalid. Invoke with no arguments to
             show all available timezones.
         """
 
@@ -108,7 +114,9 @@ class Time(commands.Cog):
             else:
                 await ctx.send(msg)
 
-    @commands.command(brief="Show times for all users.", aliases=['alltime','alltimes'])
+    @commands.command(
+        brief="Show times for all users.", aliases=["alltime", "alltimes"]
+    )
     async def usertimes(self, ctx):
         """
         Usage: -usertimes
@@ -123,7 +131,7 @@ class Time(commands.Cog):
                 """
         message = await ctx.send(
             reference=self.bot.rep_ref(ctx),
-            content=f"{self.bot.emote_dict['loading']} **Loading user timezones...**"
+            content=f"{self.bot.emote_dict['loading']} **Loading user timezones...**",
         )
         result = await self.bot.cxn.fetch(query)
         users = []
@@ -143,11 +151,12 @@ class Time(commands.Cog):
                     continue
                 t["time"] = utils.getClockForTime(t["time"])
                 msg += f"{str(user[0]).ljust(max(*width))}| {t['time']} ({user[1]})\n"
-            await message.edit(content=f"{self.bot.emote_dict['announce']} **Usertimes:**")
-            p = pagination.MainMenu(pagination.TextPageSource(
-                text=msg,
-                prefix="```prolog"
-            ))
+            await message.edit(
+                content=f"{self.bot.emote_dict['announce']} **Usertimes:**"
+            )
+            p = pagination.MainMenu(
+                pagination.TextPageSource(text=msg, prefix="```prolog")
+            )
             try:
                 await p.start(ctx)
             except menus.MenuError as e:
@@ -155,9 +164,8 @@ class Time(commands.Cog):
         else:
             await ctx.send(
                 reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['failed']} No users have set their timezones."
+                content=f"{self.bot.emote_dict['failed']} No users have set their timezones.",
             )
-
 
     @commands.command(brief="See a member's timezone.", aliases=["tz"])
     async def timezone(self, ctx, *, member: converters.DiscordUser = None):
@@ -189,7 +197,7 @@ class Time(commands.Cog):
             content=f"{self.bot.emote_dict['announce']} `{member}'s timezone is {timezone}`",
         )
 
-    @commands.command(brief="Show a user's current time.", aliases=['time'])
+    @commands.command(brief="Show a user's current time.", aliases=["time"])
     async def usertime(self, ctx, *, member: discord.Member = None):
         """
         Usage: -usertime [member]
@@ -287,11 +295,14 @@ class Time(commands.Cog):
             request = json.loads(r)
 
             if request["status"] != "OK":
-                await ctx.send(reference=self.bot.rep_ref(ctx), content=f"{self.bot.emote_dict['failed']} An API error occurred. Please try again later.")
+                await ctx.send(
+                    reference=self.bot.rep_ref(ctx),
+                    content=f"{self.bot.emote_dict['failed']} An API error occurred. Please try again later.",
+                )
             else:
-                zone = pytz.timezone(request['zoneName'])
+                zone = pytz.timezone(request["zoneName"])
                 time = datetime.now(zone)
-                time_fmt = time.strftime('%a %I:%M %p')
+                time_fmt = time.strftime("%a %I:%M %p")
                 clock = utils.getClockForTime(time_fmt)
                 msg = f"{self.bot.emote_dict['announce']} `It is {clock} in {city_name.title()} ({request['zoneName']})`"
                 await ctx.send(reference=self.bot.rep_ref(ctx), content=msg)

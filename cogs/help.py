@@ -461,3 +461,44 @@ class Help(commands.Cog):
                     await ctx.send(
                         f"{self.emote_dict['error']} No command named `{invokercommand}` found."
                     )
+
+    @commands.command(hidden=True, brief="Get the brief of a command.")
+    async def brief(self, ctx, command=None):
+        """
+        Usage: -brief <command>
+        Output:
+            The short description of the passed command
+        """
+        if command is None:
+            return await ctx.send(f"Usage: `{ctx.prefix}brief <command>`")
+        _command = self.bot.get_command(command)
+        if _command is None:
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['failed']} No command named `{command}` found.",
+            )
+        await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"{self.bot.emote_dict['announce']} Command brief for **{_command.name}**: `{_command.brief}`",
+        )
+
+    @commands.command(hidden=True, brief="Get the help docstring of a command.")
+    async def docstring(self, ctx, command=None):
+        """
+        Usage: -docstring <command>
+        Output:
+            The long description of the passed command
+        """
+
+        if command is None:
+            return await ctx.send(f"Usage: `{ctx.prefix}docstring <command>`")
+        _command = self.bot.get_command(command)
+        if _command is None:
+            return await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['failed']} No command named `{command}` found.",
+            )
+        await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"{self.bot.emote_dict['announce']} Command docstring for **{_command.name}**:```yaml\n{_command.help}```",
+        )

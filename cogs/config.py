@@ -377,7 +377,7 @@ class Config(commands.Cog):
                 content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
             )
 
-    @commands.command()
+    @commands.command(brief="Blacklist users or servers.")
     async def blacklist(
         self,
         ctx,
@@ -387,6 +387,9 @@ class Config(commands.Cog):
         *,
         reason: typing.Optional[str] = None,
     ):
+        """
+        Usage: -blacklist <object> [reason]
+        """
         if _objects is None:
             p = pagination.MainMenu(
                 pagination.TextPageSource(str(self.bot.blacklist), prefix="```json")
@@ -418,10 +421,13 @@ class Config(commands.Cog):
                 content=f"{self.bot.emote_dict['success']} `{', '.join(already_blacklisted)}` {ternary} already blacklisted",
             )
 
-    @commands.command()
+    @commands.command(brief="Remove users or servers from the blacklist.")
     async def unblacklist(
         self, ctx, _object: typing.Union[discord.User, converters.DiscordGuild] = None
     ):
+        """
+        Usage: -unblacklist <object>
+        """
         if _object is None:
             return await ctx.send(f"Usage: `{ctx.prefix}unblacklist <object>`")
         try:
@@ -708,6 +714,9 @@ class Config(commands.Cog):
 
     @commands.command(brief="Toggle locking the bot to owners.")
     async def ownerlock(self, ctx):
+        """
+        Usage: -ownerlock
+        """
         if self.is_ownerlocked is True:
             self.is_ownerlocked = False
             utils.modify_config("ownerlocked", False)

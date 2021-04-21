@@ -42,9 +42,14 @@ class Manager(commands.Cog):
             return
         return True
 
-    @commands.command(name="eval", aliases=["evaluate", "e"])
+    @commands.command(
+        name="eval", aliases=["evaluate", "e"], brief="Evaluate python code."
+    )
     async def _eval(self, ctx, *, body: str):
-        """Evaluates a code"""
+        """
+        Usage: -eval <body>
+        Output: Code evaluation
+        """
 
         env = {
             "bot": self.bot,
@@ -216,7 +221,11 @@ class Manager(commands.Cog):
             content=f"{self.bot.emote_dict['success']} Successfully reloaded all extensions",
         )
 
-    @commands.command(hidden=True, brief="Reload a utilities module.", aliases=['reloadutil', 'reloadutility'])
+    @commands.command(
+        hidden=True,
+        brief="Reload a utilities module.",
+        aliases=["reloadutil", "reloadutility"],
+    )
     async def reloadutils(self, ctx, name: str):
         """ Reloads a utils module. """
         name_maker = f"./utilities/{name}.py"

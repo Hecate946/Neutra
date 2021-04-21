@@ -1,5 +1,3 @@
-# File discord_bot.py & CorpBot
-
 import calendar
 import difflib
 import json
@@ -14,6 +12,9 @@ import discord
 import humanize
 import pytz
 import timeago as timesince
+
+
+# Some funcs and ideas from corpbot.py and discord_bot.py
 
 URL_REGEX = (
     r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"

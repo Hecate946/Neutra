@@ -1,21 +1,18 @@
 import codecs
+import discord
 import json
 import math
 import operator
 import pprint
 import re
 import copy
-import time
 import unicodedata
 from unidecode import unidecode
 from collections import Counter
-from datetime import datetime, timedelta
+from datetime import datetime
 from functools import cmp_to_key
 
-import discord
-import pytz
 from discord.ext import commands, menus
-from geopy import geocoders
 from pyparsing import (
     CaselessLiteral,
     Combine,
