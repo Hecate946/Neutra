@@ -4,8 +4,10 @@ import math
 import operator
 import pprint
 import re
+import copy
 import time
 import unicodedata
+from unidecode import unidecode
 from collections import Counter
 from datetime import datetime, timedelta
 from functools import cmp_to_key
@@ -57,6 +59,50 @@ class Utility(commands.Cog):
         )
         embed.set_image(url=url)
         await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)
+
+    @commands.command(brief="Convert special characters to ascii.")
+    async def ascify(self, ctx, *, str_or_member = None):
+        """
+        Usage: -ascify <string/member>
+        Aliases: -ascii, -normalize
+        Output:
+            Attempts to convert a string or member's
+            nickname to ascii by replacing special
+            characters.
+        Notes:
+            If the passed argument is a user and both the
+            command executor and the bot have
+            the required permissions, the bot will
+            set the user's nickname to the ascified
+            version of the word. Otherwise, it will
+            simply return the ascified version. If
+            the passed string is already in ASCII,
+            it will return the same result.
+        """
+        try:
+            member = await commands.MemberConverter().convert(ctx, str_or_member)
+            if member:
+                current_name = copy.copy(member.display_name)
+                ascified = unidecode(member.display_name)
+                try:
+                    if ctx.guild:
+                        if ctx.author.guild_permissions.manage_nicknames:
+                            await member.edit(nick=ascified)
+                            return await ctx.send(
+                                reference=self.bot.rep_ref(ctx),
+                                content=f"{self.bot.emote_dict['success']} Ascified **{current_name}** to **{ascified}**"
+                            )
+                except Exception:
+                    pass
+            else:
+                ascified = unidecode(str_or_member)
+        except commands.MemberNotFound:
+            ascified = unidecode(str_or_member)
+        await ctx.send(
+            reference=self.bot.rep_ref(ctx),
+            content=f"{self.bot.emote_dict['success']} Result: **{ascified}**"
+        )
+
 
     @commands.command(brief="Show information on a character.")
     async def charinfo(self, ctx, *, characters: str):
