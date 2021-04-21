@@ -4,3 +4,5 @@
 (2021-04-18 18:17:55.180723+00:00) Rewrite blacklisting system
 (2021-04-20 18:12:58.939397+00:00) Add dehoist command
 (2021-04-21 05:11:56.069368+00:00) Add ascify command
+(2021-04-21 05:45:47.548010+00:00) Add massascify command
+(2021-04-21 05:46:01.079785+00:00) Add massdehoist command
