@@ -293,7 +293,7 @@ class Time(commands.Cog):
                 time = datetime.now(zone)
                 time_fmt = time.strftime('%a %I:%M %p')
                 clock = utils.getClockForTime(time_fmt)
-                msg = f"`It is {clock} in {str(location).split(',')[0]} ({request['zoneName']})`"
+                msg = f"{self.bot.emote_dict['announce']} `It is {clock} in {city_name.title()} ({request['zoneName']})`"
                 await ctx.send(reference=self.bot.rep_ref(ctx), content=msg)
         except Exception as e:
             await ctx.send(e)
