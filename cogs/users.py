@@ -345,7 +345,7 @@ class Users(commands.Cog):
 
             await message.edit(content=title_str)
             t = pagination.MainMenu(
-                pagination.TextPageSource(msg, prefix="```yaml\n", suffix="```")
+                pagination.TextPageSource(msg.replace('`', '\U0000ff40'), prefix="```yaml\n", suffix="```")
             )
             try:
                 await t.start(ctx)

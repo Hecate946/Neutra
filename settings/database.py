@@ -22,26 +22,7 @@ async def initialize(guilds, members):
     await update_db(guilds, members)
     await load_settings()
 
-
-#     await load_prefixes(guilds)
-
-
-# async def load_prefixes(guilds):
-#     query = """
-#             SELECT prefix
-#             FROM prefixes
-#             WHERE server_id = $1;
-#             """
-#     for guild in guilds:
-#         all_prefixes = await postgres.fetch(query, guild.id)
-#         prefixes = settings[guild.id]["prefixes"] = []
-#         for x in all_prefixes:
-#             prefixes.append(x[0])
-
-
 SEPARATOR = "=" * 33
-
-
 async def scriptexec():
     # We execute the SQL script to make sure we have all our tables.
     st = time.time()
@@ -51,8 +32,6 @@ async def scriptexec():
                 await postgres.execute(script.read())
             except Exception as e:
                 print(e)
-
-    # print(color(fore="#46648F", text=SEPARATOR))
     print(
         color(
             fore="#46648F", text=f"Script   execution : {str(time.time() - st)[:10]} s"
@@ -61,7 +40,7 @@ async def scriptexec():
 
 
 async def update_server(server, member_list):
-    # Main database updater. This is mostly just for updating new servers and members that the bot joined when offline.
+    # Main database updater on bot startup
     st = time.time()
     await postgres.execute(
         """

@@ -2,6 +2,8 @@ import asyncio
 import datetime
 import inspect
 import os
+import fnmatch
+import ast
 import platform
 import struct
 import subprocess
@@ -685,3 +687,73 @@ class Bot(commands.Cog):
             await pages.start(ctx)
         except menus.MenuError as e:
             await ctx.send(str(e))
+
+
+    @commands.command(
+        aliases=["code", "cloc"], brief="Count the lines in the source code."
+    )
+    async def lines(self, ctx):
+        """
+        Usage: -lines
+        Aliases: -cloc, -code
+        Output:
+            Gives the number of lines in the source code"""
+        async with ctx.channel.typing():
+            # Script from
+            # https://github.com/kyco/python-count-lines-of-code/blob/python3/cloc.py
+
+            # Get our current working directory
+            path = os.getcwd()
+
+            # Set up some lists
+            extensions = []
+            code_count = []
+            include = ["py", "sql", "json", "yml"]
+
+            # Get the extensions - include our include list
+            extensions = self.get_extensions(path, include)
+            
+
+            for run in extensions:
+                from utilities import info
+                info.get_files(os.getcwd())
+                extension = "*." + run
+                temp = 0
+                for root, dir, files in os.walk(path):
+                    for items in fnmatch.filter(files, extension):
+                        value = root + "/" + items
+                        temp += sum(+1 for line in open(value, "rb"))
+                code_count.append(temp)
+                pass
+
+            # Set up our output
+            msg = f"{self.bot.emote_dict['info']} Info on home directory:\n```fix\n"
+            padTo = 0
+            for idx, val in enumerate(code_count):
+                # Find out which has the longest
+                tempLen = len(str("{:,}".format(code_count[idx])))
+                if tempLen > padTo:
+                    padTo = tempLen
+            for idx, val in enumerate(code_count):
+                lineWord = "lines"
+                if code_count[idx] == 1:
+                    lineWord = "line"
+
+                numString = str("{:,}".format(code_count[idx])).ljust(padTo, " ")
+                msg += numString + " " + lineWord + " of " + extensions[idx] + "\n"
+                pass
+            msg += "```"
+            await ctx.send(msg)
+
+    # Helper function to get extensions
+    def get_extensions(self, path, excl):
+        extensions = []
+        for root, dir, files in os.walk(path):
+            for items in fnmatch.filter(files, "*"):
+                temp_extensions = items.rfind(".")
+                ext = items[temp_extensions + 1 :]
+                if ext not in extensions:
+                    if ext in excl:
+                        extensions.append(ext)
+                        pass
+        return extensions

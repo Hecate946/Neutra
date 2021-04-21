@@ -222,7 +222,7 @@ class Config(commands.Cog):
     @commands.group(
         case_insensitive=True,
         aliases=["to-do"],
-        invoke_without_subcommand=True,
+        invoke_without_command=True,
         brief="Show, add, or remove from the bot's todo list.",
     )
     async def todo(self, ctx):
@@ -320,7 +320,7 @@ class Config(commands.Cog):
     @commands.group(
         case_insensitive=True,
         aliases=["set", "add"],
-        invoke_without_subcommand=True,
+        invoke_without_command=True,
         brief="Write to the bot's overview or changelog.",
     )
     async def write(self, ctx):

@@ -136,6 +136,7 @@ class Hypernova(commands.AutoShardedBot):
             r"(?:https?://)?discord(?:app)?\.(?:com/invite|gg)/[a-zA-Z0-9]+/?"
         )
 
+
     def setup(self):
         # Start the task loop
         self.status_loop.start()
@@ -635,6 +636,5 @@ class Hypernova(commands.AutoShardedBot):
                 await message.channel.send(
                     f"Hey {message.author.mention}! if you're looking to invite me to your server, use this link:\n<{self.constants.oauth}>"
                 )
-
 
 bot = Hypernova()

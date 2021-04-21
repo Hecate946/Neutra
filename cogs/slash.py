@@ -19,7 +19,11 @@ class Slash(commands.Cog):
         description="Show my server prefix.", guild_ids=[x.id for x in bot.guilds]
     )
     async def prefix(self, ctx: SlashContext):
-        current_prefixes = self.bot.server_settings[ctx.guild.id]["prefixes"]
+        current_prefixes = self.bot.server_settings[ctx.guild.id]["prefixes"].copy()
+        try:
+            current_prefixes.remove(f"<@!{self.bot.user.id}>")
+        except ValueError:
+            pass
         if len(current_prefixes) == 0:
             return await ctx.send(
                 reference=self.bot.rep_ref(ctx),

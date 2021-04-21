@@ -5,6 +5,7 @@ import operator
 import pprint
 import re
 import time
+import unicodedata
 from collections import Counter
 from datetime import datetime, timedelta
 from functools import cmp_to_key
@@ -56,6 +57,22 @@ class Utility(commands.Cog):
         )
         embed.set_image(url=url)
         await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)
+
+    @commands.command(brief="Show information on a character.")
+    async def charinfo(self, ctx, *, characters: str):
+        """Shows you information about a number of characters.
+
+        Only up to 25 characters at a time.
+        """
+
+        def to_string(c):
+            digit = f'{ord(c):x}'
+            name = unicodedata.name(c, 'Name not found.')
+            return f'{self.bot.emote_dict["success"]} `\\U{digit:>08}`: {name} - {c} \N{EM DASH} <http://www.fileformat.info/info/unicode/char/{digit}>'
+        msg = '\n'.join(map(to_string, characters))
+        if len(msg) > 2000:
+            return await ctx.send('Output too long to display.')
+        await ctx.send(msg)
 
     @commands.command(brief="Show a user's avatar.", aliases=["av", "pfp"])
     async def avatar(self, ctx, *, user: converters.DiscordUser = None):
