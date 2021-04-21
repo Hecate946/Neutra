@@ -745,14 +745,20 @@ class Bot(commands.Cog):
                 len(f"{funcs:,}"),
                 len(f"{comments:,}"),
             )
-            msg += f"{file_amount:,} Files\n"
-            msg += f"{lines:,} Lines\n"
-            msg += f"{chars:,} Characters\n"
-            msg += f"{imports:,} Imports\n"
-            msg += f"{classes:,} Classes\n"
-            msg += f"{funcs:,} Functions\n"
-            msg += f"{funcs:,} Comments"
-
+            files = "{:,}".format(file_amount)
+            lines = "{:,}".format(lines)
+            chars = "{:,}".format(chars)
+            imports = "{:,}".format(imports)
+            classes = "{:,}".format(classes)
+            funcs = "{:,}".format(funcs)
+            comments = "{:,}".format(comments)
+            msg += f"{files.ljust(width)} Files\n"
+            msg += f"{lines.ljust(width)} Lines\n"
+            msg += f"{chars.ljust(width)} Characters\n"
+            msg += f"{imports.ljust(width)} Imports\n"
+            msg += f"{classes.ljust(width)} Classes\n"
+            msg += f"{funcs.ljust(width)} Functions\n"
+            msg += f"{comments.ljust(width)} Comments"
             msg += "```"
             em = discord.Embed(color=self.bot.constants.embed)
             em.title = f"{self.bot.emote_dict['info']} Source information"
