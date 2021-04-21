@@ -8,8 +8,8 @@ Hello! I'm Hypernova, and I specialize in tracking and moderation.
 I was designed to collect all sorts of data on servers, users,
 messages, emojis, online time, and more! I also come with a fast
 and clean moderation system that offers every opportunity for effective
-server management. Apart from moderation and tracking, I feature 175
-commands across 12 categories that provide awesome utilities!
+server management. Apart from moderation and tracking, I feature 186
+commands across 13 categories that provide awesome utilities!
 Some examples include managing user timezones, role management, and logging.
 ## Categories
 ##### [Admin](#Admin-1)
@@ -17,10 +17,11 @@ Some examples include managing user timezones, role management, and logging.
 ##### [Conversion](#Conversion-1)
 ##### [Files](#Files-1)
 ##### [Logging](#Logging-1)
-##### [Moderation](#Moderation-1)
+##### [Mod](#Mod-1)
 ##### [Restrict](#Restrict-1)
 ##### [Roles](#Roles-1)
 ##### [Server](#Server-1)
+##### [Time](#Time-1)
 ##### [Users](#Users-1)
 ##### [Utility](#Utility-1)
 ##### [Warn](#Warn-1)
@@ -62,7 +63,7 @@ unlock: Unlock a channel.
 ```
 
 ### Bot
-#### Module for bot information (15 Commands)
+#### Module for bot information. (15 Commands)
 
 ```yaml
 about: Display information about the bot.
@@ -97,7 +98,7 @@ users: Shows all users I'm connected to.
 ```
 
 ### Conversion
-#### Module for unit conversions (16 Commands)
+#### Module for unit conversions. (16 Commands)
 
 ```yaml
 binint: Convert binary to an integer.
@@ -167,7 +168,7 @@ readme: DMs you my readme file.
 ```
 
 ### Logging
-#### Log your server events (4 Commands)
+#### Log all server events. (4 Commands)
 
 ```yaml
 log: Enable specific logging events.
@@ -179,7 +180,7 @@ unlog: Disable specific logging events.
 unlogchannel: Remove the logging channel.
 ```
 
-### Moderation
+### Mod
 #### Keep your server under control. (16 Commands)
 
 ```yaml
@@ -217,7 +218,7 @@ vcpurge: Kick all users from a voice channel.
 ```
 
 ### Restrict
-#### Module for disabling commands (9 Commands)
+#### Module for disabling commands. (9 Commands)
 
 ```yaml
 disable: Disable a command.
@@ -265,7 +266,7 @@ whohas: Show the people who have a role.
 ```
 
 ### Server
-#### Module for all server stats (13 Commands)
+#### Module for all server stats. (13 Commands)
 
 ```yaml
 activity: Show the most active server users.
@@ -293,6 +294,27 @@ recentjoins: Show the latest users to join.
 serverinfo: Show server information.
 
 topic: Show a channel topic.
+```
+
+### Time
+#### Module for time functions. (8 Commands)
+
+```yaml
+clock: Get the time of any location
+
+listtz: List all available timezones.
+
+remtz: Remove your timezone.
+
+settz: Set your timezone.
+
+stopwatch: Start or stop a stopwatch.
+
+timezone: See a member's timezone.
+
+usertime: Show a user's current time.
+
+usertimes: Show times for all users.
 ```
 
 ### Users
@@ -327,7 +349,7 @@ words: Most used words from a user.
 ```
 
 ### Utility
-#### Module for general utilities (21 Commands)
+#### Module for general utilities. (15 Commands)
 
 ```yaml
 ascify: Convert special characters to ascii.
@@ -337,8 +359,6 @@ avatar: Show a user's avatar.
 calculate: Calculate a math formula.
 
 charinfo: Show information on a character.
-
-clock: Get the time of any location
 
 defaultavatar: Show a user's default avatar.
 
@@ -356,25 +376,15 @@ permissions: Show a user's permissions.
 
 raw: Shows the raw content of a message.
 
-remtz: Remove your timezone.
-
-settz: Set your timezone.
-
 shorten: Shorten a URL.
 
 snipe: Snipe a deleted message.
 
 snowflake: Show info on a discord snowflake.
-
-stopwatch: Start or stop a stopwatch.
-
-time: Show a user's current time.
-
-timezone: See a member's timezone.
 ```
 
 ### Warn
-#### Manage the server warning system (5 Commands)
+#### Manage the server warning system. (5 Commands)
 
 ```yaml
 clearwarns: Clear a user's warnings
