@@ -1,3 +1,4 @@
+import asyncio
 import calendar
 import difflib
 import json
@@ -9,6 +10,7 @@ from io import BytesIO
 
 import aiohttp
 import discord
+from discord.ext import menus
 import humanize
 import pytz
 import timeago as timesince

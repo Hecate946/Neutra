@@ -13,7 +13,7 @@ import discord
 from discord.ext import commands, menus
 from PythonGists import PythonGists
 
-from utilities import converters, pagination
+from utilities import converters, pagination, permissions
 
 
 def setup(bot):
@@ -1085,3 +1085,9 @@ class Botadmin(commands.Cog):
             color=self.bot.constants.embed,
         )
         await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)
+
+    @commands.command(rest_is_raw=True, hidden=True, aliases=['say'])
+    @permissions.bot_has_permissions(manage_messages=True)
+    async def echo(self, ctx, *, content):
+        await ctx.message.delete()
+        await ctx.send(content)

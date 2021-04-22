@@ -1,17 +1,15 @@
-import asyncio
-import io
 import re
 import typing
+import asyncio
+import discord
+
+from better_profanity import profanity
 from collections import Counter
 from datetime import datetime, timedelta
-
-import asyncpg
-import discord
-from better_profanity import profanity
 from discord.ext import commands
 
 from settings import database
-from utilities import converters, pagination, permissions, utils
+from utilities import converters, permissions, utils, helpers
 
 
 def setup(bot):
@@ -36,11 +34,11 @@ class Mod(commands.Cog):
     @permissions.bot_has_permissions(move_members=True)
     @permissions.has_permissions(move_members=True)
     async def vcmove(
-        self, ctx, targets: commands.Greedy[discord.Member] = None, channel: str = None
+        self, ctx, targets: commands.Greedy[discord.Member] = None, channel: discord.VoiceChannel = None
     ):
         """
-        Usage:      -vcmove <target> <target>... <channel>
-        Output:     Moves members into a new voice channel
+        Usage: -vcmove <target> <target>... <channel>
+        Output: Moves members into a new voice channel
         Permission: Move Members
         """
         if not targets:
@@ -53,48 +51,21 @@ class Mod(commands.Cog):
                 reference=self.bot.rep_ref(ctx),
                 content=f"Usage: `{ctx.prefix}vc move <to channel> <target> [target]...`",
             )
-        voice = []
-        try:
-            voicechannel = ctx.guild.get_channel(int(channel))
-        except Exception as e:
-            try:
-                voicechannel = discord.utils.get(ctx.guild.voice_channels, name=channel)
-            except Exception as e:
-                await ctx.send(e)
+        vcmoved = []
         for target in targets:
-            if target.id in self.bot.constants.owners:
-                return await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
-                    content="You cannot move my master.",
-                )
-            if (
-                ctx.author.top_role.position < target.top_role.position
-                and ctx.author.id not in self.bot.constants.owners
-            ):
-                return await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
-                    content="You cannot move other staff members",
-                )
             try:
-                await target.edit(voice_channel=voicechannel)
+                await target.edit(voice_channel=channel)
             except discord.HTTPException:
                 await ctx.send(
-                    f"{self.bot.emote_dict['error']} Target is not connected to a voice channel"
+                    reference=self.bot.rep_ref(ctx),
+                    content=f"{self.bot.emote_dict['error']} Target is not connected to a voice channel"
                 )
-            voice.append(target)
-        if voice:
-            vckicked = []
-            for member in voice:
-                users = []
-                people = self.bot.get_user(int(member.id))
-                users.append(people)
-                for user in users:
-                    username = f"{user.name}#{user.discriminator}"
-                    vckicked += [username]
+                continue
+            vcmoved.append(str(target))
+        if vcmoved:
             await ctx.send(
-                "<:checkmark:816534984676081705> VC Moved `{0}`".format(
-                    ", ".join(vckicked)
-                )
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['success']} VC Moved `{', '.join(vcmoved)}`"
             )
 
     @commands.command(brief="Kick all users from a voice channel.")
@@ -112,22 +83,27 @@ class Mod(commands.Cog):
                 reference=self.bot.rep_ref(ctx),
                 content=f"Usage: `{ctx.prefix}vcpurge <voice channel name/id>`",
             )
-        if channel.members is None:
+        if len(channel.members) == 0:
             return await ctx.send(
                 reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['error']} No members in voice channel.",
+                content=f"{self.bot.emote_dict['error']} No members in voice channel {channel.mention}.",
             )
+        failed = []
         for member in channel.members:
             try:
-                if await permissions.voice_priv(ctx, member):
-                    continue
                 await member.edit(voice_channel=None)
             except Exception:
+                failed.append(str(member))
                 continue
         await ctx.send(
             reference=self.bot.rep_ref(ctx),
             content=f"{self.bot.emote_dict['success']} Purged {channel.mention}.",
         )
+        if failed:
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['success']} Failed to vckick {len(failed)} user{'' if len(failed) == 1 else 's'}.",
+            )
 
     @commands.command(brief="Kick users from a voice channel.")
     @commands.guild_only()
@@ -135,8 +111,8 @@ class Mod(commands.Cog):
     @permissions.bot_has_permissions(move_members=True)
     async def vckick(self, ctx, targets: commands.Greedy[discord.Member]):
         """
-        Usage:      -vckick <target> <target>
-        Output:     Kicks passed members from their channel
+        Usage: -vckick <target> <target>..
+        Output: Kicks passed members from their channel
         Permission: Move Members
         """
         if not len(targets):
@@ -144,37 +120,19 @@ class Mod(commands.Cog):
                 reference=self.bot.rep_ref(ctx),
                 content=f"Usage: `{ctx.prefix}vckick <target> [target]...`",
             )
-        voice = []
+        vckicked = []
         for target in targets:
-            if (
-                ctx.author.top_role.position <= target.top_role.position
-                and ctx.author.id not in self.bot.constants.owners
-                or ctx.author.id != ctx.guild.owner.id
-                and target.id != ctx.author.id
-            ):
-                return await ctx.send(
-                    "<:fail:816521503554273320> You cannot move other staff members"
-                )
             try:
                 await target.edit(voice_channel=None)
             except discord.HTTPException:
                 await ctx.send(
-                    f"{self.bot.emote_dict['error']} Target is not connected to a voice channel"
+                    f"{self.bot.emote_dict['error']} Target is not connected to a voice channel."
                 )
-            voice.append(target)
-        if voice:
-            vckicked = []
-            for member in voice:
-                users = []
-                people = self.bot.get_user(int(member.id))
-                users.append(people)
-                for user in users:
-                    username = f"{user.name}#{user.discriminator}"
-                    vckicked += [username]
+            vckicked.append(str(target))
+        if vckicked:
             await ctx.send(
-                "<:checkmark:816534984676081705> VC Kicked `{0}`".format(
-                    ", ".join(vckicked)
-                )
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['success']} VC Kicked `{', '.join(vckicked)}`"
             )
 
     ###################
@@ -203,9 +161,8 @@ class Mod(commands.Cog):
         Notes:
             Command -muterole must be executed prior to usage of
             this command. Upon usage, will not be able to read
-            messages in any channel except for messages in #muted
-            (if still exists). Roles will be given back to the user
-            upon -unmute, or when their timed mute ends.
+            messages in any channel. Roles will be given back to
+            the user upon -unmute, or when their timed mute ends.
         """
         global target
         if not len(targets):
@@ -239,7 +196,7 @@ class Mod(commands.Cog):
                         f"{self.bot.emote_dict['failed']} I cannot mute bots."
                     )
                     continue
-                if not self.mute_role in target.roles:
+                if self.mute_role not in target.roles:
                     role_ids = ",".join([str(r.id) for r in target.roles])
                     end_time = (
                         datetime.utcnow() + timedelta(seconds=minutes * 60)
@@ -354,7 +311,7 @@ class Mod(commands.Cog):
                 )
                 if str(role_ids) == "None":
                     await target.remove_roles(self.mute_role)
-                    unmuted.append(target)
+                    unmuted.append(str(target))
                     continue
                 role_ids = role_ids[0]
                 roles = [
@@ -368,7 +325,7 @@ class Mod(commands.Cog):
                 )
 
                 await target.edit(roles=roles)
-                unmuted.append(target)
+                unmuted.append(str(target))
                 if unmutereason:
                     try:
                         await target.send(
@@ -384,23 +341,15 @@ class Mod(commands.Cog):
                 )
 
         if unmuted:
-            allmuted = []
-            for member in unmuted:
-                users = []
-                people = self.bot.get_user(int(member.id))
-                users.append(people)
-                for user in users:
-                    username = f"{user.name}#{user.discriminator}"
-                    allmuted += [username]
             await ctx.send(
                 reference=self.bot.rep_ref(ctx),
-                content=f'{self.bot.emote_dict["success"]} Unmuted `{", ".join(allmuted)}`',
+                content=f'{self.bot.emote_dict["success"]} Unmuted `{", ".join(unmuted)}`',
             )
-            self.bot.dispatch("mod_action", ctx, targets=allmuted)
+            self.bot.dispatch("mod_action", ctx, targets=unmuted)
 
-    @commands.command(
-        name="unmute", brief="Unmute previously muted members.", aliases=["endmute"]
-    )
+    @commands.command(name="unmute",
+                      brief="Unmute previously muted members.",
+                      aliases=["endmute"])
     @commands.guild_only()
     @permissions.bot_has_permissions(manage_roles=True)
     @permissions.has_permissions(kick_members=True)
@@ -425,79 +374,56 @@ class Mod(commands.Cog):
     ## Restriction Commands ##
     ##########################
 
+    async def restrictor(self, ctx, targets, on_or_off, block_or_blind):
+        overwrite = discord.PermissionOverwrite()
+        if on_or_off == "on":
+            boolean = False
+        else:
+            boolean = None
+        if block_or_blind == "block":
+            overwrite.send_messages = boolean
+        else:
+            overwrite.read_messages = boolean
+        restrict = []
+        failed = []
+        for target in targets:
+            res = await permissions.check_priv(ctx, target)
+            if res:
+                failed.append((str(target), res))
+                continue
+            try:
+                await ctx.channel.set_permissions(
+                    target, overwrite=overwrite
+                )
+                restrict.append(str(target))
+            except Exception as e:
+                failed.append((str(target), e))
+                continue
+        if restrict:
+            await ctx.send(
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['success']} {ctx.command.name.capitalize()}ed `{', '.join(restrict)}`"
+            )
+            self.bot.dispatch("mod_action", ctx, targets=restrict)
+        if failed:
+            await helpers.error_info(ctx, failed)
+
     @commands.command(brief="Restrict users from sending messages.")
     @commands.guild_only()
     @permissions.has_permissions(kick_members=True)
     async def block(self, ctx, targets: commands.Greedy[discord.Member]):
         """
-        Usage:      -block <target> [target]...
-        Example:    -block Hecate 708584008065351681 @Elizabeth
+        Usage: -block <target> [target]...
+        Example: -block Hecate 708584008065351681 @Elizabeth
         Permission: Kick Members
-        Output:     Stops users from messaging in the channel.
+        Output: Stops users from messaging in the channel.
         """
-        if not len(targets):  # checks if there is user
+        if not len(targets):
             return await ctx.send(
                 reference=self.bot.rep_ref(ctx),
                 content=f"Usage: `{ctx.prefix}block <target> [target] [target]...`",
             )
-        blocked = []
-        for target in targets:
-            if (
-                ctx.author.id not in self.bot.constants.owners
-                and ctx.author.id != ctx.guild.owner.id
-                and not ctx.author.guild_permissions.kick_members
-            ):
-                return await ctx.send(
-                    "You have insufficient permission to execute that command."
-                )
-            if target.id in self.bot.constants.owners:
-                return await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
-                    content="You cannot block my master.",
-                )
-            if target.id == ctx.author.id:
-                return await ctx.send(
-                    "I don't think you really want to block yourself..."
-                )
-            if target.id == self.bot.user.id:
-                return await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
-                    content="I don't think I want to block myself...",
-                )
-            if (
-                target.guild_permissions.kick_members
-                and ctx.author.id not in self.bot.constants.owners
-                and ctx.author.id != ctx.guild.owner.id
-            ):
-                return await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
-                    content="You cannot punish other staff members.",
-                )
-            try:
-                await ctx.channel.set_permissions(
-                    target, send_messages=False
-                )  # gives back send messages permissions
-                blocked.append(target)
-            except Exception:
-                await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
-                    content="`{0}` could not me block".format(target),
-                )
-        if blocked:
-            blocked_users = []
-            for unblind in blocked:
-                users = []
-                people = self.bot.get_user(int(unblind.id))
-                users.append(people)
-                for user in users:
-                    username = f"{user.name}#{user.discriminator}"
-                    blocked_users += [username]
-            await ctx.send(
-                "<:checkmark:816534984676081705> Blocked `{0}`".format(
-                    ", ".join(blocked_users)
-                )
-            )
-            self.bot.dispatch("mod_action", ctx, targets=blocked_users)
+        await self.restrictor(ctx, targets, "on", "block")
 
     @commands.command(brief="Reallow users to send messages.")
     @commands.guild_only()
@@ -514,64 +440,7 @@ class Mod(commands.Cog):
                 reference=self.bot.rep_ref(ctx),
                 content=f"Usage: `{ctx.prefix}unblock <target> [target] [target]...`",
             )
-        unblocked = []
-        for target in targets:
-            if (
-                ctx.author.id not in self.bot.constants.owners
-                and ctx.author.id != ctx.guild.owner.id
-                and not ctx.author.guild_permissions.kick_members
-            ):
-                return await ctx.send(
-                    "You have insufficient permission to execute that command."
-                )
-            if target.id in self.bot.constants.owners:
-                return await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
-                    content="You cannot unblock my master.",
-                )
-            if target.id == ctx.author.id:
-                return await ctx.send(
-                    "I don't think you really want to unblock yourself..."
-                )
-            if target.id == self.bot.user.id:
-                return await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
-                    content="I don't think I want to unblock myself...",
-                )
-            if (
-                target.guild_permissions.kick_members
-                and ctx.author.id not in self.bot.constants.owners
-                and ctx.author.id != ctx.guild.owner.id
-            ):
-                return await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
-                    content="You cannot punish other staff members.",
-                )
-            try:
-                await ctx.channel.set_permissions(
-                    target, send_messages=None
-                )  # gives back send messages permissions
-                unblocked.append(target)
-            except Exception:
-                await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
-                    content="`{0}` could not me unblock".format(target),
-                )
-        if unblocked:
-            unblocked_users = []
-            for unblind in unblocked:
-                users = []
-                people = self.bot.get_user(int(unblind.id))
-                users.append(people)
-                for user in users:
-                    username = f"{user.name}#{user.discriminator}"
-                    unblocked_users += [username]
-            await ctx.send(
-                "<:checkmark:816534984676081705> Unblocked `{0}`".format(
-                    ", ".join(unblocked_users)
-                )
-            )
-            self.bot.dispatch("mod_action", ctx, targets=unblocked_users)
+        await self.restrictor(ctx, targets, "off", "unblock")
 
     @commands.command(brief="Hide a channel from a user.")
     @commands.guild_only()
@@ -588,64 +457,7 @@ class Mod(commands.Cog):
                 reference=self.bot.rep_ref(ctx),
                 content=f"Usage: `{ctx.prefix}blind <target> [target] [target]...`",
             )
-        blinded = []
-        for target in targets:
-            if (
-                ctx.author.id not in self.bot.constants.owners
-                and ctx.author.id != ctx.guild.owner.id
-                and not ctx.author.guild_permissions.kick_members
-            ):
-                return await ctx.send(
-                    "You have insufficient permission to execute that command."
-                )
-            if target.id in self.bot.constants.owners:
-                return await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
-                    content="You cannot blind my master.",
-                )
-            if target.id == ctx.author.id:
-                return await ctx.send(
-                    "I don't think you really want to blind yourself..."
-                )
-            if target.id == self.bot.user.id:
-                return await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
-                    content="I don't think I want to blind myself...",
-                )
-            if (
-                target.guild_permissions.kick_members
-                and ctx.author.id not in self.bot.constants.owners
-                and ctx.author.id != ctx.guild.owner.id
-            ):
-                return await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
-                    content="You cannot punish other staff members.",
-                )
-            try:
-                await ctx.channel.set_permissions(
-                    target, send_messages=False, read_messages=False
-                )  # gives back send messages permissions
-                blinded.append(target)
-            except Exception:
-                await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
-                    content="`{0}` could not me blinded".format(target),
-                )
-        if blinded:
-            blinded_users = []
-            for unblind in blinded:
-                users = []
-                people = self.bot.get_user(int(unblind.id))
-                users.append(people)
-                for user in users:
-                    username = f"{user.name}#{user.discriminator}"
-                    blinded_users += [username]
-            await ctx.send(
-                "<:checkmark:816534984676081705> Blinded `{0}`".format(
-                    ", ".join(blinded_users)
-                )
-            )
-            self.bot.dispatch("mod_action", ctx, targets=blinded_users)
+        await self.restrictor(ctx, targets, "on", "blind")
 
     @commands.command(brief="Reallow users see a channel.")
     @commands.guild_only()
@@ -662,64 +474,7 @@ class Mod(commands.Cog):
                 reference=self.bot.rep_ref(ctx),
                 content=f"Usage: `{ctx.prefix}unblind <target> [target] [target]...`",
             )
-        unblinded = []
-        for target in targets:
-            if (
-                ctx.author.id not in self.bot.constants.owners
-                and ctx.author.id != ctx.guild.owner.id
-                and not ctx.author.guild_permissions.kick_members
-            ):
-                return await ctx.send(
-                    "You have insufficient permission to execute that command."
-                )
-            if target.id in self.bot.constants.owners:
-                return await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
-                    content="You cannot unblind my master.",
-                )
-            if target.id == ctx.author.id:
-                return await ctx.send(
-                    "I don't think you really want to unblind yourself..."
-                )
-            if target.id == self.bot.user.id:
-                return await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
-                    content="I don't think I want to unblind myself...",
-                )
-            if (
-                target.guild_permissions.kick_members
-                and ctx.author.id not in self.bot.constants.owners
-                and ctx.author.id != ctx.guild.owner.id
-            ):
-                return await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
-                    content="You cannot punish other staff members.",
-                )
-            try:
-                await ctx.channel.set_permissions(
-                    target, send_messages=None, read_messages=None
-                )  # gives back send messages permissions
-                unblinded.append(target)
-            except Exception:
-                await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
-                    content="`{0}` could not me unblinded".format(target),
-                )
-        if unblinded:
-            unblinded_users = []
-            for unblind in unblinded:
-                users = []
-                people = self.bot.get_user(int(unblind.id))
-                users.append(people)
-                for user in users:
-                    username = f"{user.name}#{user.discriminator}"
-                    unblinded_users += [username]
-            await ctx.send(
-                "<:checkmark:816534984676081705> Unblinded `{0}`".format(
-                    ", ".join(unblinded_users)
-                )
-            )
-            self.bot.dispatch("mod_action", ctx, targets=unblinded_users)
+        await self.restrictor(ctx, targets, "off", "unblind")
 
     ##################
     ## Kick Command ##
@@ -736,7 +491,6 @@ class Mod(commands.Cog):
         *,
         reason: typing.Optional[str] = "No reason",
     ):
-
         """
         Usage:      -kick <target> [target]... [reason]
         Example:    -kick @Jacob Sarah for advertising
@@ -749,16 +503,18 @@ class Mod(commands.Cog):
                 content=f"Usage: `{ctx.prefix}kick <target> [target]... [reason]`",
             )
 
-        if await permissions.checker(ctx, value=users):
-            return
         kicked = []
-        immune = []
+        failed = []
         for target in users:
+            res = await permissions.check_priv(ctx, target)
+            if res:
+                failed.append((str(target), res))
+                continue
             try:
                 await ctx.guild.kick(target, reason=reason)
-                kicked.append(f"{target.name}#{target.discriminator}")
-            except Exception:
-                immune.append(f"{target.name}#{target.discriminator}")
+                kicked.append(str(target))
+            except Exception as e:
+                failed.append((str(target), e))
                 continue
         if kicked:
             await ctx.send(
@@ -766,11 +522,9 @@ class Mod(commands.Cog):
                 content=f"{self.bot.emote_dict['success']} Kicked `{', '.join(kicked)}`",
             )
             self.bot.dispatch("mod_action", ctx, targets=kicked)
-        if immune:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['failed']} Failed to kick `{', '.join(immune)}`",
-            )
+        if failed:
+            await helpers.error_info(ctx, failed)
+            
 
     ##################
     ## Ban Commands ##
@@ -822,15 +576,19 @@ class Mod(commands.Cog):
             delete_message_days = 1
 
         banned = []
-        immune = []
+        failed = []
         for target in targets:
+            res = permissions.check_priv(ctx, target)
+            if res:
+                failed.append((str(target), res))
+                continue
             try:
                 await ctx.guild.ban(
                     target, reason=reason, delete_message_days=delete_message_days
                 )
-                banned.append(f"{target.name}#{target.discriminator}")
-            except Exception:
-                immune.append(f"{target.name}#{target.discriminator}")
+                banned.append(str(target))
+            except Exception as e:
+                failed.append(str(target), e)
                 continue
         if banned:
             await ctx.send(
@@ -838,11 +596,8 @@ class Mod(commands.Cog):
                 content=f"{self.bot.emote_dict['success']} Banned `{', '.join(banned)}`",
             )
             self.bot.dispatch("mod_action", ctx, targets=banned)
-        if immune:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['failed']} Failed to ban `{', '.join(immune)}`",
-            )
+        if failed:
+            await helpers.error_info(ctx, failed)
 
     @commands.command(brief="Softban users from the server.")
     @commands.guild_only()
@@ -872,9 +627,6 @@ class Mod(commands.Cog):
                 content=f"Usage: `{ctx.prefix}softban <member> [days to delete messages] [reason]`",
             )
 
-        if await permissions.checker(ctx, value=targets):
-            return
-
         if delete_message_days:
             if not delete_message_days.isdigit():
                 if reason == "No reason":
@@ -894,16 +646,20 @@ class Mod(commands.Cog):
             delete_message_days = 7
 
         banned = []
-        immune = []
+        failed = []
         for target in targets:
+            res = await permissions.check_priv(ctx, target)
+            if res:
+                failed.append((str(target), res))
+                continue
             try:
                 await ctx.guild.ban(
                     target, reason=reason, delete_message_days=delete_message_days
                 )
                 await ctx.guild.unban(target, reason=reason)
-                banned.append(f"{target.name}#{target.discriminator}")
-            except Exception:
-                immune.append(f"{target.name}#{target.discriminator}")
+                banned.append(str(target))
+            except Exception as e:
+                failed.append((str(target), e))
                 continue
         if banned:
             await ctx.send(
@@ -911,11 +667,8 @@ class Mod(commands.Cog):
                 content=f"{self.bot.emote_dict['success']} Softbanned `{', '.join(banned)}`",
             )
             self.bot.dispatch("mod_action", ctx, targets=banned)
-        if immune:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['failed']} Failed to softban `{', '.join(immune)}`",
-            )
+        if failed:
+            await helpers.error_info(ctx, failed)
 
     @commands.command(brief="Hackban multiple users by ID.")
     @permissions.bot_has_permissions(ban_members=True)
@@ -1006,7 +759,8 @@ class Mod(commands.Cog):
             )
             self.bot.dispatch("mod_action", ctx, targets=hackbanned)
 
-    @commands.command(brief="Unban a previously banned user.", aliases=["revokeban"])
+    @commands.command(brief="Unban a previously banned user.",
+                      aliases=["revokeban"])
     @commands.guild_only()
     @permissions.has_permissions(ban_members=True)
     async def unban(self, ctx, member: converters.BannedMember, *, reason: str = None):
@@ -1041,15 +795,14 @@ class Mod(commands.Cog):
             )
         self.bot.dispatch("mod_action", ctx, targets=[str(member.user)])
 
-    # https://github.com/AlexFlipnote/discord_bot.py
+    # https://github.com/AlexFlipnote/discord_bot.py with my own additions
 
     ###################
     ## Prune Command ##
     ###################
 
-    @commands.group(
-        brief="Remove any type of content.", aliases=["purge", "delete", "remove"]
-    )
+    @commands.group(brief="Remove any type of content.",
+                    aliases=["purge", "delete", "remove"])
     @commands.guild_only()
     @commands.max_concurrency(5, per=commands.BucketType.guild)
     @permissions.bot_has_permissions(manage_messages=True)
@@ -1188,9 +941,8 @@ class Mod(commands.Cog):
         if prefix:
 
             def predicate(m):
-                return (m.webhook_id is None and m.author.bot) or m.content.startswith(
-                    prefix
-                )
+                return (
+                    m.webhook_id is None and m.author.bot) or m.content.startswith(prefix)
 
         else:
 
@@ -1220,7 +972,8 @@ class Mod(commands.Cog):
     @prune.command(name="emojis", aliases=["emotes"])
     async def _emojis(self, ctx, search=100):
         """Removes all messages containing custom emoji."""
-        custom_emoji = re.compile(r"<a?:(.*?):(\d{17,21})>|[\u263a-\U0001f645]")
+        custom_emoji = re.compile(
+            r"<a?:(.*?):(\d{17,21})>|[\u263a-\U0001f645]")
 
         def predicate(m):
             return custom_emoji.search(m.content)
@@ -1281,7 +1034,8 @@ class Mod(commands.Cog):
         deleted = await ctx.channel.purge(limit=search, check=check, before=ctx.message)
         return Counter(str(m.author) for m in deleted)
 
-    @commands.command(brief="Clean up command usage.", search=200, aliases=["clean"])
+    @commands.command(brief="Clean up command usage.",
+                      search=200, aliases=["clean"])
     @commands.guild_only()
     @permissions.bot_has_permissions(manage_messages=True)
     @permissions.has_permissions(manage_messages=True)
@@ -1308,8 +1062,13 @@ class Mod(commands.Cog):
         ]
         if deleted:
             messages.append("")
-            spammers = sorted(spammers.items(), key=lambda t: t[1], reverse=True)
-            messages.extend(f"`{author}`: {count}" for author, count in spammers)
+            spammers = sorted(
+                spammers.items(),
+                key=lambda t: t[1],
+                reverse=True)
+            messages.extend(
+                f"`{author}`: {count}" for author,
+                count in spammers)
         desc = "\n".join(messages)
         em = discord.Embed()
         em.color = self.bot.constants.embed

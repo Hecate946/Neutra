@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord.ext.commands.errors import BadArgument
 
 from settings import constants
 
@@ -88,52 +89,67 @@ def bot_has_permissions(*, check=all, **perms):
     return commands.check(pred)
 
 
+# async def check_priv(ctx, member):
+#     """ Custom way to check permissions when handling moderation commands """
+#     try:
+#         # Self checks
+#         if member == ctx.author:
+#             raise commands.BadArgument(f"You cannot {ctx.command.name} yourself.")
+#         if member.id == ctx.bot.user.id:
+#             raise commands.BadArgument(f"I cannot {ctx.command.name} myself.")
+
+#         # Check if user bypasses
+#         if ctx.author.id == ctx.guild.owner.id:
+#             return
+#         if ctx.author.id in owners:
+#             return
+
+#         # Now permission check
+#         if member.id in owners:
+#             if ctx.author.id not in owners:
+#                 raise commands.BadArgument(f"I cannot {ctx.command.name} my creator.")
+#         if member.id == ctx.guild.owner.id:
+#             raise commands.BadArgument(f"You cannot {ctx.command.name} the server owner.",
+#             )
+#         if ctx.author.top_role.position == member.top_role.position:
+#             raise commands.BadArgument(f"You cannot {ctx.command.name} someone who has the same permissions as you.",
+#             )
+#         if ctx.author.top_role.position < member.top_role.position:
+#             raise commands.BadArgument(f"You cannot {ctx.command.name} someone with a higher role than you.")
+#     except Exception as e:
+#         print(e)
+#         pass
+
 async def check_priv(ctx, member):
-    """ Custom (weird) way to check permissions when handling moderation commands """
-    failed = []
+    """
+    Handle permission hierarchy for commands
+    Return the reason for failure.
+    """
     try:
         # Self checks
         if member == ctx.author:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"<:failed:816521503554273320> You cannot {ctx.command.name} yourself.",
-            )
+            return f"You cannot {ctx.command.name} yourself."
         if member.id == ctx.bot.user.id:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Fuck off or I'll {ctx.command.name} you. Little piece of shit...",
-            )
+            return f"I cannot {ctx.command.name} myself."
 
         # Check if user bypasses
         if ctx.author.id == ctx.guild.owner.id:
-            return None
+            return
         if ctx.author.id in owners:
-            return None
+            return
 
         # Now permission check
         if member.id in owners:
             if ctx.author.id not in owners:
-                return await ctx.send(
-                    f"<:failed:816521503554273320> I cannot {ctx.command.name} my creator."
-                )
-            else:
-                pass
+                return f"You cannot {ctx.command.name} my creator."
         if member.id == ctx.guild.owner.id:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"<:failed:816521503554273320> You cannot {ctx.command.name} the server owner.",
-            )
-        if ctx.author.top_role == member.top_role:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"<:failed:816521503554273320> You cannot {ctx.command.name} someone who has the same permissions as you.",
-            )
-        if ctx.author.top_role < member.top_role:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"<:failed:816521503554273320> You cannot {ctx.command.name} someone with a higher role than you.",
-            )
-    except Exception:
+            return f"You cannot {ctx.command.name} the server owner."
+        if ctx.author.top_role.position == member.top_role.position:
+            return f"You cannot {ctx.command.name} a user with equal permissions."
+        if ctx.author.top_role.position < member.top_role.position:
+            return f"You cannot {ctx.command.name} a user with superior permissions."
+    except Exception as e:
+        print(e)
         pass
 
 
@@ -144,38 +160,6 @@ async def checker(ctx, value):
     if type(value) is not list:
         result = await check_priv(ctx, member=value)
     return result
-
-
-async def voice_priv(ctx, member):
-    try:
-        if member == ctx.author:
-            return None
-        if member.id == ctx.bot.user.id:
-            return None
-
-        if ctx.author.id == ctx.guild.owner.id:
-            return None
-        if ctx.author.id in owners:
-            return None
-
-        if member.id == ctx.guild.owner.id:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"<:failed:816521503554273320> You cannot {ctx.command.name} the server owner.",
-            )
-        if ctx.author.top_role == member.top_role:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"<:failed:816521503554273320> You cannot {ctx.command.name} someone who has the same permissions as you.",
-            )
-        if ctx.author.top_role < member.top_role:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"<:failed:816521503554273320> You cannot {ctx.command.name} someone who has a higher role than you.",
-            )
-    except Exception as e:
-        print(e)
-
 
 def can_handle(ctx, permission: str):
     """ Checks if bot has permissions or is in DMs right now """
