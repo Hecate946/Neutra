@@ -24,6 +24,12 @@ class Mod(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.mregex = re.compile(r"[0-9]{17,21}")
+        self.dregex = re.compile(
+            r"(?:https?://)?discord(?:app)?\.(?:com/invite|gg)/[a-zA-Z0-9]+/?"
+        )
+        self.uregex = re.compile(
+            r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
+        )
 
     ####################
     ## VOICE COMMANDS ##
@@ -672,92 +678,44 @@ class Mod(commands.Cog):
 
     @commands.command(brief="Hackban multiple users by ID.")
     @permissions.bot_has_permissions(ban_members=True)
-    @permissions.has_permissions(manage_guild=True)
-    async def hackban(self, ctx, *users: str):
+    @permissions.has_permissions(ban_members=True)
+    async def hackban(self, ctx, *, users: commands.Greedy[discord.User]):
         """
-        Usage:      -hackban <id> [id] [id]...
-        Example:    -hackban 805871188462010398 243507089479579784
-        Permission: Manage Server
-        Output:     Hackbans multiple users by ID.
-        Notes:      Users do not have to be in the server."""
-        if not users:
+        Usage: -hackban <id> [id] [id]...
+        Example: -hackban 805871188462010398 243507089479579784
+        Permission: Ban Members
+        Output: Hackbans multiple users by ID.
+        Notes: Users do not have to be in the server."""
+        if not len(users):
             return await ctx.send(
                 reference=self.bot.rep_ref(ctx),
                 content=f"Usage: `{ctx.prefix}hackban <id> [id] [id]...`",
             )
         banned = []
+        failed = []
         for user in users:
-            try:
-                u = ctx.guild.get_member(int(user))
-                if (
-                    u.guild_permissions.kick_members
-                    and ctx.author.id not in self.bot.constants.owners
-                    and ctx.author.id != ctx.guild.owner.id
-                ):
-                    return await ctx.send(
-                        reference=self.bot.rep_ref(ctx),
-                        content="You cannot punish other staff members.",
-                    )
-            except Exception:
-                try:
-                    u = discord.Object(id=user)
-                except TypeError:
-                    return await ctx.send(
-                        f"{self.bot.emote_dict['failed']} User snowflake must be integer. Ex: 708584008065351681."
-                    )
-            if (
-                ctx.author.id not in self.bot.constants.owners
-                and not ctx.author.guild_permissions.manage_guild
-            ):
-                return await ctx.send(
-                    "You have insufficient permission to execute that command."
-                )
-            if u.id in self.bot.constants.owners:
-                return await ctx.send(
-                    f"{self.bot.emote_dict['failed']} You cannot hackban my creator."
-                )
-            if u.id == ctx.author.id:
-                return await ctx.send(
-                    f"I don't think you really want to hackban yourself..."
-                )
-            if u.id == self.bot.user.id:
-                return await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
-                    content="I don't think I want to hackban myself...",
-                )
+            res = permissions.check_priv(ctx, user)
+            if res:
+                failed.append((str(user), res))
+                continue
             try:
                 await ctx.guild.ban(
-                    u,
+                    user,
                     reason=f"Hackban executed by {ctx.author}",
                     delete_message_days=7,
                 )
                 banned.append(user)
-            except Exception:
-                uu = ctx.message.guild.get_member(user)
-                if uu is None:
-                    await ctx.send(
-                        f"{self.bot.emote_dict['failed']} `{user}` could not be hackbanned."
-                    )
-                else:
-                    await ctx.send(
-                        f"{self.bot.emote_dict['failed']} `{uu}` is already on the server and could not be hackbanned."
-                    )
+            except Exception as e:
+                failed.append((str(user), e))
                 continue
         if banned:
-            hackbanned = []
-            for ban in banned:
-                users = []
-                people = self.bot.get_user(ban)
-                users.append(people)
-                for user in users:
-                    username = f"{user.name}#{user.discriminator}"
-                    hackbanned += [username]
             await ctx.send(
-                "{1} Hackbanned `{0}`".format(
-                    ", ".join(hackbanned), self.bot.emote_dict["success"]
-                )
+                reference=self.bot.rep_ref(ctx),
+                content=f"{self.bot.emote_dict['success']} Hackbanned `{', '.join(banned)}`"
             )
-            self.bot.dispatch("mod_action", ctx, targets=hackbanned)
+            self.bot.dispatch("mod_action", ctx, targets=banned)
+        if failed:
+            await helpers.error_info(ctx, failed)
 
     @commands.command(brief="Unban a previously banned user.",
                       aliases=["revokeban"])
@@ -885,6 +843,22 @@ class Mod(commands.Cog):
         await self.do_removal(ctx, search, lambda e: len(e.embeds))
 
     @prune.command()
+    async def invites(self, ctx, search=100):
+        """Removes messages that have discord invite links in them."""
+        def predicate(m):
+            print(self.dregex.search(m.content))
+            return self.dregex.search(m.content)
+        await self.do_removal(ctx, search, predicate)
+
+    @prune.command(aliases=['link', 'url', 'links'])
+    async def urls(self, ctx, search=100):
+        """Removes messages that have URLs in them."""
+        def predicate(m):
+            print(self.uregex.search(m.content))
+            return self.uregex.search(m.content)
+        await self.do_removal(ctx, search, predicate)
+
+    @prune.command()
     async def files(self, ctx, search=100):
         """Removes messages that have attachments in them."""
         await self.do_removal(ctx, search, lambda e: len(e.attachments))
@@ -938,6 +912,9 @@ class Mod(commands.Cog):
     async def _bots(self, ctx, search=100, prefix=None):
         """Removes a bot user's messages and messages with their optional prefix."""
 
+        if not search.isdigit():
+            prefix = search
+            search = 100
         if prefix:
 
             def predicate(m):

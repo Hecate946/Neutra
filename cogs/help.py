@@ -303,7 +303,6 @@ class Help(commands.Cog):
 
             if invokercommand.lower() in [
                 "general",
-                "misc",
                 "utility",
                 "utils",
                 "util",
@@ -369,6 +368,17 @@ class Help(commands.Cog):
                 "decrypt",
             ]:
                 cog = self.bot.get_cog("Conversion")
+                return await self.helper_func(
+                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
+                )
+
+            if invokercommand.lower() in [
+                "tools",
+                "miscellaneous",
+                "random",
+                "misc",
+            ]:
+                cog = self.bot.get_cog("Misc")
                 return await self.helper_func(
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )
