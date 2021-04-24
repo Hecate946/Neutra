@@ -1,6 +1,7 @@
 import re
 import typing
 import asyncio
+import asyncpg
 import discord
 
 from better_profanity import profanity
@@ -48,30 +49,23 @@ class Mod(commands.Cog):
         Permission: Move Members
         """
         if not targets:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}vc move <to channel> <target> [target]...`",
+            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}vc move <to channel> <target> [target]...`",
             )
         if not channel:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}vc move <to channel> <target> [target]...`",
+            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}vc move <to channel> <target> [target]...`",
             )
         vcmoved = []
         for target in targets:
             try:
                 await target.edit(voice_channel=channel)
             except discord.HTTPException:
-                await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
+                await ctx.send_or_reply(
                     content=f"{self.bot.emote_dict['error']} Target is not connected to a voice channel"
                 )
                 continue
             vcmoved.append(str(target))
         if vcmoved:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['success']} VC Moved `{', '.join(vcmoved)}`"
+            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} VC Moved `{', '.join(vcmoved)}`"
             )
 
     @commands.command(brief="Kick all users from a voice channel.")
@@ -85,14 +79,10 @@ class Mod(commands.Cog):
         Permission: Move Members
         """
         if channel is None:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}vcpurge <voice channel name/id>`",
+            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}vcpurge <voice channel name/id>`",
             )
         if len(channel.members) == 0:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['error']} No members in voice channel {channel.mention}.",
+            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} No members in voice channel {channel.mention}.",
             )
         failed = []
         for member in channel.members:
@@ -101,14 +91,11 @@ class Mod(commands.Cog):
             except Exception:
                 failed.append(str(member))
                 continue
-        await ctx.send(
-            reference=self.bot.rep_ref(ctx),
+        await ctx.send_or_reply(
             content=f"{self.bot.emote_dict['success']} Purged {channel.mention}.",
         )
         if failed:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['success']} Failed to vckick {len(failed)} user{'' if len(failed) == 1 else 's'}.",
+            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} Failed to vckick {len(failed)} user{'' if len(failed) == 1 else 's'}.",
             )
 
     @commands.command(brief="Kick users from a voice channel.")
@@ -122,23 +109,19 @@ class Mod(commands.Cog):
         Permission: Move Members
         """
         if not len(targets):
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}vckick <target> [target]...`",
+            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}vckick <target> [target]...`",
             )
         vckicked = []
         for target in targets:
             try:
                 await target.edit(voice_channel=None)
             except discord.HTTPException:
-                await ctx.send(
+                await ctx.send_or_reply(
                     f"{self.bot.emote_dict['error']} Target is not connected to a voice channel."
                 )
             vckicked.append(str(target))
         if vckicked:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['success']} VC Kicked `{', '.join(vckicked)}`"
+            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} VC Kicked `{', '.join(vckicked)}`"
             )
 
     ###################
@@ -172,9 +155,7 @@ class Mod(commands.Cog):
         """
         global target
         if not len(targets):
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}mute <target> [target]... [minutes] [reason]`",
+            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}mute <target> [target]... [minutes] [reason]`",
             )
 
         else:
@@ -188,17 +169,17 @@ class Mod(commands.Cog):
                     or None
                 )
                 if self.mute_role is None:
-                    return await ctx.send(
+                    return await ctx.send_or_reply(
                         f"use `{ctx.prefix}muterole <role>` to initialize the muted role."
                     )
                 self.mute_role = ctx.guild.get_role(int(self.mute_role))
             except Exception as e:
                 print("really?")
-                return await ctx.send(e)
+                return await ctx.send_or_reply(e)
             muted = []
             for target in targets:
                 if target.bot:
-                    await ctx.send(
+                    await ctx.send_or_reply(
                         f"{self.bot.emote_dict['failed']} I cannot mute bots."
                     )
                     continue
@@ -210,38 +191,35 @@ class Mod(commands.Cog):
                         else None
                     )
                     if target.id in self.bot.constants.owners:
-                        return await ctx.send(
-                            reference=self.bot.rep_ref(ctx),
+                        return await ctx.send_or_reply(
                             content="You cannot mute my developer.",
                         )
                     if target.id == ctx.author.id:
-                        return await ctx.send(
+                        return await ctx.send_or_reply(
                             "I don't think you really want to mute yourself..."
                         )
                     if target.id == self.bot.user.id:
-                        return await ctx.send(
-                            reference=self.bot.rep_ref(ctx),
+                        return await ctx.send_or_reply(
                             content="I don't think I want to mute myself...",
                         )
                     if (
                         target.guild_permissions.kick_members
                         and ctx.author.id != ctx.guild.owner.id
                     ):
-                        return await ctx.send(
-                            reference=self.bot.rep_ref(ctx),
+                        return await ctx.send_or_reply(
                             content="You cannot punish other staff members.",
                         )
                     if ctx.guild.me.top_role.position < target.top_role.position:
-                        return await ctx.send(
+                        return await ctx.send_or_reply(
                             f"My highest role is below `{target}'s` highest role. Aborting mute."
                         )
 
                     if ctx.guild.me.top_role.position == target.top_role.position:
-                        return await ctx.send(
+                        return await ctx.send_or_reply(
                             f"I have the same permissions as `{target}`. Aborting mute."
                         )
                     if ctx.guild.me.top_role.position < self.mute_role.position:
-                        return await ctx.send(
+                        return await ctx.send_or_reply(
                             "My highest role is below the mute role. Aborting mute."
                         )
                     try:
@@ -253,12 +231,12 @@ class Mod(commands.Cog):
                             getattr(end_time, "isoformat", lambda: None)(),
                         )
                     except Exception as e:
-                        return await ctx.send(e)
+                        return await ctx.send_or_reply(e)
                     try:
                         await target.edit(roles=[self.mute_role])
                         muted.append(target)
                     except Exception as e:
-                        return await ctx.send(e)
+                        return await ctx.send_or_reply(e)
                     if reason:
                         try:
                             await target.send(
@@ -272,7 +250,7 @@ class Mod(commands.Cog):
                     if minutes:
                         unmutes.append(target)
                 else:
-                    await ctx.send(
+                    await ctx.send_or_reply(
                         f"{self.bot.emote_dict['error']} Member `{target.display_name}` is already muted."
                     )
             if muted:
@@ -288,7 +266,7 @@ class Mod(commands.Cog):
                     msg = f'{self.bot.emote_dict["success"]} Muted `{", ".join(allmuted)}` indefinetely'
                 else:
                     msg = f'{self.bot.emote_dict["success"]} Muted `{", ".join(allmuted)}` for {minutes:,} minute{"" if minutes == 1 else "s"}'
-                await ctx.send(msg)
+                await ctx.send_or_reply(msg)
                 self.bot.dispatch("mod_action", ctx, targets=allmuted)
             if len(unmutes):
                 await asyncio.sleep(minutes * 60)
@@ -305,7 +283,7 @@ class Mod(commands.Cog):
             self.mute_role = self.mute_role[0]
             self.mute_role = ctx.guild.get_role(int(self.mute_role))
         except Exception as e:
-            return await ctx.send(e)
+            return await ctx.send_or_reply(e)
         unmuted = []
         for target in targets:
             if self.mute_role in target.roles:
@@ -341,15 +319,12 @@ class Mod(commands.Cog):
                         return
 
             else:
-                return await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
+                return await ctx.send_or_reply(
                     content=f"{self.bot.emote_dict['error']} Member is not muted",
                 )
 
         if unmuted:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f'{self.bot.emote_dict["success"]} Unmuted `{", ".join(unmuted)}`',
+            await ctx.send_or_reply(content=f'{self.bot.emote_dict["success"]} Unmuted `{", ".join(unmuted)}`',
             )
             self.bot.dispatch("mod_action", ctx, targets=unmuted)
 
@@ -368,9 +343,7 @@ class Mod(commands.Cog):
         Output: Unmutes members muted by the -hardmute command.
         """
         if not len(targets):
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}unmute <target> [target]...`",
+            await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}unmute <target> [target]...`",
             )
 
         else:
@@ -406,9 +379,7 @@ class Mod(commands.Cog):
                 failed.append((str(target), e))
                 continue
         if restrict:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['success']} {ctx.command.name.capitalize()}ed `{', '.join(restrict)}`"
+            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} {ctx.command.name.capitalize()}ed `{', '.join(restrict)}`"
             )
             self.bot.dispatch("mod_action", ctx, targets=restrict)
         if failed:
@@ -425,9 +396,7 @@ class Mod(commands.Cog):
         Output: Stops users from messaging in the channel.
         """
         if not len(targets):
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}block <target> [target] [target]...`",
+            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}block <target> [target] [target]...`",
             )
         await self.restrictor(ctx, targets, "on", "block")
 
@@ -442,9 +411,7 @@ class Mod(commands.Cog):
         Output:     Reallows blocked users to send messages.
         """
         if not targets:  # checks if there is user
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}unblock <target> [target] [target]...`",
+            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}unblock <target> [target] [target]...`",
             )
         await self.restrictor(ctx, targets, "off", "unblock")
 
@@ -459,9 +426,7 @@ class Mod(commands.Cog):
         Output:     Prevents users from seeing the channel.
         """
         if not targets:  # checks if there is user
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}blind <target> [target] [target]...`",
+            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}blind <target> [target] [target]...`",
             )
         await self.restrictor(ctx, targets, "on", "blind")
 
@@ -476,9 +441,7 @@ class Mod(commands.Cog):
         Output:     Reallows blinded users to see the channel.
         """
         if not targets:  # checks if there is user
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}unblind <target> [target] [target]...`",
+            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}unblind <target> [target] [target]...`",
             )
         await self.restrictor(ctx, targets, "off", "unblind")
 
@@ -504,9 +467,7 @@ class Mod(commands.Cog):
         Output:     Kicks passed members from the server.
         """
         if not len(users):
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}kick <target> [target]... [reason]`",
+            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}kick <target> [target]... [reason]`",
             )
 
         kicked = []
@@ -523,9 +484,7 @@ class Mod(commands.Cog):
                 failed.append((str(target), e))
                 continue
         if kicked:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['success']} Kicked `{', '.join(kicked)}`",
+            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} Kicked `{', '.join(kicked)}`",
             )
             self.bot.dispatch("mod_action", ctx, targets=kicked)
         if failed:
@@ -555,9 +514,7 @@ class Mod(commands.Cog):
         Output:     Ban passed members from the server.
         """
         if not len(targets):
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}ban <target1> [target2] [delete message days] [reason]`",
+            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}ban <target1> [target2] [delete message days] [reason]`",
             )
 
         if await permissions.checker(ctx, value=targets):
@@ -597,9 +554,7 @@ class Mod(commands.Cog):
                 failed.append(str(target), e)
                 continue
         if banned:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['success']} Banned `{', '.join(banned)}`",
+            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} Banned `{', '.join(banned)}`",
             )
             self.bot.dispatch("mod_action", ctx, targets=banned)
         if failed:
@@ -628,9 +583,7 @@ class Mod(commands.Cog):
             The days to delete messages is set to 7 days.
         """
         if not len(targets):
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}softban <member> [days to delete messages] [reason]`",
+            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}softban <member> [days to delete messages] [reason]`",
             )
 
         if delete_message_days:
@@ -668,9 +621,7 @@ class Mod(commands.Cog):
                 failed.append((str(target), e))
                 continue
         if banned:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['success']} Softbanned `{', '.join(banned)}`",
+            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} Softbanned `{', '.join(banned)}`",
             )
             self.bot.dispatch("mod_action", ctx, targets=banned)
         if failed:
@@ -687,9 +638,7 @@ class Mod(commands.Cog):
         Output: Hackbans multiple users by ID.
         Notes: Users do not have to be in the server."""
         if not len(users):
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}hackban <id> [id] [id]...`",
+            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}hackban <id> [id] [id]...`",
             )
         banned = []
         failed = []
@@ -709,9 +658,7 @@ class Mod(commands.Cog):
                 failed.append((str(user), e))
                 continue
         if banned:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['success']} Hackbanned `{', '.join(banned)}`"
+            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} Hackbanned `{', '.join(banned)}`"
             )
             self.bot.dispatch("mod_action", ctx, targets=banned)
         if failed:
@@ -731,9 +678,7 @@ class Mod(commands.Cog):
         Notes:      Pass either the user's ID or their username
         """
         if not member:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}unban <id/name#discriminator> [reason]`",
+            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}unban <id/name#discriminator> [reason]`",
             )
         if reason is None:
             reason = utils.responsible(
@@ -742,14 +687,10 @@ class Mod(commands.Cog):
 
         await ctx.guild.unban(member.user, reason=reason)
         if member.reason:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f'{self.bot.emote_dict["success"]} Unbanned `{member.user} (ID: {member.user.id})`, previously banned for `{member.reason}.`',
+            await ctx.send_or_reply(content=f'{self.bot.emote_dict["success"]} Unbanned `{member.user} (ID: {member.user.id})`, previously banned for `{member.reason}.`',
             )
         else:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f'{self.bot.emote_dict["success"]} Unbanned `{member.user} (ID: {member.user.id}).`',
+            await ctx.send_or_reply(content=f'{self.bot.emote_dict["success"]} Unbanned `{member.user} (ID: {member.user.id}).`',
             )
         self.bot.dispatch("mod_action", ctx, targets=[str(member.user)])
 
@@ -799,9 +740,7 @@ class Mod(commands.Cog):
         self, ctx, limit, predicate, *, before=None, after=None, message=True
     ):
         if limit > 2000:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Too many messages to search given ({limit}/2000)",
+            return await ctx.send_or_reply(content=f"Too many messages to search given ({limit}/2000)",
             )
 
         if not before:
@@ -817,21 +756,15 @@ class Mod(commands.Cog):
                 limit=limit, before=before, after=after, check=predicate
             )
         except discord.Forbidden:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content="I do not have permissions to delete messages.",
+            return await ctx.send_or_reply(content="I do not have permissions to delete messages.",
             )
         except discord.HTTPException as e:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Error: {e} (try a smaller search?)",
+            return await ctx.send_or_reply(content=f"Error: {e} (try a smaller search?)",
             )
 
         deleted = len(deleted)
         if message is True:
-            msg = await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f'{self.bot.emote_dict["trash"]} Deleted {deleted} message{"" if deleted == 1 else "s"}',
+            msg = await ctx.send_or_reply(content=f'{self.bot.emote_dict["trash"]} Deleted {deleted} message{"" if deleted == 1 else "s"}',
             )
             await asyncio.sleep(7)
             await ctx.message.delete()
@@ -893,9 +826,7 @@ class Mod(commands.Cog):
         The substring must be at least 2 characters long.
         """
         if len(substr) < 2:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content="The substring length must be at least 3 characters.",
+            await ctx.send_or_reply(content="The substring length must be at least 3 characters.",
             )
         else:
             await self.do_removal(ctx, 100, lambda e: substr in e.content)
@@ -962,9 +893,7 @@ class Mod(commands.Cog):
         """Removes all reactions from messages that have them."""
 
         if search > 2000:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Too many messages to search for ({search}/2000)",
+            return await ctx.send_or_reply(content=f"Too many messages to search for ({search}/2000)",
             )
 
         total_reactions = 0
@@ -972,7 +901,7 @@ class Mod(commands.Cog):
             if len(message.reactions):
                 total_reactions += sum(r.count for r in message.reactions)
                 await message.clear_reactions()
-        await ctx.send(
+        await ctx.send_or_reply(
             f'{self.bot.emote_dict["trash"]} Successfully removed {total_reactions} reactions.',
             delete_after=7,
         )
@@ -984,9 +913,7 @@ class Mod(commands.Cog):
         try:
             message = await channel.fetch_message(message_id)
         except commands.errors.NotFound:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content="Message could not be found in this channel",
+            await ctx.send_or_reply(content="Message could not be found in this channel",
             )
             return
 
@@ -1051,7 +978,7 @@ class Mod(commands.Cog):
         em.color = self.bot.constants.embed
         em.description = desc
 
-        await ctx.send(reference=self.bot.rep_ref(ctx), embed=em, delete_after=10)
+        await ctx.send_or_reply(embed=em, delete_after=10)
 
     #########################
     ## Profanity Listeners ##
@@ -1131,3 +1058,182 @@ class Mod(commands.Cog):
                     )
                 except Exception:
                     return
+
+    @commands.command(brief="Set the slowmode for a channel")
+    @commands.guild_only()
+    @permissions.bot_has_permissions(manage_channels=True)
+    @permissions.has_permissions(manage_channels=True)
+    async def slowmode(self, ctx, channel=None, time: float = None):
+        """
+        Usage: -slowmode [channel] [seconds]
+        Permission: Manage Channels
+        Output:
+            Sets the channel's slowmode to your input value.
+        Notes:
+            If no slowmode is passed, will reset the slowmode.
+        """
+        if channel is None:
+            channel_obj = ctx.channel
+            time = 0.0
+        else:
+            try:
+                channel_obj = await commands.TextChannelConverter().convert(
+                    ctx, channel
+                )
+            except commands.ChannelNotFound:
+                channel_obj = ctx.channel
+                if channel.isdigit():
+                    time = float(channel)
+                else:
+                    time = 0.0
+        try:
+            await channel_obj.edit(slowmode_delay=time)
+        except discord.HTTPException as e:
+            await ctx.send_or_reply(content=f'{self.bot.emote_dict["failed"]} Failed to set slowmode because of an error\n{e}',
+            )
+        else:
+            await ctx.send_or_reply(content=f'{self.bot.emote_dict["success"]} Slowmode for {channel_obj.mention} set to `{time}s`',
+            )
+
+    @commands.command(aliases=["lockdown", "lockchannel"], brief="Lock a channel")
+    @commands.guild_only()
+    @permissions.bot_has_permissions(manage_channels=True, manage_roles=True)
+    @permissions.has_permissions(administrator=True)
+    async def lock(self, ctx, channel=None, minutes_: int = None):
+        """
+        Usage: -lock [channel] [minutes]
+        Aliases: -lockdown, -lockchannel
+        Permission: Administrator
+        Output:
+            Locked channel for the specified time. Infinite if not specified
+        Notes:
+            Max timed lock is 2 hours
+        """
+        if channel is None:
+            channel_obj = ctx.channel
+        else:
+            try:
+                channel_obj = await commands.TextChannelConverter().convert(
+                    ctx, channel
+                )
+            except commands.ChannelNotFound:
+                channel_obj = ctx.channel
+                if channel.isdigit():
+                    minutes_ = int(channel)
+                else:
+                    minutes_ = None
+        try:
+            channel = channel_obj
+            overwrites_everyone = channel.overwrites_for(ctx.guild.default_role)
+            my_overwrites = channel.overwrites_for(ctx.guild.me)
+            everyone_overwrite_current = overwrites_everyone.send_messages
+            msg = await ctx.send_or_reply(content=f"Locking channel {channel.mention}...",
+            )
+            try:
+                await self.bot.cxn.execute(
+                    "INSERT INTO lockedchannels VALUES ($1, $2, $3, $4)",
+                    channel.id,
+                    ctx.guild.id,
+                    ctx.author.id,
+                    str(everyone_overwrite_current),
+                )
+            except asyncpg.UniqueViolationError:
+                return await msg.edit(
+                    content=f"{self.bot.emote_dict['failed']} Channel {channel.mention} is already locked."
+                )
+
+            my_overwrites.send_messages = True
+            overwrites_everyone.send_messages = False
+            await ctx.message.channel.set_permissions(
+                ctx.guild.default_role,
+                overwrite=overwrites_everyone,
+                reason=(
+                    utils.responsible(ctx.author, "Channel locked by command execution")
+                ),
+            )
+            if minutes_:
+                if minutes_ > 120:
+                    raise commands.BadArgument("Max timed lock is 120 minutes.")
+                elif minutes_ < 0:
+                    raise commands.BadArgument("Minutes must be greater than 0.")
+                minutes = minutes_
+
+                await msg.edit(
+                    content=f"{self.bot.emote_dict['lock']} Channel {channel.mention} locked for `{minutes}` minute{'' if minutes == 1 else 's'}. ID: `{channel.id}`"
+                )
+                await asyncio.sleep(minutes * 60)
+                await self.unlock(ctx, channel=channel, surpress=True)
+            else:
+                await msg.edit(
+                    content=f"{self.bot.emote_dict['lock']} Channel {channel.mention} locked. ID: `{channel.id}`"
+                )
+        except discord.Forbidden:
+            await msg.edit(
+                content=f"{self.bot.emote_dict['failed']} I have insufficient permission to lock channels."
+            )
+
+    @commands.command(brief="Unlock a channel.", aliases=["unlockchannel"])
+    @commands.guild_only()
+    @permissions.bot_has_permissions(manage_channels=True)
+    @permissions.has_permissions(administrator=True)
+    async def unlock(self, ctx, channel: discord.TextChannel = None, surpress=False):
+        """
+        Usage: -unlock [channel]
+        Alias: -unlockchannel
+        Permission: Administrator
+        Output: Unlocks a previously locked channel
+        """
+        if channel is None:
+            channel = ctx.channel
+        try:
+            locked = (
+                await self.bot.cxn.fetchrow(
+                    "SELECT channel_id FROM lockedchannels WHERE channel_id = $1",
+                    channel.id,
+                )
+                or (None)
+            )
+            if locked is None:
+                if surpress is True:
+                    return
+                else:
+                    return await ctx.send_or_reply(
+                        f"{self.bot.emote_dict['lock']} Channel {channel.mention} is already unlocked. ID: `{channel.id}`"
+                    )
+
+            msg = await ctx.send_or_reply(content=f"Unlocking channel {channel.mention}...",
+            )
+            old_overwrites = await self.bot.cxn.fetchrow(
+                "SELECT everyone_perms FROM lockedchannels WHERE channel_id = $1",
+                channel.id,
+            )
+            everyone_perms = old_overwrites[0]
+
+            if everyone_perms == "None":
+                everyone_perms = None
+            elif everyone_perms == "False":
+                everyone_perms = False
+            elif everyone_perms == "True":
+                everyone_perms = True
+
+            overwrites_everyone = ctx.channel.overwrites_for(ctx.guild.default_role)
+            overwrites_everyone.send_messages = everyone_perms
+            await ctx.message.channel.set_permissions(
+                ctx.guild.default_role,
+                overwrite=overwrites_everyone,
+                reason=(
+                    utils.responsible(
+                        ctx.author, "Channel unlocked by command execution"
+                    )
+                ),
+            )
+            await self.bot.cxn.execute(
+                "DELETE FROM lockedchannels WHERE channel_id = $1", channel.id
+            )
+            await msg.edit(
+                content=f"{self.bot.emote_dict['unlock']} Channel {channel.mention} unlocked. ID: `{channel.id}`"
+            )
+        except discord.errors.Forbidden:
+            await msg.edit(
+                content=f"{self.bot.emote_dict['failed']} I have insufficient permission to unlock channels."
+            )

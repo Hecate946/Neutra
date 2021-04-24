@@ -53,8 +53,7 @@ class Bot(commands.Cog):
         Alias:  -info
         Output: Version Information, Bot Statistics
         """
-        msg = await ctx.send(
-            reference=self.bot.rep_ref(ctx), content="**Collecting Info...**"
+        msg = await ctx.send_or_reply( content="**Collecting Info...**"
         )
         total_members = sum(1 for x in self.bot.get_all_members())
         voice_channels = []
@@ -146,9 +145,7 @@ class Bot(commands.Cog):
             correct it as soon as possible.
         """
         if bug is None:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}bugreport <bug>`",
+            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}bugreport <bug>`",
             )
 
         owner = discord.utils.get(self.bot.get_all_members(), id=708584008065351681)
@@ -165,22 +162,17 @@ class Bot(commands.Cog):
         try:
             await owner.send(message)
         except discord.errors.InvalidArgument:
-            await ctx.send(
+            await ctx.send_or_reply(
                 "I cannot send your bug report, I'm unable to find my owner."
             )
         except discord.errors.HTTPException:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx), content="Your bug report is too long."
+            await ctx.send_or_reply(content="Your bug report is too long."
             )
         except Exception:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content="I'm unable to deliver your bug report. Sorry.",
+            await ctx.send_or_reply(content="I'm unable to deliver your bug report. Sorry.",
             )
         else:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content="Your bug report has been sent.",
+            await ctx.send_or_reply(content="Your bug report has been sent.",
             )
 
     @commands.command(
@@ -199,9 +191,7 @@ class Bot(commands.Cog):
             However, please be detailed and concise.
         """
         if suggestion is None:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage `{ctx.prefix}suggest <suggestion>`",
+            return await ctx.send_or_reply(content=f"Usage `{ctx.prefix}suggest <suggestion>`",
             )
         owner = discord.utils.get(self.bot.get_all_members(), id=708584008065351681)
         author = ctx.author
@@ -217,22 +207,17 @@ class Bot(commands.Cog):
         try:
             await owner.send(message)
         except discord.errors.InvalidArgument:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx), content="I cannot send your message"
+            await ctx.send_or_reply(content="I cannot send your message"
             )
         except discord.errors.HTTPException:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx), content="Your message is too long."
+            await ctx.send_or_reply(content="Your message is too long."
             )
         except Exception as e:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content="I failed to send your message.",
+            await ctx.send_or_reply(content="I failed to send your message.",
             )
             print(e)
         else:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx), content="Your message has been sent."
+            await ctx.send_or_reply(content="Your message has been sent."
             )
 
     @commands.command(brief="Show the bot's uptime.", aliases=["runtime"])
@@ -242,7 +227,7 @@ class Bot(commands.Cog):
         Alias:  -runtime
         Output: Time since last reboot.
         """
-        await ctx.send(
+        await ctx.send_or_reply(
             f"{self.bot.emote_dict['stopwatch']} I've been running for `{utils.time_between(self.bot.starttime, int(time.time()))}`"
         )
 
@@ -265,9 +250,7 @@ class Bot(commands.Cog):
         """
         async with ctx.channel.typing():
             start = time.time()
-            message = await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f'{self.bot.emote_dict["loading"]} **Calculating Speed...**',
+            message = await ctx.send_or_reply(content=f'{self.bot.emote_dict["loading"]} **Calculating Speed...**',
             )
             end = time.time()
 
@@ -329,9 +312,7 @@ class Bot(commands.Cog):
         """
         async with ctx.channel.typing():
             start = time.time()
-            message = await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f'{self.bot.emote_dict["loading"]} **Calculating Latency...**',
+            message = await ctx.send_or_reply(content=f'{self.bot.emote_dict["loading"]} **Calculating Latency...**',
             )
             end = time.time()
 
@@ -472,7 +453,7 @@ class Bot(commands.Cog):
             color=self.bot.constants.embed,
         )
         embed.set_author(name=owner, icon_url=owner.avatar_url)
-        await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)
+        await ctx.send_or_reply(embed=embed)
 
     @commands.command(brief="Show my changelog.", aliases=["updates"])
     async def changelog(self, ctx):
@@ -483,8 +464,7 @@ class Bot(commands.Cog):
         """
         with open("./data/txts/changelog.txt", "r", encoding="utf-8") as fp:
             changelog = fp.read()
-        await ctx.send(
-            reference=self.bot.rep_ref(ctx),
+        await ctx.send_or_reply(
             content=f"**{self.bot.user.name}'s Changelog**",
         )
         p = pagination.MainMenu(
@@ -493,7 +473,7 @@ class Bot(commands.Cog):
         try:
             await p.start(ctx)
         except menus.MenuError as e:
-            await ctx.send(e)
+            await ctx.send_or_reply(e)
 
     @commands.command(brief="Display the source code.", aliases=["sourcecode"])
     async def source(self, ctx, *, command: str = None):
@@ -506,17 +486,17 @@ class Bot(commands.Cog):
         source_url = "https://github.com/Hecate946/Hypernova"
         branch = "main"
         if command is None:
-            return await ctx.send(source_url)
+            return await ctx.send_or_reply(source_url)
 
         else:
             obj = self.bot.get_command(command.replace(".", " "))
             if obj is None:
-                return await ctx.send(
+                return await ctx.send_or_reply(
                     f'{self.bot.emote_dict["failed"]} Command `{command}` does not exist.'
                 )
             # Show source for all commands so comment this out.
             # elif obj.hidden:
-            #     return await ctx.send(
+            #     return await ctx.send_or_reply(
             #         f'{self.bot.emote_dict["failed"]} Command `{command}` does not exist.'
             #     )
 
@@ -535,7 +515,7 @@ class Bot(commands.Cog):
 
         final_url = f"<{source_url}/blob/{branch}/{location}#L{firstlineno}-L{firstlineno + len(lines) - 1}>"
         msg = f"**__My source {'' if command is None else f'for {command}'} is located at:__**\n\n{final_url}"
-        await ctx.send(msg)
+        await ctx.send_or_reply(msg)
 
     @commands.command(brief="Invite me to your server!", aliases=["bi", "invite"])
     async def botinvite(self, ctx):
@@ -544,7 +524,7 @@ class Bot(commands.Cog):
         Aliases: -bi, -invite
         Output: An invite link to invite me to your server
         """
-        await ctx.send(
+        await ctx.send_or_reply(
             f"**{ctx.author.name}**, use this URL to invite me\n<{self.bot.constants.oauth}>"
         )
 
@@ -557,7 +537,7 @@ class Bot(commands.Cog):
         Aliases: -sup, -assist, -assistance
         Output: An invite link to my support server
         """
-        await ctx.send(
+        await ctx.send_or_reply(
             f"**{ctx.author.name}**, use this URL to join my support server\n{self.bot.constants.support}"
         )
 
@@ -568,9 +548,7 @@ class Bot(commands.Cog):
         Output: Detailed information on my user stats
         """
         async with ctx.channel.typing():
-            msg = await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['loading']} **Collecting User Statistics**",
+            msg = await ctx.send_or_reply(content=f"{self.bot.emote_dict['loading']} **Collecting User Statistics**",
             )
             users = [x for x in self.bot.get_all_members() if not x.bot]
             users_online = [x for x in users if x.status != discord.Status.offline]
@@ -633,7 +611,7 @@ class Bot(commands.Cog):
             member = ctx.author
 
         if member.id == self.bot.user.id:
-            return await ctx.send(
+            return await ctx.send_or_reply(
                 "I'm on **{:,}** server{}. ".format(
                     len(self.bot.guilds), "" if len(self.bot.guilds) == 1 else "s"
                 )
@@ -649,7 +627,7 @@ class Bot(commands.Cog):
         else:
             targ = "**{}** shares".format(member.display_name)
 
-        await ctx.send(
+        await ctx.send_or_reply(
             "{} **{:,}** server{} with me.".format(
                 targ, count, "" if count == 1 else "s"
             )
@@ -692,7 +670,7 @@ class Bot(commands.Cog):
         try:
             await pages.start(ctx)
         except menus.MenuError as e:
-            await ctx.send(str(e))
+            await ctx.send_or_reply(str(e))
 
     @commands.command(
         aliases=["code", "cloc", "codeinfo"], brief="Show sourcecode statistics."
@@ -768,4 +746,4 @@ class Bot(commands.Cog):
             em = discord.Embed(color=self.bot.constants.embed)
             em.title = f"{self.bot.emote_dict['info']} Source information"
             em.description = msg
-            await ctx.send(embed=em)
+            await ctx.send_or_reply(embed=em)

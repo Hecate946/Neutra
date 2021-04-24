@@ -25,12 +25,10 @@ class Slash(commands.Cog):
         except ValueError:
             pass
         if len(current_prefixes) == 0:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"My current prefix is {self.bot.constants.prefix}",
+            return await ctx.send_or_reply(content=f"My current prefix is {self.bot.constants.prefix}",
                 hidden=True,
             )
-        await ctx.send(
+        await ctx.send_or_reply(
             f"My current prefix{' is' if len(current_prefixes) == 1 else 'es are '} `{', '.join(current_prefixes)}`",
             hidden=True,
         )
@@ -38,6 +36,6 @@ class Slash(commands.Cog):
     # @cog_ext.cog_slash(description="Show my uptime.", guild_ids=[740734113086177433, 782493910161031185])
     # async def uptime(self, ctx: SlashContext):
     #     uptime = utils.time_between(self.bot.starttime, int(time.time()))
-    #     await ctx.send(
+    #     await ctx.send_or_reply(
     #         f"{self.bot.emote_dict['stopwatch']} I've been running for `{uptime}`",
     #         hidden=True)

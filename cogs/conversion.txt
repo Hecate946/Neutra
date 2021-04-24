@@ -82,12 +82,9 @@ class Conversion(commands.Cog):
         Output: Turn lb into kg (imperial to metric)
         """
         if lbs is None:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}lbs <value>`",
+            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}lbs <value>`",
             )
-        await ctx.send(
-            reference=self.bot.rep_ref(ctx),
+        await ctx.send_or_reply(
             content="That is {0:.2f} kg".format(lbs * 0.453592),
         )
 
@@ -101,9 +98,7 @@ class Conversion(commands.Cog):
         Output: Turn kg into lb (metric to imperial)
         """
         if float is None:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}kg <value>`",
+            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}kg <value>`",
             )
         await ctx.channel.send("That is {0:.2f} lbs".format(kg * 2.20462))
 
@@ -249,8 +244,7 @@ class Conversion(commands.Cog):
         """
         async with ctx.channel.typing():
             if not value:
-                return await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
+                return await ctx.send_or_reply(
                     content="Usage: `{}color [value]`".format(ctx.prefix),
                 )
             try:
@@ -294,8 +288,7 @@ class Conversion(commands.Cog):
                     else None
                 )
                 if original_type is None:
-                    return await ctx.send(
-                        reference=self.bot.rep_ref(ctx),
+                    return await ctx.send_or_reply(
                         content=f"{self.bot.emote_dict['failed']} Incorrect number of color values!  Hex takes 1, RGB takes 3, CMYK takes 4.",
                     )
                 # Verify values
@@ -307,8 +300,7 @@ class Conversion(commands.Cog):
                     else 100
                 )
                 if not all((0 <= x <= max_val for x in color_values)):
-                    return await ctx.send(
-                        reference=self.bot.rep_ref(ctx),
+                    return await ctx.send_or_reply(
                         content="Value out of range!  Valid ranges are from `#000000` to `#FFFFFF` for Hex, `0` to `255` for RGB, and `0` to `100` for CMYK.",
                     )
             em = discord.Embed()
@@ -353,7 +345,7 @@ class Conversion(commands.Cog):
                 fname = "Upload." + ext[-1] if len(ext) > 1 else "Upload"
                 dfile = discord.File(file_path, filename=fname)
                 em.set_image(url="attachment://" + fname)
-                await ctx.send(reference=self.bot.rep_ref(ctx), embed=em, file=dfile)
+                await ctx.send_or_reply(embed=em, file=dfile)
             except Exception as e:
                 raise
             if os.path.exists(file_path):
@@ -365,29 +357,24 @@ class Conversion(commands.Cog):
         Usage: -hexdec <hex>
         """
         if input_hex == None:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content="Usage: `{}hexdec [input_hex]`".format(ctx.prefix),
+            await ctx.send_or_reply(content="Usage: `{}hexdec [input_hex]`".format(ctx.prefix),
             )
             return
 
         input_hex = self._check_hex(input_hex)
         if not len(input_hex):
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx), content="Malformed hex - try again."
+            await ctx.send_or_reply(content="Malformed hex - try again."
             )
             return
 
         try:
             dec = int(input_hex, 16)
         except Exception:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content="I couldn't make that conversion!",
+            await ctx.send_or_reply(content="I couldn't make that conversion!",
             )
             return
 
-        await ctx.send(dec)
+        await ctx.send_or_reply(dec)
 
     @commands.command(brief="Convert decimal into hex.")
     async def dechex(self, ctx, *, input_dec=None):
@@ -395,23 +382,20 @@ class Conversion(commands.Cog):
         Usage: -dechex <hex>
         """
         if input_dec == None:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content="Usage: `{}dechex [input_dec]`".format(ctx.prefix),
+            await ctx.send_or_reply(content="Usage: `{}dechex [input_dec]`".format(ctx.prefix),
             )
             return
 
         try:
             input_dec = int(input_dec)
         except Exception:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx), content="Input must be an integer."
+            await ctx.send_or_reply(content="Input must be an integer."
             )
             return
         min_length = 2
         hex_str = "{:x}".format(input_dec).upper()
         hex_str = "0" * (len(hex_str) % min_length) + hex_str
-        await ctx.send(reference=self.bot.rep_ref(ctx), content="0x" + hex_str)
+        await ctx.send_or_reply(content="0x" + hex_str)
 
     @commands.command(brief="Convert a string to binary.")
     async def strbin(self, ctx, *, input_string=None):
@@ -421,9 +405,7 @@ class Conversion(commands.Cog):
             Converts the input string to its binary representation.
         """
         if input_string == None:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content="Usage: `{}strbin [input_string]`".format(ctx.prefix),
+            await ctx.send_or_reply(content="Usage: `{}strbin [input_string]`".format(ctx.prefix),
             )
             return
         msg = "".join("{:08b}".format(ord(c)) for c in input_string)
@@ -434,7 +416,7 @@ class Conversion(commands.Cog):
         msg = "```fix\n"
         msg += " ".join(msg_list)
         msg += "```"
-        await ctx.send(msg)
+        await ctx.send_or_reply(msg)
 
     @commands.command(brief="Convert binary to a string")
     async def binstr(self, ctx, *, input_binary=None):
@@ -444,9 +426,7 @@ class Conversion(commands.Cog):
             Converts the input binary to its string representation.
         """
         if input_binary == None:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content="Usage: `{}binstr [input_binary]`".format(ctx.prefix),
+            await ctx.send_or_reply(content="Usage: `{}binstr [input_binary]`".format(ctx.prefix),
             )
             return
         # Clean the string
@@ -455,15 +435,13 @@ class Conversion(commands.Cog):
             if char == "0" or char == "1":
                 new_bin += char
         if not len(new_bin):
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content="Usage: `{}binstr [input_binary]`".format(ctx.prefix),
+            await ctx.send_or_reply(content="Usage: `{}binstr [input_binary]`".format(ctx.prefix),
             )
             return
         msg = "".join(
             chr(int(new_bin[i : i + 8], 2)) for i in range(0, len(new_bin), 8)
         )
-        await ctx.send(reference=self.bot.rep_ref(ctx), content=msg)
+        await ctx.send_or_reply(content=msg)
 
     @commands.command(brief="Convert binary to an integer.")
     async def binint(self, ctx, *, input_binary=None):
@@ -473,16 +451,14 @@ class Conversion(commands.Cog):
             Converts the input binary to its integer representation.
         """
         if input_binary == None:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content="Usage: `{}binint [input_binary]`".format(ctx.prefix),
+            await ctx.send_or_reply(content="Usage: `{}binint [input_binary]`".format(ctx.prefix),
             )
             return
         try:
             msg = int(input_binary, 2)
         except Exception:
             msg = "I couldn't make that conversion!"
-        await ctx.send(reference=self.bot.rep_ref(ctx), content=msg)
+        await ctx.send_or_reply(content=msg)
 
     @commands.command(brief="Convert an integer to binary.")
     async def intbin(self, ctx, *, input_int=None):
@@ -491,21 +467,17 @@ class Conversion(commands.Cog):
         Output:
             Converts the input integer to its binary representation."""
         if input_int == None:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content="Usage: `{}intbin [input_int]`".format(ctx.prefix),
+            await ctx.send_or_reply(content="Usage: `{}intbin [input_int]`".format(ctx.prefix),
             )
             return
         try:
             input_int = int(input_int)
         except Exception:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx), content="Input must be an integer."
+            await ctx.send_or_reply(content="Input must be an integer."
             )
             return
 
-        await ctx.send(
-            reference=self.bot.rep_ref(ctx), content="{:08b}".format(input_int)
+        await ctx.send_or_reply( content="{:08b}".format(input_int)
         )
 
     @commands.group(brief="Encode to: b32, b64, b85, rot13, hex.")
@@ -556,9 +528,7 @@ class Conversion(commands.Cog):
     async def encryptout(self, ctx, convert: str, input):
         """ The main, modular function to control encrypt/decrypt commands """
         if not input:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Aren't you going to give me anything to encode/decode **{ctx.author.name}**",
+            return await ctx.send_or_reply(content=f"Aren't you going to give me anything to encode/decode **{ctx.author.name}**",
             )
 
         async with ctx.channel.typing():
@@ -569,24 +539,21 @@ class Conversion(commands.Cog):
                     data = BytesIO(input)
 
                 try:
-                    return await ctx.send(
+                    return await ctx.send_or_reply(
                         content=f"📑 **{convert}**",
                         file=discord.File(data, filename=utils.timetext("Encryption")),
                     )
                 except discord.HTTPException:
-                    return await ctx.send(
-                        reference=self.bot.rep_ref(ctx),
+                    return await ctx.send_or_reply(
                         content=f"The file I returned was over 8 MB, sorry {ctx.author.name}...",
                     )
 
             try:
-                await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
+                await ctx.send_or_reply(
                     content=f"📑 **{convert}**```fix\n{input.decode('UTF-8')}```",
                 )
             except AttributeError:
-                await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
+                await ctx.send_or_reply(
                     content=f"📑 **{convert}**```fix\n{input}```",
                 )
 
@@ -611,7 +578,7 @@ class Conversion(commands.Cog):
                 ctx, "base32 -> Text", base64.b32decode(input.encode("UTF-8"))
             )
         except Exception:
-            await ctx.send(reference=self.bot.rep_ref(ctx), content="Invalid base32...")
+            await ctx.send_or_reply(content="Invalid base32...")
 
     @encode.command(name="base64", aliases=["b64"])
     async def encode_base64(self, ctx, *, input: commands.clean_content = None):
@@ -634,7 +601,7 @@ class Conversion(commands.Cog):
                 ctx, "base64 -> Text", base64.urlsafe_b64decode(input.encode("UTF-8"))
             )
         except Exception:
-            await ctx.send(reference=self.bot.rep_ref(ctx), content="Invalid base64...")
+            await ctx.send_or_reply(content="Invalid base64...")
 
     @encode.command(name="rot13", aliases=["r13"])
     async def encode_rot13(self, ctx, *, input: commands.clean_content = None):
@@ -653,7 +620,7 @@ class Conversion(commands.Cog):
         try:
             await self.encryptout(ctx, "rot13 -> Text", codecs.decode(input, "rot_13"))
         except Exception:
-            await ctx.send(reference=self.bot.rep_ref(ctx), content="Invalid rot13...")
+            await ctx.send_or_reply(content="Invalid rot13...")
 
     @encode.command(name="hex")
     async def encode_hex(self, ctx, *, input: commands.clean_content = None):
@@ -676,7 +643,7 @@ class Conversion(commands.Cog):
                 ctx, "hex -> Text", binascii.unhexlify(input.encode("UTF-8"))
             )
         except Exception:
-            await ctx.send(reference=self.bot.rep_ref(ctx), content="Invalid hex...")
+            await ctx.send_or_reply(content="Invalid hex...")
 
     @encode.command(name="base85", aliases=["b85"])
     async def encode_base85(self, ctx, *, input: commands.clean_content = None):
@@ -699,7 +666,7 @@ class Conversion(commands.Cog):
                 ctx, "base85 -> Text", base64.b85decode(input.encode("UTF-8"))
             )
         except Exception:
-            await ctx.send(reference=self.bot.rep_ref(ctx), content="Invalid base85...")
+            await ctx.send_or_reply(content="Invalid base85...")
 
     @encode.command(name="ascii85", aliases=["a85"])
     async def encode_ascii85(self, ctx, *, input: commands.clean_content = None):
@@ -722,8 +689,7 @@ class Conversion(commands.Cog):
                 ctx, "ASCII85 -> Text", base64.a85decode(input.encode("UTF-8"))
             )
         except Exception:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx), content="Invalid ASCII85..."
+            await ctx.send_or_reply(content="Invalid ASCII85..."
             )
 
     @commands.command(brief="Show the morse lookup table")
@@ -760,7 +726,7 @@ class Conversion(commands.Cog):
             msg += "\n"
 
         msg += "```"
-        await ctx.send(msg)
+        await ctx.send_or_reply(msg)
 
     @commands.command(brief="Converts ascii to morse code.")
     async def morse(self, ctx, *, content=None):
@@ -775,9 +741,7 @@ class Conversion(commands.Cog):
         """
 
         if content == None:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content="Usage `{}morse [content]`".format(ctx.prefix),
+            await ctx.send_or_reply(content="Usage `{}morse [content]`".format(ctx.prefix),
             )
             return
 
@@ -799,16 +763,14 @@ class Conversion(commands.Cog):
 
         if not len(morse_list):
             # We didn't get any valid words
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content="There were no valid a-z/0-9 chars in the passed content.",
+            await ctx.send_or_reply(content="There were no valid a-z/0-9 chars in the passed content.",
             )
             return
 
         # We got *something*
         msg = "    ".join(morse_list)
         msg = "```fix\n" + msg + "```"
-        await ctx.send(msg)
+        await ctx.send_or_reply(msg)
 
     @commands.command(brief="Converts morse code to ascii.")
     async def unmorse(self, ctx, *, content=None):
@@ -822,9 +784,7 @@ class Conversion(commands.Cog):
         """
 
         if content == None:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content="Usage `{}unmorse [content]`".format(ctx.prefix),
+            await ctx.send_or_reply(content="Usage `{}unmorse [content]`".format(ctx.prefix),
             )
             return
 
@@ -848,13 +808,11 @@ class Conversion(commands.Cog):
 
         if not len(ascii_list):
             # We didn't get any valid words
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content="There were no valid morse chars in the passed content.",
+            await ctx.send_or_reply(content="There were no valid morse chars in the passed content.",
             )
             return
 
         # We got *something* - join separated by a space
         msg = " ".join(ascii_list)
         msg = "```fix\n" + msg + "```"
-        await ctx.send(msg)
+        await ctx.send_or_reply(msg)

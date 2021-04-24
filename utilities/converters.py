@@ -186,7 +186,7 @@ class BotServer(commands.Converter):
             except discord.NotFound:
                 raise commands.BadArgument("Server `{}` not found".format(argument))
             except Exception as e:
-                await ctx.send(e)
+                await ctx.send_or_reply(e)
         options = [
             f"{s.id}" for s in ctx.bot.guilds if argument.lower() in s.name.lower()
         ]
@@ -200,31 +200,17 @@ class DiscordGuild(commands.Converter):
     async def convert(self, ctx, argument):
         if argument.isdigit():
             server_id = int(argument, base=10)
-            try:
-                server = ctx.bot.get_guild(server_id)
-                return server
-            except discord.HTTPException:
-                await ctx.send(
-                    reference=self.bot.rep_ref(ctx), content=f"Something went wrong."
-                )
-            except discord.Forbidden:
-                return await ctx.send(
-                    reference=self.bot.rep_ref(ctx), content=f"I'm not in that server"
-                )
-            except discord.NotFound:
-                return await ctx.send(
-                    reference=self.bot.rep_ref(ctx), content="Server doesn't exist"
-                )
-            except Exception as e:
-                await ctx.send(e)
-        server = discord.utils.find(
-            lambda s: argument.lower() in str(s.name).lower(), ctx.bot.guilds
-        )
-        if server is None:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx), content=f"Didn't find that server."
+            server = ctx.bot.get_guild(server_id)
+            if not server:
+                raise commands.BadArgument(f"Server `{argument}` not found.")
+            return server
+        else:
+            server = discord.utils.find(
+                lambda s: argument.lower() in str(s.name).lower(), ctx.bot.guilds
             )
-        return server
+            if not server:
+                raise commands.BadArgument(f"Server `{argument}` not found.")
+            return server
 
 
 # converter from R.Danny

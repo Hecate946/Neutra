@@ -27,6 +27,13 @@ CREATE TABLE IF NOT EXISTS tracker (
     unix BIGINT
 );
 
+CREATE TABLE IF NOT EXISTS spammers (
+    user_id BIGINT,
+    server_id BIGINT,
+    spamcount BIGINT,
+    UNIQUE(user_id, server_id)
+);
+
 -- This table has been dropped and is no longer used.
 -- CREATE TABLE IF NOT EXISTS useravatars (
 --     user_id BIGINT PRIMARY KEY,

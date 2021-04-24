@@ -731,7 +731,7 @@ class Logging(commands.Cog):
         )
         self.bot.server_settings[ctx.guild.id]["logging"]["logchannel"] = channel.id
         self.bot.server_settings[ctx.guild.id]["logging"]["webhook_id"] = webhook.id
-        await ctx.send(
+        await ctx.send_or_reply(
             f"{self.bot.emote_dict['success']} Set channel {channel.mention} as this server's logging channel."
         )
         await webhook.execute(
@@ -771,7 +771,7 @@ class Logging(commands.Cog):
 
         for webhook in server_webhook_list:
             if str(webhook.id) == str(webhook_id):
-                return await ctx.send(
+                return await ctx.send_or_reply(
                     f"{self.bot.emote_dict['error']} Logging is already set up on this server"
                 )
 
@@ -805,15 +805,11 @@ class Logging(commands.Cog):
                 "UPDATE logging SET logchannel = NULL WHERE server_id = $1",
                 ctx.guild.id,
             )
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['success']} Logging is now disabled on this server",
+            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} Logging is now disabled on this server",
             )
             return
         else:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['error']} Logging is not enabled on this server.",
+            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} Logging is not enabled on this server.",
             )
 
     @commands.command(brief="Enable specific logging events.")
@@ -959,7 +955,7 @@ class Logging(commands.Cog):
                     type_of_log = log_type[0]
             if type_of_log is None:
                 # invalid logging type
-                await ctx.send(
+                await ctx.send_or_reply(
                     f"{self.bot.emote_dict['failed']} `{log_arg.capitalize()}` is not a valid logging option. Use `{ctx.prefix}log help` for more info."
                 )
                 return
@@ -980,7 +976,7 @@ class Logging(commands.Cog):
                 log_dict = self.bot.server_settings[ctx.guild.id]["logging"]
                 current_list = [log_dict[item] for item in list_of_log_types]
                 if all([item == log_bool for item in current_list]):
-                    return await ctx.send(
+                    return await ctx.send_or_reply(
                         f"{self.bot.emote_dict['success']} All logging events are already {'enabled' if log_bool else 'disabled'}."
                     )
 
@@ -993,11 +989,11 @@ class Logging(commands.Cog):
                     await self.bot.cxn.execute(query, log_bool, ctx.guild.id)
                     self.bot.server_settings[ctx.guild.id]["logging"][i] = log_bool
                 if log_bool:
-                    await ctx.send(
+                    await ctx.send_or_reply(
                         f"{self.bot.emote_dict['success']} All logging events have been enabled."
                     )
                 elif not log_bool:
-                    await ctx.send(
+                    await ctx.send_or_reply(
                         f"{self.bot.emote_dict['success']} All logging events have been disabled."
                     )
                 return
@@ -1025,7 +1021,7 @@ class Logging(commands.Cog):
             logchan = await self.bot.cxn.fetchval(query, ctx.guild.id) or None
             if logchan is None:
                 # no existing logging channel
-                return await ctx.send(
+                return await ctx.send_or_reply(
                     f"{self.bot.emote_dict['failed']} Logging not setup on this server. "
                     f"Use `{ctx.prefix}logserver` to setup a logging channel."
                 )
@@ -1036,11 +1032,11 @@ class Logging(commands.Cog):
                 is log_bool
             ):
                 if log_bool:
-                    await ctx.send(
+                    await ctx.send_or_reply(
                         f"{self.bot.emote_dict['success']} {type_of_log.capitalize()} is already enabled."
                     )
                 elif not log_bool:
-                    await ctx.send(
+                    await ctx.send_or_reply(
                         f"{self.bot.emote_dict['success']} {type_of_log.capitalize()} is already disabled."
                     )
                 return
@@ -1055,10 +1051,10 @@ class Logging(commands.Cog):
                 psql_type_of_log
             ] = log_bool
             if log_bool:
-                await ctx.send(
+                await ctx.send_or_reply(
                     f"{self.bot.emote_dict['success']} {type_of_log.capitalize()} will now be logged in {logchan.mention}"
                 )
             else:
-                await ctx.send(
+                await ctx.send_or_reply(
                     f"{self.bot.emote_dict['success']} {type_of_log.capitalize()} will no longer be logged in {logchan.mention}"
                 )

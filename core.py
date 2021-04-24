@@ -22,7 +22,7 @@ from utilities import utils
 
 MAX_LOGGING_BYTES = 32 * 1024 * 1024  # 32 MiB
 COGS = [x[:-3] for x in sorted(os.listdir("././cogs")) if x.endswith(".py")]
-USELESS_COGS = ["HELP", "TESTING", "TRACKER", "UPDATER", "SLASH"]
+USELESS_COGS = ["HELP", "TESTING", "BATCH", "SLASH"]
 COG_EXCEPTIONS = ["CONFIG", "BOTADMIN", "MANAGER", "JISHAKU", "MASTER"]
 
 cxn = database.postgres
@@ -103,7 +103,6 @@ traceback_logger_format = logging.Formatter(
     "{asctime}: [{levelname}] {name} || {message}", "%Y-%m-%d %H:%M:%S", style="{"
 )
 traceback_logger_handler.setFormatter(traceback_logger_format)
-
 
 async def get_prefix(bot, message):
     if not message.guild:
@@ -509,14 +508,12 @@ class Hypernova(commands.AutoShardedBot):
             await help_command(ctx, invokercommand=name)
 
         elif isinstance(error, commands.BadArgument):
-            await ctx.send(
-                reference=self.rep_ref(ctx),
+            await ctx.send_or_reply(
                 content=f"{self.emote_dict['failed']} {error}",
             )
 
         elif isinstance(error, commands.BadUnionArgument):
-            await ctx.send(
-                reference=self.rep_ref(ctx),
+            await ctx.send_or_reply(
                 content=f"{self.emote_dict['failed']} {error}",
             )
 
@@ -527,16 +524,14 @@ class Hypernova(commands.AutoShardedBot):
             )
 
         elif isinstance(error, commands.CommandOnCooldown):
-            await ctx.send(
-                reference=self.rep_ref(ctx),
+            await ctx.send_or_reply(
                 content=f"{self.emote_dict['error']} This command is on cooldown... retry in {error.retry_after:.2f} seconds.",
             )
 
         elif isinstance(error, commands.DisabledCommand):
             # This could get annoying so lets just comment out for now
             ctx.message.add_reaction(self.emote_dict["failed"])
-            await ctx.send(
-                reference=self.rep_ref(ctx),
+            await ctx.send_or_reply(
                 content=f"{self.emote_dict['failed']} This command is disabled.",
             )
             pass
@@ -547,7 +542,7 @@ class Hypernova(commands.AutoShardedBot):
         elif isinstance(error, commands.CommandInvokeError):
             err = utils.traceback_maker(error.original, advance=True)
             if "or fewer" in str(error):
-                return await ctx.send(
+                return await ctx.send_or_reply(
                     f"{self.emote_dict['failed']} Result was greater than the character limit."
                 )
             print(
@@ -575,15 +570,14 @@ class Hypernova(commands.AutoShardedBot):
 
         elif isinstance(error, commands.BotMissingPermissions):
             # Readable error so just send it to the channel where the error occurred.
-            await ctx.send(
-                reference=self.rep_ref(ctx),
+            await ctx.send_or_reply(
                 content=f"{self.emote_dict['error']} {error}",
             )
 
         elif isinstance(error, commands.CheckFailure):
             # Readable error so just send it to the channel where the error occurred.
             # Or not
-            # await ctx.send(reference=self.rep_ref(ctx), content=f"{self.emote_dict['error']} {error}")
+            # await ctx.send_or_reply(content=f"{self.emote_dict['error']} {error}")
             pass
 
         else:
@@ -635,6 +629,82 @@ class Hypernova(commands.AutoShardedBot):
                 await message.channel.send(
                     f"Hey {message.author.mention}! if you're looking to invite me to your server, use this link:\n<{self.constants.oauth}>"
                 )
+    try:
+        async def on_error(self, event, *args, **kwargs):
+            print(traceback.format_exc())
+            ctx = await self.get_context(args[0])
+            destination = f"\n\tLocation: {str(ctx.author)} in #{ctx.channel} [{ctx.channel.id}] ({ctx.guild}) [{ctx.guild.id}]:\n"
+            message = f"\tContent: {args[0].clean_content}\n"
+            tb = traceback.format_exc().split('\n')
+            location = "./" + "/".join(tb[3].split("/")[-4:])
+            error = f'\tFile: "{location + tb[4]}:\n\tException: {sys.exc_info()[0].__name__}: {sys.exc_info()[1]}\n'
+            content = destination + message + error + "\n"
+            await ctx.log("e", content)
+    except Exception as e:
+        print(e)
+
+    async def get_context(self, message, *, cls=None):
+        """Override get_context to use a custom Context"""
+        context = await super().get_context(message, cls=BotContext)
+        return context
+
+    @property
+    def hecate(self):
+        return self.get_user(708584008065351681)
+
+    @property
+    def bot_channel(self):
+        return self.get_channel(835199229890658324)
 
 
 bot = Hypernova()
+
+class BotContext(commands.Context):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    async def fail(self, content=None, **kwargs):
+        return await self.send_or_reply(bot.emote_dict['failed'] + content)
+
+    async def success(self, content=None, **kwargs):
+        return await self.send_or_reply(bot.emote_dict['success'] + content)
+
+    async def log(self, _type=None, content=None, **kwargs):
+        if _type in ["info", "i", "information"]:
+            logger = info_logger
+            loglev = info_logger.info
+            level = "INFO"
+            location = info_logger_handler.baseFilename
+        elif _type in ["command", "commands", "cmd", "cmds"]:
+            logger = command_logger
+            loglev = command_logger.info
+            level = "INFO"
+            location = command_logger_handler.baseFilename
+        elif _type in ["err", "e", "error", "errors"]:
+            logger = error_logger
+            loglev = error_logger.warning
+            level = "WARNING"
+            location = error_logger_handler.baseFilename
+        elif _type in ["trace", "t", "traceback"]:
+            logger = traceback_logger
+            loglev = traceback_logger.warning
+            level = "WARNING"
+            location = traceback_logger_handler.baseFilename
+        log_format = "{0}: [{1}] {2} ||".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"), level, logger.name)
+        filename = "./" + "/".join(location.split('/')[-4:])
+        loglev(msg=content)
+        return await self.bot_channel(
+            bot.emote_dict['log'] + f" **Logged to `{filename}`**```prolog\n{log_format}{content}```"
+        )
+
+    async def bot_channel(self, content=None, **kwargs):
+        return await bot.bot_channel.send(content, **kwargs)
+
+    async def send_or_reply(self, content=None, **kwargs):
+        ref = self.message.reference
+        if ref and isinstance(ref.resolved, discord.Message):
+            return await self.send(content, **kwargs, reference=ref.resolved.to_reference())
+        return await self.send(content, **kwargs)
+
+    async def react(self, reaction=None, content=None, **kwargs):
+        return await self.message.add_reaction(reaction)

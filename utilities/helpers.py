@@ -4,8 +4,7 @@ from discord.ext import menus
 from utilities import pagination
 
 async def error_info(ctx, failed):
-    mess = await ctx.send(
-        reference=ctx.bot.rep_ref(ctx),
+    mess = await ctx.send_or_reply(
         content=f"{ctx.bot.emote_dict['failed']} Failed to kick `{', '.join([x[0] for x in failed])}`",
     )
     try:
@@ -26,7 +25,7 @@ async def error_info(ctx, failed):
             "raw_reaction_add", timeout=30.0, check=rxn_check
         )
         await mess.delete()
-        await ctx.send(f"{ctx.bot.emote_dict['announce']} **Failure explanation:**")
+        await ctx.send_or_reply(f"{ctx.bot.emote_dict['announce']} **Failure explanation:**")
         text = '\n'.join([f"User: {x[0]} Reason: {x[1]}" for x in failed])
         p = pagination.MainMenu(
             pagination.TextPageSource(
@@ -36,7 +35,7 @@ async def error_info(ctx, failed):
         try:
             await p.start(ctx)
         except menus.MenuError as e:
-            await ctx.send(e)
+            await ctx.send_or_reply(e)
 
     except asyncio.TimeoutError:
             try:

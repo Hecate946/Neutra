@@ -1,4 +1,5 @@
-import asyncio
+import base64
+import random
 import codecs
 import discord
 import json
@@ -6,14 +7,17 @@ import math
 import operator
 import pprint
 import re
+import os
 import copy
 import unicodedata
-from unidecode import unidecode
-from collections import Counter
-from datetime import datetime
-from functools import cmp_to_key
 
+from collections import Counter, namedtuple
+from datetime import datetime
 from discord.ext import commands, menus
+from functools import cmp_to_key
+from PIL import Image
+from typing import Union
+from unidecode import unidecode
 from pyparsing import (
     CaselessLiteral,
     Combine,
@@ -34,6 +38,7 @@ from utilities import converters, pagination, permissions, utils
 def setup(bot):
     bot.add_cog(Utility(bot))
 
+# Thanks goes to Stella bot for some of these features.
 
 class Utility(commands.Cog):
     """
@@ -43,6 +48,234 @@ class Utility(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.emote_dict = bot.emote_dict
+
+
+    def parse_date(self, token):
+        token_epoch = 1293840000
+        bytes_int = base64.standard_b64decode(token + "==")
+        decoded = int.from_bytes(bytes_int, "big")
+        timestamp = datetime.utcfromtimestamp(decoded)
+
+        # sometime works
+        if timestamp.year < 2015:
+            timestamp = datetime.utcfromtimestamp(decoded + token_epoch)
+        return timestamp
+
+    @commands.command(aliases=["pt", "parsetoken"], brief="Decode a discord token.")
+    async def ptoken(self, ctx, token = None):
+        """
+        Usage: -ptoken <token>
+        Aliases: -pt, -parsetoken
+        Output:
+            Decodes the token by splitting the token into 3 parts.
+        Notes:
+            First part is a user id where it was decoded from base 64 into str. The second part
+            is the creation of the token, which is converted from base 64 into int. The last part
+            cannot be decoded due to discord encryption.
+        """
+        if token is None:
+            return await ctx.send_or_reply(f"Usage: `{ctx.prefix}ptoken <token>`")
+        token_part = token.split(".")
+        if len(token_part) != 3:
+            return await ctx.send_or_reply("Invalid token")
+
+        def decode_user(user):
+            user_bytes = user.encode()
+            user_id_decoded = base64.b64decode(user_bytes)
+            return user_id_decoded.decode("ascii")
+        str_id = decode_user(token_part[0])
+        if not str_id or not str_id.isdigit():
+            return await ctx.send_or_reply("Invalid user")
+        user_id = int(str_id)
+        member = self.bot.get_user(user_id)
+        if not member:
+            return await ctx.send_or_reply("Invalid user")
+        timestamp = self.parse_date(token_part[1]) or "Invalid date"
+
+        embed = discord.Embed(
+            title=f"{member.display_name}'s token",
+            description=f"**User:** `{member}`\n"
+                        f"**ID:** `{member.id}`\n"
+                        f"**Bot:** `{member.bot}`\n"
+                        f"**Created:** `{member.created_at}`\n"
+                        f"**Token Created:** `{timestamp}`"
+        )
+        embed.color = self.bot.constants.color
+        embed.set_thumbnail(url=member.avatar_url)
+        await ctx.send_or_reply(embed=embed)
+
+    @commands.command(aliases=["gt", "generatetoken"],
+                      brief="Generate a discord token for a user.")
+    async def gtoken(self, ctx, member: Union[discord.Member, discord.User] = None):
+        """
+        Usage: -gtoken <user>
+        Aliases: -gt, -generatetoken
+        Output:
+            Generates a discord token for a user
+        Notes:
+            Defaults to command author
+        """
+        if not member:
+            member = ctx.author
+        byte_first = str(member.id).encode('ascii')
+        first_encode = base64.b64encode(byte_first)
+        first = first_encode.decode('ascii')
+        time_rn = datetime.utcnow()
+        epoch_offset = int(time_rn.timestamp())
+        bytes_int = int(epoch_offset).to_bytes(10, "big")
+        bytes_clean = bytes_int.lstrip(b"\x00")
+        unclean_middle = base64.standard_b64encode(bytes_clean)
+        middle = unclean_middle.decode('utf-8').rstrip("==")
+        Pair = namedtuple("Pair", "min max")
+        num = Pair(48, 57)  # 0 - 9
+        cap_alp = Pair(65, 90)  # A - Z
+        cap = Pair(97, 122)  # a - z
+        select = (num, cap_alp, cap)
+        last = ""
+        for each in range(27):
+            pair = random.choice(select)
+            last += str(chr(random.randint(pair.min, pair.max)))
+
+        complete = ".".join((first, middle, last))
+
+        embed = discord.Embed(
+            title=f"{member.display_name}'s token",
+            description=f"**User:** `{member}`\n"
+                        f"**ID:** `{member.id}`\n"
+                        f"**Bot:** `{member.bot}`\n"
+                        f"**Token created:** `{time_rn}`\n"
+                        f"**Generated token:** `{complete}`\n"
+        )
+        embed.color = self.bot.constants.embed
+        embed.set_thumbnail(url=member.avatar_url)
+        await ctx.send_or_reply(embed=embed)
+
+    @commands.command(brief="Find the first message of a reply thread.")
+    async def replies(self, ctx, message: discord.Message):
+        """
+        Usage: -replies <message>
+        Output:
+            The author, replies, message
+            and jump_url to the message.
+        """
+        if message is None:
+            return await ctx.send_or_reply(f"Usage: `{ctx.prefix}replies <message>`")
+        def count_reply(m, replies=0):
+            if isinstance(m, discord.MessageReference):
+                return count_reply(m.cached_message, replies)
+            if isinstance(m, discord.Message):
+                if not m.reference:
+                    return m, replies
+                replies += 1
+                return count_reply(m.reference, replies)
+
+        msg, count = count_reply(message)
+        em = discord.Embed()
+        em.color = self.bot.constants.embed
+        em.title = "Reply Count"
+        em.description =   (
+            f"**Original:** `{msg.author}`\n"
+            f"**Message:** {msg.clean_content}\n"
+            f"**Replies:** `{count}`\n"
+            f"**Origin:** [`jump`]({msg.jump_url})"
+        )
+        
+        await ctx.send_or_reply(embed=em)
+
+    @commands.command(name="type",
+                      aliases=["objtype", "findtype"],
+                      brief="Find the type of a discord object.")
+    async def type_(self, ctx, obj_id: discord.Object = None):
+        """
+        Usage: -type <discord object>
+        Aliases: -findtype, -objtype
+        Output:
+            Attemps to find the type of the object presented.
+        """
+        if obj_id is None:
+            return await ctx.send_or_reply(f"Usage: `{ctx.prefix}findtype <discord object>`")
+        async def found_message(type_id):
+            embed = discord.Embed(title="Result")
+            embed.description=(
+                f"**ID**: `{obj_id.id}`\n"
+                f"**Type:** `{type_id.capitalize()}`\n"
+                f"**Created:** `{obj_id.created_at}`"
+            )
+            embed.color = self.bot.constants.embed
+            await ctx.send_or_reply(embed=embed)
+            return
+
+        async def find(w, t):
+            try:
+                method = getattr(self.bot, f"{w}_{t}")
+                if result := await discord.utils.maybe_coroutine(method, obj_id.id):
+                    return result is not None
+            except discord.Forbidden:
+                return ("fetch", "guild") != (w, t)
+            except (discord.NotFound, AttributeError):
+                pass
+
+        m = await self.bot.http._HTTPClient__session.get(f"https://cdn.discordapp.com/emojis/{obj_id.id}")
+        res = None
+        if m.status == 200:
+            return await found_message("emoji")
+        try:
+            await commands.MessageConverter().convert(ctx, str(obj_id.id))
+            res = True
+            return await found_message("message")
+        except commands.MessageNotFound:
+            pass
+
+        try:
+            await commands.MemberConverter().convert(ctx, str(obj_id.id))
+            res = True
+            return await found_message("member")
+        except commands.MemberNotFound:
+            pass
+
+        try:
+            await commands.UserConverter().convert(ctx, str(obj_id.id))
+            res = True
+            return await found_message("user")
+        except commands.UserNotFound:
+            pass
+
+        try:
+            await commands.RoleConverter().convert(ctx, str(obj_id.id))
+            res = True
+            return await found_message("role")
+        except commands.RoleNotFound:
+            pass
+
+        try:
+            await commands.TextChannelConverter().convert(ctx, str(obj_id.id))
+            res = True
+            return await found_message("text channel")
+        except commands.ChannelNotFound:
+            pass
+
+        try:
+            await commands.VoiceChannelConverter().convert(ctx, str(obj_id.id))
+            res = True
+            return await found_message("voice channel")
+        except commands.ChannelNotFound:
+            pass
+
+        try:
+            await commands.CategoryChannelConverter().convert(ctx, str(obj_id.id))
+            res = True
+            return await found_message("category")
+        except commands.ChannelNotFound:
+            pass
+
+        try:
+            await commands.InviteConverter().convert(ctx, str(obj_id.id))
+            res = True
+            return await found_message("invite")
+        except commands.BadInviteArgument:
+            pass
+        if not res:
+            return await ctx.send_or_reply(f"{self.bot.emote_dict['failed']} I could not find that object.")
 
     async def do_avatar(self, ctx, user, url):
         embed = discord.Embed(
@@ -54,7 +287,135 @@ class Utility(commands.Cog):
             color=self.bot.constants.embed,
         )
         embed.set_image(url=url)
-        await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)
+        await ctx.send_or_reply(embed=embed)
+
+
+    @commands.command(brief="Show a given color and its values.")
+    async def color(self, ctx, *, value=None):
+        """
+        Usage: -color <value>
+        Output:
+            View info on a rgb, hex or cmyk color and their
+            values in other formats
+        Examples:
+            -color #3399cc
+            -color rgb(3, 4, 5)
+            -color cmyk(1, 2, 3, 4)
+            -color 0xFF00FF
+        Notes:
+            Will try to convert value into role
+            and return role color before searching
+            for hex, decimal, rgb, and cmyk
+        """
+        async with ctx.channel.typing():
+            if not value:
+                return await ctx.send_or_reply(
+                    content="Usage: `{}color [value]`".format(ctx.prefix),
+                )
+            try:
+                role = await commands.RoleConverter().convert(ctx, value)
+                color_values = [role.color.value]
+                original_type = "hex"
+            except Exception:
+                # Let's replace commas, and parethesis with spaces, then split on whitespace
+                values = (
+                    value.replace(",", " ")
+                    .replace("(", " ")
+                    .replace(")", " ")
+                    .replace("%", " ")
+                    .split()
+                )
+                color_values = []
+                for x in values:
+                    if x.lower().startswith(("0x", "#")) or any(
+                        (y in x.lower() for y in "abcdef")
+                    ):
+                        # We likely have a hex value
+                        try:
+                            color_values.append(
+                                int(x.lower().replace("#", "").replace("0x", ""), 16)
+                            )
+                        except:
+                            pass  # Bad value - ignore
+                    else:
+                        # Try to convert it to an int
+                        try:
+                            color_values.append(int(x))
+                        except:
+                            pass  # Bad value - ignore
+                original_type = (
+                    "hex"
+                    if len(color_values) == 1
+                    else "rgb"
+                    if len(color_values) == 3
+                    else "cmyk"
+                    if len(color_values) == 4
+                    else None
+                )
+                if original_type is None:
+                    return await ctx.send_or_reply(
+                        content=f"{self.bot.emote_dict['failed']} Incorrect number of color values!  Hex takes 1, RGB takes 3, CMYK takes 4.",
+                    )
+                # Verify values
+                max_val = (
+                    int("FFFFFF", 16)
+                    if original_type == "hex"
+                    else 255
+                    if original_type == "rgb"
+                    else 100
+                )
+                if not all((0 <= x <= max_val for x in color_values)):
+                    return await ctx.send_or_reply(
+                        content="Value out of range!  Valid ranges are from `#000000` to `#FFFFFF` for Hex, `0` to `255` for RGB, and `0` to `100` for CMYK.",
+                    )
+            em = discord.Embed()
+            # Organize the data into the Message format expectations
+            if original_type == "hex":
+                hex_value = (
+                    "#" + hex(color_values[0]).replace("0x", "").rjust(6, "0").upper()
+                )
+                color = color_values[0]
+            elif original_type == "rgb":
+                hex_value = self._rgb_to_hex(*color_values)
+                color = int(self._rgb_to_hex(*color_values).replace("#", ""), 16)
+            else:
+                hex_value = self._cmyk_to_hex(*color_values)
+                color = int(self._cmyk_to_hex(*color_values).replace("#", ""), 16)
+
+            em.add_field(name="HEX", value=hex_value, inline=False)
+            em.add_field(
+                name="DECIMAL",
+                value=int(self._check_hex(hex_value), 16),
+                inline=False,
+            )
+            em.add_field(
+                name="RGB",
+                value="rgb({}, {}, {})".format(*self._hex_to_rgb(hex_value)),
+                inline=False,
+            )
+            em.add_field(
+                name="CMYK",
+                value="cmyk({}, {}, {}, {})".format(*self._hex_to_cmyk(hex_value)),
+                inline=False,
+            )
+            em.color = color
+            # Create the image
+            file_path = "././data/wastebin/color.png"
+            try:
+                image = Image.new(
+                    mode="RGB", size=(256, 256), color=self._hex_int_to_tuple(color)
+                )
+                image.save(file_path)
+                ext = file_path.split(".")
+                fname = "Upload." + ext[-1] if len(ext) > 1 else "Upload"
+                dfile = discord.File(file_path, filename=fname)
+                em.set_image(url="attachment://" + fname)
+                await ctx.send_or_reply(embed=em, file=dfile)
+            except Exception as e:
+                raise
+            if os.path.exists(file_path):
+                os.remove(file_path)
+
 
     @commands.command(brief="Dehoist a specified user.")
     @permissions.bot_has_permissions(manage_nicknames=True)
@@ -72,7 +433,7 @@ class Utility(commands.Cog):
             instead.
         """
         if user is None:
-            return await ctx.send(f"Usage: `{ctx.prefix}dehoist <user>`")
+            return await ctx.send_or_reply(f"Usage: `{ctx.prefix}dehoist <user>`")
         characters = [
             "!",
             '"',
@@ -103,20 +464,16 @@ class Utility(commands.Cog):
                         ctx.author, "Nickname edited by dehoist command."
                     ),
                 )
-                return await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
+                return await ctx.send_or_reply(
                     content=f"{self.bot.emote_dict['success']} Successfully dehoisted `{user}`",
                 )
             except Exception:
-                await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
+                await ctx.send_or_reply(
                     content=f"{self.bot.emote_dict['failed']} Failed to dehoist `{user}`",
                 )
 
         else:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['failed']} User `{user}` is not hoisting.",
+            await ctx.send_or_reply(content=f"{self.bot.emote_dict['failed']} User `{user}` is not hoisting.",
             )
 
     @commands.command(brief="Convert special characters to ascii.")
@@ -147,8 +504,7 @@ class Utility(commands.Cog):
                     if ctx.guild:
                         if ctx.author.guild_permissions.manage_nicknames:
                             await member.edit(nick=ascified)
-                            return await ctx.send(
-                                reference=self.bot.rep_ref(ctx),
+                            return await ctx.send_or_reply(
                                 content=f"{self.bot.emote_dict['success']} Ascified **{current_name}** to **{ascified}**",
                             )
                 except Exception:
@@ -157,8 +513,7 @@ class Utility(commands.Cog):
                 ascified = unidecode(str_or_member)
         except commands.MemberNotFound:
             ascified = unidecode(str_or_member)
-        await ctx.send(
-            reference=self.bot.rep_ref(ctx),
+        await ctx.send_or_reply(
             content=f"{self.bot.emote_dict['success']} Result: **{ascified}**",
         )
 
@@ -176,8 +531,8 @@ class Utility(commands.Cog):
 
         msg = "\n".join(map(to_string, characters))
         if len(msg) > 2000:
-            return await ctx.send("Output too long to display.")
-        await ctx.send(msg)
+            return await ctx.send_or_reply("Output too long to display.")
+        await ctx.send_or_reply(msg)
 
     @commands.command(brief="Show a user's avatar.", aliases=["av", "pfp"])
     async def avatar(self, ctx, *, user: converters.DiscordUser = None):
@@ -193,9 +548,7 @@ class Utility(commands.Cog):
         try:
             await self.bot.fetch_user(user.id)
         except AttributeError:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['failed']} User `{user}` does not exist.",
+            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['failed']} User `{user}` does not exist.",
             )
         await self.do_avatar(ctx, user, url=user.avatar_url)
 
@@ -215,9 +568,7 @@ class Utility(commands.Cog):
         try:
             await self.bot.fetch_user(user.id)
         except AttributeError:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['failed']} User `{user}` does not exist.",
+            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['failed']} User `{user}` does not exist.",
             )
         await self.do_avatar(ctx, user, user.default_avatar_url)
 
@@ -236,14 +587,10 @@ class Utility(commands.Cog):
         Notes:      Nickname will reset if no member is passed.
         """
         if user is None:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}nickname <user> <nickname>`",
+            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}nickname <user> <nickname>`",
             )
         if user.id == ctx.guild.owner.id:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.emote_dict['failed']} User `{user}` is the server owner. I cannot edit the nickname of the server owner.",
+            return await ctx.send_or_reply(content=f"{self.emote_dict['failed']} User `{user}` is the server owner. I cannot edit the nickname of the server owner.",
             )
         try:
             await user.edit(
@@ -255,11 +602,9 @@ class Utility(commands.Cog):
             message = f"{self.emote_dict['success']} Nicknamed `{user}: {nickname}`"
             if nickname is None:
                 message = f"{self.emote_dict['success']} Reset nickname for `{user}`"
-            await ctx.send(message)
+            await ctx.send_or_reply(message)
         except discord.Forbidden:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.emote_dict['failed']} I do not have permission to edit `{user}'s` nickname.",
+            await ctx.send_or_reply(content=f"{self.emote_dict['failed']} I do not have permission to edit `{user}'s` nickname.",
             )
 
     # command mostly from Alex Flipnote's discord_bot.py bot
@@ -340,9 +685,7 @@ class Utility(commands.Cog):
     @find.command(name="discrim", aliases=["discriminator"])
     async def find_discrim(self, ctx, *, search: str):
         if not len(search) == 4 or not re.compile("^[0-9]*$").search(search):
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content="You must provide exactly 4 digits",
+            return await ctx.send_or_reply(content="You must provide exactly 4 digits",
             )
 
         loop = [f"{i} ({i.id})" for i in ctx.guild.members if search == i.discriminator]
@@ -383,15 +726,22 @@ class Utility(commands.Cog):
         return re.search(br"[^ ][^ ]+", encoderes) is None
 
     @find.command(name="weird", aliases=["hardmention"])
-    async def findhardmention(self, ctx):
+    async def findhardmention(self, ctx, username:str = None):
         """List members with difficult to mention usernames."""
-        loop = [
-            member
-            for member in ctx.message.guild.members
-            if self._is_hard_to_mention(member.name)
-        ]
+        if username:
+            loop = [
+                member
+                for member in ctx.message.guild.members
+                if self._is_hard_to_mention(str(member.name))
+            ]
+        else:
+            loop = [
+                member
+                for member in ctx.message.guild.members
+                if self._is_hard_to_mention(member.display_name)
+            ]
         await utils.prettyResults(
-            ctx, "name", f"Found **{len(loop)}** on your search for weird names.", loop
+            ctx, "name", f"Found **{len(loop)}** on your search for hard to mention names.", loop
         )
 
     @commands.command(brief="Show info on a discord snowflake.", aliases=["id"])
@@ -403,9 +753,7 @@ class Utility(commands.Cog):
         Output: Date and time of the snowflake's creation
         """
         if not sid.isdigit():
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: {ctx.prefix}snowflake <id>",
+            return await ctx.send_or_reply(content=f"Usage: {ctx.prefix}snowflake <id>",
             )
 
         sid = int(sid)
@@ -416,42 +764,8 @@ class Utility(commands.Cog):
         msg = "Snowflake created {}".format(
             cdate.strftime("%A, %B %d, %Y at %H:%M:%S UTC")
         )
-        return await ctx.send(msg)
+        return await ctx.send_or_reply(msg)
 
-    @commands.command(name="permissions", brief="Show a user's permissions.")
-    @commands.guild_only()
-    async def _permissions(
-        self, ctx, member: discord.Member = None, channel: discord.TextChannel = None
-    ):
-        """
-        Usage:  -permissions [member] [channel]
-        Output: Shows a member's permissions in a specific channel.
-        Notes:
-            Will default to yourself and the current channel
-            if they are not specified.
-        """
-        channel = channel or ctx.channel
-        if member is None:
-            member = ctx.author
-
-        await self.say_permissions(ctx, member, channel)
-
-    async def say_permissions(self, ctx, member, channel):
-        permissions = channel.permissions_for(member)
-        e = discord.Embed(colour=member.colour)
-        avatar = member.avatar_url_as(static_format="png")
-        e.set_author(name=str(member), url=avatar)
-        allowed, denied = [], []
-        for name, value in permissions:
-            name = name.replace("_", " ").replace("guild", "server").title()
-            if value:
-                allowed.append(name)
-            else:
-                denied.append(name)
-
-        e.add_field(name="Allowed", value="\n".join(allowed))
-        e.add_field(name="Denied", value="\n".join(denied))
-        await ctx.send(reference=self.bot.rep_ref(ctx), embed=e)
 
     @commands.command(brief="Shows the raw content of a message.")
     async def raw(self, ctx, *, message: discord.Message):
@@ -467,7 +781,7 @@ class Utility(commands.Cog):
             for e in message.content:
                 emoji_unicode = e.encode("unicode-escape").decode("ASCII")
                 content = content.replace(e, emoji_unicode)
-            return await ctx.send(
+            return await ctx.send_or_reply(
                 "```\n" + "Raw Content\n===========\n\n" + content + "\n```"
             )
 
@@ -488,7 +802,7 @@ class Utility(commands.Cog):
         try:
             await p.start(ctx)
         except menus.MenuError as e:
-            await ctx.send(str(e))
+            await ctx.send_or_reply(str(e))
 
     @commands.command(brief="Snipe a deleted message.", aliases=["retrieve"])
     @commands.guild_only()
@@ -510,9 +824,7 @@ class Utility(commands.Cog):
             )
 
         if result is None:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['error']} There is nothing to snipe.",
+            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} There is nothing to snipe.",
             )
 
         author = result[0]
@@ -541,101 +853,9 @@ class Utility(commands.Cog):
             icon_url="https://media.discordapp.net/attachments/506838906872922145/603642595419357190/messagedelete.png",
         )
         embed.set_footer(text=f"Message ID: {message_id}")
-        await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)
+        await ctx.send_or_reply(embed=embed)
 
-    @commands.command(brief="Emoji usage tracking.")
-    @commands.guild_only()
-    async def emojistats(self, ctx):
-        """
-        Usage -emojistats
-        Output: Get detailed emoji usage stats.
-        """
-        async with ctx.channel.typing():
-            msg = await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['loading']} **Collecting Emoji Statistics**",
-            )
-            query = """
-                    SELECT (emoji_id, total)
-                    FROM emojistats
-                    WHERE server_id = $1
-                    ORDER BY total DESC;
-                    """
-
-            emoji_list = []
-            result = await self.bot.cxn.fetch(query, ctx.guild.id)
-            for x in result:
-                try:
-                    emoji = self.bot.get_emoji(int(x[0][0]))
-                    if emoji is None:
-                        continue
-                    emoji_list.append((emoji, x[0][1]))
-
-                except Exception as e:
-                    print(e)
-                    continue
-
-            p = pagination.SimplePages(
-                entries=["{}: Uses: {}".format(e[0], e[1]) for e in emoji_list],
-                per_page=15,
-            )
-            p.embed.title = f"Emoji usage stats in **{ctx.guild.name}**"
-            await msg.delete()
-            try:
-                await p.start(ctx)
-            except menus.MenuError as e:
-                await ctx.send(e)
-
-    @commands.command(brief="Get usage stats on an emoji.")
-    async def emoji(self, ctx, emoji: converters.SearchEmojiConverter = None):
-        """
-        Usage: -emoji <custom emoji>
-        Output: Usage stats on the passed emoji
-        """
-        async with ctx.channel.typing():
-            if emoji is None:
-                return await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
-                    content=f"Usage: `{ctx.prefix}emoji <custom emoji>`",
-                )
-            emoji_id = emoji.id
-
-            msg = await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['loading']} **Collecting Emoji Statistics**",
-            )
-            query = f"""SELECT (author_id, content) FROM messages WHERE content ~ '<a?:.+?:{emoji_id}>';"""
-
-            stuff = await self.bot.cxn.fetch(query)
-
-            emoji_users = []
-            for x in stuff:
-                emoji_users.append(x[0][0])
-
-            fat_msg = ""
-            for x in stuff:
-                fat_msg += x[0][1]
-
-            emoji_users = Counter(emoji_users).most_common()
-
-            matches = re.compile(f"<a?:.+?:{emoji_id}>").findall(fat_msg)
-            total_uses = len(matches)
-
-            p = pagination.SimplePages(
-                entries=[
-                    "`{}`: Uses: {}".format(self.bot.get_user(u[0]), u[1])
-                    for u in emoji_users
-                ],
-                per_page=15,
-            )
-            p.embed.title = f"Emoji usage stats for {emoji} (Total: {total_uses})"
-            await msg.delete()
-            try:
-                await p.start(ctx)
-            except menus.MenuError as e:
-                await ctx.send(e)
-
-    @commands.command(brief="Shorten a URL.")
+    @commands.command(brief="Shorten URLs to a bitly links.")
     async def shorten(self, ctx, url=None):
         """
         Usage: -shorten <url>
@@ -644,9 +864,7 @@ class Utility(commands.Cog):
             the url that was passed.
         """
         if url is None:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}shorten <url>`",
+            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}shorten <url>`",
             )
         params = {"access_token": self.bot.constants.bitly, "longUrl": url}
 
@@ -655,14 +873,10 @@ class Utility(commands.Cog):
         )
         resp = json.loads(response)
         if resp["status_code"] != 200:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['failed']} Invalid URL received.",
+            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['failed']} Invalid URL received.",
             )
         else:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['success']} Successfully shortened URL:\t"
+            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} Successfully shortened URL:\t"
                 "<{}>".format(resp["data"]["url"]),
             )
 
@@ -703,9 +917,7 @@ class Utility(commands.Cog):
             round
             sgn"""
         if formula is None:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content="Usage: `{}calculate <formula>`".format(ctx.prefix),
+            return await ctx.send_or_reply(content="Usage: `{}calculate <formula>`".format(ctx.prefix),
             )
         formula = formula.replace("*", "x")
 
@@ -718,17 +930,67 @@ class Utility(commands.Cog):
                 formula.replace("*", "\\*").replace("`", "\\`").replace("_", "\\_"),
             )
             msg += "```yaml\n" + ctx.command.help + "```"
-            return await ctx.send(msg)
+            return await ctx.send_or_reply(msg)
 
         if int(answer) == answer:
             # Check if it's a whole number and cast to int if so
             answer = int(answer)
 
         # Say message
-        await ctx.send(
-            reference=self.bot.rep_ref(ctx), content="{} = {}".format(formula, answer)
+        await ctx.send_or_reply( content="{} = {}".format(formula, answer)
         )
 
+
+    # Color helper functions
+    def _rgb_to_hex(self, r, g, b):
+        return "#{:02x}{:02x}{:02x}".format(r, g, b).upper()
+
+    def _hex_to_rgb(self, _hex):
+        _hex = _hex.lower().replace("#", "").replace("0x", "")
+        l_hex = len(_hex)
+        return tuple(
+            int(_hex[i : i + l_hex // 3], 16) for i in range(0, l_hex, l_hex // 3)
+        )
+
+    def _hex_to_cmyk(self, _hex):
+        return self._rgb_to_cmyk(*self._hex_to_rgb(_hex))
+
+    def _cmyk_to_hex(self, c, m, y, k):
+        return self._rgb_to_hex(*self._cmyk_to_rgb(c, m, y, k))
+
+    def _cmyk_to_rgb(self, c, m, y, k):
+        c, m, y, k = [float(x) / 100.0 for x in tuple([c, m, y, k])]
+        return tuple(
+            [
+                round(255.0 - ((min(1.0, x * (1.0 - k) + k)) * 255.0))
+                for x in tuple([c, m, y])
+            ]
+        )
+
+    def _rgb_to_cmyk(self, r, g, b):
+        c, m, y = [1 - x / 255 for x in tuple([r, g, b])]
+        min_cmy = min(c, m, y)
+        return (
+            tuple([0, 0, 0, 100])
+            if all(x == 0 for x in [r, g, b])
+            else tuple(
+                [
+                    round(x * 100)
+                    for x in [(x - min_cmy) / (1 - min_cmy) for x in tuple([c, m, y])]
+                    + [min_cmy]
+                ]
+            )
+        )
+
+    def _hex_int_to_tuple(self, _hex):
+        return (_hex >> 16 & 0xFF, _hex >> 8 & 0xFF, _hex & 0xFF)
+
+
+    def _check_hex(self, hex_string):
+        # Remove 0x/0X
+        hex_string = hex_string.replace("0x", "").replace("0X", "")
+        hex_string = re.sub(r"[^0-9A-Fa-f]+", "", hex_string)
+        return hex_string
 
 class NumericStringParser(object):
     """

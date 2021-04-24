@@ -21,9 +21,574 @@ class Admin(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.dregex = re.compile(
-            r"(?:https?://)?discord(?:app)?\.(?:com/invite|gg)/[a-zA-Z0-9]+/?"
+        self.bot = bot
+        self.emote_dict = bot.emote_dict
+        self.exceptions = []
+
+    # This is a server admin only cog
+    async def cog_check(self, ctx):
+        if not ctx.guild:
+            raise commands.NoPrivateMessage()
+        if (
+            ctx.author.id in self.bot.constants.admins
+            or ctx.author.id in self.bot.constants.owners
+        ):
+            return True
+        return
+        # elif ctx.author.guild_permissions.manage_guild:
+        #     return True
+        # else:
+        #     perm_list = ["Manage Server"]
+        #     raise commands.BadArgument(
+        #         message=f"You are missing the following permission{'' if len(perm_list) == 1 else 's'}: `{', '.join(perm_list)}`"
+        #     )
+
+    def _get_our_comms(self):
+        # Get our cog
+        our_cog = str(self.__module__.split(".")[1]).capitalize()
+        # Build a list of commands
+        our_comm_list = [c.name for c in self.bot.get_cog(our_cog).get_commands()]
+        # Add our cog name to the list
+        our_comm_list.append(our_cog)
+        return our_comm_list
+
+    def _get_commands(self, check):
+        # Check Cogs first
+        cog = self._get_cog_commands(check)
+        if cog:
+            return cog
+        # Check for commands
+        return self._get_command(check)
+
+    def _get_command(self, command):
+        # Returns the command in a list if it exists
+        # excludes hidden commands
+        for cog in self.bot.cogs:
+            if cog in self.exceptions:
+                # Skip exceptions
+                continue
+            for c in self.bot.get_cog(cog).get_commands():
+                if c.name == command:
+                    if c.hidden or c in self.exceptions:
+                        return None
+                    return [c.name]
+        return None
+
+    def _get_cog_commands(self, cog):
+        # Returns a list of commands associated with the passed cog
+        # excludes hidden commands
+        if not cog in self.bot.cogs:
+            return None
+        if cog in self.exceptions:
+            return None
+        command_list = []
+        for c in self.bot.get_cog(cog).get_commands():
+            if not c.hidden and not c in self.exceptions:
+                command_list.append(c.name)
+        return command_list
+
+    def _get_all_commands(self):
+        # Returns a list of all commands - excludes hidden commands
+        command_list = []
+        for cog in self.bot.cogs:
+            if cog in self.exceptions:
+                continue
+            for c in self.bot.get_cog(cog).get_commands():
+                if not c.hidden and not c in self.exceptions:
+                    command_list.append(c.name)
+        return command_list
+
+    @commands.command(brief="React on disabled commands.")
+    async def disabledreact(self, ctx, *, yes_no=None):
+        """Sets whether the bot reacts to disabled commands when attempted (admin-only)."""
+        query = """SELECT react FROM servers WHERE server_id = $1"""
+        current = await self.bot.cxn.fetchval(query, ctx.guild.id)
+        if current is True:
+            react = True
+        else:
+            react = False
+        if yes_no is None:
+            # Output current setting
+            msg = "{} currently *{}*.".format(
+                "Reacting on disabled commands",
+                "enabled" if current is True else "disabled",
+            )
+        elif yes_no.lower() in ["yes", "on", "true", "enabled", "enable"]:
+            yes_no = True
+            react = True
+            msg = "{} {} *enabled*.".format(
+                "Reacting on disabled commands",
+                "remains" if current is True else "is now",
+            )
+        elif yes_no.lower() in ["no", "off", "false", "disabled", "disable"]:
+            yes_no = False
+            react = False
+            msg = "{} {} *disabled*.".format(
+                "Reacting on disabled commands",
+                "is now" if current is True else "remains",
+            )
+        else:
+            msg = "That is not a valid setting."
+            yes_no = current
+        if yes_no != current and yes_no is not None:
+            self.bot.server_settings[ctx.guild.id]["react"] = react
+            await self.bot.cxn.execute(
+                "UPDATE servers SET react = $1 WHERE server_id = $2",
+                react,
+                ctx.guild.id,
+            )
+        await ctx.send_or_reply(msg)
+
+    # @commands.command(brief="Toggle if admins can use disabled commands")
+    # async def adminallow(self, ctx, *, yes_no = None):
+    #     """Sets whether admins can access disabled commands (admin-only)."""
+    #     query = '''SELECT admin_allow FROM servers WHERE server_id = $1'''
+    #     current = await self.bot.cxn.fetchval(query, ctx.guild.id)
+    #     if current is True:
+    #         admin_allow = True
+    #     else:
+    #         admin_allow = False
+    #     if yes_no is None:
+    #         # Output current setting
+    #         msg =  "{} currently *{}*.".format("Admin allow on disabled commands","enabled" if current is True else "disabled")
+    #     elif yes_no.lower() in [ "yes", "on", "true", "enabled", "enable" ]:
+    #         yes_no = True
+    #         admin_allow = True
+    #         msg = "{} {} *enabled*.".format("Admin allow on disabled commands","remains" if current is True else "is now")
+    #     elif yes_no.lower() in [ "no", "off", "false", "disabled", "disable" ]:
+    #         yes_no = False
+    #         admin_allow = False
+    #         msg = "{} {} *disabled*.".format("Admin allow on disabled commands","is now" if current is True else "remains")
+    #     else:
+    #         msg = "That is not a valid setting."
+    #         yes_no = current
+    #     if yes_no != current and yes_no is not None:
+    #         self.bot.server_settings[ctx.guild.id]['admin_allow'] = admin_allow
+    #         await self.bot.cxn.execute("UPDATE settings SET admin_allow = $1", admin_allow)
+    #     await ctx.send_or_reply(msg)
+
+    @commands.command(brief="Disable a command.")
+    async def disable(self, ctx, *, command_or_cog_name=None):
+        """Disables the passed command or all commands in the passed cog (owner only).  Command and cog names are case-sensitive."""
+
+        if command_or_cog_name is None:
+            return await ctx.send_or_reply(
+                ": `{}disable [command_or_cog_name]`".format(ctx.prefix)
+            )
+        # Make sure we're not trying to block anything in this cog
+        if command_or_cog_name in self._get_our_comms():
+            msg = "You can't disable any commands from this cog."
+            return await pagination.EmbedText(
+                desc_head="```fix",
+                desc_foot="```",
+                color=self.bot.constants.embed,
+                description=msg,
+                title="Disable Commands",
+            ).send(ctx)
+        # At this point - we should check if we have a command
+        comm = self._get_commands(command_or_cog_name)
+        if comm is None:
+            msg = '"{}" is not a cog or command name that is eligible for this system.'.format(
+                command_or_cog_name
+            )
+            return await pagination.EmbedText(
+                desc_head="```fix",
+                desc_foot="```",
+                color=self.bot.constants.embed,
+                description=msg,
+                title="Disable Commands",
+            ).send(ctx)
+        # Build a list of the commands we disable
+        disabled = []
+        dis_com = self.bot.server_settings[ctx.guild.id]["disabled_commands"]
+        for c in comm:
+            if not c in dis_com:
+                dis_com.append(c)
+                disabled.append(c)
+
+        if len(disabled):
+            await self.bot.cxn.execute(
+                """UPDATE servers SET disabled_commands = $1 WHERE server_id = $2;""",
+                ",".join([x for x in dis_com]),
+                ctx.guild.id,
+            )
+
+        # Now we give some output
+        msg = (
+            "All eligible passed commands are already disabled."
+            if len(disabled) == 0
+            else ", ".join(sorted(disabled))
         )
+        title = (
+            "Disabled 1 Command"
+            if len(disabled) == 1
+            else "Disabled {} Commands".format(len(disabled))
+        )
+        await pagination.EmbedText(
+            desc_head="```fix",
+            desc_foot="```",
+            color=self.bot.constants.embed,
+            description=msg,
+            title=title,
+        ).send(ctx)
+
+    @commands.command(brief="Enable a command.")
+    async def enable(self, ctx, *, command_or_cog_name=None):
+        """Enables the passed command or all commands in the passed cog (admin-only).  Command and cog names are case-sensitive."""
+
+        if command_or_cog_name == None:
+            return await ctx.send_or_reply(
+                "Usage: `{}enable [command_or_cog_name]`".format(ctx.prefix)
+            )
+        # We should check if we have a command
+        comm = self._get_commands(command_or_cog_name)
+        if comm == None:
+            msg = '"{}" is not a cog or command name that is eligible for this system.'.format(
+                command_or_cog_name
+            )
+            return await pagination.EmbedText(
+                desc_head="```fix",
+                desc_foot="```",
+                color=self.bot.constants.embed,
+                description=msg,
+                title="Enable Commands",
+            ).send(ctx)
+        # Build a list of the commands we disable
+        enabled = []
+        dis_com = self.bot.server_settings[ctx.guild.id]["disabled_commands"]
+        dis_copy = []
+        for c in dis_com:
+            if not c in comm:
+                # Not in our list - keep it disabled
+                dis_copy.append(c)
+            else:
+                # In our list - add it to the enabled list
+                enabled.append(c)
+        if len(enabled):
+            # We actually made changes - update the setting
+            await self.bot.cxn.execute(
+                """UPDATE servers SET disabled_commands = $1 WHERE server_id = $2;""",
+                ",".join([x for x in dis_copy]),
+                ctx.guild.id,
+            )
+            self.bot.server_settings[ctx.guild.id]["disabled_commands"] = dis_copy
+        # Now we give some output
+        msg = (
+            "All eligible passed commands are already enabled."
+            if len(enabled) == 0
+            else ", ".join(sorted(enabled))
+        )
+        title = (
+            "Enabled 1 Command"
+            if len(enabled) == 1
+            else "Enabled {} Commands".format(len(enabled))
+        )
+        await pagination.EmbedText(
+            desc_head="```fix",
+            desc_foot="```",
+            color=self.bot.constants.embed,
+            description=msg,
+            title=title,
+        ).send(ctx)
+
+    @commands.command(brief="List disabled commands.")
+    async def listdisabled(self, ctx):
+        """Lists all disabled commands (admin-only)."""
+        dis_com = self.bot.server_settings[ctx.guild.id]["disabled_commands"]
+        msg = (
+            "No commands have been disabled."
+            if len(dis_com) == 0
+            else ", ".join(sorted(dis_com))
+        )
+        title = (
+            "1 Disabled Command"
+            if len(dis_com) == 1
+            else "{} Disabled Commands".format(len(dis_com))
+        )
+        await pagination.EmbedText(
+            desc_head="```fix",
+            desc_foot="```",
+            color=self.bot.constants.embed,
+            description=msg,
+            title=title,
+        ).send(ctx)
+
+    @commands.command(brief="Show the status of a command.")
+    async def isdisabled(self, ctx, *, command_or_cog_name=None):
+        """Outputs whether the passed command - or all commands in a passed cog are disabled (admin-only)."""
+        # Get our commands or whatever
+        dis_com = self.bot.server_settings[ctx.guild.id]["disabled_commands"]
+        comm = self._get_commands(command_or_cog_name)
+        if comm == None:
+            msg = '"{}" is not a cog or command name that is eligible for this system.'.format(
+                command_or_cog_name
+            )
+            return await pagination.EmbedText(
+                desc_head="```fix",
+                desc_foot="```",
+                color=self.bot.constants.embed,
+                description=msg,
+                title="Disabled Commands",
+            ).send(ctx)
+        is_cog = True if self.bot.get_cog(command_or_cog_name) else False
+        # Now we check if they're all disabled
+        disabled = []
+        for c in dis_com:
+            if c in comm:
+                disabled.append(c)
+        if is_cog:
+            title = (
+                "1 Command Disabled in {}".format(command_or_cog_name)
+                if len(disabled) == 1
+                else "{} Commands Disabled in {}".format(
+                    len(disabled), command_or_cog_name
+                )
+            )
+            if len(disabled) == 0:
+                msg = "None"
+                footer = "0% disabled"
+            else:
+                msg = ", ".join(disabled)
+                footer = "{:,g}% disabled".format(
+                    round(len(disabled) / len(comm) * 100, 2)
+                )
+        else:
+            title = "{} Command Status".format(command_or_cog_name)
+            footer = None
+            msg = "Disabled" if len(disabled) else "Enabled"
+        await pagination.EmbedText(
+            desc_head="```fix",
+            desc_foot="```",
+            color=self.bot.constants.embed,
+            description=msg,
+            title=title,
+            footer=footer,
+        ).send(ctx)
+
+    @commands.command(brief="Disable all commands.")
+    async def disableall(self, ctx):
+        """Disables all enabled commands outside this module (admin-only)."""
+        # Setup our lists
+        comm_list = self._get_all_commands()
+        our_comm_list = self._get_our_comms()
+        dis_com = self.bot.server_settings[ctx.guild.id]["disabled_commands"]
+        disabled = []
+
+        # Iterate and disable
+        for c in comm_list:
+            if not c in our_comm_list and not c in dis_com:
+                disabled.append(c)
+                dis_com.append(c)
+        if len(disabled):
+            # We actually made changes - update the setting
+            await self.bot.cxn.execute(
+                """UPDATE servers SET disabled_commands = $1 WHERE server_id = $2;""",
+                ",".join([x for x in dis_com]),
+                ctx.guild.id,
+            )
+
+        # Give some output
+        msg = (
+            "All eligible commands are already disabled."
+            if len(disabled) == 0
+            else ", ".join(sorted(disabled))
+        )
+        title = (
+            "Disabled 1 Command"
+            if len(disabled) == 1
+            else "Disabled {} Commands".format(len(disabled))
+        )
+        await pagination.EmbedText(
+            desc_head="```fix",
+            desc_foot="```",
+            color=self.bot.constants.embed,
+            description=msg,
+            title=title,
+        ).send(ctx)
+
+    @commands.command(brief="Enable all commands")
+    async def enableall(self, ctx):
+        """Enables all disabled commands (admin-only)."""
+        # Setup our lists
+        dis_com = self.bot.server_settings[ctx.guild.id]["disabled_commands"].copy()
+        self.bot.server_settings[ctx.guild.id]["disabled_commands"] = []
+
+        if len(dis_com):
+            # We actually made changes - update the setting
+            await self.bot.cxn.execute(
+                """UPDATE servers SET disabled_commands = NULL WHERE server_id = $1;""",
+                ctx.guild.id,
+            )
+
+        # Give some output
+        if len(dis_com) == 0:
+            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} All commands already enabled.",
+            )
+        msg = ", ".join(sorted(dis_com))
+        title = (
+            "Enabled 1 Command"
+            if len(dis_com) == 1
+            else "Enabled {} Commands".format(len(dis_com))
+        )
+        await pagination.EmbedText(
+            description=msg,
+            title=title,
+            desc_head="```fix",
+            desc_foot="```",
+            color=self.bot.constants.embed,
+        ).send(ctx)
+
+    @commands.command(brief="Disallow users from using the bot.")
+    @permissions.has_permissions(administrator=True)
+    async def ignore(self, ctx, user: discord.Member = None, react: str = ""):
+        """
+        Usage: -ignore <user> [react] [reason]
+        Output: Will not process commands from the passed user.
+        Permission: Administrator
+        Notes:
+            Specify the "react" to choose whether or not to
+            react to the user's attempted commands.
+        """
+
+        if user is None:
+            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}ignore <user> [react]`",
+            )
+
+        if user.guild_permissions.administrator:
+            return await ctx.send_or_reply(content=f"{self.emote_dict['failed']} You cannot punish other staff members",
+            )
+        if user.id in self.bot.constants.owners:
+            return await ctx.send_or_reply(content=f"{self.emote_dict['failed']} You cannot punish my creator.",
+            )
+        if user.top_role.position > ctx.author.top_role.position:
+            return await ctx.send_or_reply(content=f"{self.emote_dict['failed']} User `{user}` is higher in the role hierarchy than you.",
+            )
+
+        if react is None:
+            react = False
+
+        if react.upper() == "REACT":
+            react = True
+        else:
+            react = False
+
+        query = (
+            """SELECT server_id FROM ignored WHERE user_id = $1 AND server_id = $2"""
+        )
+        already_ignored = (
+            await self.bot.cxn.fetchval(query, user.id, ctx.guild.id) or None
+        )
+
+        if already_ignored is not None:
+            return await ctx.send_or_reply(content=f"{self.emote_dict['error']} User `{user}` is already being ignored.",
+            )
+
+        query = """INSERT INTO ignored VALUES ($1, $2, $3, $4, $5)"""
+        await self.bot.cxn.execute(
+            query,
+            ctx.guild.id,
+            user.id,
+            ctx.author.id,
+            react,
+            ctx.message.created_at.utcnow(),
+        )
+
+        self.bot.server_settings[ctx.guild.id]["ignored_users"][user.id] = react
+
+        await ctx.send_or_reply(
+            content=f"{self.emote_dict['success']} Ignored `{user}`",
+        )
+
+    @commands.command(brief="Reallow users to use the bot.", aliases=["listen"])
+    @commands.guild_only()
+    @permissions.has_permissions(administrator=True)
+    async def unignore(self, ctx, user: discord.Member = None):
+        """
+        Usage: -unignore <user>
+        Alias: -listen
+        Output: Will delete the passed user from the ignored list
+        Permission: Administrator
+        """
+
+        if user is None:
+            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}unignore <user>`",
+            )
+
+        query = """SELECT user_id FROM ignored WHERE user_id = $1 AND server_id = $2"""
+        blacklisted = await self.bot.cxn.fetchval(query, user.id, ctx.guild.id) or None
+        if blacklisted is None:
+            return await ctx.send_or_reply(content=f"{self.emote_dict['error']} User was not ignored.",
+            )
+
+        query = """DELETE FROM ignored WHERE user_id = $1 AND server_id = $2"""
+        await self.bot.cxn.execute(query, user.id, ctx.guild.id)
+
+        self.bot.server_settings[ctx.guild.id]["ignored_users"].pop(user.id, None)
+
+        await ctx.send_or_reply(
+            f"{self.emote_dict['success']} Removed `{user}` from the ignore list."
+        )
+
+    async def message(self, message):
+        # Check the message and see if we should allow it
+        ctx = await self.bot.get_context(message)
+        # never against the owners
+        if message.author.id in self.bot.constants.owners:
+            return
+
+        if not ctx.command:
+            # No command - no need to check
+            return
+
+        try:
+            react = self.bot.server_settings[message.guild.id]["ignored_users"][
+                message.author.id
+            ]
+        except KeyError:
+            # This means they aren't in the dict of ignored users.
+            return
+
+        if react is True:
+            await message.add_reaction(self.emote_dict["failed"])
+        # We have an ignored user
+        return {"Ignore": True, "Delete": False}
+
+    async def message(self, message):
+        # Check the message and see if we should allow it
+        ctx = await self.bot.get_context(message)
+        if not ctx.command:
+            # No command - no need to check
+            return
+        # Get the list of blocked commands
+        dis_com = self.bot.server_settings[message.guild.id]["disabled_commands"]
+        if ctx.command.name in dis_com:
+            # Check if we're going to override
+            admin_allow = self.bot.server_settings[message.guild.id]["admin_allow"]
+            # Check if we're admin and bot admin
+            is_admin = permissions.is_admin(ctx)
+            # Check if we override
+            if is_admin and admin_allow is True:
+                return
+            # React if needed
+            to_react = self.bot.server_settings[message.guild.id]["react"]
+            if to_react:
+                await message.add_reaction(self.bot.emote_dict["failed"])
+            # We have a disabled command - ignore it
+            return {"Ignore": True, "Delete": False}
+        else:
+            try:
+                react = self.bot.server_settings[message.guild.id]["ignored_users"][
+                    message.author.id
+                ]
+            except KeyError:
+                # This means they aren't in the dict of ignored users.
+                return
+
+            if react is True:
+                await message.add_reaction(self.bot.emote_dict["failed"])
+            # We have an ignored user
+            return {"Ignore": True, "Delete": False}
+
 
     @commands.command(
         brief="Add a custom server prefix.", aliases=["prefix", "setprefix"]
@@ -44,19 +609,13 @@ class Admin(commands.Cog):
         except ValueError:
             pass
         if new_prefix in current_prefixes:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['error']} `{new_prefix}` is already a registered prefix.",
+            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} `{new_prefix}` is already a registered prefix.",
             )
         if len(current_prefixes) == 10:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['failed']} Max prefix limit of 10 has been reached.",
+            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['failed']} Max prefix limit of 10 has been reached.",
             )
         if len(new_prefix) > 20:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['failed']} Max prefix length is 20 characters.",
+            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['failed']} Max prefix length is 20 characters.",
             )
         self.bot.server_settings[ctx.guild.id]["prefixes"].append(new_prefix)
         query = """
@@ -64,7 +623,7 @@ class Admin(commands.Cog):
                 VALUES ($1, $2);
                 """
         await self.bot.cxn.execute(query, ctx.guild.id, new_prefix)
-        await ctx.send(
+        await ctx.send_or_reply(
             f"{self.bot.emote_dict['success']} Successfully added prefix `{new_prefix}`"
         )
 
@@ -80,9 +639,7 @@ class Admin(commands.Cog):
         Output: Removes a custom prefix from your server.
         """
         if old_prefix is None:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}addprefix <old prefix>`",
+            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}addprefix <old prefix>`",
             )
         current_prefixes = self.bot.server_settings[ctx.guild.id]["prefixes"].copy()
         try:
@@ -90,9 +647,7 @@ class Admin(commands.Cog):
         except ValueError:
             pass
         if old_prefix not in current_prefixes:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['error']} `{old_prefix}` is not a registered prefix.",
+            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} `{old_prefix}` is not a registered prefix.",
             )
         if len(current_prefixes) == 1:
             c = await pagination.Confirmation(
@@ -126,9 +681,7 @@ class Admin(commands.Cog):
                     """
             await self.bot.cxn.execute(query, ctx.guild.id, old_prefix)
             self.bot.server_settings[ctx.guild.id]["prefixes"].remove(old_prefix)
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['success']} Successfully removed prefix `{old_prefix}`",
+            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} Successfully removed prefix `{old_prefix}`",
             )
 
     @commands.command(
@@ -161,9 +714,7 @@ class Admin(commands.Cog):
         except ValueError:
             pass
         if current_prefixes == []:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['exclamation']} I currently have no prefixes set.",
+            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['exclamation']} I currently have no prefixes set.",
             )
         c = await pagination.Confirmation(
             msg=f"{self.bot.emote_dict['exclamation']} "
@@ -186,13 +737,10 @@ class Admin(commands.Cog):
             self.bot.server_settings[ctx.guild.id]["prefixes"] = [
                 f"<@!{self.bot.user.id}>"
             ]
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['success']} **Successfully cleared all prefixes.**",
+            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} **Successfully cleared all prefixes.**",
             )
             return
-        await ctx.send(
-            reference=self.bot.rep_ref(ctx),
+        await ctx.send_or_reply(
             content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
         )
 
@@ -222,16 +770,12 @@ class Admin(commands.Cog):
         except ValueError:
             pass
         if current_prefixes == []:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['exclamation']} I currently have no prefixes set.",
+            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['exclamation']} I currently have no prefixes set.",
             )
         if len(current_prefixes) == 0:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"My current prefix is {self.bot.constants.prefix}",
+            return await ctx.send_or_reply(content=f"My current prefix is {self.bot.constants.prefix}",
             )
-        await ctx.send(
+        await ctx.send_or_reply(
             f"{self.bot.emote_dict['info']} My current prefix{' is' if len(current_prefixes) == 1 else 'es are '} `{', '.join(current_prefixes)}`"
         )
 
@@ -253,7 +797,7 @@ class Admin(commands.Cog):
             Channel "muted" may be deleted after command execution
             if so desired.
         """
-        msg = await ctx.send(
+        msg = await ctx.send_or_reply(
             f"{self.bot.emote_dict['error']} Creating mute system. This process may take several minutes."
         )
         if role is None:
@@ -312,7 +856,7 @@ class Admin(commands.Cog):
     #         await ctx.reply(f"The current prefix is `{prefix}`")
     #     else:
     #         if len(new) > 5:
-    #             await ctx.send(
+    #             await ctx.send_or_reply(
     #                 f"{ctx.author.mention}, that prefix is too long. The prefix must be five characters maximum."
     #             )
     #         else:
@@ -327,655 +871,7 @@ class Admin(commands.Cog):
     #                 f"{self.bot.emote_dict['success']} The prefix has been set to `{new}`"
     #             )
 
-    @commands.command(
-        brief="Enable or disable auto-deleting invite links",
-        aliases=["removeinvitelinks", "deleteinvites", "antiinvites"],
-    )
-    @permissions.has_permissions(manage_guild=True)
-    async def antiinvite(self, ctx, *, yes_no=None):
-        """
-        Usage:      -antiinvite <yes|enable|true|on||no|disable|false|off>
-        Aliases:    -removeinvites, -deleteinvites, -antiinvites
-        Permission: Manage Server
-        Output:     Removes invite links sent by users.
-        Notes:
-            Users with the Manage Messages permission
-            are immune to the antiinviter.
-        """
-        query = """SELECT antiinvite FROM servers WHERE server_id = $1"""
-        current = await self.bot.cxn.fetchval(query, ctx.guild.id)
-        if current is True:
-            removeinvitelinks = True
-        else:
-            removeinvitelinks = False
-        if yes_no is None:
-            # Output current setting
-            msg = "{} currently *{}*.".format(
-                "Removal of invite links", "enabled" if current is True else "disabled"
-            )
-        elif yes_no.lower() in ["yes", "on", "true", "enabled", "enable"]:
-            yes_no = True
-            removeinvitelinks = True
-            msg = "{} {} *enabled*.".format(
-                "Removal of invite links", "remains" if current is True else "is now"
-            )
-        elif yes_no.lower() in ["no", "off", "false", "disabled", "disable"]:
-            yes_no = False
-            removeinvitelinks = False
-            msg = "{} {} *disabled*.".format(
-                "Removal of invite links", "is now" if current is True else "remains"
-            )
-        else:
-            msg = "That is not a valid setting."
-            yes_no = current
-        if yes_no != current and yes_no is not None:
-            self.bot.server_settings[ctx.guild.id]["antiinvite"] = removeinvitelinks
-            query = """
-                    UPDATE servers
-                    SET antiinvite = $1
-                    WHERE server_id = $2
-                    """
-            await self.bot.cxn.execute(query, removeinvitelinks, ctx.guild.id)
-        await ctx.send(msg)
 
-    @commands.group(
-        case_insensitive=True,
-        aliases=["autoroles"],
-        brief="Assign roles to new members.",
-    )
-    @permissions.bot_has_permissions(manage_roles=True)
-    @permissions.has_permissions(manage_guild=True, manage_roles=True)
-    async def autorole(self, ctx):
-        """
-        Usage: -autorole <option>
-        Example: -autorole add <role1> <role2>
-        Permission: Manage Server, Manage Roles
-        Output: Assigns the roles to new users on server join.
-        Options:
-            add  <role1> <role2>... Adds autoroles
-            remove <role1> <role2>... Removes autoroles
-            clear Deletes all autoroles
-            show Shows all current autoroles
-        """
-        if ctx.invoked_subcommand is None:
-            help_cmd = self.bot.get_command("help")
-            await help_cmd(ctx, invokercommand="autorole")
-
-    @autorole.command()
-    async def add(self, ctx, roles: commands.Greedy[discord.Role] = None):
-        if roles is None:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}autorole <roles>`",
-            )
-        for role in roles:
-            self.bot.server_settings[ctx.guild.id]["autoroles"].append(role.id)
-        query = f"""UPDATE servers
-                    SET autoroles = $1
-                    WHERE server_id = $2;
-                """
-        autoroles = ",".join(
-            [str(x) for x in self.bot.server_settings[ctx.guild.id]["autoroles"]]
-        )
-        await self.bot.cxn.execute(query, autoroles, ctx.guild.id)
-        await ctx.send(
-            reference=self.bot.rep_ref(ctx),
-            content=f"{self.bot.emote_dict['success']} Updated autorole settings.",
-        )
-
-    @autorole.command(aliases=["rem", "rm"])
-    async def remove(self, ctx, roles: commands.Greedy[discord.Role] = None):
-        if roles is None:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}autorole <roles>`",
-            )
-        autoroles = self.bot.server_settings[ctx.guild.id]["autoroles"]
-        for role in roles:
-            index = autoroles.index(str(role.id))
-            autoroles.pop(index)
-        query = f"""UPDATE servers SET autoroles = $1 WHERE server_id = $2"""
-        autoroles = ",".join(
-            [str(x) for x in self.bot.server_settings[ctx.guild.id]["autoroles"]]
-        )
-        await self.bot.cxn.execute(query, autoroles, ctx.guild.id)
-        await ctx.send(
-            reference=self.bot.rep_ref(ctx),
-            content=f"{self.bot.emote_dict['success']} Updated autorole settings.",
-        )
-
-    @autorole.command()
-    async def clear(self, ctx):
-        self.bot.server_settings[ctx.guild.id]["autoroles"] = []
-        query = """UPDATE servers
-                   SET autoroles = NULL
-                   WHERE server_id = $1;
-                """
-        await self.bot.cxn.execute(query, ctx.guild.id)
-        await ctx.send(
-            reference=self.bot.rep_ref(ctx),
-            content=f"{self.bot.emote_dict['success']} Cleared all autoroles.",
-        )
-
-    @autorole.command()
-    async def show(self, ctx):
-        autoroles = self.bot.server_settings[ctx.guild.id]["autoroles"]
-
-        if autoroles == []:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"No autoroles yet, use `{ctx.prefix}autorole add <roles>`",
-            )
-
-        p = pagination.SimplePages(
-            entries=[f"`{ctx.guild.get_role(int(x)).name}`" for x in autoroles],
-            per_page=20,
-        )
-        p.embed.title = "Autoroles in {} ({:,} total)".format(
-            ctx.guild.name, len(autoroles)
-        )
-
-        try:
-            await p.start(ctx)
-        except menus.MenuError as e:
-            await ctx.send(e)
-
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        if self.bot.bot_ready is False:
-            return
-        if not message.guild:
-            return
-        if not self.dregex.search(message.content):
-            return
-
-        removeinvitelinks = self.bot.server_settings[message.guild.id]["antiinvite"]
-
-        if removeinvitelinks is not True:
-            return
-
-        member = message.guild.get_member(message.author.id)
-        if message.author.id in self.bot.constants.owners:
-            return  # We are immune!
-        if member.guild_permissions.manage_messages:
-            return  # We are immune!
-
-        try:
-            await message.delete()
-            await message.channel.send("No invite links allowed", delete_after=7)
-        except Exception:
-            return  # await message.channel.send(e)
-
-    @commands.Cog.listener()
-    async def on_message_edit(self, before, after):
-        if self.bot.bot_ready is False:
-            return
-        if not before.guild:
-            return
-        if not self.dregex.search(after.content):
-            return
-
-        removeinvitelinks = self.bot.server_settings[after.guild.id]["antiinvite"]
-
-        if removeinvitelinks is not True:
-            return
-
-        member = after.author
-        if member.id in self.bot.constants.owners:
-            return  # We are immune!
-        if member.guild_permissions.manage_messages:
-            return  # We are immune!
-        try:
-            await after.delete()
-            await after.channel.send("No invite links allowed", delete_after=7)
-        except Exception:
-            return
-
-    @commands.command(brief="Reassign roles on user rejoin.", aliases=["stickyroles"])
-    @commands.guild_only()
-    @permissions.bot_has_permissions(manage_roles=True)
-    @permissions.has_permissions(manage_guild=True, manage_roles=True)
-    async def reassign(self, ctx, *, yes_no=None):
-        """
-        Usage:      -reassign <yes|enable|true|on||no|disable|false|off>
-        Aliases:    -stickyroles
-        Permission: Manage Server
-        Output:     Reassigns roles when past members rejoin the server.
-        Notes:
-            This setting is enabled by default. The bot will attempt to
-            add the users their old roles unless it is missing permissions.
-        """
-        current = self.bot.server_settings[ctx.guild.id]["reassign"]
-        if current is False:
-            reassign = False
-        else:
-            current is True
-            reassign = True
-        if yes_no is None:
-            # Output what we have
-            msg = "{} currently **{}**.".format(
-                "Reassigning roles on member rejoin",
-                "enabled" if current is True else "disabled",
-            )
-        elif yes_no.lower() in ["yes", "on", "true", "enabled", "enable"]:
-            yes_no = True
-            reassign = True
-            msg = "{} {} **enabled**.".format(
-                "Reassigning roles on member rejoin",
-                "remains" if current is True else "is now",
-            )
-        elif yes_no.lower() in ["no", "off", "false", "disabled", "disable"]:
-            yes_no = False
-            reassign = False
-            msg = "{} {} **disabled**.".format(
-                "Reassigning roles on member rejoin",
-                "is now" if current is True else "remains",
-            )
-        else:
-            msg = f"{self.bot.emote_dict['error']} That is not a valid setting."
-            yes_no = current
-        if yes_no != current and yes_no is not None:
-            await self.bot.cxn.execute(
-                "UPDATE servers SET reassign = $1 WHERE server_id = $2",
-                reassign,
-                ctx.guild.id,
-            )
-            self.bot.server_settings[ctx.guild.id]["reassign"] = reassign
-        await ctx.send(msg)
-
-    @commands.Cog.listener()
-    async def on_member_join(self, member):
-        if self.bot.bot_ready is False:
-            return
-        required_perms = member.guild.me.guild_permissions.manage_roles
-        if not required_perms:
-            return
-
-        reassign = self.bot.server_settings[member.guild.id]["reassign"]
-        if reassign is not True:
-            pass
-        else:
-            query = (
-                """SELECT roles FROM userroles WHERE user_id = $1 and server_id = $2"""
-            )
-            old_roles = (
-                await self.bot.cxn.fetchval(query, member.id, member.guild.id) or None
-            )
-            if old_roles is None:
-                pass
-            roles = str(old_roles).split(",")
-            for role_id in roles:
-                try:
-                    role = member.guild.get_role(int(role_id))
-                except ValueError:
-                    continue
-                if role not in member.roles:
-                    try:
-                        await member.add_roles(role)
-                    except Exception as e:
-                        print(e)
-
-        query = """SELECT autoroles FROM servers WHERE server_id = $1"""
-        autoroles = await self.bot.cxn.fetchrow(query, member.guild.id) or None
-        if autoroles is None or autoroles[0] is None:
-            return
-        else:
-            roles = str(autoroles[0]).split(",")
-            for role_id in roles:
-                try:
-                    role = member.guild.get_role(int(role_id))
-                except ValueError:
-                    continue
-                if role not in member.roles:
-                    try:
-                        await member.add_roles(role)
-                    except Exception as e:
-                        print(e)
-
-    @commands.group(
-        invoke_without_command=True,
-        name="filter",
-        aliases=["profanity"],
-        brief="Manage the server's word filter.",
-    )
-    @commands.guild_only()
-    @permissions.has_permissions(manage_guild=True)
-    async def _filter(self, ctx):
-        """
-        Usage:      -filter <method>
-        Alias:      -profanity
-        Example:    -filter add <badwords>
-        Permission: Manage Server
-        Output:     Adds, removes, clears, or displays the filter.
-        Methods:
-            add
-            remove
-            display     (Alias: show)
-            clear
-        Notes:
-            Words added the the filter list will delete all
-            messages containing that word. Users with the
-            Manage Messages permission are immune. To add or
-            remove multiple words with one command, separate
-            the words with a comma.
-            Example: -filter add badword1, badword2, badword3
-        """
-        if ctx.invoked_subcommand is None:
-            help_command = self.bot.get_command("help")
-            await help_command(ctx, invokercommand="filter")
-
-    @_filter.command(name="add", aliases=["+"])
-    @permissions.has_permissions(manage_guild=True)
-    async def add_words(self, ctx, *, words_to_filter: str = None):
-        if words_to_filter is None:
-            return await ctx.channel.send(f"Usage: `{ctx.prefix}filter add <word>`")
-
-        words_to_filter = words_to_filter.split(",")
-
-        current_filter = self.bot.server_settings[ctx.guild.id]["profanities"]
-
-        added = []
-        existing = []
-        for word in words_to_filter:
-            if word.strip().lower() not in current_filter:
-                current_filter.append(word.strip().lower())
-                added.append(word.strip().lower())
-            else:
-                existing.append(word.strip().lower())
-
-        insertion = ",".join(current_filter)
-
-        query = """UPDATE servers SET profanities = $1 WHERE server_id = $2;"""
-        await self.bot.cxn.execute(query, insertion, ctx.guild.id)
-
-        if existing:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['error']} The word{'' if len(existing) == 1 else 's'} `{', '.join(existing)}` "
-                f"{'was' if len(existing) == 1 else 'were'} already in the word filter.",
-            )
-
-        if added:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['success']} The word{'' if len(added) == 1 else 's'} `{', '.join(added)}` "
-                f"{'was' if len(added) == 1 else 'were'} successfully added to the word filter.",
-            )
-
-    @_filter.command(
-        name="remove",
-        aliases=["-"],
-        brief="Remove a word from the servers filtere list",
-    )
-    @permissions.has_permissions(manage_guild=True)
-    async def remove_words(self, ctx, *, words: str = None):
-        if words is None:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}filter remove <word>`",
-            )
-
-        words_to_remove = words.lower().split(",")
-
-        word_list = self.bot.server_settings[ctx.guild.id]["profanities"]
-        if word_list == []:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['error']} This server has no filtered words.",
-            )
-
-        removed = []
-        not_found = []
-        for word in words_to_remove:
-            if word.strip().lower() not in word_list:
-                not_found.append(word)
-                continue
-            else:
-                word_index = word_list.index(word.strip().lower())
-                word_list.pop(word_index)
-                removed.append(word.strip().lower())
-
-        insertion = ",".join(word_list)
-
-        query = """UPDATE servers SET profanities = $1 WHERE server_id = $2;"""
-        await self.bot.cxn.execute(query, insertion, ctx.guild.id)
-
-        if not_found:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['error']} The word{'' if len(not_found) == 1 else 's'} `{', '.join(not_found)}` "
-                f"{'was' if len(not_found) == 1 else 'were'} not in the word filter.",
-            )
-
-        if removed:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['success']} The word{'' if len(removed) == 1 else 's'} `{', '.join(removed)}` "
-                f"{'was' if len(removed) == 1 else 'were'} successfully removed from the word filter.",
-            )
-
-    @_filter.command(
-        brief="Display a list of this server's filtered words.", aliases=["show"]
-    )
-    @permissions.has_permissions(manage_guild=True)
-    async def display(self, ctx):
-        words = self.bot.server_settings[ctx.guild.id]["profanities"]
-
-        if words == []:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"No filtered words yet, use `{ctx.prefix}filter add <word>` to filter words",
-            )
-
-        p = pagination.SimplePages(entries=[f"`{x}`" for x in words], per_page=20)
-        p.embed.title = "Filtered words in {} ({:,} total)".format(
-            ctx.guild.name, len(words)
-        )
-
-        try:
-            await p.start(ctx)
-        except menus.MenuError as e:
-            await ctx.send(e)
-
-    @_filter.command(name="clear")
-    @permissions.has_permissions(manage_guild=True)
-    async def _clear(self, ctx):
-
-        query = """UPDATE servers SET profanities = NULL where server_id = $1;"""
-        await self.bot.cxn.execute(query, ctx.guild.id)
-        self.bot.server_settings[ctx.guild.id]["profanities"] = []
-
-        await ctx.send(
-            reference=self.bot.rep_ref(ctx),
-            content=f"{self.bot.emote_dict['success']} Removed all filtered words.",
-        )
-
-    @commands.command(brief="Set the slowmode for a channel")
-    @commands.guild_only()
-    @permissions.bot_has_permissions(manage_channels=True)
-    @permissions.has_permissions(manage_channels=True)
-    async def slowmode(self, ctx, channel=None, time: float = None):
-        """
-        Usage: -slowmode [channel] [seconds]
-        Permission: Manage Channels
-        Output:
-            Sets the channel's slowmode to your input value.
-        Notes:
-            If no slowmode is passed, will reset the slowmode.
-        """
-        if channel is None:
-            channel_obj = ctx.channel
-            time = 0.0
-        else:
-            try:
-                channel_obj = await commands.TextChannelConverter().convert(
-                    ctx, channel
-                )
-            except commands.ChannelNotFound:
-                channel_obj = ctx.channel
-                if channel.isdigit():
-                    time = float(channel)
-                else:
-                    time = 0.0
-        try:
-            await channel_obj.edit(slowmode_delay=time)
-        except discord.HTTPException as e:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f'{self.bot.emote_dict["failed"]} Failed to set slowmode because of an error\n{e}',
-            )
-        else:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f'{self.bot.emote_dict["success"]} Slowmode for {channel_obj.mention} set to `{time}s`',
-            )
-
-    @commands.command(aliases=["lockdown", "lockchannel"], brief="Lock a channel")
-    @commands.guild_only()
-    @permissions.bot_has_permissions(manage_channels=True, manage_roles=True)
-    @permissions.has_permissions(administrator=True)
-    async def lock(self, ctx, channel=None, minutes_: int = None):
-        """
-        Usage: -lock [channel] [minutes]
-        Aliases: -lockdown, -lockchannel
-        Permission: Administrator
-        Output:
-            Locked channel for the specified time. Infinite if not specified
-        Notes:
-            Max timed lock is 2 hours
-        """
-        if channel is None:
-            channel_obj = ctx.channel
-        else:
-            try:
-                channel_obj = await commands.TextChannelConverter().convert(
-                    ctx, channel
-                )
-            except commands.ChannelNotFound:
-                channel_obj = ctx.channel
-                if channel.isdigit():
-                    minutes_ = int(channel)
-                else:
-                    minutes_ = None
-        try:
-            channel = channel_obj
-            overwrites_everyone = channel.overwrites_for(ctx.guild.default_role)
-            my_overwrites = channel.overwrites_for(ctx.guild.me)
-            everyone_overwrite_current = overwrites_everyone.send_messages
-            msg = await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Locking channel {channel.mention}...",
-            )
-            try:
-                await self.bot.cxn.execute(
-                    "INSERT INTO lockedchannels VALUES ($1, $2, $3, $4)",
-                    channel.id,
-                    ctx.guild.id,
-                    ctx.author.id,
-                    str(everyone_overwrite_current),
-                )
-            except asyncpg.UniqueViolationError:
-                return await msg.edit(
-                    content=f"{self.bot.emote_dict['failed']} Channel {channel.mention} is already locked."
-                )
-
-            my_overwrites.send_messages = True
-            overwrites_everyone.send_messages = False
-            await ctx.message.channel.set_permissions(
-                ctx.guild.default_role,
-                overwrite=overwrites_everyone,
-                reason=(
-                    utils.responsible(ctx.author, "Channel locked by command execution")
-                ),
-            )
-            if minutes_:
-                if minutes_ > 120:
-                    raise commands.BadArgument("Max timed lock is 120 minutes.")
-                elif minutes_ < 0:
-                    raise commands.BadArgument("Minutes must be greater than 0.")
-                minutes = minutes_
-
-                await msg.edit(
-                    content=f"{self.bot.emote_dict['lock']} Channel {channel.mention} locked for `{minutes}` minute{'' if minutes == 1 else 's'}. ID: `{channel.id}`"
-                )
-                await asyncio.sleep(minutes * 60)
-                await self.unlock(ctx, channel=channel, surpress=True)
-            else:
-                await msg.edit(
-                    content=f"{self.bot.emote_dict['lock']} Channel {channel.mention} locked. ID: `{channel.id}`"
-                )
-        except discord.Forbidden:
-            await msg.edit(
-                content=f"{self.bot.emote_dict['failed']} I have insufficient permission to lock channels."
-            )
-
-    @commands.command(brief="Unlock a channel.", aliases=["unlockchannel"])
-    @commands.guild_only()
-    @permissions.bot_has_permissions(manage_channels=True)
-    @permissions.has_permissions(administrator=True)
-    async def unlock(self, ctx, channel: discord.TextChannel = None, surpress=False):
-        """
-        Usage: -unlock [channel]
-        Alias: -unlockchannel
-        Permission: Administrator
-        Output: Unlocks a previously locked channel
-        """
-        if channel is None:
-            channel = ctx.channel
-        try:
-            locked = (
-                await self.bot.cxn.fetchrow(
-                    "SELECT channel_id FROM lockedchannels WHERE channel_id = $1",
-                    channel.id,
-                )
-                or (None)
-            )
-            if locked is None:
-                if surpress is True:
-                    return
-                else:
-                    return await ctx.send(
-                        f"{self.bot.emote_dict['lock']} Channel {channel.mention} is already unlocked. ID: `{channel.id}`"
-                    )
-
-            msg = await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Unlocking channel {channel.mention}...",
-            )
-            old_overwrites = await self.bot.cxn.fetchrow(
-                "SELECT everyone_perms FROM lockedchannels WHERE channel_id = $1",
-                channel.id,
-            )
-            everyone_perms = old_overwrites[0]
-
-            if everyone_perms == "None":
-                everyone_perms = None
-            elif everyone_perms == "False":
-                everyone_perms = False
-            elif everyone_perms == "True":
-                everyone_perms = True
-
-            overwrites_everyone = ctx.channel.overwrites_for(ctx.guild.default_role)
-            overwrites_everyone.send_messages = everyone_perms
-            await ctx.message.channel.set_permissions(
-                ctx.guild.default_role,
-                overwrite=overwrites_everyone,
-                reason=(
-                    utils.responsible(
-                        ctx.author, "Channel unlocked by command execution"
-                    )
-                ),
-            )
-            await self.bot.cxn.execute(
-                "DELETE FROM lockedchannels WHERE channel_id = $1", channel.id
-            )
-            await msg.edit(
-                content=f"{self.bot.emote_dict['unlock']} Channel {channel.mention} unlocked. ID: `{channel.id}`"
-            )
-        except discord.errors.Forbidden:
-            await msg.edit(
-                content=f"{self.bot.emote_dict['failed']} I have insufficient permission to unlock channels."
-            )
 
     @commands.command(brief="Have the bot leave the server.", aliases=["kill", "die"])
     @commands.guild_only()
@@ -996,8 +892,7 @@ class Admin(commands.Cog):
         if c:
             await ctx.guild.leave()
             return
-        await ctx.send(
-            reference=self.bot.rep_ref(ctx),
+        await ctx.send_or_reply(
             content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
         )
 
@@ -1054,14 +949,11 @@ class Admin(commands.Cog):
                     hoisted.append(user)
 
             if len(hoisted) == 0:
-                await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
+                await ctx.send_or_reply(
                     content=f"{self.bot.emote_dict['exclamation']} No users to dehoist.",
                 )
                 return
-            message = await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['loading']} **Dehoisting {len(hoisted)} user{'' if len(hoisted) == 1 else 's'}...**",
+            message = await ctx.send_or_reply(content=f"{self.bot.emote_dict['loading']} **Dehoisting {len(hoisted)} user{'' if len(hoisted) == 1 else 's'}...**",
             )
             edited = []
             failed = []
@@ -1089,9 +981,7 @@ class Admin(commands.Cog):
                 msg += f"\n{self.bot.emote_dict['failed']} Failed to dehoist {len(failed)} user{'' if len(failed) == 1 else 's'}."
             await message.edit(content=msg)
         else:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
+            await ctx.send_or_reply(content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
             )
 
     @commands.command(brief="Mass nickname users with odd names.")
@@ -1121,15 +1011,12 @@ class Admin(commands.Cog):
                     odd_names.append(user)
 
             if len(odd_names) == 0:
-                await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
+                await ctx.send_or_reply(
                     content=f"{self.bot.emote_dict['exclamation']} No users to ascify.",
                 )
                 return
 
-            message = await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['loading']} **Ascifying {len(odd_names)} user{'' if len(odd_names) == 1 else 's'}...**",
+            message = await ctx.send_or_reply(content=f"{self.bot.emote_dict['loading']} **Ascifying {len(odd_names)} user{'' if len(odd_names) == 1 else 's'}...**",
             )
             edited = []
             failed = []
@@ -1150,7 +1037,5 @@ class Admin(commands.Cog):
                 msg += f"\n{self.bot.emote_dict['failed']} Failed to ascify {len(failed)} user{'' if len(failed) == 1 else 's'}."
             await message.edit(content=msg)
         else:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
+            await ctx.send_or_reply(content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
             )

@@ -71,9 +71,7 @@ class Manager(commands.Cog):
         try:
             exec(to_compile, env)
         except Exception as e:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"```py\n{e.__class__.__name__}: {e}\n```",
+            return await ctx.send_or_reply(content=f"```py\n{e.__class__.__name__}: {e}\n```",
             )
 
         func = env["func"]
@@ -82,9 +80,7 @@ class Manager(commands.Cog):
                 ret = await func()
         except Exception as e:
             value = stdout.getvalue()
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"```py\n{value}{traceback.format_exc()}\n```",
+            await ctx.send_or_reply(content=f"```py\n{value}{traceback.format_exc()}\n```",
             )
         else:
             value = stdout.getvalue()
@@ -95,13 +91,11 @@ class Manager(commands.Cog):
 
             if ret is None:
                 if value:
-                    await ctx.send(
-                        reference=self.bot.rep_ref(ctx), content=f"```py\n{value}\n```"
+                    await ctx.send_or_reply(content=f"```py\n{value}\n```"
                     )
             else:
                 self._last_result = ret
-                await ctx.send(
-                    reference=self.bot.rep_ref(ctx), content=f"```py\n{value}{ret}\n```"
+                await ctx.send_or_reply( content=f"```py\n{value}{ret}\n```"
                 )
 
     def cleanup_code(self, content):
@@ -142,8 +136,7 @@ class Manager(commands.Cog):
 
         self.bot.owner_ids = constants.owners
 
-        await ctx.send(
-            reference=self.bot.rep_ref(ctx),
+        await ctx.send_or_reply(
             content=f"{self.bot.emote_dict['success']} **Refreshed Configuration.**",
         )
 
@@ -156,9 +149,8 @@ class Manager(commands.Cog):
             try:
                 self.bot.load_extension(f"{name}")
             except Exception as e:
-                return await ctx.send(str(e).replace("'", "**"))
-        await ctx.send(
-            reference=self.bot.rep_ref(ctx),
+                return await ctx.send_or_reply(str(e).replace("'", "**"))
+        await ctx.send_or_reply(
             content=f"{self.bot.emote_dict['success']} Loaded extension **{name}**",
         )
 
@@ -171,9 +163,8 @@ class Manager(commands.Cog):
             try:
                 self.bot.unload_extension(f"{name}")
             except Exception as e:
-                return await ctx.send(str(e).replace("'", "**"))
-        await ctx.send(
-            reference=self.bot.rep_ref(ctx),
+                return await ctx.send_or_reply(str(e).replace("'", "**"))
+        await ctx.send_or_reply(
             content=f"{self.bot.emote_dict['success']} Unloaded extension **{name}**",
         )
 
@@ -186,9 +177,8 @@ class Manager(commands.Cog):
             try:
                 self.bot.reload_extension(f"{name}")
             except Exception as e:
-                return await ctx.send(str(e).replace("'", "**"))
-        await ctx.send(
-            reference=self.bot.rep_ref(ctx),
+                return await ctx.send_or_reply(str(e).replace("'", "**"))
+        await ctx.send_or_reply(
             content=f"{self.bot.emote_dict['success']} Reloaded extension **{name}.py**",
         )
 
@@ -210,14 +200,11 @@ class Manager(commands.Cog):
             output = "\n".join(
                 [f"**{g[0]}** ```diff\n- {g[1]}```" for g in error_collection]
             )
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Attempted to reload all extensions, was able to reload, "
+            return await ctx.send_or_reply(content=f"Attempted to reload all extensions, was able to reload, "
                 f"however the following failed...\n\n{output}",
             )
 
-        await ctx.send(
-            reference=self.bot.rep_ref(ctx),
+        await ctx.send_or_reply(
             content=f"{self.bot.emote_dict['success']} Successfully reloaded all extensions",
         )
 
@@ -233,18 +220,13 @@ class Manager(commands.Cog):
             module_name = importlib.import_module(f".{name}", package="utilities")
             importlib.reload(module_name)
         except ModuleNotFoundError:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Couldn't find module named **{name_maker}**",
+            return await ctx.send_or_reply(content=f"Couldn't find module named **{name_maker}**",
             )
         except Exception as e:
             error = utils.traceback_maker(e)
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Module **{name_maker}** returned error and was not reloaded...\n{error}",
+            return await ctx.send_or_reply(content=f"Module **{name_maker}** returned error and was not reloaded...\n{error}",
             )
-        await ctx.send(
-            reference=self.bot.rep_ref(ctx),
+        await ctx.send_or_reply(
             content=f"{self.bot.emote_dict['success']} Reloaded module **{name_maker}**",
         )
 
@@ -268,14 +250,11 @@ class Manager(commands.Cog):
             output = "\n".join(
                 [f"**{g[0]}** ```diff\n- {g[1]}```" for g in error_collection]
             )
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Attempted to reload all utilties, was able to reload, "
+            return await ctx.send_or_reply(content=f"Attempted to reload all utilties, was able to reload, "
                 f"however the following failed...\n\n{output}",
             )
 
-        await ctx.send(
-            reference=self.bot.rep_ref(ctx),
+        await ctx.send_or_reply(
             content=f"{self.bot.emote_dict['success']} Successfully reloaded all utilities.",
         )
 
@@ -286,8 +265,7 @@ class Manager(commands.Cog):
         Alias:       -restart
         Permissions: Bot Owner
         """
-        msg = await ctx.send(
-            reference=self.bot.rep_ref(ctx),
+        msg = await ctx.send_or_reply(
             content=f"{self.bot.emote_dict['loading']} {ctx.invoked_with.capitalize()}ing...",
         )
         utils.modify_config(
@@ -437,8 +415,7 @@ class Manager(commands.Cog):
 
         members = self.bot.get_all_members()
         await initialize(self.bot.guilds, members)
-        await ctx.send(
-            reference=self.bot.rep_ref(ctx),
+        await ctx.send_or_reply(
             content=f"{self.bot.emote_dict['success']} Updated Database",
         )
 
@@ -459,9 +436,7 @@ class Manager(commands.Cog):
         """
 
         if query is None:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}sql <query>`",
+            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}sql <query>`",
             )
 
         query = self.cleanup_code(query)
@@ -478,15 +453,12 @@ class Manager(commands.Cog):
             results = await strategy(query)
             dt = (time.perf_counter() - start) * 1000.0
         except Exception:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"```py\n{traceback.format_exc()}\n```",
+            return await ctx.send_or_reply(content=f"```py\n{traceback.format_exc()}\n```",
             )
 
         rows = len(results)
         if is_multistatement or rows == 0:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx), content=f"`{dt:.2f}ms: {results}`"
+            return await ctx.send_or_reply(content=f"`{dt:.2f}ms: {results}`"
             )
 
         headers = list(results[0].keys())
@@ -498,11 +470,10 @@ class Manager(commands.Cog):
         fmt = f"```\n{render}\n```\n*Returned {formatting.plural(rows):row} in {dt:.2f}ms*"
         if len(fmt) > 2000:
             fp = io.BytesIO(fmt.encode("utf-8"))
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx), file=discord.File(fp, "results.txt")
+            await ctx.send_or_reply(file=discord.File(fp, "results.txt")
             )
         else:
-            await ctx.send(reference=self.bot.rep_ref(ctx), content=fmt)
+            await ctx.send_or_reply(content=fmt)
 
     @commands.command(
         hidden=True, brief="Show info on a sql table.", aliases=["tables", "database"]
@@ -525,9 +496,7 @@ class Manager(commands.Cog):
         try:
             headers = list(results[0].keys())
         except IndexError:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}table <table name>`",
+            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}table <table name>`",
             )
         table = formatting.TabularData()
         table.set_columns(headers)
@@ -537,13 +506,11 @@ class Manager(commands.Cog):
         fmt = f"```\n{render}\n```"
         if len(fmt) > 2000:
             fp = io.BytesIO(fmt.encode("utf-8"))
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content="Too many results...",
+            await ctx.send_or_reply(content="Too many results...",
                 file=discord.File(fp, "results.txt"),
             )
         else:
-            await ctx.send(reference=self.bot.rep_ref(ctx), content=fmt)
+            await ctx.send_or_reply(content=fmt)
 
     @commands.group(hidden=True, brief="Show info on the database.", aliases=["pg"])
     async def postgres(self, ctx):
@@ -572,8 +539,7 @@ class Manager(commands.Cog):
                     query, self.bot.constants.postgres.split("/")[-1]
                 )
             except asyncpg.UndefinedTableError:
-                return await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
+                return await ctx.send_or_reply(
                     content=f"{self.bot.emote_dict['failed']} Table `{table_name}` does not exist.",
                 )
         else:
@@ -581,8 +547,7 @@ class Manager(commands.Cog):
             try:
                 results = await self.bot.cxn.fetch(query, table_name)
             except asyncpg.UndefinedTableError:
-                return await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
+                return await ctx.send_or_reply(
                     content=f"{self.bot.emote_dict['failed']} Table `{table_name}` does not exist.",
                 )
 
@@ -595,13 +560,11 @@ class Manager(commands.Cog):
         fmt = f"```\n{render}\n```"
         if len(fmt) > 2000:
             fp = io.BytesIO(fmt.encode("utf-8"))
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content="Too many results...",
+            await ctx.send_or_reply(content="Too many results...",
                 file=discord.File(fp, "results.txt"),
             )
         else:
-            await ctx.send(reference=self.bot.rep_ref(ctx), content=fmt)
+            await ctx.send_or_reply(content=fmt)
 
     @postgres.command(aliases=["largest"], brief="Get the largest tables.")
     async def lb(self, ctx):
@@ -661,13 +624,11 @@ class Manager(commands.Cog):
         fmt = f"```\n{render}\n```"
         if len(fmt) > 2000:
             fp = io.BytesIO(fmt.encode("utf-8"))
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content="Too many results...",
+            await ctx.send_or_reply(content="Too many results...",
                 file=discord.File(fp, "results.txt"),
             )
         else:
-            await ctx.send(reference=self.bot.rep_ref(ctx), content=fmt)
+            await ctx.send_or_reply(content=fmt)
 
     @postgres.command(aliases=["t"], brief="Show some info on postgres datatypes.")
     async def types(self, ctx):
@@ -685,13 +646,11 @@ class Manager(commands.Cog):
         fmt = f"```\n{render}\n```"
         if len(fmt) > 2000:
             fp = io.BytesIO(fmt.encode("utf-8"))
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content="Too many results...",
+            await ctx.send_or_reply(content="Too many results...",
                 file=discord.File(fp, "results.txt"),
             )
         else:
-            await ctx.send(reference=self.bot.rep_ref(ctx), content=fmt)
+            await ctx.send_or_reply(content=fmt)
 
     @postgres.command(aliases=["info"], brief="Show some info on postgres table sizes.")
     async def i(self, ctx):
@@ -726,13 +685,11 @@ class Manager(commands.Cog):
         fmt = f"```\n{render}\n```"
         if len(fmt) > 2000:
             fp = io.BytesIO(fmt.encode("utf-8"))
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content="Too many results...",
+            await ctx.send_or_reply(content="Too many results...",
                 file=discord.File(fp, "results.txt"),
             )
         else:
-            await ctx.send(reference=self.bot.rep_ref(ctx), content=fmt)
+            await ctx.send_or_reply(content=fmt)
 
     @postgres.command(
         aliases=["relation", "relations"], brief="Show some info on postgres relations."
@@ -758,13 +715,11 @@ class Manager(commands.Cog):
         fmt = f"```\n{render}\n```"
         if len(fmt) > 2000:
             fp = io.BytesIO(fmt.encode("utf-8"))
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content="Too many results...",
+            await ctx.send_or_reply(content="Too many results...",
                 file=discord.File(fp, "results.txt"),
             )
         else:
-            await ctx.send(reference=self.bot.rep_ref(ctx), content=fmt)
+            await ctx.send_or_reply(content=fmt)
 
     async def run_process(self, command):
         try:
@@ -801,7 +756,7 @@ class Manager(commands.Cog):
         try:
             await pages.start(ctx)
         except menus.MenuError as e:
-            await ctx.send(str(e))
+            await ctx.send_or_reply(str(e))
 
     @commands.command(hidden=True, aliases=["repeat"], brief="Repeat a command.")
     async def do(self, ctx, times: int, *, command):
@@ -816,16 +771,14 @@ class Manager(commands.Cog):
             try:
                 await new_ctx.reinvoke()
             except ValueError:
-                return await ctx.send(
-                    reference=self.bot.rep_ref(ctx), content=f"Invalid Context"
+                return await ctx.send_or_reply( content=f"Invalid Context"
                 )
 
     async def tabulate_query(self, ctx, query, *args):
         records = await self.bot.cxn.fetch(query, *args)
 
         if len(records) == 0:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx), content="No results found."
+            return await ctx.send_or_reply(content="No results found."
             )
 
         headers = list(records[0].keys())
@@ -837,13 +790,11 @@ class Manager(commands.Cog):
         fmt = f"```\n{render}\n```"
         if len(fmt) > 2000:
             fp = io.BytesIO(fmt.encode("utf-8"))
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content="Too many results...",
+            await ctx.send_or_reply(content="Too many results...",
                 file=discord.File(fp, "results.txt"),
             )
         else:
-            await ctx.send(reference=self.bot.rep_ref(ctx), content=fmt)
+            await ctx.send_or_reply(content=fmt)
 
     @commands.group(
         hidden=True, invoke_without_command=True, brief="Show command history."
@@ -968,8 +919,7 @@ class Manager(commands.Cog):
 
         embed.add_field(name="Unused", value=unused, inline=False)
 
-        await ctx.send(
-            reference=self.bot.rep_ref(ctx),
+        await ctx.send_or_reply(
             embed=embed,
             file=discord.File(io.BytesIO(render.encode()), filename="full_results.txt"),
         )
@@ -985,8 +935,7 @@ class Manager(commands.Cog):
         if cog is not None:
             cog = self.bot.get_cog(cog)
             if cog is None:
-                return await ctx.send(
-                    reference=self.bot.rep_ref(ctx), content=f"Unknown cog: {cog}"
+                return await ctx.send_or_reply( content=f"Unknown cog: {cog}"
                 )
 
             query = """SELECT *, t.success + t.failed AS "total"
@@ -1141,7 +1090,7 @@ class Manager(commands.Cog):
 
         embed.set_footer(text=f"{total_warnings} warning(s)")
         embed.description = "\n".join(description)
-        await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)
+        await ctx.send_or_reply(embed=embed)
 
     @commands.command(
         hidden=True, aliases=["perf", "elapsed"], brief="Time a command response."
@@ -1160,8 +1109,7 @@ class Manager(commands.Cog):
         new_ctx.channel = PerformanceMocker()
 
         if new_ctx.command is None:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx), content="No command found"
+            return await ctx.send_or_reply(content="No command found"
             )
 
         start = time.perf_counter()
@@ -1171,8 +1119,7 @@ class Manager(commands.Cog):
             end = time.perf_counter()
             success = False
             try:
-                await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
+                await ctx.send_or_reply(
                     content=f"```py\n{traceback.format_exc()}\n```",
                 )
             except discord.HTTPException:
@@ -1186,8 +1133,7 @@ class Manager(commands.Cog):
         else:
             emote = self.bot.emote_dict["failed"]
 
-        await ctx.send(
-            reference=self.bot.rep_ref(ctx),
+        await ctx.send_or_reply(
             content=f"{emote} `{(end - start) * 1000:.2f}ms`",
         )
 
@@ -1218,14 +1164,11 @@ class Manager(commands.Cog):
             git_location = None
 
         if not git_location:
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['error']} Git not found.",
+            await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} Git not found.",
             )
             return
         # Try to update
-        message = await ctx.send(
-            reference=self.bot.rep_ref(ctx),
+        message = await ctx.send_or_reply(
             content=f"{self.bot.emote_dict['loading']} **Updating...**",
         )
         try:
@@ -1241,7 +1184,7 @@ class Manager(commands.Cog):
             if len(err.decode("utf-8")):
                 msg += err.decode("utf-8").replace("`", "\`") + "\n"
             msg += "```"
-            await ctx.send(msg)
+            await ctx.send_or_reply(msg)
             await message.edit(
                 content=f"{self.bot.emote_dict['success']} **Completed.**"
             )

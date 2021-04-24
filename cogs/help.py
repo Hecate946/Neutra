@@ -33,7 +33,7 @@ class Help(commands.Cog):
     async def send_help(self, ctx, embed, pm, delete_after):
         if pm is True:
             if not ctx.guild:
-                msg = await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)
+                msg = await ctx.send_or_reply(embed=embed)
                 return
             try:
                 msg = await ctx.author.send(embed=embed)
@@ -42,14 +42,12 @@ class Help(commands.Cog):
                 except Exception:
                     return
             except Exception:
-                msg = await ctx.send(
-                    reference=self.bot.rep_ref(ctx),
+                msg = await ctx.send_or_reply(
                     embed=embed,
                     delete_after=delete_after,
                 )
         else:
-            msg = await ctx.send(
-                reference=self.bot.rep_ref(ctx), embed=embed, delete_after=delete_after
+            msg = await ctx.send_or_reply(embed=embed, delete_after=delete_after
             )
 
         def reaction_check(m):
@@ -86,7 +84,7 @@ class Help(commands.Cog):
             if str(c.name).upper() in COMMAND_EXCEPTIONS and not permissions.is_admin(
                 ctx
             ):
-                await ctx.send(
+                await ctx.send_or_reply(
                     f"{self.emote_dict['error']} No command named `{name}` found."
                 )
                 continue
@@ -101,9 +99,7 @@ class Help(commands.Cog):
             )
             return
         else:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.emote_dict['error']} No command named `{name}` found.",
+            return await ctx.send_or_reply(content=f"{self.emote_dict['error']} No command named `{name}` found.",
             )
 
     ##########################
@@ -244,15 +240,20 @@ class Help(commands.Cog):
             if invokercommand.lower() in [
                 "admin",
                 "administration",
-                "administrator",
-                "settings",
-                "setup",
-                "configuration",
-                "auto",
-                "automod",
-                "automoderation",
+                "administrator","restrict", "restriction", "disabling", "settings", "configuration"
             ]:
                 cog = self.bot.get_cog("Admin")
+                return await self.helper_func(
+                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
+                )
+
+
+            if invokercommand.lower() in [
+                "auto",
+                "automod",
+                "automoderation"
+            ]:
+                cog = self.bot.get_cog("Automod")
                 return await self.helper_func(
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )
@@ -307,6 +308,10 @@ class Help(commands.Cog):
                 "utils",
                 "util",
                 "utilities",
+                "tools",
+                "miscellaneous",
+                "random",
+                "misc",
             ]:
                 cog = self.bot.get_cog("Utility")
                 return await self.helper_func(
@@ -319,12 +324,6 @@ class Help(commands.Cog):
                 "timezones",
             ]:
                 cog = self.bot.get_cog("Time")
-                return await self.helper_func(
-                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
-                )
-
-            if invokercommand.lower() in ["restrict", "restriction", "disabling"]:
-                cog = self.bot.get_cog("Restrict")
                 return await self.helper_func(
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )
@@ -342,7 +341,7 @@ class Help(commands.Cog):
                 "servers",
                 "statistics",
             ]:
-                cog = self.bot.get_cog("Server")
+                cog = self.bot.get_cog("Stats")
                 return await self.helper_func(
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )
@@ -354,23 +353,23 @@ class Help(commands.Cog):
                 "userstats",
                 "user",
             ]:
-                cog = self.bot.get_cog("Users")
+                cog = self.bot.get_cog("Tracking")
                 return await self.helper_func(
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )
 
-            if invokercommand.lower() in [
-                "conversions",
-                "conversion",
-                "encoding",
-                "encryption",
-                "decryption",
-                "decrypt",
-            ]:
-                cog = self.bot.get_cog("Conversion")
-                return await self.helper_func(
-                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
-                )
+            # if invokercommand.lower() in [
+            #     "conversions",
+            #     "conversion",
+            #     "encoding",
+            #     "encryption",
+            #     "decryption",
+            #     "decrypt",
+            # ]:
+            #     cog = self.bot.get_cog("Conversion")
+            #     return await self.helper_func(
+            #         ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
+            #     )
 
             if invokercommand.lower() in [
                 "tools",
@@ -383,16 +382,27 @@ class Help(commands.Cog):
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )
 
+            if invokercommand.lower() in [
+                "automod",
+                "warning",
+                "automoderation",
+                "system"
+            ]:
+                cog = self.bot.get_cog("Automod")
+                return await self.helper_func(
+                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
+                )
+
             if invokercommand.lower() in ["jsk", "jish", "jishaku"]:
                 if not permissions.is_owner(ctx):
-                    return await ctx.send(
+                    return await ctx.send_or_reply(
                         f"{self.emote_dict['error']} No command named `{invokercommand}` found."
                     )
                 return await ctx.send_help("jishaku")
 
             if invokercommand.lower() in ["conf", "config", "owner", "owners"]:
                 if not permissions.is_owner(ctx):
-                    return await ctx.send(
+                    return await ctx.send_or_reply(
                         f"{self.emote_dict['error']} No command named `{invokercommand}` found."
                     )
                 cog = self.bot.get_cog("Config")
@@ -402,7 +412,7 @@ class Help(commands.Cog):
 
             if invokercommand.lower() in ["hidden", "botadmin", "admins", "botadmins"]:
                 if not permissions.is_admin(ctx):
-                    return await ctx.send(
+                    return await ctx.send_or_reply(
                         f"{self.emote_dict['error']} No command named `{invokercommand}` found."
                     )
                 cog = self.bot.get_cog("Botadmin")
@@ -412,7 +422,7 @@ class Help(commands.Cog):
 
             if invokercommand.lower() in ["manage", "manager", "master", "heart"]:
                 if not permissions.is_owner(ctx):
-                    return await ctx.send(
+                    return await ctx.send_or_reply(
                         f"{self.emote_dict['error']} No command named `{invokercommand}` found."
                     )
                 cog = self.bot.get_cog("Manager")
@@ -468,7 +478,7 @@ class Help(commands.Cog):
                     await self.send_help(ctx, help_embed, pm, delete_after)
                     return
                 else:
-                    await ctx.send(
+                    await ctx.send_or_reply(
                         f"{self.emote_dict['error']} No command named `{invokercommand}` found."
                     )
 
@@ -480,15 +490,12 @@ class Help(commands.Cog):
             The short description of the passed command
         """
         if command is None:
-            return await ctx.send(f"Usage: `{ctx.prefix}brief <command>`")
+            return await ctx.send_or_reply(f"Usage: `{ctx.prefix}brief <command>`")
         _command = self.bot.get_command(command)
         if _command is None:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['failed']} No command named `{command}` found.",
+            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['failed']} No command named `{command}` found.",
             )
-        await ctx.send(
-            reference=self.bot.rep_ref(ctx),
+        await ctx.send_or_reply(
             content=f"{self.bot.emote_dict['announce']} Command brief for **{_command.name}**: `{_command.brief}`",
         )
 
@@ -501,14 +508,11 @@ class Help(commands.Cog):
         """
 
         if command is None:
-            return await ctx.send(f"Usage: `{ctx.prefix}docstring <command>`")
+            return await ctx.send_or_reply(f"Usage: `{ctx.prefix}docstring <command>`")
         _command = self.bot.get_command(command)
         if _command is None:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['failed']} No command named `{command}` found.",
+            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['failed']} No command named `{command}` found.",
             )
-        await ctx.send(
-            reference=self.bot.rep_ref(ctx),
+        await ctx.send_or_reply(
             content=f"{self.bot.emote_dict['announce']} Command docstring for **{_command.name}**:```yaml\n{_command.help}```",
         )

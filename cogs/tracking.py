@@ -10,10 +10,10 @@ from utilities import converters, pagination, permissions, utils
 
 
 def setup(bot):
-    bot.add_cog(Users(bot))
+    bot.add_cog(Tracking(bot))
 
 
-class Users(commands.Cog):
+class Tracking(commands.Cog):
     """
     Module for all user stats
     """
@@ -31,9 +31,7 @@ class Users(commands.Cog):
         Notes:  Cannot determine platform when users are offline.
         """
         if not len(members):
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}platform <member> [member] [member]...`",
+            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}platform <member> [member] [member]...`",
             )
         mobilestatus = []
         notmobilestatus = []
@@ -43,7 +41,7 @@ class Users(commands.Cog):
             try:
                 mobile = member.is_on_mobile()
             except Exception as e:
-                await ctx.send(
+                await ctx.send_or_reply(
                     f"{self.bot.emote_dict['failed']} Somthing went wrong: {e}"
                 )
 
@@ -64,9 +62,7 @@ class Users(commands.Cog):
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
                     notmobile += [username]
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['desktop']} User{'' if len(notmobile) == 1 else 's'} `{', '.join(notmobile)}` {'is' if len(notmobile) == 1 else 'are'} on discord desktop.",
+            await ctx.send_or_reply(content=f"{self.bot.emote_dict['desktop']} User{'' if len(notmobile) == 1 else 's'} `{', '.join(notmobile)}` {'is' if len(notmobile) == 1 else 'are'} on discord desktop.",
             )
         if mobilestatus:
             mobile = []
@@ -77,9 +73,7 @@ class Users(commands.Cog):
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
                     mobile += [username]
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['mobile']} User{'' if len(mobile) == 1 else 's'} `{', '.join(mobile)}` {'is' if len(mobile) == 1 else 'are'} on discord mobile.",
+            await ctx.send_or_reply(content=f"{self.bot.emote_dict['mobile']} User{'' if len(mobile) == 1 else 's'} `{', '.join(mobile)}` {'is' if len(mobile) == 1 else 'are'} on discord mobile.",
             )
         if web_status:
             mobile = []
@@ -90,9 +84,7 @@ class Users(commands.Cog):
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
                     mobile += [username]
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['web']} User{'' if len(mobile) == 1 else 's'} `{', '.join(mobile)}` {'is' if len(mobile) == 1 else 'are'} on discord web.",
+            await ctx.send_or_reply(content=f"{self.bot.emote_dict['web']} User{'' if len(mobile) == 1 else 's'} `{', '.join(mobile)}` {'is' if len(mobile) == 1 else 'are'} on discord web.",
             )
         if offline:
             mobile = []
@@ -103,9 +95,7 @@ class Users(commands.Cog):
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
                     mobile += [username]
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['offline']} User{'' if len(mobile) == 1 else 's'} `{', '.join(mobile)}` {'is' if len(mobile) == 1 else 'are'} offline",
+            await ctx.send_or_reply(content=f"{self.bot.emote_dict['offline']} User{'' if len(mobile) == 1 else 's'} `{', '.join(mobile)}` {'is' if len(mobile) == 1 else 'are'} offline",
             )
 
     # @commands.command(
@@ -209,7 +199,7 @@ class Users(commands.Cog):
     # # else:
     # #    embed.add_field(name=f"Roles: [0]", value ="** **", inline=False)
     # # embed.add_field(name="Permissions:", value=", ".join(perm_list).replace("_", " ").replace("guild", "server").title().replace("Tts", "TTS"), inline=False)
-    # await ctx.send(reference=self.bot.rep_ref(ctx), embed=embed)
+    # await ctx.send_or_reply(embed=embed)
 
     @commands.command(
         brief="Show information on a user.",
@@ -229,9 +219,7 @@ class Users(commands.Cog):
             if user is None:
                 user = ctx.author
 
-            message = await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"**{self.bot.emote_dict['loading']} Collecting User Data...**",
+            message = await ctx.send_or_reply(content=f"**{self.bot.emote_dict['loading']} Collecting User Data...**",
             )
 
             sid = int(user.id)
@@ -352,7 +340,7 @@ class Users(commands.Cog):
             try:
                 await t.start(ctx)
             except menus.MenuError as e:
-                await ctx.send(e)
+                await ctx.send_or_reply(e)
 
     @commands.command(name="status", brief="Show a user's status")
     async def status_(self, ctx, *, member: discord.Member = None):
@@ -363,12 +351,10 @@ class Users(commands.Cog):
             member = ctx.author
         status = "\n".join(self.activity_string(a) for a in member.activities)
         if status == "":
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"**{member.display_name}** has no current status.",
+            return await ctx.send_or_reply(content=f"**{member.display_name}** has no current status.",
             )
         msg = f"**{member.display_name}'s** Status: {status}\n"
-        await ctx.send(msg)
+        await ctx.send_or_reply(msg)
 
     def activity_string(self, activity):
         if isinstance(activity, (discord.Game, discord.Streaming)):
@@ -413,15 +399,11 @@ class Users(commands.Cog):
         a = await self.bot.cxn.fetchrow(query, user.id, ctx.guild.id) or None
         if a is None:
             # await self.fix_member(ctx.author)
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content="`{}` has sent **0** messages.".format(user),
+            return await ctx.send_or_reply(content="`{}` has sent **0** messages.".format(user),
             )
         else:
             a = int(a[0])
-            await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"`{user}` has sent **{a}** message{'' if a == 1 else 's'}",
+            await ctx.send_or_reply(content=f"`{user}` has sent **{a}** message{'' if a == 1 else 's'}",
             )
 
     @commands.command(brief="Show the top message senders.", aliases=["top"])
@@ -457,7 +439,7 @@ class Users(commands.Cog):
         try:
             await p.start(ctx)
         except menus.MenuError as e:
-            await ctx.send(e)
+            await ctx.send_or_reply(e)
 
     @commands.command(brief="Show a user's nicknames.", aliases=["nicknames"])
     @commands.guild_only()
@@ -485,7 +467,7 @@ class Users(commands.Cog):
         try:
             await p.start(ctx)
         except menus.MenuError as e:
-            await ctx.send(e)
+            await ctx.send_or_reply(e)
 
     @commands.command(brief="Show a user's usernames.", aliases=["usernames"])
     @commands.guild_only()
@@ -501,9 +483,7 @@ class Users(commands.Cog):
         if user is None:
             user = ctx.author
         if user.bot:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['error']} I do not track bots.",
+            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} I do not track bots.",
             )
 
         query = """SELECT usernames FROM usernames WHERE user_id = $1"""
@@ -517,7 +497,7 @@ class Users(commands.Cog):
         try:
             await p.start(ctx)
         except menus.MenuError as e:
-            await ctx.send(e)
+            await ctx.send_or_reply(e)
 
     # @commands.command(brief="Show a user's avatars.", aliases=["avs"])
     # @commands.guild_only()
@@ -543,7 +523,7 @@ class Users(commands.Cog):
     #     try:
     #         await p.start(ctx)
     #     except menus.MenuError as e:
-    #         await ctx.send(e)
+    #         await ctx.send_or_reply(e)
 
     @commands.command(
         brief="Check when a user was last seen.",
@@ -562,15 +542,11 @@ class Users(commands.Cog):
             Will default to yourself if no user is passed
         """
         if user is None:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}seen <user>`",
+            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}seen <user>`",
             )
 
         if user.bot:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['error']} I do not track bots.",
+            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} I do not track bots.",
             )
 
         tracker = self.bot.get_cog("Tracker")
@@ -578,12 +554,10 @@ class Users(commands.Cog):
         data = await tracker.last_observed(user)
 
         if data["last_seen"] is None:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx), content=f"I have not seen `{user}`"
+            return await ctx.send_or_reply(content=f"I have not seen `{user}`"
             )
 
-        await ctx.send(
-            reference=self.bot.rep_ref(ctx),
+        await ctx.send_or_reply(
             content=f"User `{user}` was last seen {data['last_seen']} ago.",
         )
 
@@ -601,7 +575,7 @@ class Users(commands.Cog):
             premsg = f"Commands most frequently used in **{ctx.guild.name}**"
         else:
             if user.bot:
-                return await ctx.send(
+                return await ctx.send_or_reply(
                     f"{self.bot.emote_dict['error']} I do not track bots."
                 )
             query = """SELECT command FROM commands WHERE server_id = $1 AND author_id = $2"""
@@ -614,9 +588,7 @@ class Users(commands.Cog):
         try:
             width = len(max(counter, key=len))
         except ValueError:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['error']} User `{user}` has not run any commands.",
+            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} User `{user}` has not run any commands.",
             )
         total = sum(counter.values())
 
@@ -627,7 +599,7 @@ class Users(commands.Cog):
         output = "\n".join("{0:<{1}} : {2}".format(str(k), width, c) for k, c in common)
 
         msg = "{0} \n\nTOTAL: {1}".format(output, total)
-        # await ctx.send(premsg + '```yaml\n{}\n\nTOTAL: {}```'.format(output, total))
+        # await ctx.send_or_reply(premsg + '```yaml\n{}\n\nTOTAL: {}```'.format(output, total))
         pages = pagination.MainMenu(
             pagination.TextPageSource(msg, prefix="```yaml", max_size=500)
         )
@@ -636,11 +608,11 @@ class Users(commands.Cog):
         else:
             title = f"Most common commands used by **{user.display_name}**"
 
-        await ctx.send(title)
+        await ctx.send_or_reply(title)
         try:
             await pages.start(ctx)
         except menus.MenuError as e:
-            await ctx.send(str(e))
+            await ctx.send_or_reply(str(e))
 
     @commands.command(
         name="commands", brief="Count the commands run.", aliases=["commandcount"]
@@ -657,20 +629,16 @@ class Users(commands.Cog):
         if user is None:
             query = """SELECT COUNT(*) as c FROM commands WHERE server_id = $1"""
             command_count = await self.bot.cxn.fetchrow(query, ctx.guild.id)
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"A total of **{command_count[0]:,}** command{' has' if int(command_count[0]) == 1 else 's have'} been executed on this server.",
+            return await ctx.send_or_reply(content=f"A total of **{command_count[0]:,}** command{' has' if int(command_count[0]) == 1 else 's have'} been executed on this server.",
             )
         else:
             if user.bot:
-                return await ctx.send(
+                return await ctx.send_or_reply(
                     f"{self.bot.emote_dict['error']} I do not track bots."
                 )
             query = """SELECT COUNT(*) as c FROM commands WHERE author_id = $1 AND server_id = $2"""
             command_count = await self.bot.cxn.fetchrow(query, user.id, ctx.guild.id)
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"User `{user}` has executed **{int(command_count[0]):,}** commands.",
+            return await ctx.send_or_reply(content=f"User `{user}` has executed **{int(command_count[0]):,}** commands.",
             )
 
     @commands.command(brief="Show the top bot users.", aliases=["botusage"])
@@ -700,7 +668,7 @@ class Users(commands.Cog):
                 value=f"{v[0]} command{'' if int(v[0]) == 1 else 's'}",
             )
 
-        await ctx.send(reference=self.bot.rep_ref(ctx), embed=e)
+        await ctx.send_or_reply(embed=e)
 
     @commands.command(brief="Most used words from a user.")
     @commands.guild_only()
@@ -716,16 +684,19 @@ class Users(commands.Cog):
             member = ctx.author
 
         if member.bot:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['error']} I do not track bots.",
+            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} I do not track bots.",
             )
-        message = await ctx.send(
-            reference=self.bot.rep_ref(ctx),
+        message = await ctx.send_or_reply(
             content=f"**{self.bot.emote_dict['loading']} Collecting Word Statistics...**",
         )
+        query = """
+                SELECT content
+                FROM messages
+                WHERE author_id = $1
+                AND server_id = $2;
+                """,
         all_msgs = await self.bot.cxn.fetch(
-            """SELECT content FROM messages WHERE author_id = $1 AND server_id = $2""",
+            query,
             member.id,
             ctx.guild.id,
         )
@@ -745,7 +716,7 @@ class Users(commands.Cog):
         try:
             await pages.start(ctx)
         except menus.MenuError as e:
-            await ctx.send(str(e))
+            await ctx.send_or_reply(str(e))
 
     @commands.command(brief="Usage for a specific word.")
     @commands.guild_only()
@@ -758,20 +729,15 @@ class Users(commands.Cog):
             Will default to you if no user is passed.
         """
         if word is None:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"Usage: `{ctx.prefix}word <word> [user]`",
+            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}word <word> [user]`",
             )
         if member is None:
             member = ctx.author
         if member.bot:
-            return await ctx.send(
-                reference=self.bot.rep_ref(ctx),
-                content=f"{self.bot.emote_dict['error']} I do not track bots.",
+            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} I do not track bots.",
             )
 
-        message = await ctx.send(
-            reference=self.bot.rep_ref(ctx),
+        message = await ctx.send_or_reply(
             content=f"**{self.bot.emote_dict['loading']} Collecting Word Statistics...**",
         )
         all_msgs = await self.bot.cxn.fetch(
@@ -805,3 +771,107 @@ class Users(commands.Cog):
         await message.edit(
             content=f"The word `{word}` has been used {found[0][1]} time{'' if found[0][1] == 1 else 's'} and is the {common} most common word used by **{member.display_name}**"
         )
+
+    @commands.command(brief="Show all users who spam.")
+    async def spammers(self, ctx):
+        query = """
+                SELECT (user_id, spamcount)
+                FROM spammers
+                WHERE server_id = $1
+                ORDER BY spamcount DESC;
+                """
+        result = await self.bot.cxn.fetch(query, ctx.guild.id)
+        page_list = []
+        for x in result:
+            name = ctx.guild.get_member(x[0][0])
+            if not name:
+                continue
+            page_list.append(
+                {
+                    "name": name,
+                    "value": f"Times recorded spamming: {x[0][1]}"
+                }
+            )
+
+        p = pagination.MainMenu(
+            pagination.FieldPageSource(
+                entries=[
+                    ("{}. {}".format(y + 1, x["name"]), x["value"])
+                    for y, x in enumerate(page_list)
+                ],
+                per_page=10,
+                title=f"Recorded spammers in **{ctx.guild.name}** ({len(page_list):,} total)",
+            )
+        )
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send_or_reply(e)
+
+
+    @commands.group(
+        brief="Show the most active server users.", invoke_without_command=True
+    )
+    @commands.guild_only()
+    async def activity(self, ctx, unit: str = "month"):
+        """
+        Usage: -activity [characters] [unit of time]
+        Output: Top message senders in the server
+        Permission: Manage Messages
+        """
+        unit = unit.lower()
+        time_dict = {"day": 86400, "week": 604800, "month": 2592000, "year": 31556952}
+        if unit not in time_dict:
+            unit = "month"
+        time_seconds = time_dict.get(unit, 2592000)
+        now = int(datetime.datetime.utcnow().timestamp())
+        diff = now - time_seconds
+        query = """SELECT COUNT(*) as c, author_id FROM messages WHERE server_id = $1 AND unix > $2 GROUP BY author_id ORDER BY c DESC LIMIT 25"""
+        stuff = await self.bot.cxn.fetch(query, ctx.guild.id, diff)
+
+        e = discord.Embed(
+            title=f"Activity for the last {unit}",
+            description=f"{sum(x[0] for x in stuff)} messages from {len(stuff)} user{'' if len(stuff) == 1 else 's'}",
+            color=self.bot.constants.embed,
+        )
+        for n, v in enumerate(stuff[:24]):
+            try:
+                name = ctx.guild.get_member(int(v[1])).name
+            except AttributeError:
+                name = f"Unknown member"
+            e.add_field(
+                name=f"{n+1}. {name}",
+                value=f"{v[0]} message{'' if int(v[0]) == 1 else 's'}",
+            )
+
+        await ctx.send_or_reply(embed=e)
+
+    @activity.command(aliases=["characters"])
+    @commands.guild_only()
+    async def char(self, ctx, unit: str = "day"):
+        if ctx.author.id not in self.bot.constants.owners:
+            return
+        unit = unit.lower()
+        time_dict = {"day": 86400, "week": 604800, "month": 2592000, "year": 31556952}
+        if unit not in time_dict:
+            unit = "month"
+        time_seconds = time_dict.get(unit, 2592000)
+        now = int(datetime.datetime.utcnow().timestamp())
+        diff = now - time_seconds
+        query = """SELECT SUM(LENGTH(content)) as c, author_id, COUNT(*) FROM messages WHERE server_id = $1 AND unix > $2 GROUP BY author_id ORDER BY c DESC LIMIT 25"""
+        stuff = await self.bot.cxn.fetch(query, ctx.guild.id, diff)
+        e = discord.Embed(
+            title="Current leaderboard",
+            description=f"Activity for the last {unit}",
+            color=self.bot.constants.embed,
+        )
+        for n, v in enumerate(stuff):
+            try:
+                name = ctx.guild.get_member(int(v[1])).name
+            except AttributeError:
+                name = "Unknown member"
+            # ratio = int(v[0] / 1440)
+            # e.add_field(name=f"{n+1}. {name}", value=f"{v[0]:,} chars ({ratio} chars/minute)")
+            e.add_field(name=f"{n+1}. {name}", value=f"{v[0]:,} chars")
+
+        await ctx.send_or_reply(embed=e)

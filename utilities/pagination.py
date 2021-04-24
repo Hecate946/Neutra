@@ -298,7 +298,7 @@ class Message:
             if not dfile:
                 # File doesn't exist...
                 try:
-                    await ctx.send(
+                    await ctx.send_or_reply(
                         "An error occurred!\nThe file specified couldn't be sent :("
                     )
                 except Exception:
@@ -324,7 +324,7 @@ class Message:
                 if self.force_pm:
                     # send an error message
                     try:
-                        await ctx.send(
+                        await ctx.send_or_reply(
                             "An error occurred!\nCould not dm this message to you :("
                         )
                     except Exception:
@@ -332,7 +332,7 @@ class Message:
                         pass
                     return None
                 pass
-        return await ctx.send(message, file=send_file, delete_after=self.delete_after)
+        return await ctx.send_or_reply(message, file=send_file, delete_after=self.delete_after)
 
     async def send(self, ctx):
         if not ctx or not self.message or not len(self.message):
@@ -493,12 +493,11 @@ class Embed:
                     return None
                 pass
         if send_file:
-            return await ctx.send(
+            return await ctx.send_or_reply(
                 embed=embed, file=send_file, delete_after=self.delete_after
             )
         else:
-            return await ctx.send(
-                reference=ctx.bot.rep_ref(ctx),
+            return await ctx.send_or_reply(
                 embed=embed,
                 delete_after=self.delete_after,
             )
@@ -919,11 +918,11 @@ class Picker:
             await self.self_message.edit(content=msg, embed=None)
         else:
             if type(msg) is discord.Embed:
-                self.self_message = await self.ctx.send(
-                    reference=self.ctx.bot.rep_ref(self.ctx), embed=msg
+                self.self_message = await self.ctx.send_or_reply(
+                    embed=msg
                 )
             else:
-                self.self_message = await self.ctx.send(msg)
+                self.self_message = await self.ctx.send_or_reply(msg)
         # Add our reactions
         await self._add_reactions(self.self_message, current_reactions)
         # Now we would wait...
@@ -1040,7 +1039,7 @@ class PagePicker(Picker):
             )
             if ind == 4:
                 # User selects a page
-                page_instruction = await self.ctx.send(
+                page_instruction = await self.ctx.send_or_reply(
                     "Type the number of that page to go to from {} to {}.".format(
                         1, pages
                     )
