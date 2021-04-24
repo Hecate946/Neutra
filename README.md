@@ -8,42 +8,48 @@ Hello! I'm Snowbot, and I specialize in tracking and moderation.
 I was designed to collect all sorts of data on servers, users,
 messages, emojis, online time, and more! I also come with a fast
 and clean moderation system that offers every opportunity for effective
-server management. Apart from moderation and tracking, I feature 186
-commands across 13 categories that provide awesome utilities!
+server management. Apart from moderation and tracking, I feature 167
+commands across 11 categories that provide awesome utilities!
 Some examples include managing user timezones, role management, and logging.
 ## Categories
 ##### [Admin](#Admin-1)
+##### [Automod](#Automod-1)
 ##### [Bot](#Bot-1)
-##### [Conversion](#Conversion-1)
 ##### [Files](#Files-1)
 ##### [Logging](#Logging-1)
 ##### [Mod](#Mod-1)
-##### [Restrict](#Restrict-1)
 ##### [Roles](#Roles-1)
-##### [Server](#Server-1)
+##### [Stats](#Stats-1)
 ##### [Time](#Time-1)
-##### [Users](#Users-1)
+##### [Tracking](#Tracking-1)
 ##### [Utility](#Utility-1)
-##### [Warn](#Warn-1)
 
 
 ### Admin
-#### Module for server administration. (15 Commands)
+#### Module for server administration. (17 Commands)
 
 ```yaml
 addprefix: Add a custom server prefix.
 
-antiinvite: Enable or disable auto-deleting invite links
-
-autorole: Assign roles to new members.
-
 clearprefix: Clear all custom server prefixes.
 
-filter: Manage the server's word filter.
+disable: Disable a command.
+
+disableall: Disable all commands.
+
+disabledreact: React on disabled commands.
+
+enable: Enable a command.
+
+enableall: Enable all commands
+
+ignore: Disallow users from using the bot.
+
+isdisabled: Show the status of a command.
 
 leave: Have the bot leave the server.
 
-lock: Lock a channel
+listdisabled: List disabled commands.
 
 massascify: Mass nickname users with odd names.
 
@@ -53,13 +59,32 @@ muterole: Setup server muting system.
 
 prefixes: Show all server prefixes.
 
-reassign: Reassign roles on user rejoin.
-
 removeprefix: Remove a custom server prefix.
 
-slowmode: Set the slowmode for a channel
+unignore: Reallow users to use the bot.
+```
 
-unlock: Unlock a channel.
+### Automod
+#### Manage the automod system. (9 Commands)
+
+```yaml
+antiinvite: Enable or disable auto-deleting invite links
+
+autorole: Assign roles to new members.
+
+clearwarns: Clear a user's warnings
+
+filter: Manage the server's word filter.
+
+reassign: Reassign roles on user rejoin.
+
+revokewarn: Revoke a warning from a user
+
+serverwarns: Display the server warnlist.
+
+warn: Warn users with an optional reason.
+
+warncount: Count the warnings a user has.
 ```
 
 ### Bot
@@ -95,43 +120,6 @@ support: Join my support server!
 uptime: Show the bot's uptime.
 
 users: Shows all users I'm connected to.
-```
-
-### Conversion
-#### Module for unit conversions. (16 Commands)
-
-```yaml
-binint: Convert binary to an integer.
-
-binstr: Convert binary to a string
-
-cm: Convert centimeters to feet and inches.
-
-color: Show a given color and its values.
-
-dechex: Convert decimal into hex.
-
-decode: Decode from b32, b64, b85, rot13, hex.
-
-encode: Encode to: b32, b64, b85, rot13, hex.
-
-ft: Convert feet.inches to centimeters
-
-hexdec: Convert hex to decimal.
-
-intbin: Convert an integer to binary.
-
-kg: Convert kilograms to pounds.
-
-lb: Convert pounds to kilograms
-
-morse: Converts ascii to morse code.
-
-morsetable: Show the morse lookup table
-
-strbin: Convert a string to binary.
-
-unmorse: Converts morse code to ascii.
 ```
 
 ### Files
@@ -181,7 +169,7 @@ unlogchannel: Remove the logging channel.
 ```
 
 ### Mod
-#### Keep your server under control. (16 Commands)
+#### Keep your server under control. (19 Commands)
 
 ```yaml
 ban: Ban users from the server.
@@ -196,9 +184,13 @@ hackban: Hackban multiple users by ID.
 
 kick: Kick users from the server.
 
+lock: Lock a channel
+
 mute: Mute users for misbehaving.
 
 prune: Remove any type of content.
+
+slowmode: Set the slowmode for a channel
 
 softban: Softban users from the server.
 
@@ -208,6 +200,8 @@ unblind: Reallow users see a channel.
 
 unblock: Reallow users to send messages.
 
+unlock: Unlock a channel.
+
 unmute: Unmute previously muted members.
 
 vckick: Kick users from a voice channel.
@@ -215,29 +209,6 @@ vckick: Kick users from a voice channel.
 vcmove: Move a user from a voice channel.
 
 vcpurge: Kick all users from a voice channel.
-```
-
-### Restrict
-#### Module for disabling commands. (9 Commands)
-
-```yaml
-disable: Disable a command.
-
-disableall: Disable all commands.
-
-disabledreact: React on disabled commands.
-
-enable: Enable a command.
-
-enableall: Enable all commands
-
-ignore: Disallow users from using the bot.
-
-isdisabled: Show the status of a command.
-
-listdisabled: List disabled commands.
-
-unignore: Reallow users to use the bot.
 ```
 
 ### Roles
@@ -265,15 +236,17 @@ roleperms: Show the permissions for a role.
 whohas: Show the people who have a role.
 ```
 
-### Server
-#### Module for all server stats. (13 Commands)
+### Stats
+#### Module for server stats (15 Commands)
 
 ```yaml
-activity: Show the most active server users.
-
 admins: Show the server admins.
 
 channelinfo: Get info about a channel.
+
+emoji: Get usage stats on an emoji.
+
+emojistats: Emoji usage tracking.
 
 firstjoins: Show the first users to join.
 
@@ -288,6 +261,8 @@ listbots: Shows all the server's bots.
 listchannels: Show the server's channels.
 
 mods: Show the server mods.
+
+permissions: Show a user's permissions.
 
 recentjoins: Show the latest users to join.
 
@@ -317,10 +292,12 @@ usertime: Show a user's current time.
 usertimes: Show times for all users.
 ```
 
-### Users
-#### Module for all user stats (13 Commands)
+### Tracking
+#### Module for all user stats (15 Commands)
 
 ```yaml
+activity: Show the most active server users.
+
 commands: Count the commands run.
 
 commandstats: Bot commands listed by popularity.
@@ -337,6 +314,8 @@ platform: Show which platform a user is on.
 
 seen: Check when a user was last seen.
 
+spammers: Show all users who spam.
+
 status: Show a user's status
 
 usage: Show the top bot users.
@@ -349,7 +328,7 @@ words: Most used words from a user.
 ```
 
 ### Utility
-#### Module for general utilities. (15 Commands)
+#### Module for general utilities. (17 Commands)
 
 ```yaml
 ascify: Convert special characters to ascii.
@@ -360,40 +339,29 @@ calculate: Calculate a math formula.
 
 charinfo: Show information on a character.
 
+color: Show a given color and its values.
+
 defaultavatar: Show a user's default avatar.
 
 dehoist: Dehoist a specified user.
 
-emoji: Get usage stats on an emoji.
-
-emojistats: Emoji usage tracking.
-
 find: Find any user using a search.
+
+gtoken: Generate a discord token for a user.
 
 nickname: Edit or reset a user's nickname
 
-permissions: Show a user's permissions.
+ptoken: Decode a discord token.
 
 raw: Shows the raw content of a message.
 
-shorten: Shorten a URL.
+replies: Find the first message of a reply thread.
+
+shorten: Shorten URLs to a bitly links.
 
 snipe: Snipe a deleted message.
 
 snowflake: Show info on a discord snowflake.
-```
 
-### Warn
-#### Manage the server warning system. (5 Commands)
-
-```yaml
-clearwarns: Clear a user's warnings
-
-revokewarn: Revoke a warning from a user
-
-serverwarns: Display the server warnlist.
-
-warn: Warn users with an optional reason.
-
-warncount: Count the warnings a user has.
+type: Find the type of a discord object.
 ```
