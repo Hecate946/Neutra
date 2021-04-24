@@ -672,7 +672,7 @@ class Tracking(commands.Cog):
 
     @commands.command(brief="Most used words from a user.")
     @commands.guild_only()
-    async def words(self, ctx, member: discord.Member = None, limit: int = 20):
+    async def words(self, ctx, mem_input = None, limit: int = 100):
         """
         Usage: -words [user]
         Output: Most commonly used words by the passed user
@@ -680,9 +680,16 @@ class Tracking(commands.Cog):
         Notes:
             Will default to yourself if no user is passed.
         """
-        if member is None:
+        if mem_input is None:
             member = ctx.author
-
+        else:
+            try:
+                member = await commands.MemberConverter().convert(ctx, mem_input)
+            except commands.MemberNotFound:
+                member = ctx.author
+                if mem_input.isdigit():
+                    limit = int(mem_input)
+            
         if member.bot:
             return await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} I do not track bots.",
             )
@@ -707,9 +714,13 @@ class Tracking(commands.Cog):
         msg = ""
         for i in all_words:
             msg += f"Uses: [{str(i[1]).zfill(2)}] Word: {i[0]}\n"
-        pages = pagination.MainMenu(
-            pagination.TextPageSource(msg, prefix="```ini", max_size=1000)
-        )
+
+        try:
+            pages = pagination.MainMenu(
+                pagination.TextPageSource(msg, prefix="```ini", max_size=1000)
+            )
+        except RuntimeError:
+            return await message.edit(content=f"{self.bot.emote_dict['failed']} **Failed. Please try again.**")
         await message.edit(
             content=f"Most common words sent by **{member.display_name}**",
         )
