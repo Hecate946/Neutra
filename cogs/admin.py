@@ -846,7 +846,7 @@ class Admin(commands.Cog):
     #     Example: -prefix $
     #     Permission: Manage Server
     #     Notes:
-    #         The bot will always respond to @Hypernova in addition
+    #         The bot will always respond to @Snowbot in addition
     #         to the set prefix. The default prefix is -.
     #         The bot will only respond to that prefix in DMs.
     #         The new prefix set must be under 5 characters.

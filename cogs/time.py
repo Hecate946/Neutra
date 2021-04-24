@@ -23,7 +23,7 @@ class Time(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.stopwatches = {}
-        self.geo = geocoders.Nominatim(user_agent="Hypernova")
+        self.geo = geocoders.Nominatim(user_agent="Snowbot")
 
     @commands.command(
         brief="Remove your timezone.",

@@ -119,7 +119,7 @@ async def get_prefix(bot, message):
 
 
 # Main bot class. Heart of the application
-class Hypernova(commands.AutoShardedBot):
+class Snowbot(commands.AutoShardedBot):
     def __init__(self):
 
         super().__init__(
@@ -657,7 +657,7 @@ class Hypernova(commands.AutoShardedBot):
         return self.get_channel(835199229890658324)
 
 
-bot = Hypernova()
+bot = Snowbot()
 
 class BotContext(commands.Context):
     def __init__(self, **kwargs):

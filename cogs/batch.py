@@ -9,7 +9,7 @@ from discord.ext import commands, tasks
 
 from utilities import utils, converters, decorators
 
-command_logger = logging.getLogger("Hypernova")
+command_logger = logging.getLogger("Snowbot")
 
 EMOJI_REGEX = re.compile(r"<a?:.+?:([0-9]{15,21})>")
 EMOJI_NAME_REGEX = re.compile(r"[0-9a-zA-Z\_]{2,32}")

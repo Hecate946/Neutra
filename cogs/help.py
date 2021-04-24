@@ -109,8 +109,8 @@ class Help(commands.Cog):
     async def category_embed(self, ctx, cog, list, pm, delete_after):
         embed = discord.Embed(
             title=f"Category: `{cog}`",
-            description=f"**Bot Invite Link:** [https://hypernova.discord.bot]({self.bot.constants.oauth})\n"
-            f"**Support Server:**  [https://discord.gg/hypernova]({self.bot.constants.support})\n",
+            description=f"**Bot Invite Link:** [https://snowbot.discord.bot]({self.bot.constants.oauth})\n"
+            f"**Support Server:**  [https://discord.gg/snowbot]({self.bot.constants.support})\n",
             color=self.bot.constants.embed,
         )
         embed.set_footer(
@@ -139,7 +139,7 @@ class Help(commands.Cog):
         except discord.Forbidden:
             pass
 
-    @commands.command(name="help", brief="Hypernova's Help Command")
+    @commands.command(name="help", brief="Snowbot's Help Command")
     async def _help(self, ctx, invokercommand: str = None, pm=False, delete_after=None):
         """
         Usage:  -help [command/category] [pm = true]
@@ -170,8 +170,8 @@ class Help(commands.Cog):
             embed = discord.Embed(
                 title=f"{self.bot.user.name}'s Help Command",
                 url="https://discord.gg/947ramn",
-                description=f"**Bot Invite Link:** [https://hypernova.discord.bot]({self.bot.constants.oauth})\n"
-                f"**Support Server:**  [https://discord.gg/hypernova]({self.bot.constants.support})",
+                description=f"**Bot Invite Link:** [https://snowbot.discord.bot]({self.bot.constants.oauth})\n"
+                f"**Support Server:**  [https://discord.gg/snowbot]({self.bot.constants.support})",
                 color=self.bot.constants.embed,
             )
 
@@ -463,8 +463,8 @@ class Help(commands.Cog):
                 if valid_commands != "":
                     help_embed = discord.Embed(
                         title=f"Category: `{valid_cog.title()}`",
-                        description=f"**Bot Invite Link:** [https://hypernova.discord.bot]({self.bot.constants.oauth})\n"
-                        f"**Support Server:**  [https://discord.gg/hypernova]({self.bot.constants.support})",
+                        description=f"**Bot Invite Link:** [https://snowbot.discord.bot]({self.bot.constants.oauth})\n"
+                        f"**Support Server:**  [https://discord.gg/snowbot]({self.bot.constants.support})",
                         color=self.bot.constants.embed,
                     )
                     help_embed.set_footer(

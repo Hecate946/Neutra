@@ -136,7 +136,7 @@ class Bot(commands.Cog):
         """
         Usage:    -bugreport <report>
         Aliases:  -issuereport, -reportbug, -reportissue
-        Examples: -bugreport Hello! I found a bug with Hypernova
+        Examples: -bugreport Hello! I found a bug with Snowbot
         Output:   Confirmation that your bug report has been sent.
         Notes:
             Do not hesitate to use this command,
@@ -483,7 +483,7 @@ class Bot(commands.Cog):
         Notes:
             If no command is specified, shows full repository
         """
-        source_url = "https://github.com/Hecate946/Hypernova"
+        source_url = "https://github.com/Hecate946/Snowbot"
         branch = "main"
         if command is None:
             return await ctx.send_or_reply(source_url)
@@ -510,7 +510,7 @@ class Bot(commands.Cog):
             location = os.path.relpath(filename).replace("\\", "/")
         else:
             location = module.replace(".", "/") + ".py"
-            source_url = "https://github.com/Hecate946/Hypernova"
+            source_url = "https://github.com/Hecate946/Snowbot"
             branch = "main"
 
         final_url = f"<{source_url}/blob/{branch}/{location}#L{firstlineno}-L{firstlineno + len(lines) - 1}>"
