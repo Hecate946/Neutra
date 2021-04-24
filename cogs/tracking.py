@@ -694,7 +694,7 @@ class Tracking(commands.Cog):
                 FROM messages
                 WHERE author_id = $1
                 AND server_id = $2;
-                """,
+                """
         all_msgs = await self.bot.cxn.fetch(
             query,
             member.id,
