@@ -49,7 +49,7 @@ class Batch(commands.Cog):
 
     @tasks.loop(seconds=2.0)
     async def bulk_inserter(self):
-
+        self.bot.batch_inserts += 1
         # Insert all the commands executed.
         if self.command_batch:
             query = """
@@ -306,6 +306,7 @@ class Batch(commands.Cog):
                     await self.bot.cxn.execute(query, str(roles), user_id, server_id)
                 self.bot.rolechanges += len(self.roles_batch.items())
                 self.roles_batch.clear()
+
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()

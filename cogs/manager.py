@@ -42,6 +42,13 @@ class Manager(commands.Cog):
             return
         return True
 
+    @commands.command(brief="Get the batch insert count.")
+    async def batches(self, ctx):
+        """
+        Usage: -batches
+        """
+        await ctx.send_or_reply(f"{self.bot.emote_dict['db']} {self.bot.user} ({self.bot.user.id}) Batch Inserts: {self.bot.batch_inserts}")
+
     @commands.command(
         name="eval", aliases=["evaluate", "e"], brief="Evaluate python code."
     )
@@ -1154,57 +1161,25 @@ class Manager(commands.Cog):
         if subcommand is None:
             return await ctx.send_help(str(ctx.command))
 
-        url = self.bot.constants.github
+        if subcommand == "give":
+            subcommand = "git add . && git commit -m 'update' && git push"
 
-        # Let's find out if we *have* git first
-        if os.name == "nt":
-            # Check for git
-            command = "where"
-        else:
-            command = "which"
-        try:
-            p = subprocess.run(
-                command + " git",
-                shell=True,
-                check=True,
-                stderr=subprocess.DEVNULL,
-                stdout=subprocess.PIPE,
-            )
-            git_location = p.stdout.decode("utf-8").split("\n")[0].split("\r")[0]
-        except:
-            git_location = None
-
-        if not git_location:
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['error']} Git not found.",
-            )
-            return
-        # Try to update
         message = await ctx.send_or_reply(
             content=f"{self.bot.emote_dict['loading']} **Updating...**",
         )
-        try:
-            u = subprocess.Popen(
-                [git_location, subcommand, url],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-            out, err = u.communicate()
-            msg = "```\n"
-            if len(out.decode("utf-8")):
-                msg += out.decode("utf-8").replace("`", "\`") + "\n"
-            if len(err.decode("utf-8")):
-                msg += err.decode("utf-8").replace("`", "\`") + "\n"
-            msg += "```"
-            await ctx.send_or_reply(msg)
-            await message.edit(
-                content=f"{self.bot.emote_dict['success']} **Completed.**"
-            )
-        except:
-            await message.edit(
-                content=f"{self.bot.emote_dict['failed']} Git not installed."
-            )
-            return
+        async with ctx.typing():
+            stdout, stderr = await self.run_process(subcommand)
+
+        if stderr:
+            text = f"stdout:\n{stdout}\nstderr:\n{stderr}"
+        else:
+            text = stdout
+
+        await self.bot.hecate.send(text)
+
+        await message.edit(
+            content=f"{self.bot.emote_dict['success']} **Completed.**"
+        )
 
     @commands.command(hidden=True, brief="Run a command as another user.")
     async def sudo(

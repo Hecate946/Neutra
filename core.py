@@ -453,7 +453,7 @@ class Snowbot(commands.AutoShardedBot):
         await cleanup.cleanup_servers(self.guilds)
 
         try:
-            channel = self.get_channel(constants.reboot["channel"])
+            channel = await self.fetch_channel(constants.reboot["channel"])
             msg = channel.get_partial_message(constants.reboot["message"])
             await msg.edit(
                 content=self.emote_dict["success"]
@@ -461,7 +461,7 @@ class Snowbot(commands.AutoShardedBot):
                 + "{0}ed Successfully.".format(constants.reboot["invoker"])
             )
         except Exception as e:
-            print(e)
+            await self.hecate.send(e)
             pass
 
     async def set_status(self):
@@ -537,9 +537,6 @@ class Snowbot(commands.AutoShardedBot):
             )
             pass
 
-        elif isinstance(error, discord.errors.Forbidden):
-            pass
-
         elif isinstance(error, commands.CommandInvokeError):
             err = utils.traceback_maker(error.original, advance=True)
             if "or fewer" in str(error):
@@ -601,6 +598,14 @@ class Snowbot(commands.AutoShardedBot):
                 )
             )
             traceback_logger.warning(str(err) + "\n")
+            # destination = f"\n\tLocation: {str(ctx.author)} in #{ctx.channel} [{ctx.channel.id}] ({ctx.guild}) [{ctx.guild.id}]:\n"
+            # message = f"\tContent: {ctx.message.clean_content}\n"
+            # tb = traceback.format_exc().split("\n")
+            # location = "./" + "/".join(tb[3].split("/")[-4:])
+            # error = f'\tFile: "{location + tb[4]}:\n\tException: {sys.exc_info()[0].__name__}: {sys.exc_info()[1]}\n'
+            # content = destination + message + error + "\n"
+            # await ctx.log("e", content)
+
 
     async def on_guild_join(self, guild):
         if self.bot_ready is False:
@@ -631,21 +636,17 @@ class Snowbot(commands.AutoShardedBot):
                     f"Hey {message.author.mention}! if you're looking to invite me to your server, use this link:\n<{self.constants.oauth}>"
                 )
 
-    try:
 
-        async def on_error(self, event, *args, **kwargs):
-            print(traceback.format_exc())
-            ctx = await self.get_context(args[0])
-            destination = f"\n\tLocation: {str(ctx.author)} in #{ctx.channel} [{ctx.channel.id}] ({ctx.guild}) [{ctx.guild.id}]:\n"
-            message = f"\tContent: {args[0].clean_content}\n"
-            tb = traceback.format_exc().split("\n")
-            location = "./" + "/".join(tb[3].split("/")[-4:])
-            error = f'\tFile: "{location + tb[4]}:\n\tException: {sys.exc_info()[0].__name__}: {sys.exc_info()[1]}\n'
-            content = destination + message + error + "\n"
-            await ctx.log("e", content)
-
-    except Exception as e:
-        print(e)
+    async def on_error(self, event, *args, **kwargs):
+        print(traceback.format_exc())
+        ctx = await self.get_context(args[0])
+        destination = f"\n\tLocation: {str(ctx.author)} in #{ctx.channel} [{ctx.channel.id}] ({ctx.guild}) [{ctx.guild.id}]:\n"
+        message = f"\tContent: {args[0].clean_content}\n"
+        tb = traceback.format_exc().split("\n")
+        location = "./" + "/".join(tb[3].split("/")[-4:])
+        error = f'\tFile: "{location + tb[4]}:\n\tException: {sys.exc_info()[0].__name__}: {sys.exc_info()[1]}\n'
+        content = destination + message + error + "\n"
+        await ctx.log("e", content)
 
     async def get_context(self, message, *, cls=None):
         """Override get_context to use a custom Context"""
@@ -659,7 +660,6 @@ class Snowbot(commands.AutoShardedBot):
     @property
     def bot_channel(self):
         return self.get_channel(835199229890658324)
-
 
 bot = Snowbot()
 
