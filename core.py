@@ -14,11 +14,11 @@ import aiohttp
 import discord
 from alive_progress import alive_bar
 from colr import color
-from discord.ext import commands, tasks
+from discord.ext import commands, menus, tasks
 from discord_slash.client import SlashCommand
 
 from settings import cleanup, constants, database
-from utilities import utils
+from utilities import utils, pagination
 
 MAX_LOGGING_BYTES = 32 * 1024 * 1024  # 32 MiB
 COGS = [x[:-3] for x in sorted(os.listdir("././cogs")) if x.endswith(".py")]
@@ -606,7 +606,6 @@ class Snowbot(commands.AutoShardedBot):
             # content = destination + message + error + "\n"
             # await ctx.log("e", content)
 
-
     async def on_guild_join(self, guild):
         if self.bot_ready is False:
             return
@@ -636,7 +635,6 @@ class Snowbot(commands.AutoShardedBot):
                     f"Hey {message.author.mention}! if you're looking to invite me to your server, use this link:\n<{self.constants.oauth}>"
                 )
 
-
     async def on_error(self, event, *args, **kwargs):
         print(traceback.format_exc())
         ctx = await self.get_context(args[0])
@@ -661,6 +659,7 @@ class Snowbot(commands.AutoShardedBot):
     def bot_channel(self):
         return self.get_channel(835199229890658324)
 
+
 bot = Snowbot()
 
 
@@ -669,10 +668,10 @@ class BotContext(commands.Context):
         super().__init__(**kwargs)
 
     async def fail(self, content=None, **kwargs):
-        return await self.send_or_reply(bot.emote_dict["failed"] + content)
+        return await self.send_or_reply(bot.emote_dict["failed"] + " " + content)
 
     async def success(self, content=None, **kwargs):
-        return await self.send_or_reply(bot.emote_dict["success"] + content)
+        return await self.send_or_reply(bot.emote_dict["success"] + " " + content)
 
     async def log(self, _type=None, content=None, **kwargs):
         if _type in ["info", "i", "information"]:

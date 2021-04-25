@@ -74,20 +74,23 @@ class Config(commands.Cog):
     @commands.group(case_insensitive=True, brief="Change the bot's specifications.")
     async def change(self, ctx):
         """
-        Usage:      -change <method> <new>
-        Examples:   -change name Milky Way, -change avatar <url>
+        Usage: -change <options> <new>
+        Examples:
+            -change name Milky Way
+            -change avatar <url>
         Permission: Bot Owner
-        Output:     Edited Bot Specification.
-        Methods:
-            avatar        (Alias: pfp)
-            nickname      (Alias: nick)
-            username      (Alias: name)
+        Output: Edits the specified bot attribute.
+        Options:
+            avatar, nickname, username
         """
         if ctx.invoked_subcommand is None:
             return await ctx.usage("<method> <new value>")
 
     @change.command(
-        name="username", hidden=True, aliases=["name", "user"], brief="Change username."
+        name="username",
+        hidden=True,
+        aliases=["name", "user"],
+        brief="Change the bot's username.",
     )
     async def change_username(self, ctx, *, name: str):
         try:
@@ -113,7 +116,7 @@ class Config(commands.Cog):
         except Exception as err:
             await ctx.send_or_reply(err)
 
-    @change.command(name="avatar", hidden=True, brief="Change avatar.")
+    @change.command(name="avatar", hidden=True, brief="Change the bot's avatar.")
     async def change_avatar(self, ctx, url: str = None):
         if url is None and len(ctx.message.attachments) == 0:
             return await ctx.send_or_reply(
@@ -146,7 +149,7 @@ class Config(commands.Cog):
                 content="Provide an attachment or a valid URL.",
             )
 
-    @change.command(brief="Change the bot default presence", aliases=["pres"])
+    @change.command(brief="Change the bot's presence", aliases=["pres"])
     async def presence(self, ctx, *, presence: str = ""):
         if ctx.author.id not in self.bot.constants.owners:
             return None
@@ -159,7 +162,7 @@ class Config(commands.Cog):
         self.bot.constants.presence = presence
         await ctx.send_or_reply(msg)
 
-    @change.command(brief="Set the bot's default status type.")
+    @change.command(brief="Set the bot's status type.")
     async def status(self, ctx, status: str = None):
         if ctx.author.id not in self.bot.constants.owners:
             return
@@ -184,7 +187,7 @@ class Config(commands.Cog):
             content=f"{self.bot.emote_dict['success']} status now set as `{status}`",
         )
 
-    @change.command(brief="Set the bot's default activity type.", aliases=["action"])
+    @change.command(brief="Set the bot's activity type.", aliases=["action"])
     async def activity(self, ctx, activity: str = None):
 
         if activity.lower() in ["play", "playing", "game", "games"]:

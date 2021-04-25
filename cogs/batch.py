@@ -307,7 +307,6 @@ class Batch(commands.Cog):
                 self.bot.rolechanges += len(self.roles_batch.items())
                 self.roles_batch.clear()
 
-
     @commands.Cog.listener()
     @decorators.wait_until_ready()
     async def on_command(self, ctx):

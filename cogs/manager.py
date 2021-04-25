@@ -47,7 +47,9 @@ class Manager(commands.Cog):
         """
         Usage: -batches
         """
-        await ctx.send_or_reply(f"{self.bot.emote_dict['db']} {self.bot.user} ({self.bot.user.id}) Batch Inserts: {self.bot.batch_inserts}")
+        await ctx.send_or_reply(
+            f"{self.bot.emote_dict['db']} {self.bot.user} ({self.bot.user.id}) Batch Inserts: {self.bot.batch_inserts}"
+        )
 
     @commands.command(
         name="eval", aliases=["evaluate", "e"], brief="Evaluate python code."
@@ -821,7 +823,15 @@ class Manager(commands.Cog):
     )
     @commands.is_owner()
     async def command_history(self, ctx):
-        """Command history."""
+        """
+        Usage: -command_history <option> [args]
+        Output:
+            Recorded command history matching
+            the specified arguments.
+        Options:
+            command, server,
+            user, log, cog
+        """
         query = """SELECT
                         CASE failed
                             WHEN TRUE THEN command || ' [!]'
@@ -836,7 +846,7 @@ class Manager(commands.Cog):
                 """
         await self.tabulate_query(ctx, query)
 
-    @command_history.command(name="for")
+    @command_history.command(name="command", aliases=["for"])
     @commands.is_owner()
     async def command_history_for(
         self, ctx, days: typing.Optional[int] = 7, *, command: str
@@ -1175,11 +1185,9 @@ class Manager(commands.Cog):
         else:
             text = stdout
 
-        await self.bot.hecate.send("```prolog\n"+text+"```")
+        await self.bot.hecate.send("```prolog\n" + text + "```")
 
-        await message.edit(
-            content=f"{self.bot.emote_dict['success']} **Completed.**"
-        )
+        await message.edit(content=f"{self.bot.emote_dict['success']} **Completed.**")
 
     @commands.command(hidden=True, brief="Run a command as another user.")
     async def sudo(

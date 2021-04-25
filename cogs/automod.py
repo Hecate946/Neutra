@@ -352,7 +352,7 @@ class Automod(commands.Cog):
 
     @commands.group(
         case_insensitive=True,
-        aliases=["autoroles"],
+        aliases=["autoroles", "autoassign"],
         brief="Assign roles to new members.",
     )
     @permissions.bot_has_permissions(manage_roles=True)
@@ -360,29 +360,44 @@ class Automod(commands.Cog):
     async def autorole(self, ctx):
         """
         Usage: -autorole <option>
-        Example: -autorole add <role1> <role2>
+        Aliases:
+            -autoassign
+            -autoroles
+        Output: Assigns roles to new users
+        Examples:
+            -autorole add <role1> <role2>
+            -autorole show
         Permission: Manage Server, Manage Roles
-        Output: Assigns the roles to new users on server join.
         Options:
-            add  <role1> <role2>... Adds autoroles
-            remove <role1> <role2>... Removes autoroles
-            clear Deletes all autoroles
-            show Shows all current autoroles
+            add, remove, clear, show
         """
         if ctx.invoked_subcommand is None:
             return await ctx.usage("<option> [arguments]")
 
-    @autorole.command()
+    @autorole.command(brief="Auto-assign roles on user join.")
     async def add(self, ctx, roles: commands.Greedy[discord.Role] = None):
+        """
+        Usage: -autorole add <role1> [role2]...
+        Output:
+            Will automatically assign
+            the passed roles to users
+            who join the server.
+        Examples:
+            -autorole add <role1> [role2]
+            -autoassign add <role>
+        Notes:
+            Accepts any number of roles.
+            Roles with multiple words must
+            be encapsulated by quotes.
+        """
         if roles is None:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}autorole <roles>`",
-            )
+            return await ctx.usage("<roles>")
         for role in roles:
             self.bot.server_settings[ctx.guild.id]["autoroles"].append(role.id)
-        query = f"""UPDATE servers
-                    SET autoroles = $1
-                    WHERE server_id = $2;
+        query = f"""
+                UPDATE servers
+                SET autoroles = $1
+                WHERE server_id = $2;
                 """
         autoroles = ",".join(
             [str(x) for x in self.bot.server_settings[ctx.guild.id]["autoroles"]]
@@ -392,17 +407,33 @@ class Automod(commands.Cog):
             content=f"{self.bot.emote_dict['success']} Updated autorole settings.",
         )
 
-    @autorole.command(aliases=["rem", "rm"])
+    @autorole.command(aliases=["rem", "rm"], brief="Remove automatic autoroles.")
     async def remove(self, ctx, roles: commands.Greedy[discord.Role] = None):
+        """
+        Usage: -autorole remove <role1> [role2]...
+        Output:
+            Will no longer assign
+            the passed roles to users
+            who join the server.
+        Examples:
+            -autorole rm <role1> <role2>
+            -autoassign remove <role>
+        Notes:
+            Accepts any number of roles.
+            Roles with multiple words must
+            be encapsulated by quotes.
+        """
         if roles is None:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}autorole <roles>`",
-            )
+            return await ctx.usage("<roles>")
         autoroles = self.bot.server_settings[ctx.guild.id]["autoroles"]
         for role in roles:
             index = autoroles.index(str(role.id))
             autoroles.pop(index)
-        query = f"""UPDATE servers SET autoroles = $1 WHERE server_id = $2"""
+        query = f"""
+                UPDATE servers
+                SET autoroles = $1
+                WHERE server_id = $2;
+                """
         autoroles = ",".join(
             [str(x) for x in self.bot.server_settings[ctx.guild.id]["autoroles"]]
         )
@@ -411,20 +442,52 @@ class Automod(commands.Cog):
             content=f"{self.bot.emote_dict['success']} Updated autorole settings.",
         )
 
-    @autorole.command()
+    @autorole.command(brief="Clear all current autoroles.")
     async def clear(self, ctx):
-        self.bot.server_settings[ctx.guild.id]["autoroles"] = []
-        query = """UPDATE servers
-                   SET autoroles = NULL
-                   WHERE server_id = $1;
-                """
-        await self.bot.cxn.execute(query, ctx.guild.id)
-        await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['success']} Cleared all autoroles.",
-        )
+        """
+        Usage: -autorole clear
+        Output:
+            Will no longer assign
+            any previous autoroles
+            to users who join the server.
+        Examples:
+            -autorole rm <role1> [role2]
+            -autoassign remove <role>
+        Notes:
+            Will ask for confirmation.
+        """
+        if not self.bot.server_settings[ctx.guild.id]["autoroles"]:
+            return await ctx.fail("This server has no current autoroles.")
+        content = f"{self.bot.emote_dict['exclamation']} **This action will remove all current autoroles. Do you wish to continue?**"
+        p = await pagination.Confirmation(msg=content).prompt(ctx)
+        if p:
+            self.bot.server_settings[ctx.guild.id]["autoroles"] = []
+            query = """
+                    UPDATE servers
+                    SET autoroles = NULL
+                    WHERE server_id = $1;
+                    """
+            await self.bot.cxn.execute(query, ctx.guild.id)
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['success']} Cleared all autoroles.",
+            )
+        else:
+            await ctx.send_or_reply(
+                f"{self.bot.emote_dict['exclamation']} **Cancelled.**"
+            )
 
-    @autorole.command()
+    @autorole.command(brief="Show all current autoroles.", aliases=["display"])
     async def show(self, ctx):
+        """
+        Usage: -autorole show
+        Alias: -autorole display
+        Output:
+            Will start a pagination session
+            showing all current autoroles
+        Examples:
+            -autorole display
+            -autoassign show
+        """
         autoroles = self.bot.server_settings[ctx.guild.id]["autoroles"]
 
         if autoroles == []:
@@ -608,33 +671,44 @@ class Automod(commands.Cog):
     @permissions.has_permissions(manage_guild=True)
     async def _filter(self, ctx):
         """
-        Usage:      -filter <method>
-        Alias:      -profanity
-        Example:    -filter add <badwords>
+        Usage: -filter <option>
+        Alias: -profanity
         Permission: Manage Server
-        Output:     Adds, removes, clears, or displays the filter.
-        Methods:
-            add
-            remove
-            display     (Alias: show)
-            clear
+        Output:
+            Adds, removes, clears, or displays the filter.
+        Example:
+            -filter add <badwords>
+        Options:
+            add, remove, display, clear
         Notes:
-            Words added the the filter list will delete all
-            messages containing that word. Users with the
-            Manage Messages permission are immune. To add or
-            remove multiple words with one command, separate
-            the words with a comma.
-            Example: -filter add badword1, badword2, badword3
+            Words added to the filter list
+            will delete all messages with
+            that word. Users with the
+            Manage Messages permission are immune.
+            To add or remove multiple words with
+            one command, separate the words by a comma.
+            Example: -filter add badword1, badword2
         """
         if ctx.invoked_subcommand is None:
             help_command = self.bot.get_command("help")
             await help_command(ctx, invokercommand="filter")
 
-    @_filter.command(name="add", aliases=["+"])
+    @_filter.command(name="add", aliases=["+"], brief="Add words to the filter.")
     @permissions.has_permissions(manage_guild=True)
     async def add_words(self, ctx, *, words_to_filter: str = None):
+        """
+        Usage: -filter add <words>
+        Output:
+            Saves all the passed words
+            and will delete when users
+            without the Manage Messages
+            permission send those words.
+        Notes:
+            separate words by a comma
+            to add multiple words at once.
+        """
         if words_to_filter is None:
-            return await ctx.channel.send(f"Usage: `{ctx.prefix}filter add <word>`")
+            return await ctx.usage("<word>")
 
         words_to_filter = words_to_filter.split(",")
 
@@ -668,11 +742,21 @@ class Automod(commands.Cog):
 
     @_filter.command(
         name="remove",
-        aliases=["-"],
-        brief="Remove a word from the servers filtere list",
+        aliases=["-", "rm", "rem"],
+        brief="Removes words from the filter.",
     )
     @permissions.has_permissions(manage_guild=True)
     async def remove_words(self, ctx, *, words: str = None):
+        """
+        Usage: -filter remove <words>
+        Alias: --, -rm , -rem
+        Output:
+            Deletes the passed words from
+            the filter (if they were saved.)
+        Notes:
+            separate words by a comma
+            to remove multiple words at once.
+        """
         if words is None:
             return await ctx.send_or_reply(
                 content=f"Usage: `{ctx.prefix}filter remove <word>`",
@@ -699,7 +783,11 @@ class Automod(commands.Cog):
 
         insertion = ",".join(word_list)
 
-        query = """UPDATE servers SET profanities = $1 WHERE server_id = $2;"""
+        query = """
+                UPDATE servers
+                SET profanities = $1
+                WHERE server_id = $2;
+                """
         await self.bot.cxn.execute(query, insertion, ctx.guild.id)
 
         if not_found:
@@ -714,11 +802,16 @@ class Automod(commands.Cog):
                 f"{'was' if len(removed) == 1 else 'were'} successfully removed from the word filter.",
             )
 
-    @_filter.command(
-        brief="Display a list of this server's filtered words.", aliases=["show"]
-    )
+    @_filter.command(brief="Show all filtered words.", aliases=["show"])
     @permissions.has_permissions(manage_guild=True)
     async def display(self, ctx):
+        """
+        Usage: -filter display
+        Alias: -filter show
+        Output:
+            Starts a pagination session to
+            show all currently filtered words.
+        """
         words = self.bot.server_settings[ctx.guild.id]["profanities"]
 
         if words == []:
@@ -740,7 +833,11 @@ class Automod(commands.Cog):
     @permissions.has_permissions(manage_guild=True)
     async def _clear(self, ctx):
 
-        query = """UPDATE servers SET profanities = NULL where server_id = $1;"""
+        query = """
+                UPDATE servers
+                SET profanities = NULL
+                WHERE server_id = $1;
+                """
         await self.bot.cxn.execute(query, ctx.guild.id)
         self.bot.server_settings[ctx.guild.id]["profanities"] = []
 

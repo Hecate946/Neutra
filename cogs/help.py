@@ -548,7 +548,7 @@ class Help(commands.Cog):
             color=self.bot.constants.embed,
         )
         help_embed.set_footer(
-            text=f'Use "{ctx.prefix}help {command.name} method" for information on a method.'
+            text=f'Use "{ctx.prefix}help {command.name} option" for information on a option.'
         )
         help_embed.add_field(
             name=f"**Command Group:** `{command.name.title()}`\n**Description:** `{brief}`\n",

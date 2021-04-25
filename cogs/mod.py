@@ -752,10 +752,10 @@ class Mod(commands.Cog):
     @permissions.has_permissions(manage_messages=True)
     async def purge(self, ctx):
         """
-        Usage: -purge <method> <amount>
+        Usage: -purge <option> <amount>
         Aliases: -prune, -delete, -remove
         Permission: Manage Messages
-        Methods:
+        Options:
             all, bots, contains, embeds,
             emojis, files, humans, images,
             invites, mentions, reactions,
@@ -783,7 +783,7 @@ class Mod(commands.Cog):
             try:
                 args[1]
             except IndexError:
-                return await ctx.usage("<method> [amount]")
+                return await ctx.usage("<option> [amount]")
             await self._remove_all(ctx, search=int(args[1]))
 
     async def do_removal(

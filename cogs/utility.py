@@ -1,4 +1,5 @@
 import base64
+import io
 import random
 import codecs
 import discord
@@ -32,7 +33,7 @@ from pyparsing import (
     oneOf,
 )
 
-from utilities import converters, pagination, permissions, utils
+from utilities import converters, pagination, permissions, utils, helpers
 
 
 def setup(bot):
@@ -366,7 +367,9 @@ class Utility(commands.Cog):
                 )
                 if original_type is None:
                     return await ctx.send_or_reply(
-                        content=f"{self.bot.emote_dict['failed']} Incorrect number of color values!  Hex takes 1, RGB takes 3, CMYK takes 4.",
+                        content=f"{self.bot.emote_dict['failed']} "
+                        "Incorrect number of color values! "
+                        "Hex takes 1, RGB takes 3, CMYK takes 4.",
                     )
                 # Verify values
                 max_val = (
@@ -378,7 +381,9 @@ class Utility(commands.Cog):
                 )
                 if not all((0 <= x <= max_val for x in color_values)):
                     return await ctx.send_or_reply(
-                        content="Value out of range!  Valid ranges are from `#000000` to `#FFFFFF` for Hex, `0` to `255` for RGB, and `0` to `100` for CMYK.",
+                        content="Value out of range! "
+                        "Valid ranges are from `#000000` to `#FFFFFF` for Hex, "
+                        "`0` to `255` for RGB, and `0` to `100` for CMYK.",
                     )
             em = discord.Embed()
             # Organize the data into the Message format expectations
@@ -412,21 +417,15 @@ class Utility(commands.Cog):
             )
             em.color = color
             # Create the image
-            file_path = "././data/wastebin/color.png"
-            try:
-                image = Image.new(
-                    mode="RGB", size=(256, 256), color=self._hex_int_to_tuple(color)
-                )
-                image.save(file_path)
-                ext = file_path.split(".")
-                fname = "Upload." + ext[-1] if len(ext) > 1 else "Upload"
-                dfile = discord.File(file_path, filename=fname)
-                em.set_image(url="attachment://" + fname)
-                await ctx.send_or_reply(embed=em, file=dfile)
-            except Exception as e:
-                raise
-            if os.path.exists(file_path):
-                os.remove(file_path)
+            image = Image.new(
+                mode="RGB", size=(256, 256), color=self._hex_int_to_tuple(color)
+            )
+            buffer = io.BytesIO()
+            image.save(buffer, "png")  # 'save' function for PIL
+            buffer.seek(0)
+            dfile = discord.File(fp=buffer, filename="color.png")
+            em.set_image(url="attachment://color.png")
+            await ctx.send_or_reply(embed=em, file=dfile)
 
     @commands.command(brief="Dehoist a specified user.")
     @permissions.bot_has_permissions(manage_nicknames=True)
@@ -632,13 +631,13 @@ class Utility(commands.Cog):
     @permissions.has_permissions(manage_messages=True)
     async def find(self, ctx):
         """
-        Usage: -find <method> <search>
+        Usage: -find <option> <search>
         Alias: -search
         Output: Users matching your search.
         Examples:
             -find name Hecate
             -find id 70858400
-        Methods:
+        Options:
             duplicates
             hardmention
             hash       (Ex: 3523)
@@ -648,7 +647,7 @@ class Utility(commands.Cog):
             username   (Ex: Hecate)
         """
         if ctx.invoked_subcommand is None:
-            return await ctx.usage("<method> <search>")
+            return await ctx.usage("<option> <search>")
 
     @find.command(
         name="playing",
