@@ -8,14 +8,14 @@ Hello! I'm Snowbot, and I specialize in tracking and moderation.
 I was designed to collect all sorts of data on servers, users,
 messages, emojis, online time, and more! I also come with a fast
 and clean moderation system that offers every opportunity for effective
-server management. Apart from moderation and tracking, I feature 167
+server management. Apart from moderation and tracking, I feature 169
 commands across 11 categories that provide awesome utilities!
 Some examples include managing user timezones, role management, and logging.
 ## Categories
 ##### [Admin](#Admin-1)
 ##### [Automod](#Automod-1)
-##### [Bot](#Bot-1)
 ##### [Files](#Files-1)
+##### [Info](#Info-1)
 ##### [Logging](#Logging-1)
 ##### [Mod](#Mod-1)
 ##### [Roles](#Roles-1)
@@ -87,41 +87,6 @@ warn: Warn users with an optional reason.
 warncount: Count the warnings a user has.
 ```
 
-### Bot
-#### Module for bot information. (15 Commands)
-
-```yaml
-about: Display information about the bot.
-
-botinvite: Invite me to your server!
-
-bugreport: Send a bugreport to the developer.
-
-changelog: Show my changelog.
-
-hostinfo: Show the bot's host environment.
-
-lines: Show sourcecode statistics.
-
-overview: Show some info on the bot's purpose.
-
-ping: Test the bot's response latency.
-
-sharedservers: Servers you and the bot share.
-
-source: Display the source code.
-
-speed: Bot network speed.
-
-suggest: Send a suggestion to the developer.
-
-support: Join my support server!
-
-uptime: Show the bot's uptime.
-
-users: Shows all users I'm connected to.
-```
-
 ### Files
 #### Module for downloading files. (14 Commands)
 
@@ -153,6 +118,43 @@ dumptimezones: DMs you a file of time zones.
 dumpvoicechannels: DMs you a file of voice channels.
 
 readme: DMs you my readme file.
+```
+
+### Info
+#### Module for bot information. (16 Commands)
+
+```yaml
+about: Display information about the bot.
+
+botinvite: Invite me to your server!
+
+bugreport: Send a bugreport to the developer.
+
+changelog: Show my changelog.
+
+hostinfo: Show the bot's host environment.
+
+lines: Show sourcecode statistics.
+
+neofetch: Run the neofetch command.
+
+overview: Show some info on the bot's purpose.
+
+ping: Test the bot's response latency.
+
+sharedservers: Servers you and the bot share.
+
+source: Display the source code.
+
+speed: Bot network speed.
+
+suggest: Send a suggestion to the developer.
+
+support: Join my support server!
+
+uptime: Show the bot's uptime.
+
+users: Shows all users I'm connected to.
 ```
 
 ### Logging
@@ -188,7 +190,7 @@ lock: Lock a channel
 
 mute: Mute users for misbehaving.
 
-prune: Remove any type of content.
+purge: Remove any type of content.
 
 slowmode: Set the slowmode for a channel
 
