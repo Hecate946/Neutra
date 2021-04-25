@@ -233,7 +233,7 @@ class Tracking(commands.Cog):
             except Exception:
                 pass
 
-            tracking = self.bot.get_cog("Tracker")
+            tracking = self.bot.get_cog("Batch")
 
             title_str = f"{self.bot.emote_dict['info']} Information on **{user}**"
             msg = ""
@@ -549,7 +549,7 @@ class Tracking(commands.Cog):
             return await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} I do not track bots.",
             )
 
-        tracker = self.bot.get_cog("Tracker")
+        tracker = self.bot.get_cog("Batch")
 
         data = await tracker.last_observed(user)
 
