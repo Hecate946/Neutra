@@ -830,7 +830,7 @@ class Files(commands.Cog):
         )
         premsg = ""
         premsg += f"# Snowbot Moderation & Stat Tracking Discord Bot\n"
-        premsg += "![6010fc1cf1ae9c815f9b09168dbb65a7-1](https://user-images.githubusercontent.com/74381783/108671227-f6d3f580-7494-11eb-9a77-9478f5a39684.png)\n"
+        #premsg += "![6010fc1cf1ae9c815f9b09168dbb65a7-1](https://user-images.githubusercontent.com/74381783/108671227-f6d3f580-7494-11eb-9a77-9478f5a39684.png)\n"
         premsg += f"### [Bot Invite Link]({self.bot.constants.oauth})\n"
         premsg += f"### [Support Server]({self.bot.constants.support})\n"
         premsg += (
