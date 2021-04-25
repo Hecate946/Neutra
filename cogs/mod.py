@@ -701,15 +701,15 @@ class Mod(commands.Cog):
     ###################
 
     @commands.group(brief="Remove any type of content.",
-                    aliases=["purge", "delete", "remove"])
+                    aliases=["prune", "delete", "remove"])
     @commands.guild_only()
     @commands.max_concurrency(5, per=commands.BucketType.guild)
     @permissions.bot_has_permissions(manage_messages=True)
     @permissions.has_permissions(manage_messages=True)
-    async def prune(self, ctx):
+    async def purge(self, ctx):
         """
-        Usage: -prune <method> <amount>
-        Aliases: -purge, -delete, -remove
+        Usage: -purge <method> <amount>
+        Aliases: -prune, -delete, -remove
         Permission: Manage Messages
         Output: Deletes messages that match criteria
         Examples: 
@@ -769,7 +769,7 @@ class Mod(commands.Cog):
             await ctx.message.delete()
             await msg.delete()
 
-    @prune.command(brief="Purge messages that contain embeds.")
+    @purge.command(brief="Purge messages that contain embeds.")
     async def embeds(self, ctx, search=100):
         """
         Usage: -purge embeds [amount]
@@ -783,7 +783,7 @@ class Mod(commands.Cog):
         """
         await self.do_removal(ctx, search, lambda e: len(e.embeds))
 
-    @prune.command(brief="Purge messages that contain invites.", aliases=['ads'])
+    @purge.command(brief="Purge messages that contain invites.", aliases=['ads'])
     async def invites(self, ctx, search=100):
         """
         Usage: -purge invites [amount]
@@ -800,7 +800,7 @@ class Mod(commands.Cog):
             return self.dregex.search(m.content)
         await self.do_removal(ctx, search, predicate)
 
-    @prune.command(aliases=['link', 'url', 'links'], brief="Purge messages that contain URLs.")
+    @purge.command(aliases=['link', 'url', 'links'], brief="Purge messages that contain URLs.")
     async def urls(self, ctx, search=100):
         """
         Usage: -purge urls [amount]
@@ -820,7 +820,7 @@ class Mod(commands.Cog):
             return self.uregex.search(m.content)
         await self.do_removal(ctx, search, predicate)
 
-    @prune.command(brief="Purge messages that contain attachments.", aliases=['attachments'])
+    @purge.command(brief="Purge messages that contain attachments.", aliases=['attachments'])
     async def files(self, ctx, search=100):
         """
         Usage: -purge files [amount]
@@ -835,7 +835,7 @@ class Mod(commands.Cog):
         """
         await self.do_removal(ctx, search, lambda e: len(e.attachments))
 
-    @prune.command(brief="Purge messages that contain mentions.", aliases=['pings', 'ping', 'mention'])
+    @purge.command(brief="Purge messages that contain mentions.", aliases=['pings', 'ping', 'mention'])
     async def mentions(self, ctx, search=100):
         """
         Usage: -purge mentions [amount]
@@ -854,7 +854,7 @@ class Mod(commands.Cog):
             ctx, search, lambda e: len(e.mentions) or len(e.role_mentions)
         )
 
-    @prune.command(brief="Purge messages that contain images.", aliases=["pictures", "pics", "image"])
+    @purge.command(brief="Purge messages that contain images.", aliases=["pictures", "pics", "image"])
     async def images(self, ctx, search=100):
         """
         Usage: -purge mentions [amount]
@@ -873,7 +873,7 @@ class Mod(commands.Cog):
             ctx, search, lambda e: len(e.embeds) or len(e.attachments)
         )
 
-    @prune.command(name="all", brief="Purge all messages.", aliases=['messages'])
+    @purge.command(name="all", brief="Purge all messages.", aliases=['messages'])
     async def _remove_all(self, ctx, search=100):
         """
         Usage: -purge all [amount]
@@ -889,7 +889,7 @@ class Mod(commands.Cog):
         """
         await self.do_removal(ctx, search, lambda e: True)
 
-    @prune.command(brief="Purge all messages sent by a user.", aliases=['member'])
+    @purge.command(brief="Purge all messages sent by a user.", aliases=['member'])
     async def user(self, ctx, member: discord.Member = None, search=100):
         """
         Usage: -purge user <user> [amount]
@@ -906,7 +906,7 @@ class Mod(commands.Cog):
             return await ctx.usage(f"<user> [amount]")
         await self.do_removal(ctx, search, lambda e: e.author == member)
 
-    @prune.command(brief="Purge all messages that contain a passed string.", aliases=["has"])
+    @purge.command(brief="Purge all messages that contain a passed string.", aliases=["has"])
     async def contains(self, ctx, *, substr: str):
         """
         Usage: -purge contains <string>
@@ -936,7 +936,7 @@ class Mod(commands.Cog):
         prefixes.append(f"<@!{self.bot.constants.client}")
         return prefixes
 
-    @prune.command(name="bots", brief="Purge all messages sent by bots.", aliases=['robots'])
+    @purge.command(name="bots", brief="Purge all messages sent by bots.", aliases=['robots'])
     async def _bots(self, ctx, search=100, prefix=None):
         """
         Usage: -purge bots [amount] [prefix]
@@ -970,7 +970,7 @@ class Mod(commands.Cog):
 
         await self.do_removal(ctx, search, predicate)
 
-    @prune.command(name="webhooks", aliases=["webhook"], brief="Purge all messages sent by wehooks.")
+    @purge.command(name="webhooks", aliases=["webhook"], brief="Purge all messages sent by wehooks.")
     async def webhooks(self, ctx, search=100):
         """
         Usage: -purge webhooks [amount]
@@ -988,7 +988,7 @@ class Mod(commands.Cog):
 
         await self.do_removal(ctx, search, predicate)
 
-    @prune.command(name="humans", aliases=["users", "members", "people"], brief="Purge all messages sent by humans.")
+    @purge.command(name="humans", aliases=["users", "members", "people"], brief="Purge all messages sent by humans.")
     async def _users(self, ctx, search=100):
         """
         Usage: -purge humans [amount]
@@ -1008,7 +1008,7 @@ class Mod(commands.Cog):
 
         await self.do_removal(ctx, search, predicate)
 
-    @prune.command(name="emojis", aliases=["emotes","emote", "emoji"], brief="Purge all messages that contain custom emojis.")
+    @purge.command(name="emojis", aliases=["emotes","emote", "emoji"], brief="Purge all messages that contain custom emojis.")
     async def _emojis(self, ctx, search=100):
         """
         Usage: -purge emojis [amount]
@@ -1030,7 +1030,7 @@ class Mod(commands.Cog):
 
         await self.do_removal(ctx, search, predicate)
 
-    @prune.command(name="reactions", brief="Purge all reactions from messages.")
+    @purge.command(name="reactions", brief="Purge all reactions from messages.")
     async def _reactions(self, ctx, search=100):
         """
         Usage: -purge emojis [amount]
@@ -1058,7 +1058,7 @@ class Mod(commands.Cog):
             delete_after=7,
         )
 
-    @prune.command(name="until", aliases=["after"], brief="Purge all messages until a specified message.")
+    @purge.command(name="until", aliases=["after"], brief="Purge all messages until a specified message.")
     async def _until(self, ctx, message_id: int):
         """
         Usage: -purge until <message id>
