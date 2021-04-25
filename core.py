@@ -104,6 +104,7 @@ traceback_logger_format = logging.Formatter(
 )
 traceback_logger_handler.setFormatter(traceback_logger_format)
 
+
 async def get_prefix(bot, message):
     if not message.guild:
         prefix = constants.prefix
@@ -629,17 +630,20 @@ class Snowbot(commands.AutoShardedBot):
                 await message.channel.send(
                     f"Hey {message.author.mention}! if you're looking to invite me to your server, use this link:\n<{self.constants.oauth}>"
                 )
+
     try:
+
         async def on_error(self, event, *args, **kwargs):
             print(traceback.format_exc())
             ctx = await self.get_context(args[0])
             destination = f"\n\tLocation: {str(ctx.author)} in #{ctx.channel} [{ctx.channel.id}] ({ctx.guild}) [{ctx.guild.id}]:\n"
             message = f"\tContent: {args[0].clean_content}\n"
-            tb = traceback.format_exc().split('\n')
+            tb = traceback.format_exc().split("\n")
             location = "./" + "/".join(tb[3].split("/")[-4:])
             error = f'\tFile: "{location + tb[4]}:\n\tException: {sys.exc_info()[0].__name__}: {sys.exc_info()[1]}\n'
             content = destination + message + error + "\n"
             await ctx.log("e", content)
+
     except Exception as e:
         print(e)
 
@@ -659,15 +663,16 @@ class Snowbot(commands.AutoShardedBot):
 
 bot = Snowbot()
 
+
 class BotContext(commands.Context):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     async def fail(self, content=None, **kwargs):
-        return await self.send_or_reply(bot.emote_dict['failed'] + content)
+        return await self.send_or_reply(bot.emote_dict["failed"] + content)
 
     async def success(self, content=None, **kwargs):
-        return await self.send_or_reply(bot.emote_dict['success'] + content)
+        return await self.send_or_reply(bot.emote_dict["success"] + content)
 
     async def log(self, _type=None, content=None, **kwargs):
         if _type in ["info", "i", "information"]:
@@ -690,11 +695,14 @@ class BotContext(commands.Context):
             loglev = traceback_logger.warning
             level = "WARNING"
             location = traceback_logger_handler.baseFilename
-        log_format = "{0}: [{1}] {2} ||".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"), level, logger.name)
-        filename = "./" + "/".join(location.split('/')[-4:])
+        log_format = "{0}: [{1}] {2} ||".format(
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"), level, logger.name
+        )
+        filename = "./" + "/".join(location.split("/")[-4:])
         loglev(msg=content)
         return await self.bot_channel(
-            bot.emote_dict['log'] + f" **Logged to `{filename}`**```prolog\n{log_format}{content}```"
+            bot.emote_dict["log"]
+            + f" **Logged to `{filename}`**```prolog\n{log_format}{content}```"
         )
 
     async def bot_channel(self, content=None, **kwargs):
@@ -703,11 +711,15 @@ class BotContext(commands.Context):
     async def send_or_reply(self, content=None, **kwargs):
         ref = self.message.reference
         if ref and isinstance(ref.resolved, discord.Message):
-            return await self.send(content, **kwargs, reference=ref.resolved.to_reference())
+            return await self.send(
+                content, **kwargs, reference=ref.resolved.to_reference()
+            )
         return await self.send(content, **kwargs)
 
     async def react(self, reaction=None, content=None, **kwargs):
         return await self.message.add_reaction(reaction)
 
     async def usage(self, content=None, **kwargs):
-        return await self.send(f"Usage: `{self.prefix}{self.command.qualified_name} " + content + "`")
+        return await self.send(
+            f"Usage: `{self.prefix}{self.command.qualified_name} " + content + "`"
+        )

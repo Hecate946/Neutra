@@ -58,7 +58,8 @@ class Config(commands.Cog):
             instead of rebooting the entire client.
         """
         if key is None or value is None:
-            return await ctx.send_or_reply(content=f"Enter a value to edit and its new value.",
+            return await ctx.send_or_reply(
+                content=f"Enter a value to edit and its new value.",
             )
         if value.isdigit():
             utils.modify_config(key=key, value=int(value))
@@ -91,7 +92,8 @@ class Config(commands.Cog):
     async def change_username(self, ctx, *, name: str):
         try:
             await self.bot.user.edit(username=name)
-            await ctx.send_or_reply(content=f"Successfully changed username to **{name}**",
+            await ctx.send_or_reply(
+                content=f"Successfully changed username to **{name}**",
             )
         except discord.HTTPException as err:
             await ctx.send_or_reply(err)
@@ -114,7 +116,8 @@ class Config(commands.Cog):
     @change.command(name="avatar", hidden=True, brief="Change avatar.")
     async def change_avatar(self, ctx, url: str = None):
         if url is None and len(ctx.message.attachments) == 0:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}change avatar <avatar>`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}change avatar <avatar>`",
             )
         if url is None and len(ctx.message.attachments) == 1:
             url = ctx.message.attachments[0].url
@@ -133,12 +136,14 @@ class Config(commands.Cog):
         except aiohttp.InvalidURL:
             await ctx.send_or_reply(content="Invalid URL.")
         except discord.InvalidArgument:
-            await ctx.send_or_reply(content="This URL does not contain a useable image.",
+            await ctx.send_or_reply(
+                content="This URL does not contain a useable image.",
             )
         except discord.HTTPException as err:
             await ctx.send_or_reply(err)
         except TypeError:
-            await ctx.send_or_reply(content="Provide an attachment or a valid URL.",
+            await ctx.send_or_reply(
+                content="Provide an attachment or a valid URL.",
             )
 
     @change.command(brief="Change the bot default presence", aliases=["pres"])
@@ -168,7 +173,8 @@ class Config(commands.Cog):
         elif status.lower() in ["offline", "gray", "invisible", "invis"]:
             status = "offline"
         else:
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['failed']} `{status}` is not a valid status.",
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['failed']} `{status}` is not a valid status.",
             )
 
         utils.edit_config(value="status", changeto=status)
@@ -190,7 +196,8 @@ class Config(commands.Cog):
         elif activity.lower() in ["comp", "competing", "compete"]:
             activity = "competing"
         else:
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['failed']} `{activity}` is not a valid status.",
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['failed']} `{activity}` is not a valid status.",
             )
 
         utils.edit_config(value="activity", changeto=activity)
@@ -241,7 +248,8 @@ class Config(commands.Cog):
     @todo.command()
     async def add(self, ctx, *, todo: str = None):
         if todo is None:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}todo add <todo>`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}todo add <todo>`",
             )
         with open(self.todo, "a", encoding="utf-8") as fp:
             fp.write(todo + "\n")
@@ -252,7 +260,8 @@ class Config(commands.Cog):
     @todo.command(aliases=["rm", "rem"])
     async def remove(self, ctx, *, index_or_todo: str = None):
         if index_or_todo is None:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}todo remove <todo>`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}todo remove <todo>`",
             )
         with open(self.todo, mode="r", encoding="utf-8") as fp:
             lines = fp.readlines()
@@ -271,10 +280,12 @@ class Config(commands.Cog):
             with open(self.todo, mode="w", encoding="utf-8") as fp:
                 print(lines)
                 fp.write("".join(lines))
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} Successfully removed todo `{index_or_todo}` from the todo list.",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['success']} Successfully removed todo `{index_or_todo}` from the todo list.",
             )
         else:
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['failed']} Could not find todo `{index_or_todo}` in the todo list.",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['failed']} Could not find todo `{index_or_todo}` in the todo list.",
             )
 
     @todo.command()
@@ -282,7 +293,8 @@ class Config(commands.Cog):
         try:
             os.remove(self.todo)
         except FileNotFoundError:
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} Successfully cleared the todo list.",
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['success']} Successfully cleared the todo list.",
             )
         await ctx.send_or_reply(
             f"{self.bot.emote_dict['success']} Successfully cleared the todo list."
@@ -315,16 +327,19 @@ class Config(commands.Cog):
         if c:
             with open("./data/txts/overview.txt", "w", encoding="utf-8") as fp:
                 fp.write(overview)
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} **Successfully updated overview.**",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['success']} **Successfully updated overview.**",
             )
         else:
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
             )
 
     @write.command()
     async def changelog(self, ctx, *, entry: str = None):
         if entry is None:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}write changelog <entry>`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}write changelog <entry>`",
             )
         c = await pagination.Confirmation(
             f"**{self.bot.emote_dict['exclamation']} This action will post to my changelog. Do you wish to continue?**"
@@ -332,10 +347,12 @@ class Config(commands.Cog):
         if c:
             with open("./data/txts/changelog.txt", "a", encoding="utf-8") as fp:
                 fp.write(f"({datetime.utcnow()}+00:00) " + entry + "\n")
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} **Successfully posted to the changelog.**",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['success']} **Successfully posted to the changelog.**",
             )
         else:
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
             )
 
     @commands.command(brief="Blacklist users or servers.")
@@ -371,11 +388,13 @@ class Config(commands.Cog):
             self.bot.blacklist[str(obj.id)] = reason if reason else "No reason"
             blacklisted.append(str(obj))
         if blacklisted:
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} Blacklisted `{', '.join(blacklisted)}`",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['success']} Blacklisted `{', '.join(blacklisted)}`",
             )
         if already_blacklisted:
             ternary = "was" if len(already_blacklisted) == 1 else "were"
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} `{', '.join(already_blacklisted)}` {ternary} already blacklisted",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['success']} `{', '.join(already_blacklisted)}` {ternary} already blacklisted",
             )
 
     @commands.command(brief="Remove users or servers from the blacklist.")
@@ -390,7 +409,8 @@ class Config(commands.Cog):
         try:
             self.bot.blacklist.pop(str(_object.id))
         except KeyError:
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} `{str(_object)}` was not blacklisted.",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['success']} `{str(_object)}` was not blacklisted.",
             )
             return
         await ctx.send_or_reply(
@@ -406,10 +426,12 @@ class Config(commands.Cog):
         EXCEPTIONS = ["toggle"]
         command = self.bot.get_command(command)
         if command is None:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}toggle <command>`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}toggle <command>`",
             )
         if command.name in EXCEPTIONS:
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} command {command.qualified_name} cannot be disabled.",
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['error']} command {command.qualified_name} cannot be disabled.",
             )
 
         command.enabled = not command.enabled
@@ -461,17 +483,20 @@ class Config(commands.Cog):
         if ctx.author.id != 708584008065351681:
             return
         if member is None:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}addowner <new owner>`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}addowner <new owner>`",
             )
         if member.bot:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}addowner <new owner>`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}addowner <new owner>`",
             )
 
         data = utils.load_json("config.json")
         current_owners = data["owners"]
 
         if member.id in current_owners:
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} **`{member}` is already an owner.**",
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['error']} **`{member}` is already an owner.**",
             )
 
         c = await pagination.Confirmation(
@@ -481,7 +506,8 @@ class Config(commands.Cog):
         if c:
             current_owners.append(member.id)
             utils.modify_config("owners", current_owners)
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} **`{member}` is now officially one of my owners.**",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['success']} **`{member}` is now officially one of my owners.**",
             )
             return
         await ctx.send_or_reply(
@@ -506,17 +532,20 @@ class Config(commands.Cog):
         if ctx.author.id != 708584008065351681:
             return
         if member is None:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}remowner <owner>`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}remowner <owner>`",
             )
         if member.bot:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}remowner <owner>`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}remowner <owner>`",
             )
 
         data = utils.load_json("config.json")
         current_owners = data["owners"]
 
         if member.id not in current_owners:
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} **`{member}` is not an owner.**",
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['error']} **`{member}` is not an owner.**",
             )
 
         c = await pagination.Confirmation(
@@ -527,7 +556,8 @@ class Config(commands.Cog):
             index = current_owners.index(member.id)
             current_owners.pop(index)
             utils.modify_config("owners", current_owners)
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} **Successfully removed `{member}` from my owner list.**",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['success']} **Successfully removed `{member}` from my owner list.**",
             )
             return
         await ctx.send_or_reply(
@@ -551,17 +581,20 @@ class Config(commands.Cog):
         if ctx.author.id != 708584008065351681:
             return
         if member is None:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}addadmin <new admin>`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}addadmin <new admin>`",
             )
         if member.bot:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}addadmin <new admin>`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}addadmin <new admin>`",
             )
 
         data = utils.load_json("config.json")
         current_admins = data["admins"]
 
         if member.id in current_admins:
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} **`{member}` is already an admin.**",
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['error']} **`{member}` is already an admin.**",
             )
 
         c = await pagination.Confirmation(
@@ -571,7 +604,8 @@ class Config(commands.Cog):
         if c:
             current_admins.append(member.id)
             utils.modify_config("admins", current_admins)
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} **`{member}` is now officially one of my admins.**",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['success']} **`{member}` is now officially one of my admins.**",
             )
             return
         await ctx.send_or_reply(
@@ -596,17 +630,20 @@ class Config(commands.Cog):
         if ctx.author.id != 708584008065351681:
             return
         if member is None:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}remadmin <admin>`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}remadmin <admin>`",
             )
         if member.bot:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}remadmin <admin>`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}remadmin <admin>`",
             )
 
         data = utils.load_json("config.json")
         current_admins = data["admins"]
 
         if member.id not in current_admins:
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} **`{member}` is not an admin.**",
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['error']} **`{member}` is not an admin.**",
             )
 
         c = await pagination.Confirmation(
@@ -617,7 +654,8 @@ class Config(commands.Cog):
             index = current_admins.index(member.id)
             current_admins.pop(index)
             utils.modify_config("admins", current_admins)
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} **Successfully removed `{member}` from my admin list.**",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['success']} **Successfully removed `{member}` from my admin list.**",
             )
             return
         await ctx.send_or_reply(

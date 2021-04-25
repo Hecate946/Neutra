@@ -176,14 +176,12 @@ async def prettyResults(
 ):
     """ A prettier way to show loop results """
     if not loop:
-        return await ctx.send_or_reply(content="The result was empty..."
-        )
+        return await ctx.send_or_reply(content="The result was empty...")
 
     pretty = "\r\n".join(
         [f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)]
     )
     return pretty
-
 
     # data = BytesIO(pretty.encode("utf-8"))
     # await ctx.send_or_reply(

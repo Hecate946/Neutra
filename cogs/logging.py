@@ -713,7 +713,9 @@ class Logging(commands.Cog):
     ##############
 
     async def do_logging(self, ctx, channel):
-        bytes_avatar = await self.bot.get(str(ctx.guild.me.avatar_url), res_method="read")
+        bytes_avatar = await self.bot.get(
+            str(ctx.guild.me.avatar_url), res_method="read"
+        )
         webhook = await channel.create_webhook(
             name=self.bot.user.name + "-logger",
             avatar=bytes_avatar,
@@ -805,11 +807,13 @@ class Logging(commands.Cog):
                 "UPDATE logging SET logchannel = NULL WHERE server_id = $1",
                 ctx.guild.id,
             )
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} Logging is now disabled on this server",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['success']} Logging is now disabled on this server",
             )
             return
         else:
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} Logging is not enabled on this server.",
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['error']} Logging is not enabled on this server.",
             )
 
     @commands.command(brief="Enable specific logging events.")

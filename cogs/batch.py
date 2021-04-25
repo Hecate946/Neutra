@@ -110,7 +110,6 @@ class Batch(commands.Cog):
                     await self.bot.cxn.execute(query, message_id, author_id, channel_id)
                 self.snipe_batch.clear()
 
-
         # mass inserts nicknames, usernames, and roles
         if self.member_batch:
             query = """
@@ -148,7 +147,7 @@ class Batch(commands.Cog):
                     )
                 self.member_batch.clear()
 
-        # Emoji usage tracking 
+        # Emoji usage tracking
         if self.emoji_batch:
             query = """
                     INSERT INTO emojistats (
@@ -308,7 +307,6 @@ class Batch(commands.Cog):
                 self.bot.rolechanges += len(self.roles_batch.items())
                 self.roles_batch.clear()
 
-
     @commands.Cog.listener()
     @decorators.wait_until_ready()
     async def on_command(self, ctx):
@@ -349,7 +347,6 @@ class Batch(commands.Cog):
                 }
             )
 
-
     # Helper functions to detect changes
     @staticmethod
     async def status_changed(before, after):
@@ -384,11 +381,9 @@ class Batch(commands.Cog):
         if before.roles != after.roles:
             return True
 
-
     @commands.Cog.listener()
     @decorators.wait_until_ready()
     async def on_member_update(self, before, after):
-
 
         if after.bot:
             return
@@ -665,7 +660,6 @@ class Batch(commands.Cog):
             # "avatars": avatars or None
         }
         return observed_data
-
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()

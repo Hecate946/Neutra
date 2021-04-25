@@ -120,6 +120,7 @@ def bot_has_permissions(*, check=all, **perms):
 #         print(e)
 #         pass
 
+
 async def check_priv(ctx, member):
     """
     Handle permission hierarchy for commands
@@ -151,6 +152,7 @@ async def check_priv(ctx, member):
     except Exception as e:
         print(e)
         pass
+
 
 def sync_priv(ctx, member):
     """
@@ -184,6 +186,7 @@ def sync_priv(ctx, member):
         print(e)
         pass
 
+
 async def checker(ctx, value):
     if type(value) is list:
         for x in value:
@@ -191,6 +194,7 @@ async def checker(ctx, value):
     if type(value) is not list:
         result = await check_priv(ctx, member=value)
     return result
+
 
 def can_handle(ctx, permission: str):
     """ Checks if bot has permissions or is in DMs right now """

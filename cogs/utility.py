@@ -38,7 +38,9 @@ from utilities import converters, pagination, permissions, utils
 def setup(bot):
     bot.add_cog(Utility(bot))
 
+
 # Thanks goes to Stella bot for some of these features.
+
 
 class Utility(commands.Cog):
     """
@@ -48,7 +50,6 @@ class Utility(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.emote_dict = bot.emote_dict
-
 
     def parse_date(self, token):
         token_epoch = 1293840000
@@ -62,7 +63,7 @@ class Utility(commands.Cog):
         return timestamp
 
     @commands.command(aliases=["pt", "parsetoken"], brief="Decode a discord token.")
-    async def ptoken(self, ctx, token = None):
+    async def ptoken(self, ctx, token=None):
         """
         Usage: -ptoken <token>
         Aliases: -pt, -parsetoken
@@ -83,6 +84,7 @@ class Utility(commands.Cog):
             user_bytes = user.encode()
             user_id_decoded = base64.b64decode(user_bytes)
             return user_id_decoded.decode("ascii")
+
         str_id = decode_user(token_part[0])
         if not str_id or not str_id.isdigit():
             return await ctx.send_or_reply("Invalid user")
@@ -95,17 +97,18 @@ class Utility(commands.Cog):
         embed = discord.Embed(
             title=f"{member.display_name}'s token",
             description=f"**User:** `{member}`\n"
-                        f"**ID:** `{member.id}`\n"
-                        f"**Bot:** `{member.bot}`\n"
-                        f"**Created:** `{member.created_at}`\n"
-                        f"**Token Created:** `{timestamp}`"
+            f"**ID:** `{member.id}`\n"
+            f"**Bot:** `{member.bot}`\n"
+            f"**Created:** `{member.created_at}`\n"
+            f"**Token Created:** `{timestamp}`",
         )
         embed.color = self.bot.constants.color
         embed.set_thumbnail(url=member.avatar_url)
         await ctx.send_or_reply(embed=embed)
 
-    @commands.command(aliases=["gt", "generatetoken"],
-                      brief="Generate a discord token for a user.")
+    @commands.command(
+        aliases=["gt", "generatetoken"], brief="Generate a discord token for a user."
+    )
     async def gtoken(self, ctx, member: Union[discord.Member, discord.User] = None):
         """
         Usage: -gtoken <user>
@@ -117,15 +120,15 @@ class Utility(commands.Cog):
         """
         if not member:
             member = ctx.author
-        byte_first = str(member.id).encode('ascii')
+        byte_first = str(member.id).encode("ascii")
         first_encode = base64.b64encode(byte_first)
-        first = first_encode.decode('ascii')
+        first = first_encode.decode("ascii")
         time_rn = datetime.utcnow()
         epoch_offset = int(time_rn.timestamp())
         bytes_int = int(epoch_offset).to_bytes(10, "big")
         bytes_clean = bytes_int.lstrip(b"\x00")
         unclean_middle = base64.standard_b64encode(bytes_clean)
-        middle = unclean_middle.decode('utf-8').rstrip("==")
+        middle = unclean_middle.decode("utf-8").rstrip("==")
         Pair = namedtuple("Pair", "min max")
         num = Pair(48, 57)  # 0 - 9
         cap_alp = Pair(65, 90)  # A - Z
@@ -141,10 +144,10 @@ class Utility(commands.Cog):
         embed = discord.Embed(
             title=f"{member.display_name}'s token",
             description=f"**User:** `{member}`\n"
-                        f"**ID:** `{member.id}`\n"
-                        f"**Bot:** `{member.bot}`\n"
-                        f"**Token created:** `{time_rn}`\n"
-                        f"**Generated token:** `{complete}`\n"
+            f"**ID:** `{member.id}`\n"
+            f"**Bot:** `{member.bot}`\n"
+            f"**Token created:** `{time_rn}`\n"
+            f"**Generated token:** `{complete}`\n",
         )
         embed.color = self.bot.constants.embed
         embed.set_thumbnail(url=member.avatar_url)
@@ -160,6 +163,7 @@ class Utility(commands.Cog):
         """
         if message is None:
             return await ctx.send_or_reply(f"Usage: `{ctx.prefix}replies <message>`")
+
         def count_reply(m, replies=0):
             if isinstance(m, discord.MessageReference):
                 return count_reply(m.cached_message, replies)
@@ -173,18 +177,20 @@ class Utility(commands.Cog):
         em = discord.Embed()
         em.color = self.bot.constants.embed
         em.title = "Reply Count"
-        em.description =   (
+        em.description = (
             f"**Original:** `{msg.author}`\n"
             f"**Message:** {msg.clean_content}\n"
             f"**Replies:** `{count}`\n"
             f"**Origin:** [`jump`]({msg.jump_url})"
         )
-        
+
         await ctx.send_or_reply(embed=em)
 
-    @commands.command(name="type",
-                      aliases=["objtype", "findtype"],
-                      brief="Find the type of a discord object.")
+    @commands.command(
+        name="type",
+        aliases=["objtype", "findtype"],
+        brief="Find the type of a discord object.",
+    )
     async def type_(self, ctx, obj_id: discord.Object = None):
         """
         Usage: -type <discord object>
@@ -193,10 +199,13 @@ class Utility(commands.Cog):
             Attemps to find the type of the object presented.
         """
         if obj_id is None:
-            return await ctx.send_or_reply(f"Usage: `{ctx.prefix}findtype <discord object>`")
+            return await ctx.send_or_reply(
+                f"Usage: `{ctx.prefix}findtype <discord object>`"
+            )
+
         async def found_message(type_id):
             embed = discord.Embed(title="Result")
-            embed.description=(
+            embed.description = (
                 f"**ID**: `{obj_id.id}`\n"
                 f"**Type:** `{type_id.capitalize()}`\n"
                 f"**Created:** `{obj_id.created_at}`"
@@ -215,7 +224,9 @@ class Utility(commands.Cog):
             except (discord.NotFound, AttributeError):
                 pass
 
-        m = await self.bot.http._HTTPClient__session.get(f"https://cdn.discordapp.com/emojis/{obj_id.id}")
+        m = await self.bot.http._HTTPClient__session.get(
+            f"https://cdn.discordapp.com/emojis/{obj_id.id}"
+        )
         res = None
         if m.status == 200:
             return await found_message("emoji")
@@ -275,7 +286,9 @@ class Utility(commands.Cog):
         except commands.BadInviteArgument:
             pass
         if not res:
-            return await ctx.send_or_reply(f"{self.bot.emote_dict['failed']} I could not find that object.")
+            return await ctx.send_or_reply(
+                f"{self.bot.emote_dict['failed']} I could not find that object."
+            )
 
     async def do_avatar(self, ctx, user, url):
         embed = discord.Embed(
@@ -288,7 +301,6 @@ class Utility(commands.Cog):
         )
         embed.set_image(url=url)
         await ctx.send_or_reply(embed=embed)
-
 
     @commands.command(brief="Show a given color and its values.")
     async def color(self, ctx, *, value=None):
@@ -416,7 +428,6 @@ class Utility(commands.Cog):
             if os.path.exists(file_path):
                 os.remove(file_path)
 
-
     @commands.command(brief="Dehoist a specified user.")
     @permissions.bot_has_permissions(manage_nicknames=True)
     @permissions.has_permissions(manage_nicknames=True)
@@ -473,7 +484,8 @@ class Utility(commands.Cog):
                 )
 
         else:
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['failed']} User `{user}` is not hoisting.",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['failed']} User `{user}` is not hoisting.",
             )
 
     @commands.command(brief="Convert special characters to ascii.")
@@ -548,7 +560,8 @@ class Utility(commands.Cog):
         try:
             await self.bot.fetch_user(user.id)
         except AttributeError:
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['failed']} User `{user}` does not exist.",
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['failed']} User `{user}` does not exist.",
             )
         await self.do_avatar(ctx, user, url=user.avatar_url)
 
@@ -568,7 +581,8 @@ class Utility(commands.Cog):
         try:
             await self.bot.fetch_user(user.id)
         except AttributeError:
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['failed']} User `{user}` does not exist.",
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['failed']} User `{user}` does not exist.",
             )
         await self.do_avatar(ctx, user, user.default_avatar_url)
 
@@ -587,10 +601,12 @@ class Utility(commands.Cog):
         Notes:      Nickname will reset if no member is passed.
         """
         if user is None:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}nickname <user> <nickname>`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}nickname <user> <nickname>`",
             )
         if user.id == ctx.guild.owner.id:
-            return await ctx.send_or_reply(content=f"{self.emote_dict['failed']} User `{user}` is the server owner. I cannot edit the nickname of the server owner.",
+            return await ctx.send_or_reply(
+                content=f"{self.emote_dict['failed']} User `{user}` is the server owner. I cannot edit the nickname of the server owner.",
             )
         try:
             await user.edit(
@@ -604,7 +620,8 @@ class Utility(commands.Cog):
                 message = f"{self.emote_dict['success']} Reset nickname for `{user}`"
             await ctx.send_or_reply(message)
         except discord.Forbidden:
-            await ctx.send_or_reply(content=f"{self.emote_dict['failed']} I do not have permission to edit `{user}'s` nickname.",
+            await ctx.send_or_reply(
+                content=f"{self.emote_dict['failed']} I do not have permission to edit `{user}'s` nickname.",
             )
 
     # command mostly from Alex Flipnote's discord_bot.py bot
@@ -619,7 +636,7 @@ class Utility(commands.Cog):
         Usage: -find <method> <search>
         Alias: -search
         Output: Users matching your search.
-        Examples: 
+        Examples:
             -find name Hecate
             -find id 70858400
         Methods:
@@ -634,7 +651,11 @@ class Utility(commands.Cog):
         if ctx.invoked_subcommand is None:
             return await ctx.usage("<method> <search>")
 
-    @find.command(name="playing", aliases=["status", "activity"], brief="Search for users by game.")
+    @find.command(
+        name="playing",
+        aliases=["status", "activity"],
+        brief="Search for users by game.",
+    )
     async def find_playing(self, ctx, *, search: str):
         """
         Usage: -find playing <activity>
@@ -657,7 +678,9 @@ class Utility(commands.Cog):
             loop,
         )
 
-    @find.command(name="username", aliases=["name","user"], brief="Search for users by username.")
+    @find.command(
+        name="username", aliases=["name", "user"], brief="Search for users by username."
+    )
     async def find_name(self, ctx, *, search: str):
         """
         Usage: -find username <search>
@@ -677,7 +700,11 @@ class Utility(commands.Cog):
             ctx, "name", f"Found **{len(loop)}** on your search for **{search}**", loop
         )
 
-    @find.command(name="nicknames", aliases=["nick", "nicks", "nickname"], brief="Search for users by nickname.")
+    @find.command(
+        name="nicknames",
+        aliases=["nick", "nicks", "nickname"],
+        brief="Search for users by nickname.",
+    )
     async def find_nickname(self, ctx, *, search: str):
         """
         Usage: -find nicknames <search>
@@ -697,15 +724,21 @@ class Utility(commands.Cog):
         ]
         if not loop:
             return await ctx.fail(f"**No results.**")
-        stuff = "\r\n".join([f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)])
-        await ctx.send_or_reply(f"Found **{len(loop)}** on your search for **{search}**")
-        p = pagination.MainMenu(pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=800))
+        stuff = "\r\n".join(
+            [f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)]
+        )
+        await ctx.send_or_reply(
+            f"Found **{len(loop)}** on your search for **{search}**"
+        )
+        p = pagination.MainMenu(
+            pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=800)
+        )
         try:
             await p.start(ctx)
         except menus.MenuError as e:
             await ctx.send(e)
 
-    @find.command(name="id", aliases=['snowflake'], brief="Search for users by id.")
+    @find.command(name="id", aliases=["snowflake"], brief="Search for users by id.")
     async def find_id(self, ctx, *, search: int):
         """
         Usage: -find id <search>
@@ -722,15 +755,25 @@ class Utility(commands.Cog):
         ]
         if not loop:
             return await ctx.fail(f"**No results.**")
-        stuff = "\r\n".join([f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)])
-        await ctx.send_or_reply(f"Found **{len(loop)}** on your search for **{search}**")
-        p = pagination.MainMenu(pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=800))
+        stuff = "\r\n".join(
+            [f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)]
+        )
+        await ctx.send_or_reply(
+            f"Found **{len(loop)}** on your search for **{search}**"
+        )
+        p = pagination.MainMenu(
+            pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=800)
+        )
         try:
             await p.start(ctx)
         except menus.MenuError as e:
             await ctx.send(e)
 
-    @find.command(name="hash", aliases=["discriminator","discrim"], brief="Search for users by discriminator.")
+    @find.command(
+        name="hash",
+        aliases=["discriminator", "discrim"],
+        brief="Search for users by discriminator.",
+    )
     async def find_discrim(self, ctx, *, search: str):
         """
         Usage: -find hash <search>
@@ -743,21 +786,30 @@ class Utility(commands.Cog):
             (discriminator) contain your search
         """
         if not len(search) == 4 or not re.compile("^[0-9]*$").search(search):
-            return await ctx.send_or_reply(content="You must provide exactly 4 digits",
+            return await ctx.send_or_reply(
+                content="You must provide exactly 4 digits",
             )
 
         loop = [f"{i} ({i.id})" for i in ctx.guild.members if search == i.discriminator]
         if not loop:
             return await ctx.fail(f"**No results.**")
-        stuff = "\r\n".join([f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)])
-        await ctx.send_or_reply(f"Found **{len(loop)}** on your search for **{search}**")
-        p = pagination.MainMenu(pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=1250))
+        stuff = "\r\n".join(
+            [f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)]
+        )
+        await ctx.send_or_reply(
+            f"Found **{len(loop)}** on your search for **{search}**"
+        )
+        p = pagination.MainMenu(
+            pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=1250)
+        )
         try:
             await p.start(ctx)
         except menus.MenuError as e:
             await ctx.send(e)
 
-    @find.command(name="duplicates", aliases=["dups"], brief="Find users with identical names.")
+    @find.command(
+        name="duplicates", aliases=["dups"], brief="Find users with identical names."
+    )
     async def find_duplicates(self, ctx):
         """
         Usage: -find duplicates
@@ -783,9 +835,15 @@ class Utility(commands.Cog):
 
         if not loop:
             return await ctx.fail(f"**No results.**")
-        stuff = "\r\n".join([f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)])
-        await ctx.send_or_reply(f"Found **{len(loop)}** on your search for **duplicates**")
-        p = pagination.MainMenu(pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=800))
+        stuff = "\r\n".join(
+            [f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)]
+        )
+        await ctx.send_or_reply(
+            f"Found **{len(loop)}** on your search for **duplicates**"
+        )
+        p = pagination.MainMenu(
+            pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=800)
+        )
         try:
             await p.start(ctx)
         except menus.MenuError as e:
@@ -799,8 +857,12 @@ class Utility(commands.Cog):
 
         return re.search(br"[^ ][^ ]+", encoderes) is None
 
-    @find.command(name="hardmentions", aliases=["weird", "special","hardmention"], brief="Find users with hard to mention names.")
-    async def hardmentions(self, ctx, username:str = None):
+    @find.command(
+        name="hardmentions",
+        aliases=["weird", "special", "hardmention"],
+        brief="Find users with hard to mention names.",
+    )
+    async def hardmentions(self, ctx, username: str = None):
         """
         Usage: -find hardmentions [username=False]
         Alias:
@@ -812,7 +874,7 @@ class Utility(commands.Cog):
             all users who use special characters
             that make their name hard to mention
         Notes:
-            Specify a username kwarg, as in 
+            Specify a username kwarg, as in
             -find hardmention username
             to search for hard to mention
             usernames instead of nicknames.
@@ -831,9 +893,15 @@ class Utility(commands.Cog):
             ]
         if not loop:
             return await ctx.fail(f"**No results.**")
-        stuff = "\r\n".join([f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)])
-        await ctx.send_or_reply(f"Found **{len(loop)}** on your search for **hardmentions**")
-        p = pagination.MainMenu(pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=800))
+        stuff = "\r\n".join(
+            [f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)]
+        )
+        await ctx.send_or_reply(
+            f"Found **{len(loop)}** on your search for **hardmentions**"
+        )
+        p = pagination.MainMenu(
+            pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=800)
+        )
         try:
             await p.start(ctx)
         except menus.MenuError as e:
@@ -868,7 +936,6 @@ class Utility(commands.Cog):
             cdate.strftime("%A, %B %d, %Y at %H:%M:%S UTC")
         )
         return await ctx.send_or_reply(msg)
-
 
     @commands.command(brief="Shows the raw content of a message.")
     async def raw(self, ctx, *, message: discord.Message):
@@ -927,7 +994,8 @@ class Utility(commands.Cog):
             )
 
         if result is None:
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} There is nothing to snipe.",
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['error']} There is nothing to snipe.",
             )
 
         author = result[0]
@@ -967,7 +1035,8 @@ class Utility(commands.Cog):
             the url that was passed.
         """
         if url is None:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}shorten <url>`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}shorten <url>`",
             )
         params = {"access_token": self.bot.constants.bitly, "longUrl": url}
 
@@ -976,10 +1045,12 @@ class Utility(commands.Cog):
         )
         resp = json.loads(response)
         if resp["status_code"] != 200:
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['failed']} Invalid URL received.",
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['failed']} Invalid URL received.",
             )
         else:
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} Successfully shortened URL:\t"
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['success']} Successfully shortened URL:\t"
                 "<{}>".format(resp["data"]["url"]),
             )
 
@@ -1020,7 +1091,8 @@ class Utility(commands.Cog):
             round
             sgn"""
         if formula is None:
-            return await ctx.send_or_reply(content="Usage: `{}calculate <formula>`".format(ctx.prefix),
+            return await ctx.send_or_reply(
+                content="Usage: `{}calculate <formula>`".format(ctx.prefix),
             )
         formula = formula.replace("*", "x")
 
@@ -1040,9 +1112,7 @@ class Utility(commands.Cog):
             answer = int(answer)
 
         # Say message
-        await ctx.send_or_reply( content="{} = {}".format(formula, answer)
-        )
-
+        await ctx.send_or_reply(content="{} = {}".format(formula, answer))
 
     # Color helper functions
     def _rgb_to_hex(self, r, g, b):
@@ -1088,12 +1158,12 @@ class Utility(commands.Cog):
     def _hex_int_to_tuple(self, _hex):
         return (_hex >> 16 & 0xFF, _hex >> 8 & 0xFF, _hex & 0xFF)
 
-
     def _check_hex(self, hex_string):
         # Remove 0x/0X
         hex_string = hex_string.replace("0x", "").replace("0X", "")
         hex_string = re.sub(r"[^0-9A-Fa-f]+", "", hex_string)
         return hex_string
+
 
 class NumericStringParser(object):
     """

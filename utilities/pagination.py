@@ -332,7 +332,9 @@ class Message:
                         pass
                     return None
                 pass
-        return await ctx.send_or_reply(message, file=send_file, delete_after=self.delete_after)
+        return await ctx.send_or_reply(
+            message, file=send_file, delete_after=self.delete_after
+        )
 
     async def send(self, ctx):
         if not ctx or not self.message or not len(self.message):
@@ -918,9 +920,7 @@ class Picker:
             await self.self_message.edit(content=msg, embed=None)
         else:
             if type(msg) is discord.Embed:
-                self.self_message = await self.ctx.send_or_reply(
-                    embed=msg
-                )
+                self.self_message = await self.ctx.send_or_reply(embed=msg)
             else:
                 self.self_message = await self.ctx.send_or_reply(msg)
         # Add our reactions

@@ -100,12 +100,14 @@ class Botadmin(commands.Cog):
         """
         user = self.bot.get_user(user_id)
         if not user:
-            return await ctx.send_or_reply(content=f"Could not find any UserID matching **{user_id}**",
+            return await ctx.send_or_reply(
+                content=f"Could not find any UserID matching **{user_id}**",
             )
 
         try:
             await user.send(message)
-            await ctx.send_or_reply(content=f"✉️ Sent a DM to **{user_id}**",
+            await ctx.send_or_reply(
+                content=f"✉️ Sent a DM to **{user_id}**",
             )
         except discord.Forbidden:
             await ctx.send_or_reply(
@@ -443,8 +445,7 @@ class Botadmin(commands.Cog):
             common = counter.most_common()[limit:]
         output = "\n".join("{0:<{1}} : {2}".format(k, width, c) for k, c in common)
 
-        await ctx.send_or_reply( content="```yaml\n{}\n```".format(output)
-        )
+        await ctx.send_or_reply(content="```yaml\n{}\n```".format(output))
 
     @commands.command(aliases=["guildinfo", "gi"], brief="Get stats on a bot server.")
     async def guild(self, ctx, *, guild: converters.BotServer = None):
@@ -678,8 +679,7 @@ class Botadmin(commands.Cog):
                     guild.name, guild.get_member(self.bot.user.id).nick
                 )
         if not nick:
-            await ctx.send_or_reply(content="I have no nicknames set!"
-            )
+            await ctx.send_or_reply(content="I have no nicknames set!")
         else:
             if len(nick) <= 1964 and bool is False:
                 nick += "**Could not print the rest, sorry.**"
@@ -692,8 +692,7 @@ class Botadmin(commands.Cog):
                 embed.description = nick
                 await ctx.send_or_reply(embed=embed)
             except BaseException:
-                await ctx.send_or_reply( content="```{}```".format(nick)
-                )
+                await ctx.send_or_reply(content="```{}```".format(nick))
             if bool is True:
                 await ctx.send_or_reply(
                     content="**Could not print the rest, sorry.**",
@@ -797,8 +796,7 @@ class Botadmin(commands.Cog):
                 help_embed.add_field(name="No Cogs", value="> 0 commands", inline=True)
             await ctx.send_or_reply(embed=help_embed)
             return
-        await ctx.send_or_reply( content="I couldn't find that extension."
-        )
+        await ctx.send_or_reply(content="I couldn't find that extension.")
 
     @commands.command(
         hidden=True, brief="List all extensions and cogs.", aliases=["exts"]
@@ -1023,8 +1021,7 @@ class Botadmin(commands.Cog):
         """
         url = str(discord.utils.oauth_url(bot.id))
         if not bot.bot:
-            await ctx.send_or_reply(content="User is not a bot."
-            )
+            await ctx.send_or_reply(content="User is not a bot.")
             return
         if perms == "all":
             await ctx.send_or_reply(
@@ -1072,7 +1069,7 @@ class Botadmin(commands.Cog):
         )
         await ctx.send_or_reply(embed=embed)
 
-    @commands.command(rest_is_raw=True, hidden=True, aliases=['say'])
+    @commands.command(rest_is_raw=True, hidden=True, aliases=["say"])
     @permissions.bot_has_permissions(manage_messages=True)
     async def echo(self, ctx, *, content):
         await ctx.message.delete()

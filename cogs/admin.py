@@ -420,7 +420,8 @@ class Admin(commands.Cog):
 
         # Give some output
         if len(dis_com) == 0:
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} All commands already enabled.",
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['success']} All commands already enabled.",
             )
         msg = ", ".join(sorted(dis_com))
         title = (
@@ -452,13 +453,16 @@ class Admin(commands.Cog):
             return await ctx.usage("<user> [react]")
 
         if user.guild_permissions.administrator:
-            return await ctx.send_or_reply(content=f"{self.emote_dict['failed']} You cannot punish other staff members",
+            return await ctx.send_or_reply(
+                content=f"{self.emote_dict['failed']} You cannot punish other staff members",
             )
         if user.id in self.bot.constants.owners:
-            return await ctx.send_or_reply(content=f"{self.emote_dict['failed']} You cannot punish my creator.",
+            return await ctx.send_or_reply(
+                content=f"{self.emote_dict['failed']} You cannot punish my creator.",
             )
         if user.top_role.position > ctx.author.top_role.position:
-            return await ctx.send_or_reply(content=f"{self.emote_dict['failed']} User `{user}` is higher in the role hierarchy than you.",
+            return await ctx.send_or_reply(
+                content=f"{self.emote_dict['failed']} User `{user}` is higher in the role hierarchy than you.",
             )
 
         if react is None:
@@ -477,7 +481,8 @@ class Admin(commands.Cog):
         )
 
         if already_ignored is not None:
-            return await ctx.send_or_reply(content=f"{self.emote_dict['error']} User `{user}` is already being ignored.",
+            return await ctx.send_or_reply(
+                content=f"{self.emote_dict['error']} User `{user}` is already being ignored.",
             )
 
         query = """INSERT INTO ignored VALUES ($1, $2, $3, $4, $5)"""
@@ -513,7 +518,8 @@ class Admin(commands.Cog):
         query = """SELECT user_id FROM ignored WHERE user_id = $1 AND server_id = $2"""
         blacklisted = await self.bot.cxn.fetchval(query, user.id, ctx.guild.id) or None
         if blacklisted is None:
-            return await ctx.send_or_reply(content=f"{self.emote_dict['error']} User was not ignored.",
+            return await ctx.send_or_reply(
+                content=f"{self.emote_dict['error']} User was not ignored.",
             )
 
         query = """DELETE FROM ignored WHERE user_id = $1 AND server_id = $2"""
@@ -585,7 +591,6 @@ class Admin(commands.Cog):
             # We have an ignored user
             return {"Ignore": True, "Delete": False}
 
-
     @commands.command(
         brief="Add a custom server prefix.", aliases=["prefix", "setprefix"]
     )
@@ -605,13 +610,16 @@ class Admin(commands.Cog):
         except ValueError:
             pass
         if new_prefix in current_prefixes:
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} `{new_prefix}` is already a registered prefix.",
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['error']} `{new_prefix}` is already a registered prefix.",
             )
         if len(current_prefixes) == 10:
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['failed']} Max prefix limit of 10 has been reached.",
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['failed']} Max prefix limit of 10 has been reached.",
             )
         if len(new_prefix) > 20:
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['failed']} Max prefix length is 20 characters.",
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['failed']} Max prefix length is 20 characters.",
             )
         self.bot.server_settings[ctx.guild.id]["prefixes"].append(new_prefix)
         query = """
@@ -642,7 +650,8 @@ class Admin(commands.Cog):
         except ValueError:
             pass
         if old_prefix not in current_prefixes:
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} `{old_prefix}` is not a registered prefix.",
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['error']} `{old_prefix}` is not a registered prefix.",
             )
         if len(current_prefixes) == 1:
             c = await pagination.Confirmation(
@@ -676,7 +685,8 @@ class Admin(commands.Cog):
                     """
             await self.bot.cxn.execute(query, ctx.guild.id, old_prefix)
             self.bot.server_settings[ctx.guild.id]["prefixes"].remove(old_prefix)
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} Successfully removed prefix `{old_prefix}`",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['success']} Successfully removed prefix `{old_prefix}`",
             )
 
     @commands.command(
@@ -709,7 +719,8 @@ class Admin(commands.Cog):
         except ValueError:
             pass
         if current_prefixes == []:
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['exclamation']} I currently have no prefixes set.",
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['exclamation']} I currently have no prefixes set.",
             )
         c = await pagination.Confirmation(
             msg=f"{self.bot.emote_dict['exclamation']} "
@@ -732,7 +743,8 @@ class Admin(commands.Cog):
             self.bot.server_settings[ctx.guild.id]["prefixes"] = [
                 f"<@!{self.bot.user.id}>"
             ]
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} **Successfully cleared all prefixes.**",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['success']} **Successfully cleared all prefixes.**",
             )
             return
         await ctx.send_or_reply(
@@ -765,10 +777,12 @@ class Admin(commands.Cog):
         except ValueError:
             pass
         if current_prefixes == []:
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['exclamation']} I currently have no prefixes set.",
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['exclamation']} I currently have no prefixes set.",
             )
         if len(current_prefixes) == 0:
-            return await ctx.send_or_reply(content=f"My current prefix is {self.bot.constants.prefix}",
+            return await ctx.send_or_reply(
+                content=f"My current prefix is {self.bot.constants.prefix}",
             )
         await ctx.send_or_reply(
             f"{self.bot.emote_dict['info']} My current prefix{' is' if len(current_prefixes) == 1 else 'es are '} `{', '.join(current_prefixes)}`"
@@ -866,8 +880,6 @@ class Admin(commands.Cog):
     #                 f"{self.bot.emote_dict['success']} The prefix has been set to `{new}`"
     #             )
 
-
-
     @commands.command(brief="Have the bot leave the server.", aliases=["kill", "die"])
     @commands.guild_only()
     @permissions.has_permissions(manage_guild=True)
@@ -948,7 +960,8 @@ class Admin(commands.Cog):
                     content=f"{self.bot.emote_dict['exclamation']} No users to dehoist.",
                 )
                 return
-            message = await ctx.send_or_reply(content=f"{self.bot.emote_dict['loading']} **Dehoisting {len(hoisted)} user{'' if len(hoisted) == 1 else 's'}...**",
+            message = await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['loading']} **Dehoisting {len(hoisted)} user{'' if len(hoisted) == 1 else 's'}...**",
             )
             edited = []
             failed = []
@@ -976,7 +989,8 @@ class Admin(commands.Cog):
                 msg += f"\n{self.bot.emote_dict['failed']} Failed to dehoist {len(failed)} user{'' if len(failed) == 1 else 's'}."
             await message.edit(content=msg)
         else:
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
             )
 
     @commands.command(brief="Mass nickname users with odd names.")
@@ -1011,7 +1025,8 @@ class Admin(commands.Cog):
                 )
                 return
 
-            message = await ctx.send_or_reply(content=f"{self.bot.emote_dict['loading']} **Ascifying {len(odd_names)} user{'' if len(odd_names) == 1 else 's'}...**",
+            message = await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['loading']} **Ascifying {len(odd_names)} user{'' if len(odd_names) == 1 else 's'}...**",
             )
             edited = []
             failed = []
@@ -1032,5 +1047,6 @@ class Admin(commands.Cog):
                 msg += f"\n{self.bot.emote_dict['failed']} Failed to ascify {len(failed)} user{'' if len(failed) == 1 else 's'}."
             await message.edit(content=msg)
         else:
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
             )

@@ -6,13 +6,16 @@ from discord.ext import commands, menus
 
 from utilities import converters, utils, pagination, permissions
 
+
 def setup(bot):
     bot.add_cog(Stats(bot))
+
 
 class Stats(commands.Cog):
     """
     Module for server stats
     """
+
     def __init__(self, bot):
         self.bot = bot
 
@@ -57,7 +60,6 @@ class Stats(commands.Cog):
             if channel.topic
             else "No topic set.",
         )
-
 
     @commands.command(
         brief="Show server information.", aliases=["si", "serverstats", "ss", "server"]
@@ -233,7 +235,6 @@ class Stats(commands.Cog):
             content=f"Admins in **{ctx.guild.name}:**\n\n{message}",
         )
 
-
     @commands.command(brief="Emoji usage tracking.")
     @commands.guild_only()
     async def emojistats(self, ctx):
@@ -242,7 +243,8 @@ class Stats(commands.Cog):
         Output: Get detailed emoji usage stats.
         """
         async with ctx.channel.typing():
-            msg = await ctx.send_or_reply(content=f"{self.bot.emote_dict['loading']} **Collecting Emoji Statistics**",
+            msg = await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['loading']} **Collecting Emoji Statistics**",
             )
             query = """
                     SELECT (emoji_id, total)
@@ -288,7 +290,8 @@ class Stats(commands.Cog):
                 )
             emoji_id = emoji.id
 
-            msg = await ctx.send_or_reply(content=f"{self.bot.emote_dict['loading']} **Collecting Emoji Statistics**",
+            msg = await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['loading']} **Collecting Emoji Statistics**",
             )
             query = f"""SELECT (author_id, content) FROM messages WHERE content ~ '<a?:.+?:{emoji_id}>';"""
 
@@ -320,7 +323,6 @@ class Stats(commands.Cog):
                 await p.start(ctx)
             except menus.MenuError as e:
                 await ctx.send_or_reply(e)
-
 
     @commands.command(brief="Check when a user joined the server.")
     @commands.guild_only()
@@ -524,7 +526,7 @@ class Stats(commands.Cog):
     @permissions.bot_has_permissions(embed_links=True)
     @permissions.has_permissions(manage_guild=True)
     @commands.guild_only()
-    async def listbots(self, ctx, *, _input = None):
+    async def listbots(self, ctx, *, _input=None):
         """
         Usage: -listbots [server]
         Permission: Manage Server
@@ -544,8 +546,7 @@ class Stats(commands.Cog):
         list_of_bots = [x for x in guild.members if x.bot]
         if not len(list_of_bots):
             # No bots.
-            await ctx.send_or_reply(content=f"This server has no bots."
-            )
+            await ctx.send_or_reply(content=f"This server has no bots.")
         else:
             # Got some bots!
             bot_list = []
@@ -572,7 +573,6 @@ class Stats(commands.Cog):
                 await p.start(ctx)
             except menus.MenuError as e:
                 await ctx.send_or_reply(e)
-
 
     @commands.command(brief="Show the server's channels.", aliases=["channels"])
     @commands.guild_only()
@@ -638,7 +638,6 @@ class Stats(commands.Cog):
 
         for page in paginator.pages:
             await ctx.send_or_reply(embed=page)
-
 
     @commands.command(name="permissions", brief="Show a user's permissions.")
     @commands.guild_only()

@@ -41,7 +41,10 @@ class Mod(commands.Cog):
     @permissions.bot_has_permissions(move_members=True)
     @permissions.has_permissions(move_members=True)
     async def vcmove(
-        self, ctx, targets: commands.Greedy[discord.Member] = None, channel: discord.VoiceChannel = None
+        self,
+        ctx,
+        targets: commands.Greedy[discord.Member] = None,
+        channel: discord.VoiceChannel = None,
     ):
         """
         Usage: -vcmove <target> <target>... <channel>
@@ -49,10 +52,12 @@ class Mod(commands.Cog):
         Permission: Move Members
         """
         if not targets:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}vc move <to channel> <target> [target]...`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}vc move <to channel> <target> [target]...`",
             )
         if not channel:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}vc move <to channel> <target> [target]...`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}vc move <to channel> <target> [target]...`",
             )
         vcmoved = []
         for target in targets:
@@ -65,7 +70,8 @@ class Mod(commands.Cog):
                 continue
             vcmoved.append(str(target))
         if vcmoved:
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} VC Moved `{', '.join(vcmoved)}`"
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['success']} VC Moved `{', '.join(vcmoved)}`"
             )
 
     @commands.command(brief="Kick all users from a voice channel.")
@@ -79,10 +85,12 @@ class Mod(commands.Cog):
         Permission: Move Members
         """
         if channel is None:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}vcpurge <voice channel name/id>`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}vcpurge <voice channel name/id>`",
             )
         if len(channel.members) == 0:
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} No members in voice channel {channel.mention}.",
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['error']} No members in voice channel {channel.mention}.",
             )
         failed = []
         for member in channel.members:
@@ -95,7 +103,8 @@ class Mod(commands.Cog):
             content=f"{self.bot.emote_dict['success']} Purged {channel.mention}.",
         )
         if failed:
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} Failed to vckick {len(failed)} user{'' if len(failed) == 1 else 's'}.",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['success']} Failed to vckick {len(failed)} user{'' if len(failed) == 1 else 's'}.",
             )
 
     @commands.command(brief="Kick users from a voice channel.")
@@ -109,7 +118,8 @@ class Mod(commands.Cog):
         Permission: Move Members
         """
         if not len(targets):
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}vckick <target> [target]...`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}vckick <target> [target]...`",
             )
         vckicked = []
         for target in targets:
@@ -121,7 +131,8 @@ class Mod(commands.Cog):
                 )
             vckicked.append(str(target))
         if vckicked:
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} VC Kicked `{', '.join(vckicked)}`"
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['success']} VC Kicked `{', '.join(vckicked)}`"
             )
 
     ###################
@@ -155,7 +166,8 @@ class Mod(commands.Cog):
         """
         global target
         if not len(targets):
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}mute <target> [target]... [minutes] [reason]`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}mute <target> [target]... [minutes] [reason]`",
             )
 
         else:
@@ -324,13 +336,14 @@ class Mod(commands.Cog):
                 )
 
         if unmuted:
-            await ctx.send_or_reply(content=f'{self.bot.emote_dict["success"]} Unmuted `{", ".join(unmuted)}`',
+            await ctx.send_or_reply(
+                content=f'{self.bot.emote_dict["success"]} Unmuted `{", ".join(unmuted)}`',
             )
             self.bot.dispatch("mod_action", ctx, targets=unmuted)
 
-    @commands.command(name="unmute",
-                      brief="Unmute previously muted members.",
-                      aliases=["endmute"])
+    @commands.command(
+        name="unmute", brief="Unmute previously muted members.", aliases=["endmute"]
+    )
     @commands.guild_only()
     @permissions.bot_has_permissions(manage_roles=True)
     @permissions.has_permissions(kick_members=True)
@@ -343,7 +356,8 @@ class Mod(commands.Cog):
         Output: Unmutes members muted by the -hardmute command.
         """
         if not len(targets):
-            await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}unmute <target> [target]...`",
+            await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}unmute <target> [target]...`",
             )
 
         else:
@@ -371,15 +385,14 @@ class Mod(commands.Cog):
                 failed.append((str(target), res))
                 continue
             try:
-                await ctx.channel.set_permissions(
-                    target, overwrite=overwrite
-                )
+                await ctx.channel.set_permissions(target, overwrite=overwrite)
                 restrict.append(str(target))
             except Exception as e:
                 failed.append((str(target), e))
                 continue
         if restrict:
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} {ctx.command.name.capitalize()}ed `{', '.join(restrict)}`"
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['success']} {ctx.command.name.capitalize()}ed `{', '.join(restrict)}`"
             )
             self.bot.dispatch("mod_action", ctx, targets=restrict)
         if failed:
@@ -396,7 +409,8 @@ class Mod(commands.Cog):
         Output: Stops users from messaging in the channel.
         """
         if not len(targets):
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}block <target> [target] [target]...`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}block <target> [target] [target]...`",
             )
         await self.restrictor(ctx, targets, "on", "block")
 
@@ -411,7 +425,8 @@ class Mod(commands.Cog):
         Output:     Reallows blocked users to send messages.
         """
         if not targets:  # checks if there is user
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}unblock <target> [target] [target]...`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}unblock <target> [target] [target]...`",
             )
         await self.restrictor(ctx, targets, "off", "unblock")
 
@@ -426,7 +441,8 @@ class Mod(commands.Cog):
         Output:     Prevents users from seeing the channel.
         """
         if not targets:  # checks if there is user
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}blind <target> [target] [target]...`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}blind <target> [target] [target]...`",
             )
         await self.restrictor(ctx, targets, "on", "blind")
 
@@ -441,7 +457,8 @@ class Mod(commands.Cog):
         Output:     Reallows blinded users to see the channel.
         """
         if not targets:  # checks if there is user
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}unblind <target> [target] [target]...`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}unblind <target> [target] [target]...`",
             )
         await self.restrictor(ctx, targets, "off", "unblind")
 
@@ -467,7 +484,8 @@ class Mod(commands.Cog):
         Output:     Kicks passed members from the server.
         """
         if not len(users):
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}kick <target> [target]... [reason]`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}kick <target> [target]... [reason]`",
             )
 
         kicked = []
@@ -484,12 +502,12 @@ class Mod(commands.Cog):
                 failed.append((str(target), e))
                 continue
         if kicked:
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} Kicked `{', '.join(kicked)}`",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['success']} Kicked `{', '.join(kicked)}`",
             )
             self.bot.dispatch("mod_action", ctx, targets=kicked)
         if failed:
             await helpers.error_info(ctx, failed)
-            
 
     ##################
     ## Ban Commands ##
@@ -514,7 +532,8 @@ class Mod(commands.Cog):
         Output:     Ban passed members from the server.
         """
         if not len(targets):
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}ban <target1> [target2] [delete message days] [reason]`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}ban <target1> [target2] [delete message days] [reason]`",
             )
 
         if await permissions.checker(ctx, value=targets):
@@ -554,7 +573,8 @@ class Mod(commands.Cog):
                 failed.append(str(target), e)
                 continue
         if banned:
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} Banned `{', '.join(banned)}`",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['success']} Banned `{', '.join(banned)}`",
             )
             self.bot.dispatch("mod_action", ctx, targets=banned)
         if failed:
@@ -583,7 +603,8 @@ class Mod(commands.Cog):
             The days to delete messages is set to 7 days.
         """
         if not len(targets):
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}softban <member> [days to delete messages] [reason]`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}softban <member> [days to delete messages] [reason]`",
             )
 
         if delete_message_days:
@@ -621,7 +642,8 @@ class Mod(commands.Cog):
                 failed.append((str(target), e))
                 continue
         if banned:
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} Softbanned `{', '.join(banned)}`",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['success']} Softbanned `{', '.join(banned)}`",
             )
             self.bot.dispatch("mod_action", ctx, targets=banned)
         if failed:
@@ -638,7 +660,8 @@ class Mod(commands.Cog):
         Output: Hackbans multiple users by ID.
         Notes: Users do not have to be in the server."""
         if not len(users):
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}hackban <id> [id] [id]...`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}hackban <id> [id] [id]...`",
             )
         banned = []
         failed = []
@@ -658,14 +681,14 @@ class Mod(commands.Cog):
                 failed.append((str(user), e))
                 continue
         if banned:
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} Hackbanned `{', '.join(banned)}`"
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['success']} Hackbanned `{', '.join(banned)}`"
             )
             self.bot.dispatch("mod_action", ctx, targets=banned)
         if failed:
             await helpers.error_info(ctx, failed)
 
-    @commands.command(brief="Unban a previously banned user.",
-                      aliases=["revokeban"])
+    @commands.command(brief="Unban a previously banned user.", aliases=["revokeban"])
     @commands.guild_only()
     @permissions.has_permissions(ban_members=True)
     async def unban(self, ctx, member: converters.BannedMember, *, reason: str = None):
@@ -678,7 +701,8 @@ class Mod(commands.Cog):
         Notes:      Pass either the user's ID or their username
         """
         if not member:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}unban <id/name#discriminator> [reason]`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}unban <id/name#discriminator> [reason]`",
             )
         if reason is None:
             reason = utils.responsible(
@@ -687,10 +711,12 @@ class Mod(commands.Cog):
 
         await ctx.guild.unban(member.user, reason=reason)
         if member.reason:
-            await ctx.send_or_reply(content=f'{self.bot.emote_dict["success"]} Unbanned `{member.user} (ID: {member.user.id})`, previously banned for `{member.reason}.`',
+            await ctx.send_or_reply(
+                content=f'{self.bot.emote_dict["success"]} Unbanned `{member.user} (ID: {member.user.id})`, previously banned for `{member.reason}.`',
             )
         else:
-            await ctx.send_or_reply(content=f'{self.bot.emote_dict["success"]} Unbanned `{member.user} (ID: {member.user.id}).`',
+            await ctx.send_or_reply(
+                content=f'{self.bot.emote_dict["success"]} Unbanned `{member.user} (ID: {member.user.id}).`',
             )
         self.bot.dispatch("mod_action", ctx, targets=[str(member.user)])
 
@@ -704,22 +730,22 @@ class Mod(commands.Cog):
         brief="Remove any type of content.",
         aliases=["prune", "delete", "remove"],
         description="Methods:"
-                    "\nAll - Purge all messages."
-                    "\nBots - Purge messages sent by bots."
-                    "\nContains - Custom purge messages."
-                    "\nEmbeds - Purge messages with embeds."
-                    "\nEmojis - Purge messages with emojis."
-                    "\nFiles - Purge messages with attachments."
-                    "\nHumans - Purge  messages sent by humans."
-                    "\nImages - Purge messages with images."
-                    "\nInvites - Purge messages with invites."
-                    "\nMentions - Purge messages with mentions."
-                    "\nReactions - Purge reactions from messages."
-                    "\nUntil - Purge messages until a message."
-                    "\nUrls - Purge messages with URLs."
-                    "\nUser - Purge messages sent by a user."
-                    "\nWebhooks - Purge messages sent by wehooks."
-        )
+        "\nAll - Purge all messages."
+        "\nBots - Purge messages sent by bots."
+        "\nContains - Custom purge messages."
+        "\nEmbeds - Purge messages with embeds."
+        "\nEmojis - Purge messages with emojis."
+        "\nFiles - Purge messages with attachments."
+        "\nHumans - Purge  messages sent by humans."
+        "\nImages - Purge messages with images."
+        "\nInvites - Purge messages with invites."
+        "\nMentions - Purge messages with mentions."
+        "\nReactions - Purge reactions from messages."
+        "\nUntil - Purge messages until a message."
+        "\nUrls - Purge messages with URLs."
+        "\nUser - Purge messages sent by a user."
+        "\nWebhooks - Purge messages sent by wehooks.",
+    )
     @commands.guild_only()
     @commands.max_concurrency(5, per=commands.BucketType.guild)
     @permissions.bot_has_permissions(manage_messages=True)
@@ -737,7 +763,7 @@ class Mod(commands.Cog):
         Output:
             Deletes messages that match
             a specific search criteria
-        Examples: 
+        Examples:
             -prune user Hecate
             -prune bots
             -prune invites 1000
@@ -764,7 +790,8 @@ class Mod(commands.Cog):
         self, ctx, limit, predicate, *, before=None, after=None, message=True
     ):
         if limit > 2000:
-            return await ctx.send_or_reply(content=f"Too many messages to search given ({limit}/2000)",
+            return await ctx.send_or_reply(
+                content=f"Too many messages to search given ({limit}/2000)",
             )
 
         if not before:
@@ -780,15 +807,18 @@ class Mod(commands.Cog):
                 limit=limit, before=before, after=after, check=predicate
             )
         except discord.Forbidden:
-            return await ctx.send_or_reply(content="I do not have permissions to delete messages.",
+            return await ctx.send_or_reply(
+                content="I do not have permissions to delete messages.",
             )
         except discord.HTTPException as e:
-            return await ctx.send_or_reply(content=f"Error: {e} (try a smaller search?)",
+            return await ctx.send_or_reply(
+                content=f"Error: {e} (try a smaller search?)",
             )
 
         deleted = len(deleted)
         if message is True:
-            msg = await ctx.send_or_reply(content=f'{self.bot.emote_dict["trash"]} Deleted {deleted} message{"" if deleted == 1 else "s"}',
+            msg = await ctx.send_or_reply(
+                content=f'{self.bot.emote_dict["trash"]} Deleted {deleted} message{"" if deleted == 1 else "s"}',
             )
             await asyncio.sleep(7)
             await ctx.message.delete()
@@ -807,7 +837,7 @@ class Mod(commands.Cog):
         """
         await self.do_removal(ctx, search, lambda e: len(e.embeds))
 
-    @purge.command(brief="Purge messages with invites.", aliases=['ads'])
+    @purge.command(brief="Purge messages with invites.", aliases=["ads"])
     async def invites(self, ctx, search=100):
         """
         Usage: -purge invites [amount]
@@ -819,12 +849,14 @@ class Mod(commands.Cog):
             -purge invites
             -prune invites 125
         """
+
         def predicate(m):
             print(self.dregex.search(m.content))
             return self.dregex.search(m.content)
+
         await self.do_removal(ctx, search, predicate)
 
-    @purge.command(aliases=['link', 'url', 'links'], brief="Purge messages with URLs.")
+    @purge.command(aliases=["link", "url", "links"], brief="Purge messages with URLs.")
     async def urls(self, ctx, search=100):
         """
         Usage: -purge urls [amount]
@@ -839,12 +871,14 @@ class Mod(commands.Cog):
             -purge urls
             -prune urls 125
         """
+
         def predicate(m):
             print(self.uregex.search(m.content))
             return self.uregex.search(m.content)
+
         await self.do_removal(ctx, search, predicate)
 
-    @purge.command(brief="Purge messages with attachments.", aliases=['attachments'])
+    @purge.command(brief="Purge messages with attachments.", aliases=["attachments"])
     async def files(self, ctx, search=100):
         """
         Usage: -purge files [amount]
@@ -859,7 +893,9 @@ class Mod(commands.Cog):
         """
         await self.do_removal(ctx, search, lambda e: len(e.attachments))
 
-    @purge.command(brief="Purge messages with mentions.", aliases=['pings', 'ping', 'mention'])
+    @purge.command(
+        brief="Purge messages with mentions.", aliases=["pings", "ping", "mention"]
+    )
     async def mentions(self, ctx, search=100):
         """
         Usage: -purge mentions [amount]
@@ -878,7 +914,9 @@ class Mod(commands.Cog):
             ctx, search, lambda e: len(e.mentions) or len(e.role_mentions)
         )
 
-    @purge.command(brief="Purge messages with images.", aliases=["pictures", "pics", "image"])
+    @purge.command(
+        brief="Purge messages with images.", aliases=["pictures", "pics", "image"]
+    )
     async def images(self, ctx, search=100):
         """
         Usage: -purge mentions [amount]
@@ -897,7 +935,7 @@ class Mod(commands.Cog):
             ctx, search, lambda e: len(e.embeds) or len(e.attachments)
         )
 
-    @purge.command(name="all", brief="Purge all messages.", aliases=['messages'])
+    @purge.command(name="all", brief="Purge all messages.", aliases=["messages"])
     async def _remove_all(self, ctx, search=100):
         """
         Usage: -purge all [amount]
@@ -913,7 +951,7 @@ class Mod(commands.Cog):
         """
         await self.do_removal(ctx, search, lambda e: True)
 
-    @purge.command(brief="Purge messages sent by a user.", aliases=['member'])
+    @purge.command(brief="Purge messages sent by a user.", aliases=["member"])
     async def user(self, ctx, member: discord.Member = None, search=100):
         """
         Usage: -purge user <user> [amount]
@@ -947,7 +985,8 @@ class Mod(commands.Cog):
             of 2 characters in length.
         """
         if len(substr) < 2:
-            await ctx.fail(content="The substring length must be at least 3 characters.",
+            await ctx.fail(
+                content="The substring length must be at least 3 characters.",
             )
         else:
             await self.do_removal(ctx, 100, lambda e: substr in e.content)
@@ -960,7 +999,9 @@ class Mod(commands.Cog):
         prefixes.append(f"<@!{self.bot.constants.client}")
         return prefixes
 
-    @purge.command(name="bots", brief="Purge messages sent by bots.", aliases=['robots'])
+    @purge.command(
+        name="bots", brief="Purge messages sent by bots.", aliases=["robots"]
+    )
     async def _bots(self, ctx, search=100, prefix=None):
         """
         Usage: -purge bots [amount] [prefix]
@@ -985,8 +1026,9 @@ class Mod(commands.Cog):
         if prefix:
 
             def predicate(m):
-                return (
-                    m.webhook_id is None and m.author.bot) or m.content.startswith(prefix)
+                return (m.webhook_id is None and m.author.bot) or m.content.startswith(
+                    prefix
+                )
 
         else:
 
@@ -995,7 +1037,9 @@ class Mod(commands.Cog):
 
         await self.do_removal(ctx, search, predicate)
 
-    @purge.command(name="webhooks", aliases=["webhook"], brief="Purge messages sent by wehooks.")
+    @purge.command(
+        name="webhooks", aliases=["webhook"], brief="Purge messages sent by wehooks."
+    )
     async def webhooks(self, ctx, search=100):
         """
         Usage: -purge webhooks [amount]
@@ -1008,12 +1052,17 @@ class Mod(commands.Cog):
             -purge webhook
             -prune webhooks 125
         """
+
         def predicate(m):
             return m.webhook_id
 
         await self.do_removal(ctx, search, predicate)
 
-    @purge.command(name="humans", aliases=["users", "members", "people"], brief="Purge messages sent by humans.")
+    @purge.command(
+        name="humans",
+        aliases=["users", "members", "people"],
+        brief="Purge messages sent by humans.",
+    )
     async def _users(self, ctx, search=100):
         """
         Usage: -purge humans [amount]
@@ -1030,12 +1079,17 @@ class Mod(commands.Cog):
             -purge humans
             -prune people 125
         """
+
         def predicate(m):
             return m.author.bot is False
 
         await self.do_removal(ctx, search, predicate)
 
-    @purge.command(name="emojis", aliases=["emotes","emote", "emoji"], brief="Purge messages with emojis.")
+    @purge.command(
+        name="emojis",
+        aliases=["emotes", "emote", "emoji"],
+        brief="Purge messages with emojis.",
+    )
     async def _emojis(self, ctx, search=100):
         """
         Usage: -purge emojis [amount]
@@ -1044,14 +1098,13 @@ class Mod(commands.Cog):
             -purge emote
             -purge emoji
         Output:
-            Deletes all messages that 
+            Deletes all messages that
             contain custom discord emojis.
         Examples:
             -purge emojis
             -prune emotes 125
         """
-        custom_emoji = re.compile(
-            r"<a?:(.*?):(\d{17,21})>|[\u263a-\U0001f645]")
+        custom_emoji = re.compile(r"<a?:(.*?):(\d{17,21})>|[\u263a-\U0001f645]")
 
         def predicate(m):
             return custom_emoji.search(m.content)
@@ -1073,7 +1126,8 @@ class Mod(commands.Cog):
             Only the reactions are removed.
         """
         if search > 2000:
-            return await ctx.send_or_reply(content=f"Too many messages to search for ({search}/2000)",
+            return await ctx.send_or_reply(
+                content=f"Too many messages to search for ({search}/2000)",
             )
 
         total_reactions = 0
@@ -1086,7 +1140,9 @@ class Mod(commands.Cog):
             delete_after=7,
         )
 
-    @purge.command(name="until", aliases=["after"], brief="Purge messages after a message.")
+    @purge.command(
+        name="until", aliases=["after"], brief="Purge messages after a message."
+    )
     async def _until(self, ctx, message_id: int):
         """
         Usage: -purge until <message id>
@@ -1103,7 +1159,8 @@ class Mod(commands.Cog):
         try:
             message = await channel.fetch_message(message_id)
         except commands.errors.NotFound:
-            await ctx.send_or_reply(content="Message could not be found in this channel",
+            await ctx.send_or_reply(
+                content="Message could not be found in this channel",
             )
             return
 
@@ -1128,8 +1185,7 @@ class Mod(commands.Cog):
         deleted = await ctx.channel.purge(limit=search, check=check, before=ctx.message)
         return Counter(str(m.author) for m in deleted)
 
-    @commands.command(brief="Clean up command usage.",
-                      search=200, aliases=["clean"])
+    @commands.command(brief="Clean up command usage.", search=200, aliases=["clean"])
     @commands.guild_only()
     @permissions.bot_has_permissions(manage_messages=True)
     @permissions.has_permissions(manage_messages=True)
@@ -1156,13 +1212,8 @@ class Mod(commands.Cog):
         ]
         if deleted:
             messages.append("")
-            spammers = sorted(
-                spammers.items(),
-                key=lambda t: t[1],
-                reverse=True)
-            messages.extend(
-                f"`{author}`: {count}" for author,
-                count in spammers)
+            spammers = sorted(spammers.items(), key=lambda t: t[1], reverse=True)
+            messages.extend(f"`{author}`: {count}" for author, count in spammers)
         desc = "\n".join(messages)
         em = discord.Embed()
         em.color = self.bot.constants.embed
@@ -1279,10 +1330,12 @@ class Mod(commands.Cog):
         try:
             await channel_obj.edit(slowmode_delay=time)
         except discord.HTTPException as e:
-            await ctx.send_or_reply(content=f'{self.bot.emote_dict["failed"]} Failed to set slowmode because of an error\n{e}',
+            await ctx.send_or_reply(
+                content=f'{self.bot.emote_dict["failed"]} Failed to set slowmode because of an error\n{e}',
             )
         else:
-            await ctx.send_or_reply(content=f'{self.bot.emote_dict["success"]} Slowmode for {channel_obj.mention} set to `{time}s`',
+            await ctx.send_or_reply(
+                content=f'{self.bot.emote_dict["success"]} Slowmode for {channel_obj.mention} set to `{time}s`',
             )
 
     @commands.command(aliases=["lockdown", "lockchannel"], brief="Lock a channel")
@@ -1317,7 +1370,8 @@ class Mod(commands.Cog):
             overwrites_everyone = channel.overwrites_for(ctx.guild.default_role)
             my_overwrites = channel.overwrites_for(ctx.guild.me)
             everyone_overwrite_current = overwrites_everyone.send_messages
-            msg = await ctx.send_or_reply(content=f"Locking channel {channel.mention}...",
+            msg = await ctx.send_or_reply(
+                content=f"Locking channel {channel.mention}...",
             )
             try:
                 await self.bot.cxn.execute(
@@ -1391,7 +1445,8 @@ class Mod(commands.Cog):
                         f"{self.bot.emote_dict['lock']} Channel {channel.mention} is already unlocked. ID: `{channel.id}`"
                     )
 
-            msg = await ctx.send_or_reply(content=f"Unlocking channel {channel.mention}...",
+            msg = await ctx.send_or_reply(
+                content=f"Unlocking channel {channel.mention}...",
             )
             old_overwrites = await self.bot.cxn.fetchrow(
                 "SELECT everyone_perms FROM lockedchannels WHERE channel_id = $1",

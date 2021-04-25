@@ -94,14 +94,17 @@ class Roles(commands.Cog):
         Output:     Adds multiple roles to multiple users
         """
         if ctx.guild.me.permissions_in(ctx.message.channel).manage_roles is False:
-            return await ctx.send_or_reply(content="Sorry, I do not have the manage_roles permission",
+            return await ctx.send_or_reply(
+                content="Sorry, I do not have the manage_roles permission",
             )
 
         if len(targets) == 0:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}ar <user> [user] [user] <role> [role] [role]...`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}ar <user> [user] [user] <role> [role] [role]...`",
             )
         if len(roles) == 0:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}ar <user> [user] [user] <role> [role] [role]...`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}ar <user> [user] [user] <role> [role] [role]...`",
             )
         target_list = []
         target_names = []
@@ -163,14 +166,17 @@ class Roles(commands.Cog):
             ctx.message.guild.me.permissions_in(ctx.message.channel).manage_roles
             is False
         ):
-            return await ctx.send_or_reply(content="Sorry, I do not have the manage_roles permission",
+            return await ctx.send_or_reply(
+                content="Sorry, I do not have the manage_roles permission",
             )
 
         if len(targets) == 0:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}rr <user> [user] [user] <role> [role] [role]...`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}rr <user> [user] [user] <role> [role] [role]...`",
             )
         if len(roles) == 0:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}rr <user> [user] [user] <role> [role] [role]...`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}rr <user> [user] [user] <role> [role] [role]...`",
             )
         target_list = []
         target_names = []
@@ -249,10 +255,12 @@ class Roles(commands.Cog):
     @massrole.command(brief="Adds all members with a certain role a new role.")
     async def add(self, ctx, role1: discord.Role = None, role2: discord.Role = None):
         if role1 is None:
-            return await ctx.send_or_reply(content="Usage: `{ctx.prefix}massrole add <role1> <role2> ",
+            return await ctx.send_or_reply(
+                content="Usage: `{ctx.prefix}massrole add <role1> <role2> ",
             )
         if role2 is None:
-            return await ctx.send_or_reply(content="Usage: `{ctx.prefix}massrole add <role1> <role2> ",
+            return await ctx.send_or_reply(
+                content="Usage: `{ctx.prefix}massrole add <role1> <role2> ",
             )
         if (
             ctx.author.top_role.position < role1.position
@@ -265,35 +273,40 @@ class Roles(commands.Cog):
             role2.permissions.administrator
             and ctx.author.id not in self.bot.constants.owners
         ):
-            return await ctx.send_or_reply(content="I cannot manipulate an admin role",
+            return await ctx.send_or_reply(
+                content="I cannot manipulate an admin role",
             )
         if (
             role2.position > ctx.author.top_role.position
             and ctx.author.id not in self.bot.constants.owners
             and ctx.author.id != ctx.guild.owner.id
         ):
-            return await ctx.send_or_reply(content="That role is higher than your highest role",
+            return await ctx.send_or_reply(
+                content="That role is higher than your highest role",
             )
         if (
             role2.position == ctx.author.top_role.position
             and ctx.author.id not in self.bot.constants.owners
             and ctx.author.id != ctx.guild.owner.id
         ):
-            return await ctx.send_or_reply(content="That role is your highest role",
+            return await ctx.send_or_reply(
+                content="That role is your highest role",
             )
         if (
             role1.position > ctx.author.top_role.position
             and ctx.author.id not in self.bot.constants.owners
             and ctx.author.id != ctx.guild.owner.id
         ):
-            return await ctx.send_or_reply(content="That role is higher than your highest role",
+            return await ctx.send_or_reply(
+                content="That role is higher than your highest role",
             )
         if (
             role1.position == ctx.author.top_role.position
             and ctx.author.id not in self.bot.constants.owners
             and ctx.author.id != ctx.guild.owner.id
         ):
-            return await ctx.send_or_reply(content="That role is your highest role",
+            return await ctx.send_or_reply(
+                content="That role is your highest role",
             )
         number_of_members = []
         for member in ctx.guild.members:
@@ -302,7 +315,8 @@ class Roles(commands.Cog):
 
         members_to_add_roles = len(number_of_members)
         if members_to_add_roles < 1:
-            return await ctx.send_or_reply(content=f"{self.emote_dict['error']} No members to add roles to",
+            return await ctx.send_or_reply(
+                content=f"{self.emote_dict['error']} No members to add roles to",
             )
         msg = await ctx.send_or_reply(
             f"{self.emote_dict['error']} Adding role `{role2.name}` to `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}. This process may take several minutes."
@@ -325,10 +339,12 @@ class Roles(commands.Cog):
     )
     async def remove(self, ctx, role1: discord.Role, role2: discord.Role):
         if role1 is None:
-            return await ctx.send_or_reply(content="Usage: `{ctx.prefix}massrole add <role1> <role2> ",
+            return await ctx.send_or_reply(
+                content="Usage: `{ctx.prefix}massrole add <role1> <role2> ",
             )
         if role2 is None:
-            return await ctx.send_or_reply(content="Usage: `{ctx.prefix}massrole add <role1> <role2> ",
+            return await ctx.send_or_reply(
+                content="Usage: `{ctx.prefix}massrole add <role1> <role2> ",
             )
         if (
             ctx.author.top_role.position < role1.position
@@ -341,35 +357,40 @@ class Roles(commands.Cog):
             role2.permissions.administrator
             and ctx.author.id not in self.bot.constants.owners
         ):
-            return await ctx.send_or_reply(content="I cannot manipulate an admin role",
+            return await ctx.send_or_reply(
+                content="I cannot manipulate an admin role",
             )
         if (
             role2.position > ctx.author.top_role.position
             and ctx.author.id not in self.bot.constants.owners
             and ctx.author.id != ctx.guild.owner.id
         ):
-            return await ctx.send_or_reply(content="That role is higher than your highest role",
+            return await ctx.send_or_reply(
+                content="That role is higher than your highest role",
             )
         if (
             role2.position == ctx.author.top_role.position
             and ctx.author.id not in self.bot.constants.owners
             and ctx.author.id != ctx.guild.owner.id
         ):
-            return await ctx.send_or_reply(content="That role is your highest role",
+            return await ctx.send_or_reply(
+                content="That role is your highest role",
             )
         if (
             role1.position > ctx.author.top_role.position
             and ctx.author.id not in self.bot.constants.owners
             and ctx.author.id != ctx.guild.owner.id
         ):
-            return await ctx.send_or_reply(content="That role is higher than your highest role",
+            return await ctx.send_or_reply(
+                content="That role is higher than your highest role",
             )
         if (
             role1.position == ctx.author.top_role.position
             and ctx.author.id not in self.bot.constants.owners
             and ctx.author.id != ctx.guild.owner.id
         ):
-            return await ctx.send_or_reply(content="That role is your highest role",
+            return await ctx.send_or_reply(
+                content="That role is your highest role",
             )
         number_of_members = []
         for member in ctx.guild.members:
@@ -378,7 +399,8 @@ class Roles(commands.Cog):
 
         members_to_add_roles = len(number_of_members)
         if members_to_add_roles < 1:
-            return await ctx.send_or_reply(content=f"{self.emote_dict['error']} No members to remove roles from",
+            return await ctx.send_or_reply(
+                content=f"{self.emote_dict['error']} No members to remove roles from",
             )
         msg = await ctx.send_or_reply(
             f"{self.emote_dict['error']} Removing role `{role2.name}` from `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}. This process may take several minutes."
@@ -508,7 +530,8 @@ class Roles(commands.Cog):
             Shows the number of people with the passed role.
         """
         if role is None:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}rolecall <role>`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}rolecall <role>`",
             )
 
         count = 0
@@ -539,7 +562,8 @@ class Roles(commands.Cog):
         Notes:
         """
         if role is None:
-            return await ctx.send_or_reply(content=f"Usage `{ctx.prefix}whohas <role>`",
+            return await ctx.send_or_reply(
+                content=f"Usage `{ctx.prefix}whohas <role>`",
             )
 
         users = [member for member in ctx.guild.members if role in member.roles]
@@ -577,7 +601,8 @@ class Roles(commands.Cog):
             granted to the passed role
         """
         if role is None:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}roleperms <role>`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}roleperms <role>`",
             )
 
         permissions = ""
@@ -636,7 +661,8 @@ class Roles(commands.Cog):
                 sorted_list.append((role, rolecounts.get(role, 0)))
 
         if not sorted_list:  # another failsafe
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} No empty roles found.",
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['error']} No empty roles found.",
             )
 
         await self.rolelist_paginate(ctx, sorted_list, title="Empty Roles")

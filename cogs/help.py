@@ -47,8 +47,7 @@ class Help(commands.Cog):
                     delete_after=delete_after,
                 )
         else:
-            msg = await ctx.send_or_reply(embed=embed, delete_after=delete_after
-            )
+            msg = await ctx.send_or_reply(embed=embed, delete_after=delete_after)
 
         def reaction_check(m):
             if (
@@ -99,7 +98,8 @@ class Help(commands.Cog):
             )
             return
         else:
-            return await ctx.send_or_reply(content=f"{self.emote_dict['error']} No command named `{name}` found.",
+            return await ctx.send_or_reply(
+                content=f"{self.emote_dict['error']} No command named `{name}` found.",
             )
 
     ##########################
@@ -147,7 +147,7 @@ class Help(commands.Cog):
         """
         delete_after = None
         pm = False
-        
+
         if ctx.guild:
             if not ctx.guild.me.permissions_in(ctx.channel).embed_links:
                 pm = True
@@ -193,9 +193,7 @@ class Help(commands.Cog):
                     ]
                     cog_comms = [y.name for y in c.get_commands() if not y.hidden]
                     if all(x in disabled_comms for x in cog_comms):
-                        msg += (
-                            f"\n[!] `{c.qualified_name}` ~~{c.description}~~\n"
-                        )
+                        msg += f"\n[!] `{c.qualified_name}` ~~{c.description}~~\n"
                     else:
                         msg += line
                 else:
@@ -236,19 +234,19 @@ class Help(commands.Cog):
             if invokercommand.lower() in [
                 "admin",
                 "administration",
-                "administrator","restrict", "restriction", "disabling", "settings", "configuration"
+                "administrator",
+                "restrict",
+                "restriction",
+                "disabling",
+                "settings",
+                "configuration",
             ]:
                 cog = self.bot.get_cog("Admin")
                 return await self.helper_func(
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )
 
-
-            if invokercommand.lower() in [
-                "auto",
-                "automod",
-                "automoderation"
-            ]:
+            if invokercommand.lower() in ["auto", "automod", "automoderation"]:
                 cog = self.bot.get_cog("Automod")
                 return await self.helper_func(
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
@@ -382,7 +380,7 @@ class Help(commands.Cog):
                 "automod",
                 "warning",
                 "automoderation",
-                "system"
+                "system",
             ]:
                 cog = self.bot.get_cog("Automod")
                 return await self.helper_func(
@@ -449,7 +447,9 @@ class Help(commands.Cog):
                             ):
                                 continue
                             if isinstance(command, commands.Group):
-                                await self.send_group_help(ctx, invokercommand, command, None, pm, delete_after)
+                                await self.send_group_help(
+                                    ctx, invokercommand, command, None, pm, delete_after
+                                )
                                 return
                             valid_commands += command.name
                             valid_help += command.help
@@ -462,7 +462,14 @@ class Help(commands.Cog):
                             if len(args) > 1:
                                 if command.name == args[0]:
                                     if isinstance(command, commands.Group):
-                                        return await self.send_group_help(ctx, invokercommand, command, args[1], pm , delete_after)
+                                        return await self.send_group_help(
+                                            ctx,
+                                            invokercommand,
+                                            command,
+                                            args[1],
+                                            pm,
+                                            delete_after,
+                                        )
 
                 if valid_commands != "":
                     help_embed = discord.Embed(
@@ -476,8 +483,7 @@ class Help(commands.Cog):
                     )
                     help_embed.add_field(
                         name=f"**Command Name:** `{valid_commands.title()}`\n**Description:** `{valid_brief}`\n",
-                        value=f"** **"
-                        f"```yaml\n{valid_help}```",
+                        value=f"** **" f"```yaml\n{valid_help}```",
                     )
                     await self.send_help(ctx, help_embed, pm, delete_after)
                     return
@@ -486,11 +492,16 @@ class Help(commands.Cog):
                         f"{self.emote_dict['error']} No command named `{invokercommand}` found."
                     )
 
-    async def send_group_help(self, ctx, invokercommand, command, subcommand, pm, delete_after):
+    async def send_group_help(
+        self, ctx, invokercommand, command, subcommand, pm, delete_after
+    ):
         if subcommand:
             found = False
             for x in command.commands:
-                if x.name.lower() == subcommand.lower() or subcommand.lower() in x.aliases:
+                if (
+                    x.name.lower() == subcommand.lower()
+                    or subcommand.lower() in x.aliases
+                ):
                     found = True
                     if not x.brief or x.brief == "":
                         brief = "No description"
@@ -512,9 +523,8 @@ class Help(commands.Cog):
                     )
                     help_embed.add_field(
                         name=f"**Command Group:** `{command.name.title()}`\n**Subcommand:** `{x.name.title()}`\n**Description:** `{brief}`",
-                        value=f"** **"
-                        f"```yaml\n{_help}```",
-                        inline=False
+                        value=f"** **" f"```yaml\n{_help}```",
+                        inline=False,
                     )
                     return await self.send_help(ctx, help_embed, pm, delete_after)
             if not found:
@@ -542,9 +552,8 @@ class Help(commands.Cog):
         )
         help_embed.add_field(
             name=f"**Command Group:** `{command.name.title()}`\n**Description:** `{brief}`\n",
-            value=f"** **"
-            f"```yaml\n{_help}```",
-            inline=False
+            value=f"** **" f"```yaml\n{_help}```",
+            inline=False,
         )
         return await self.send_help(ctx, help_embed, pm, delete_after)
 
@@ -559,7 +568,8 @@ class Help(commands.Cog):
             return await ctx.usage("<command>")
         _command = self.bot.get_command(command)
         if _command is None:
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['failed']} No command named `{command}` found.",
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['failed']} No command named `{command}` found.",
             )
         await ctx.send_or_reply(
             content=f"{self.bot.emote_dict['announce']} Command brief for **{_command.name}**: `{_command.brief}`",
@@ -577,7 +587,8 @@ class Help(commands.Cog):
             return await ctx.usage("<command>")
         _command = self.bot.get_command(command)
         if _command is None:
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['failed']} No command named `{command}` found.",
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['failed']} No command named `{command}` found.",
             )
         await ctx.send_or_reply(
             content=f"{self.bot.emote_dict['announce']} Command docstring for **{_command.name}**:```yaml\n{_command.help}```",

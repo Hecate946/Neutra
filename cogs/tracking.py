@@ -31,7 +31,8 @@ class Tracking(commands.Cog):
         Notes:  Cannot determine platform when users are offline.
         """
         if not len(members):
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}platform <member> [member] [member]...`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}platform <member> [member] [member]...`",
             )
         mobilestatus = []
         notmobilestatus = []
@@ -62,7 +63,8 @@ class Tracking(commands.Cog):
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
                     notmobile += [username]
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['desktop']} User{'' if len(notmobile) == 1 else 's'} `{', '.join(notmobile)}` {'is' if len(notmobile) == 1 else 'are'} on discord desktop.",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['desktop']} User{'' if len(notmobile) == 1 else 's'} `{', '.join(notmobile)}` {'is' if len(notmobile) == 1 else 'are'} on discord desktop.",
             )
         if mobilestatus:
             mobile = []
@@ -73,7 +75,8 @@ class Tracking(commands.Cog):
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
                     mobile += [username]
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['mobile']} User{'' if len(mobile) == 1 else 's'} `{', '.join(mobile)}` {'is' if len(mobile) == 1 else 'are'} on discord mobile.",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['mobile']} User{'' if len(mobile) == 1 else 's'} `{', '.join(mobile)}` {'is' if len(mobile) == 1 else 'are'} on discord mobile.",
             )
         if web_status:
             mobile = []
@@ -84,7 +87,8 @@ class Tracking(commands.Cog):
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
                     mobile += [username]
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['web']} User{'' if len(mobile) == 1 else 's'} `{', '.join(mobile)}` {'is' if len(mobile) == 1 else 'are'} on discord web.",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['web']} User{'' if len(mobile) == 1 else 's'} `{', '.join(mobile)}` {'is' if len(mobile) == 1 else 'are'} on discord web.",
             )
         if offline:
             mobile = []
@@ -95,7 +99,8 @@ class Tracking(commands.Cog):
                 for user in users:
                     username = f"{user.name}#{user.discriminator}"
                     mobile += [username]
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['offline']} User{'' if len(mobile) == 1 else 's'} `{', '.join(mobile)}` {'is' if len(mobile) == 1 else 'are'} offline",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['offline']} User{'' if len(mobile) == 1 else 's'} `{', '.join(mobile)}` {'is' if len(mobile) == 1 else 'are'} offline",
             )
 
     # @commands.command(
@@ -219,7 +224,8 @@ class Tracking(commands.Cog):
             if user is None:
                 user = ctx.author
 
-            message = await ctx.send_or_reply(content=f"**{self.bot.emote_dict['loading']} Collecting User Data...**",
+            message = await ctx.send_or_reply(
+                content=f"**{self.bot.emote_dict['loading']} Collecting User Data...**",
             )
 
             sid = int(user.id)
@@ -351,7 +357,8 @@ class Tracking(commands.Cog):
             member = ctx.author
         status = "\n".join(self.activity_string(a) for a in member.activities)
         if status == "":
-            return await ctx.send_or_reply(content=f"**{member.display_name}** has no current status.",
+            return await ctx.send_or_reply(
+                content=f"**{member.display_name}** has no current status.",
             )
         msg = f"**{member.display_name}'s** Status: {status}\n"
         await ctx.send_or_reply(msg)
@@ -399,11 +406,13 @@ class Tracking(commands.Cog):
         a = await self.bot.cxn.fetchrow(query, user.id, ctx.guild.id) or None
         if a is None:
             # await self.fix_member(ctx.author)
-            return await ctx.send_or_reply(content="`{}` has sent **0** messages.".format(user),
+            return await ctx.send_or_reply(
+                content="`{}` has sent **0** messages.".format(user),
             )
         else:
             a = int(a[0])
-            await ctx.send_or_reply(content=f"`{user}` has sent **{a}** message{'' if a == 1 else 's'}",
+            await ctx.send_or_reply(
+                content=f"`{user}` has sent **{a}** message{'' if a == 1 else 's'}",
             )
 
     @commands.command(brief="Show the top message senders.", aliases=["top"])
@@ -485,7 +494,8 @@ class Tracking(commands.Cog):
         if user is None:
             user = ctx.author
         if user.bot:
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} I do not track bots.",
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['error']} I do not track bots.",
             )
 
         query = """SELECT usernames FROM usernames WHERE user_id = $1"""
@@ -544,11 +554,13 @@ class Tracking(commands.Cog):
             Will default to yourself if no user is passed
         """
         if user is None:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}seen <user>`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}seen <user>`",
             )
 
         if user.bot:
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} I do not track bots.",
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['error']} I do not track bots.",
             )
 
         tracker = self.bot.get_cog("Batch")
@@ -556,8 +568,7 @@ class Tracking(commands.Cog):
         data = await tracker.last_observed(user)
 
         if data["last_seen"] is None:
-            return await ctx.send_or_reply(content=f"I have not seen `{user}`"
-            )
+            return await ctx.send_or_reply(content=f"I have not seen `{user}`")
 
         await ctx.send_or_reply(
             content=f"User `{user}` was last seen {data['last_seen']} ago.",
@@ -591,7 +602,8 @@ class Tracking(commands.Cog):
         try:
             width = len(max(counter, key=len))
         except ValueError:
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} User `{user}` has not run any commands.",
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['error']} User `{user}` has not run any commands.",
             )
         total = sum(counter.values())
 
@@ -633,7 +645,8 @@ class Tracking(commands.Cog):
         if user is None:
             query = """SELECT COUNT(*) as c FROM commands WHERE server_id = $1"""
             command_count = await self.bot.cxn.fetchrow(query, ctx.guild.id)
-            return await ctx.send_or_reply(content=f"A total of **{command_count[0]:,}** command{' has' if int(command_count[0]) == 1 else 's have'} been executed on this server.",
+            return await ctx.send_or_reply(
+                content=f"A total of **{command_count[0]:,}** command{' has' if int(command_count[0]) == 1 else 's have'} been executed on this server.",
             )
         else:
             if user.bot:
@@ -642,7 +655,8 @@ class Tracking(commands.Cog):
                 )
             query = """SELECT COUNT(*) as c FROM commands WHERE author_id = $1 AND server_id = $2"""
             command_count = await self.bot.cxn.fetchrow(query, user.id, ctx.guild.id)
-            return await ctx.send_or_reply(content=f"User `{user}` has executed **{int(command_count[0]):,}** commands.",
+            return await ctx.send_or_reply(
+                content=f"User `{user}` has executed **{int(command_count[0]):,}** commands.",
             )
 
     @commands.command(brief="Show the top bot users.", aliases=["botusage"])
@@ -678,7 +692,7 @@ class Tracking(commands.Cog):
     @commands.command(brief="Most used words from a user.")
     @commands.guild_only()
     @permissions.has_permissions(manage_messages=True)
-    async def words(self, ctx, mem_input = None, limit: int = 100):
+    async def words(self, ctx, mem_input=None, limit: int = 100):
         """
         Usage: -words [user]
         Output: Most commonly used words by the passed user
@@ -695,9 +709,10 @@ class Tracking(commands.Cog):
                 member = ctx.author
                 if mem_input.isdigit():
                     limit = int(mem_input)
-            
+
         if member.bot:
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} I do not track bots.",
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['error']} I do not track bots.",
             )
         message = await ctx.send_or_reply(
             content=f"**{self.bot.emote_dict['loading']} Collecting Word Statistics...**",
@@ -726,7 +741,9 @@ class Tracking(commands.Cog):
                 pagination.TextPageSource(msg, prefix="```ini", max_size=1000)
             )
         except RuntimeError:
-            return await message.edit(content=f"{self.bot.emote_dict['failed']} **Failed. Please try again.**")
+            return await message.edit(
+                content=f"{self.bot.emote_dict['failed']} **Failed. Please try again.**"
+            )
         await message.edit(
             content=f"Most common words sent by **{member.display_name}**",
         )
@@ -747,12 +764,14 @@ class Tracking(commands.Cog):
             Will default to you if no user is passed.
         """
         if word is None:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}word <word> [user]`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}word <word> [user]`",
             )
         if member is None:
             member = ctx.author
         if member.bot:
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} I do not track bots.",
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['error']} I do not track bots.",
             )
 
         message = await ctx.send_or_reply(
@@ -811,10 +830,7 @@ class Tracking(commands.Cog):
             if not name:
                 continue
             page_list.append(
-                {
-                    "name": name,
-                    "value": f"Times recorded spamming: {x[0][1]}"
-                }
+                {"name": name, "value": f"Times recorded spamming: {x[0][1]}"}
             )
 
         p = pagination.MainMenu(
@@ -831,7 +847,6 @@ class Tracking(commands.Cog):
             await p.start(ctx)
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
-
 
     @commands.group(
         brief="Show the most active server users.", invoke_without_command=True

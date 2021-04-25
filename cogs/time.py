@@ -161,7 +161,8 @@ class Time(commands.Cog):
             except menus.MenuError as e:
                 await ctx.send_or_reply(e)
         else:
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['failed']} No users have set their timezones.",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['failed']} No users have set their timezones.",
             )
 
     @commands.command(brief="See a member's timezone.", aliases=["tz"])
@@ -183,7 +184,8 @@ class Time(commands.Cog):
                 """
         timezone = await self.bot.cxn.fetchval(query, member.id) or None
         if timezone is None:
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} `{member}` has not set their timezone. "
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['error']} `{member}` has not set their timezone. "
                 f"Use the `{ctx.prefix}settz [Region/City]` command.",
             )
 
@@ -221,7 +223,8 @@ class Time(commands.Cog):
 
         t = self.getTimeFromTZ(tz)
         if t is None:
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['failed']} I couldn't find that timezone.",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['failed']} I couldn't find that timezone.",
             )
             return
         t["time"] = utils.getClockForTime(t["time"])
@@ -263,7 +266,8 @@ class Time(commands.Cog):
             and countries as valid locations
         """
         if place is None:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}clock <location>`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}clock <location>`",
             )
         try:
             if place.lower() == "la":
@@ -311,11 +315,13 @@ class Time(commands.Cog):
         author = ctx.author
         if author.id not in self.stopwatches:
             self.stopwatches[author.id] = int(time.perf_counter())
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['stopwatch']} Stopwatch started!",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['stopwatch']} Stopwatch started!",
             )
         else:
             tmp = abs(self.stopwatches[author.id] - int(time.perf_counter()))
             tmp = str(timedelta(seconds=tmp))
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['stopwatch']} Stopwatch stopped! Time: **{tmp}**",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['stopwatch']} Stopwatch stopped! Time: **{tmp}**",
             )
             self.stopwatches.pop(author.id, None)

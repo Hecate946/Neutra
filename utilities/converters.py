@@ -233,10 +233,12 @@ class BannedMember(commands.Converter):
             raise commands.BadArgument("This member has not been banned before.")
         return entity
 
+
 class Arguments(argparse.ArgumentParser):
     def error(self, message):
         raise RuntimeError(message)
-        
+
+
 class GlobalChannel(commands.Converter):
     async def convert(self, ctx, argument):
         try:

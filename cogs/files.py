@@ -126,7 +126,8 @@ class Files(commands.Cog):
         try:
             await ctx.author.send(file=discord.File(data, filename=help_file))
         except Exception:
-            await ctx.send_or_reply(file=discord.File(data, filename=help_file),
+            await ctx.send_or_reply(
+                file=discord.File(data, filename=help_file),
             )
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
@@ -173,7 +174,8 @@ class Files(commands.Cog):
         try:
             await ctx.author.send(file=discord.File(data, filename=server_file))
         except Exception:
-            await ctx.send_or_reply(file=discord.File(data, filename=server_file),
+            await ctx.send_or_reply(
+                file=discord.File(data, filename=server_file),
             )
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
@@ -268,7 +270,8 @@ class Files(commands.Cog):
         try:
             await ctx.author.send(file=discord.File(data, filename=role_file))
         except Exception:
-            await ctx.send_or_reply(file=discord.File(data, filename=role_file),
+            await ctx.send_or_reply(
+                file=discord.File(data, filename=role_file),
             )
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
@@ -319,7 +322,8 @@ class Files(commands.Cog):
         try:
             await ctx.author.send(file=discord.File(data, filename=role_file))
         except Exception:
-            await ctx.send_or_reply(file=discord.File(data, filename=role_file),
+            await ctx.send_or_reply(
+                file=discord.File(data, filename=role_file),
             )
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
@@ -368,7 +372,8 @@ class Files(commands.Cog):
         try:
             await ctx.author.send(file=discord.File(data, filename=role_file))
         except Exception:
-            await ctx.send_or_reply(file=discord.File(data, filename=role_file),
+            await ctx.send_or_reply(
+                file=discord.File(data, filename=role_file),
             )
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
@@ -417,7 +422,8 @@ class Files(commands.Cog):
         try:
             await ctx.author.send(file=discord.File(data, filename=role_file))
         except Exception:
-            await ctx.send_or_reply(file=discord.File(data, filename=role_file),
+            await ctx.send_or_reply(
+                file=discord.File(data, filename=role_file),
             )
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
@@ -463,7 +469,8 @@ class Files(commands.Cog):
         try:
             await ctx.author.send(file=discord.File(data, filename=role_file))
         except Exception:
-            await ctx.send_or_reply(file=discord.File(data, filename=role_file),
+            await ctx.send_or_reply(
+                file=discord.File(data, filename=role_file),
             )
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
@@ -535,7 +542,8 @@ class Files(commands.Cog):
         try:
             await ctx.author.send(file=discord.File(data, filename=log_file))
         except Exception:
-            await ctx.send_or_reply(file=discord.File(data, filename=log_file),
+            await ctx.send_or_reply(
+                file=discord.File(data, filename=log_file),
             )
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
@@ -579,7 +587,8 @@ class Files(commands.Cog):
         try:
             await ctx.author.send(file=discord.File(data, filename=time_file))
         except Exception:
-            await ctx.send_or_reply(file=discord.File(data, filename=time_file),
+            await ctx.send_or_reply(
+                file=discord.File(data, filename=time_file),
             )
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
@@ -630,7 +639,8 @@ class Files(commands.Cog):
         try:
             await ctx.author.send(file=discord.File(data, filename=time_file))
         except Exception:
-            await ctx.send_or_reply(file=discord.File(data, filename=time_file),
+            await ctx.send_or_reply(
+                file=discord.File(data, filename=time_file),
             )
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
@@ -684,7 +694,8 @@ class Files(commands.Cog):
         try:
             await ctx.author.send(file=discord.File(data, filename=time_file))
         except Exception:
-            await ctx.send_or_reply(file=discord.File(data, filename=time_file),
+            await ctx.send_or_reply(
+                file=discord.File(data, filename=time_file),
             )
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
@@ -733,7 +744,8 @@ class Files(commands.Cog):
         try:
             await ctx.author.send(file=discord.File(data, filename=time_file))
         except Exception:
-            await ctx.send_or_reply(file=discord.File(data, filename=time_file),
+            await ctx.send_or_reply(
+                file=discord.File(data, filename=time_file),
             )
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
@@ -783,7 +795,8 @@ class Files(commands.Cog):
         try:
             await ctx.author.send(file=discord.File(data, filename=time_file))
         except Exception:
-            await ctx.send_or_reply(file=discord.File(data, filename=time_file),
+            await ctx.send_or_reply(
+                file=discord.File(data, filename=time_file),
             )
             await mess.edit(
                 content="{} Uploaded `{}`.".format(
@@ -853,5 +866,6 @@ class Files(commands.Cog):
         with codecs.open("./README.md", "w", encoding="utf-8") as fp:
             fp.write(final)
 
-            await ctx.send_or_reply(file=discord.File(data, filename="README.md"),
+            await ctx.send_or_reply(
+                file=discord.File(data, filename="README.md"),
             )

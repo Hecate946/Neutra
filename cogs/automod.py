@@ -41,7 +41,8 @@ class Automod(commands.Cog):
             They only store a record of how many instances a user has misbehaved.
         """
         if not len(targets):
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}warn <target> [target]... [reason]`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}warn <target> [target]... [reason]`",
             )
         warned = []
         for target in targets:
@@ -114,7 +115,8 @@ class Automod(commands.Cog):
                     )
                 )
         if warned:
-            await ctx.send_or_reply(content=f'{self.bot.emote_dict["success"]} Warned `{", ".join(warned)}`',
+            await ctx.send_or_reply(
+                content=f'{self.bot.emote_dict["success"]} Warned `{", ".join(warned)}`',
             )
 
     @commands.command(brief="Count the warnings a user has.", aliases=["listwarns"])
@@ -142,7 +144,8 @@ class Automod(commands.Cog):
                     f"{self.emote_dict['success']} User `{target}` has no warnings."
                 )
             warnings = int(warnings[0])
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['announce']} User `{target}` currently has **{warnings}** warning{'' if int(warnings) == 1 else 's'} in this server.",
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['announce']} User `{target}` currently has **{warnings}** warning{'' if int(warnings) == 1 else 's'} in this server.",
             )
         except Exception as e:
             return await ctx.send_or_reply(e)
@@ -167,7 +170,8 @@ class Automod(commands.Cog):
         Output: Clears all warnings for that user
         """
         if target is None:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}deletewarn <target>`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}deletewarn <target>`",
             )
         try:
             warnings = (
@@ -188,7 +192,8 @@ class Automod(commands.Cog):
                 target.id,
                 ctx.guild.id,
             )
-            await ctx.send_or_reply(content=f"{self.emote_dict['success']} Cleared all warnings for `{target}` in this server.",
+            await ctx.send_or_reply(
+                content=f"{self.emote_dict['success']} Cleared all warnings for `{target}` in this server.",
             )
             try:
                 await target.send(
@@ -213,7 +218,8 @@ class Automod(commands.Cog):
         Output: Revokes a warning from a user
         """
         if target is None:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}revokewarn <target>`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}revokewarn <target>`",
             )
         try:
             warnings = (
@@ -271,7 +277,8 @@ class Automod(commands.Cog):
         query = """SELECT user_id, warnings FROM warn WHERE server_id = $1 ORDER BY warnings DESC"""
         records = await self.bot.cxn.fetch(query, ctx.guild.id) or None
         if records is None:
-            return await ctx.send_or_reply(content=f"{self.emote_dict['error']} No current warnings exist on this server.",
+            return await ctx.send_or_reply(
+                content=f"{self.emote_dict['error']} No current warnings exist on this server.",
             )
 
         p = pagination.SimplePages(
@@ -291,7 +298,6 @@ class Automod(commands.Cog):
             await p.start(ctx)
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
-
 
     @commands.command(
         brief="Enable or disable auto-deleting invite links",
@@ -369,7 +375,8 @@ class Automod(commands.Cog):
     @autorole.command()
     async def add(self, ctx, roles: commands.Greedy[discord.Role] = None):
         if roles is None:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}autorole <roles>`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}autorole <roles>`",
             )
         for role in roles:
             self.bot.server_settings[ctx.guild.id]["autoroles"].append(role.id)
@@ -388,7 +395,8 @@ class Automod(commands.Cog):
     @autorole.command(aliases=["rem", "rm"])
     async def remove(self, ctx, roles: commands.Greedy[discord.Role] = None):
         if roles is None:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}autorole <roles>`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}autorole <roles>`",
             )
         autoroles = self.bot.server_settings[ctx.guild.id]["autoroles"]
         for role in roles:
@@ -420,7 +428,8 @@ class Automod(commands.Cog):
         autoroles = self.bot.server_settings[ctx.guild.id]["autoroles"]
 
         if autoroles == []:
-            return await ctx.send_or_reply(content=f"No autoroles yet, use `{ctx.prefix}autorole add <roles>`",
+            return await ctx.send_or_reply(
+                content=f"No autoroles yet, use `{ctx.prefix}autorole add <roles>`",
             )
 
         p = pagination.SimplePages(
@@ -646,12 +655,14 @@ class Automod(commands.Cog):
         await self.bot.cxn.execute(query, insertion, ctx.guild.id)
 
         if existing:
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} The word{'' if len(existing) == 1 else 's'} `{', '.join(existing)}` "
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['error']} The word{'' if len(existing) == 1 else 's'} `{', '.join(existing)}` "
                 f"{'was' if len(existing) == 1 else 'were'} already in the word filter.",
             )
 
         if added:
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} The word{'' if len(added) == 1 else 's'} `{', '.join(added)}` "
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['success']} The word{'' if len(added) == 1 else 's'} `{', '.join(added)}` "
                 f"{'was' if len(added) == 1 else 'were'} successfully added to the word filter.",
             )
 
@@ -663,14 +674,16 @@ class Automod(commands.Cog):
     @permissions.has_permissions(manage_guild=True)
     async def remove_words(self, ctx, *, words: str = None):
         if words is None:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}filter remove <word>`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}filter remove <word>`",
             )
 
         words_to_remove = words.lower().split(",")
 
         word_list = self.bot.server_settings[ctx.guild.id]["profanities"]
         if word_list == []:
-            return await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} This server has no filtered words.",
+            return await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['error']} This server has no filtered words.",
             )
 
         removed = []
@@ -690,12 +703,14 @@ class Automod(commands.Cog):
         await self.bot.cxn.execute(query, insertion, ctx.guild.id)
 
         if not_found:
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['error']} The word{'' if len(not_found) == 1 else 's'} `{', '.join(not_found)}` "
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['error']} The word{'' if len(not_found) == 1 else 's'} `{', '.join(not_found)}` "
                 f"{'was' if len(not_found) == 1 else 'were'} not in the word filter.",
             )
 
         if removed:
-            await ctx.send_or_reply(content=f"{self.bot.emote_dict['success']} The word{'' if len(removed) == 1 else 's'} `{', '.join(removed)}` "
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['success']} The word{'' if len(removed) == 1 else 's'} `{', '.join(removed)}` "
                 f"{'was' if len(removed) == 1 else 'were'} successfully removed from the word filter.",
             )
 
@@ -707,7 +722,8 @@ class Automod(commands.Cog):
         words = self.bot.server_settings[ctx.guild.id]["profanities"]
 
         if words == []:
-            return await ctx.send_or_reply(content=f"No filtered words yet, use `{ctx.prefix}filter add <word>` to filter words",
+            return await ctx.send_or_reply(
+                content=f"No filtered words yet, use `{ctx.prefix}filter add <word>` to filter words",
             )
 
         p = pagination.SimplePages(entries=[f"`{x}`" for x in words], per_page=20)

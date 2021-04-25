@@ -41,7 +41,10 @@ class Info(commands.Cog):
         value = await self.bot.cxn.fetchrow(query)
         return int(value[0])
 
-    @commands.command(aliases=["info", "bot", "botstats", "botinfo"], brief="Display information about the bot.")
+    @commands.command(
+        aliases=["info", "bot", "botstats", "botinfo"],
+        brief="Display information about the bot.",
+    )
     async def about(self, ctx):
         """
         Usage: -about
@@ -79,7 +82,9 @@ class Info(commands.Cog):
             ),
             inline=True,
         )
-        embed.add_field(name="Python Version", value=f"{platform.python_version()}", inline=True)
+        embed.add_field(
+            name="Python Version", value=f"{platform.python_version()}", inline=True
+        )
         embed.add_field(name="Library", value="Discord.py", inline=True)
         embed.add_field(name="API Version", value=f"{dv}", inline=True)
         embed.add_field(
@@ -131,7 +136,8 @@ class Info(commands.Cog):
             correct it as soon as possible.
         """
         if bug is None:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}bugreport <bug>`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}bugreport <bug>`",
             )
 
         owner = discord.utils.get(self.bot.get_all_members(), id=708584008065351681)
@@ -152,13 +158,14 @@ class Info(commands.Cog):
                 "I cannot send your bug report, I'm unable to find my owner."
             )
         except discord.errors.HTTPException:
-            await ctx.send_or_reply(content="Your bug report is too long."
-            )
+            await ctx.send_or_reply(content="Your bug report is too long.")
         except Exception:
-            await ctx.send_or_reply(content="I'm unable to deliver your bug report. Sorry.",
+            await ctx.send_or_reply(
+                content="I'm unable to deliver your bug report. Sorry.",
             )
         else:
-            await ctx.send_or_reply(content="Your bug report has been sent.",
+            await ctx.send_or_reply(
+                content="Your bug report has been sent.",
             )
 
     @commands.command(
@@ -177,7 +184,8 @@ class Info(commands.Cog):
             However, please be detailed and concise.
         """
         if suggestion is None:
-            return await ctx.send_or_reply(content=f"Usage `{ctx.prefix}suggest <suggestion>`",
+            return await ctx.send_or_reply(
+                content=f"Usage `{ctx.prefix}suggest <suggestion>`",
             )
         owner = discord.utils.get(self.bot.get_all_members(), id=708584008065351681)
         author = ctx.author
@@ -193,18 +201,16 @@ class Info(commands.Cog):
         try:
             await owner.send(message)
         except discord.errors.InvalidArgument:
-            await ctx.send_or_reply(content="I cannot send your message"
-            )
+            await ctx.send_or_reply(content="I cannot send your message")
         except discord.errors.HTTPException:
-            await ctx.send_or_reply(content="Your message is too long."
-            )
+            await ctx.send_or_reply(content="Your message is too long.")
         except Exception as e:
-            await ctx.send_or_reply(content="I failed to send your message.",
+            await ctx.send_or_reply(
+                content="I failed to send your message.",
             )
             print(e)
         else:
-            await ctx.send_or_reply(content="Your message has been sent."
-            )
+            await ctx.send_or_reply(content="Your message has been sent.")
 
     @commands.command(brief="Show the bot's uptime.", aliases=["runtime"])
     async def uptime(self, ctx):
@@ -236,7 +242,8 @@ class Info(commands.Cog):
         """
         async with ctx.channel.typing():
             start = time.time()
-            message = await ctx.send_or_reply(content=f'{self.bot.emote_dict["loading"]} **Calculating Speed...**',
+            message = await ctx.send_or_reply(
+                content=f'{self.bot.emote_dict["loading"]} **Calculating Speed...**',
             )
             end = time.time()
 
@@ -298,7 +305,8 @@ class Info(commands.Cog):
         """
         async with ctx.channel.typing():
             start = time.time()
-            message = await ctx.send_or_reply(content=f'{self.bot.emote_dict["loading"]} **Calculating Latency...**',
+            message = await ctx.send_or_reply(
+                content=f'{self.bot.emote_dict["loading"]} **Calculating Latency...**',
             )
             end = time.time()
 
@@ -534,7 +542,8 @@ class Info(commands.Cog):
         Output: Detailed information on my user stats
         """
         async with ctx.channel.typing():
-            msg = await ctx.send_or_reply(content=f"{self.bot.emote_dict['loading']} **Collecting User Statistics**",
+            msg = await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['loading']} **Collecting User Statistics**",
             )
             users = [x for x in self.bot.get_all_members() if not x.bot]
             users_online = [x for x in users if x.status != discord.Status.offline]
