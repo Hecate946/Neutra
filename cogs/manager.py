@@ -1175,7 +1175,7 @@ class Manager(commands.Cog):
         else:
             text = stdout
 
-        await self.bot.hecate.send(text)
+        await self.bot.hecate.send("```prolog\n"+text+"```")
 
         await message.edit(
             content=f"{self.bot.emote_dict['success']} **Completed.**"
