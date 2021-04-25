@@ -70,10 +70,10 @@ class Config(commands.Cog):
             f"{self.bot.emote_dict['success']} Edited key `{key}` to `{value}`"
         )
 
-    @commands.group(hidden=True, brief="Change the bot's specifications.")
+    @commands.group(case_insensitive=True, brief="Change the bot's specifications.")
     async def change(self, ctx):
         """
-        Usage:      -search <method> <new>
+        Usage:      -change <method> <new>
         Examples:   -change name Milky Way, -change avatar <url>
         Permission: Bot Owner
         Output:     Edited Bot Specification.
@@ -83,8 +83,7 @@ class Config(commands.Cog):
             username      (Alias: name)
         """
         if ctx.invoked_subcommand is None:
-            help_command = self.bot.get_command("help")
-            await help_command(ctx, invokercommand="change")
+            return await ctx.usage("<method> <new value>")
 
     @change.command(
         name="username", hidden=True, aliases=["name", "user"], brief="Change username."
@@ -304,7 +303,7 @@ class Config(commands.Cog):
             changelog: Post an entry to the changelog
         """
         if ctx.invoked_subcommand is None:
-            return await ctx.send_help(str(ctx.command))
+            return await ctx.usage("<method>")
 
     @write.command()
     async def overview(self, ctx, *, overview: str = None):
@@ -387,7 +386,7 @@ class Config(commands.Cog):
         Usage: -unblacklist <object>
         """
         if _object is None:
-            return await ctx.send_or_reply(f"Usage: `{ctx.prefix}unblacklist <object>`")
+            return await ctx.usage("<object>")
         try:
             self.bot.blacklist.pop(str(_object.id))
         except KeyError:

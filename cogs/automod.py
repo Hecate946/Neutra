@@ -364,8 +364,7 @@ class Automod(commands.Cog):
             show Shows all current autoroles
         """
         if ctx.invoked_subcommand is None:
-            help_cmd = self.bot.get_command("help")
-            await help_cmd(ctx, invokercommand="autorole")
+            return await ctx.usage("<option> [arguments]")
 
     @autorole.command()
     async def add(self, ctx, roles: commands.Greedy[discord.Role] = None):
@@ -591,6 +590,7 @@ class Automod(commands.Cog):
 
     @commands.group(
         invoke_without_command=True,
+        case_insensitive=True,
         name="filter",
         aliases=["profanity"],
         brief="Manage the server's word filter.",

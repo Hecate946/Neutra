@@ -322,12 +322,6 @@ class Stats(commands.Cog):
                 await ctx.send_or_reply(e)
 
 
-
-
-
-
-
-
     @commands.command(brief="Check when a user joined the server.")
     @commands.guild_only()
     async def joinedat(self, ctx, *, user: discord.Member = None):
@@ -440,9 +434,11 @@ class Stats(commands.Cog):
 
     @commands.command(brief="Show the first users to join.")
     @commands.guild_only()
+    @permissions.has_permissions(manage_guild=True)
     async def firstjoins(self, ctx):
         """
         Usage: -firstjoins
+        Permission: Manage Server
         Output: Embed of members to first join the current server.
         """
         our_list = []
@@ -481,9 +477,11 @@ class Stats(commands.Cog):
 
     @commands.command(brief="Show the latest users to join.")
     @commands.guild_only()
+    @permissions.has_permissions(manage_guild=True)
     async def recentjoins(self, ctx):
         """
         Usage: -recentjoins
+        Permission: Manage Server
         Output: Embed of most recent members to join the server.
         """
         our_list = []
@@ -524,11 +522,15 @@ class Stats(commands.Cog):
 
     @commands.command(brief="Shows all the server's bots.")
     @permissions.bot_has_permissions(embed_links=True)
-    @permissions.has_permissions(manage_messages=True)
+    @permissions.has_permissions(manage_guild=True)
     @commands.guild_only()
     async def listbots(self, ctx, *, _input = None):
         """
         Usage: -listbots [server]
+        Permission: Manage Server
+        Output:
+            A pagination session showing
+            all server bots and their IDs
         """
         if _input is None:
             guild = ctx.guild
@@ -579,9 +581,9 @@ class Stats(commands.Cog):
     @permissions.has_permissions(manage_channels=True)
     async def listchannels(self, ctx, guild: int = None):
         """
-        Usage:      -listchannels
-        Alias:      -channels
-        Output:     Embed of all server channels
+        Usage: -listchannels
+        Alias: -channels
+        Output: Embed of all server channels
         Permission: Manage Channels
         """
         if guild is None:
@@ -640,12 +642,15 @@ class Stats(commands.Cog):
 
     @commands.command(name="permissions", brief="Show a user's permissions.")
     @commands.guild_only()
+    @permissions.has_permissions(manage_messages=True)
     async def _permissions(
         self, ctx, member: discord.Member = None, channel: discord.TextChannel = None
     ):
         """
         Usage:  -permissions [member] [channel]
-        Output: Shows a member's permissions in a specific channel.
+        Permission: Manage Messages
+        Output:
+            Shows a member's permissions in a specific channel.
         Notes:
             Will default to yourself and the current channel
             if they are not specified.

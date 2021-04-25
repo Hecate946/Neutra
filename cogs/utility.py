@@ -625,15 +625,14 @@ class Utility(commands.Cog):
         Methods:
             duplicates
             hardmention
-            hash          (Ex: 3523)
-            nickname      (Ex: Hecate)
-            playing       (Ex: Visual Studio Code)
-            snowflake     (Ex: 708584008065351681)
-            username      (Ex: Hecate)
+            hash       (Ex: 3523)
+            nickname   (Ex: Hecate)
+            playing    (Ex: Visual Studio Code)
+            snowflake  (Ex: 708584008065351681)
+            username   (Ex: Hecate)
         """
         if ctx.invoked_subcommand is None:
-            help_command = self.bot.get_command("help")
-            await help_command(ctx, invokercommand="find")
+            return await ctx.usage("<method> <search>")
 
     @find.command(name="playing", aliases=["status", "activity"], brief="Search for users by game.")
     async def find_playing(self, ctx, *, search: str):
@@ -658,11 +657,13 @@ class Utility(commands.Cog):
             loop,
         )
 
-    @find.command(name="username", aliases=["name"], brief="Search for users by username.")
+    @find.command(name="username", aliases=["name","user"], brief="Search for users by username.")
     async def find_name(self, ctx, *, search: str):
         """
         Usage: -find username <search>
-        Aliases: -find name
+        Aliases:
+            -find name
+            -find user
         Output:
             A pagination session with all user's
             usernames that match your search
@@ -676,11 +677,14 @@ class Utility(commands.Cog):
             ctx, "name", f"Found **{len(loop)}** on your search for **{search}**", loop
         )
 
-    @find.command(name="nickname", aliases=["nick"], brief="Search for users by nickname.")
+    @find.command(name="nicknames", aliases=["nick", "nicks", "nickname"], brief="Search for users by nickname.")
     async def find_nickname(self, ctx, *, search: str):
         """
-        Usage: -find nickname <search>
-        Alias: -find nick
+        Usage: -find nicknames <search>
+        Aliases:
+            -find nicks
+            -find nick
+            -find nickname
         Output:
             A pagination session with all user's
             nicknames that match your search
@@ -691,9 +695,15 @@ class Utility(commands.Cog):
             if i.nick
             if (search.lower() in i.nick.lower()) and not i.bot
         ]
-        await utils.prettyResults(
-            ctx, "name", f"Found **{len(loop)}** on your search for **{search}**", loop
-        )
+        if not loop:
+            return await ctx.fail(f"**No results.**")
+        stuff = "\r\n".join([f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)])
+        await ctx.send_or_reply(f"Found **{len(loop)}** on your search for **{search}**")
+        p = pagination.MainMenu(pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=800))
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send(e)
 
     @find.command(name="id", aliases=['snowflake'], brief="Search for users by id.")
     async def find_id(self, ctx, *, search: int):
@@ -710,9 +720,15 @@ class Utility(commands.Cog):
             for i in ctx.guild.members
             if (str(search) in str(i.id)) and not i.bot
         ]
-        await utils.prettyResults(
-            ctx, "name", f"Found **{len(loop)}** on your search for **{search}**", loop
-        )
+        if not loop:
+            return await ctx.fail(f"**No results.**")
+        stuff = "\r\n".join([f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)])
+        await ctx.send_or_reply(f"Found **{len(loop)}** on your search for **{search}**")
+        p = pagination.MainMenu(pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=800))
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send(e)
 
     @find.command(name="hash", aliases=["discriminator","discrim"], brief="Search for users by discriminator.")
     async def find_discrim(self, ctx, *, search: str):
@@ -731,12 +747,15 @@ class Utility(commands.Cog):
             )
 
         loop = [f"{i} ({i.id})" for i in ctx.guild.members if search == i.discriminator]
-        await utils.prettyResults(
-            ctx,
-            "discriminator",
-            f"Found **{len(loop)}** on your search for **{search}**",
-            loop,
-        )
+        if not loop:
+            return await ctx.fail(f"**No results.**")
+        stuff = "\r\n".join([f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)])
+        await ctx.send_or_reply(f"Found **{len(loop)}** on your search for **{search}**")
+        p = pagination.MainMenu(pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=1250))
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send(e)
 
     @find.command(name="duplicates", aliases=["dups"], brief="Find users with identical names.")
     async def find_duplicates(self, ctx):
@@ -762,9 +781,15 @@ class Utility(commands.Cog):
                     f"Duplicates: [{str(name_tuple[1]).zfill(2)}] {name_tuple[0]}"
                 )
 
-        await utils.prettyResults(
-            ctx, "name", f"Found **{len(loop)}** on your search for duplicates", loop
-        )
+        if not loop:
+            return await ctx.fail(f"**No results.**")
+        stuff = "\r\n".join([f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)])
+        await ctx.send_or_reply(f"Found **{len(loop)}** on your search for **duplicates**")
+        p = pagination.MainMenu(pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=800))
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send(e)
 
     def _is_hard_to_mention(self, name):
         """Determine if a name is hard to mention."""
@@ -774,11 +799,14 @@ class Utility(commands.Cog):
 
         return re.search(br"[^ ][^ ]+", encoderes) is None
 
-    @find.command(name="hardmention", aliases=["weird", "special"], brief="Find users with hard to mention names.")
-    async def findhardmention(self, ctx, username:str = None):
+    @find.command(name="hardmentions", aliases=["weird", "special","hardmention"], brief="Find users with hard to mention names.")
+    async def hardmentions(self, ctx, username:str = None):
         """
-        Usage: -find hardmention [username=False]
-        Alias: -find weird, -find special
+        Usage: -find hardmentions [username=False]
+        Alias:
+            -find weird
+            -find special
+            -find hardmention
         Output:
             Starts a pagination session showing
             all users who use special characters
@@ -801,9 +829,15 @@ class Utility(commands.Cog):
                 for member in ctx.message.guild.members
                 if self._is_hard_to_mention(member.display_name)
             ]
-        await utils.prettyResults(
-            ctx, "name", f"Found **{len(loop)}** on your search for hard to mention names.", loop
-        )
+        if not loop:
+            return await ctx.fail(f"**No results.**")
+        stuff = "\r\n".join([f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)])
+        await ctx.send_or_reply(f"Found **{len(loop)}** on your search for **hardmentions**")
+        p = pagination.MainMenu(pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=800))
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send(e)
 
     @commands.command(brief="Show info on a discord snowflake.", aliases=["id"])
     async def snowflake(self, ctx, *, sid=None):

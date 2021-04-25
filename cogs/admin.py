@@ -237,9 +237,7 @@ class Admin(commands.Cog):
         """Enables the passed command or all commands in the passed cog (admin-only).  Command and cog names are case-sensitive."""
 
         if command_or_cog_name == None:
-            return await ctx.send_or_reply(
-                "Usage: `{}enable [command_or_cog_name]`".format(ctx.prefix)
-            )
+            return await ctx.usage("[command_or_cog_name]")
         # We should check if we have a command
         comm = self._get_commands(command_or_cog_name)
         if comm == None:
@@ -451,8 +449,7 @@ class Admin(commands.Cog):
         """
 
         if user is None:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}ignore <user> [react]`",
-            )
+            return await ctx.usage("<user> [react]")
 
         if user.guild_permissions.administrator:
             return await ctx.send_or_reply(content=f"{self.emote_dict['failed']} You cannot punish other staff members",
@@ -511,8 +508,7 @@ class Admin(commands.Cog):
         """
 
         if user is None:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}unignore <user>`",
-            )
+            return await ctx.usage("<user>")
 
         query = """SELECT user_id FROM ignored WHERE user_id = $1 AND server_id = $2"""
         blacklisted = await self.bot.cxn.fetchval(query, user.id, ctx.guild.id) or None
@@ -639,8 +635,7 @@ class Admin(commands.Cog):
         Output: Removes a custom prefix from your server.
         """
         if old_prefix is None:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}addprefix <old prefix>`",
-            )
+            return await ctx.usage("<old prefix>")
         current_prefixes = self.bot.server_settings[ctx.guild.id]["prefixes"].copy()
         try:
             current_prefixes.remove(f"<@!{self.bot.user.id}>")

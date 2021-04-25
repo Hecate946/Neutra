@@ -443,6 +443,7 @@ class Tracking(commands.Cog):
 
     @commands.command(brief="Show a user's nicknames.", aliases=["nicknames"])
     @commands.guild_only()
+    @permissions.has_permissions(manage_messages=True)
     async def nicks(self, ctx, user: discord.Member = None):
         """
         Usage: -nicks [user]
@@ -471,6 +472,7 @@ class Tracking(commands.Cog):
 
     @commands.command(brief="Show a user's usernames.", aliases=["usernames"])
     @commands.guild_only()
+    @permissions.has_permissions(manage_messages=True)
     async def names(self, ctx, user: discord.Member = None):
         """
         Usage: -names [user]
@@ -563,6 +565,7 @@ class Tracking(commands.Cog):
 
     @commands.command(brief="Bot commands listed by popularity.")
     @commands.guild_only()
+    @permissions.has_permissions(manage_messages=True)
     async def commandstats(self, ctx, user: discord.Member = None, limit=100):
         """
         Usage: -commandstats [user] [limit]
@@ -618,6 +621,7 @@ class Tracking(commands.Cog):
         name="commands", brief="Count the commands run.", aliases=["commandcount"]
     )
     @commands.guild_only()
+    @permissions.has_permissions(manage_messages=True)
     async def commandcount(self, ctx, user: discord.Member = None):
         """
         Usage:  -commands [user]
@@ -643,6 +647,7 @@ class Tracking(commands.Cog):
 
     @commands.command(brief="Show the top bot users.", aliases=["botusage"])
     @commands.guild_only()
+    @permissions.has_permissions(manage_messages=True)
     async def usage(self, ctx, unit: str = "month"):
         """
         Usage: -usage [unit of time]
@@ -672,6 +677,7 @@ class Tracking(commands.Cog):
 
     @commands.command(brief="Most used words from a user.")
     @commands.guild_only()
+    @permissions.has_permissions(manage_messages=True)
     async def words(self, ctx, mem_input = None, limit: int = 100):
         """
         Usage: -words [user]
@@ -731,6 +737,7 @@ class Tracking(commands.Cog):
 
     @commands.command(brief="Usage for a specific word.")
     @commands.guild_only()
+    @permissions.has_permissions(manage_messages=True)
     async def word(self, ctx, word: str = None, member: discord.Member = None):
         """
         Usage: -word <word> [user]
@@ -784,7 +791,13 @@ class Tracking(commands.Cog):
         )
 
     @commands.command(brief="Show all users who spam.")
+    @permissions.has_permissions(manage_messages=True)
     async def spammers(self, ctx):
+        """
+        Usage: -spammers
+        Permission: Manage Messages
+        Output: Users recorded spamming
+        """
         query = """
                 SELECT (user_id, spamcount)
                 FROM spammers
@@ -824,6 +837,7 @@ class Tracking(commands.Cog):
         brief="Show the most active server users.", invoke_without_command=True
     )
     @commands.guild_only()
+    @permissions.has_permissions(manage_messages=True)
     async def activity(self, ctx, unit: str = "month"):
         """
         Usage: -activity [characters] [unit of time]

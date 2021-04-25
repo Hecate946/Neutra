@@ -472,7 +472,7 @@ class Help(commands.Cog):
                         color=self.bot.constants.embed,
                     )
                     help_embed.set_footer(
-                        text=f'Use "{ctx.prefix}help command" for information on a command.'
+                        text=f'Use "{ctx.prefix}help category" for information on a category.'
                     )
                     help_embed.add_field(
                         name=f"**Command Name:** `{valid_commands.title()}`\n**Description:** `{valid_brief}`\n",
@@ -508,7 +508,7 @@ class Help(commands.Cog):
                         color=self.bot.constants.embed,
                     )
                     help_embed.set_footer(
-                        text=f'Use "{ctx.prefix}help command" for information on a command.'
+                        text=f'Use "{ctx.prefix}help category" for information on a category.'
                     )
                     help_embed.add_field(
                         name=f"**Command Group:** `{command.name.title()}`\n**Subcommand:** `{x.name.title()}`\n**Description:** `{brief}`",
@@ -538,7 +538,7 @@ class Help(commands.Cog):
             color=self.bot.constants.embed,
         )
         help_embed.set_footer(
-            text=f'Use "{ctx.prefix}help command" for information on a command.'
+            text=f'Use "{ctx.prefix}help {command.name} method" for information on a method.'
         )
         help_embed.add_field(
             name=f"**Command Group:** `{command.name.title()}`\n**Description:** `{brief}`\n",
@@ -546,21 +546,6 @@ class Help(commands.Cog):
             f"```yaml\n{_help}```",
             inline=False
         )
-        for subcommand in sorted(command.commands, key=lambda c: c.name):
-            if not subcommand.brief or subcommand.brief == "":
-                sub_brief = "No description"
-            else:
-                sub_brief = subcommand.brief
-            if not subcommand.help or subcommand.help == "":
-                sub_help = "No help"
-            else:
-                sub_help = subcommand.help
-            help_embed.add_field(
-                name=f"**\n** **Subcommand:** `{subcommand.name.title()}`\n**Description:** `{sub_brief}`\n",
-                value=f"** **"
-                f"```yaml\n{sub_help}```",
-                inline=False
-            )
         return await self.send_help(ctx, help_embed, pm, delete_after)
 
     @commands.command(hidden=True, brief="Get the brief of a command.")
@@ -571,7 +556,7 @@ class Help(commands.Cog):
             The short description of the passed command
         """
         if command is None:
-            return await ctx.send_or_reply(f"Usage: `{ctx.prefix}brief <command>`")
+            return await ctx.usage("<command>")
         _command = self.bot.get_command(command)
         if _command is None:
             return await ctx.send_or_reply(content=f"{self.bot.emote_dict['failed']} No command named `{command}` found.",
@@ -589,7 +574,7 @@ class Help(commands.Cog):
         """
 
         if command is None:
-            return await ctx.send_or_reply(f"Usage: `{ctx.prefix}docstring <command>`")
+            return await ctx.usage("<command>")
         _command = self.bot.get_command(command)
         if _command is None:
             return await ctx.send_or_reply(content=f"{self.bot.emote_dict['failed']} No command named `{command}` found.",

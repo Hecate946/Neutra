@@ -182,15 +182,13 @@ async def prettyResults(
     pretty = "\r\n".join(
         [f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)]
     )
+    return pretty
 
-    if len(loop) < 15:
-        return await ctx.send_or_reply(content=f"{resultmsg}```ini\n{pretty}```"
-        )
 
-    data = BytesIO(pretty.encode("utf-8"))
-    await ctx.send_or_reply(
-        content=resultmsg, file=discord.File(data, filename=timetext(filename.title()))
-    )
+    # data = BytesIO(pretty.encode("utf-8"))
+    # await ctx.send_or_reply(
+    #     content=resultmsg, file=discord.File(data, filename=timetext(filename.title()))
+    # )
 
 
 def makeBar(progress):

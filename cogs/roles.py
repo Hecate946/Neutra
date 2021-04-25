@@ -41,7 +41,6 @@ class Roles(commands.Cog):
         Alias:  -ri
         Output: Info on the passed role
         """
-
         owner = ctx.guild.owner
         guild = ctx.guild
 
@@ -445,10 +444,10 @@ class Roles(commands.Cog):
         """
         Usage: -listroles
         Alias: -roles
+        Permission: Manage Messages
         Output:
             Shows roles and their member counts. Takes one argument,
             sort_order, which can be default, name, count, or color.
-        Permission: Manage Messages
         """
 
         sort_order = sort_order.lower()
@@ -530,9 +529,11 @@ class Roles(commands.Cog):
 
     @commands.command(brief="Show the people who have a role.")
     @commands.guild_only()
+    @permissions.has_permissions(manage_messages=True)
     async def whohas(self, ctx, *, role: discord.Role = None):
         """
         Usage: -whohas <role>
+        Permission: Manage Messages
         Output:
             Lists the people who have the specified role with their status.
         Notes:
@@ -571,7 +572,9 @@ class Roles(commands.Cog):
         """
         Usage:  -roleperms <role>
         Alias:  -rp
-        Output: Embed with all the permissions granted to that role
+        Output:
+            Embed with all the permissions
+            granted to the passed role
         """
         if role is None:
             return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}roleperms <role>`",

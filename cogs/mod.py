@@ -700,8 +700,26 @@ class Mod(commands.Cog):
     ## Prune Command ##
     ###################
 
-    @commands.group(brief="Remove any type of content.",
-                    aliases=["prune", "delete", "remove"])
+    @commands.group(
+        brief="Remove any type of content.",
+        aliases=["prune", "delete", "remove"],
+        description="Methods:"
+                    "\nAll - Purge all messages."
+                    "\nBots - Purge messages sent by bots."
+                    "\nContains - Custom purge messages."
+                    "\nEmbeds - Purge messages with embeds."
+                    "\nEmojis - Purge messages with emojis."
+                    "\nFiles - Purge messages with attachments."
+                    "\nHumans - Purge  messages sent by humans."
+                    "\nImages - Purge messages with images."
+                    "\nInvites - Purge messages with invites."
+                    "\nMentions - Purge messages with mentions."
+                    "\nReactions - Purge reactions from messages."
+                    "\nUntil - Purge messages until a message."
+                    "\nUrls - Purge messages with URLs."
+                    "\nUser - Purge messages sent by a user."
+                    "\nWebhooks - Purge messages sent by wehooks."
+        )
     @commands.guild_only()
     @commands.max_concurrency(5, per=commands.BucketType.guild)
     @permissions.bot_has_permissions(manage_messages=True)
@@ -711,28 +729,35 @@ class Mod(commands.Cog):
         Usage: -purge <method> <amount>
         Aliases: -prune, -delete, -remove
         Permission: Manage Messages
-        Output: Deletes messages that match criteria
+        Methods:
+            all, bots, contains, embeds,
+            emojis, files, humans, images,
+            invites, mentions, reactions,
+            until, urls, user, webhooks.
+        Output:
+            Deletes messages that match
+            a specific search criteria
         Examples: 
             -prune user Hecate
             -prune bots
             -prune invites 1000
-        Output: 
-            Message removal within your search specification.
         Notes:
-            Specify the amount kwarg to search
-            that number of messages. For example
+            Specify the amount kwarg
+            to search that number of
+            messages. For example,
             -prune user Hecate 1000
-            will search for all messages in the
-            past 1000 and delete all that were
-            sent by Hecate. Default amount is 100.
+            will search for all messages
+            in the past 1000 sent in the
+            channel, and delete all that
+            were sent by Hecate.
+            Default amount is 100.
         """
         args = str(ctx.message.content).split(" ")
         if ctx.invoked_subcommand is None:
             try:
                 args[1]
             except IndexError:
-                help_command = self.bot.get_command("help")
-                return await help_command(ctx, invokercommand="prune")
+                return await ctx.usage("<method> [amount]")
             await self._remove_all(ctx, search=int(args[1]))
 
     async def do_removal(
@@ -769,28 +794,27 @@ class Mod(commands.Cog):
             await ctx.message.delete()
             await msg.delete()
 
-    @purge.command(brief="Purge messages that contain embeds.")
+    @purge.command(brief="Purge messages with embeds.")
     async def embeds(self, ctx, search=100):
         """
         Usage: -purge embeds [amount]
         Output:
-            Searches the passed amount of messages
-            (100 by default) and deletes all
-            messages that contain embeds in them.
+            Deletes all messages that
+            contain embeds in them.
         Examples:
             -purge embeds 2000
             -prune embeds
         """
         await self.do_removal(ctx, search, lambda e: len(e.embeds))
 
-    @purge.command(brief="Purge messages that contain invites.", aliases=['ads'])
+    @purge.command(brief="Purge messages with invites.", aliases=['ads'])
     async def invites(self, ctx, search=100):
         """
         Usage: -purge invites [amount]
         Alias: -purge ads
         Output:
-            Deletes all messages that contain
-            discord invite links in them.
+            Deletes all messages with
+            invite links in them.
         Examples:
             -purge invites
             -prune invites 125
@@ -800,7 +824,7 @@ class Mod(commands.Cog):
             return self.dregex.search(m.content)
         await self.do_removal(ctx, search, predicate)
 
-    @purge.command(aliases=['link', 'url', 'links'], brief="Purge messages that contain URLs.")
+    @purge.command(aliases=['link', 'url', 'links'], brief="Purge messages with URLs.")
     async def urls(self, ctx, search=100):
         """
         Usage: -purge urls [amount]
@@ -820,7 +844,7 @@ class Mod(commands.Cog):
             return self.uregex.search(m.content)
         await self.do_removal(ctx, search, predicate)
 
-    @purge.command(brief="Purge messages that contain attachments.", aliases=['attachments'])
+    @purge.command(brief="Purge messages with attachments.", aliases=['attachments'])
     async def files(self, ctx, search=100):
         """
         Usage: -purge files [amount]
@@ -835,7 +859,7 @@ class Mod(commands.Cog):
         """
         await self.do_removal(ctx, search, lambda e: len(e.attachments))
 
-    @purge.command(brief="Purge messages that contain mentions.", aliases=['pings', 'ping', 'mention'])
+    @purge.command(brief="Purge messages with mentions.", aliases=['pings', 'ping', 'mention'])
     async def mentions(self, ctx, search=100):
         """
         Usage: -purge mentions [amount]
@@ -854,7 +878,7 @@ class Mod(commands.Cog):
             ctx, search, lambda e: len(e.mentions) or len(e.role_mentions)
         )
 
-    @purge.command(brief="Purge messages that contain images.", aliases=["pictures", "pics", "image"])
+    @purge.command(brief="Purge messages with images.", aliases=["pictures", "pics", "image"])
     async def images(self, ctx, search=100):
         """
         Usage: -purge mentions [amount]
@@ -889,7 +913,7 @@ class Mod(commands.Cog):
         """
         await self.do_removal(ctx, search, lambda e: True)
 
-    @purge.command(brief="Purge all messages sent by a user.", aliases=['member'])
+    @purge.command(brief="Purge messages sent by a user.", aliases=['member'])
     async def user(self, ctx, member: discord.Member = None, search=100):
         """
         Usage: -purge user <user> [amount]
@@ -906,7 +930,7 @@ class Mod(commands.Cog):
             return await ctx.usage(f"<user> [amount]")
         await self.do_removal(ctx, search, lambda e: e.author == member)
 
-    @purge.command(brief="Purge all messages that contain a passed string.", aliases=["has"])
+    @purge.command(brief="Customize purging messages.", aliases=["has"])
     async def contains(self, ctx, *, substr: str):
         """
         Usage: -purge contains <string>
@@ -936,14 +960,15 @@ class Mod(commands.Cog):
         prefixes.append(f"<@!{self.bot.constants.client}")
         return prefixes
 
-    @purge.command(name="bots", brief="Purge all messages sent by bots.", aliases=['robots'])
+    @purge.command(name="bots", brief="Purge messages sent by bots.", aliases=['robots'])
     async def _bots(self, ctx, search=100, prefix=None):
         """
         Usage: -purge bots [amount] [prefix]
         Alias:
             -purge robots
         Output:
-            Deletes all messages authored by bots.
+            Deletes all messages
+            that were sent by bots.
         Examples:
             -purge robots 200
             -prune bote 150 >
@@ -970,7 +995,7 @@ class Mod(commands.Cog):
 
         await self.do_removal(ctx, search, predicate)
 
-    @purge.command(name="webhooks", aliases=["webhook"], brief="Purge all messages sent by wehooks.")
+    @purge.command(name="webhooks", aliases=["webhook"], brief="Purge messages sent by wehooks.")
     async def webhooks(self, ctx, search=100):
         """
         Usage: -purge webhooks [amount]
@@ -988,7 +1013,7 @@ class Mod(commands.Cog):
 
         await self.do_removal(ctx, search, predicate)
 
-    @purge.command(name="humans", aliases=["users", "members", "people"], brief="Purge all messages sent by humans.")
+    @purge.command(name="humans", aliases=["users", "members", "people"], brief="Purge messages sent by humans.")
     async def _users(self, ctx, search=100):
         """
         Usage: -purge humans [amount]
@@ -997,8 +1022,10 @@ class Mod(commands.Cog):
             -purge members
             -purge people
         Output:
-            Deletes all messages that were sent 
-            by humans. Excludes webhooks and bots.
+            Deletes all messages
+            sent by user accounts.
+            Bot and webhook messages
+            will not be deleted.
         Examples:
             -purge humans
             -prune people 125
@@ -1008,7 +1035,7 @@ class Mod(commands.Cog):
 
         await self.do_removal(ctx, search, predicate)
 
-    @purge.command(name="emojis", aliases=["emotes","emote", "emoji"], brief="Purge all messages that contain custom emojis.")
+    @purge.command(name="emojis", aliases=["emotes","emote", "emoji"], brief="Purge messages with emojis.")
     async def _emojis(self, ctx, search=100):
         """
         Usage: -purge emojis [amount]
@@ -1017,7 +1044,8 @@ class Mod(commands.Cog):
             -purge emote
             -purge emoji
         Output:
-            Deletes all messages that contain emojis.
+            Deletes all messages that 
+            contain custom discord emojis.
         Examples:
             -purge emojis
             -prune emotes 125
@@ -1030,7 +1058,7 @@ class Mod(commands.Cog):
 
         await self.do_removal(ctx, search, predicate)
 
-    @purge.command(name="reactions", brief="Purge all reactions from messages.")
+    @purge.command(name="reactions", brief="Purge reactions from messages.")
     async def _reactions(self, ctx, search=100):
         """
         Usage: -purge emojis [amount]
@@ -1041,7 +1069,7 @@ class Mod(commands.Cog):
             -purge reactions
             -prune reactions 125
         Notes:
-            The messages searched are not deleted.
+            The messages are not deleted.
             Only the reactions are removed.
         """
         if search > 2000:
@@ -1058,17 +1086,18 @@ class Mod(commands.Cog):
             delete_after=7,
         )
 
-    @purge.command(name="until", aliases=["after"], brief="Purge all messages until a specified message.")
+    @purge.command(name="until", aliases=["after"], brief="Purge messages after a message.")
     async def _until(self, ctx, message_id: int):
         """
         Usage: -purge until <message id>
         Alias: -purge after
         Output:
-            Purges all messages until the given message_id.
+            Purges all messages until
+            the given message_id.
             Given ID is not deleted
         Examples:
-            -purge until 810377376269205546
-            -prune after 810377376269205546 
+            -purge until 810377376269
+            -prune after 810377376269
         """
         channel = ctx.message.channel
         try:

@@ -302,7 +302,7 @@ class Manager(commands.Cog):
             traceback
         """
         if ctx.invoked_subcommand is None:
-            await ctx.send_help(str(ctx.command))
+            return await ctx.usage("<option>")
 
     @logger.command(name="commands", aliases=["cmds"])
     async def _get_cmds(self, ctx):
@@ -335,7 +335,7 @@ class Manager(commands.Cog):
             pid         Aliases: process, processid
         """
         if ctx.invoked_subcommand is None:
-            await ctx.send_help(str(ctx.command))
+            return await ctx.usage("<option>")
 
     @pm2.command(aliases=["out", "output"])
     async def stdout(self, ctx):
@@ -380,7 +380,7 @@ class Manager(commands.Cog):
             settings        Alias: config
         """
         if ctx.invoked_subcommand is None:
-            await ctx.send_help(str(ctx.command))
+            return await ctx.usage("<option>")
 
     @json.command(name="commands", aliases=["commandstats", "command"])
     async def _commands(self, ctx):
@@ -526,7 +526,7 @@ class Manager(commands.Cog):
             r/relation/relations: Show the database relations
         """
         if ctx.invoked_subcommand is None:
-            return await ctx.send_help(str(ctx.command))
+            return await ctx.usage("<option>")
 
     @postgres.command(brief="Get the size of the total db or a table.")
     async def size(self, ctx, *, table_name: str = None):
@@ -797,7 +797,7 @@ class Manager(commands.Cog):
             await ctx.send_or_reply(content=fmt)
 
     @commands.group(
-        hidden=True, invoke_without_command=True, brief="Show command history."
+        hidden=True, invoke_without_command=True, brief="Show command history.", case_insensitive=True
     )
     @commands.is_owner()
     async def command_history(self, ctx):
