@@ -822,6 +822,10 @@ class Files(commands.Cog):
             to include all the current command descriptions
             for each registered category.
         """
+        mess = await ctx.send_or_reply(
+            content="Saving readme to **{}**...".format(self.bot.constants.github),
+        )
+
         owner, cmds, cogs = self.bot.public_stats()
         overview = (
             open("./data/txts/overview.txt")
@@ -861,11 +865,26 @@ class Files(commands.Cog):
             )
         final = premsg + msg
         data = io.BytesIO(final.encode("utf-8"))
-        import codecs
 
-        with codecs.open("./README.md", "w", encoding="utf-8") as fp:
+        with open("./README.md", "w", encoding="utf-8") as fp:
             fp.write(final)
 
+        await mess.edit(content="Uploading `README.md`...")
+        try:
+            await ctx.author.send(file=discord.File(data, filename="README.md"))
+        except Exception:
             await ctx.send_or_reply(
                 file=discord.File(data, filename="README.md"),
             )
+            await mess.edit(
+                content="{} Uploaded `{}`.".format(
+                    self.bot.emote_dict["success"], "README.md"
+                )
+            )
+            return
+        await mess.edit(
+            content="{} Uploaded `{}`.".format(
+                self.bot.emote_dict["success"], "README.md"
+            )
+        )
+        await mess.add_reaction(self.bot.emote_dict["letter"])

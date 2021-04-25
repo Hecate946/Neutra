@@ -25,24 +25,6 @@ class Admin(commands.Cog):
         self.emote_dict = bot.emote_dict
         self.exceptions = []
 
-    # This is a server admin only cog
-    async def cog_check(self, ctx):
-        if not ctx.guild:
-            raise commands.NoPrivateMessage()
-        if (
-            ctx.author.id in self.bot.constants.admins
-            or ctx.author.id in self.bot.constants.owners
-        ):
-            return True
-        return
-        # elif ctx.author.guild_permissions.manage_guild:
-        #     return True
-        # else:
-        #     perm_list = ["Manage Server"]
-        #     raise commands.BadArgument(
-        #         message=f"You are missing the following permission{'' if len(perm_list) == 1 else 's'}: `{', '.join(perm_list)}`"
-        #     )
-
     def _get_our_comms(self):
         # Get our cog
         our_cog = str(self.__module__.split(".")[1]).capitalize()
@@ -99,6 +81,7 @@ class Admin(commands.Cog):
         return command_list
 
     @commands.command(brief="React on disabled commands.")
+    @permissions.has_permissions(manage_guild=True)
     async def disabledreact(self, ctx, *, yes_no=None):
         """Sets whether the bot reacts to disabled commands when attempted (admin-only)."""
         query = """SELECT react FROM servers WHERE server_id = $1"""
@@ -168,6 +151,7 @@ class Admin(commands.Cog):
     #     await ctx.send_or_reply(msg)
 
     @commands.command(brief="Disable a command.")
+    @permissions.has_permissions(manage_guild=True)
     async def disable(self, ctx, *, command_or_cog_name=None):
         """Disables the passed command or all commands in the passed cog (owner only).  Command and cog names are case-sensitive."""
 
@@ -233,6 +217,7 @@ class Admin(commands.Cog):
         ).send(ctx)
 
     @commands.command(brief="Enable a command.")
+    @permissions.has_permissions(manage_guild=True)
     async def enable(self, ctx, *, command_or_cog_name=None):
         """Enables the passed command or all commands in the passed cog (admin-only).  Command and cog names are case-sensitive."""
 
@@ -290,6 +275,7 @@ class Admin(commands.Cog):
         ).send(ctx)
 
     @commands.command(brief="List disabled commands.")
+    @permissions.has_permissions(manage_guild=True)
     async def listdisabled(self, ctx):
         """Lists all disabled commands (admin-only)."""
         dis_com = self.bot.server_settings[ctx.guild.id]["disabled_commands"]
@@ -312,6 +298,7 @@ class Admin(commands.Cog):
         ).send(ctx)
 
     @commands.command(brief="Show the status of a command.")
+    @permissions.has_permissions(manage_guild=True)
     async def isdisabled(self, ctx, *, command_or_cog_name=None):
         """Outputs whether the passed command - or all commands in a passed cog are disabled (admin-only)."""
         # Get our commands or whatever
@@ -364,6 +351,7 @@ class Admin(commands.Cog):
         ).send(ctx)
 
     @commands.command(brief="Disable all commands.")
+    @permissions.has_permissions(manage_guild=True)
     async def disableall(self, ctx):
         """Disables all enabled commands outside this module (admin-only)."""
         # Setup our lists
@@ -405,6 +393,7 @@ class Admin(commands.Cog):
         ).send(ctx)
 
     @commands.command(brief="Enable all commands")
+    @permissions.has_permissions(administrator=True)
     async def enableall(self, ctx):
         """Enables all disabled commands (admin-only)."""
         # Setup our lists
@@ -438,7 +427,7 @@ class Admin(commands.Cog):
         ).send(ctx)
 
     @commands.command(brief="Disallow users from using the bot.")
-    @permissions.has_permissions(administrator=True)
+    @permissions.has_permissions(manage_guilld=True)
     async def ignore(self, ctx, user: discord.Member = None, react: str = ""):
         """
         Usage: -ignore <user> [react] [reason]
@@ -503,7 +492,7 @@ class Admin(commands.Cog):
 
     @commands.command(brief="Reallow users to use the bot.", aliases=["listen"])
     @commands.guild_only()
-    @permissions.has_permissions(administrator=True)
+    @permissions.has_permissions(manage_guilld=True)
     async def unignore(self, ctx, user: discord.Member = None):
         """
         Usage: -unignore <user>
