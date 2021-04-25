@@ -300,7 +300,7 @@ class Manager(commands.Cog):
     ####################
 
     @commands.group(
-        hidden=True, brief="View log files.", aliases=["l"], case_insensitive=True
+        hidden=True, brief="View logging files.", aliases=["l"], case_insensitive=True
     )
     async def logger(self, ctx):
         """
@@ -309,10 +309,8 @@ class Manager(commands.Cog):
         Permission: Bot owner
         Output: View any log recorded in ./data/logs
         Options:
-            commands
-            errors
-            info
-            traceback
+            commands, errors
+            info, traceback
         """
         if ctx.invoked_subcommand is None:
             return await ctx.usage("<option>")

@@ -855,7 +855,7 @@ class Tracking(commands.Cog):
     @permissions.has_permissions(manage_messages=True)
     async def activity(self, ctx, unit: str = "month"):
         """
-        Usage: -activity [characters] [unit of time]
+        Usage: -activity [unit of time]
         Output: Top message senders in the server
         Permission: Manage Messages
         """
