@@ -624,8 +624,7 @@ class Utility(commands.Cog):
                 content=f"{self.emote_dict['failed']} I do not have permission to edit `{user}'s` nickname.",
             )
 
-    # command mostly from Alex Flipnote's discord_bot.py bot
-    # I'll rewrite his "prettyresults" method to use a paginator later.
+    # command idea from Alex Flipnote's discord_bot.py bot
     # https://github.com/AlexFlipnote/discord_bot.py
 
     @commands.group(brief="Find any user using a search.", aliases=["search"])
@@ -671,12 +670,21 @@ class Utility(commands.Cog):
                     if g.name and (search.lower() in g.name.lower()):
                         loop.append(f"{i} | {type(g).__name__}: {g.name} ({i.id})")
 
-        await utils.prettyResults(
-            ctx,
-            "playing",
-            f"Found **{len(loop)}** on your search for **{search}**",
-            loop,
+        if not loop:
+            return await ctx.fail(f"**No results.**")
+        stuff = "\r\n".join(
+            [f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)]
         )
+        await ctx.send_or_reply(
+            f"Found **{len(loop)}** on your search for **{search}**"
+        )
+        p = pagination.MainMenu(
+            pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=800)
+        )
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send(e)
 
     @find.command(
         name="username", aliases=["name", "user"], brief="Search for users by username."
@@ -696,9 +704,21 @@ class Utility(commands.Cog):
             for i in ctx.guild.members
             if search.lower() in i.name.lower() and not i.bot
         ]
-        await utils.prettyResults(
-            ctx, "name", f"Found **{len(loop)}** on your search for **{search}**", loop
+        if not loop:
+            return await ctx.fail(f"**No results.**")
+        stuff = "\r\n".join(
+            [f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)]
         )
+        await ctx.send_or_reply(
+            f"Found **{len(loop)}** on your search for **{search}**"
+        )
+        p = pagination.MainMenu(
+            pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=800)
+        )
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send(e)
 
     @find.command(
         name="nicknames",

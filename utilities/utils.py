@@ -161,34 +161,6 @@ def responsible(target, reason):
     return f"{responsible} {reason}"
 
 
-def actionmessage(case, mass=False):
-    """ Default way to present action confirmation in chat """
-    output = f"**{case}** the user"
-
-    if mass:
-        output = f"**{case}** the IDs/Users"
-
-    return f"✅ Successfully {output}"
-
-
-async def prettyResults(
-    ctx, filename: str = "Results", resultmsg: str = "Here's the results:", loop=None
-):
-    """ A prettier way to show loop results """
-    if not loop:
-        return await ctx.send_or_reply(content="The result was empty...")
-
-    pretty = "\r\n".join(
-        [f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)]
-    )
-    return pretty
-
-    # data = BytesIO(pretty.encode("utf-8"))
-    # await ctx.send_or_reply(
-    #     content=resultmsg, file=discord.File(data, filename=timetext(filename.title()))
-    # )
-
-
 def makeBar(progress):
     return "[{0}{1}] {2}%".format(
         "#" * (int(round(progress / 3))),
