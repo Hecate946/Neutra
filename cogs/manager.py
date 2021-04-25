@@ -1156,7 +1156,7 @@ class Manager(commands.Cog):
         )
 
     @commands.command(aliases=["github"], brief="Update to and from github repo.")
-    async def git(self, ctx, subcommand):
+    async def git(self, ctx, *, subcommand):
         """Updates from git."""
         if subcommand is None:
             return await ctx.send_help(str(ctx.command))
