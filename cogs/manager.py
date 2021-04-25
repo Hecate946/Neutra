@@ -1162,13 +1162,13 @@ class Manager(commands.Cog):
             return await ctx.send_help(str(ctx.command))
 
         if subcommand == "give":
-            subcommand = "git add . && git commit -m 'update' && git push"
+            subcommand = "add . && git commit -m 'update' && git push"
 
         message = await ctx.send_or_reply(
             content=f"{self.bot.emote_dict['loading']} **Updating...**",
         )
         async with ctx.typing():
-            stdout, stderr = await self.run_process(subcommand)
+            stdout, stderr = await self.run_process("git " + subcommand)
 
         if stderr:
             text = f"stdout:\n{stdout}\nstderr:\n{stderr}"
