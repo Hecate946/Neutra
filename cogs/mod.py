@@ -789,9 +789,8 @@ class Mod(commands.Cog):
         Usage: -purge invites [amount]
         Alias: -purge ads
         Output:
-            Searches the passed amount of messages
-            (100 by default) and deletes all messages
-            that contain discord invite links in them.
+            Deletes all messages that contain
+            discord invite links in them.
         Examples:
             -purge invites
             -prune invites 125
@@ -810,9 +809,8 @@ class Mod(commands.Cog):
             -purge links
             -purge url
         Output:
-            Searches the passed amount of messages
-            (100 by default) and deletes all messages
-            that contain any type of URL in them.
+            Deletes all messages that
+            contain URLs in them.
         Examples:
             -purge urls
             -prune urls 125
@@ -829,9 +827,8 @@ class Mod(commands.Cog):
         Aliases:
             -purge attachments
         Output:
-            Searches the passed amount of messages
-            (100 by default) and deletes all messages
-            that contain attachments in them.
+            Deletes all messages that
+            contain attachments in them.
         Examples:
             -purge attachments
             -prune files 125
@@ -847,9 +844,8 @@ class Mod(commands.Cog):
             -purge ping
             -purge mention
         Output:
-            Searches the passed amount of messages
-            (100 by default) and deletes all messages
-            that contain user mentions in them.
+            Deletes all messages that
+            contain user mentions in them.
         Examples:
             -purge mentions
             -prune pings 125
@@ -867,9 +863,8 @@ class Mod(commands.Cog):
             -purge pictures
             -purge image
         Output:
-            Searches the passed amount of messages
-            (100 by default) and deletes all messages
-            that contain images or embeds in them.
+            Deletes all messages that
+            contain images in them.
         Examples:
             -purge pictures
             -prune images 125
@@ -886,8 +881,7 @@ class Mod(commands.Cog):
             -purge
             -purge messages
         Output:
-            Searches the passed amount of messages
-            (100 by default) and deletes all messages.
+            Deletes all messages.
         Examples:
             -purge
             -prune 2000
@@ -902,9 +896,8 @@ class Mod(commands.Cog):
         Aliases:
             -purge member
         Output:
-            Searches the passed amount of messages
-            (100 by default) and deletes all messages
-            that were sent by the passed member.
+            Deletes all messages that
+            were sent by the passed user.
         Examples:
             -purge user
             -prune member 125
@@ -920,8 +913,8 @@ class Mod(commands.Cog):
         Alias:
             -purge has
         Output:
-            Searches the past 100 messages and deletes
-            all messages that contain the passed string.
+            Deletes all messages that
+            contain the passed string.
         Examples:
             -purge contains hello
             -prune has no
@@ -950,8 +943,7 @@ class Mod(commands.Cog):
         Alias:
             -purge robots
         Output:
-            Searches the past 100 messages and deletes
-            all messages that were sent by bots.
+            Deletes all messages authored by bots.
         Examples:
             -purge robots 200
             -prune bote 150 >
@@ -985,9 +977,8 @@ class Mod(commands.Cog):
         Alias:
             -purge webhook
         Output:
-            Searches the passed amount of messages
-            (100 by default) and deletes all messages
-            that were sent by webhooks.
+            Deletes all messages that
+            were sent by webhooks.
         Examples:
             -purge webhook
             -prune webhooks 125
@@ -1006,10 +997,8 @@ class Mod(commands.Cog):
             -purge members
             -purge people
         Output:
-            Searches the passed amount of messages
-            (100 by default) and deletes all messages
-            that were sent by humans.
-            Excludes webhooks and bots.
+            Deletes all messages that were sent 
+            by humans. Excludes webhooks and bots.
         Examples:
             -purge humans
             -prune people 125
@@ -1028,9 +1017,7 @@ class Mod(commands.Cog):
             -purge emote
             -purge emoji
         Output:
-            Searches the passed amount of messages
-            (100 by default) and deletes all messages
-            that contain emojis.
+            Deletes all messages that contain emojis.
         Examples:
             -purge emojis
             -prune emotes 125
@@ -1048,9 +1035,8 @@ class Mod(commands.Cog):
         """
         Usage: -purge emojis [amount]
         Output:
-            Searches the passed amount of messages
-            (100 by default) and removes all reactions
-            from messages that were reacted on.
+            Demoves all reactions from
+            messages that were reacted on.
         Examples:
             -purge reactions
             -prune reactions 125
