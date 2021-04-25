@@ -152,6 +152,37 @@ async def check_priv(ctx, member):
         print(e)
         pass
 
+def sync_priv(ctx, member):
+    """
+    Handle permission hierarchy for commands
+    Return the reason for failure.
+    """
+    try:
+        # Self checks
+        if member == ctx.author:
+            return f"You cannot {ctx.command.name} yourself."
+        if member.id == ctx.bot.user.id:
+            return f"I cannot {ctx.command.name} myself."
+
+        # Check if user bypasses
+        if ctx.author.id == ctx.guild.owner.id:
+            return
+        if ctx.author.id in owners:
+            return
+
+        # Now permission check
+        if member.id in owners:
+            if ctx.author.id not in owners:
+                return f"You cannot {ctx.command.name} my creator."
+        if member.id == ctx.guild.owner.id:
+            return f"You cannot {ctx.command.name} the server owner."
+        if ctx.author.top_role.position == member.top_role.position:
+            return f"You cannot {ctx.command.name} a user with equal permissions."
+        if ctx.author.top_role.position < member.top_role.position:
+            return f"You cannot {ctx.command.name} a user with superior permissions."
+    except Exception as e:
+        print(e)
+        pass
 
 async def checker(ctx, value):
     if type(value) is list:

@@ -119,7 +119,7 @@ class Help(commands.Cog):
 
         msg = ""
         for i in list:
-            if i.brief is None or i.brief == "":
+            if not i.brief or i.brief == "":
                 i.brief = "No description"
             line = f"\n`{i.name}` {i.brief}\n"
             if ctx.guild:
@@ -129,7 +129,7 @@ class Help(commands.Cog):
                 ):
                     msg += line
                 else:
-                    msg += f"\n:no_entry: `{i.name}` ~~{i.brief}~~\n"
+                    msg += f"\n[!] `{i.name}` ~~{i.brief}~~\n"
             else:
                 msg += line
 
@@ -140,26 +140,22 @@ class Help(commands.Cog):
             pass
 
     @commands.command(name="help", brief="Snowbot's Help Command")
-    async def _help(self, ctx, invokercommand: str = None, pm=False, delete_after=None):
+    async def _help(self, ctx, *, invokercommand: str = None):
         """
         Usage:  -help [command/category] [pm = true]
         Output: HELP!
         """
-        if str(invokercommand).upper() in ["YES", "TRUE"]:
-            trigger = None
-            pm = True
+        delete_after = None
+        pm = False
+        
+        if ctx.guild:
+            if not ctx.guild.me.permissions_in(ctx.channel).embed_links:
+                pm = True
 
-        elif invokercommand and str(pm).upper() in ["YES", "TRUE"]:
+        if invokercommand:
             trigger = True
-            pm = True
-
         else:
-            if invokercommand:
-                trigger = True
-                pm = False
-            else:
-                trigger = None
-                pm = False
+            trigger = None
 
         if trigger is None:
 
@@ -198,7 +194,7 @@ class Help(commands.Cog):
                     cog_comms = [y.name for y in c.get_commands() if not y.hidden]
                     if all(x in disabled_comms for x in cog_comms):
                         msg += (
-                            f"\n:no_entry: `{c.qualified_name}` ~~{c.description}~~\n"
+                            f"\n[!] `{c.qualified_name}` ~~{c.description}~~\n"
                         )
                     else:
                         msg += line
@@ -218,7 +214,7 @@ class Help(commands.Cog):
                         hidden_cogs.append(c)
                 for c in hidden_cogs:
                     if c.qualified_name.upper() == "JISHAKU":
-                        continue  # Honestly we don't need jishaku showing up in help
+                        continue  # We don't need jishaku showing up in help
                     line = f"\n`{c.qualified_name}` {c.description}\n"
                     msg += line
                 embed.add_field(
@@ -266,7 +262,7 @@ class Help(commands.Cog):
                 "robot",
                 "information",
             ]:
-                cog = self.bot.get_cog("Bot")
+                cog = self.bot.get_cog("Info")
                 return await self.helper_func(
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )
@@ -434,7 +430,6 @@ class Help(commands.Cog):
             ## Manages Command Help ##
             ##########################
             else:
-
                 valid_cog = ""
                 valid_commands = ""
                 valid_help = ""
@@ -453,12 +448,21 @@ class Help(commands.Cog):
                                 and ctx.author.id not in self.bot.constants.owners
                             ):
                                 continue
+                            if isinstance(command, commands.Group):
+                                await self.send_group_help(ctx, invokercommand, command, None, pm, delete_after)
+                                return
                             valid_commands += command.name
                             valid_help += command.help
                             if not command.brief:
                                 command.brief = "None"
                             valid_brief += command.brief
                             valid_cog += str(command.cog.qualified_name)
+                        else:
+                            args = invokercommand.split()
+                            if len(args) > 1:
+                                if command.name == args[0]:
+                                    if isinstance(command, commands.Group):
+                                        return await self.send_group_help(ctx, invokercommand, command, args[1], pm , delete_after)
 
                 if valid_commands != "":
                     help_embed = discord.Embed(
@@ -471,8 +475,8 @@ class Help(commands.Cog):
                         text=f'Use "{ctx.prefix}help command" for information on a command.'
                     )
                     help_embed.add_field(
-                        name=f"**Command Name:** `{valid_commands.title()}`",
-                        value=f"\n**Description:** `{valid_brief}`\n"
+                        name=f"**Command Name:** `{valid_commands.title()}`\n**Description:** `{valid_brief}`\n",
+                        value=f"** **"
                         f"```yaml\n{valid_help}```",
                     )
                     await self.send_help(ctx, help_embed, pm, delete_after)
@@ -481,6 +485,83 @@ class Help(commands.Cog):
                     await ctx.send_or_reply(
                         f"{self.emote_dict['error']} No command named `{invokercommand}` found."
                     )
+
+    async def send_group_help(self, ctx, invokercommand, command, subcommand, pm, delete_after):
+        if subcommand:
+            found = False
+            for x in command.commands:
+                if x.name.lower() == subcommand.lower() or subcommand.lower() in x.aliases:
+                    found = True
+                    if not x.brief or x.brief == "":
+                        brief = "No description"
+                    else:
+                        brief = x.brief
+
+                    if not x.help or x.help == "":
+                        _help = "No help"
+                    else:
+                        _help = x.help
+                    help_embed = discord.Embed(
+                        title=f"Category: `{str(command.cog.qualified_name).title()}`",
+                        description=f"**Bot Invite Link:** [https://snowbot.discord.bot]({self.bot.constants.oauth})\n"
+                        f"**Support Server:**  [https://discord.gg/snowbot]({self.bot.constants.support})",
+                        color=self.bot.constants.embed,
+                    )
+                    help_embed.set_footer(
+                        text=f'Use "{ctx.prefix}help command" for information on a command.'
+                    )
+                    help_embed.add_field(
+                        name=f"**Command Group:** `{command.name.title()}`\n**Subcommand:** `{x.name.title()}`\n**Description:** `{brief}`",
+                        value=f"** **"
+                        f"```yaml\n{_help}```",
+                        inline=False
+                    )
+                    return await self.send_help(ctx, help_embed, pm, delete_after)
+            if not found:
+                await ctx.send_or_reply(
+                    f"{self.emote_dict['error']} No command named `{invokercommand}` found."
+                )
+                return
+
+        if not command.brief or command.brief == "":
+            brief = "No description"
+        else:
+            brief = command.brief
+        if not command.help or command.help == "":
+            _help = "No help"
+        else:
+            _help = command.help
+        help_embed = discord.Embed(
+            title=f"Category: `{str(command.cog.qualified_name).title()}`",
+            description=f"**Bot Invite Link:** [https://snowbot.discord.bot]({self.bot.constants.oauth})\n"
+            f"**Support Server:**  [https://discord.gg/snowbot]({self.bot.constants.support})",
+            color=self.bot.constants.embed,
+        )
+        help_embed.set_footer(
+            text=f'Use "{ctx.prefix}help command" for information on a command.'
+        )
+        help_embed.add_field(
+            name=f"**Command Group:** `{command.name.title()}`\n**Description:** `{brief}`\n",
+            value=f"** **"
+            f"```yaml\n{_help}```",
+            inline=False
+        )
+        for subcommand in sorted(command.commands, key=lambda c: c.name):
+            if not subcommand.brief or subcommand.brief == "":
+                sub_brief = "No description"
+            else:
+                sub_brief = subcommand.brief
+            if not subcommand.help or subcommand.help == "":
+                sub_help = "No help"
+            else:
+                sub_help = subcommand.help
+            help_embed.add_field(
+                name=f"**\n** **Subcommand:** `{subcommand.name.title()}`\n**Description:** `{sub_brief}`\n",
+                value=f"** **"
+                f"```yaml\n{sub_help}```",
+                inline=False
+            )
+        return await self.send_help(ctx, help_embed, pm, delete_after)
 
     @commands.command(hidden=True, brief="Get the brief of a command.")
     async def brief(self, ctx, command=None):

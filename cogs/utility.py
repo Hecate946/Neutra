@@ -616,24 +616,34 @@ class Utility(commands.Cog):
     @permissions.has_permissions(manage_messages=True)
     async def find(self, ctx):
         """
-        Usage:      -find <method> <search>
-        Alias:      -search
-        Examples:   -find name Hecate, -find id 708584008065351681
-        Permission: Manage Messages
-        Output:     User within your search specification.
+        Usage: -find <method> <search>
+        Alias: -search
+        Output: Users matching your search.
+        Examples: 
+            -find name Hecate
+            -find id 70858400
         Methods:
-            discriminator (Ex: 3523)               (Alias: discrim)
-            nickname      (Ex: Heca)               (Alias: nick)
-            playing       (Ex: Minecraft)          (Alias: status)
-            snowflake     (Ex: 708584008065351681) (Alias: id)
-            username      (Ex: Hec)                (Alias: name)
+            duplicates
+            hardmention
+            hash          (Ex: 3523)
+            nickname      (Ex: Hecate)
+            playing       (Ex: Visual Studio Code)
+            snowflake     (Ex: 708584008065351681)
+            username      (Ex: Hecate)
         """
         if ctx.invoked_subcommand is None:
             help_command = self.bot.get_command("help")
             await help_command(ctx, invokercommand="find")
 
-    @find.command(name="playing", aliases=["status"])
+    @find.command(name="playing", aliases=["status", "activity"], brief="Search for users by game.")
     async def find_playing(self, ctx, *, search: str):
+        """
+        Usage: -find playing <activity>
+        Alias: -find status, -find activity
+        Output:
+            All the users currently playing
+            the specified activity
+        """
         loop = []
         for i in ctx.guild.members:
             if i.activities and (not i.bot):
@@ -648,8 +658,15 @@ class Utility(commands.Cog):
             loop,
         )
 
-    @find.command(name="username", aliases=["name"])
+    @find.command(name="username", aliases=["name"], brief="Search for users by username.")
     async def find_name(self, ctx, *, search: str):
+        """
+        Usage: -find username <search>
+        Aliases: -find name
+        Output:
+            A pagination session with all user's
+            usernames that match your search
+        """
         loop = [
             f"{i} ({i.id})"
             for i in ctx.guild.members
@@ -659,8 +676,15 @@ class Utility(commands.Cog):
             ctx, "name", f"Found **{len(loop)}** on your search for **{search}**", loop
         )
 
-    @find.command(name="nickname", aliases=["nick"])
+    @find.command(name="nickname", aliases=["nick"], brief="Search for users by nickname.")
     async def find_nickname(self, ctx, *, search: str):
+        """
+        Usage: -find nickname <search>
+        Alias: -find nick
+        Output:
+            A pagination session with all user's
+            nicknames that match your search
+        """
         loop = [
             f"{i.nick} | {i} ({i.id})"
             for i in ctx.guild.members
@@ -671,8 +695,16 @@ class Utility(commands.Cog):
             ctx, "name", f"Found **{len(loop)}** on your search for **{search}**", loop
         )
 
-    @find.command(name="id")
+    @find.command(name="id", aliases=['snowflake'], brief="Search for users by id.")
     async def find_id(self, ctx, *, search: int):
+        """
+        Usage: -find id <search>
+        Alias: -find snowflake
+        Output:
+            Starts a pagination session
+            showing all users who's IDs
+            contain your search
+        """
         loop = [
             f"{i} | {i} ({i.id})"
             for i in ctx.guild.members
@@ -682,8 +714,18 @@ class Utility(commands.Cog):
             ctx, "name", f"Found **{len(loop)}** on your search for **{search}**", loop
         )
 
-    @find.command(name="discrim", aliases=["discriminator"])
+    @find.command(name="hash", aliases=["discriminator","discrim"], brief="Search for users by discriminator.")
     async def find_discrim(self, ctx, *, search: str):
+        """
+        Usage: -find hash <search>
+        Aliases:
+            -find discrim
+            -find discriminator
+        Output:
+            Starts a pagination session
+            showing all users who's hash
+            (discriminator) contain your search
+        """
         if not len(search) == 4 or not re.compile("^[0-9]*$").search(search):
             return await ctx.send_or_reply(content="You must provide exactly 4 digits",
             )
@@ -696,9 +738,16 @@ class Utility(commands.Cog):
             loop,
         )
 
-    @find.command(name="duplicates", aliases=["dups"])
+    @find.command(name="duplicates", aliases=["dups"], brief="Find users with identical names.")
     async def find_duplicates(self, ctx):
-        """Show members with identical names."""
+        """
+        Usage: -find duplicates
+        Alias: -find dups
+        Output:
+            Starts a pagination session
+            showing all users who's nicknames
+            are not unique on the server
+        """
         name_list = []
         for member in ctx.guild.members:
             name_list.append(member.display_name.lower())
@@ -725,9 +774,21 @@ class Utility(commands.Cog):
 
         return re.search(br"[^ ][^ ]+", encoderes) is None
 
-    @find.command(name="weird", aliases=["hardmention"])
+    @find.command(name="hardmention", aliases=["weird", "special"], brief="Find users with hard to mention names.")
     async def findhardmention(self, ctx, username:str = None):
-        """List members with difficult to mention usernames."""
+        """
+        Usage: -find hardmention [username=False]
+        Alias: -find weird, -find special
+        Output:
+            Starts a pagination session showing
+            all users who use special characters
+            that make their name hard to mention
+        Notes:
+            Specify a username kwarg, as in 
+            -find hardmention username
+            to search for hard to mention
+            usernames instead of nicknames.
+        """
         if username:
             loop = [
                 member
@@ -749,11 +810,19 @@ class Utility(commands.Cog):
         """
         Usage: -snowflake <id>
         Alias: -id
-        Example: -snowflake 810377376269205546
-        Output: Date and time of the snowflake's creation
+        Output:
+            The exact date & time that the
+            discord snowflake was created
+        Examples:
+            -snowflake 81037737626
+            -id 810377376269205546
+        Notes:
+            Will calculate when the snowflake
+            will be created if it does not exist
         """
-        if not sid.isdigit():
-            return await ctx.send_or_reply(content=f"Usage: {ctx.prefix}snowflake <id>",
+        if not str(sid).isdigit():
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}snowflake <id>`"
             )
 
         sid = int(sid)

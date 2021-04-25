@@ -1,40 +1,35 @@
-import asyncio
-import datetime
-import inspect
 import os
-import fnmatch
-import ast
-import platform
-import struct
-import subprocess
 import sys
 import time
-from platform import python_version
 import codecs
-import pathlib
-import discord
 import psutil
-from discord import __version__ as discord_version
+import struct
+import asyncio
+import discord
+import inspect
+import pathlib
+import datetime
+import platform
+import subprocess
+
+from discord import __version__ as dv
 from discord.ext import commands, menus
-from psutil import Process, virtual_memory
 
 from utilities import converters, pagination, speedtest, utils
 
 
 def setup(bot):
-    bot.add_cog(Bot(bot))
+    bot.add_cog(Info(bot))
 
 
-class Bot(commands.Cog):
+class Info(commands.Cog):
     """
     Module for bot information.
     """
 
     def __init__(self, bot):
         self.bot = bot
-        self.emote_dict = bot.emote_dict
         self.process = psutil.Process(os.getpid())
-        self.startTime = int(time.time())
 
     async def total_global_commands(self):
         query = """SELECT COUNT(*) as c FROM commands"""
@@ -46,15 +41,14 @@ class Bot(commands.Cog):
         value = await self.bot.cxn.fetchrow(query)
         return int(value[0])
 
-    @commands.command(aliases=["info"], brief="Display information about the bot.")
+    @commands.command(aliases=["info", "bot", "botstats", "botinfo"], brief="Display information about the bot.")
     async def about(self, ctx):
         """
-        Usage:  -about
-        Alias:  -info
-        Output: Version Information, Bot Statistics
+        Usage: -about
+        Aliases: -info, -bot, -botstats, botinfo
+        Output: Version info and bot stats
         """
-        msg = await ctx.send_or_reply( content="**Collecting Info...**"
-        )
+        msg = await ctx.send_or_reply(content="**Collecting Info...**")
         total_members = sum(1 for x in self.bot.get_all_members())
         voice_channels = []
         text_channels = []
@@ -66,15 +60,10 @@ class Bot(commands.Cog):
         voice = len(voice_channels)
 
         ramUsage = self.process.memory_full_info().rss / 1024 ** 2
-        avgmembers = round(len(self.bot.users) / len(self.bot.guilds))
-        current_time = int(time.time())
-        proc = Process()
+        proc = psutil.Process()
         with proc.oneshot():
-            # This could be used, but I thought most people are not interested in stuff like CPU Time
-            # cpu_time = datetime.timedelta(seconds=(cpu := proc.cpu_times()).system + cpu.user)
-            mem_total = virtual_memory().total / (1024 ** 2)
+            mem_total = psutil.virtual_memory().total / (1024 ** 2)
             mem_of_total = proc.memory_percent()
-            mem_usage = mem_total * (mem_of_total / 100)
 
         embed = discord.Embed(colour=self.bot.constants.embed)
         embed.set_thumbnail(url=ctx.bot.user.avatar_url)
@@ -90,9 +79,9 @@ class Bot(commands.Cog):
             ),
             inline=True,
         )
-        embed.add_field(name="Python Version", value=f"{python_version()}", inline=True)
+        embed.add_field(name="Python Version", value=f"{platform.python_version()}", inline=True)
         embed.add_field(name="Library", value="Discord.py", inline=True)
-        embed.add_field(name="API Version", value=f"{discord_version}", inline=True)
+        embed.add_field(name="API Version", value=f"{dv}", inline=True)
         embed.add_field(
             name="Command Count",
             value=len([x.name for x in self.bot.commands if not x.hidden]),
@@ -103,7 +92,7 @@ class Bot(commands.Cog):
         )
         embed.add_field(
             name="Channel Count",
-            value=f"""{self.emote_dict['textchannel']} {text:,}        {self.emote_dict['voicechannel']} {voice:,}""",
+            value=f"""{self.bot.emote_dict['textchannel']} {text:,}        {self.bot.emote_dict['voicechannel']} {voice:,}""",
             inline=True,
         )
         embed.add_field(name="Member Count", value=f"{total_members:,}", inline=True)
@@ -117,10 +106,7 @@ class Bot(commands.Cog):
             value=f"{await self.total_global_messages():,}",
             inline=True,
         )
-        # Below are cached commands. Above are stored in the asyncpg database
-        # embed.add_field(name="Commands Run", value=sum(self.bot.command_stats.values()), inline=True)
         embed.add_field(name="RAM", value=f"{ramUsage:.2f} MB", inline=True)
-        # embed.add_field(name="CPU", value=f"{cpu_time} MB", inline=True)
 
         await msg.edit(
             content=f"About **{ctx.bot.user}** | **{self.bot.constants.version}**",
@@ -223,9 +209,9 @@ class Bot(commands.Cog):
     @commands.command(brief="Show the bot's uptime.", aliases=["runtime"])
     async def uptime(self, ctx):
         """
-        Usage:  -uptime
-        Alias:  -runtime
-        Output: Time since last reboot.
+        Usage: -uptime
+        Alias: -runtime
+        Output: Time since last boot.
         """
         await ctx.send_or_reply(
             f"{self.bot.emote_dict['stopwatch']} I've been running for `{utils.time_between(self.bot.starttime, int(time.time()))}`"
@@ -650,7 +636,7 @@ class Bot(commands.Cog):
             for output in result
         ]
 
-    @commands.command(hidden=True, brief="Run the neofetch command.")
+    @commands.command(brief="Run the neofetch command.")
     async def neofetch(self, ctx):
         """
         Usage: -neofetch
