@@ -668,10 +668,14 @@ class BotContext(commands.Context):
         super().__init__(**kwargs)
 
     async def fail(self, content=None, **kwargs):
-        return await self.send_or_reply(bot.emote_dict["failed"] + " " + content)
+        return await self.send_or_reply(
+            bot.emote_dict["failed"] + " " + (content if content else ""), **kwargs
+        )
 
     async def success(self, content=None, **kwargs):
-        return await self.send_or_reply(bot.emote_dict["success"] + " " + content)
+        return await self.send_or_reply(
+            bot.emote_dict["success"] + " " + (content if content else ""), **kwargs
+        )
 
     async def log(self, _type=None, content=None, **kwargs):
         if _type in ["info", "i", "information"]:

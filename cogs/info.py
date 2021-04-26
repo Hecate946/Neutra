@@ -120,7 +120,16 @@ class Info(commands.Cog):
 
     @commands.command(brief="Check if the bot is rate limited")
     async def is_ratelimited(self, ctx):
-        await ctx.send_or_reply(f"{self.bot.emote_dict['stopwatch']} {self.bot.user} ({self.bot.user.id}) Rate limited: " + str(self.bot.is_ws_ratelimited()))
+        """
+        Usage: -is_ratelimited
+        Output:
+            Boolean value stating whether
+            or not the bot is rate-limited
+        """
+        await ctx.send_or_reply(
+            f"{self.bot.emote_dict['stopwatch']} {self.bot.user} ({self.bot.user.id}) Rate limited: "
+            + str(self.bot.is_ws_ratelimited())
+        )
 
     @commands.command(
         brief="Send a bugreport to the developer.",

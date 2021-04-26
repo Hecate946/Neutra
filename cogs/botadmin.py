@@ -1069,8 +1069,17 @@ class Botadmin(commands.Cog):
         )
         await ctx.send_or_reply(embed=embed)
 
-    @commands.command(rest_is_raw=True, hidden=True, aliases=["say"])
+    @commands.command(
+        rest_is_raw=True, hidden=True, aliases=["say"], brief="Echo a message."
+    )
     @permissions.bot_has_permissions(manage_messages=True)
     async def echo(self, ctx, *, content):
+        """
+        Usage -echo
+        Alias: -say
+        Output:
+            Deletes the command invocation
+            and resends the exact content.
+        """
         await ctx.message.delete()
         await ctx.send_or_reply(content)
