@@ -1,15 +1,15 @@
-import base64
 import io
-import random
-import codecs
-import discord
+import re
+import copy
 import json
 import math
-import operator
+import base64
+import codecs
 import pprint
-import re
-import os
-import copy
+import random
+import asyncio
+import discord
+import operator
 import unicodedata
 
 from collections import Counter, namedtuple
@@ -33,14 +33,14 @@ from pyparsing import (
     oneOf,
 )
 
-from utilities import converters, pagination, permissions, utils, helpers
+from utilities import converters, pagination, permissions, utils
 
 
 def setup(bot):
     bot.add_cog(Utility(bot))
 
 
-# Thanks goes to Stella bot for some of these features.
+# Couple of commands taken and edited from Stella_bot.
 
 
 class Utility(commands.Cog):
@@ -50,7 +50,34 @@ class Utility(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.emote_dict = bot.emote_dict
+        self.msg_collection = []
+        self.uregex = re.compile(
+            r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
+        )
+        self.color_dict = { 
+                "teal": discord.Color.teal(),
+                "dark_teal": discord.Color.dark_teal(),
+                "green": discord.Color.green(),
+                "dark_green": discord.Color.dark_green(),
+                "blue": discord.Color.blue(),
+                "dark_blue": discord.Color.dark_blue(),
+                "purple": discord.Color.purple(),
+                "dark_purple": discord.Color.dark_purple(),
+                "pink": discord.Color.magenta(),
+                "dark_pink": discord.Color.dark_magenta(),
+                "gold": discord.Color.gold(),
+                "dark_gold": discord.Color.dark_gold(),
+                "orange": discord.Color.orange(),
+                "dark_orange": discord.Color.dark_orange(),
+                "red": discord.Color.red(),
+                "dark_red": discord.Color.dark_red(),
+                "lighter_gray": discord.Color.lighter_grey(),
+                "dark_gray": discord.Color.dark_grey(),
+                "light_gray": discord.Color.light_grey(),
+                "darker_gray": discord.Color.darker_grey(),
+                "blurple": discord.Color.blurple(),
+                "greyple": discord.Color.greyple()
+        }
 
     def parse_date(self, token):
         token_epoch = 1293840000
@@ -427,6 +454,17 @@ class Utility(commands.Cog):
             em.set_image(url="attachment://color.png")
             await ctx.send_or_reply(embed=em, file=dfile)
 
+
+    @commands.command(brief="Send an image with some hex codes.")
+    async def colors(self, ctx):
+        """
+        Usage: -colors
+        Output:
+            An image showing a few
+            hex colors and codes
+        """
+        await ctx.send_or_reply(file=discord.File("./data/assets/colors.png", filename="colors.png"))
+
     @commands.command(brief="Dehoist a specified user.")
     @permissions.bot_has_permissions(manage_nicknames=True)
     @permissions.has_permissions(manage_nicknames=True)
@@ -605,7 +643,7 @@ class Utility(commands.Cog):
             )
         if user.id == ctx.guild.owner.id:
             return await ctx.send_or_reply(
-                content=f"{self.emote_dict['failed']} User `{user}` is the server owner. I cannot edit the nickname of the server owner.",
+                content=f"{self.bot.emote_dict['failed']} User `{user}` is the server owner. I cannot edit the nickname of the server owner.",
             )
         try:
             await user.edit(
@@ -614,13 +652,13 @@ class Utility(commands.Cog):
                     ctx.author, "Nickname edited by command execution"
                 ),
             )
-            message = f"{self.emote_dict['success']} Nicknamed `{user}: {nickname}`"
+            message = f"{self.bot.emote_dict['success']} Nicknamed `{user}: {nickname}`"
             if nickname is None:
-                message = f"{self.emote_dict['success']} Reset nickname for `{user}`"
+                message = f"{self.bot.emote_dict['success']} Reset nickname for `{user}`"
             await ctx.send_or_reply(message)
         except discord.Forbidden:
             await ctx.send_or_reply(
-                content=f"{self.emote_dict['failed']} I do not have permission to edit `{user}'s` nickname.",
+                content=f"{self.bot.emote_dict['failed']} I do not have permission to edit `{user}'s` nickname.",
             )
 
     # command idea from Alex Flipnote's discord_bot.py bot
@@ -1072,6 +1110,401 @@ class Utility(commands.Cog):
                 content=f"{self.bot.emote_dict['success']} Successfully shortened URL:\t"
                 "<{}>".format(resp["data"]["url"]),
             )
+
+    async def do_color(self, value):
+        values = (
+            value.replace(",", " ")
+            .replace("(", " ")
+            .replace(")", " ")
+            .replace("%", " ")
+            .split()
+        )
+        color_values = []
+        for x in values:
+            if x.lower().startswith(("0x", "#")) or any(
+                (y in x.lower() for y in "abcdef")
+            ):
+                # We likely have a hex value
+                try:
+                    color_values.append(
+                        int(x.lower().replace("#", "").replace("0x", ""), 16)
+                    )
+                except:
+                    pass  # Bad value - ignore
+            else:
+                # Try to convert it to an int
+                try:
+                    color_values.append(int(x))
+                except:
+                    pass  # Bad value - ignore
+        original_type = "hex" if len(color_values) == 1 else None
+        if original_type is None:
+            return False
+        # Verify values
+        max_val = int("FFFFFF", 16)
+
+        if not all((0 <= x <= max_val for x in color_values)):
+            return False
+        if original_type == "hex":
+            color = color_values[0]
+        return color
+
+    async def do_msg_check(self, ctx, embed):
+        def message_check(m):
+            return (
+                m.author.id == ctx.author.id
+                and m.channel == ctx.channel
+                and m.content != ""
+            )
+
+        try:
+            msg = await self.bot.wait_for("message", check=message_check, timeout=60.0)
+            self.msg_collection.append(msg.id)
+        except asyncio.TimeoutError:
+            msg = await ctx.fail(f"Embed session timed out.")
+            self.msg_collection.append(msg.id)
+            await asyncio.sleep(5)
+            return
+
+        if msg.content.lower() == "none":
+            msg = discord.Embed.Empty
+            return msg
+        elif msg.content.lower() == "cancel":
+            msg = await ctx.success(f"Embed session cancelled.")
+            self.msg_collection.append(msg.id)
+            return
+        elif msg.content.lower() == "end":
+            msg = await ctx.success(f"Embed session ended.")
+            self.msg_collection.append(msg.id)
+            try:
+                await ctx.send_or_reply(embed=embed)
+                await self.do_cleanup(ctx)
+            except discord.HTTPException:
+                pass
+            return
+        else:
+            msg = msg.content
+        return msg
+
+    @commands.command(
+        brief="Create an embed interactively.",
+        description="============================================\n"
+        "Hello there! Welcome to my interactive embed creating session.\n"
+        "Type `cancel` at any time to cancel the session.\n"
+        "Type `none` to leave any portion of the embed empty.\n"
+        "Type `end` at any time to finalize the embed and end the session.\n"
+        "============================================\n",
+    )
+    @permissions.bot_has_permissions(embed_links=True)
+    @permissions.has_permissions(manage_messages=True, embed_links=True)
+    async def embed(self, ctx):
+        """
+        Usage: -embed
+        Permissions: Manage Messages, Embed Links
+        Output:
+            Starts an interactive embed
+            creating session.
+        Notes:
+            Use "cancel" at any time to cancel the session
+            Use "none" at any time to skip the value
+            Use "end" at any time to end the session and send the embed.
+        """
+
+        m = await ctx.send_or_reply(
+            f"{ctx.command.description}\nEnter your embed title:"
+        )
+        self.msg_collection.append(m.id)
+        embed = discord.Embed()
+
+        msg = await self.do_msg_check(ctx, embed)
+        if msg is None:
+            return
+        if len(str(msg)) > pagination.TITLE_LIMIT:
+            check = False
+            while check is False:
+                m = await ctx.fail(
+                    f"Title too long ({len(msg)}/{pagination.TITLE_LIMIT}).\nPlease re-enter a shorter embed title:"
+                )
+                self.msg_collection.append(m.id)
+                msg = await self.do_msg_check(ctx, embed)
+                if msg is None or isinstance(msg, discord.embeds._EmptyEmbed):
+                    break
+                if not len(msg) > pagination.TITLE_LIMIT:
+                    check = True
+        embed.title = msg
+        if not isinstance(msg, discord.embeds._EmptyEmbed):
+            m = await ctx.send_or_reply("Enter your embed's click url:")
+            self.msg_collection.append(m.id)
+            msg = await self.do_msg_check(ctx, embed)
+
+            if msg is None:
+                return
+            if not isinstance(msg, discord.embeds._EmptyEmbed):
+                if not self.uregex.fullmatch(msg):
+                    check = False
+                    while check is False:
+                        m = await ctx.fail(
+                            "Invalid URL schema.\nEnter your embed's click url:"
+                        )
+                        self.msg_collection.append(m.id)
+                        msg = await self.do_msg_check(ctx, embed)
+                        if msg is None or isinstance(msg, discord.embeds._EmptyEmbed):
+                            break
+                        if self.uregex.fullmatch(msg):
+                            check = True
+            if msg is None:
+                return
+            embed.url = msg
+
+        m = await ctx.send_or_reply(
+            "Enter your embed's color (Must be in HEX. Ex: #ff00ff. None for default):"
+        )
+        self.msg_collection.append(m.id)
+        msg = await self.do_msg_check(ctx, embed)
+        if msg is None:
+            return
+        if isinstance(msg, discord.embeds._EmptyEmbed):
+            color = random.choice([x[1] for x in self.color_dict.items()])
+        else:
+            color = await self.do_color(msg)
+            while color is False:
+                m = await ctx.fail(
+                    "Invalid color value.\nEnter your embed's color value:"
+                )
+                self.msg_collection.append(m.id)
+                msg = await self.do_msg_check(ctx, embed)
+                if msg is None or isinstance(msg, discord.embeds._EmptyEmbed):
+                    break
+                color = await self.do_color(msg)
+
+        if msg is None:
+            return
+        embed.color = color
+
+        m = await ctx.send_or_reply("Enter your embed author's name:")
+        self.msg_collection.append(m.id)
+        msg = await self.do_msg_check(ctx, embed)
+        if msg is None:
+            return
+        author_name = msg
+        if len(str(msg)) > pagination.AUTHOR_LIMIT:
+            check = False
+            while check is False:
+                m = await ctx.fail(
+                    f"Author name too long ({len(msg)}/{pagination.AUTHOR_LIMIT}).\nPlease re-enter a shorter author name:"
+                )
+                self.msg_collection.append(m.id)
+                msg = await self.do_msg_check(ctx, embed)
+                if msg is None or isinstance(msg, discord.embeds._EmptyEmbed):
+                    break
+                if not len(msg) > pagination.AUTHOR_LIMIT:
+                    check = True
+
+        if not isinstance(author_name, discord.embeds._EmptyEmbed):
+            embed.set_author(name=author_name)
+
+            m = await ctx.send_or_reply(
+                "Enter your embed author's icon (must be an image url):"
+            )
+            self.msg_collection.append(m.id)
+            msg = await self.do_msg_check(ctx, embed)
+            if msg is None:
+                return
+            if not isinstance(msg, discord.embeds._EmptyEmbed):
+                if not self.uregex.fullmatch(msg):
+                    check = False
+                    while check is False:
+                        m = await ctx.fail(
+                            "Invalid URL schema.\nEnter your embed author's icon (must be an image url):"
+                        )
+                        self.msg_collection.append(m.id)
+                        msg = await self.do_msg_check(ctx, embed)
+                        if msg is None or isinstance(msg, discord.embeds._EmptyEmbed):
+                            break
+                        if self.uregex.fullmatch(msg):
+                            check = True
+            if msg is None:
+                return
+            author_icon = msg
+            embed.set_author(name=author_name, icon_url=author_icon)
+
+            m = await ctx.send_or_reply("Enter your embed author's click URL:")
+            self.msg_collection.append(m.id)
+            msg = await self.do_msg_check(ctx, embed)
+            if msg is None:
+                return
+            if not isinstance(msg, discord.embeds._EmptyEmbed):
+                if not self.uregex.fullmatch(msg):
+                    check = False
+                    while check is False:
+                        m = await ctx.fail(
+                            "Invalid URL schema.\nEnter your embed author's click URL (must be a valid http(s) URL):"
+                        )
+                        self.msg_collection.append(m.id)
+                        msg = await self.do_msg_check(ctx, embed)
+                        if msg is None or isinstance(msg, discord.embeds._EmptyEmbed):
+                            break
+                        if self.uregex.fullmatch(msg):
+                            check = True
+            if msg is None:
+                return
+            author_url = msg
+            embed.set_author(name=author_name, url=author_url, icon_url=author_icon)
+
+        m = await ctx.send_or_reply("Enter your embed's description:")
+        self.msg_collection.append(m.id)
+        msg = await self.do_msg_check(ctx, embed)
+        if msg is None:
+            return
+        embed.description = msg
+
+        m = await ctx.send_or_reply("Enter your embed's footer:")
+        self.msg_collection.append(m.id)
+        msg = await self.do_msg_check(ctx, embed)
+        if msg is None:
+            return
+        footer_text = msg
+        if not isinstance(footer_text, discord.embeds._EmptyEmbed):
+            embed.set_footer(text=footer_text)
+
+            m = await ctx.send_or_reply(
+                "Enter your embed footer's icon URL (must be a valid http(s) URL):"
+            )
+            self.msg_collection.append(m.id)
+            msg = await self.do_msg_check(ctx, embed)
+            if msg is None:
+                return
+            if not isinstance(msg, discord.embeds._EmptyEmbed):
+                if not self.uregex.fullmatch(msg):
+                    check = False
+                    while check is False:
+                        m = await ctx.fail(
+                            "Invalid URL schema.\nEnter your embed footer's icon URL (must be a valid http/https url):"
+                        )
+                        self.msg_collection.append(m.id)
+                        msg = await self.do_msg_check(ctx, embed)
+                        if msg is None or isinstance(msg, discord.embeds._EmptyEmbed):
+                            break
+                        if self.uregex.fullmatch(msg):
+                            check = True
+            if msg is None:
+                return
+            footer_icon = msg
+
+            embed.set_footer(text=footer_text, icon_url=footer_icon)
+
+        m = await ctx.send_or_reply("Enter the number of fields to add to your embed:")
+        self.msg_collection.append(m.id)
+        msg = await self.do_msg_check(ctx, embed)
+        if msg is None:
+            return
+        if not isinstance(msg, discord.embeds._EmptyEmbed):
+            if not msg.isdigit():
+                check = False
+                while check is False:
+                    m = await ctx.fail(
+                        "Field count must be a positive integer.\nEnter the number of fields to add to your embed:"
+                    )
+                    self.msg_collection.append(m.id)
+                    msg = await self.do_msg_check(ctx, embed)
+                    if msg is None or isinstance(msg, discord.embeds._EmptyEmbed):
+                        break
+                    if msg.isdigit():
+                        check = True
+            if int(msg) > pagination.FIELDS_LIMIT:
+                check = False
+                while check is False:
+                    m = await ctx.fail(
+                        f"Field count too large ({int(msg)}/{pagination.FIELDS_LIMIT}).\nPlease re-enter a smaller number:"
+                    )
+                    self.msg_collection.append(m.id)
+                    msg = await self.do_msg_check(ctx, embed)
+                    if msg is None or isinstance(msg, discord.embeds._EmptyEmbed):
+                        break
+                    if not int(msg) > pagination.FIELDS_LIMIT:
+                        check = True
+
+            field_count = int(msg)
+            current_fields = 0
+            while current_fields < field_count:
+                current_fields += 1
+                m = await ctx.send_or_reply(
+                    f"Enter the name for field #{current_fields}:"
+                )
+                self.msg_collection.append(m.id)
+                msg = await self.do_msg_check(ctx, embed)
+                if msg is None:
+                    return
+                if isinstance(msg, discord.embeds._EmptyEmbed):
+                    msg = "‏‏‎‏‏‎\u200f\u200f\u200e \u200e"
+                if len(str(msg)) > pagination.FIELD_NAME_LIMIT:
+                    check = False
+                    while check is False:
+                        m = await ctx.fail(
+                            f"Field name too long ({len(msg)}/{pagination.FIELD_NAME_LIMIT}).\nPlease re-enter a shorter field name:"
+                        )
+                        self.msg_collection.append(m.id)
+                        msg = await self.do_msg_check(ctx, embed)
+                        if msg is None or isinstance(msg, discord.embeds._EmptyEmbed):
+                            break
+                        if not len(msg) > pagination.FIELD_NAME_LIMIT:
+                            check = True
+
+                field_name = msg
+
+                m = await ctx.send_or_reply(
+                    f"Enter the value for field #{current_fields}:"
+                )
+                self.msg_collection.append(m.id)
+                msg = await self.do_msg_check(ctx, embed)
+                if msg is None:
+                    return
+                if isinstance(msg, discord.embeds._EmptyEmbed):
+                    msg = "‏‏‏‏‎\u200f\u200f\u200e \u200e"
+                if len(str(msg)) > pagination.FIELD_VALUE_LIMIT:
+                    check = False
+                    while check is False:
+                        m = await ctx.fail(
+                            f"Field name too long ({len(msg)}/{pagination.FIELD_VALUE_LIMIT}).\nPlease re-enter a shorter field value:"
+                        )
+                        self.msg_collection.append(m.id)
+                        msg = await self.do_msg_check(ctx, embed)
+                        if msg is None or isinstance(msg, discord.embeds._EmptyEmbed):
+                            break
+                        if not len(msg) > pagination.FIELD_VALUE_LIMIT:
+                            check = True
+                field_value = msg
+
+                embed.add_field(name=field_name, value=field_value, inline=False)
+
+        await ctx.send_or_reply(embed=embed)
+        await self.do_cleanup(ctx)
+
+    async def do_cleanup(self, ctx):
+        if ctx.guild:
+            if ctx.guild.me.permissions_in(ctx.channel).manage_messages:
+                p = await pagination.Confirmation(
+                    f"Do you want me to clean all messages from the embed session and leave only the resulting embed?"
+                ).prompt(ctx)
+                if p:
+                    mess = await ctx.send_or_reply(
+                        f"{self.bot.emote_dict['loading']} Deleting {len(self.msg_collection)} messages..."
+                    )
+
+                    def purge_checker(m):
+                        return m.id in self.msg_collection
+
+                    deleted = await ctx.channel.purge(limit=200, check=purge_checker)
+                    await mess.edit(
+                        content=f"{self.bot.emote_dict['trash']} Deleted {len(deleted)} messages."
+                    )
+                    self.msg_collection.clear()
+                else:
+                    await ctx.send_or_reply(f"Cancelled.")
+            else:
+                self.msg_collection.clear()
+        else:
+            self.msg_collection.clear()
 
     @commands.command(aliases=["math", "calc"], brief="Calculate a math formula.")
     async def calculate(self, ctx, *, formula=None):
