@@ -524,6 +524,9 @@ class Snowbot(commands.AutoShardedBot):
                 f"{self.emote_dict['failed']} This command cannot be used in private messages."
             )
 
+        elif isinstance(error, commands.PrivateMessageOnly):
+            await ctx.fail("This command can only be used in private messages.")
+
         elif isinstance(error, commands.CommandOnCooldown):
             await ctx.send_or_reply(
                 content=f"{self.emote_dict['error']} This command is on cooldown... retry in {error.retry_after:.2f} seconds.",
