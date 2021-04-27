@@ -1,4 +1,5 @@
-# R. Danny
+# R.danny
+# https://github.com/Rapptz/RoboDanny/blob/rewrite/cogs/utils/formats.py
 
 
 class plural:

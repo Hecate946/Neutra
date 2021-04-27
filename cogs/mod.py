@@ -9,9 +9,10 @@ from better_profanity import profanity
 from collections import Counter
 from datetime import datetime, timedelta
 from discord.ext import commands
+from discord.ext.commands.converter import EmojiConverter
 
 from settings import database
-from utilities import converters, permissions, utils, helpers
+from utilities import converters, permissions, utils, helpers, time
 
 
 def setup(bot):
@@ -522,64 +523,127 @@ class Mod(commands.Cog):
         self,
         ctx,
         targets: commands.Greedy[discord.Member],
-        delete_message_days=None,
+        delete_message_days: typing.Optional[int] = 1,
         *,
-        reason: typing.Optional[str] = "No reason",
+        reason: typing.Optional[str] = "No reason.",
     ):
         """
-        Usage:      -ban <target> [target]... [delete message days = 1] [reason]
-        Example:    -ban @Jacob Sarah 4 for advertising
+        Usage: -ban <target> [target]... [delete message days = 1] [reason]
+        Example: -ban @Jacob Sarah 4 for advertising
         Permission: Ban Members
-        Output:     Ban passed members from the server.
+        Output: Ban passed members from the server.
         """
         if not len(targets):
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}ban <target1> [target2] [delete message days] [reason]`",
+            return await ctx.usage(
+                "<target1> [target2].. [delete message days = 1] [reason]"
             )
 
-        if await permissions.checker(ctx, value=targets):
-            return
-
-        if delete_message_days:
-            if not delete_message_days.isdigit():
-                if reason == "No reason":
-                    reason = str(delete_message_days)
-                else:
-                    reason = str(delete_message_days) + " " + reason
-                delete_message_days = 1
-            else:
-                delete_message_days = int(delete_message_days)
-                if delete_message_days > 7:
-                    delete_message_days = 7
-                elif delete_message_days < 0:
-                    delete_message_days = 0
-                else:
-                    delete_message_days = 1
-        else:
-            delete_message_days = 1
+        if delete_message_days > 7:
+            delete_message_days = 7
+        elif delete_message_days < 0:
+            delete_message_days = 0
 
         banned = []
         failed = []
         for target in targets:
-            res = permissions.check_priv(ctx, target)
+            res = await permissions.check_priv(ctx, target)
             if res:
                 failed.append((str(target), res))
                 continue
             try:
                 await ctx.guild.ban(
-                    target, reason=reason, delete_message_days=delete_message_days
+                    target,
+                    reason=await converters.ActionReason().convert(ctx, reason),
+                    delete_message_days=delete_message_days,
                 )
                 banned.append(str(target))
             except Exception as e:
                 failed.append((str(target), e))
                 continue
         if banned:
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['success']} Banned `{', '.join(banned)}`",
-            )
+            await ctx.success(f"Banned `{', '.join(banned)}`")
             self.bot.dispatch("mod_action", ctx, targets=banned)
         if failed:
             await helpers.error_info(ctx, failed)
+
+    @commands.command(brief="Temporarily ban users.")
+    async def tempban(
+        self,
+        ctx,
+        targets: commands.Greedy[discord.Member],
+        duration: time.FutureTime,
+        delete_message_days: typing.Optional[int] = 0,
+        reason: typing.Optional[str] = "No reason.",
+    ):
+        """
+        Usage: -tempban <user> [user]... [hours till unban] [days to delete messages] [reason]
+        Alias: -timedban
+        Permission: Ban Members
+        """
+        if not len(targets):
+            return await ctx.usage(
+                "<user> [hours until unban] [days to delete messages] [reason]"
+            )
+
+        until = f"until {duration.dt:%Y-%m-%d %H:%M UTC}"
+
+        if delete_message_days > 7:
+            delete_message_days = 7
+        elif delete_message_days < 0:
+            delete_message_days = 0
+
+        query = """
+                INSERT INTO tasks
+                VALUES ($1, $2, $3, $4)
+                ON CONFLICT (user_id, server_id)
+                DO NOTHING;
+                """
+
+        banned = []
+        failed = []
+        for target in targets:
+            res = await permissions.check_priv(ctx, target)
+            if res:
+                failed.append((str(target), res))
+                continue
+            try:
+                await self.bot.cxn.execute(
+                    query, target.id, ctx.guild.id, "tempban", duration.dt
+                )
+            except asyncpg.UniqueViolationError:
+                failed.append((target.id, "User is already tempbanned."))
+                continue
+            try:
+                await ctx.guild.ban(
+                    target,
+                    reason=await converters.ActionReason().convert(ctx, reason),
+                    delete_message_days=delete_message_days,
+                )
+                banned.append(str(target))
+            except Exception as e:
+                failed.append((str(target), e))
+                continue
+        if banned:
+            await ctx.success(f"Tempbanned `{', '.join(banned)}` `{until}.`")
+            self.bot.dispatch("mod_action", ctx, targets=banned)
+            await self.do_timer(
+                ctx, banned, seconds=(duration.dt - datetime.utcnow()).total_seconds()
+            )
+        if failed:
+            await helpers.error_info(ctx, failed)
+
+    async def do_timer(self, ctx, users, seconds):
+        await asyncio.sleep(seconds)
+        for user in users:
+            try:
+                member = await converters.BannedMember().convert(ctx, user)
+            except Exception as e:
+                print(e)
+            if member:
+                try:
+                    await ctx.guild.unban(member.user, reason="Tempban timer expired.")
+                except Exception as e:
+                    print(e)
 
     @commands.command(brief="Softban users from the server.")
     @commands.guild_only()
@@ -589,9 +653,9 @@ class Mod(commands.Cog):
         self,
         ctx,
         targets: commands.Greedy[discord.Member],
-        delete_message_days=None,
+        delete_message_days: typing.Optional[int] = 7,
         *,
-        reason: str = "No reason",
+        reason: typing.Optional[str] = "No reason.",
     ):
         """
         Usage:      -softban <targets> [delete message = 7] [reason]
@@ -604,27 +668,12 @@ class Mod(commands.Cog):
             The days to delete messages is set to 7 days.
         """
         if not len(targets):
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}softban <member> [days to delete messages] [reason]`",
-            )
+            return await ctx.usage("<user> [days to delete messages] [reason]")
 
-        if delete_message_days:
-            if not delete_message_days.isdigit():
-                if reason == "No reason":
-                    reason = str(delete_message_days)
-                else:
-                    reason = str(delete_message_days) + " " + reason
-                delete_message_days = 7
-            else:
-                delete_message_days = int(delete_message_days)
-                if delete_message_days > 7:
-                    delete_message_days = 7
-                elif delete_message_days < 0:
-                    delete_message_days = 0
-                else:
-                    delete_message_days = 7
-        else:
+        if delete_message_days > 7:
             delete_message_days = 7
+        elif delete_message_days < 0:
+            delete_message_days = 0
 
         banned = []
         failed = []
@@ -635,21 +684,22 @@ class Mod(commands.Cog):
                 continue
             try:
                 await ctx.guild.ban(
-                    target, reason=reason, delete_message_days=delete_message_days
+                    target,
+                    reason=await converters.ActionReason().convert(ctx, reason),
+                    delete_message_days=delete_message_days,
                 )
-                await ctx.guild.unban(target, reason=reason)
+                await ctx.guild.unban(
+                    target, reason=converters.ActionReason().convert(ctx, reason)
+                )
                 banned.append(str(target))
             except Exception as e:
                 failed.append((str(target), e))
                 continue
         if banned:
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['success']} Softbanned `{', '.join(banned)}`",
-            )
+            await ctx.success(f"Softbanned `{', '.join(banned)}`")
             self.bot.dispatch("mod_action", ctx, targets=banned)
         if failed:
             await helpers.error_info(ctx, failed)
-
 
     @commands.command(brief="Hackban multiple users.")
     @permissions.bot_has_permissions(ban_members=True)
@@ -658,8 +708,9 @@ class Mod(commands.Cog):
         self,
         ctx,
         users: commands.Greedy[converters.UserIDConverter],
-        *, args = None,
-    ):  
+        *,
+        args=None,
+    ):
         """
         Usage: -hackban <user id> <user id>... [--reason] [--delete]
         Example:
@@ -668,9 +719,8 @@ class Mod(commands.Cog):
         Output: Hackbans multiple users.
         Notes: Users do not have to be in the server.
         """
-
-        if users is None:
-            return await ctx.usage("<user> <user>... [--reason] [--delete]")
+        if not len(users):
+            return await ctx.usage("<user> [user]... [--reason] [--delete]")
 
         if args:
             parser = converters.Arguments(add_help=False, allow_abbrev=False)
@@ -681,7 +731,7 @@ class Mod(commands.Cog):
                 args = parser.parse_args(shlex.split(args))
             except Exception as e:
                 return await ctx.fail(str(e).capitalize())
-                
+
             if args.reason:
                 reason = " ".join(args.reason)
             reason = await converters.ActionReason().convert(ctx, reason)
@@ -716,9 +766,7 @@ class Mod(commands.Cog):
                 failed.append((str(user), e))
                 continue
         if banned:
-            await ctx.success(
-                f"Hackbanned `{', '.join(banned)}`"
-            )
+            await ctx.success(f"Hackbanned `{', '.join(banned)}`")
             self.bot.dispatch("mod_action", ctx, targets=banned)
         if failed:
             await helpers.error_info(ctx, failed)
