@@ -8,7 +8,7 @@ import discord
 from better_profanity import profanity
 from collections import Counter
 from datetime import datetime, timedelta
-from discord.ext import commands, flags
+from discord.ext import commands
 
 from settings import database
 from utilities import converters, permissions, utils, helpers
@@ -651,7 +651,7 @@ class Mod(commands.Cog):
             await helpers.error_info(ctx, failed)
 
 
-    @commands.command(brief="Hackban multiple users.", cls=flags.FlagCommand)
+    @commands.command(brief="Hackban multiple users.")
     @permissions.bot_has_permissions(ban_members=True)
     @permissions.has_permissions(ban_members=True)
     async def hackban(
