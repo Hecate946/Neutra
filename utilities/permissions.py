@@ -89,38 +89,6 @@ def bot_has_permissions(*, check=all, **perms):
     return commands.check(pred)
 
 
-# async def check_priv(ctx, member):
-#     """ Custom way to check permissions when handling moderation commands """
-#     try:
-#         # Self checks
-#         if member == ctx.author:
-#             raise commands.BadArgument(f"You cannot {ctx.command.name} yourself.")
-#         if member.id == ctx.bot.user.id:
-#             raise commands.BadArgument(f"I cannot {ctx.command.name} myself.")
-
-#         # Check if user bypasses
-#         if ctx.author.id == ctx.guild.owner.id:
-#             return
-#         if ctx.author.id in owners:
-#             return
-
-#         # Now permission check
-#         if member.id in owners:
-#             if ctx.author.id not in owners:
-#                 raise commands.BadArgument(f"I cannot {ctx.command.name} my creator.")
-#         if member.id == ctx.guild.owner.id:
-#             raise commands.BadArgument(f"You cannot {ctx.command.name} the server owner.",
-#             )
-#         if ctx.author.top_role.position == member.top_role.position:
-#             raise commands.BadArgument(f"You cannot {ctx.command.name} someone who has the same permissions as you.",
-#             )
-#         if ctx.author.top_role.position < member.top_role.position:
-#             raise commands.BadArgument(f"You cannot {ctx.command.name} someone with a higher role than you.")
-#     except Exception as e:
-#         print(e)
-#         pass
-
-
 async def check_priv(ctx, member):
     """
     Handle permission hierarchy for commands
@@ -133,51 +101,22 @@ async def check_priv(ctx, member):
         if member.id == ctx.bot.user.id:
             return f"I cannot {ctx.command.name} myself."
 
-        # Check if user bypasses
-        if ctx.author.id == ctx.guild.owner.id:
-            return
-        if ctx.author.id in owners:
-            return
-
-        # Now permission check
-        if member.id in owners:
-            if ctx.author.id not in owners:
-                return f"You cannot {ctx.command.name} my creator."
+        # Bot lacks permissions
         if member.id == ctx.guild.owner.id:
-            return f"You cannot {ctx.command.name} the server owner."
-        if ctx.author.top_role.position == member.top_role.position:
-            return f"You cannot {ctx.command.name} a user with equal permissions."
-        if ctx.author.top_role.position < member.top_role.position:
-            return f"You cannot {ctx.command.name} a user with superior permissions."
-    except Exception as e:
-        print(e)
-        pass
-
-
-def sync_priv(ctx, member):
-    """
-    Handle permission hierarchy for commands
-    Return the reason for failure.
-    """
-    try:
-        # Self checks
-        if member == ctx.author:
-            return f"You cannot {ctx.command.name} yourself."
-        if member.id == ctx.bot.user.id:
-            return f"I cannot {ctx.command.name} myself."
+            return f"I cannot {ctx.command.name} the server owner."
+        if ctx.guild.me.top_role.position == member.top_role.position:
+            return f"I cannot {ctx.command.name} a user with equal permissions."
+        if ctx.guild.me.top_role.position < member.top_role.position:
+            return f"I cannot {ctx.command.name} a user with superior permissions."
+        if member.id in owners:
+            return f"I cannot {ctx.command.name} my creator."
 
         # Check if user bypasses
         if ctx.author.id == ctx.guild.owner.id:
             return
         if ctx.author.id in owners:
             return
-
         # Now permission check
-        if member.id in owners:
-            if ctx.author.id not in owners:
-                return f"You cannot {ctx.command.name} my creator."
-        if member.id == ctx.guild.owner.id:
-            return f"You cannot {ctx.command.name} the server owner."
         if ctx.author.top_role.position == member.top_role.position:
             return f"You cannot {ctx.command.name} a user with equal permissions."
         if ctx.author.top_role.position < member.top_role.position:
