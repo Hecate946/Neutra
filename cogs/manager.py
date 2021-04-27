@@ -271,6 +271,35 @@ class Manager(commands.Cog):
             content=f"{self.bot.emote_dict['success']} Successfully reloaded all utilities.",
         )
 
+    @commands.command(hidden=True, brief="Reload all settings modules.")
+    async def reloadallsettings(self, ctx):
+        """ Reloads a settings module. """
+        error_collection = []
+        utilities = [
+            x[:-3] for x in sorted(os.listdir("settings")) if x.endswith(".py")
+        ]
+        for module in utilities:
+            try:
+                module_name = importlib.import_module(f"settings.{module}")
+                importlib.reload(module_name)
+            except Exception as e:
+                error_collection.append(
+                    [module, utils.traceback_maker(e, advance=False)]
+                )
+
+        if error_collection:
+            output = "\n".join(
+                [f"**{g[0]}** ```diff\n- {g[1]}```" for g in error_collection]
+            )
+            return await ctx.send_or_reply(
+                content=f"Attempted to reload all settings, was able to reload, "
+                f"however the following failed...\n\n{output}",
+            )
+
+        await ctx.send_or_reply(
+            content=f"{self.bot.emote_dict['success']} Successfully reloaded all utilities.",
+        )
+
     @commands.command(hidden=True, aliases=["restart"], brief="Reboot the bot.")
     async def reboot(self, ctx):
         """

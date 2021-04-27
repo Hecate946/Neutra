@@ -30,7 +30,7 @@ async def scriptexec():
     # We execute the SQL script to make sure we have all our tables.
     st = time.time()
     for script in scripts:
-        with open(f"data/scripts/{script}.sql", "r", encoding="utf-8") as script:
+        with open(f"./data/scripts/{script}.sql", "r", encoding="utf-8") as script:
             try:
                 await postgres.execute(script.read())
             except Exception as e:

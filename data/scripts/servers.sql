@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS warn (
     server_id bigint,
     warnings smallint
 );
-DROP TABLE tasks;
+
 CREATE TABLE IF NOT EXISTS tasks (
     user_id BIGINT,
     server_id BIGINT,
