@@ -1,11 +1,15 @@
+import io
 import re
 import copy
+import shlex
 import discord
+import argparse
 
+from datetime import datetime, timedelta
 from discord.ext import commands
 from unidecode import unidecode
 
-from utilities import pagination, permissions, utils
+from utilities import pagination, permissions, utils, helpers, converters
 
 
 def setup(bot):
@@ -469,7 +473,7 @@ class Admin(commands.Cog):
 
         if already_ignored is not None:
             return await ctx.send_or_reply(
-                content=f"{self.emote_dict['error']} User `{user}` is already being ignored.",
+                content=f"{self.emote_dict['warn']} User `{user}` is already being ignored.",
             )
 
         query = """INSERT INTO ignored VALUES ($1, $2, $3, $4, $5)"""
@@ -506,7 +510,7 @@ class Admin(commands.Cog):
         blacklisted = await self.bot.cxn.fetchval(query, user.id, ctx.guild.id) or None
         if blacklisted is None:
             return await ctx.send_or_reply(
-                content=f"{self.emote_dict['error']} User was not ignored.",
+                content=f"{self.emote_dict['warn']} User was not ignored.",
             )
 
         query = """DELETE FROM ignored WHERE user_id = $1 AND server_id = $2"""
@@ -598,7 +602,7 @@ class Admin(commands.Cog):
             pass
         if new_prefix in current_prefixes:
             return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['error']} `{new_prefix}` is already a registered prefix.",
+                content=f"{self.bot.emote_dict['warn']} `{new_prefix}` is already a registered prefix.",
             )
         if len(current_prefixes) == 10:
             return await ctx.send_or_reply(
@@ -638,7 +642,7 @@ class Admin(commands.Cog):
             pass
         if old_prefix not in current_prefixes:
             return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['error']} `{old_prefix}` is not a registered prefix.",
+                content=f"{self.bot.emote_dict['warn']} `{old_prefix}` is not a registered prefix.",
             )
         if len(current_prefixes) == 1:
             c = await pagination.Confirmation(
@@ -794,7 +798,7 @@ class Admin(commands.Cog):
             if so desired.
         """
         msg = await ctx.send_or_reply(
-            f"{self.bot.emote_dict['error']} Creating mute system. This process may take several minutes."
+            f"{self.bot.emote_dict['warn']} Creating mute system. This process may take several minutes."
         )
         if role is None:
             role = await ctx.guild.create_role(
@@ -1038,3 +1042,285 @@ class Admin(commands.Cog):
                 content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
             )
 
+    @commands.command(brief="Massban users matching a search.", aliases=["multiban"])
+    @commands.guild_only()
+    @permissions.bot_has_permissions(ban_members=True)
+    @permissions.has_permissions(manage_guild=True, ban_members=True)
+    async def massban(self, ctx, *, args=None):
+        """
+        Usage: -massban <arguments>
+        Aliases: -multiban
+        Permissions: Manage Server, Ban Members
+        Output:
+            Massbans users matching searches
+        Notes:
+            Use -massban --help
+            to show all valid arguments.
+        """
+
+        help_docstr = ""
+        help_docstr += "**Valid Massban Flags:**"
+        help_docstr += "```yaml\n"
+        help_docstr += "Flags: [Every flag is optional.]\n"
+        help_docstr += "\t--help|-h: Shows this message\n"
+        help_docstr += "\t--channel|-c: Channel to search for message history.\n"
+        help_docstr += "\t--reason|-r: The reason for the ban.\n"
+        help_docstr += "\t--regex: Regex that usernames must match.\n"
+        help_docstr += (
+            "\t--created: Matches users that registered after X minutes ago.\n"
+        )
+        help_docstr += "\t--joined: Matches users that joined after X minutes ago.\n"
+        help_docstr += (
+            "\t--joined-before: Matches users who joined before the user ID given.\n"
+        )
+        help_docstr += (
+            "\t--joined-after: Matches users who joined after the user ID given.\n"
+        )
+        help_docstr += (
+            "\t--no-avatar: Matches users who have no avatar. (no arguments)\n"
+        )
+        help_docstr += "\t--no-roles: Matches users that have no role. (no arguments)\n"
+        help_docstr += "\t--has-role: Matches users that have a specific role.\n"
+        help_docstr += (
+            "\t--show: Show members instead of banning them. (no arguments)\n"
+        )
+        help_docstr += (
+            "\t--warns: Matches users who's warn count is more than a value.\n"
+        )
+        help_docstr += "\tMessage history filters (Requires --channel):\n"
+        help_docstr += "\t\t--contains: A substring to search for in the message.\n"
+        help_docstr += (
+            "\t\t--starts: A substring to search if the message starts with.\n"
+        )
+        help_docstr += "\t\t--ends: A substring to search if the message ends with.\n"
+        help_docstr += "\t\t--match: A regex to match the message content to.\n"
+        help_docstr += (
+            "\t\t--search: How many messages to search. Default 100. Max 2000.\n"
+        )
+        help_docstr += "\t\t--after: Messages must come after this message ID.\n"
+        help_docstr += "\t\t--before: Messages must come before this message ID.\n"
+        help_docstr += (
+            "\t\t--files: Checks if the message has attachments (no arguments).\n"
+        )
+        help_docstr += (
+            "\t\t--embeds: Checks if the message has embeds (no arguments).\n"
+        )
+        help_docstr += "```"
+
+        if args is None:
+            return await ctx.usage("<arguments>")
+
+        parser = converters.Arguments(add_help=False, allow_abbrev=False)
+        parser.add_argument("--help", "-h", action="store_true")
+        parser.add_argument("--channel", "-c")
+        parser.add_argument("--reason", "-r", nargs="+")
+        parser.add_argument("--search", type=int, default=100)
+        parser.add_argument("--regex")
+        parser.add_argument("--no-avatar", action="store_true")
+        parser.add_argument("--no-roles", action="store_true")
+        parser.add_argument("--has-role", type=int)
+        parser.add_argument("--warns", "--warn", type=int)
+        parser.add_argument("--created", type=int)
+        parser.add_argument("--joined", type=int)
+        parser.add_argument("--joined-before", type=int)
+        parser.add_argument("--joined-after", type=int)
+        parser.add_argument("--contains")
+        parser.add_argument("--starts")
+        parser.add_argument("--ends")
+        parser.add_argument("--match")
+        parser.add_argument("--show", action="store_true")
+        parser.add_argument(
+            "--embeds", action="store_const", const=lambda m: len(m.embeds)
+        )
+        parser.add_argument(
+            "--files", action="store_const", const=lambda m: len(m.attachments)
+        )
+        parser.add_argument("--after", type=int)
+        parser.add_argument("--before", type=int)
+
+        try:
+            args = parser.parse_args(shlex.split(args))
+        except Exception as e:
+            return await ctx.send(str(e).capitalize())
+
+        members = []
+
+        if args.help:
+            return await ctx.send_or_reply(help_docstr)
+
+        if args.channel:
+            channel = await commands.TextChannelConverter().convert(ctx, args.channel)
+            before = args.before and discord.Object(id=args.before)
+            after = args.after and discord.Object(id=args.after)
+            predicates = []
+            if args.contains:
+                predicates.append(lambda m: args.contains in m.content)
+            if args.starts:
+                predicates.append(lambda m: m.content.startswith(args.starts))
+            if args.ends:
+                predicates.append(lambda m: m.content.endswith(args.ends))
+            if args.match:
+                try:
+                    _match = re.compile(args.match)
+                except re.error as e:
+                    return await ctx.send(f"Invalid regex passed to `--match`: {e}")
+                else:
+                    predicates.append(lambda m, x=_match: x.match(m.content))
+            if args.embeds:
+                predicates.append(args.embeds)
+            if args.files:
+                predicates.append(args.files)
+
+            async for message in channel.history(
+                limit=min(max(1, args.search), 2000), before=before, after=after
+            ):
+                if all(p(message) for p in predicates):
+                    members.append(message.author)
+        else:
+            if ctx.guild.chunked:
+                members = ctx.guild.members
+            else:
+                async with ctx.typing():
+                    await ctx.guild.chunk(cache=True)
+                members = ctx.guild.members
+
+        # member filters
+        predicates = [
+            lambda m: m.discriminator != "0000",  # No deleted users
+        ]
+
+        converter = commands.MemberConverter()
+
+        if args.regex:
+            try:
+                _regex = re.compile(args.regex)
+            except re.error as e:
+                return await ctx.send(f"Invalid regex passed to `--regex`: {e}")
+            else:
+                predicates.append(lambda m, x=_regex: x.match(m.name))
+
+        if args.no_avatar:
+            predicates.append(lambda m: m.avatar is None)
+        if args.no_roles:
+            predicates.append(lambda m: len(getattr(m, "roles", [])) <= 1)
+        if args.has_role:
+
+            role = ctx.guild.get_role(args.has_role)
+            if role is None:
+                return await ctx.fail("Invalid role.")
+            predicates.append(lambda m: role in m.roles)
+
+        now = datetime.utcnow()
+        if args.created:
+
+            def created(member, *, offset=now - timedelta(minutes=args.created)):
+                return member.created_at > offset
+
+            predicates.append(created)
+        if args.joined:
+
+            def joined(member, *, offset=now - timedelta(minutes=args.joined)):
+                if isinstance(member, discord.User):
+                    # If the member is a user then they left already
+                    return True
+                return member.joined_at and member.joined_at > offset
+
+            predicates.append(joined)
+        if args.joined_after:
+            _joined_after_member = await converter.convert(ctx, str(args.joined_after))
+
+            def joined_after(member, *, _other=_joined_after_member):
+                return (
+                    member.joined_at
+                    and _other.joined_at
+                    and member.joined_at > _other.joined_at
+                )
+
+            predicates.append(joined_after)
+        if args.joined_before:
+            _joined_before_member = await converter.convert(
+                ctx, str(args.joined_before)
+            )
+
+            def joined_before(member, *, _other=_joined_before_member):
+                return (
+                    member.joined_at
+                    and _other.joined_at
+                    and member.joined_at < _other.joined_at
+                )
+
+            predicates.append(joined_before)
+
+        warned = []
+        if args.warns:
+            wcs = await self.get_warncount(ctx.guild)
+            for user, warns in wcs.items():
+                if warns >= args.warns:
+                    warned.append(user)
+
+            def warns(member):
+                return member.id in warned
+
+            predicates.append(warns)
+        members = {m for m in members if all(p(m) for p in predicates)}
+        # members.add([x for x in await p(m)])
+        if len(members) == 0:
+            return await ctx.send("No members found matching criteria.")
+
+        if args.show:
+            members = sorted(members, key=lambda m: m.joined_at or now)
+            fmt = "\n".join(
+                f"{m.id}\tJoined: {m.joined_at}\tCreated: {m.created_at}\t{m}"
+                for m in members
+            )
+            content = f"Current Time: {datetime.utcnow()}\nTotal members: {len(members)}\n{fmt}"
+            file = discord.File(
+                io.BytesIO(content.encode("utf-8")), filename="members.txt"
+            )
+            return await ctx.send(file=file)
+
+        if args.reason is None:
+            return await ctx.send("--reason flag is required.")
+        else:
+            reason = " ".join(args.reason)
+            raw_reason = reason
+            reason = await converters.ActionReason().convert(ctx, reason)
+
+        confirm = await ctx.confirm(
+            f"This action will ban {len(members)} user{'' if len(members) == 1 else 's'}"
+        )
+        if not confirm:
+            return await ctx.send("**Cancelled.**")
+
+        banned = []
+        failed = []
+        for member in members:
+            res = await permissions.check_priv(ctx, member)
+            if res:
+                failed.append((str(member), res))
+                continue
+            try:
+                await ctx.guild.ban(member, reason=reason)
+                banned.append((str(member), raw_reason))
+            except Exception as e:
+                failed.append((str(member), e))
+                continue
+
+        if banned:
+            await ctx.success(f"Massbanned {len(banned)}/{len(members)} users.")
+            self.bot.dispatch("mod_action", ctx, targets=banned)
+        if failed:
+            await helpers.error_info(ctx, failed)
+
+    async def get_warncount(self, guild):
+        query = """
+                SELECT (warnings, user_id)
+                FROM warn WHERE
+                server_id = $1;
+                """
+        res = await self.bot.cxn.fetch(query, guild.id)
+        results = {}
+        for x in res:
+            results[x[0][1]] = x[0][0]
+
+        return results

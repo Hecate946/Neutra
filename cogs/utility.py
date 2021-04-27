@@ -54,29 +54,29 @@ class Utility(commands.Cog):
         self.uregex = re.compile(
             r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
         )
-        self.color_dict = { 
-                "teal": discord.Color.teal(),
-                "dark_teal": discord.Color.dark_teal(),
-                "green": discord.Color.green(),
-                "dark_green": discord.Color.dark_green(),
-                "blue": discord.Color.blue(),
-                "dark_blue": discord.Color.dark_blue(),
-                "purple": discord.Color.purple(),
-                "dark_purple": discord.Color.dark_purple(),
-                "pink": discord.Color.magenta(),
-                "dark_pink": discord.Color.dark_magenta(),
-                "gold": discord.Color.gold(),
-                "dark_gold": discord.Color.dark_gold(),
-                "orange": discord.Color.orange(),
-                "dark_orange": discord.Color.dark_orange(),
-                "red": discord.Color.red(),
-                "dark_red": discord.Color.dark_red(),
-                "lighter_gray": discord.Color.lighter_grey(),
-                "dark_gray": discord.Color.dark_grey(),
-                "light_gray": discord.Color.light_grey(),
-                "darker_gray": discord.Color.darker_grey(),
-                "blurple": discord.Color.blurple(),
-                "greyple": discord.Color.greyple()
+        self.color_dict = {
+            "teal": discord.Color.teal(),
+            "dark_teal": discord.Color.dark_teal(),
+            "green": discord.Color.green(),
+            "dark_green": discord.Color.dark_green(),
+            "blue": discord.Color.blue(),
+            "dark_blue": discord.Color.dark_blue(),
+            "purple": discord.Color.purple(),
+            "dark_purple": discord.Color.dark_purple(),
+            "pink": discord.Color.magenta(),
+            "dark_pink": discord.Color.dark_magenta(),
+            "gold": discord.Color.gold(),
+            "dark_gold": discord.Color.dark_gold(),
+            "orange": discord.Color.orange(),
+            "dark_orange": discord.Color.dark_orange(),
+            "red": discord.Color.red(),
+            "dark_red": discord.Color.dark_red(),
+            "lighter_gray": discord.Color.lighter_grey(),
+            "dark_gray": discord.Color.dark_grey(),
+            "light_gray": discord.Color.light_grey(),
+            "darker_gray": discord.Color.darker_grey(),
+            "blurple": discord.Color.blurple(),
+            "greyple": discord.Color.greyple(),
         }
 
     def parse_date(self, token):
@@ -454,7 +454,6 @@ class Utility(commands.Cog):
             em.set_image(url="attachment://color.png")
             await ctx.send_or_reply(embed=em, file=dfile)
 
-
     @commands.command(brief="Send an image with some hex codes.")
     async def colors(self, ctx):
         """
@@ -463,7 +462,9 @@ class Utility(commands.Cog):
             An image showing a few
             hex colors and codes
         """
-        await ctx.send_or_reply(file=discord.File("./data/assets/colors.png", filename="colors.png"))
+        await ctx.send_or_reply(
+            file=discord.File("./data/assets/colors.png", filename="colors.png")
+        )
 
     @commands.command(brief="Dehoist a specified user.")
     @permissions.bot_has_permissions(manage_nicknames=True)
@@ -654,7 +655,9 @@ class Utility(commands.Cog):
             )
             message = f"{self.bot.emote_dict['success']} Nicknamed `{user}: {nickname}`"
             if nickname is None:
-                message = f"{self.bot.emote_dict['success']} Reset nickname for `{user}`"
+                message = (
+                    f"{self.bot.emote_dict['success']} Reset nickname for `{user}`"
+                )
             await ctx.send_or_reply(message)
         except discord.Forbidden:
             await ctx.send_or_reply(
@@ -1052,7 +1055,7 @@ class Utility(commands.Cog):
 
         if result is None:
             return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['error']} There is nothing to snipe.",
+                content=f"{self.bot.emote_dict['warn']} There is nothing to snipe.",
             )
 
         author = result[0]

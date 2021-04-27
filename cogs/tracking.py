@@ -495,7 +495,7 @@ class Tracking(commands.Cog):
             user = ctx.author
         if user.bot:
             return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['error']} I do not track bots.",
+                content=f"{self.bot.emote_dict['warn']} I do not track bots.",
             )
 
         query = """SELECT usernames FROM usernames WHERE user_id = $1"""
@@ -560,7 +560,7 @@ class Tracking(commands.Cog):
 
         if user.bot:
             return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['error']} I do not track bots.",
+                content=f"{self.bot.emote_dict['warn']} I do not track bots.",
             )
 
         tracker = self.bot.get_cog("Batch")
@@ -590,7 +590,7 @@ class Tracking(commands.Cog):
         else:
             if user.bot:
                 return await ctx.send_or_reply(
-                    f"{self.bot.emote_dict['error']} I do not track bots."
+                    f"{self.bot.emote_dict['warn']} I do not track bots."
                 )
             query = """SELECT command FROM commands WHERE server_id = $1 AND author_id = $2"""
             command_list = await self.bot.cxn.fetch(query, ctx.guild.id, user.id)
@@ -603,7 +603,7 @@ class Tracking(commands.Cog):
             width = len(max(counter, key=len))
         except ValueError:
             return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['error']} User `{user}` has not run any commands.",
+                content=f"{self.bot.emote_dict['warn']} User `{user}` has not run any commands.",
             )
         total = sum(counter.values())
 
@@ -651,7 +651,7 @@ class Tracking(commands.Cog):
         else:
             if user.bot:
                 return await ctx.send_or_reply(
-                    f"{self.bot.emote_dict['error']} I do not track bots."
+                    f"{self.bot.emote_dict['warn']} I do not track bots."
                 )
             query = """SELECT COUNT(*) as c FROM commands WHERE author_id = $1 AND server_id = $2"""
             command_count = await self.bot.cxn.fetchrow(query, user.id, ctx.guild.id)
@@ -712,7 +712,7 @@ class Tracking(commands.Cog):
 
         if member.bot:
             return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['error']} I do not track bots.",
+                content=f"{self.bot.emote_dict['warn']} I do not track bots.",
             )
         message = await ctx.send_or_reply(
             content=f"**{self.bot.emote_dict['loading']} Collecting Word Statistics...**",
@@ -771,7 +771,7 @@ class Tracking(commands.Cog):
             member = ctx.author
         if member.bot:
             return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['error']} I do not track bots.",
+                content=f"{self.bot.emote_dict['warn']} I do not track bots.",
             )
 
         message = await ctx.send_or_reply(

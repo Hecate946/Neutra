@@ -265,3 +265,31 @@ DiscordChannel = typing.Union[
     commands.converter.VoiceChannelConverter,
     commands.converter.CategoryChannelConverter,
 ]
+
+class UserIDConverter(commands.Converter):
+    async def convert(self, ctx, argument):
+        if not argument.isdigit():
+            raise commands.BadArgument("User IDs must be integers.")
+        try:
+            user = await ctx.guild.fetch_member(argument)
+        except:
+            try:
+                user = await ctx.bot.fetch_user(argument)
+            except discord.NotFound:
+                raise commands.BadArgument("Invalid user.")
+        return user
+
+class ActionReason(commands.Converter):
+    async def convert(self, ctx, argument):
+        ret = f"{ctx.author} (ID: {ctx.author.id}) in #{ctx.channel.name}: {argument}"
+
+        if len(ret) > 512:
+            reason_max = 512 - len(ret) + len(argument)
+            raise commands.BadArgument(
+                f"Reason is too long ({len(argument)}/{reason_max})"
+            )
+        return ret
+
+class Arguments(argparse.ArgumentParser):
+    def error(self, message):
+        raise RuntimeError(message)

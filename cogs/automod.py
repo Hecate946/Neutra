@@ -278,7 +278,7 @@ class Automod(commands.Cog):
         records = await self.bot.cxn.fetch(query, ctx.guild.id) or None
         if records is None:
             return await ctx.send_or_reply(
-                content=f"{self.emote_dict['error']} No current warnings exist on this server.",
+                content=f"{self.emote_dict['warn']} No current warnings exist on this server.",
             )
 
         p = pagination.SimplePages(
@@ -600,7 +600,7 @@ class Automod(commands.Cog):
                 "is now" if current is True else "remains",
             )
         else:
-            msg = f"{self.bot.emote_dict['error']} That is not a valid setting."
+            msg = f"{self.bot.emote_dict['warn']} That is not a valid setting."
             yes_no = current
         if yes_no != current and yes_no is not None:
             await self.bot.cxn.execute(
@@ -730,7 +730,7 @@ class Automod(commands.Cog):
 
         if existing:
             await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['error']} The word{'' if len(existing) == 1 else 's'} `{', '.join(existing)}` "
+                content=f"{self.bot.emote_dict['warn']} The word{'' if len(existing) == 1 else 's'} `{', '.join(existing)}` "
                 f"{'was' if len(existing) == 1 else 'were'} already in the word filter.",
             )
 
@@ -767,7 +767,7 @@ class Automod(commands.Cog):
         word_list = self.bot.server_settings[ctx.guild.id]["profanities"]
         if word_list == []:
             return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['error']} This server has no filtered words.",
+                content=f"{self.bot.emote_dict['warn']} This server has no filtered words.",
             )
 
         removed = []
@@ -792,7 +792,7 @@ class Automod(commands.Cog):
 
         if not_found:
             await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['error']} The word{'' if len(not_found) == 1 else 's'} `{', '.join(not_found)}` "
+                content=f"{self.bot.emote_dict['warn']} The word{'' if len(not_found) == 1 else 's'} `{', '.join(not_found)}` "
                 f"{'was' if len(not_found) == 1 else 'were'} not in the word filter.",
             )
 
@@ -829,10 +829,15 @@ class Automod(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-    @_filter.command(name="clear")
+    @_filter.command(name="clear", brief="Clear all words from the filer.")
     @permissions.has_permissions(manage_guild=True)
     async def _clear(self, ctx):
-
+        """
+        Usage: -filter clear
+        Output:
+            Confirmation that the filtered
+            word list has been cleared.
+        """
         query = """
                 UPDATE servers
                 SET profanities = NULL

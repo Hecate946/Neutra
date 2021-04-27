@@ -185,7 +185,7 @@ class Time(commands.Cog):
         timezone = await self.bot.cxn.fetchval(query, member.id) or None
         if timezone is None:
             return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['error']} `{member}` has not set their timezone. "
+                content=f"{self.bot.emote_dict['warn']} `{member}` has not set their timezone. "
                 f"Use the `{ctx.prefix}settz [Region/City]` command.",
             )
 
@@ -213,7 +213,7 @@ class Time(commands.Cog):
         tz = await self.bot.cxn.fetchval(query, member.id) or None
         if tz is None:
             msg = (
-                f"{self.bot.emote_dict['error']} "
+                f"{self.bot.emote_dict['warn']} "
                 f"`{member}` hasn't set their timezone yet. "
                 f"They can do so with `{ctx.prefix}settz [Region/City]` command.\n"
                 f"The current UTC time is **{timenow}**."

@@ -434,7 +434,7 @@ class Config(commands.Cog):
             )
         if command.name in EXCEPTIONS:
             return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['error']} command {command.qualified_name} cannot be disabled.",
+                content=f"{self.bot.emote_dict['warn']} command {command.qualified_name} cannot be disabled.",
             )
 
         command.enabled = not command.enabled
@@ -499,7 +499,7 @@ class Config(commands.Cog):
 
         if member.id in current_owners:
             return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['error']} **`{member}` is already an owner.**",
+                content=f"{self.bot.emote_dict['warn']} **`{member}` is already an owner.**",
             )
 
         c = await pagination.Confirmation(
@@ -548,7 +548,7 @@ class Config(commands.Cog):
 
         if member.id not in current_owners:
             return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['error']} **`{member}` is not an owner.**",
+                content=f"{self.bot.emote_dict['warn']} **`{member}` is not an owner.**",
             )
 
         c = await pagination.Confirmation(
@@ -597,7 +597,7 @@ class Config(commands.Cog):
 
         if member.id in current_admins:
             return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['error']} **`{member}` is already an admin.**",
+                content=f"{self.bot.emote_dict['warn']} **`{member}` is already an admin.**",
             )
 
         c = await pagination.Confirmation(
@@ -646,7 +646,7 @@ class Config(commands.Cog):
 
         if member.id not in current_admins:
             return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['error']} **`{member}` is not an admin.**",
+                content=f"{self.bot.emote_dict['warn']} **`{member}` is not an admin.**",
             )
 
         c = await pagination.Confirmation(

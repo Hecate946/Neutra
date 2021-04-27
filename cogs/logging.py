@@ -774,7 +774,7 @@ class Logging(commands.Cog):
         for webhook in server_webhook_list:
             if str(webhook.id) == str(webhook_id):
                 return await ctx.send_or_reply(
-                    f"{self.bot.emote_dict['error']} Logging is already set up on this server"
+                    f"{self.bot.emote_dict['warn']} Logging is already set up on this server"
                 )
 
         await self.do_logging(ctx, channel)
@@ -813,7 +813,7 @@ class Logging(commands.Cog):
             return
         else:
             return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['error']} Logging is not enabled on this server.",
+                content=f"{self.bot.emote_dict['warn']} Logging is not enabled on this server.",
             )
 
     @commands.command(brief="Enable specific logging events.")

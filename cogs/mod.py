@@ -1,4 +1,5 @@
 import re
+import shlex
 import typing
 import asyncio
 import asyncpg
@@ -7,7 +8,7 @@ import discord
 from better_profanity import profanity
 from collections import Counter
 from datetime import datetime, timedelta
-from discord.ext import commands
+from discord.ext import commands, flags
 
 from settings import database
 from utilities import converters, permissions, utils, helpers
@@ -65,7 +66,7 @@ class Mod(commands.Cog):
                 await target.edit(voice_channel=channel)
             except discord.HTTPException:
                 await ctx.send_or_reply(
-                    content=f"{self.bot.emote_dict['error']} Target is not connected to a voice channel"
+                    content=f"{self.bot.emote_dict['warn']} Target is not connected to a voice channel"
                 )
                 continue
             vcmoved.append(str(target))
@@ -90,14 +91,14 @@ class Mod(commands.Cog):
             )
         if len(channel.members) == 0:
             return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['error']} No members in voice channel {channel.mention}.",
+                content=f"{self.bot.emote_dict['warn']} No members in voice channel {channel.mention}.",
             )
         failed = []
         for member in channel.members:
             try:
                 await member.edit(voice_channel=None)
-            except Exception:
-                failed.append(str(member))
+            except Exception as e:
+                failed.append((str(member), e))
                 continue
         await ctx.send_or_reply(
             content=f"{self.bot.emote_dict['success']} Purged {channel.mention}.",
@@ -127,7 +128,7 @@ class Mod(commands.Cog):
                 await target.edit(voice_channel=None)
             except discord.HTTPException:
                 await ctx.send_or_reply(
-                    f"{self.bot.emote_dict['error']} Target is not connected to a voice channel."
+                    f"{self.bot.emote_dict['warn']} Target is not connected to a voice channel."
                 )
             vckicked.append(str(target))
         if vckicked:
@@ -263,7 +264,7 @@ class Mod(commands.Cog):
                         unmutes.append(target)
                 else:
                     await ctx.send_or_reply(
-                        f"{self.bot.emote_dict['error']} Member `{target.display_name}` is already muted."
+                        f"{self.bot.emote_dict['warn']} Member `{target.display_name}` is already muted."
                     )
             if muted:
                 allmuted = []
@@ -332,7 +333,7 @@ class Mod(commands.Cog):
 
             else:
                 return await ctx.send_or_reply(
-                    content=f"{self.bot.emote_dict['error']} Member is not muted",
+                    content=f"{self.bot.emote_dict['warn']} Member is not muted",
                 )
 
         if unmuted:
@@ -570,7 +571,7 @@ class Mod(commands.Cog):
                 )
                 banned.append(str(target))
             except Exception as e:
-                failed.append(str(target), e)
+                failed.append((str(target), e))
                 continue
         if banned:
             await ctx.send_or_reply(
@@ -649,40 +650,74 @@ class Mod(commands.Cog):
         if failed:
             await helpers.error_info(ctx, failed)
 
-    @commands.command(brief="Hackban multiple users by ID.")
+
+    @commands.command(brief="Hackban multiple users.", cls=flags.FlagCommand)
     @permissions.bot_has_permissions(ban_members=True)
     @permissions.has_permissions(ban_members=True)
-    async def hackban(self, ctx, *, users: commands.Greedy[discord.User]):
+    async def hackban(
+        self,
+        ctx,
+        users: commands.Greedy[converters.UserIDConverter],
+        *, args = None,
+    ):  
         """
-        Usage: -hackban <id> [id] [id]...
-        Example: -hackban 805871188462010398 243507089479579784
+        Usage: -hackban <user id> <user id>... [--reason] [--delete]
+        Example:
+            -hackban 805871188462010398 --reason for spamming --delete 2
         Permission: Ban Members
-        Output: Hackbans multiple users by ID.
-        Notes: Users do not have to be in the server."""
-        if not len(users):
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}hackban <id> [id] [id]...`",
-            )
+        Output: Hackbans multiple users.
+        Notes: Users do not have to be in the server.
+        """
+
+        if users is None:
+            return await ctx.usage("<user> <user>... [--reason] [--delete]")
+
+        if args:
+            parser = converters.Arguments(add_help=False, allow_abbrev=False)
+            parser.add_argument("--reason", nargs="+", default="No reason.")
+            parser.add_argument("--delete", type=int, default=1)
+
+            try:
+                args = parser.parse_args(shlex.split(args))
+            except Exception as e:
+                return await ctx.fail(str(e).capitalize())
+                
+            if args.reason:
+                reason = " ".join(args.reason)
+            reason = await converters.ActionReason().convert(ctx, reason)
+
+            if args.delete:
+                delete = args.delete
+                if delete > 7:
+                    delete = 7
+                if delete < 0:
+                    delete = 0
+            else:
+                delete = 1
+        else:
+            delete = 1
+            reason = "No reason"
         banned = []
         failed = []
         for user in users:
-            res = permissions.check_priv(ctx, user)
-            if res:
-                failed.append((str(user), res))
-                continue
+            if isinstance(user, discord.Member):
+                res = await permissions.check_priv(ctx, user)
+                if res:
+                    failed.append((str(user), res))
+                    continue
             try:
                 await ctx.guild.ban(
                     user,
-                    reason=f"Hackban executed by {ctx.author}",
-                    delete_message_days=7,
+                    reason=reason,
+                    delete_message_days=delete,
                 )
-                banned.append(user)
+                banned.append(str(user))
             except Exception as e:
                 failed.append((str(user), e))
                 continue
         if banned:
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['success']} Hackbanned `{', '.join(banned)}`"
+            await ctx.success(
+                f"Hackbanned `{', '.join(banned)}`"
             )
             self.bot.dispatch("mod_action", ctx, targets=banned)
         if failed:

@@ -84,7 +84,7 @@ class Help(commands.Cog):
                 ctx
             ):
                 await ctx.send_or_reply(
-                    f"{self.emote_dict['error']} No command named `{name}` found."
+                    f"{self.emote_dict['warn']} No command named `{name}` found."
                 )
                 continue
             cog_commands.append(c)
@@ -99,7 +99,7 @@ class Help(commands.Cog):
             return
         else:
             return await ctx.send_or_reply(
-                content=f"{self.emote_dict['error']} No command named `{name}` found.",
+                content=f"{self.emote_dict['warn']} No command named `{name}` found.",
             )
 
     ##########################
@@ -390,14 +390,14 @@ class Help(commands.Cog):
             if invokercommand.lower() in ["jsk", "jish", "jishaku"]:
                 if not permissions.is_owner(ctx):
                     return await ctx.send_or_reply(
-                        f"{self.emote_dict['error']} No command named `{invokercommand}` found."
+                        f"{self.emote_dict['warn']} No command named `{invokercommand}` found."
                     )
                 return await ctx.send_help("jishaku")
 
             if invokercommand.lower() in ["conf", "config", "owner", "owners"]:
                 if not permissions.is_owner(ctx):
                     return await ctx.send_or_reply(
-                        f"{self.emote_dict['error']} No command named `{invokercommand}` found."
+                        f"{self.emote_dict['warn']} No command named `{invokercommand}` found."
                     )
                 cog = self.bot.get_cog("Config")
                 return await self.helper_func(
@@ -407,7 +407,7 @@ class Help(commands.Cog):
             if invokercommand.lower() in ["hidden", "botadmin", "admins", "botadmins"]:
                 if not permissions.is_admin(ctx):
                     return await ctx.send_or_reply(
-                        f"{self.emote_dict['error']} No command named `{invokercommand}` found."
+                        f"{self.emote_dict['warn']} No command named `{invokercommand}` found."
                     )
                 cog = self.bot.get_cog("Botadmin")
                 return await self.helper_func(
@@ -417,7 +417,7 @@ class Help(commands.Cog):
             if invokercommand.lower() in ["manage", "manager", "master", "heart"]:
                 if not permissions.is_owner(ctx):
                     return await ctx.send_or_reply(
-                        f"{self.emote_dict['error']} No command named `{invokercommand}` found."
+                        f"{self.emote_dict['warn']} No command named `{invokercommand}` found."
                     )
                 cog = self.bot.get_cog("Manager")
                 return await self.helper_func(
@@ -489,7 +489,7 @@ class Help(commands.Cog):
                     return
                 else:
                     await ctx.send_or_reply(
-                        f"{self.emote_dict['error']} No command named `{invokercommand}` found."
+                        f"{self.emote_dict['warn']} No command named `{invokercommand}` found."
                     )
 
     async def send_group_help(
@@ -529,7 +529,7 @@ class Help(commands.Cog):
                     return await self.send_help(ctx, help_embed, pm, delete_after)
             if not found:
                 await ctx.send_or_reply(
-                    f"{self.emote_dict['error']} No command named `{invokercommand}` found."
+                    f"{self.emote_dict['warn']} No command named `{invokercommand}` found."
                 )
                 return
 

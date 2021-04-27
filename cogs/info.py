@@ -756,15 +756,13 @@ class Info(commands.Cog):
             em.description = msg
             await ctx.send_or_reply(embed=em)
 
-
     @commands.command()
     async def privacy(self, ctx):
         with open("./data/txts/privacy.txt") as fp:
             privacy = fp.read()
         await ctx.send_or_reply("```fix\n" + privacy.format(ctx.prefix) + "```")
 
-
-    @commands.command(brief="Send a request to the developer.", aliases=['contact'])
+    @commands.command(brief="Send a request to the developer.", aliases=["contact"])
     @commands.dm_only()
     @commands.cooldown(2, 60, commands.BucketType.user)
     async def request(self, ctx, *, request: str = None):

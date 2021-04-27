@@ -529,7 +529,7 @@ class Snowbot(commands.AutoShardedBot):
 
         elif isinstance(error, commands.CommandOnCooldown):
             await ctx.send_or_reply(
-                content=f"{self.emote_dict['error']} This command is on cooldown... retry in {error.retry_after:.2f} seconds.",
+                content=f"{self.emote_dict['warn']} This command is on cooldown... retry in {error.retry_after:.2f} seconds.",
             )
 
         elif isinstance(error, commands.DisabledCommand):
@@ -572,13 +572,13 @@ class Snowbot(commands.AutoShardedBot):
         elif isinstance(error, commands.BotMissingPermissions):
             # Readable error so just send it to the channel where the error occurred.
             await ctx.send_or_reply(
-                content=f"{self.emote_dict['error']} {error}",
+                content=f"{self.emote_dict['warn']} {error}",
             )
 
         elif isinstance(error, commands.CheckFailure):
             # Readable error so just send it to the channel where the error occurred.
             # Or not
-            # await ctx.send_or_reply(content=f"{self.emote_dict['error']} {error}")
+            # await ctx.send_or_reply(content=f"{self.emote_dict['warn']} {error}")
             pass
 
         else:
@@ -640,6 +640,7 @@ class Snowbot(commands.AutoShardedBot):
 
     async def on_error(self, event, *args, **kwargs):
         print(traceback.format_exc())
+        print(args)
         ctx = await self.get_context(args[0])
         destination = f"\n\tLocation: {str(ctx.author)} in #{ctx.channel} [{ctx.channel.id}] ({ctx.guild}) [{ctx.guild.id}]:\n"
         message = f"\tContent: {args[0].clean_content}\n"
@@ -729,3 +730,12 @@ class BotContext(commands.Context):
         return await self.send(
             f"Usage: `{self.prefix}{self.command.qualified_name} " + content + "`"
         )
+
+    async def confirm(self, content=None, **kwargs):
+        content = (
+            f"**{bot.emote_dict['exclamation']} {content}. Do you wish to continue?**"
+        )
+        c = await pagination.Confirmation(msg=content).prompt(ctx=self)
+        if c:
+            return True
+        return
