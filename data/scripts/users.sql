@@ -39,3 +39,12 @@ CREATE TABLE IF NOT EXISTS useravatars (
     avatar_id BIGINT,
     unix REAL
 );
+
+CREATE TABLE IF NOT EXISTS userstatus (
+    user_id BIGINT PRIMARY KEY,
+    online REAL DEFAULT 0 NOT NULL,
+    idle REAL DEFAULT 0 NOT NULL,
+    dnd REAL DEFAULT 0 NOT NULL,
+    past REAL,
+    startdate TIMESTAMP
+);

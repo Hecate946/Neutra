@@ -31,7 +31,6 @@ def is_home():
 
 def event_check(func):
     """Event decorator check."""
-
     def check(method):
         method.callback = method
 
@@ -39,9 +38,7 @@ def event_check(func):
         async def wrapper(*args, **kwargs):
             if await discord.utils.maybe_coroutine(func, *args, **kwargs):
                 await method(*args, **kwargs)
-
         return wrapper
-
     return check
 
 
@@ -55,3 +52,4 @@ def wait_until_ready(bot=None):
             return True
 
     return event_check(predicate)
+

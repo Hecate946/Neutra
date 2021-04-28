@@ -146,8 +146,23 @@ class Snowbot(commands.AutoShardedBot):
         try:
             super().run(self.token, reconnect=True)  # Run the bot
         finally:  # Write up our json files with the stats from the session.
-            self.status_loop.stop()
+            self.status_loop.stop() # Stop the loop
+
             print("\nKilled")
+            with open("./data/json/botstats.json", "r", encoding="utf-8") as fp:
+                current_data = json.load(fp)
+            if current_data == {}:
+                with open("./data/json/botstats.json", "w", encoding="utf-8") as fp:
+                    json.dump({
+                        "startdate": str(datetime.utcnow()),
+                        "runtime": (datetime.utcnow() - self.uptime).total_seconds()
+                    }, fp, indent=2)
+            else:
+                with open("./data/json/botstats.json", "w", encoding="utf-8") as fp:
+                    current_data['runtime']  = current_data['runtime'] + (datetime.utcnow() - self.uptime).total_seconds()
+                    json.dump(current_data, fp, indent=2)
+
+
             with open("./data/json/blacklist.json", "w", encoding="utf-8") as fp:
                 json.dump(self.blacklist, fp, indent=2)
             with open("./data/json/commands.json", "w", encoding="utf-8") as fp:
@@ -225,6 +240,7 @@ class Snowbot(commands.AutoShardedBot):
         if not hasattr(self, "starttime"):
             self.starttime = int(time.time())
 
+
         if not hasattr(self, "cxn"):
             self.cxn = cxn
 
@@ -247,9 +263,9 @@ class Snowbot(commands.AutoShardedBot):
             self.bot_settings = database.bot_settings
 
         # Create all the necessary jsons
-        # first the webhook json
-        if not os.path.exists("./data/json/webhooks.json"):
-            with open("./data/json/webhooks.json", mode="w", encoding="utf-8") as fp:
+        # first the uptime stat json
+        if not os.path.exists("./data/json/botstats.json"):
+            with open("./data/json/botstats.json", mode="w", encoding="utf-8") as fp:
                 fp.write(r"{}")
         # load all blacklisted discord objects
         if not os.path.exists("./data/json/blacklist.json"):
@@ -668,8 +684,12 @@ class Snowbot(commands.AutoShardedBot):
         return self.get_user(708584008065351681)
 
     @property
+    def home(self):
+        return self.get_guild(self.constants.home)
+
+    @property
     def bot_channel(self):
-        return self.get_channel(835199229890658324)
+        return self.get_channel(self.constants.botlog)
 
 
 bot = Snowbot()

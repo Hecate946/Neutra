@@ -1,6 +1,7 @@
 import io
 import os
 import sys
+import json
 import time
 import codecs
 import psutil
@@ -15,8 +16,8 @@ import subprocess
 
 from discord import __version__ as dv
 from discord.ext import commands, menus
-
-from utilities import converters, pagination, speedtest, utils
+from PIL import Image, ImageDraw, ImageFont
+from utilities import converters, pagination, speedtest, utils, decorators
 
 
 def setup(bot):
@@ -799,20 +800,59 @@ class Info(commands.Cog):
             await ctx.success(content="Your request has been submitted.")
 
 
-    @commands.command(aliases=["%", r"%uptime"])
+    @commands.command(hidden=True, aliases=["%", r"%uptime"])
     async def percentuptime(self, ctx):
-        from PIL import Image, ImageDraw
+        with open("./data/json/botstats.json", "r", encoding="utf-8") as fp:
+            data = json.load(fp)
+        startdate = datetime.datetime.strptime(data['startdate'], "%Y-%m-%d %H:%M:%S.%f")
+        total = (datetime.datetime.utcnow() - startdate).total_seconds()
+        uptime = data['runtime'] + (datetime.datetime.utcnow() - self.bot.uptime).total_seconds()
+        print(total)
+        print(uptime)
+        percent = f"{(uptime/total):.2%}"
+        if (uptime/total) > 0.9:
+            color = (109, 255, 72)
+        elif 0.7 < (uptime/total) < 0.9:
+            color = (226, 232, 19)
+        else:
+            color = (232, 44, 19)
         em = discord.Embed(color=self.bot.constants.embed)
-        img = Image.new('RGBA', (1920, 1080), (0,0,0,0))
+        img = Image.new('RGBA', (2400, 1024), (0,0,0,0))
         draw = ImageDraw.Draw(img)
+        font = ImageFont.truetype('./data/assets/Helvetica.ttf', 100)
         #start and end indicate the angle of start and end
         #Draw arc
-        draw.arc((50, 100, 100, 50), start=30, end=270, fill=(255, 255, 255), width=20)
+        w, h = 1050, 1000
+        print(w)
+        shape = [(50, 0), (w, h)]
+        # *(uptime/total)
+        draw.arc(shape, start=0, end=360*(uptime/total), fill=(10, 24, 34), width=200)
+        # w,h = font.getsize(percent)
+        # print(w)
+        # print(h)
+        # draw.text((445, 460), percent, fill=color, font=font)
+        self.center_text(img, 1100, 1000, font, percent, color)
+        font = ImageFont.truetype('./data/assets/Helvetica-Bold.ttf', 85)
+        draw.text((1200, 0), "Uptime Tracking Startdate:", fill=(255, 255, 255), font=font)
+        font = ImageFont.truetype('./data/assets/Helvetica.ttf', 68)
+        draw.text((1200, 100), utils.format_time(startdate).split(".")[0] + "]", fill=(255, 255, 255), font=font)
+        font = ImageFont.truetype('./data/assets/Helvetica-Bold.ttf', 85)
+        draw.text((1200, 300), "Total Uptime (Hours):", fill=(255, 255, 255), font=font)
+        font = ImageFont.truetype('./data/assets/Helvetica.ttf', 68)
+        draw.text((1200, 400), f"{data['runtime']/3600:.2f}", fill=(255, 255, 255), font=font)
         #Drawing a pie chart
         #draw.pieslice((425, 50, 575, 200), start=30, end=270, fill=(255, 255, 255), outline=(0, 0, 0))
         buffer = io.BytesIO()
         img.save(buffer, "png")  # 'save' function for PIL
         buffer.seek(0)
         dfile = discord.File(fp=buffer, filename="uptime.png")
+        em.title = "Uptime Statistics"
         em.set_image(url="attachment://uptime.png")
         await ctx.send_or_reply(embed=em, file=dfile)
+
+    def center_text(self, img, strip_width, strip_height, font, text, color=(255, 255, 255)):
+        draw = ImageDraw.Draw(img)
+        text_width, text_height = draw.textsize(text, font)
+        position = ((strip_width-text_width)/2,(strip_height-text_height)/2)
+        draw.text(position, text, color, font=font)
+        return img

@@ -7,6 +7,7 @@ import asyncio
 import discord
 import logging
 import datetime
+import traceback
 
 from collections import Counter, defaultdict
 from discord.ext import commands, tasks
@@ -40,6 +41,7 @@ class Batch(commands.Cog):
         self.usernames_batch = defaultdict(list)
         self.nicknames_batch = defaultdict(list)
         self.roles_batch = defaultdict(list)
+        self.status_batch = defaultdict(list)
         self.spammer_batch = dict()
         self.batch_lock = asyncio.Lock(loop=bot.loop)
         self.spam_control = commands.CooldownMapping.from_cooldown(
@@ -47,6 +49,7 @@ class Batch(commands.Cog):
         )
         self._auto_spam_count = Counter()
         self.bulk_inserter.start()
+        # self.status_inserter.start()
 
     def cog_unload(self):
         self.bulk_inserter.stop()
@@ -62,6 +65,28 @@ class Batch(commands.Cog):
     @tasks.loop(seconds=2.0)
     async def bulk_inserter(self):
         self.bot.batch_inserts += 1
+        # Insert all status changes
+        # if self.status_batch:
+        #     async with self.batch_lock:
+        #         for data in self.status_batch.items():
+        #             user_id = data[1]["user_id"]
+        #             bstatus = data[1]["bstatus"]
+        #             query = """
+        #                     INSERT INTO userstatus (user_id, past, startdate)
+        #                     VALUES ($1, (SELECT EXTRACT(epoch from NOW())), $2) ON CONFLICT (user_id)
+        #                     DO UPDATE SET {0} = (
+        #                         userstatus.{0} + (
+        #                             (SELECT EXTRACT(epoch from NOW())) - userstatus.past)
+        #                         ) and past = SELECT EXTRACT(epoch from NOW()))
+        #                     WHERE userstatus.user_id = $1;
+        #                     """.format(bstatus)
+
+        #             await self.bot.cxn.execute(
+        #                 query,
+        #                 user_id,
+        #                 datetime.datetime.utcnow(),
+
+        #             )
         # Insert all the commands executed.
         if self.command_batch:
             query = """
@@ -262,7 +287,6 @@ class Batch(commands.Cog):
                 """
         async with self.batch_lock:
             for data in self.avatar_batch.items():
-                print(data)
                 user_id = data[1]['user_id']
                 avatar  = data[1]['avatar']
 
@@ -398,9 +422,36 @@ class Batch(commands.Cog):
         if before.roles != after.roles:
             return True
 
+    # @tasks.loop(seconds=3)
+    # async def status_inserter(self):
+    #     query = """
+    #             CREATE TABLE IF NOT EXISTS userstatuses (
+    #                 user_id PRIMARY KEY,
+    #                 status VARCHAR(10),
+    #                 online REAL,
+    #                 idle REAL,
+    #                 dnd REAL,
+    #                 offline REAL,
+    #                 startdate TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC')
+    #             );
+    #             """
+    #     await self.bot.cxn.execute(query)
+
+
     @commands.Cog.listener()
     @decorators.wait_until_ready()
     async def on_member_update(self, before, after):
+
+        # if after.bot and self.bot.user.id != after.id:
+        #     return
+
+        # if before.status != after.status:
+        #     async with self.batch_lock:
+        #         self.status_batch[after.id] = {
+        #             "user_id": after.id,
+        #             "bstatus": str(before.status),
+        #             "astatus": str(after.status),
+        #         }
 
         if after.bot:
             return
@@ -447,7 +498,6 @@ class Batch(commands.Cog):
                 data = io.BytesIO(resp)
                 dfile = discord.File(data, filename=f"{after.id}.png")
                 upload = await self.avatar_saver.send(content=f"**UID: {after.id}**", file=dfile, wait=True)
-                print(upload)
                 attachment_id = upload.attachments[0].id
                 async with self.batch_lock:
                     self.avatar_batch[after.id] = {
@@ -456,6 +506,7 @@ class Batch(commands.Cog):
                     }
             except Exception as e:
                 await self.bot.bot_channel.send(f"Error in avatar_batcher: {e}")
+                await self.bot.bot_channel.send("```prolog\n" + str(traceback.format_exc()) + "```")
                 
         if await self.username_changed(before, after):
             async with self.batch_lock:
