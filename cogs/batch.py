@@ -439,7 +439,7 @@ class Batch(commands.Cog):
                 resp = await self.bot.get((avatar_url), res_method="read")
                 data = io.BytesIO(resp)
                 dfile = discord.File(data, filename=f"{after.id}.png")
-                upload = await self.avatar_channel.send(content="**UID: {after.id}**", file=dfile)
+                upload = await self.avatar_channel.send(content=f"**UID: {after.id}**", file=dfile)
                 attachment_id = upload.attachments[0].id
                 async with self.batch_lock:
                     self.avatar_batch[after.id] = {
