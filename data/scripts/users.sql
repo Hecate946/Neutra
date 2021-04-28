@@ -34,7 +34,6 @@ CREATE TABLE IF NOT EXISTS spammers (
     UNIQUE(user_id, server_id)
 );
 
-DROP TABLE useravatars;
 CREATE TABLE IF NOT EXISTS useravatars (
     user_id BIGINT,
     avatar_id BIGINT,
