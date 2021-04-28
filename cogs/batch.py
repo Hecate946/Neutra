@@ -1,4 +1,6 @@
 import io
+import json
+import os
 import re
 import time
 import asyncio
@@ -49,9 +51,13 @@ class Batch(commands.Cog):
     def cog_unload(self):
         self.bulk_inserter.stop()
 
-    @property
-    def avatar_channel(self):
-        return self.bot.get_channel(836709104348692520)
+    @discord.utils.cached_property
+    def avatar_saver(self):
+        wh_id, wh_token = self.bot.constants.avsaver
+        webhook = discord.Webhook.partial(
+            id=wh_id, token=wh_token, adapter=discord.AsyncWebhookAdapter(self.bot.session)
+        )
+        return webhook
 
     @tasks.loop(seconds=2.0)
     async def bulk_inserter(self):
@@ -317,6 +323,7 @@ class Batch(commands.Cog):
                 self.bot.rolechanges += len(self.roles_batch.items())
                 self.roles_batch.clear()
 
+
     @commands.Cog.listener()
     @decorators.wait_until_ready()
     async def on_command(self, ctx):
@@ -439,7 +446,7 @@ class Batch(commands.Cog):
                 resp = await self.bot.get((avatar_url), res_method="read")
                 data = io.BytesIO(resp)
                 dfile = discord.File(data, filename=f"{after.id}.png")
-                upload = await self.avatar_channel.send(content=f"**UID: {after.id}**", file=dfile)
+                upload = await self.avatar_saver.send(content=f"**UID: {after.id}**", file=dfile)
                 attachment_id = upload.attachments[0].id
                 async with self.batch_lock:
                     self.avatar_batch[after.id] = {
@@ -675,7 +682,7 @@ class Batch(commands.Cog):
         if usernames:
             usernames = str(usernames).replace(",", ", ")
         if avatars:
-            avatars = [f"https://cdn.discordapp.com/attachments/{self.avatar_channel.id}/{x[0]}/{member.id}.png" for x in avatars]
+            avatars = [f"https://cdn.discordapp.com/attachments/{self.avatar_saver.channel_id}/{x[0]}/{member.id}.png" for x in avatars]
         if hasattr(member, "guild"):
             if nicknames:
                 nicknames = str(nicknames).replace(",", ", ")

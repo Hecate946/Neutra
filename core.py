@@ -136,6 +136,54 @@ class Snowbot(commands.AutoShardedBot):
             r"(?:https?://)?discord(?:app)?\.(?:com/invite|gg)/[a-zA-Z0-9]+/?"
         )
 
+
+    def run(self, mode="production"):
+        # Startup function that gets called in starter.py
+
+        self.setup()  # load the cogs
+
+        self.token = constants.token
+        try:
+            super().run(self.token, reconnect=True)  # Run the bot
+        finally:  # Write up our json files with the stats from the session.
+            self.status_loop.stop()
+            print("\nKilled")
+            with open("./data/json/blacklist.json", "w", encoding="utf-8") as fp:
+                json.dump(self.blacklist, fp, indent=2)
+            with open("./data/json/commands.json", "w", encoding="utf-8") as fp:
+                json.dump(self.command_stats, fp, indent=2)
+            with open("./data/json/sockets.json", "w", encoding="utf-8") as fp:
+                json.dump(self.socket_events, fp, indent=2)
+            with open("./data/json/stats.json", "w", encoding="utf-8") as fp:
+                stats = {
+                    "client name": self.user.name,
+                    "client id": self.user.id,
+                    "client age": utils.time_between(
+                        self.user.created_at.timestamp(), time.time()
+                    ),
+                    "client owner": f"{self.owner_ids[0]}, {self.get_user(self.owner_ids[0])}",
+                    "last run": utils.timeago(datetime.utcnow() - self.uptime),
+                    "commands run": len(self.command_stats),
+                    "messages seen": self.messages,
+                    "server count": len(self.guilds),
+                    "channel count": len([x for x in self.get_all_channels()]),
+                    "member count": len([x for x in self.get_all_members()]),
+                    "batch inserts": self.batch_inserts,
+                    "username changes": self.namechanges,
+                    "nickname changes": self.nickchanges,
+                    "avatar changes": self.avchanges,
+                }
+
+                json.dump(stats, fp, indent=2)
+
+            data = utils.load_json("config.json")
+            if mode == "tester":
+                utils.write_json("config_test.json", data)
+            elif mode == "watcher":
+                utils.write_json("config_watch.json", data)
+            else:
+                utils.write_json("config_prod.json", data)
+
     def setup(self):
         # Start the task loop
         self.status_loop.start()
@@ -198,6 +246,11 @@ class Snowbot(commands.AutoShardedBot):
         if not hasattr(self, "bot_settings"):
             self.bot_settings = database.bot_settings
 
+        # Create all the necessary jsons
+        # first the webhook json
+        if not os.path.exists("./data/json/webhooks.json"):
+            with open("./data/json/webhooks.json", mode="w", encoding="utf-8") as fp:
+                fp.write(r"{}")
         # load all blacklisted discord objects
         if not os.path.exists("./data/json/blacklist.json"):
             with open("./data/json/blacklist.json", mode="w", encoding="utf-8") as fp:
@@ -211,58 +264,12 @@ class Snowbot(commands.AutoShardedBot):
 
         if not hasattr(self, "blacklist"):
             self.blacklist = blacklist
-
+            
         # loads all the cogs in ./cogs and prints them on sys.stdout
         for cog in COGS:
             self.load_extension(f"cogs.{cog}")
             print(color(fore="#88ABB4", text=f"Loaded: {str(cog).upper()}"))
 
-    def run(self, mode="production"):
-        # Startup function that gets called in starter.py
-
-        self.setup()  # load the cogs
-
-        self.token = constants.token
-        try:
-            super().run(self.token, reconnect=True)  # Run the bot
-        finally:  # Write up our json files with the stats from the session.
-            self.status_loop.stop()
-            print("\nKilled")
-            with open("./data/json/blacklist.json", "w", encoding="utf-8") as fp:
-                json.dump(self.blacklist, fp, indent=2)
-            with open("./data/json/commands.json", "w", encoding="utf-8") as fp:
-                json.dump(self.command_stats, fp, indent=2)
-            with open("./data/json/sockets.json", "w", encoding="utf-8") as fp:
-                json.dump(self.socket_events, fp, indent=2)
-            with open("./data/json/stats.json", "w", encoding="utf-8") as fp:
-                stats = {
-                    "client name": self.user.name,
-                    "client id": self.user.id,
-                    "client age": utils.time_between(
-                        self.user.created_at.timestamp(), time.time()
-                    ),
-                    "client owner": f"{self.owner_ids[0]}, {self.get_user(self.owner_ids[0])}",
-                    "last run": utils.timeago(datetime.utcnow() - self.uptime),
-                    "commands run": len(self.command_stats),
-                    "messages seen": self.messages,
-                    "server count": len(self.guilds),
-                    "channel count": len([x for x in self.get_all_channels()]),
-                    "member count": len([x for x in self.get_all_members()]),
-                    "batch inserts": self.batch_inserts,
-                    "username changes": self.namechanges,
-                    "nickname changes": self.nickchanges,
-                    "avatar changes": self.avchanges,
-                }
-
-                json.dump(stats, fp, indent=2)
-
-            data = utils.load_json("config.json")
-            if mode == "tester":
-                utils.write_json("config_test.json", data)
-            elif mode == "watcher":
-                utils.write_json("config_watch.json", data)
-            else:
-                utils.write_json("config_prod.json", data)
 
     async def close(self):  # Shutdown the bot cleanly
         await super().close()
