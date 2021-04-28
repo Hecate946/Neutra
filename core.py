@@ -264,7 +264,7 @@ class Snowbot(commands.AutoShardedBot):
 
         if not hasattr(self, "blacklist"):
             self.blacklist = blacklist
-            
+
         # loads all the cogs in ./cogs and prints them on sys.stdout
         for cog in COGS:
             self.load_extension(f"cogs.{cog}")
@@ -640,7 +640,7 @@ class Snowbot(commands.AutoShardedBot):
             return
         await self.process_commands(message)
         if isinstance(message.channel, discord.DMChannel):
-            if message.author.id != self.bot.user.id:
+            if message.author.id != self.user.id:
                 if self.dregex.match(message.content):
                     await message.channel.send(
                         f"Hey {message.author.mention}! if you're looking to invite me to your server, use this link:\n<{self.constants.oauth}>"
