@@ -249,7 +249,6 @@ class Batch(commands.Cog):
                     await self.bot.cxn.execute(query, user_id, unix)
                 self.tracker_batch.clear()
 
-        # TODO currently deprecated, but possible in the future.
         # query = f"""UPDATE useravatars SET avatars = CONCAT_WS(',', avatars, cast($1 as text)) WHERE user_id = $2"""
         query = """
                 INSERT INTO useravatars
@@ -440,7 +439,7 @@ class Batch(commands.Cog):
                 resp = await self.bot.get((avatar_url), res_method="read")
                 data = io.BytesIO(resp)
                 dfile = discord.File(data, filename=f"{after.id}.png")
-                upload = await self.avatar_channel.send(file=dfile)
+                upload = await self.avatar_channel.send(content="**UID: {after.id}**", file=dfile)
                 attachment_id = upload.attachments[0].id
                 async with self.batch_lock:
                     self.avatar_batch[after.id] = {
