@@ -34,8 +34,9 @@ CREATE TABLE IF NOT EXISTS spammers (
     UNIQUE(user_id, server_id)
 );
 
--- This table has been dropped and is no longer used.
--- CREATE TABLE IF NOT EXISTS useravatars (
---     user_id BIGINT PRIMARY KEY,
---     avatars TEXT
--- );
+DROP TABLE useravatars;
+CREATE TABLE IF NOT EXISTS useravatars (
+    user_id BIGINT,
+    avatar_id BIGINT,
+    unix REAL
+);

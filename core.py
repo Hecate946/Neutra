@@ -583,7 +583,7 @@ class Snowbot(commands.AutoShardedBot):
 
         else:
             # Ok so here we don't really know what the error is, so lets print the basic error.
-            # We can always check pm2.log for the full error later if necessary
+            # We can always check ./pm2 logs for the full error later if necessary
             err = utils.traceback_maker(error, advance=True)
             print(color(fore="FF0000", text="Error"))
             print(error)
@@ -633,22 +633,23 @@ class Snowbot(commands.AutoShardedBot):
             return
         await self.process_commands(message)
         if isinstance(message.channel, discord.DMChannel):
-            if self.dregex.match(message.content):
-                await message.channel.send(
-                    f"Hey {message.author.mention}! if you're looking to invite me to your server, use this link:\n<{self.constants.oauth}>"
-                )
+            if message.author.id != self.bot.user.id:
+                if self.dregex.match(message.content):
+                    await message.channel.send(
+                        f"Hey {message.author.mention}! if you're looking to invite me to your server, use this link:\n<{self.constants.oauth}>"
+                    )
 
-    async def on_error(self, event, *args, **kwargs):
-        print(traceback.format_exc())
-        print(args)
-        ctx = await self.get_context(args[0])
-        destination = f"\n\tLocation: {str(ctx.author)} in #{ctx.channel} [{ctx.channel.id}] ({ctx.guild}) [{ctx.guild.id}]:\n"
-        message = f"\tContent: {args[0].clean_content}\n"
-        tb = traceback.format_exc().split("\n")
-        location = "./" + "/".join(tb[3].split("/")[-4:])
-        error = f'\tFile: "{location + tb[4]}:\n\tException: {sys.exc_info()[0].__name__}: {sys.exc_info()[1]}\n'
-        content = destination + message + error + "\n"
-        await ctx.log("e", content)
+    # async def on_error(self, event, *args, **kwargs):
+    #     print(traceback.format_exc())
+    #     print(args)
+    #     ctx = await self.get_context(args[0])
+    #     destination = f"\n\tLocation: {str(ctx.author)} in #{ctx.channel} [{ctx.channel.id}] ({ctx.guild}) [{ctx.guild.id}]:\n"
+    #     message = f"\tContent: {args[0].clean_content}\n"
+    #     tb = traceback.format_exc().split("\n")
+    #     location = "./" + "/".join(tb[3].split("/")[-4:])
+    #     error = f'\tFile: "{location + tb[4]}:\n\tException: {sys.exc_info()[0].__name__}: {sys.exc_info()[1]}\n'
+    #     content = destination + message + error + "\n"
+    #     await ctx.log("e", content)
 
     async def get_context(self, message, *, cls=None):
         """Override get_context to use a custom Context"""
@@ -730,6 +731,9 @@ class BotContext(commands.Context):
         return await self.send(
             f"Usage: `{self.prefix}{self.command.qualified_name} " + content + "`"
         )
+    async def load(self, content=None, **kwargs):
+        content = f"{bot.emote_dict['loading']} **{content}**"
+        return await self.send_or_reply(content, **kwargs)
 
     async def confirm(self, content=None, **kwargs):
         content = (

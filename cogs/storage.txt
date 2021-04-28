@@ -1,0 +1,23 @@
+import discord
+from discord.ext import commands
+
+
+def setup(bot):
+    bot.add_cog(Storage(bot))
+
+class Storage(commands.Cog):
+    """
+    Module for managing storage.
+    """
+    def __init__(self, bot):
+        self.bot = bot
+
+    
+    @property
+    def avatar_channel(self):
+        return self.bot.get_channel()
+
+    
+    @commands.Cog.listener()
+    async def on_user_update(self, before, after):
+        

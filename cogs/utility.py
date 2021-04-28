@@ -939,7 +939,7 @@ class Utility(commands.Cog):
             to search for hard to mention
             usernames instead of nicknames.
         """
-        if username:
+        if username.lower() in "--username":
             loop = [
                 member
                 for member in ctx.message.guild.members

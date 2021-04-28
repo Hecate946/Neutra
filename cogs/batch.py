@@ -1,6 +1,8 @@
+import io
 import re
 import time
 import asyncio
+import discord
 import logging
 import datetime
 
@@ -46,6 +48,10 @@ class Batch(commands.Cog):
 
     def cog_unload(self):
         self.bulk_inserter.stop()
+
+    @property
+    def avatar_channel(self):
+        return self.bot.get_channel(836709104348692520)
 
     @tasks.loop(seconds=2.0)
     async def bulk_inserter(self):
@@ -245,14 +251,19 @@ class Batch(commands.Cog):
 
         # TODO currently deprecated, but possible in the future.
         # query = f"""UPDATE useravatars SET avatars = CONCAT_WS(',', avatars, cast($1 as text)) WHERE user_id = $2"""
-        # async with self.batch_lock:
-        #     for data in self.avatar_batch.items():
-        #         user_id = data[1]['user_id']
-        #         avatar  = data[1]['avatar']
+        query = """
+                INSERT INTO useravatars
+                VALUES ($1, $2, $3);
+                """
+        async with self.batch_lock:
+            for data in self.avatar_batch.items():
+                print(data)
+                user_id = data[1]['user_id']
+                avatar  = data[1]['avatar']
 
-        #         await self.bot.cxn.execute(query, str(avatar), user_id)
-        #     self.bot.avchanges += len(self.avatar_batch.items())
-        #     self.avatar_batch.clear()
+                await self.bot.cxn.execute(query, user_id, avatar, time.time())
+            self.bot.avchanges += len(self.avatar_batch.items())
+            self.avatar_batch.clear()
 
         if self.usernames_batch:
             query = """
@@ -423,13 +434,22 @@ class Batch(commands.Cog):
         async with self.batch_lock:
             self.tracker_batch[after.id] = {"unix": time.time(), "user_id": after.id}
 
-        # if await self.avatar_changed(before, after):
-        #     async with self.batch_lock:
-        #         self.avatar_batch[after.id] = {
-        #             "user_id": after.id,
-        #             "avatar": after.avatar
-        #         }
-
+        if await self.avatar_changed(before, after):
+            try:
+                avatar_url = str(after.avatar_url_as(format="png", size=1024))
+                resp = await self.bot.get((avatar_url), res_method="read")
+                data = io.BytesIO(resp)
+                dfile = discord.File(data, filename=f"{after.id}.png")
+                upload = await self.avatar_channel.send(file=dfile)
+                attachment_id = upload.attachments[0].id
+                async with self.batch_lock:
+                    self.avatar_batch[after.id] = {
+                        "user_id": after.id,
+                        "avatar": attachment_id
+                    }
+            except Exception as e:
+                await self.bot.bot_channel.send(f"Error in avatar_batcher: {e}")
+                
         if await self.username_changed(before, after):
             async with self.batch_lock:
                 self.usernames_batch[after.id] = {
@@ -633,6 +653,13 @@ class Batch(commands.Cog):
         )
         # avatars = await self.bot.cxn.fetchval(
         #     "SELECT avatars from useravatars WHERE user_id = $1 LIMIT 1", member.id) or None
+        query = """
+                SELECT (avatar_id)
+                FROM useravatars
+                WHERE user_id = $1
+                ORDER BY unix DESC;
+                """
+        avatars = await self.bot.cxn.fetch(query, member.id)
         if hasattr(member, "guild"):
             nicknames = (
                 await self.bot.cxn.fetchval(
@@ -648,16 +675,16 @@ class Batch(commands.Cog):
 
         if usernames:
             usernames = str(usernames).replace(",", ", ")
-        # if avatars:
-        #     avatars = str(avatars).replace(",",", ")
+        if avatars:
+            avatars = [f"https://cdn.discordapp.com/attachments/{self.avatar_channel.id}/{x[0]}/{member.id}.png" for x in avatars]
         if hasattr(member, "guild"):
             if nicknames:
                 nicknames = str(nicknames).replace(",", ", ")
 
         observed_data = {
             "usernames": usernames or None,
-            "nicknames": nicknames or None
-            # "avatars": avatars or None
+            "nicknames": nicknames or None,
+            "avatars": avatars or None
         }
         return observed_data
 

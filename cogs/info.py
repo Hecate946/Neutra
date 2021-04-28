@@ -1,3 +1,4 @@
+import io
 import os
 import sys
 import time
@@ -796,3 +797,22 @@ class Info(commands.Cog):
             print(e)
         else:
             await ctx.success(content="Your request has been submitted.")
+
+
+    @commands.command(aliases=["%", r"%uptime"])
+    async def percentuptime(self, ctx):
+        from PIL import Image, ImageDraw
+        em = discord.Embed(color=self.bot.constants.embed)
+        img = Image.new('RGBA', (1920, 1080), (0,0,0,0))
+        draw = ImageDraw.Draw(img)
+        #start and end indicate the angle of start and end
+        #Draw arc
+        draw.arc((50, 100, 100, 50), start=30, end=270, fill=(255, 255, 255), width=20)
+        #Drawing a pie chart
+        #draw.pieslice((425, 50, 575, 200), start=30, end=270, fill=(255, 255, 255), outline=(0, 0, 0))
+        buffer = io.BytesIO()
+        img.save(buffer, "png")  # 'save' function for PIL
+        buffer.seek(0)
+        dfile = discord.File(fp=buffer, filename="uptime.png")
+        em.set_image(url="attachment://uptime.png")
+        await ctx.send_or_reply(embed=em, file=dfile)

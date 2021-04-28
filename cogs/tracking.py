@@ -1,9 +1,12 @@
-import time
+import io
 from collections import Counter, OrderedDict
 from datetime import datetime
+from operator import itemgetter
 from re import M
 
 import discord
+from PIL import Image
+from discord import member
 from discord.ext import commands, menus
 
 from utilities import converters, pagination, permissions, utils
@@ -511,31 +514,66 @@ class Tracking(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-    # @commands.command(brief="Show a user's avatars.", aliases=["avs"])
-    # @commands.guild_only()
-    # async def avatars(self, ctx, user: discord.Member = None):
-    #     """
-    #     Usage: -names [user]
-    #     Alias: -usernames
-    #     Output: Embed of all user's names.
-    #     Permission: Manage Messages
-    #     Notes:
-    #         Will default to yourself if no user is passed
-    #     """
-    #     if user is None:
-    #         user = ctx.author
-    #     query = '''SELECT avatars FROM useravatars WHERE user_id = $1'''
-    #     name_list = await self.bot.cxn.fetchrow(query, user.id)
-    #     name_list = name_list[0].split(',')
-    #     name_list = list(OrderedDict.fromkeys(name_list))
+    @commands.command(brief="Show a user's avatars.", aliases=["avs"])
+    @commands.guild_only()
+    async def avatars(self, ctx, user: discord.Member = None):
+        """
+        Usage: -avatars [user]
+        Alias: -avs
+        Output:
+            Embed of the past 16 avatars
+            A user has had
+        Permission: Manage Messages
+        Notes:
+            Will default to yourself if no user is passed
+        """
+        if user is None:
+            user = ctx.author
+        tracking = self.bot.get_cog("Batch")
+        if not tracking:
+            return await ctx.fail(f"This command is currently unavailable. Please try again later.")
+        msg = await ctx.load(f"Collecting {user}'s Avatars...")
+        res = await tracking.user_data(ctx, user)
+        if not res['avatars']:
+            # Tack on their current avatar
+            res['avatars'] = [str(user.avatar_url_as(format="png", size=256))]
+        
+        em = discord.Embed(color=self.bot.constants.embed)
+        em.title = f"Recorded Avatars for {user}"
+        iteration = 0
+        parent = Image.open("./data/assets/mask.png")
+        for av in res['avatars']:
+            print(av)
+            if iteration < 4:
+                val = 0
+                x = iteration
+            elif iteration >= 4 and iteration < 8:
+                val = 1
+                x = iteration - 4
+            elif iteration >=8 and iteration < 12:
+                val = 2
+                x = iteration - 8
+            elif iteration >=12 and iteration < 16:
+                val = 3
+                x = iteration - 12
+            else:
+                break
 
-    #     p = pagination.SimplePages(entries=[f"`{n}`" for n in name_list], per_page=5)
-    #     p.embed.title = f"Avatars for {user}"
+            res = await self.bot.get(av, res_method="read")
+            av_bytes = io.BytesIO(res)
+            im = Image.open(av_bytes)
+            im = im.resize((256, 256))
+            parent.paste(im, (x * 256, 256 * val))
+            iteration += 1
 
-    #     try:
-    #         await p.start(ctx)
-    #     except menus.MenuError as e:
-    #         await ctx.send_or_reply(e)
+        buffer = io.BytesIO()
+        parent.save(buffer, "png")  # 'save' function for PIL
+        buffer.seek(0)
+        dfile = discord.File(fp=buffer, filename="avatars.png")
+        em.set_image(url="attachment://avatars.png")
+        await msg.delete()
+        await ctx.send_or_reply(embed=em, file=dfile)
+
 
     @commands.command(
         brief="Check when a user was last seen.",
