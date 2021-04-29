@@ -73,10 +73,7 @@ class Batch(commands.Cog):
                 for data in self.status_batch.items():
                     user_id = data[1]["user_id"]
                     bstatus = data[1]["bstatus"]
-                    query = """
-                            SELECT EXTRACT(epoch from NOW())
-                            """
-                    res1 = await self.bot.cxn.fetchval(query)
+                    res1 = time.time()
                     query = """
                             SELECT last_changed FROM userstatus;
                             """
