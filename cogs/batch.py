@@ -86,16 +86,16 @@ class Batch(commands.Cog):
                             await self.bot.bot_channel.send(F"fuck res1 > res2")
                     query = """
                             INSERT INTO userstatus (user_id, last_changed)
-                            VALUES ($1, (SELECT EXTRACT(epoch from NOW())))
+                            VALUES ($1, $2)
                             ON CONFLICT (user_id)
-                            DO UPDATE SET {0} = userstatus.{0} + (SELECT EXTRACT(epoch from NOW()) - userstatus.last_changed),
-                            last_changed = (SELECT EXTRACT(epoch from NOW()))
+                            DO UPDATE SET {0} = userstatus.{0} + ($2 - userstatus.last_changed),
+                            last_changed = $2
                             WHERE userstatus.user_id = $1;
                             """.format(
                         bstatus
                     )
 
-                    await self.bot.cxn.execute(query, user_id)
+                    await self.bot.cxn.execute(query, user_id, time.time())
                 self.status_batch.clear()
         # Insert all the commands executed.
         if self.command_batch:
