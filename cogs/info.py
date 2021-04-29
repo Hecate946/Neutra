@@ -799,8 +799,7 @@ class Info(commands.Cog):
         else:
             await ctx.success(content="Your request has been submitted.")
 
-
-    @commands.command(hidden=True, aliases=["%", r"%uptime"])
+    @commands.command(hidden=True, aliases=[r"%uptime"])
     async def percentuptime(self, ctx):
         me = self.bot.home.get_member(self.bot.user.id)
         query = """
@@ -816,14 +815,16 @@ class Info(commands.Cog):
         botstats = await self.bot.cxn.fetchval(query)
         statustime = time.time() - self.bot.statustime
         runtime = botstats[0]
-        online = botstats[1] + statustime if str(me.status) == "offline" else botstats[1]
+        online = (
+            botstats[1] + statustime if str(me.status) == "offline" else botstats[1]
+        )
         idle = botstats[2] + statustime if str(me.status) == "idle" else botstats[2]
         dnd = botstats[3] + statustime if str(me.status) == "dnd" else botstats[3]
         startdate = botstats[5]
         total = (datetime.datetime.utcnow() - startdate).total_seconds()
         offline = total - (online + idle + dnd)
         uptime = online + idle + dnd
-        raw_percent = (uptime/total)
+        raw_percent = uptime / total
         if raw_percent > 1:
             raw_percent = 1
         if raw_percent > 0.9:
@@ -834,34 +835,50 @@ class Info(commands.Cog):
             color = (232, 44, 19)
         percent = f"{raw_percent:.2%}"
         em = discord.Embed(color=self.bot.constants.embed)
-        img = Image.new('RGBA', (2500, 1024), (0,0,0,0))
+        img = Image.new("RGBA", (2500, 1024), (0, 0, 0, 0))
         draw = ImageDraw.Draw(img)
-        font = ImageFont.truetype('./data/assets/Helvetica.ttf', 100)
+        font = ImageFont.truetype("./data/assets/Helvetica.ttf", 100)
         w, h = 1050, 1000
         shape = [(50, 0), (w, h)]
-        draw.arc(shape, start=360*raw_percent, end=0, fill=(125, 135, 140), width=200)
-        draw.arc(shape, start=0, end=360*raw_percent, fill=(10, 24, 34), width=200)
+        draw.arc(shape, start=360 * raw_percent, end=0, fill=(125, 135, 140), width=200)
+        draw.arc(shape, start=0, end=360 * raw_percent, fill=(10, 24, 34), width=200)
         # draw.text((445, 460), percent, fill=color, font=font)
         self.center_text(img, 1100, 1000, font, percent, color)
-        font = ImageFont.truetype('./data/assets/Helvetica-Bold.ttf', 85)
-        draw.text((1200, 0), "Uptime Tracking Startdate:", fill=(255, 255, 255), font=font)
-        font = ImageFont.truetype('./data/assets/Helvetica.ttf', 68)
-        draw.text((1200, 100), utils.format_time(startdate).split(".")[0] + "]", fill=(255, 255, 255), font=font)
-        font = ImageFont.truetype('./data/assets/Helvetica-Bold.ttf', 85)
+        font = ImageFont.truetype("./data/assets/Helvetica-Bold.ttf", 85)
+        draw.text(
+            (1200, 0), "Uptime Tracking Startdate:", fill=(255, 255, 255), font=font
+        )
+        font = ImageFont.truetype("./data/assets/Helvetica.ttf", 68)
+        draw.text(
+            (1200, 100),
+            utils.format_time(startdate).split(".")[0] + "]",
+            fill=(255, 255, 255),
+            font=font,
+        )
+        font = ImageFont.truetype("./data/assets/Helvetica-Bold.ttf", 85)
         draw.text((1200, 300), "Total Uptime (Hours):", fill=(255, 255, 255), font=font)
-        font = ImageFont.truetype('./data/assets/Helvetica.ttf', 68)
-        draw.text((1200, 400), f"{runtime/3600:.2f}", fill=(255, 255, 255), font=font)
-        font = ImageFont.truetype('./data/assets/Helvetica-Bold.ttf', 85)
+        font = ImageFont.truetype("./data/assets/Helvetica.ttf", 68)
+        draw.text((1200, 400), f"{uptime/3600:.2f}", fill=(255, 255, 255), font=font)
+        font = ImageFont.truetype("./data/assets/Helvetica-Bold.ttf", 85)
         draw.text((1200, 600), "Status Information:", fill=(255, 255, 255), font=font)
-        font = ImageFont.truetype('./data/assets/Helvetica.ttf', 68)
+        font = ImageFont.truetype("./data/assets/Helvetica.ttf", 68)
         draw.rectangle((1200, 800, 1275, 875), fill=(46, 204, 113), outline=(0, 0, 0))
-        draw.text((1300, 810), f"Online: {online/total:.2%}", fill=(255, 255, 255), font=font)
+        draw.text(
+            (1300, 810), f"Online: {online/total:.2%}", fill=(255, 255, 255), font=font
+        )
         draw.rectangle((1800, 800, 1875, 875), fill=(241, 196, 15), outline=(0, 0, 0))
-        draw.text((1900, 810), f"Idle: {idle/total:.2%}", fill=(255, 255, 255), font=font)
+        draw.text(
+            (1900, 810), f"Idle: {idle/total:.2%}", fill=(255, 255, 255), font=font
+        )
         draw.rectangle((1200, 900, 1275, 975), fill=(231, 76, 60), outline=(0, 0, 0))
         draw.text((1300, 910), f"DND: {dnd/total:.2%}", fill=(255, 255, 255), font=font)
         draw.rectangle((1800, 900, 1875, 975), fill=(97, 109, 126), outline=(0, 0, 0))
-        draw.text((1900, 910), f"Offline: {offline/total:.2%}", fill=(255, 255, 255), font=font)
+        draw.text(
+            (1900, 910),
+            f"Offline: {offline/total:.2%}",
+            fill=(255, 255, 255),
+            font=font,
+        )
 
         buffer = io.BytesIO()
         img.save(buffer, "png")  # 'save' function for PIL
@@ -871,9 +888,11 @@ class Info(commands.Cog):
         em.set_image(url="attachment://uptime.png")
         await ctx.send_or_reply(embed=em, file=dfile)
 
-    def center_text(self, img, strip_width, strip_height, font, text, color=(255, 255, 255)):
+    def center_text(
+        self, img, strip_width, strip_height, font, text, color=(255, 255, 255)
+    ):
         draw = ImageDraw.Draw(img)
         text_width, text_height = draw.textsize(text, font)
-        position = ((strip_width-text_width)/2,(strip_height-text_height)/2)
+        position = ((strip_width - text_width) / 2, (strip_height - text_height) / 2)
         draw.text(position, text, color, font=font)
         return img

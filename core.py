@@ -136,7 +136,6 @@ class Snowbot(commands.AutoShardedBot):
             r"(?:https?://)?discord(?:app)?\.(?:com/invite|gg)/[a-zA-Z0-9]+/?"
         )
 
-
     def run(self, mode="production"):
         # Startup function that gets called in starter.py
 
@@ -146,7 +145,7 @@ class Snowbot(commands.AutoShardedBot):
         try:
             super().run(self.token, reconnect=True)  # Run the bot
         finally:  # Write up our json files with the stats from the session.
-            self.status_loop.stop() # Stop the loop
+            self.status_loop.stop()  # Stop the loop
 
             print("\nKilled")
             # with open("./data/json/botstats.json", "r", encoding="utf-8") as fp:
@@ -165,7 +164,6 @@ class Snowbot(commands.AutoShardedBot):
             #         current_data['runtime']  = current_data['runtime'] + (datetime.utcnow() - self.uptime).total_seconds()
             #         current_data['runtime']  = current_data['runtime'] + (datetime.utcnow() - self.uptime).total_seconds()
             #         json.dump(current_data, fp, indent=2)
-
 
             with open("./data/json/blacklist.json", "w", encoding="utf-8") as fp:
                 json.dump(self.blacklist, fp, indent=2)
@@ -247,7 +245,6 @@ class Snowbot(commands.AutoShardedBot):
         if not hasattr(self, "statustime"):
             self.statustime = time.time()
 
-
         if not hasattr(self, "cxn"):
             self.cxn = cxn
 
@@ -293,7 +290,6 @@ class Snowbot(commands.AutoShardedBot):
             self.load_extension(f"cogs.{cog}")
             print(color(fore="#88ABB4", text=f"Loaded: {str(cog).upper()}"))
 
-
     async def close(self):  # Shutdown the bot cleanly
         me = self.home.get_member(self.user.id)
         runtime = time.time() - self.starttime
@@ -304,7 +300,9 @@ class Snowbot(commands.AutoShardedBot):
                 ON CONFLICT (bot_id)
                 DO UPDATE SET runtime = botstats.runtime + $2,
                 {0} = botstats.{0} + $3
-                """.format(me.status)
+                """.format(
+            me.status
+        )
         await self.cxn.execute(query, self.user.id, runtime, statustime)
         await super().close()
         await self.session.close()
@@ -776,6 +774,7 @@ class BotContext(commands.Context):
         return await self.send(
             f"Usage: `{self.prefix}{self.command.qualified_name} " + content + "`"
         )
+
     async def load(self, content=None, **kwargs):
         content = f"{bot.emote_dict['loading']} **{content}**"
         return await self.send_or_reply(content, **kwargs)

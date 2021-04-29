@@ -6,14 +6,14 @@ from PIL import Image, ImageDraw, ImageFont
 from utilities import decorators
 from settings import constants
 
-    
+
 def setup(bot):
     bot.add_cog(Specific(bot))
+
 
 class Specific(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()

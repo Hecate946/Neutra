@@ -82,7 +82,8 @@ class Conversion(commands.Cog):
         Output: Turn lb into kg (imperial to metric)
         """
         if lbs is None:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}lbs <value>`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}lbs <value>`",
             )
         await ctx.send_or_reply(
             content="That is {0:.2f} kg".format(lbs * 0.453592),
@@ -98,7 +99,8 @@ class Conversion(commands.Cog):
         Output: Turn kg into lb (metric to imperial)
         """
         if float is None:
-            return await ctx.send_or_reply(content=f"Usage: `{ctx.prefix}kg <value>`",
+            return await ctx.send_or_reply(
+                content=f"Usage: `{ctx.prefix}kg <value>`",
             )
         await ctx.channel.send("That is {0:.2f} lbs".format(kg * 2.20462))
 
@@ -225,27 +227,27 @@ class Conversion(commands.Cog):
     def _hex_int_to_tuple(self, _hex):
         return (_hex >> 16 & 0xFF, _hex >> 8 & 0xFF, _hex & 0xFF)
 
-
     @commands.command(brief="Convert hex to decimal.")
     async def hexdec(self, ctx, *, input_hex=None):
         """
         Usage: -hexdec <hex>
         """
         if input_hex == None:
-            await ctx.send_or_reply(content="Usage: `{}hexdec [input_hex]`".format(ctx.prefix),
+            await ctx.send_or_reply(
+                content="Usage: `{}hexdec [input_hex]`".format(ctx.prefix),
             )
             return
 
         input_hex = self._check_hex(input_hex)
         if not len(input_hex):
-            await ctx.send_or_reply(content="Malformed hex - try again."
-            )
+            await ctx.send_or_reply(content="Malformed hex - try again.")
             return
 
         try:
             dec = int(input_hex, 16)
         except Exception:
-            await ctx.send_or_reply(content="I couldn't make that conversion!",
+            await ctx.send_or_reply(
+                content="I couldn't make that conversion!",
             )
             return
 
@@ -257,15 +259,15 @@ class Conversion(commands.Cog):
         Usage: -dechex <hex>
         """
         if input_dec == None:
-            await ctx.send_or_reply(content="Usage: `{}dechex [input_dec]`".format(ctx.prefix),
+            await ctx.send_or_reply(
+                content="Usage: `{}dechex [input_dec]`".format(ctx.prefix),
             )
             return
 
         try:
             input_dec = int(input_dec)
         except Exception:
-            await ctx.send_or_reply(content="Input must be an integer."
-            )
+            await ctx.send_or_reply(content="Input must be an integer.")
             return
         min_length = 2
         hex_str = "{:x}".format(input_dec).upper()
@@ -280,7 +282,8 @@ class Conversion(commands.Cog):
             Converts the input string to its binary representation.
         """
         if input_string == None:
-            await ctx.send_or_reply(content="Usage: `{}strbin [input_string]`".format(ctx.prefix),
+            await ctx.send_or_reply(
+                content="Usage: `{}strbin [input_string]`".format(ctx.prefix),
             )
             return
         msg = "".join("{:08b}".format(ord(c)) for c in input_string)
@@ -301,7 +304,8 @@ class Conversion(commands.Cog):
             Converts the input binary to its string representation.
         """
         if input_binary == None:
-            await ctx.send_or_reply(content="Usage: `{}binstr [input_binary]`".format(ctx.prefix),
+            await ctx.send_or_reply(
+                content="Usage: `{}binstr [input_binary]`".format(ctx.prefix),
             )
             return
         # Clean the string
@@ -310,7 +314,8 @@ class Conversion(commands.Cog):
             if char == "0" or char == "1":
                 new_bin += char
         if not len(new_bin):
-            await ctx.send_or_reply(content="Usage: `{}binstr [input_binary]`".format(ctx.prefix),
+            await ctx.send_or_reply(
+                content="Usage: `{}binstr [input_binary]`".format(ctx.prefix),
             )
             return
         msg = "".join(
@@ -326,7 +331,8 @@ class Conversion(commands.Cog):
             Converts the input binary to its integer representation.
         """
         if input_binary == None:
-            await ctx.send_or_reply(content="Usage: `{}binint [input_binary]`".format(ctx.prefix),
+            await ctx.send_or_reply(
+                content="Usage: `{}binint [input_binary]`".format(ctx.prefix),
             )
             return
         try:
@@ -342,18 +348,17 @@ class Conversion(commands.Cog):
         Output:
             Converts the input integer to its binary representation."""
         if input_int == None:
-            await ctx.send_or_reply(content="Usage: `{}intbin [input_int]`".format(ctx.prefix),
+            await ctx.send_or_reply(
+                content="Usage: `{}intbin [input_int]`".format(ctx.prefix),
             )
             return
         try:
             input_int = int(input_int)
         except Exception:
-            await ctx.send_or_reply(content="Input must be an integer."
-            )
+            await ctx.send_or_reply(content="Input must be an integer.")
             return
 
-        await ctx.send_or_reply( content="{:08b}".format(input_int)
-        )
+        await ctx.send_or_reply(content="{:08b}".format(input_int))
 
     @commands.group(brief="Encode to: b32, b64, b85, rot13, hex.")
     async def encode(self, ctx):
@@ -403,7 +408,8 @@ class Conversion(commands.Cog):
     async def encryptout(self, ctx, convert: str, input):
         """ The main, modular function to control encrypt/decrypt commands """
         if not input:
-            return await ctx.send_or_reply(content=f"Aren't you going to give me anything to encode/decode **{ctx.author.name}**",
+            return await ctx.send_or_reply(
+                content=f"Aren't you going to give me anything to encode/decode **{ctx.author.name}**",
             )
 
         async with ctx.channel.typing():
@@ -564,8 +570,7 @@ class Conversion(commands.Cog):
                 ctx, "ASCII85 -> Text", base64.a85decode(input.encode("UTF-8"))
             )
         except Exception:
-            await ctx.send_or_reply(content="Invalid ASCII85..."
-            )
+            await ctx.send_or_reply(content="Invalid ASCII85...")
 
     @commands.command(brief="Show the morse lookup table")
     async def morsetable(self, ctx, num_per_row=None):
@@ -616,7 +621,8 @@ class Conversion(commands.Cog):
         """
 
         if content == None:
-            await ctx.send_or_reply(content="Usage `{}morse [content]`".format(ctx.prefix),
+            await ctx.send_or_reply(
+                content="Usage `{}morse [content]`".format(ctx.prefix),
             )
             return
 
@@ -638,7 +644,8 @@ class Conversion(commands.Cog):
 
         if not len(morse_list):
             # We didn't get any valid words
-            await ctx.send_or_reply(content="There were no valid a-z/0-9 chars in the passed content.",
+            await ctx.send_or_reply(
+                content="There were no valid a-z/0-9 chars in the passed content.",
             )
             return
 
@@ -659,7 +666,8 @@ class Conversion(commands.Cog):
         """
 
         if content == None:
-            await ctx.send_or_reply(content="Usage `{}unmorse [content]`".format(ctx.prefix),
+            await ctx.send_or_reply(
+                content="Usage `{}unmorse [content]`".format(ctx.prefix),
             )
             return
 
@@ -683,7 +691,8 @@ class Conversion(commands.Cog):
 
         if not len(ascii_list):
             # We didn't get any valid words
-            await ctx.send_or_reply(content="There were no valid morse chars in the passed content.",
+            await ctx.send_or_reply(
+                content="There were no valid morse chars in the passed content.",
             )
             return
 

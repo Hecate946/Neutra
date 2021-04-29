@@ -189,7 +189,9 @@ class Config(commands.Cog):
                 VALUES ($1)
                 ON CONFLICT (bot_id)
                 DO UPDATE SET {0} = botstats.{0} + $2
-                """.format(me.status)
+                """.format(
+            me.status
+        )
 
         statustime = time.time() - self.bot.statustime
         await self.bot.cxn.execute(query, self.bot.user.id, statustime)

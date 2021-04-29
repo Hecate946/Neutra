@@ -58,7 +58,9 @@ class Batch(commands.Cog):
     def avatar_saver(self):
         wh_id, wh_token, wh_channel = self.bot.constants.avsaver
         webhook = discord.Webhook.partial(
-            id=wh_id, token=wh_token, adapter=discord.AsyncWebhookAdapter(self.bot.session)
+            id=wh_id,
+            token=wh_token,
+            adapter=discord.AsyncWebhookAdapter(self.bot.session),
         )
         return (webhook, int(wh_channel))
 
@@ -78,12 +80,11 @@ class Batch(commands.Cog):
                             DO UPDATE SET {0} = userstatus.{0} + (SELECT EXTRACT(epoch from NOW()) - userstatus.last_changed),
                             last_changed = (SELECT EXTRACT(epoch from NOW()))
                             WHERE userstatus.user_id = $1;
-                            """.format(bstatus)
-
-                    await self.bot.cxn.execute(
-                        query,
-                        user_id
+                            """.format(
+                        bstatus
                     )
+
+                    await self.bot.cxn.execute(query, user_id)
                 self.status_batch.clear()
         # Insert all the commands executed.
         if self.command_batch:
@@ -98,7 +99,7 @@ class Batch(commands.Cog):
                 # print([x[1][0] for x in self.command_batch.items()])
                 # print([y.values() for y in [x[1][0] for x in self.command_batch.items()]])
                 # await self.bot.cxn.executemany(
-                #     query, 
+                #     query,
                 #     [y for y in [x[1][0].keys() for x in self.command_batch.items()]]
                 # )
                 for data in self.command_batch.items():
@@ -291,8 +292,8 @@ class Batch(commands.Cog):
                 """
         async with self.batch_lock:
             for data in self.avatar_batch.items():
-                user_id = data[1]['user_id']
-                avatar  = data[1]['avatar']
+                user_id = data[1]["user_id"]
+                avatar = data[1]["avatar"]
 
                 await self.bot.cxn.execute(query, user_id, avatar, time.time())
             self.bot.avchanges += len(self.avatar_batch.items())
@@ -350,7 +351,6 @@ class Batch(commands.Cog):
                     await self.bot.cxn.execute(query, str(roles), user_id, server_id)
                 self.bot.rolechanges += len(self.roles_batch.items())
                 self.roles_batch.clear()
-
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -426,7 +426,6 @@ class Batch(commands.Cog):
         if before.roles != after.roles:
             return True
 
-
     @commands.Cog.listener()
     @decorators.wait_until_ready()
     async def on_member_update(self, before, after):
@@ -481,17 +480,21 @@ class Batch(commands.Cog):
                 resp = await self.bot.get((avatar_url), res_method="read")
                 data = io.BytesIO(resp)
                 dfile = discord.File(data, filename=f"{after.id}.png")
-                upload = await self.avatar_saver[0].send(content=f"**UID: {after.id}**", file=dfile, wait=True)
+                upload = await self.avatar_saver[0].send(
+                    content=f"**UID: {after.id}**", file=dfile, wait=True
+                )
                 attachment_id = upload.attachments[0].id
                 async with self.batch_lock:
                     self.avatar_batch[after.id] = {
                         "user_id": after.id,
-                        "avatar": attachment_id
+                        "avatar": attachment_id,
                     }
             except Exception as e:
                 await self.bot.bot_channel.send(f"Error in avatar_batcher: {e}")
-                await self.bot.bot_channel.send("```prolog\n" + str(traceback.format_exc()) + "```")
-                
+                await self.bot.bot_channel.send(
+                    "```prolog\n" + str(traceback.format_exc()) + "```"
+                )
+
         if await self.username_changed(before, after):
             async with self.batch_lock:
                 self.usernames_batch[after.id] = {
@@ -718,7 +721,10 @@ class Batch(commands.Cog):
         if usernames:
             usernames = str(usernames).replace(",", ", ")
         if avatars:
-            avatars = [f"https://cdn.discordapp.com/attachments/{self.avatar_saver[1]}/{x[0]}/{member.id}.png" for x in avatars]
+            avatars = [
+                f"https://cdn.discordapp.com/attachments/{self.avatar_saver[1]}/{x[0]}/{member.id}.png"
+                for x in avatars
+            ]
         if hasattr(member, "guild"):
             if nicknames:
                 nicknames = str(nicknames).replace(",", ", ")
@@ -726,7 +732,7 @@ class Batch(commands.Cog):
         observed_data = {
             "usernames": usernames or None,
             "nicknames": nicknames or None,
-            "avatars": avatars or None
+            "avatars": avatars or None,
         }
         return observed_data
 
