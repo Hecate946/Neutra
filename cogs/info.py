@@ -861,7 +861,7 @@ class Info(commands.Cog):
         draw.rectangle((1200, 900, 1275, 975), fill=(231, 76, 60), outline=(0, 0, 0))
         draw.text((1300, 910), f"DND: {dnd/total:.2%}", fill=(255, 255, 255), font=font)
         draw.rectangle((1800, 900, 1875, 975), fill=(97, 109, 126), outline=(0, 0, 0))
-        draw.text((1900, 910), f"Invisible: {offline/total:.2%}", fill=(255, 255, 255), font=font)
+        draw.text((1900, 910), f"Offline: {offline/total:.2%}", fill=(255, 255, 255), font=font)
 
         buffer = io.BytesIO()
         img.save(buffer, "png")  # 'save' function for PIL
