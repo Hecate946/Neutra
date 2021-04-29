@@ -560,6 +560,7 @@ class Tracking(commands.Cog):
 
             res = await self.bot.get(av, res_method="read")
             av_bytes = io.BytesIO(res)
+            av_bytes.seek(0)
             im = Image.open(av_bytes)
             im = im.resize((256, 256))
             parent.paste(im, (x * 256, 256 * val))
