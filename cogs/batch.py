@@ -74,6 +74,16 @@ class Batch(commands.Cog):
                     user_id = data[1]["user_id"]
                     bstatus = data[1]["bstatus"]
                     query = """
+                            SELECT EXTRACT(epoch from NOW())
+                            """
+                    res1 = await self.bot.cxn.fetchval(query)
+                    query = """
+                            SELECT last_changed FROM userstatus;
+                            """
+                    res2 = await self.bot.cxn.fetchval(query)
+                    if res1 < res2:
+                        await self.bot.bot_channel.send(F"fuck res1 > res2")
+                    query = """
                             INSERT INTO userstatus (user_id, last_changed)
                             VALUES ($1, (SELECT EXTRACT(epoch from NOW())))
                             ON CONFLICT (user_id)
