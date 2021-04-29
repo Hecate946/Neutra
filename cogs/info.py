@@ -822,9 +822,7 @@ class Info(commands.Cog):
         startdate = botstats[5]
         total = (datetime.datetime.utcnow() - startdate).total_seconds()
         offline = total - (online + idle + dnd)
-        uptime = runtime + (time.time() - self.bot.starttime)
-        print(total)
-        print(uptime)
+        uptime = online + idle + dnd
         raw_percent = (uptime/total)
         if raw_percent > 1:
             raw_percent = 1
@@ -839,17 +837,10 @@ class Info(commands.Cog):
         img = Image.new('RGBA', (2500, 1024), (0,0,0,0))
         draw = ImageDraw.Draw(img)
         font = ImageFont.truetype('./data/assets/Helvetica.ttf', 100)
-        # start and end indicate the angle of start and end
-        # Draw arc
         w, h = 1050, 1000
-        print(w)
         shape = [(50, 0), (w, h)]
-        # *(uptime/total)
         draw.arc(shape, start=360*raw_percent, end=0, fill=(125, 135, 140), width=200)
         draw.arc(shape, start=0, end=360*raw_percent, fill=(10, 24, 34), width=200)
-        # w,h = font.getsize(percent)
-        # print(w)
-        # print(h)
         # draw.text((445, 460), percent, fill=color, font=font)
         self.center_text(img, 1100, 1000, font, percent, color)
         font = ImageFont.truetype('./data/assets/Helvetica-Bold.ttf', 85)
@@ -872,13 +863,6 @@ class Info(commands.Cog):
         draw.rectangle((1800, 900, 1875, 975), fill=(97, 109, 126), outline=(0, 0, 0))
         draw.text((1900, 910), f"Invisible: {offline/total:.2%}", fill=(255, 255, 255), font=font)
 
-        query = """
-                SELECT * FROM userstatus
-                WHERE user_id = $1
-                """
-        status_data = await self.bot.cxn.fetch(query, self.bot.user.id)
-        for entry in status_data:
-            print(entry)
         buffer = io.BytesIO()
         img.save(buffer, "png")  # 'save' function for PIL
         buffer.seek(0)
