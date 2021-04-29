@@ -80,7 +80,7 @@ class Batch(commands.Cog):
                     res2 = await self.bot.cxn.fetchval(query)
                     if res2 is not None:
                         if res1 < res2:
-                            await self.bot.bot_channel.send(F"fuck res1 > res2")
+                            await self.bot.bot_channel.send(F"fuck res1 < res2")
                     query = """
                             INSERT INTO userstatus (user_id, last_changed)
                             VALUES ($1, $2)

@@ -955,9 +955,17 @@ class Tracking(commands.Cog):
 
         await ctx.send_or_reply(embed=e)
 
-    @commands.command(brief="Status info and online time.")
-    async def eyes(self, ctx, user: discord.Member = None):
-    
+    @commands.command(brief="Status info and online time.", aliases=["onlinetime",r"%status", r"%online","statusstats"])
+    async def statusinfo(self, ctx, user: discord.Member = None):
+        """
+        Usage: -statusinfo <user>
+        Output:
+            A pie chart graph with details
+            of the passed user's status
+        Notes:
+            Will default to yourself
+            if no user is passed.
+        """
         async with ctx.typing():
             if not user:
                 user = ctx.author
@@ -969,8 +977,7 @@ class Tracking(commands.Cog):
 
             data = await self.bot.cxn.fetch(query, user.id)
             if not data:
-                pass
-                return
+                return await self.do_generic(ctx, user)
             for row in data:
                 online_time = row[1]
                 idle_time = row[2]
@@ -985,14 +992,15 @@ class Tracking(commands.Cog):
             font = ImageFont.truetype("./data/assets/Helvetica.ttf", 100)
 
             if str(user.status) == "online":
-                online_time += time.time() - last_change
+                online_time = online_time + abs(time.time() - last_change)
             elif str(user.status) == "idle":
-                online_time += time.time() - last_change
+                idle_time = idle_time + abs(time.time() - last_change)
             elif str(user.status) == "dnd":
-                online_time += time.time() - last_change
+                dnd_time = dnd_time + abs(time.time() - last_change)
+            elif str(user.status) == "offline":
+                offline_time = offline_time + abs(time.time() - last_change)
 
-            total = (datetime.utcnow() - startdate).total_seconds()
-            offline_time = total - (online_time + idle_time + dnd_time)
+            total = offline_time + online_time + idle_time + dnd_time
             uptime = online_time + idle_time + dnd_time
             raw_percent = uptime / total
             status_list = [online_time, idle_time, dnd_time, offline_time]
@@ -1063,17 +1071,17 @@ class Tracking(commands.Cog):
                 fill=(255, 255, 255),
                 font=font,
             )
-            draw.rectangle((1800, 800, 1875, 875), fill=(241, 196, 15), outline=(0, 0, 0))
+            draw.rectangle((1850, 800, 1925, 875), fill=(255, 228, 0), outline=(0, 0, 0))
             draw.text(
-                (1900, 810), f"Idle: {idle_time/total:.2%}", fill=(255, 255, 255), font=font
+                (1950, 810), f"Idle: {idle_time/total:.2%}", fill=(255, 255, 255), font=font
             )
-            draw.rectangle((1200, 900, 1275, 975), fill=(231, 76, 60), outline=(0, 0, 0))
+            draw.rectangle((1200, 900, 1275, 975), fill=(237, 41, 57), outline=(0, 0, 0))
             draw.text(
                 (1300, 910), f"DND: {dnd_time/total:.2%}", fill=(255, 255, 255), font=font
             )
-            draw.rectangle((1800, 900, 1875, 975), fill=(97, 109, 126), outline=(0, 0, 0))
+            draw.rectangle((1850, 900, 1925, 975), fill=(97, 109, 126), outline=(0, 0, 0))
             draw.text(
-                (1900, 910),
+                (1950, 910),
                 f"Offline: {offline_time/total:.2%}",
                 fill=(255, 255, 255),
                 font=font,
@@ -1100,9 +1108,9 @@ class Tracking(commands.Cog):
         if str(status_type).startswith("online"):
             color = discord.Color.green().to_rgb()
         elif str(status_type).startswith("idle"):
-            color = discord.Color.gold().to_rgb()
+            color = (255, 228, 0)#discord.Color.gold().to_rgb()
         elif str(status_type).startswith("dnd"):
-            color = discord.Color.red().to_rgb()
+            color = (237, 41, 57)#discord.Color.red().to_rgb()
         else:
             color = (97, 109, 126)
         return color
@@ -1112,3 +1120,128 @@ class Tracking(commands.Cog):
         return [var_name for var_name, var_val in callers_local_vars if var_val is var][
             0
         ]
+
+    async def do_generic(self, ctx, user):
+            em = discord.Embed(color=self.bot.constants.embed)
+            img = Image.new("RGBA", (2400, 1024), (0, 0, 0, 0))
+            draw = ImageDraw.Draw(img)
+            font = ImageFont.truetype("./data/assets/Helvetica.ttf", 100)
+
+            online_time = 0
+            idle_time = 0
+            dnd_time = 0
+            offline_time = 0
+            if str(user.status) == "online":
+                online_time = 1
+            elif str(user.status) == "idle":
+                idle_time = 1
+            elif str(user.status) == "dnd":
+                dnd_time = 1
+            elif str(user.status) == "offline":
+                offline_time = 1
+
+            total = offline_time + online_time + idle_time + dnd_time
+            uptime = online_time + idle_time + dnd_time
+            raw_percent = uptime / total
+            status_list = [online_time, idle_time, dnd_time, offline_time]
+            status_list.sort()
+            if raw_percent > 1:
+                raw_percent = 1
+            percent = f"{raw_percent:.2%}"
+            em = discord.Embed(color=self.bot.constants.embed)
+            img = Image.new("RGBA", (2500, 1024), (0, 0, 0, 0))
+            draw = ImageDraw.Draw(img)
+            font = ImageFont.truetype("./data/assets/Helvetica.ttf", 100)
+            w, h = 1050, 1000
+            shape = [(50, 0), (w, h)]
+            draw.arc(
+                shape,
+                start=0,
+                end=360 * (status_list[-1] / total),
+                fill=self.get_color(self.retrieve_name(status_list[-1])),
+                width=200,
+            )
+            start = 360 * (status_list[-1] / total)
+            draw.arc(
+                shape,
+                start= start,
+                end= start + 360 * (status_list[-2] / total),
+                fill=self.get_color(self.retrieve_name(status_list[-2])),
+                width=200,
+            )
+            start = start + 360 * (status_list[-2] / total)
+            draw.arc(
+                shape,
+                start=start,
+                end= start + 360 * (status_list[-3]/total),
+                fill=self.get_color(self.retrieve_name(status_list[-3])),
+                width=200,
+            )
+            start = start + 360 * (status_list[-3]/total)
+            draw.arc(
+                shape,
+                start=start,
+                end=start + 360 * (status_list[-4]/total),
+                fill=self.get_color(self.retrieve_name(status_list[-4])),
+                width=200,
+            )
+            self.center_text(img, 1100, 1000, font, percent, (255, 255, 255))
+            font = ImageFont.truetype("./data/assets/Helvetica-Bold.ttf", 85)
+            draw.text(
+                (1200, 0), "Status Tracking Startdate:", fill=(255, 255, 255), font=font
+            )
+            font = ImageFont.truetype("./data/assets/Helvetica.ttf", 68)
+            draw.text(
+                (1200, 100),
+                utils.format_time(datetime.utcnow()).split(".")[0] + "]",
+                fill=(255, 255, 255),
+                font=font,
+            )
+            font = ImageFont.truetype("./data/assets/Helvetica-Bold.ttf", 85)
+            draw.text((1200, 300), "Total Online Time:", fill=(255, 255, 255), font=font)
+            font = ImageFont.truetype("./data/assets/Helvetica.ttf", 68)
+            draw.text((1200, 400), f"{uptime/3600:.2f} {'Hour' if int(uptime/3600) == 1 else 'Hours'}", fill=(255, 255, 255), font=font)
+            font = ImageFont.truetype("./data/assets/Helvetica-Bold.ttf", 85)
+            draw.text((1200, 600), "Status Information:", fill=(255, 255, 255), font=font)
+            font = ImageFont.truetype("./data/assets/Helvetica.ttf", 68)
+            draw.rectangle((1200, 800, 1275, 875), fill=(46, 204, 113), outline=(0, 0, 0))
+            draw.text(
+                (1300, 810),
+                f"Online: {online_time/total:.2%}",
+                fill=(255, 255, 255),
+                font=font,
+            )
+            draw.rectangle((1800, 800, 1875, 875), fill=(255, 228, 0 ), outline=(0, 0, 0))
+            draw.text(
+                (1900, 810), f"Idle: {idle_time/total:.2%}", fill=(255, 255, 255), font=font
+            )
+            draw.rectangle((1200, 900, 1275, 975), fill=(237, 41, 57), outline=(0, 0, 0))
+            draw.text(
+                (1300, 910), f"DND: {dnd_time/total:.2%}", fill=(255, 255, 255), font=font
+            )
+            draw.rectangle((1800, 900, 1875, 975), fill=(97, 109, 126), outline=(0, 0, 0))
+            draw.text(
+                (1900, 910),
+                f"Offline: {offline_time/total:.2%}",
+                fill=(255, 255, 255),
+                font=font,
+            )
+
+            buffer = io.BytesIO()
+            img.save(buffer, "png")  # 'save' function for PIL
+            buffer.seek(0)
+            dfile = discord.File(fp=buffer, filename="uptime.png")
+            em.title = f"{user}'s Status Statistics"
+            em.set_image(url="attachment://uptime.png")
+            await ctx.send_or_reply(embed=em, file=dfile)
+
+            query = """
+                    INSERT INTO userstatus (user_id, last_changed)
+                    VALUES ($1, $2)
+                    ON CONFLICT (user_id)
+                    DO UPDATE SET {0} = userstatus.{0} + ($2 - userstatus.last_changed),
+                    last_changed = $2
+                    WHERE userstatus.user_id = $1;
+                    """.format(str(user.status))
+
+            await self.bot.cxn.execute(query, user.id, time.time())
