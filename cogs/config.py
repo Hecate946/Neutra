@@ -3,7 +3,7 @@ import typing
 from datetime import datetime
 
 import aiohttp
-import asyncpg
+import time
 import discord
 from discord.ext import commands, menus
 
@@ -183,6 +183,17 @@ class Config(commands.Cog):
         utils.edit_config(value="status", changeto=status)
         self.bot.constants.status = status
         await self.bot.set_status()
+        me = self.bot.home.get_member(self.bot.user.id)
+        query = """
+                INSERT INTO botstats
+                VALUES ($1)
+                ON CONFLICT (bot_id)
+                DO UPDATE SET {0} = botstats.{0} + $2
+                """.format(me.status)
+
+        statustime = time.time() - self.bot.statustime
+        await self.bot.cxn.execute(query, self.bot.user.id, statustime)
+        self.bot.statustime = time.time()
         await ctx.send_or_reply(
             content=f"{self.bot.emote_dict['success']} status now set as `{status}`",
         )

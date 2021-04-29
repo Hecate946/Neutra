@@ -149,18 +149,22 @@ class Snowbot(commands.AutoShardedBot):
             self.status_loop.stop() # Stop the loop
 
             print("\nKilled")
-            with open("./data/json/botstats.json", "r", encoding="utf-8") as fp:
-                current_data = json.load(fp)
-            if current_data == {}:
-                with open("./data/json/botstats.json", "w", encoding="utf-8") as fp:
-                    json.dump({
-                        "startdate": str(datetime.utcnow()),
-                        "runtime": (datetime.utcnow() - self.uptime).total_seconds()
-                    }, fp, indent=2)
-            else:
-                with open("./data/json/botstats.json", "w", encoding="utf-8") as fp:
-                    current_data['runtime']  = current_data['runtime'] + (datetime.utcnow() - self.uptime).total_seconds()
-                    json.dump(current_data, fp, indent=2)
+            # with open("./data/json/botstats.json", "r", encoding="utf-8") as fp:
+            #     current_data = json.load(fp)
+            # if current_data == {}:
+            #     with open("./data/json/botstats.json", "w", encoding="utf-8") as fp:
+            #         json.dump({
+            #             "startdate": str(datetime.utcnow()),
+            #             "runtime": (datetime.utcnow() - self.uptime).total_seconds(),
+            #             "online": 0,
+            #             "idle": 0,
+            #             "dnd": 0,
+            #         }, fp, indent=2)
+            # else:
+            #     with open("./data/json/botstats.json", "w", encoding="utf-8") as fp:
+            #         current_data['runtime']  = current_data['runtime'] + (datetime.utcnow() - self.uptime).total_seconds()
+            #         current_data['runtime']  = current_data['runtime'] + (datetime.utcnow() - self.uptime).total_seconds()
+            #         json.dump(current_data, fp, indent=2)
 
 
             with open("./data/json/blacklist.json", "w", encoding="utf-8") as fp:
@@ -238,7 +242,10 @@ class Snowbot(commands.AutoShardedBot):
             self.uptime = datetime.utcnow()
 
         if not hasattr(self, "starttime"):
-            self.starttime = int(time.time())
+            self.starttime = time.time()
+
+        if not hasattr(self, "statustime"):
+            self.statustime = time.time()
 
 
         if not hasattr(self, "cxn"):
@@ -264,9 +271,9 @@ class Snowbot(commands.AutoShardedBot):
 
         # Create all the necessary jsons
         # first the uptime stat json
-        if not os.path.exists("./data/json/botstats.json"):
-            with open("./data/json/botstats.json", mode="w", encoding="utf-8") as fp:
-                fp.write(r"{}")
+        # if not os.path.exists("./data/json/botstats.json"):
+        #     with open("./data/json/botstats.json", mode="w", encoding="utf-8") as fp:
+        #         fp.write(r"{}")
         # load all blacklisted discord objects
         if not os.path.exists("./data/json/blacklist.json"):
             with open("./data/json/blacklist.json", mode="w", encoding="utf-8") as fp:
@@ -288,6 +295,17 @@ class Snowbot(commands.AutoShardedBot):
 
 
     async def close(self):  # Shutdown the bot cleanly
+        me = self.home.get_member(self.user.id)
+        runtime = time.time() - self.starttime
+        statustime = time.time() - self.statustime
+        query = """
+                INSERT INTO botstats
+                VALUES ($1, $2)
+                ON CONFLICT (bot_id)
+                DO UPDATE SET runtime = botstats.runtime + $2,
+                {0} = botstats.{0} + $3
+                """.format(me.status)
+        await self.cxn.execute(query, self.user.id, runtime, statustime)
         await super().close()
         await self.session.close()
 

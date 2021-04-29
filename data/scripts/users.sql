@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS userstatus (
     online REAL DEFAULT 0 NOT NULL,
     idle REAL DEFAULT 0 NOT NULL,
     dnd REAL DEFAULT 0 NOT NULL,
-    past REAL,
-    startdate TIMESTAMP
+    offline REAL DEFAULT 0 NOT NULL,
+    last_changed REAL,
+    startdate timestamp without time zone default (now() at time zone 'utc')
 );

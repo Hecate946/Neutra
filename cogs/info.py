@@ -802,31 +802,51 @@ class Info(commands.Cog):
 
     @commands.command(hidden=True, aliases=["%", r"%uptime"])
     async def percentuptime(self, ctx):
-        with open("./data/json/botstats.json", "r", encoding="utf-8") as fp:
-            data = json.load(fp)
-        startdate = datetime.datetime.strptime(data['startdate'], "%Y-%m-%d %H:%M:%S.%f")
+        me = self.bot.home.get_member(self.bot.user.id)
+        query = """
+                SELECT (
+                    runtime,
+                    online,
+                    idle,
+                    dnd,
+                    offline,
+                    startdate
+                ) FROM botstats;
+                """
+        botstats = await self.bot.cxn.fetchval(query)
+        statustime = time.time() - self.bot.statustime
+        runtime = botstats[0]
+        online = botstats[1] + statustime if str(me.status) == "offline" else botstats[1]
+        idle = botstats[2] + statustime if str(me.status) == "idle" else botstats[2]
+        dnd = botstats[3] + statustime if str(me.status) == "dnd" else botstats[3]
+        startdate = botstats[5]
         total = (datetime.datetime.utcnow() - startdate).total_seconds()
-        uptime = data['runtime'] + (datetime.datetime.utcnow() - self.bot.uptime).total_seconds()
+        offline = total - (online + idle + dnd)
+        uptime = runtime + (time.time() - self.bot.starttime)
         print(total)
         print(uptime)
-        percent = f"{(uptime/total):.2%}"
-        if (uptime/total) > 0.9:
+        raw_percent = (uptime/total)
+        if raw_percent > 1:
+            raw_percent = 1
+        if raw_percent > 0.9:
             color = (109, 255, 72)
-        elif 0.7 < (uptime/total) < 0.9:
+        elif 0.7 < raw_percent < 0.9:
             color = (226, 232, 19)
         else:
             color = (232, 44, 19)
+        percent = f"{raw_percent:.2%}"
         em = discord.Embed(color=self.bot.constants.embed)
-        img = Image.new('RGBA', (2400, 1024), (0,0,0,0))
+        img = Image.new('RGBA', (2500, 1024), (0,0,0,0))
         draw = ImageDraw.Draw(img)
         font = ImageFont.truetype('./data/assets/Helvetica.ttf', 100)
-        #start and end indicate the angle of start and end
-        #Draw arc
+        # start and end indicate the angle of start and end
+        # Draw arc
         w, h = 1050, 1000
         print(w)
         shape = [(50, 0), (w, h)]
         # *(uptime/total)
-        draw.arc(shape, start=0, end=360*(uptime/total), fill=(10, 24, 34), width=200)
+        draw.arc(shape, start=360*raw_percent, end=0, fill=(125, 135, 140), width=200)
+        draw.arc(shape, start=0, end=360*raw_percent, fill=(10, 24, 34), width=200)
         # w,h = font.getsize(percent)
         # print(w)
         # print(h)
@@ -839,9 +859,26 @@ class Info(commands.Cog):
         font = ImageFont.truetype('./data/assets/Helvetica-Bold.ttf', 85)
         draw.text((1200, 300), "Total Uptime (Hours):", fill=(255, 255, 255), font=font)
         font = ImageFont.truetype('./data/assets/Helvetica.ttf', 68)
-        draw.text((1200, 400), f"{data['runtime']/3600:.2f}", fill=(255, 255, 255), font=font)
-        #Drawing a pie chart
-        #draw.pieslice((425, 50, 575, 200), start=30, end=270, fill=(255, 255, 255), outline=(0, 0, 0))
+        draw.text((1200, 400), f"{runtime/3600:.2f}", fill=(255, 255, 255), font=font)
+        font = ImageFont.truetype('./data/assets/Helvetica-Bold.ttf', 85)
+        draw.text((1200, 600), "Status Information:", fill=(255, 255, 255), font=font)
+        font = ImageFont.truetype('./data/assets/Helvetica.ttf', 68)
+        draw.rectangle((1200, 800, 1275, 875), fill=(46, 204, 113), outline=(0, 0, 0))
+        draw.text((1300, 810), f"Online: {online/total:.2%}", fill=(255, 255, 255), font=font)
+        draw.rectangle((1800, 800, 1875, 875), fill=(241, 196, 15), outline=(0, 0, 0))
+        draw.text((1900, 810), f"Idle: {idle/total:.2%}", fill=(255, 255, 255), font=font)
+        draw.rectangle((1200, 900, 1275, 975), fill=(231, 76, 60), outline=(0, 0, 0))
+        draw.text((1300, 910), f"DND: {dnd/total:.2%}", fill=(255, 255, 255), font=font)
+        draw.rectangle((1800, 900, 1875, 975), fill=(97, 109, 126), outline=(0, 0, 0))
+        draw.text((1900, 910), f"Invisible: {offline/total:.2%}", fill=(255, 255, 255), font=font)
+
+        query = """
+                SELECT * FROM userstatus
+                WHERE user_id = $1
+                """
+        status_data = await self.bot.cxn.fetch(query, self.bot.user.id)
+        for entry in status_data:
+            print(entry)
         buffer = io.BytesIO()
         img.save(buffer, "png")  # 'save' function for PIL
         buffer.seek(0)

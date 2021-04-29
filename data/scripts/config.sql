@@ -3,8 +3,3 @@ CREATE TABLE IF NOT EXISTS settings (
     react BOOLEAN DEFAULT True,
     admin_allow BOOLEAN DEFAULT True
 );
-
-CREATE TABLE IF NOT EXISTS botstats (
-    runtime BIGINT,
-    startdate TIMESTAMP
-);

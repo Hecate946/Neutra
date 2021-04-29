@@ -1,12 +1,11 @@
 import io
 from collections import Counter, OrderedDict
 from datetime import datetime
-from operator import itemgetter
-from re import M
+from PIL import Image, ImageDraw, ImageFont
+import time
 
 import discord
 from PIL import Image
-from discord import member
 from discord.ext import commands, menus
 
 from utilities import converters, pagination, permissions, utils
@@ -953,3 +952,87 @@ class Tracking(commands.Cog):
             e.add_field(name=f"{n+1}. {name}", value=f"{v[0]:,} chars")
 
         await ctx.send_or_reply(embed=e)
+
+
+    @commands.command(brief="Status info and online time.")
+    async def eyes(self, ctx, user: discord.Member = None):
+        if not user:
+            user = ctx.author
+        msg = await ctx.load(f"Collecting Status Information...")
+        query = """
+                SELECT * FROM userstatus
+                WHERE user_id = $1;
+                """
+
+        data = await self.bot.cxn.fetch(query, user.id)
+        if not data:
+            await msg.edit(content=f"well yeah fuck deez lowlifes never changes status pepelaugh")
+            return
+        for row in data:
+            online_time = row[1]
+            idle_time = row[2]
+            dnd_time = row[3]
+            offline_time = row[4]
+            last_change = row[5]
+            startdate = row[6]
+
+        em = discord.Embed(color=self.bot.constants.embed)
+        img = Image.new('RGBA', (2400, 1024), (0,0,0,0))
+        draw = ImageDraw.Draw(img)
+        font = ImageFont.truetype('./data/assets/Helvetica.ttf', 100)
+
+        if str(user.status) == "online":
+            online_time += (time.time() - last_change)
+        elif str(user.status) == "idle":
+            online_time += (time.time() - last_change)
+        elif str(user.status) == "dnd":
+            online_time += (time.time() - last_change)
+        else:
+            offline_time += (time.time() - last_change)
+        # start and end indicate the angle of start and end
+        # Draw arc
+        w, h = 1050, 1000
+        seconds = (datetime.utcnow() - startdate).total_seconds()
+        shape = [(50, 0), (w, h)]
+        frac = (online_time + idle_time + dnd_time) / seconds
+        percent = f"{frac:.2%}"
+        em.title = f"{user.name}'s Status Statistics"
+        em.description =  f"\n**Online Time:** {online_time}\n{(online_time/seconds):.2%}"
+        em.description += f"\n**Idle Time:** {idle_time}\n{(idle_time/seconds):.2%}"
+        em.description += f"\n**DND Time:** {dnd_time}\n{(dnd_time/seconds):.2%}"
+        em.description += f"\n**Offline Time:** {offline_time}\n{(offline_time/seconds):.2%}"
+        em.description += f"\n**Total Time:** {seconds}"
+        em.description += f"\n**% Uptime:** {percent}"
+        await ctx.send(embed=em)
+        # draw.arc(shape, start=0, end=360*frac, fill="green", width=180)
+        # # w,h = font.getsize(percent)
+        # # print(w)
+        # # print(h)
+        # # draw.text((445, 460), percent, fill=color, font=font)
+        # self.center_text(img, 1100, 1000, font, percent, (255, 255, 255))
+        # font = ImageFont.truetype('./data/assets/Helvetica-Bold.ttf', 85)
+        # draw.text((1200, 0), "Uptime Tracking Startdate:", fill=(255, 255, 255), font=font)
+        # font = ImageFont.truetype('./data/assets/Helvetica.ttf', 68)
+        # draw.text((1200, 100), utils.format_time(startdate).split(".")[0] + "]", fill=(255, 255, 255), font=font)
+        # font = ImageFont.truetype('./data/assets/Helvetica-Bold.ttf', 85)
+        # draw.text((1200, 300), "Total Uptime (Hours):", fill=(255, 255, 255), font=font)
+        # font = ImageFont.truetype('./data/assets/Helvetica.ttf', 68)
+        # draw.text((1200, 400), f"{seconds/3600:.2f}", fill=(255, 255, 255), font=font)
+        # #Drawing a pie chart
+        # #draw.pieslice((425, 50, 575, 200), start=30, end=270, fill=(255, 255, 255), outline=(0, 0, 0))
+        # buffer = io.BytesIO()
+        # img.save(buffer, "png")  # 'save' function for PIL
+        # buffer.seek(0)
+        # dfile = discord.File(fp=buffer, filename="uptime.png")
+        # em.title = f"{user.name}'s Status Statistics"
+        # em.set_image(url="attachment://uptime.png")
+        # await ctx.send_or_reply(embed=em, file=dfile)
+
+    def center_text(self, img, strip_width, strip_height, font, text, color=(255, 255, 255)):
+        draw = ImageDraw.Draw(img)
+        text_width, text_height = draw.textsize(text, font)
+        position = ((strip_width-text_width)/2,(strip_height-text_height)/2)
+        draw.text(position, text, color, font=font)
+        return img
+
+        

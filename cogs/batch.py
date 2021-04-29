@@ -66,27 +66,25 @@ class Batch(commands.Cog):
     async def bulk_inserter(self):
         self.bot.batch_inserts += 1
         # Insert all status changes
-        # if self.status_batch:
-        #     async with self.batch_lock:
-        #         for data in self.status_batch.items():
-        #             user_id = data[1]["user_id"]
-        #             bstatus = data[1]["bstatus"]
-        #             query = """
-        #                     INSERT INTO userstatus (user_id, past, startdate)
-        #                     VALUES ($1, (SELECT EXTRACT(epoch from NOW())), $2) ON CONFLICT (user_id)
-        #                     DO UPDATE SET {0} = (
-        #                         userstatus.{0} + (
-        #                             (SELECT EXTRACT(epoch from NOW())) - userstatus.past)
-        #                         ) and past = SELECT EXTRACT(epoch from NOW()))
-        #                     WHERE userstatus.user_id = $1;
-        #                     """.format(bstatus)
+        if self.status_batch:
+            async with self.batch_lock:
+                for data in self.status_batch.items():
+                    user_id = data[1]["user_id"]
+                    bstatus = data[1]["bstatus"]
+                    query = """
+                            INSERT INTO userstatus (user_id, last_changed)
+                            VALUES ($1, (SELECT EXTRACT(epoch from NOW())))
+                            ON CONFLICT (user_id)
+                            DO UPDATE SET {0} = userstatus.{0} + (SELECT EXTRACT(epoch from NOW()) - userstatus.last_changed),
+                            last_changed = (SELECT EXTRACT(epoch from NOW()))
+                            WHERE userstatus.user_id = $1;
+                            """.format(bstatus)
 
-        #             await self.bot.cxn.execute(
-        #                 query,
-        #                 user_id,
-        #                 datetime.datetime.utcnow(),
-
-        #             )
+                    await self.bot.cxn.execute(
+                        query,
+                        user_id
+                    )
+                self.status_batch.clear()
         # Insert all the commands executed.
         if self.command_batch:
             query = """
@@ -97,6 +95,12 @@ class Batch(commands.Cog):
                     VALUES ($1, $2, $3, $4, $5, $6, $7)
                     """
             async with self.batch_lock:
+                # print([x[1][0] for x in self.command_batch.items()])
+                # print([y.values() for y in [x[1][0] for x in self.command_batch.items()]])
+                # await self.bot.cxn.executemany(
+                #     query, 
+                #     [y for y in [x[1][0].keys() for x in self.command_batch.items()]]
+                # )
                 for data in self.command_batch.items():
                     server_id = data[1][0]["server_id"]
                     channel_id = data[1][0]["channel_id"]
@@ -422,37 +426,17 @@ class Batch(commands.Cog):
         if before.roles != after.roles:
             return True
 
-    # @tasks.loop(seconds=3)
-    # async def status_inserter(self):
-    #     query = """
-    #             CREATE TABLE IF NOT EXISTS userstatuses (
-    #                 user_id PRIMARY KEY,
-    #                 status VARCHAR(10),
-    #                 online REAL,
-    #                 idle REAL,
-    #                 dnd REAL,
-    #                 offline REAL,
-    #                 startdate TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC')
-    #             );
-    #             """
-    #     await self.bot.cxn.execute(query)
-
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
     async def on_member_update(self, before, after):
 
-        # if after.bot and self.bot.user.id != after.id:
-        #     return
-
-        # if before.status != after.status:
-        #     async with self.batch_lock:
-        #         self.status_batch[after.id] = {
-        #             "user_id": after.id,
-        #             "bstatus": str(before.status),
-        #             "astatus": str(after.status),
-        #         }
-
+        if before.status != after.status:
+            async with self.batch_lock:
+                self.status_batch[after.id] = {
+                    "user_id": after.id,
+                    "bstatus": str(before.status),
+                }
         if after.bot:
             return
 
