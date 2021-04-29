@@ -542,7 +542,6 @@ class Tracking(commands.Cog):
         iteration = 0
         parent = Image.open("./data/assets/mask.png")
         for av in res['avatars']:
-            print(av)
             if iteration < 4:
                 val = 0
                 x = iteration
@@ -572,7 +571,7 @@ class Tracking(commands.Cog):
         dfile = discord.File(fp=buffer, filename="avatars.png")
         em.set_image(url="attachment://avatars.png")
         await msg.delete()
-        await ctx.send_or_reply(embed=em, file=dfile)
+        await msg.edit(embed=em, file=dfile)
 
 
     @commands.command(
