@@ -571,7 +571,7 @@ class Tracking(commands.Cog):
         dfile = discord.File(fp=buffer, filename="avatars.png")
         em.set_image(url="attachment://avatars.png")
         await msg.delete()
-        await msg.edit(embed=em, file=dfile)
+        await ctx.send_or_reply(embed=em, file=dfile)
 
 
     @commands.command(
