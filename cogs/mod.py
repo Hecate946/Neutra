@@ -9,7 +9,7 @@ from better_profanity import profanity
 from collections import Counter
 from datetime import datetime, timedelta
 from discord.ext import commands
-from discord.ext.commands.converter import EmojiConverter
+
 
 from settings import database
 from utilities import converters, permissions, utils, helpers, time

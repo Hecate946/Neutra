@@ -235,7 +235,7 @@ class Stats(commands.Cog):
             content=f"Admins in **{ctx.guild.name}:**\n\n{message}",
         )
 
-    @commands.command(brief="Emoji usage tracking.", aliases=['estats'])
+    @commands.command(brief="Emoji usage tracking.", aliases=["estats"])
     @commands.guild_only()
     async def emojistats(self, ctx, user: discord.Member = None):
         """
@@ -290,7 +290,9 @@ class Stats(commands.Cog):
                 emoji_list = []
                 result = await self.bot.cxn.fetch(query, user.id, ctx.guild.id)
                 if not result:
-                    return await ctx.fail(f"`{user}` has no recorded emoji usage stats.")
+                    return await ctx.fail(
+                        f"`{user}` has no recorded emoji usage stats."
+                    )
 
                 matches = re.compile(r"<a?:.+?:[0-9]{15,21}>").findall(str(result))
                 total_uses = len(matches)
@@ -303,13 +305,12 @@ class Stats(commands.Cog):
                 emojis = Counter(emoji_list).most_common()
 
                 p = pagination.SimplePages(
-                    entries=[
-                        "{}: Uses: {}".format(e[0], e[1])
-                        for e in emojis
-                    ],
+                    entries=["{}: Uses: {}".format(e[0], e[1]) for e in emojis],
                     per_page=15,
                 )
-                p.embed.title = f"{user.display_name}'s Emoji Usage\n`(Total: {total_uses:,})`"
+                p.embed.title = (
+                    f"{user.display_name}'s Emoji Usage\n`(Total: {total_uses:,})`"
+                )
                 await msg.delete()
                 try:
                     await p.start(ctx)

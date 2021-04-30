@@ -39,7 +39,7 @@ class Batch(commands.Cog):
         self.snipe_batch = list()
         self.member_batch = defaultdict(list)
         self.emoji_batch = defaultdict(Counter)
-        #self.message_batch = defaultdict(list)
+        # self.message_batch = defaultdict(list)
         self.usernames_batch = defaultdict(list)
         self.nicknames_batch = defaultdict(list)
         self.roles_batch = defaultdict(list)
@@ -82,7 +82,7 @@ class Batch(commands.Cog):
                     res2 = await self.bot.cxn.fetchval(query)
                     if res2 is not None:
                         if res1 < res2:
-                            await self.bot.bot_channel.send(F"fuck res1 < res2")
+                            await self.bot.bot_channel.send(f"fuck res1 < res2")
                     query = """
                             INSERT INTO userstatus (user_id, last_changed)
                             VALUES ($1, $2)
@@ -97,7 +97,7 @@ class Batch(commands.Cog):
                     await self.bot.cxn.execute(query, user_id, time.time())
                 self.status_batch.clear()
         # Insert all the commands executed.
-        if self.command_batch:       
+        if self.command_batch:
             query = """
                     INSERT INTO commands (
                         server_id, channel_id,
@@ -121,7 +121,7 @@ class Batch(commands.Cog):
                 # Command logger to ./data/logs/commands.log
                 destination = None
                 for x in self.command_batch:
-                    if x['server'] is None:
+                    if x["server"] is None:
                         destination = "Private Message"
                     else:
                         destination = f"#{self.bot.get_channel(x['channel'])} [{x['channel']}] ({self.bot.get_guild(x['server'])}) [{x['server']}]"
@@ -145,7 +145,7 @@ class Batch(commands.Cog):
                 #     message_id = data[1][0]["message_id"]
                 #     author_id = data[1][0]["author_id"]
 
-                    #await self.bot.cxn.execute(query, message_id, author_id, channel_id)
+                # await self.bot.cxn.execute(query, message_id, author_id, channel_id)
             self.snipe_batch.clear()
 
         # mass inserts nicknames, usernames, and roles
@@ -271,7 +271,9 @@ class Batch(commands.Cog):
                     WHERE tracker.user_id = $1
                     """
             async with self.batch_lock:
-                await self.bot.cxn.executemany(query, ((x['user_id'], x['unix']) for x in self.tracker_batch))
+                await self.bot.cxn.executemany(
+                    query, ((x["user_id"], x["unix"]) for x in self.tracker_batch)
+                )
             self.tracker_batch.clear()
 
         # query = f"""UPDATE useravatars SET avatars = CONCAT_WS(',', avatars, cast($1 as text)) WHERE user_id = $2"""
@@ -427,10 +429,12 @@ class Batch(commands.Cog):
 
         if await self.status_changed(before, after):
             async with self.batch_lock:
-                self.tracker_batch.append({
-                    "user_id": after.id,
-                    "unix": time.time(),
-                })
+                self.tracker_batch.append(
+                    {
+                        "user_id": after.id,
+                        "unix": time.time(),
+                    }
+                )
 
         if await self.nickname_changed(before, after):
             async with self.batch_lock:
@@ -458,10 +462,12 @@ class Batch(commands.Cog):
         if after.bot:
             return
         async with self.batch_lock:
-            self.tracker_batch.append({
-                "user_id": after.id,
-                "unix": time.time(),
-            })
+            self.tracker_batch.append(
+                {
+                    "user_id": after.id,
+                    "unix": time.time(),
+                }
+            )
 
         if await self.avatar_changed(before, after):
             try:
@@ -474,11 +480,13 @@ class Batch(commands.Cog):
                 )
                 attachment_id = upload.attachments[0].id
                 async with self.batch_lock:
-                    self.avatar_batch.append({
-                        "user_id": after.id,
-                        "avatar_id": attachment_id,
-                        "unix": time.time(),
-                    })
+                    self.avatar_batch.append(
+                        {
+                            "user_id": after.id,
+                            "avatar_id": attachment_id,
+                            "unix": time.time(),
+                        }
+                    )
             except Exception as e:
                 await self.bot.bot_channel.send(f"Error in avatar_batcher: {e}")
                 await self.bot.bot_channel.send(
@@ -512,10 +520,12 @@ class Batch(commands.Cog):
                     "server_id": message.guild.id,
                 }
             )
-            self.tracker_batch.append({
-                "user_id": message.author.id,
-                "unix": time.time(),
-            })
+            self.tracker_batch.append(
+                {
+                    "user_id": message.author.id,
+                    "unix": time.time(),
+                }
+            )
 
         matches = EMOJI_REGEX.findall(message.content)
         if matches:
@@ -546,10 +556,12 @@ class Batch(commands.Cog):
         if user.bot:
             return
         async with self.batch_lock:
-            self.tracker_batch.append({
-                "user_id": user.id,
-                "unix": time.time(),
-            })
+            self.tracker_batch.append(
+                {
+                    "user_id": user.id,
+                    "unix": time.time(),
+                }
+            )
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -566,10 +578,12 @@ class Batch(commands.Cog):
             return
         author_id = message.author.id
         async with self.batch_lock:
-            self.tracker_batch.append({
-                "user_id": author_id,
-                "unix": time.time(),
-            })
+            self.tracker_batch.append(
+                {
+                    "user_id": author_id,
+                    "unix": time.time(),
+                }
+            )
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -579,10 +593,12 @@ class Batch(commands.Cog):
         if user.bot:
             return
         async with self.batch_lock:
-            self.tracker_batch.append({
-                "user_id": payload.user_id,
-                "unix": time.time(),
-            })
+            self.tracker_batch.append(
+                {
+                    "user_id": payload.user_id,
+                    "unix": time.time(),
+                }
+            )
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -591,10 +607,12 @@ class Batch(commands.Cog):
         if member.bot:
             return
         async with self.batch_lock:
-            self.tracker_batch.append({
-                "user_id": member.id,
-                "unix": time.time(),
-            })
+            self.tracker_batch.append(
+                {
+                    "user_id": member.id,
+                    "unix": time.time(),
+                }
+            )
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -603,10 +621,12 @@ class Batch(commands.Cog):
         if invite.inviter.bot:
             return
         async with self.batch_lock:
-            self.tracker_batch.append({
-                "user_id": invite.inviter.id,
-                "unix": time.time(),
-            })
+            self.tracker_batch.append(
+                {
+                    "user_id": invite.inviter.id,
+                    "unix": time.time(),
+                }
+            )
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -615,10 +635,12 @@ class Batch(commands.Cog):
         if member.bot:
             return
         async with self.batch_lock:
-            self.tracker_batch.append({
-                "user_id": member.id,
-                "unix": time.time(),
-            })
+            self.tracker_batch.append(
+                {
+                    "user_id": member.id,
+                    "unix": time.time(),
+                }
+            )
 
         await asyncio.sleep(2)
 
@@ -642,10 +664,12 @@ class Batch(commands.Cog):
         if member.bot:
             return
         async with self.batch_lock:
-            self.tracker_batch.append({
-                "user_id": member.id,
-                "unix": time.time(),
-            })
+            self.tracker_batch.append(
+                {
+                    "user_id": member.id,
+                    "unix": time.time(),
+                }
+            )
 
     async def last_observed(self, member: converters.DiscordUser):
         """Lookup last_observed data."""

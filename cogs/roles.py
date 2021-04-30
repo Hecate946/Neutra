@@ -1,9 +1,10 @@
+import discord
 import colorsys
 
-import discord
 from discord.ext import commands, menus
 
 from utilities import pagination, permissions
+
 
 EMBED_MAX_LEN = 2048  # constant for paginating embeds
 STATUSMAP1 = {

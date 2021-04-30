@@ -1,6 +1,6 @@
 apps:
   script          : ./starter.py
-  args            : Production
+  args            : production
   name            : Snowbot
   interpreter     : python3
   interpreter_args: -u

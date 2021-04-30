@@ -1,7 +1,6 @@
 import io
 import os
 import sys
-import json
 import time
 import codecs
 import psutil
@@ -17,7 +16,8 @@ import subprocess
 from discord import __version__ as dv
 from discord.ext import commands, menus
 from PIL import Image, ImageDraw, ImageFont
-from utilities import converters, pagination, speedtest, utils, decorators
+
+from utilities import converters, pagination, speedtest, utils
 
 
 def setup(bot):

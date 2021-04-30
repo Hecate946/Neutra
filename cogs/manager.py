@@ -1,24 +1,23 @@
-import asyncio
-import contextlib
-import copy
-import datetime
-import importlib
 import io
 import os
-import subprocess
 import sys
-import textwrap
+import copy
 import time
-import traceback
-import typing
-from collections import defaultdict
-
-import asyncpg
-import discord
 import psutil
+import typing
+import discord
+import asyncio
+import asyncpg
+import datetime
+import textwrap
+import importlib
+import traceback
+import contextlib
+import subprocess
+
+from collections import defaultdict
 from discord.ext import commands, menus
 
-from settings import constants
 from utilities import converters, formatting, pagination, utils
 
 
@@ -128,22 +127,22 @@ class Manager(commands.Cog):
             changes are made to the config.json file
         """
         config = utils.config().copy()
-        constants.token = config["token"]
-        constants.postgres = config["postgres"]
-        constants.github = config["github"]
-        constants.webhook = config["webhook"]
-        constants.imgur = config["imgur"]
-        constants.prefix = config["prefix"]
-        constants.owners = config["owners"]
-        constants.admins = config["admins"]
-        constants.embed = config["embed"]
-        constants.status = config["status"]
-        constants.activity = config["activity"]
-        constants.presence = config["presence"]
-        constants.version = config["version"]
-        constants.reboot = config["reboot"]
+        self.bot.constants.token = config["token"]
+        self.bot.constants.postgres = config["postgres"]
+        self.bot.constants.github = config["github"]
+        self.bot.constants.webhook = config["webhook"]
+        self.bot.constants.imgur = config["imgur"]
+        self.bot.constants.prefix = config["prefix"]
+        self.bot.constants.owners = config["owners"]
+        self.bot.constants.admins = config["admins"]
+        self.bot.constants.embed = config["embed"]
+        self.bot.constants.status = config["status"]
+        self.bot.constants.activity = config["activity"]
+        self.bot.constants.presence = config["presence"]
+        self.bot.constants.version = config["version"]
+        self.bot.constants.reboot = config["reboot"]
 
-        self.bot.owner_ids = constants.owners
+        self.bot.owner_ids = self.bot.constants.owners
 
         await ctx.send_or_reply(
             content=f"{self.bot.emote_dict['success']} **Refreshed Configuration.**",
