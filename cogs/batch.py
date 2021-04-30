@@ -31,15 +31,15 @@ class Batch(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        #self.command_batch = defaultdict(list)
+
+        self.avatar_batch = list()
         self.command_batch = list()
         self.message_batch = list()
         self.tracker_batch = list()
-        self.snipe_batch = defaultdict(list)
+        self.snipe_batch = list()
         self.member_batch = defaultdict(list)
         self.emoji_batch = defaultdict(Counter)
         #self.message_batch = defaultdict(list)
-        self.avatar_batch = defaultdict(list)
         self.usernames_batch = defaultdict(list)
         self.nicknames_batch = defaultdict(list)
         self.roles_batch = defaultdict(list)
@@ -135,18 +135,18 @@ class Batch(commands.Cog):
             query = """
                     UPDATE messages
                     SET deleted = True
-                    WHERE message_id = $1
-                    AND author_id = $2
-                    AND channel_id = $3;
+                    WHERE message_id = $1;
                     """
             async with self.batch_lock:
-                for data in self.snipe_batch.items():
-                    channel_id = data[1][0]["channel_id"]
-                    message_id = data[1][0]["message_id"]
-                    author_id = data[1][0]["author_id"]
+                print(self.snipe_batch)
+                await self.bot.cxn.executemany(query, (self.snipe_batch))
+                # for data in self.snipe_batch.items():
+                #     channel_id = data[1][0]["channel_id"]
+                #     message_id = data[1][0]["message_id"]
+                #     author_id = data[1][0]["author_id"]
 
-                    await self.bot.cxn.execute(query, message_id, author_id, channel_id)
-                self.snipe_batch.clear()
+                    #await self.bot.cxn.execute(query, message_id, author_id, channel_id)
+            self.snipe_batch.clear()
 
         # mass inserts nicknames, usernames, and roles
         if self.member_batch:
@@ -251,41 +251,45 @@ class Batch(commands.Cog):
 
         # Track user last seen times
         if self.tracker_batch:
+            # query = """
+            #         INSERT INTO tracker (
+            #             user_id, unix
+            #         )
+            #         SELECT x.user_id, x.unix
+            #         FROM jsonb_to_recordset($1::jsonb)
+            #         AS x(
+            #             user_id BIGINT, unix REAL
+            #         ) ON CONFLICT (user_id)
+            #         DO UPDATE SET unix = excluded.unix
+            #         WHERE tracker.user_id = excluded.user_id;
+            #         """
             query = """
-                    INSERT INTO tracker
+                    INSERT INTO TRACKER
                     VALUES ($1, $2)
                     ON CONFLICT (user_id)
                     DO UPDATE SET unix = $2
-                    WHERE tracker.user_id = $1;
-                    """
-            query = """
-                    INSERT INTO tracker (
-                        user_id, unix
-                    )
-                    SELECT x.user_id, x.unix
-                    FROM jsonb_to_recordset($1::jsonb)
-                    AS x(
-                        user_id BIGINT, unix REAL
-                    )
+                    WHERE tracker.user_id = $1
                     """
             async with self.batch_lock:
-                data = json.dumps(self.message_batch)
-                await self.bot.cxn.execute(query, str(data))
+                await self.bot.cxn.executemany(query, ((x['user_id'], x['unix']) for x in self.tracker_batch))
             self.tracker_batch.clear()
 
         # query = f"""UPDATE useravatars SET avatars = CONCAT_WS(',', avatars, cast($1 as text)) WHERE user_id = $2"""
         query = """
-                INSERT INTO useravatars
-                VALUES ($1, $2, $3);
+                INSERT INTO useravatars (
+                    user_id, avatar_id, unix
+                )
+                SELECT x.user_id, x.avatar_id, x.unix
+                FROM jsonb_to_recordset($1::jsonb)
+                AS x(
+                    user_id BIGINT, avatar_id BIGINT, unix REAL
+                )
                 """
         async with self.batch_lock:
-            for data in self.avatar_batch.items():
-                user_id = data[1]["user_id"]
-                avatar = data[1]["avatar"]
-
-                await self.bot.cxn.execute(query, user_id, avatar, time.time())
-            self.bot.avchanges += len(self.avatar_batch.items())
-            self.avatar_batch.clear()
+            data = json.dumps(self.avatar_batch)
+            await self.bot.cxn.execute(query, str(data))
+            self.bot.avchanges += len(self.avatar_batch)
+        self.avatar_batch.clear()
 
         if self.usernames_batch:
             query = """
@@ -372,13 +376,7 @@ class Batch(commands.Cog):
             return
 
         async with self.batch_lock:
-            self.snipe_batch[message.id].append(
-                {
-                    "message_id": message.id,
-                    "author_id": message.author.id,
-                    "channel_id": message.channel.id,
-                }
-            )
+            self.snipe_batch.append(message.id)
 
     # Helper functions to detect changes
     @staticmethod
@@ -476,10 +474,11 @@ class Batch(commands.Cog):
                 )
                 attachment_id = upload.attachments[0].id
                 async with self.batch_lock:
-                    self.avatar_batch[after.id] = {
+                    self.avatar_batch.append({
                         "user_id": after.id,
-                        "avatar": attachment_id,
-                    }
+                        "avatar_id": attachment_id,
+                        "unix": time.time(),
+                    })
             except Exception as e:
                 await self.bot.bot_channel.send(f"Error in avatar_batcher: {e}")
                 await self.bot.bot_channel.send(

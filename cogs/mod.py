@@ -595,8 +595,6 @@ class Mod(commands.Cog):
         query = """
                 INSERT INTO tasks
                 VALUES ($1, $2, $3, $4)
-                ON CONFLICT (user_id, server_id)
-                DO NOTHING;
                 """
 
         banned = []

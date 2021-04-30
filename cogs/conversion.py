@@ -1,4 +1,3 @@
-APIKEY = "e496bdab84f5bcc82ce7"
 import base64
 import binascii
 import codecs
