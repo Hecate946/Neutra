@@ -235,9 +235,9 @@ class Stats(commands.Cog):
             content=f"Admins in **{ctx.guild.name}:**\n\n{message}",
         )
 
-    @commands.command(brief="Emoji usage tracking.")
+    @commands.command(brief="Emoji usage tracking.", aliases=['estats'])
     @commands.guild_only()
-    async def emojistats(self, ctx):
+    async def emojistats(self, ctx, user: discord.Member = None):
         """
         Usage -emojistats
         Output: Get detailed emoji usage stats.
@@ -246,36 +246,75 @@ class Stats(commands.Cog):
             msg = await ctx.send_or_reply(
                 content=f"{self.bot.emote_dict['loading']} **Collecting Emoji Statistics**",
             )
-            query = """
-                    SELECT (emoji_id, total)
-                    FROM emojistats
-                    WHERE server_id = $1
-                    ORDER BY total DESC;
-                    """
+            if user is None:
+                query = """
+                        SELECT (emoji_id, total)
+                        FROM emojistats
+                        WHERE server_id = $1
+                        ORDER BY total DESC;
+                        """
 
-            emoji_list = []
-            result = await self.bot.cxn.fetch(query, ctx.guild.id)
-            for x in result:
+                emoji_list = []
+                result = await self.bot.cxn.fetch(query, ctx.guild.id)
+                for x in result:
+                    try:
+                        emoji = self.bot.get_emoji(int(x[0][0]))
+                        if emoji is None:
+                            continue
+                        emoji_list.append((emoji, x[0][1]))
+
+                    except Exception as e:
+                        print(e)
+                        continue
+
+                p = pagination.SimplePages(
+                    entries=["{}: Uses: {}".format(e[0], e[1]) for e in emoji_list],
+                    per_page=15,
+                )
+                p.embed.title = f"Emoji usage stats in **{ctx.guild.name}**"
+                await msg.delete()
                 try:
-                    emoji = self.bot.get_emoji(int(x[0][0]))
+                    await p.start(ctx)
+                except menus.MenuError as e:
+                    await ctx.send_or_reply(e)
+            else:
+                query = """
+                        SELECT (content)
+                        FROM messages
+                        WHERE content ~ '<a?:.+?:([0-9]{15,21})>'
+                        AND author_id = $1
+                        AND server_id = $2
+                        """
+
+                fat_msg = ""
+                emoji_list = []
+                result = await self.bot.cxn.fetch(query, user.id, ctx.guild.id)
+                if not result:
+                    return await ctx.fail(f"`{user}` has no recorded emoji usage stats.")
+
+                matches = re.compile(r"<a?:.+?:[0-9]{15,21}>").findall(str(result))
+                total_uses = len(matches)
+                for x in matches:
+                    emoji = self.bot.get_emoji(int(x.split(":")[2].strip(">")))
                     if emoji is None:
                         continue
-                    emoji_list.append((emoji, x[0][1]))
+                    emoji_list.append(emoji)
 
-                except Exception as e:
-                    print(e)
-                    continue
+                emojis = Counter(emoji_list).most_common()
 
-            p = pagination.SimplePages(
-                entries=["{}: Uses: {}".format(e[0], e[1]) for e in emoji_list],
-                per_page=15,
-            )
-            p.embed.title = f"Emoji usage stats in **{ctx.guild.name}**"
-            await msg.delete()
-            try:
-                await p.start(ctx)
-            except menus.MenuError as e:
-                await ctx.send_or_reply(e)
+                p = pagination.SimplePages(
+                    entries=[
+                        "{}: Uses: {}".format(e[0], e[1])
+                        for e in emojis
+                    ],
+                    per_page=15,
+                )
+                p.embed.title = f"Emoji usage stats for {user} (Total: {total_uses})"
+                await msg.delete()
+                try:
+                    await p.start(ctx)
+                except menus.MenuError as e:
+                    await ctx.send_or_reply(e)
 
     @commands.command(brief="Get usage stats on an emoji.")
     async def emoji(self, ctx, emoji: converters.SearchEmojiConverter = None):
