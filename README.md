@@ -7,12 +7,13 @@ Hello! I'm Snowbot, and I specialize in tracking and moderation.
 I was designed to collect all sorts of data on servers, users,
 messages, emojis, online time, and more! I also come with a fast
 and clean moderation system that offers every opportunity for effective
-server management. Apart from moderation and tracking, I feature 181
-commands across 11 categories that provide awesome utilities!
+server management. Apart from moderation and tracking, I feature 204
+commands across 13 categories that provide awesome utilities!
 Some examples include managing user timezones, role management, and logging.
 ## Categories
 ##### [Admin](#Admin-1)
 ##### [Automod](#Automod-1)
+##### [Conversion](#Conversion-1)
 ##### [Files](#Files-1)
 ##### [Info](#Info-1)
 ##### [Logging](#Logging-1)
@@ -21,11 +22,12 @@ Some examples include managing user timezones, role management, and logging.
 ##### [Stats](#Stats-1)
 ##### [Time](#Time-1)
 ##### [Tracking](#Tracking-1)
+##### [Specific](#Specific-1)
 ##### [Utility](#Utility-1)
 
 
 ### Admin
-#### Module for server administration. (17 Commands)
+#### Module for server administration. (18 Commands)
 
 ```yaml
 addprefix: Add a custom server prefix.
@@ -51,6 +53,8 @@ leave: Have the bot leave the server.
 listdisabled: List disabled commands.
 
 massascify: Mass nickname users with odd names.
+
+massban: Massban users matching a search.
 
 massdehoist: Dehoist all server users.
 
@@ -84,6 +88,41 @@ serverwarns: Display the server warnlist.
 warn: Warn users with an optional reason.
 
 warncount: Count the warnings a user has.
+```
+
+### Conversion
+#### Module for unit conversions. (15 Commands)
+
+```yaml
+binint: Convert binary to an integer.
+
+binstr: Convert binary to a string
+
+cm: Convert centimeters to feet and inches.
+
+dechex: Convert decimal into hex.
+
+decode: Decode from b32, b64, b85, rot13, hex.
+
+encode: Encode to: b32, b64, b85, rot13, hex.
+
+ft: Convert feet.inches to centimeters
+
+hexdec: Convert hex to decimal.
+
+intbin: Convert an integer to binary.
+
+kg: Convert kilograms to pounds.
+
+lb: Convert pounds to kilograms
+
+morse: Converts ascii to morse code.
+
+morsetable: Show the morse lookup table
+
+strbin: Convert a string to binary.
+
+unmorse: Converts morse code to ascii.
 ```
 
 ### Files
@@ -120,7 +159,7 @@ readme: DMs you my readme file.
 ```
 
 ### Info
-#### Module for bot information. (16 Commands)
+#### Module for bot information. (19 Commands)
 
 ```yaml
 about: Display information about the bot.
@@ -133,6 +172,8 @@ changelog: Show my changelog.
 
 hostinfo: Show the bot's host environment.
 
+is_ratelimited: Check if the bot is rate limited
+
 lines: Show sourcecode statistics.
 
 neofetch: Run the neofetch command.
@@ -140,6 +181,10 @@ neofetch: Run the neofetch command.
 overview: Show some info on the bot's purpose.
 
 ping: Test the bot's response latency.
+
+privacy: None
+
+request: Send a request to the developer.
 
 sharedservers: Servers you and the bot share.
 
@@ -170,7 +215,7 @@ unlogchannel: Remove the logging channel.
 ```
 
 ### Mod
-#### Keep your server under control. (19 Commands)
+#### Keep your server under control. (20 Commands)
 
 ```yaml
 ban: Ban users from the server.
@@ -181,7 +226,7 @@ block: Restrict users from sending messages.
 
 cleanup: Clean up command usage.
 
-hackban: Hackban multiple users by ID.
+hackban: Hackban multiple users.
 
 kick: Kick users from the server.
 
@@ -194,6 +239,8 @@ purge: Remove any type of content.
 slowmode: Set the slowmode for a channel
 
 softban: Softban users from the server.
+
+tempban: Temporarily ban users.
 
 unban: Unban a previously banned user.
 
@@ -294,10 +341,12 @@ usertimes: Show times for all users.
 ```
 
 ### Tracking
-#### Module for all user stats (15 Commands)
+#### Module for all user stats (17 Commands)
 
 ```yaml
 activity: Show the most active server users.
+
+avatars: Show a user's avatars.
 
 commands: Count the commands run.
 
@@ -319,6 +368,8 @@ spammers: Show all users who spam.
 
 status: Show a user's status
 
+statusinfo: Status info and online time.
+
 usage: Show the top bot users.
 
 user: Show information on a user.
@@ -328,8 +379,15 @@ word: Usage for a specific word.
 words: Most used words from a user.
 ```
 
+### Specific
+####  (0 Commands)
+
+```yaml
+
+```
+
 ### Utility
-#### Module for general utilities. (17 Commands)
+#### Module for general utilities. (19 Commands)
 
 ```yaml
 ascify: Convert special characters to ascii.
@@ -342,9 +400,13 @@ charinfo: Show information on a character.
 
 color: Show a given color and its values.
 
+colors: Send an image with some hex codes.
+
 defaultavatar: Show a user's default avatar.
 
 dehoist: Dehoist a specified user.
+
+embed: Create an embed interactively.
 
 find: Find any user using a search.
 

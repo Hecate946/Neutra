@@ -271,7 +271,7 @@ class Stats(commands.Cog):
                     entries=["{}: Uses: {}".format(e[0], e[1]) for e in emoji_list],
                     per_page=15,
                 )
-                p.embed.title = f"Emoji usage stats in **{ctx.guild.name}**"
+                p.embed.title = f"Emoji usage in **{ctx.guild.name}**"
                 await msg.delete()
                 try:
                     await p.start(ctx)
@@ -309,7 +309,7 @@ class Stats(commands.Cog):
                     ],
                     per_page=15,
                 )
-                p.embed.title = f"Emoji usage stats for {user} (Total: {total_uses})"
+                p.embed.title = f"{user.display_name}'s Emoji Usage\n`(Total: {total_uses:,})`"
                 await msg.delete()
                 try:
                     await p.start(ctx)
