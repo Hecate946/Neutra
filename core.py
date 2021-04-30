@@ -573,7 +573,7 @@ class Snowbot(commands.AutoShardedBot):
 
         elif isinstance(error, commands.DisabledCommand):
             # This could get annoying so lets just comment out for now
-            ctx.message.add_reaction(self.emote_dict["failed"])
+            await ctx.message.add_reaction(self.emote_dict["failed"])
             await ctx.send_or_reply(
                 content=f"{self.emote_dict['failed']} This command is currently unavailable. Please try again later.",
             )
