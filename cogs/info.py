@@ -54,6 +54,14 @@ class Info(commands.Cog):
         Output: Version info and bot stats
         """
         msg = await ctx.send_or_reply(content="**Collecting Info...**")
+        version_query = """
+                        SELECT version
+                        FROM config
+                        WHERE client_id = $1;
+                        """
+        bot_version = await self.bot.cxn.fetchval(
+            version_query, self.bot.user.id
+        )
         total_members = sum(1 for x in self.bot.get_all_members())
         voice_channels = []
         text_channels = []
@@ -116,7 +124,7 @@ class Info(commands.Cog):
         embed.add_field(name="RAM", value=f"{ramUsage:.2f} MB", inline=True)
 
         await msg.edit(
-            content=f"About **{ctx.bot.user}** | **{self.bot.constants.version}**",
+            content=f"About **{ctx.bot.user}** | **{round(bot_version, 1)}**",
             embed=embed,
         )
 
