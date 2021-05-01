@@ -1,4 +1,5 @@
 import io
+import json
 import os
 import sys
 import copy
@@ -309,14 +310,20 @@ class Manager(commands.Cog):
         msg = await ctx.send_or_reply(
             content=f"{self.bot.emote_dict['loading']} {ctx.invoked_with.capitalize()}ing...",
         )
-        utils.modify_config(
-            key="reboot",
-            value={
-                "invoker": ctx.invoked_with.capitalize(),
-                "message": msg.id,
-                "channel": msg.channel.id,
-            },
-        )
+
+        client_id = self.bot.user.id
+        invoker = ctx.invoked_with.capitalize()
+        message = msg.id
+        channel = msg.channel.id
+
+        query = """
+                UPDATE config SET
+                reboot_invoker = $2,
+                reboot_message_id = $3,
+                reboot_channel_id = $4
+                WHERE client_id = $1
+                """
+        await self.bot.cxn.execute(query, client_id, invoker, message, channel)
         self.bot.loop.stop()
         self.bot.loop.close()
         await self.bot.close()
@@ -1196,6 +1203,14 @@ class Manager(commands.Cog):
         """Updates from git."""
         if subcommand is None:
             return await ctx.send_help(str(ctx.command))
+
+        # I never remember to keep track of bot versions...
+        query = """
+                UPDATE config
+                SET version = version + 0.1
+                WHERE client_id = $1;
+                """
+        await self.bot.cxn.execute(query, self.bot.user.id)
 
         if subcommand == "give":
             subcommand = "add . && git commit -m 'update' && git push"

@@ -155,7 +155,7 @@ class Info(commands.Cog):
                 content=f"Usage: `{ctx.prefix}bugreport <bug>`",
             )
 
-        owner = discord.utils.get(self.bot.get_all_members(), id=708584008065351681)
+        owner = discord.utils.get(self.bot.get_all_members(), id=self.bot.hecate)
         author = ctx.message.author
         if ctx.guild:
             server = ctx.message.guild
@@ -202,7 +202,7 @@ class Info(commands.Cog):
             return await ctx.send_or_reply(
                 content=f"Usage `{ctx.prefix}suggest <suggestion>`",
             )
-        owner = discord.utils.get(self.bot.get_all_members(), id=708584008065351681)
+        owner = discord.utils.get(self.bot.get_all_members(), id=self.bot.hecate)
         author = ctx.author
         if ctx.guild:
             server = ctx.guild
@@ -534,7 +534,7 @@ class Info(commands.Cog):
         Output: An invite link to invite me to your server
         """
         await ctx.send_or_reply(
-            f"**{ctx.author.name}**, use this URL to invite me\n<{self.bot.constants.oauth}>"
+            f"**{ctx.author.name}**, use this URL to invite me\n<{self.bot.oauth}>"
         )
 
     @commands.command(

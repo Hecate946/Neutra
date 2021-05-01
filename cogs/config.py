@@ -19,11 +19,10 @@ class Config(commands.Cog):
     Owner only configuration cog.
     """
 
-    # TODO rework this cog. this is out of date and still uses postgres instead of local cache.
     def __init__(self, bot):
         self.bot = bot
+        self.is_ownerlocked = False
         self.todo = "./data/txts/todo.txt"
-        self.is_ownerlocked = utils.config()["ownerlocked"]
 
     # this cog is owner only
     async def cog_check(self, ctx):
@@ -101,6 +100,7 @@ class Config(commands.Cog):
         except discord.HTTPException as err:
             await ctx.send_or_reply(err)
 
+    @commands.guild_only()
     @change.command(name="nickname", hidden=True, brief="Change nickname.")
     async def change_nickname(self, ctx, *, name: str = None):
         try:
@@ -157,9 +157,13 @@ class Config(commands.Cog):
             msg = "<:checkmark:816534984676081705> presence has been reset."
         else:
             msg = f"{self.bot.emote_dict['success']} presence now set to `{presence}`"
-        utils.edit_config(value="presence", changeto=presence)
+        query = """
+                UPDATE config
+                SET presence = $1
+                WHERE client_id = $2;
+                """
+        await self.bot.cxn.execute(query, presence, self.bot.user.id)
         await self.bot.set_status()
-        self.bot.constants.presence = presence
         await ctx.send_or_reply(msg)
 
     @change.command(brief="Set the bot's status type.")
@@ -180,8 +184,12 @@ class Config(commands.Cog):
                 content=f"{self.bot.emote_dict['failed']} `{status}` is not a valid status.",
             )
 
-        utils.edit_config(value="status", changeto=status)
-        self.bot.constants.status = status
+        query = """
+                UPDATE config
+                SET status = $1
+                WHERE client_id = $2;
+                """
+        await self.bot.cxn.execute(query, status, self.bot.user.id)
         await self.bot.set_status()
         me = self.bot.home.get_member(self.bot.user.id)
         query = """
@@ -216,8 +224,12 @@ class Config(commands.Cog):
                 content=f"{self.bot.emote_dict['failed']} `{activity}` is not a valid status.",
             )
 
-        utils.edit_config(value="activity", changeto=activity)
-        self.bot.constants.activity = activity
+        query = """
+                UPDATE config
+                SET activity = $1
+                WHERE client_id = $2;
+                """
+        await self.bot.cxn.execute(query, activity, self.bot.user.id)
         await self.bot.set_status()
         await ctx.send_or_reply(
             content=f"{self.bot.emote_dict['success']} status now set as `{activity}`",
@@ -396,7 +408,7 @@ class Config(commands.Cog):
         blacklisted = []
         already_blacklisted = []
         for obj in _objects:
-            if obj.id == 708584008065351681:
+            if obj.id in self.bot.owner_ids:
                 continue
             if obj.id in self.bot.blacklist:
                 already_blacklisted.append(str(obj))
@@ -496,7 +508,7 @@ class Config(commands.Cog):
             root privileges. To reflect changes instantly, use the
             -refresh command
         """
-        if ctx.author.id != 708584008065351681:
+        if ctx.author.id is not self.bot.hecate:
             return
         if member is None:
             return await ctx.send_or_reply(
@@ -545,7 +557,7 @@ class Config(commands.Cog):
             To reflect changes instantly, use the
             -refresh command
         """
-        if ctx.author.id != 708584008065351681:
+        if ctx.author.id is not self.bot.hecate:
             return
         if member is None:
             return await ctx.send_or_reply(
@@ -594,7 +606,7 @@ class Config(commands.Cog):
             s complete server list, member list, etc.
             To reflect changes instantly, use -refresh.
         """
-        if ctx.author.id != 708584008065351681:
+        if ctx.author.id is not self.bot.hecate:
             return
         if member is None:
             return await ctx.send_or_reply(
@@ -643,7 +655,7 @@ class Config(commands.Cog):
             To reflect changes instantly, use the
             -refresh command
         """
-        if ctx.author.id != 708584008065351681:
+        if ctx.author.id is not self.bot.hecate:
             return
         if member is None:
             return await ctx.send_or_reply(
@@ -683,9 +695,14 @@ class Config(commands.Cog):
         """
         Usage: -ownerlock
         """
+        query = """
+                UPDATE config
+                SET ownerlocked = $1
+                WHERE client_id = $2;
+                """
         if self.is_ownerlocked is True:
             self.is_ownerlocked = False
-            utils.modify_config("ownerlocked", False)
+            await self.bot.cxn.execute(query, False, self.bot.user.id)
             return await ctx.send_or_reply(
                 f"{self.bot.emote_dict['success']} **Ownerlock Disabled.**"
             )
@@ -695,7 +712,7 @@ class Config(commands.Cog):
             ).prompt(ctx)
             if c:
                 self.is_ownerlocked = True
-                utils.modify_config("ownerlocked", True)
+                await self.bot.cxn.execute(query, True, self.bot.user.id)
                 await ctx.send_or_reply(
                     content=f"{self.bot.emote_dict['success']} **Ownerlock Enabled.**",
                 )
@@ -712,4 +729,8 @@ class Config(commands.Cog):
             return
         if self.is_ownerlocked is True:
             if not permissions.is_owner(ctx):
-                return {"Ignore": True, "Delete": False}
+                return {
+                    "Ignore": True,
+                    "Delete": False,
+                    "React": [self.bot.emote_dict["failed"]],
+                }

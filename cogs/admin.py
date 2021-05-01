@@ -3,7 +3,6 @@ import re
 import copy
 import shlex
 import discord
-import argparse
 
 from datetime import datetime, timedelta
 from discord.ext import commands

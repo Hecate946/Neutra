@@ -15,15 +15,29 @@ postgres = asyncio.get_event_loop().run_until_complete(
 )
 settings = dict()
 bot_settings = dict()
+config = dict()
 
 
-async def initialize(guilds, members):
+async def initialize(bot, members):
     await scriptexec()
-    await update_db(guilds, members)
+    await set_config_id(bot)
+    await update_db(bot.guilds, members)
     await load_settings()
 
 
 SEPARATOR = "=" * 33
+
+
+async def set_config_id(bot):
+    # Initialize the config table
+    # with the bot's client ID.
+    query = """
+            INSERT INTO config
+            VALUES ($1)
+            ON CONFLICT (client_id)
+            DO NOTHING;
+            """
+    await postgres.execute(query, bot.user.id)
 
 
 async def scriptexec():

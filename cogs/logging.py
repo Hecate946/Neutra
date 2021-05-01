@@ -74,7 +74,7 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_channel_create(self, channel):
-        if not self.bot.bot_ready:
+        if not self.bot.ready:
             return
         if not await self.check(snowflake=channel.guild.id, event="channel_updates"):
             return
@@ -98,7 +98,7 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel):
-        if not self.bot.bot_ready:
+        if not self.bot.ready:
             return
 
         if not await self.check(snowflake=channel.guild.id, event="channel_updates"):
@@ -123,7 +123,7 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_channel_update(self, before, after):
-        if not self.bot.bot_ready:
+        if not self.bot.ready:
             return
 
         if not await self.check(snowflake=after.guild.id, event="channel_updates"):
@@ -272,7 +272,7 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        if not self.bot.bot_ready:
+        if not self.bot.ready:
             return
 
         if not await self.check(snowflake=member.guild.id, event="joins"):
@@ -293,7 +293,7 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
-        if not self.bot.bot_ready:
+        if not self.bot.ready:
             return
 
         if not await self.check(snowflake=member.guild.id, event="leaves"):
@@ -314,7 +314,7 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
-        if not self.bot.bot_ready:
+        if not self.bot.ready:
             return
 
         if after.bot:
@@ -363,7 +363,7 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_user_update(self, before, after):
-        if not self.bot.bot_ready:
+        if not self.bot.ready:
             return
 
         if after.bot:
@@ -428,7 +428,7 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
-        if not self.bot.bot_ready:
+        if not self.bot.ready:
             return
 
         if member.bot:
@@ -538,7 +538,7 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
-        if not self.bot.bot_ready:
+        if not self.bot.ready:
             return
 
         if not after.guild:
@@ -594,7 +594,7 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
-        if not self.bot.bot_ready:
+        if not self.bot.ready:
             return
 
         if not message.guild:
@@ -644,7 +644,7 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_bulk_message_delete(self, messages):
-        if not self.bot.bot_ready:
+        if not self.bot.ready:
             return
 
         if not messages[0].guild:

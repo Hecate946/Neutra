@@ -31,11 +31,12 @@ class Batch(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-
+        self.avatar_webhook = None
         self.avatar_batch = list()
         self.command_batch = list()
         self.message_batch = list()
-        self.tracker_batch = list()
+        self.tracker_batch = dict()
+        # self.tracker_batch = defaultdict(list)
         self.snipe_batch = list()
         self.member_batch = defaultdict(list)
         self.emoji_batch = defaultdict(Counter)
@@ -55,16 +56,6 @@ class Batch(commands.Cog):
 
     def cog_unload(self):
         self.bulk_inserter.stop()
-
-    @discord.utils.cached_property
-    def avatar_saver(self):
-        wh_id, wh_token, wh_channel = self.bot.constants.avsaver
-        webhook = discord.Webhook.partial(
-            id=wh_id,
-            token=wh_token,
-            adapter=discord.AsyncWebhookAdapter(self.bot.session),
-        )
-        return (webhook, int(wh_channel))
 
     @tasks.loop(seconds=2.0)
     async def bulk_inserter(self):
@@ -138,14 +129,7 @@ class Batch(commands.Cog):
                     WHERE message_id = $1;
                     """
             async with self.batch_lock:
-                print(self.snipe_batch)
-                await self.bot.cxn.executemany(query, (self.snipe_batch))
-                # for data in self.snipe_batch.items():
-                #     channel_id = data[1][0]["channel_id"]
-                #     message_id = data[1][0]["message_id"]
-                #     author_id = data[1][0]["author_id"]
-
-                # await self.bot.cxn.execute(query, message_id, author_id, channel_id)
+                await self.bot.cxn.executemany(query, ((x,) for x in self.snipe_batch))
             self.snipe_batch.clear()
 
         # mass inserts nicknames, usernames, and roles
@@ -168,22 +152,35 @@ class Batch(commands.Cog):
                     ON CONFLICT (user_id, server_id) DO NOTHING;
                     """
             async with self.batch_lock:
-                for data in self.member_batch.items():
-                    user_id = data[1][0]["user_id"]
-                    server_id = data[1][0]["server_id"]
-                    username = data[1][0]["username"]
-                    nickname = data[1][0]["nickname"]
-                    roles = data[1][0]["roles"]
+                await self.bot.cxn.executemany(
+                    query,
+                    (
+                        (
+                            data[1][0]["user_id"],
+                            data[1][0]["server_id"],
+                            data[1][0]["username"],
+                            data[1][0]["nickname"],
+                            data[1][0]["roles"],
+                        )
+                        for data in self.member_batch.items()
+                    ),
+                )
+            self.member_batch.clear()
+            # for data in self.member_batch.items():
+            #     user_id = data[1][0]["user_id"]
+            #     server_id = data[1][0]["server_id"]
+            #     username = data[1][0]["username"]
+            #     nickname = data[1][0]["nickname"]
+            #     roles = data[1][0]["roles"]
 
-                    await self.bot.cxn.execute(
-                        query,
-                        user_id,
-                        username,
-                        server_id,
-                        nickname,
-                        roles,
-                    )
-                self.member_batch.clear()
+            #     await self.bot.cxn.execute(
+            #         query,
+            #         user_id,
+            #         username,
+            #         server_id,
+            #         nickname,
+            #         roles,
+            #     )
 
         # Emoji usage tracking
         if self.emoji_batch:
@@ -230,7 +227,7 @@ class Batch(commands.Cog):
                     """
             async with self.batch_lock:
                 data = json.dumps(self.message_batch)
-                await self.bot.cxn.execute(query, str(data))
+                await self.bot.cxn.execute(query, data)
                 self.bot.messages += len(self.message_batch)
             self.message_batch.clear()
 
@@ -247,51 +244,44 @@ class Batch(commands.Cog):
                     user_id = entry[0]
                     server_id = entry[1]
                     await self.bot.cxn.execute(query, user_id, server_id)
-                self.spammer_batch.clear()
+            self.spammer_batch.clear()
 
         # Track user last seen times
         if self.tracker_batch:
-            # query = """
-            #         INSERT INTO tracker (
-            #             user_id, unix
-            #         )
-            #         SELECT x.user_id, x.unix
-            #         FROM jsonb_to_recordset($1::jsonb)
-            #         AS x(
-            #             user_id BIGINT, unix REAL
-            #         ) ON CONFLICT (user_id)
-            #         DO UPDATE SET unix = excluded.unix
-            #         WHERE tracker.user_id = excluded.user_id;
-            #         """
             query = """
-                    INSERT INTO TRACKER
+                    INSERT INTO tracker (
+                        user_id,
+                        unix
+                    )
                     VALUES ($1, $2)
                     ON CONFLICT (user_id)
                     DO UPDATE SET unix = $2
-                    WHERE tracker.user_id = $1
+                    WHERE tracker.user_id = $1;
                     """
             async with self.batch_lock:
                 await self.bot.cxn.executemany(
-                    query, ((x["user_id"], x["unix"]) for x in self.tracker_batch)
+                    query,
+                    ((entry[0], entry[1]) for entry in self.tracker_batch.items()),
                 )
             self.tracker_batch.clear()
 
-        # query = f"""UPDATE useravatars SET avatars = CONCAT_WS(',', avatars, cast($1 as text)) WHERE user_id = $2"""
-        query = """
-                INSERT INTO useravatars (
-                    user_id, avatar_id, unix
-                )
-                SELECT x.user_id, x.avatar_id, x.unix
-                FROM jsonb_to_recordset($1::jsonb)
-                AS x(
-                    user_id BIGINT, avatar_id BIGINT, unix REAL
-                )
-                """
-        async with self.batch_lock:
-            data = json.dumps(self.avatar_batch)
-            await self.bot.cxn.execute(query, str(data))
-            self.bot.avchanges += len(self.avatar_batch)
-        self.avatar_batch.clear()
+        if self.avatar_batch:
+            # query = f"""UPDATE useravatars SET avatars = CONCAT_WS(',', avatars, cast($1 as text)) WHERE user_id = $2"""
+            query = """
+                    INSERT INTO useravatars (
+                        user_id, avatar_id, unix
+                    )
+                    SELECT x.user_id, x.avatar_id, x.unix
+                    FROM jsonb_to_recordset($1::jsonb)
+                    AS x(
+                        user_id BIGINT, avatar_id BIGINT, unix REAL
+                    )
+                    """
+            async with self.batch_lock:
+                data = json.dumps(self.avatar_batch)
+                await self.bot.cxn.execute(query, data)
+                self.bot.avchanges += len(self.avatar_batch)
+            self.avatar_batch.clear()
 
         if self.usernames_batch:
             query = """
@@ -346,6 +336,75 @@ class Batch(commands.Cog):
                 self.bot.rolechanges += len(self.roles_batch.items())
                 self.roles_batch.clear()
 
+    @bulk_inserter.before_loop
+    async def get_webhook(self):
+        """
+        This loads our existing
+        avatar saving webhook
+        from the db or creates
+        it if it doesn't exist.
+        Cancels avatar saving
+        if no avchan is found
+        in ./config.json
+        """
+        query = """
+                SELECT (
+                    avatar_saver_webhook_id,
+                    avatar_saver_webhook_token
+                ) FROM config
+                WHERE client_id = $1;
+                """
+        webhook_data = await self.bot.cxn.fetchval(query, self.bot.user.id)
+        if not webhook_data:
+            boolean = False
+        if any([x is None for x in webhook_data]):
+            boolean = False
+        else:
+            boolean = True
+        if boolean:
+            wh_id, wh_token = webhook_data
+            try:
+                webhook = discord.Webhook.partial(
+                    id=wh_id,
+                    token=wh_token,
+                    adapter=discord.AsyncWebhookAdapter(self.bot.session),
+                )
+                self.avatar_webhook = webhook
+            except Exception:
+                webhook = await self.do_webhook()
+                self.avatar_webhook = webhook
+        else:
+            webhook = await self.do_webhook()
+            self.avatar_webhook = webhook
+
+    async def do_webhook(self):
+        if not self.bot.constants.avchan:
+            return
+        avchan = self.bot.get_channel(self.bot.constants.avchan)
+        if not avchan or not avchan.guild:
+            print(f"Invalid avatar saver channel.")
+            return
+        bytes_avatar = await self.bot.get(
+            str(self.bot.user.avatar_url), res_method="read"
+        )
+        try:
+            webhook = await avchan.create_webhook(
+                name=self.bot.user.name + " Avatar Saver",
+                avatar=bytes_avatar,
+                reason="Webhook created to store avatars.",
+            )
+        except Exception as e:
+            print(e)
+            return
+        query = """
+                UPDATE config SET
+                avatar_saver_webhook_id = $1,
+                avatar_saver_webhook_token = $2
+                WHERE client_id = $3;
+                """
+        await self.bot.cxn.execute(query, webhook.id, webhook.token, self.bot.user.id)
+        return webhook
+
     @commands.Cog.listener()
     @decorators.wait_until_ready()
     async def on_command(self, ctx):
@@ -372,7 +431,7 @@ class Batch(commands.Cog):
     @commands.Cog.listener()
     @decorators.wait_until_ready()
     async def on_message_delete(self, message):
-        if message.author.bot or not message.guild:
+        if not message.guild:
             return
         if message.author.bot:
             return
@@ -429,12 +488,7 @@ class Batch(commands.Cog):
 
         if await self.status_changed(before, after):
             async with self.batch_lock:
-                self.tracker_batch.append(
-                    {
-                        "user_id": after.id,
-                        "unix": time.time(),
-                    }
-                )
+                self.tracker_batch[before.id] = time.time()
 
         if await self.nickname_changed(before, after):
             async with self.batch_lock:
@@ -462,36 +516,31 @@ class Batch(commands.Cog):
         if after.bot:
             return
         async with self.batch_lock:
-            self.tracker_batch.append(
-                {
-                    "user_id": after.id,
-                    "unix": time.time(),
-                }
-            )
-
-        if await self.avatar_changed(before, after):
-            try:
-                avatar_url = str(after.avatar_url_as(format="png", size=1024))
-                resp = await self.bot.get((avatar_url), res_method="read")
-                data = io.BytesIO(resp)
-                dfile = discord.File(data, filename=f"{after.id}.png")
-                upload = await self.avatar_saver[0].send(
-                    content=f"**UID: {after.id}**", file=dfile, wait=True
-                )
-                attachment_id = upload.attachments[0].id
-                async with self.batch_lock:
-                    self.avatar_batch.append(
-                        {
-                            "user_id": after.id,
-                            "avatar_id": attachment_id,
-                            "unix": time.time(),
-                        }
+            self.tracker_batch[before.id] = time.time()
+        if self.avatar_webhook:
+            if await self.avatar_changed(before, after):
+                try:
+                    avatar_url = str(after.avatar_url_as(format="png", size=1024))
+                    resp = await self.bot.get((avatar_url), res_method="read")
+                    data = io.BytesIO(resp)
+                    dfile = discord.File(data, filename=f"{after.id}.png")
+                    upload = await self.avatar_webhook.send(
+                        content=f"**UID: {after.id}**", file=dfile, wait=True
                     )
-            except Exception as e:
-                await self.bot.bot_channel.send(f"Error in avatar_batcher: {e}")
-                await self.bot.bot_channel.send(
-                    "```prolog\n" + str(traceback.format_exc()) + "```"
-                )
+                    attachment_id = upload.attachments[0].id
+                    async with self.batch_lock:
+                        self.avatar_batch.append(
+                            {
+                                "user_id": after.id,
+                                "avatar_id": attachment_id,
+                                "unix": time.time(),
+                            }
+                        )
+                except Exception as e:
+                    await self.bot.bot_channel.send(f"Error in avatar_batcher: {e}")
+                    await self.bot.bot_channel.send(
+                        "```prolog\n" + str(traceback.format_exc()) + "```"
+                    )
 
         if await self.username_changed(before, after):
             async with self.batch_lock:
@@ -520,12 +569,7 @@ class Batch(commands.Cog):
                     "server_id": message.guild.id,
                 }
             )
-            self.tracker_batch.append(
-                {
-                    "user_id": message.author.id,
-                    "unix": time.time(),
-                }
-            )
+            self.tracker_batch[message.author.id] = time.time()
 
         matches = EMOJI_REGEX.findall(message.content)
         if matches:
@@ -556,12 +600,7 @@ class Batch(commands.Cog):
         if user.bot:
             return
         async with self.batch_lock:
-            self.tracker_batch.append(
-                {
-                    "user_id": user.id,
-                    "unix": time.time(),
-                }
-            )
+            self.tracker_batch[user.id] = time.time()
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -578,12 +617,7 @@ class Batch(commands.Cog):
             return
         author_id = message.author.id
         async with self.batch_lock:
-            self.tracker_batch.append(
-                {
-                    "user_id": author_id,
-                    "unix": time.time(),
-                }
-            )
+            self.tracker_batch[author_id] = time.time()
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -593,12 +627,7 @@ class Batch(commands.Cog):
         if user.bot:
             return
         async with self.batch_lock:
-            self.tracker_batch.append(
-                {
-                    "user_id": payload.user_id,
-                    "unix": time.time(),
-                }
-            )
+            self.tracker_batch[payload.user_id] = time.time()
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -607,12 +636,7 @@ class Batch(commands.Cog):
         if member.bot:
             return
         async with self.batch_lock:
-            self.tracker_batch.append(
-                {
-                    "user_id": member.id,
-                    "unix": time.time(),
-                }
-            )
+            self.tracker_batch[member.id] = time.time()
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -621,12 +645,7 @@ class Batch(commands.Cog):
         if invite.inviter.bot:
             return
         async with self.batch_lock:
-            self.tracker_batch.append(
-                {
-                    "user_id": invite.inviter.id,
-                    "unix": time.time(),
-                }
-            )
+            self.tracker_batch[invite.inviter.id] = time.time()
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -635,12 +654,7 @@ class Batch(commands.Cog):
         if member.bot:
             return
         async with self.batch_lock:
-            self.tracker_batch.append(
-                {
-                    "user_id": member.id,
-                    "unix": time.time(),
-                }
-            )
+            self.tracker_batch[member.id] = time.time()
 
         await asyncio.sleep(2)
 
@@ -664,33 +678,34 @@ class Batch(commands.Cog):
         if member.bot:
             return
         async with self.batch_lock:
-            self.tracker_batch.append(
-                {
-                    "user_id": member.id,
-                    "unix": time.time(),
-                }
-            )
+            self.tracker_batch[member.id] = time.time()
 
     async def last_observed(self, member: converters.DiscordUser):
         """Lookup last_observed data."""
+        query = """
+                SELECT MAX(unix)
+                FROM tracker
+                WHERE user_id = $1;
+                """
+        last_seen = await self.bot.cxn.fetchval(query, member.id) or None
 
-        last_seen = (
-            await self.bot.cxn.fetchval(
-                "SELECT unix from tracker WHERE user_id = $1 LIMIT 1", member.id
-            )
-            or None
-        )
-        # TODO MAX(unix)? Really? think of a better way.
-        last_spoke = (
-            await self.bot.cxn.fetchval(
-                "SELECT MAX(unix) FROM messages WHERE author_id = $1 LIMIT 1", member.id
-            )
-            or None
-        )
+        query = """
+                SELECT MAX(unix)
+                FROM messages
+                WHERE author_id = $1;
+                """
+        last_spoke = await self.bot.cxn.fetchval(query, member.id) or None
+
         if hasattr(member, "guild"):
+            query = """
+                    SELECT MAX(unix)
+                    FROM messages
+                    WHERE author_id = $1
+                    AND server_id = $2;
+                    """
             server_last_spoke = (
                 await self.bot.cxn.fetchval(
-                    "SELECT MAX(unix) FROM messages WHERE author_id = $1 and server_id = $2 LIMIT 1",
+                    query,
                     member.id,
                     member.guild.id,
                 )
@@ -725,8 +740,7 @@ class Batch(commands.Cog):
             )
             or None
         )
-        # avatars = await self.bot.cxn.fetchval(
-        #     "SELECT avatars from useravatars WHERE user_id = $1 LIMIT 1", member.id) or None
+
         query = """
                 SELECT (avatar_id)
                 FROM useravatars
@@ -751,7 +765,7 @@ class Batch(commands.Cog):
             usernames = str(usernames).replace(",", ", ")
         if avatars:
             avatars = [
-                f"https://cdn.discordapp.com/attachments/{self.avatar_saver[1]}/{x[0]}/{member.id}.png"
+                f"https://cdn.discordapp.com/attachments/{self.bot.constants.avchan}/{x[0]}/{member.id}.png"
                 for x in avatars
             ]
         if hasattr(member, "guild"):

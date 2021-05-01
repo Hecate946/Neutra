@@ -510,7 +510,7 @@ class Automod(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if self.bot.bot_ready is False:
+        if self.bot.ready is False:
             return
         if not message.guild:
             return
@@ -536,7 +536,7 @@ class Automod(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
-        if self.bot.bot_ready is False:
+        if self.bot.ready is False:
             return
         if not before.guild:
             return
@@ -613,7 +613,7 @@ class Automod(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        if self.bot.bot_ready is False:
+        if self.bot.ready is False:
             return
         required_perms = member.guild.me.guild_permissions.manage_roles
         if not required_perms:

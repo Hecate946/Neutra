@@ -109,7 +109,7 @@ class Help(commands.Cog):
     async def category_embed(self, ctx, cog, list, pm, delete_after):
         embed = discord.Embed(
             title=f"Category: `{cog}`",
-            description=f"**Bot Invite Link:** [https://snowbot.discord.bot]({self.bot.constants.oauth})\n"
+            description=f"**Bot Invite Link:** [https://snowbot.discord.bot]({self.bot.oauth})\n"
             f"**Support Server:**  [https://discord.gg/snowbot]({self.bot.constants.support})\n",
             color=self.bot.constants.embed,
         )
@@ -166,7 +166,7 @@ class Help(commands.Cog):
             embed = discord.Embed(
                 title=f"{self.bot.user.name}'s Help Command",
                 url="https://discord.gg/947ramn",
-                description=f"**Bot Invite Link:** [https://snowbot.discord.bot]({self.bot.constants.oauth})\n"
+                description=f"**Bot Invite Link:** [https://snowbot.discord.bot]({self.bot.oauth})\n"
                 f"**Support Server:**  [https://discord.gg/snowbot]({self.bot.constants.support})",
                 color=self.bot.constants.embed,
             )
@@ -474,7 +474,7 @@ class Help(commands.Cog):
                 if valid_commands != "":
                     help_embed = discord.Embed(
                         title=f"Category: `{valid_cog.title()}`",
-                        description=f"**Bot Invite Link:** [https://snowbot.discord.bot]({self.bot.constants.oauth})\n"
+                        description=f"**Bot Invite Link:** [https://snowbot.discord.bot]({self.bot.oauth})\n"
                         f"**Support Server:**  [https://discord.gg/snowbot]({self.bot.constants.support})",
                         color=self.bot.constants.embed,
                     )
@@ -514,7 +514,7 @@ class Help(commands.Cog):
                         _help = x.help
                     help_embed = discord.Embed(
                         title=f"Category: `{str(command.cog.qualified_name).title()}`",
-                        description=f"**Bot Invite Link:** [https://snowbot.discord.bot]({self.bot.constants.oauth})\n"
+                        description=f"**Bot Invite Link:** [https://snowbot.discord.bot]({self.bot.oauth})\n"
                         f"**Support Server:**  [https://discord.gg/snowbot]({self.bot.constants.support})",
                         color=self.bot.constants.embed,
                     )
@@ -543,7 +543,7 @@ class Help(commands.Cog):
             _help = command.help
         help_embed = discord.Embed(
             title=f"Category: `{str(command.cog.qualified_name).title()}`",
-            description=f"**Bot Invite Link:** [https://snowbot.discord.bot]({self.bot.constants.oauth})\n"
+            description=f"**Bot Invite Link:** [https://snowbot.discord.bot]({self.bot.oauth})\n"
             f"**Support Server:**  [https://discord.gg/snowbot]({self.bot.constants.support})",
             color=self.bot.constants.embed,
         )

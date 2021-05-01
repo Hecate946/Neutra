@@ -1308,7 +1308,7 @@ class Mod(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
-        if self.bot.bot_ready is False:
+        if self.bot.ready is False:
             return
         if not before.guild:
             return
@@ -1345,7 +1345,7 @@ class Mod(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if self.bot.bot_ready is False:
+        if self.bot.ready is False:
             return
         if not message.guild:
             return

@@ -3,27 +3,19 @@ from utilities import utils
 config = utils.config().copy()
 
 token = config["token"]
+tester = config["tester"]
 postgres = config["postgres"]
 github = config["github"]
 support = config["support"]
-oauth = config["oauth"]
-webhook = config["webhook"]
-avsaver = config["avsaver"]
+avchan = config["avchan"]
 botlog = config["botlog"]
+embed = config["embed"]
 home = config["home"]
 bitly = config["bitly"]
 timezonedb = config["timezonedb"]
-imgur = config["imgur"]
 prefix = config["prefix"]
 owners = config["owners"]
 admins = config["admins"]
-client = config["client"]
-embed = config["embed"]
-status = config["status"]
-activity = config["activity"]
-presence = config["presence"]
-version = config["version"]
-reboot = config["reboot"]
 
 emotes = {
     "loading": "<a:loading:819280509007560756>",

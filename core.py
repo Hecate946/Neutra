@@ -1,3 +1,5 @@
+import aiohttp
+import discord
 import asyncio
 import collections
 import json
@@ -7,18 +9,16 @@ import re
 import sys
 import time
 import traceback
+
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
 
-import aiohttp
-import discord
-from alive_progress import alive_bar
 from colr import color
-from discord.ext import commands, menus, tasks
+from discord.ext import commands, tasks
 from discord_slash.client import SlashCommand
 
-from settings import cleanup, constants, database
-from utilities import utils, pagination
+from settings import cleanup, database, constants
+from utilities import utils, context as cx
 
 MAX_LOGGING_BYTES = 32 * 1024 * 1024  # 32 MiB
 COGS = [x[:-3] for x in sorted(os.listdir("././cogs")) if x.endswith(".py")]
@@ -129,153 +129,70 @@ class Snowbot(commands.AutoShardedBot):
             owner_ids=constants.owners,
             intents=discord.Intents.all(),
         )
-
-        self.session = aiohttp.ClientSession(loop=self.loop)
-        # discord invite regex
+        self.avchanges = int()
+        self.batch_inserts = int()
+        self.command_stats = collections.Counter()
+        self.constants = constants
+        self.cxn = cxn
         self.dregex = re.compile(
             r"(?:https?://)?discord(?:app)?\.(?:com/invite|gg)/[a-zA-Z0-9]+/?"
-        )
+        )  # discord invite regex
+        self.emote_dict = constants.emotes
+        self.emojis_seen = int()
+        self.messages = int()
+        self.namechanges = int()
+        self.nickchanges = int()
+        self.ready = False
+        self.rolechanges = int()
+        self.session = aiohttp.ClientSession(loop=self.loop)
+        self.slash = SlashCommand(self, sync_commands=True)
+        self.socket_events = collections.Counter()
 
-    def run(self, mode="production"):
-        # Startup function that gets called in starter.py
-
+    def run(self, token):  # Everything starts from here
         self.setup()  # load the cogs
-
-        self.token = constants.token
         try:
-            super().run(self.token, reconnect=True)  # Run the bot
+            super().run(token, reconnect=True)  # Run the bot
         finally:  # Write up our json files with the stats from the session.
-            self.status_loop.stop()  # Stop the loop
+            try:
+                self.status_loop.stop()  # Stop the loop
 
-            print("\nKilled")
-            # with open("./data/json/botstats.json", "r", encoding="utf-8") as fp:
-            #     current_data = json.load(fp)
-            # if current_data == {}:
-            #     with open("./data/json/botstats.json", "w", encoding="utf-8") as fp:
-            #         json.dump({
-            #             "startdate": str(datetime.utcnow()),
-            #             "runtime": (datetime.utcnow() - self.uptime).total_seconds(),
-            #             "online": 0,
-            #             "idle": 0,
-            #             "dnd": 0,
-            #         }, fp, indent=2)
-            # else:
-            #     with open("./data/json/botstats.json", "w", encoding="utf-8") as fp:
-            #         current_data['runtime']  = current_data['runtime'] + (datetime.utcnow() - self.uptime).total_seconds()
-            #         current_data['runtime']  = current_data['runtime'] + (datetime.utcnow() - self.uptime).total_seconds()
-            #         json.dump(current_data, fp, indent=2)
+                print(color(text="\nKilled", fore="FF0000"))
 
-            with open("./data/json/blacklist.json", "w", encoding="utf-8") as fp:
-                json.dump(self.blacklist, fp, indent=2)
-            with open("./data/json/commands.json", "w", encoding="utf-8") as fp:
-                json.dump(self.command_stats, fp, indent=2)
-            with open("./data/json/sockets.json", "w", encoding="utf-8") as fp:
-                json.dump(self.socket_events, fp, indent=2)
-            with open("./data/json/stats.json", "w", encoding="utf-8") as fp:
-                stats = {
-                    "client name": self.user.name,
-                    "client id": self.user.id,
-                    "client age": utils.time_between(
-                        self.user.created_at.timestamp(), time.time()
-                    ),
-                    "client owner": f"{self.owner_ids[0]}, {self.get_user(self.owner_ids[0])}",
-                    "last run": utils.timeago(datetime.utcnow() - self.uptime),
-                    "commands run": len(self.command_stats),
-                    "messages seen": self.messages,
-                    "server count": len(self.guilds),
-                    "channel count": len([x for x in self.get_all_channels()]),
-                    "member count": len([x for x in self.get_all_members()]),
-                    "batch inserts": self.batch_inserts,
-                    "username changes": self.namechanges,
-                    "nickname changes": self.nickchanges,
-                    "avatar changes": self.avchanges,
-                }
-
-                json.dump(stats, fp, indent=2)
-
-            data = utils.load_json("config.json")
-            if mode == "tester":
-                utils.write_json("config_test.json", data)
-            elif mode == "watcher":
-                utils.write_json("config_watch.json", data)
-            else:
-                utils.write_json("config_prod.json", data)
+                with open("./data/json/blacklist.json", "w", encoding="utf-8") as fp:
+                    json.dump(
+                        self.blacklist, fp, indent=2
+                    )  # New blacklisted users from the session
+                with open("./data/json/stats.json", "w", encoding="utf-8") as fp:
+                    stats = {
+                        "client name": self.user.name,
+                        "client id": self.user.id,
+                        "client age": utils.time_between(
+                            self.user.created_at.timestamp(), time.time()
+                        ),
+                        "client owner": f"{self.owner_ids[0]}, {self.get_user(self.owner_ids[0])}",
+                        "last run": utils.timeago(datetime.utcnow() - self.uptime),
+                        "commands run": len(self.command_stats),
+                        "messages seen": self.messages,
+                        "server count": len(self.guilds),
+                        "channel count": len([x for x in self.get_all_channels()]),
+                        "member count": len([x for x in self.get_all_members()]),
+                        "batch inserts": self.batch_inserts,
+                        "username changes": self.namechanges,
+                        "nickname changes": self.nickchanges,
+                        "avatar changes": self.avchanges,
+                    }
+                    json.dump(stats, fp, indent=2)
+            except:
+                pass
 
     def setup(self):
         # Start the task loop
         self.status_loop.start()
 
-        # Sets up all the global bot variables
-        if not hasattr(self, "bot_ready"):
-            self.bot_ready = False
-
-        if not hasattr(self, "command_stats"):
-            self.command_stats = collections.Counter()
-
-        if not hasattr(self, "socket_events"):
-            self.socket_events = collections.Counter()
-
-        if not hasattr(self, "batch_inserts"):
-            self.batch_inserts = int()
-
-        if not hasattr(self, "messages"):
-            self.messages = int()
-
-        if not hasattr(self, "emojis_seen"):
-            self.emojis_seen = int()
-
-        if not hasattr(self, "nickchanges"):
-            self.nickchanges = int()
-
-        if not hasattr(self, "namechanges"):
-            self.namechanges = int()
-
-        if not hasattr(self, "avchanges"):
-            self.avchanges = int()
-
-        if not hasattr(self, "rolechanges"):
-            self.rolechanges = int()
-
-        if not hasattr(self, "uptime"):
-            self.uptime = datetime.utcnow()
-
-        if not hasattr(self, "starttime"):
-            self.starttime = time.time()
-
-        if not hasattr(self, "statustime"):
-            self.statustime = time.time()
-
-        if not hasattr(self, "cxn"):
-            self.cxn = cxn
-
-        if not hasattr(self, "emote_dict"):
-            self.emote_dict = constants.emotes
-
-        if not hasattr(self, "server_settings"):
-            self.server_settings = database.settings
-
-        if not hasattr(self, "session"):
-            self.session = self.session
-
-        if not hasattr(self, "constants"):
-            self.constants = constants
-
-        if not hasattr(self, "slash"):
-            self.slash = SlashCommand(self, sync_commands=True)
-
-        if not hasattr(self, "bot_settings"):
-            self.bot_settings = database.bot_settings
-
-        # Create all the necessary jsons
-        # first the uptime stat json
-        # if not os.path.exists("./data/json/botstats.json"):
-        #     with open("./data/json/botstats.json", mode="w", encoding="utf-8") as fp:
-        #         fp.write(r"{}")
         # load all blacklisted discord objects
         if not os.path.exists("./data/json/blacklist.json"):
             with open("./data/json/blacklist.json", mode="w", encoding="utf-8") as fp:
                 fp.write(r"{}")
-
         with open("./data/json/blacklist.json", mode="r", encoding="utf-8") as fp:
             data = json.load(fp)
         blacklist = {}
@@ -285,34 +202,31 @@ class Snowbot(commands.AutoShardedBot):
         if not hasattr(self, "blacklist"):
             self.blacklist = blacklist
 
-        # loads all the cogs in ./cogs and prints them on sys.stdout
-        for cog in COGS:
-            self.load_extension(f"cogs.{cog}")
-            print(color(fore="#88ABB4", text=f"Loaded: {str(cog).upper()}"))
-
     async def close(self):  # Shutdown the bot cleanly
-        me = self.home.get_member(self.user.id)
-        runtime = time.time() - self.starttime
-        statustime = time.time() - self.statustime
-        query = """
-                INSERT INTO botstats
-                VALUES ($1, $2)
-                ON CONFLICT (bot_id)
-                DO UPDATE SET runtime = botstats.runtime + $2,
-                {0} = botstats.{0} + $3
-                """.format(
-            me.status
-        )
-        await self.cxn.execute(query, self.user.id, runtime, statustime)
+        try:
+            me = self.home.get_member(self.user.id)
+            runtime = time.time() - self.starttime
+            statustime = time.time() - self.statustime
+            query = """
+                    INSERT INTO botstats
+                    VALUES ($1, $2)
+                    ON CONFLICT (bot_id)
+                    DO UPDATE SET runtime = botstats.runtime + $2,
+                    {0} = botstats.{0} + $3
+                    """.format(
+                me.status
+            )
+            await self.cxn.execute(
+                query, self.user.id, runtime, statustime
+            )  # Runtime stats and status info for %uptime cmd.
+        except:
+            # Probably because the process
+            # was killed before the bot
+            # was established. Let's silence errors.
+            pass
+
         await super().close()
         await self.session.close()
-
-    @staticmethod
-    def rep_ref(ctx):
-        ref = ctx.message.reference
-        if ref and isinstance(ref.resolved, discord.Message):
-            return ref.resolved.to_reference()
-        return None
 
     ##############################
     ## Aiohttp Helper Functions ##
@@ -329,8 +243,7 @@ class Snowbot(commands.AutoShardedBot):
         return await self.query(url, "post", *args, **kwargs)
 
     def public_stats(self):
-
-        owner = discord.utils.get(self.get_all_members(), id=708584008065351681)
+        owner = discord.utils.get(self.get_all_members(), id=self.owner_ids[0])
         command_list = [
             x.name
             for x in self.commands
@@ -345,7 +258,6 @@ class Snowbot(commands.AutoShardedBot):
         return (owner, command_list, category_list)
 
     async def process_commands(self, message):
-        await self.wait_until_ready()
         ctx = await self.get_context(message, cls=commands.Context)
         if ctx.command is None:
             return
@@ -364,7 +276,7 @@ class Snowbot(commands.AutoShardedBot):
         try:
             message.author.roles
         except AttributeError:
-            # Not a User
+            # Not discord.Member
             await self.invoke(ctx)
             return
 
@@ -395,66 +307,41 @@ class Snowbot(commands.AutoShardedBot):
             except KeyError:
                 pass
             try:
-                react = check["Reaction"]
+                react = check["React"]
             except KeyError:
                 pass
         if delete:
             # Delete the message
             await message.delete()
+        if respond:
+            # We have something to say
+            await message.channel.send(respond)
+        if react:
+            # We have something to react with
+            for r in react:
+                await message.add_reaction(r)
         if not ignore:
-            if respond:
-                # We have something to say
-                await message.channel.send(respond)
-            if react:
-                # We have something to react with
-                for r in react:
-                    await message.add_reaction(r)
             await self.invoke(ctx)
 
     @tasks.loop(minutes=10)
     async def status_loop(self):
-        # ( ͡° ͜ʖ ͡°) The real reason why I code ( ͡° ͜ʖ ͡°)
-        # (っ´▽｀)っ So pretty...
-        # self.index += 1
-
-        # msg    = f"DATABASE TASK UPDATE #{self.index}"
-        # top    = "##" + "#" * (len(msg) + 4)
-        # middle = " ##" + f" {msg} " + "##"
-        # bottom = "  ##"+ "#" * (len(msg) + 4)
-        # sys.stdout.write("\033[F" * 3)
-        # print(color(fore="#1EDA10", text=top))
-        # print(color(fore="#1EDA10", text=middle))
-        # print(color(fore="#1EDA10", text=bottom))
-
-        # For some weird reason after awhile the status doesn't show up so...
-        # updating it with the task loop.
+        """
+        A status loop to keep
+        whatever current status,
+        presence & activity we have
+        """
         await self.set_status()
 
     @status_loop.before_loop
     async def before_status_loop(self):
         st = time.time()
-        print(color(fore="#FFFFFF", text="Initializing Cache..."))
+        print("Initializing Cache...")
         await self.wait_until_ready()
-        # while not self.is_ready():
-        #     with alive_bar(
-        #         title="Initializing Cache", spinner="waves2"
-        #     ) as bar:  # default setting
-        #         for i in range(100):
-        #             await asyncio.sleep(0.05)
-        #             bar()
         print(
             color(fore="#FFFFFF", text=f"Elapsed time: {str(time.time() - st)[:10]} s")
         )
         SEPARATOR = "=" * 33
         print(color(fore="#46648F", text=SEPARATOR))
-        st = time.time()
-        await self.set_status()
-        print(
-            color(
-                fore="#46648F",
-                text=f"Status initialized : {str(time.time() - st)[:10]} s",
-            )
-        )
         st = time.time()
         member_list = []
         for member in self.get_all_members():
@@ -466,62 +353,80 @@ class Snowbot(commands.AutoShardedBot):
             )
         )
         try:
-            await database.initialize(self.guilds, member_list)
+            await database.initialize(self, member_list)
         except Exception as e:
             print(utils.traceback_maker(e))
 
-        # Maybe delete this altogether, basically does some json storing.
-        from settings import cache
-
-        cache.Settings(self)
-
-        self.bot_ready = True
+        # The rest of the botvars that couldn't be set earlier
+        await self.load_globals()
 
         # Beautiful console logging on startup
-        hostinfo = await utils.get_hostinfo(self, member_list)
-        bars = hostinfo[1]
-        hostinfo = hostinfo[0].replace(" final", "").split("\n")[1:][:-2]
-        separator = "=" * max([len(x) for x in hostinfo])
-        print(color(fore="#E4C1DD", text=separator))
-        print(color(fore="#E4C1DD", text="\n".join(hostinfo)))
-        print(color(fore="#E4C1DD", text=separator))
+        # hostinfo = await utils.get_hostinfo(self, member_list)
+        # bars = hostinfo[1]
+        # hostinfo = hostinfo[0].replace(" final", "").split("\n")[1:][:-2]
+        # separator = "=" * max([len(x) for x in hostinfo])
+        # print(color(fore="#E4C1DD", text=separator))
+        # print(color(fore="#E4C1DD", text="\n".join(hostinfo)))
+        # print(color(fore="#E4C1DD", text=separator))
+        # print(color(fore="#8FBBC7", text=bars))
 
-        print(color(fore="#8FBBC7", text=bars))
-
-        # Delete all records of servers that kicked the bot
-        await cleanup.cleanup_servers(self.guilds)
-
-        try:
-            channel = await self.fetch_channel(constants.reboot["channel"])
-            msg = channel.get_partial_message(constants.reboot["message"])
-            await msg.edit(
-                content=self.emote_dict["success"]
-                + " "
-                + "{0}ed Successfully.".format(constants.reboot["invoker"])
+    async def load_globals(self):
+        """
+        Sets up the remaining botvars
+        """
+        if not hasattr(self, "oauth"):
+            self.oauth = discord.utils.oauth_url(
+                client_id=self.user.id,
+                permissions=discord.Permissions.all(),
+                scopes=("bot", "applications.commands"),
             )
-        except Exception as e:
-            await self.hecate.send(e)
-            pass
+
+        if not hasattr(self, "uptime"):
+            self.uptime = datetime.utcnow()
+
+        if not hasattr(self, "starttime"):
+            self.starttime = time.time()
+
+        if not hasattr(self, "statustime"):
+            self.statustime = time.time()
+
+        if not hasattr(self, "server_settings"):
+            self.server_settings = database.settings
+
+        await self.finalize_startup()
 
     async def set_status(self):
-        # This sets the bot's presence, status, and activity
-        # based off of the values in ./config.json
-        if self.constants.activity == "listening":
+        """
+        This sets the bot's presence, status, and activity
+        based off of the values in ./config.json
+        """
+        query = """
+                SELECT (
+                    activity,
+                    presence,
+                    status
+                )
+                FROM config
+                WHERE client_id = $1;
+                """
+        status_values = await self.cxn.fetchval(query, self.user.id)
+        if status_values is None:
+            activity = "playing"
+            presence = ""
+            status = "online"
+        else:
+            activity, presence, status = status_values
+        if activity == "listening":
             a = discord.ActivityType.listening
-        elif self.constants.activity == "watching":
+        elif activity == "watching":
             a = discord.ActivityType.watching
-        elif self.constants.activity == "competing":
+        elif activity == "competing":
             a = discord.ActivityType.competing
         else:
             a = discord.ActivityType.playing
 
-        if self.constants.presence == "":
-            activity = discord.Activity(type=a)
-        else:
-            presence = self.constants.presence
-            activity = discord.Activity(type=a, name=presence)
+        activity = discord.Activity(type=a, name=presence)
 
-        status = self.constants.status
         if status == "idle":
             s = discord.Status.idle
         elif status == "dnd":
@@ -534,10 +439,49 @@ class Snowbot(commands.AutoShardedBot):
 
         await self.change_presence(status=s, activity=activity)
 
-    async def on_command(self, ctx):
-        pass
+    async def finalize_startup(self):
+        # Delete all records of servers that kicked the bot
+        await cleanup.cleanup_servers(self.guilds)
+
+        # loads all the cogs in ./cogs and prints them on sys.stdout
+        for cog in COGS:
+            self.load_extension(f"cogs.{cog}")
+            # print(color(fore="#88ABB4", text=f"Loaded: {str(cog).upper()}"))
+
+        self.ready = True
+        print(f"{self.user} ({self.user.id})")
+
+        # See if we were rebooted by a command and send confirmation if we were.
+        query = """
+                SELECT (
+                    reboot_invoker,
+                    reboot_message_id,
+                    reboot_channel_id
+                ) FROM config
+                WHERE client_id = $1;
+                """
+        reboot = await self.cxn.fetchval(query, self.user.id)
+        if reboot:
+            if any((item is None for item in reboot)):
+                return
+            reboot_invoker, reboot_message_id, reboot_channel_id = reboot
+            try:
+                channel = await self.fetch_channel(reboot_channel_id)
+                msg = channel.get_partial_message(reboot_message_id)
+                await msg.edit(
+                    content=self.emote_dict["success"]
+                    + " "
+                    + "{0}ed Successfully.".format(reboot_invoker)
+                )
+            except Exception as e:
+                await self.hecate.send(e)
+                pass
 
     async def on_command_error(self, ctx, error):
+        """
+        Here's where we handle all command errors
+        so we can give the user feedback
+        """
         if isinstance(error, commands.MissingRequiredArgument):
             name = (
                 str(ctx.command.qualified_name)
@@ -557,8 +501,12 @@ class Snowbot(commands.AutoShardedBot):
                 content=f"{self.emote_dict['failed']} {error}",
             )
 
+        elif isinstance(error, commands.BotMissingPermissions):
+            await ctx.send_or_reply(
+                content=f"{self.emote_dict['failed']} {error}",
+            )
+
         elif isinstance(error, commands.NoPrivateMessage):
-            # Debating whether or not to ignore this.
             await ctx.author.send(
                 f"{self.emote_dict['failed']} This command cannot be used in private messages."
             )
@@ -567,24 +515,28 @@ class Snowbot(commands.AutoShardedBot):
             await ctx.fail("This command can only be used in private messages.")
 
         elif isinstance(error, commands.CommandOnCooldown):
-            await ctx.send_or_reply(
-                content=f"{self.emote_dict['warn']} This command is on cooldown... retry in {error.retry_after:.2f} seconds.",
+            await ctx.fail(
+                f"This command is on cooldown... retry in {error.retry_after:.2f} seconds."
             )
 
         elif isinstance(error, commands.DisabledCommand):
-            # This could get annoying so lets just comment out for now
             await ctx.message.add_reaction(self.emote_dict["failed"])
-            await ctx.send_or_reply(
-                content=f"{self.emote_dict['failed']} This command is currently unavailable. Please try again later.",
+            await ctx.fail(
+                f"{self.emote_dict['failed']} This command is currently unavailable."
             )
-            pass
+
+        elif isinstance(error, commands.CheckFailure):
+            # Previous checks didn't catch this one.
+            # Readable error so just send it to where the error occurred.
+            await ctx.send_or_reply(content=f"{self.emote_dict['failed']} {error}")
 
         elif isinstance(error, commands.CommandInvokeError):
             err = utils.traceback_maker(error.original, advance=True)
-            if "or fewer" in str(error):
+            if "or fewer" in str(error):  # Message was too long to send
                 return await ctx.send_or_reply(
                     f"{self.emote_dict['failed']} Result was greater than the character limit."
                 )
+            # Then we don't really know what this error is. Log it.
             print(
                 color(
                     fore="FF0000",
@@ -607,18 +559,6 @@ class Snowbot(commands.AutoShardedBot):
             )
             traceback_logger.warning(err)
             print(err)
-
-        elif isinstance(error, commands.BotMissingPermissions):
-            # Readable error so just send it to the channel where the error occurred.
-            await ctx.send_or_reply(
-                content=f"{self.emote_dict['warn']} {error}",
-            )
-
-        elif isinstance(error, commands.CheckFailure):
-            # Readable error so just send it to the channel where the error occurred.
-            # Or not
-            # await ctx.send_or_reply(content=f"{self.emote_dict['warn']} {error}")
-            pass
 
         else:
             # Ok so here we don't really know what the error is, so lets print the basic error.
@@ -649,14 +589,14 @@ class Snowbot(commands.AutoShardedBot):
             # await ctx.log("e", content)
 
     async def on_guild_join(self, guild):
-        if self.bot_ready is False:
+        if self.ready is False:
             return
 
         await database.update_server(guild, guild.members)
         await database.fix_server(guild.id)
 
     async def on_guild_remove(self, guild):
-        if self.bot_ready is False:
+        if self.ready is False:
             return
         # This happens when the bot gets kicked from a server.
         # No need to waste any space storing their info anymore.
@@ -668,14 +608,15 @@ class Snowbot(commands.AutoShardedBot):
         pass
 
     async def on_message(self, message):
-        if self.bot_ready is False:
+        if self.ready is False:
             return
         await self.process_commands(message)
         if isinstance(message.channel, discord.DMChannel):
             if message.author.id != self.user.id:
+                # Sometimes users DM the bot their server invite... Lets send them ours
                 if self.dregex.match(message.content):
                     await message.channel.send(
-                        f"Hey {message.author.mention}! if you're looking to invite me to your server, use this link:\n<{self.constants.oauth}>"
+                        f"Hey {message.author.mention}! if you're looking to invite me to your server, use this link:\n<{self.oauth}>"
                     )
 
     # async def on_error(self, event, *args, **kwargs):
@@ -692,12 +633,12 @@ class Snowbot(commands.AutoShardedBot):
 
     async def get_context(self, message, *, cls=None):
         """Override get_context to use a custom Context"""
-        context = await super().get_context(message, cls=BotContext)
+        context = await super().get_context(message, cls=cx.BotContext)
         return context
 
     @property
     def hecate(self):
-        return self.get_user(708584008065351681)
+        return self.get_user(self.owner_ids[0])
 
     @property
     def home(self):
@@ -709,81 +650,3 @@ class Snowbot(commands.AutoShardedBot):
 
 
 bot = Snowbot()
-
-
-class BotContext(commands.Context):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    async def fail(self, content=None, **kwargs):
-        return await self.send_or_reply(
-            bot.emote_dict["failed"] + " " + (content if content else ""), **kwargs
-        )
-
-    async def success(self, content=None, **kwargs):
-        return await self.send_or_reply(
-            bot.emote_dict["success"] + " " + (content if content else ""), **kwargs
-        )
-
-    async def log(self, _type=None, content=None, **kwargs):
-        if _type in ["info", "i", "information"]:
-            logger = info_logger
-            loglev = info_logger.info
-            level = "INFO"
-            location = info_logger_handler.baseFilename
-        elif _type in ["command", "commands", "cmd", "cmds"]:
-            logger = command_logger
-            loglev = command_logger.info
-            level = "INFO"
-            location = command_logger_handler.baseFilename
-        elif _type in ["err", "e", "error", "errors"]:
-            logger = error_logger
-            loglev = error_logger.warning
-            level = "WARNING"
-            location = error_logger_handler.baseFilename
-        elif _type in ["trace", "t", "traceback"]:
-            logger = traceback_logger
-            loglev = traceback_logger.warning
-            level = "WARNING"
-            location = traceback_logger_handler.baseFilename
-        log_format = "{0}: [{1}] {2} ||".format(
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S"), level, logger.name
-        )
-        filename = "./" + "/".join(location.split("/")[-4:])
-        loglev(msg=content)
-        return await self.bot_channel(
-            bot.emote_dict["log"]
-            + f" **Logged to `{filename}`**```prolog\n{log_format}{content}```"
-        )
-
-    async def bot_channel(self, content=None, **kwargs):
-        return await bot.bot_channel.send(content, **kwargs)
-
-    async def send_or_reply(self, content=None, **kwargs):
-        ref = self.message.reference
-        if ref and isinstance(ref.resolved, discord.Message):
-            return await self.send(
-                content, **kwargs, reference=ref.resolved.to_reference()
-            )
-        return await self.send(content, **kwargs)
-
-    async def react(self, reaction=None, content=None, **kwargs):
-        return await self.message.add_reaction(reaction)
-
-    async def usage(self, content=None, **kwargs):
-        return await self.send(
-            f"Usage: `{self.prefix}{self.command.qualified_name} " + content + "`"
-        )
-
-    async def load(self, content=None, **kwargs):
-        content = f"{bot.emote_dict['loading']} **{content}**"
-        return await self.send_or_reply(content, **kwargs)
-
-    async def confirm(self, content=None, **kwargs):
-        content = (
-            f"**{bot.emote_dict['exclamation']} {content}. Do you wish to continue?**"
-        )
-        c = await pagination.Confirmation(msg=content).prompt(ctx=self)
-        if c:
-            return True
-        return

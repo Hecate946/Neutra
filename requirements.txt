@@ -23,6 +23,7 @@ discord-ext-menus @ git+https://github.com/Rapptz/discord-ext-menus@4429b564fd8f
 discord-py-slash-command==1.1.0
 discord.py==1.7.1
 Django==3.2
+docopt==0.6.2
 future==0.18.2
 geographiclib==1.50
 geopy==2.1.0
@@ -61,4 +62,5 @@ typing-extensions==3.7.4.3
 tzlocal==2.1
 Unidecode==1.2.0
 urllib3==1.26.4
+yarg==0.1.9
 yarl==1.6.3

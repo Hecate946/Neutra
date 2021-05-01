@@ -1,3 +1,4 @@
+import os
 import json
 import click
 
@@ -6,25 +7,22 @@ import click
 @click.argument("mode", default="production")
 def main(mode):
     """Launches the bot."""
+    mode = mode.lower()
 
-    if mode == "tester":
-        with open("./config_test.json", "r", encoding="utf-8") as fp:
-            configuration = json.load(fp)
-        with open("./config.json", "w", encoding="utf-8") as fp:
-            json.dump(configuration, fp, indent=2)
-
-    elif mode == "watcher":
-        with open("./config_watch.json", "r", encoding="utf-8") as fp:
-            configuration = json.load(fp)
-        with open("./config.json", "w", encoding="utf-8") as fp:
-            json.dump(configuration, fp, indent=2)
-
+    if not os.path.exists("./config.json"):
+        mode = "setup"
     else:
-        mode = "production"
-        with open("./config_prod.json", "r", encoding="utf-8") as fp:
-            configuration = json.load(fp)
-        with open("./config.json", "w", encoding="utf-8") as fp:
-            json.dump(configuration, fp, indent=2)
+        with open("./config.json", "r", encoding="utf-8") as fp:
+            conf = json.load(fp)
+
+    if mode == "setup":
+        from settings import setup
+
+        setup.start()
+    elif mode == "tester":
+        token = conf["tester"]
+    else:
+        token = conf["token"]
 
     from core import bot
 
@@ -32,7 +30,7 @@ def main(mode):
     startmsg = f"{block}\n## Running {mode.capitalize()} Mode ## \n{block}"
     click.echo(startmsg)
     # run the application ...
-    bot.run(mode=mode)
+    bot.run(token=token)
 
 
 if __name__ == "__main__":
