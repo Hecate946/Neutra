@@ -157,8 +157,8 @@ class Batch(commands.Cog):
                     (
                         (
                             data[1][0]["user_id"],
-                            data[1][0]["server_id"],
                             data[1][0]["username"],
+                            data[1][0]["server_id"],
                             data[1][0]["nickname"],
                             data[1][0]["roles"],
                         )
