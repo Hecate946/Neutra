@@ -13,6 +13,8 @@ scripts = [x[:-4] for x in sorted(os.listdir("./data/scripts")) if x.endswith(".
 postgres = asyncio.get_event_loop().run_until_complete(
     asyncpg.create_pool(constants.postgres)
 )
+
+prefixes = dict()
 settings = dict()
 bot_settings = dict()
 config = dict()
@@ -21,6 +23,7 @@ config = dict()
 async def initialize(bot, members):
     await scriptexec()
     await set_config_id(bot)
+    await load_prefixes()
     await update_db(bot.guilds, members)
     await load_settings()
 
@@ -71,13 +74,6 @@ async def update_server(server, member_list):
         color(fore="#46648F", text=f"Server insertion : {str(time.time() - st)[:10]} s")
     )
 
-    # await postgres.execute(
-    #     """
-    # INSERT INTO prefixes(server_id, prefix) VALUES ($1, $2)
-    # ON CONFLICT DO NOTHING""",
-    #     server.id,
-    #     f"<@!{constants.client}>"
-    # )
     st = time.time()
     await postgres.execute(
         """INSERT INTO logging (server_id, logchannel) VALUES ($1, $2)
@@ -494,9 +490,19 @@ async def fix_server(server):
         settings[server_id]["logging"]["webhook_id"] = webhook_id
 
 
+async def load_prefixes():
+    query = """
+            SELECT server_id, ARRAY_REMOVE(ARRAY_AGG(prefix), NULL) as prefix_list
+            FROM prefixes GROUP BY server_id;
+            """
+    records = await postgres.fetch(query)
+    for server_id, prefix_list in records:
+        prefixes[server_id] = prefix_list
+        print(prefixes)
+        
+
+
 async def fetch_prefix(server):
-    try:
-        prefixes = settings[server]["prefixes"]
-    except KeyError:
-        return []
-    return prefixes
+    server_prefixes = prefixes.get(server, None)
+    print(server_prefixes)
+    return server_prefixes

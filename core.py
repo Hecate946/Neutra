@@ -105,25 +105,30 @@ traceback_logger_format = logging.Formatter(
 traceback_logger_handler.setFormatter(traceback_logger_format)
 
 
-async def get_prefix(bot, message):
-    if not message.guild:
-        prefix = constants.prefix
-        return commands.when_mentioned_or(prefix + " ", prefix)(bot, message)
-    prefixes = await database.fetch_prefix(message.guild.id)
-    if prefixes == []:
-        # Never set custom prefix, assign default
-        prefixes.append(constants.prefix)  # add default
-    prefixes_and_spaces = [
-        x + " " for x in prefixes
-    ] + prefixes  # This adds spaces so that -help and - help will both work
-    return commands.when_mentioned_or(*prefixes_and_spaces)(bot, message)
-
+# async def get_prefix(bot, message):
+#     if not message.guild:  # DM commands, only default
+#         prefixes = [constants.prefix]
+#     else:
+#         prefixes = bot.prefixes.get(message.guild.id, [constants.prefix])
+#     prefixes_and_spaces = [
+#         x + " " for x in prefixes
+#     ] + prefixes  # This adds spaces so that -help and - help will both work
+#     return commands.when_mentioned_or(*prefixes_and_spaces)(bot, message)
+def get_prefix(bot, msg):
+    user_id = bot.user.id
+    base = [f'<@!{user_id}> ', f'<@{user_id}> ']
+    if msg.guild is None:
+        base.append(constants.prefix)
+    else:
+        base.extend(bot.prefixes.get(msg.guild.id, [constants.prefix]))
+    return base
 
 # Main bot class. Heart of the application
 class Snowbot(commands.AutoShardedBot):
     def __init__(self):
-
+        allowed_mentions = discord.AllowedMentions(roles=False, everyone=False, users=True, replied_user=True)
         super().__init__(
+            allowed_mentions=allowed_mentions,
             command_prefix=get_prefix,
             case_insensitive=True,
             owner_ids=constants.owners,
@@ -142,6 +147,7 @@ class Snowbot(commands.AutoShardedBot):
         self.messages = int()
         self.namechanges = int()
         self.nickchanges = int()
+        self.prefixes = database.prefixes
         self.ready = False
         self.rolechanges = int()
         self.session = aiohttp.ClientSession(loop=self.loop)
@@ -482,6 +488,15 @@ class Snowbot(commands.AutoShardedBot):
         Here's where we handle all command errors
         so we can give the user feedback
         """
+        # This prevents any commands with local handlers being handled here in on_command_error.
+        if hasattr(ctx.command, 'on_error'):
+            return
+
+        # This prevents any cogs with an overwritten cog_command_error being handled here.
+        if ctx.cog:
+            if ctx.cog._get_overridden_method(ctx.cog.cog_command_error) is not None:
+                return
+
         if isinstance(error, commands.MissingRequiredArgument):
             name = (
                 str(ctx.command.qualified_name)
@@ -528,7 +543,8 @@ class Snowbot(commands.AutoShardedBot):
         elif isinstance(error, commands.CheckFailure):
             # Previous checks didn't catch this one.
             # Readable error so just send it to where the error occurred.
-            await ctx.send_or_reply(content=f"{self.emote_dict['failed']} {error}")
+            pass
+            #await ctx.send_or_reply(content=f"{self.emote_dict['failed']} {error}")
 
         elif isinstance(error, commands.CommandInvokeError):
             err = utils.traceback_maker(error.original, advance=True)
@@ -635,6 +651,37 @@ class Snowbot(commands.AutoShardedBot):
         """Override get_context to use a custom Context"""
         context = await super().get_context(message, cls=cx.BotContext)
         return context
+
+    def get_guild_prefixes(self, guild, *, local_inject=get_prefix):
+        proxy_msg = discord.Object(id=0)
+        proxy_msg.guild = guild
+        return local_inject(self, proxy_msg)
+
+    def get_raw_guild_prefixes(self, guild_id):
+        return self.prefixes.get(guild_id, [self.constants.prefix])
+
+    async def set_guild_prefixes(self, guild, prefixes):
+        if len(prefixes) == 0:
+            await self.put(guild.id, [None])
+            self.prefixes[guild.id] = prefixes
+        elif len(prefixes) > 10:
+            raise RuntimeError('Cannot have more than 10 custom prefixes.')
+        else:
+            await self.put(guild.id, prefixes)
+            self.prefixes[guild.id] = prefixes
+
+    async def put(self, guild_id, prefixes):
+        query = """
+                DELETE FROM prefixes
+                WHERE server_id = $1
+                """
+        await self.cxn.execute(query, guild_id)
+        query = """
+                INSERT INTO prefixes
+                VALUES ($1, $2)
+                """
+        await self.cxn.executemany(query, ((guild_id, prefix) for prefix in prefixes))
+        self.prefixes[guild_id] = prefixes
 
     @property
     def hecate(self):

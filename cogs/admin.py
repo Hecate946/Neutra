@@ -581,202 +581,6 @@ class Admin(commands.Cog):
             # We have an ignored user
             return {"Ignore": True, "Delete": False}
 
-    @commands.command(
-        brief="Add a custom server prefix.", aliases=["prefix", "setprefix"]
-    )
-    @commands.guild_only()
-    @permissions.has_permissions(manage_guild=True)
-    async def addprefix(self, ctx, new_prefix=None):
-        """
-        Usage: -addprefix
-        Aliases: -prefix, -setprefix
-        Output: Adds a custom prefix to your server.
-        """
-        if new_prefix is None:
-            return await self.prefixes(ctx)
-        current_prefixes = self.bot.server_settings[ctx.guild.id]["prefixes"].copy()
-        try:
-            current_prefixes.remove(f"<@!{self.bot.user.id}>")
-        except ValueError:
-            pass
-        if new_prefix in current_prefixes:
-            return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['warn']} `{new_prefix}` is already a registered prefix.",
-            )
-        if len(current_prefixes) == 10:
-            return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['failed']} Max prefix limit of 10 has been reached.",
-            )
-        if len(new_prefix) > 20:
-            return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['failed']} Max prefix length is 20 characters.",
-            )
-        self.bot.server_settings[ctx.guild.id]["prefixes"].append(new_prefix)
-        query = """
-                INSERT INTO prefixes
-                VALUES ($1, $2);
-                """
-        await self.bot.cxn.execute(query, ctx.guild.id, new_prefix)
-        await ctx.send_or_reply(
-            f"{self.bot.emote_dict['success']} Successfully added prefix `{new_prefix}`"
-        )
-
-    @commands.command(
-        brief="Remove a custom server prefix.", aliases=["remprefix", "rmprefix"]
-    )
-    @commands.guild_only()
-    @permissions.has_permissions(manage_guild=True)
-    async def removeprefix(self, ctx, old_prefix):
-        """
-        Usage: -removeprefix
-        Aliases: -remprefix, -rmprefix
-        Output: Removes a custom prefix from your server.
-        """
-        if old_prefix is None:
-            return await ctx.usage("<old prefix>")
-        current_prefixes = self.bot.server_settings[ctx.guild.id]["prefixes"].copy()
-        try:
-            current_prefixes.remove(f"<@!{self.bot.user.id}>")
-        except ValueError:
-            pass
-        if old_prefix not in current_prefixes:
-            return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['warn']} `{old_prefix}` is not a registered prefix.",
-            )
-        if len(current_prefixes) == 1:
-            c = await pagination.Confirmation(
-                msg=f"{self.bot.emote_dict['exclamation']} "
-                "**This action will clear all my set prefixes "
-                f"I will only respond to <@!{self.bot.user.id}>. "
-                "Do you wish to continue?**"
-            ).prompt(ctx)
-            if c:
-                query = """
-                        DELETE FROM prefixes
-                        WHERE server_id = $1
-                        """
-                await self.bot.cxn.execute(query, ctx.guild.id)
-                query = """
-                        INSERT INTO prefixes
-                        VALUES ($1, $2)
-                        """
-                await self.bot.cxn.execute(
-                    query, ctx.guild.id, f"<@!{self.bot.user.id}>"
-                )
-                self.bot.server_settings[ctx.guild.id]["prefixes"] = [
-                    f"<@!{self.bot.user.id}>"
-                ]
-                f"{self.bot.emote_dict['success']} Successfully cleared all prefixes."
-        else:
-            query = """
-                    DELETE FROM prefixes
-                    WHERE server_id = $1
-                    AND prefix = $2
-                    """
-            await self.bot.cxn.execute(query, ctx.guild.id, old_prefix)
-            self.bot.server_settings[ctx.guild.id]["prefixes"].remove(old_prefix)
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['success']} Successfully removed prefix `{old_prefix}`",
-            )
-
-    @commands.command(
-        brief="Clear all custom server prefixes.",
-        aliases=[
-            "clearprefixes",
-            "removeprefixes",
-            "remprefixes",
-            "rmprefixes",
-            "purgeprefixes",
-            "purgeprefix",
-        ],
-    )
-    @commands.guild_only()
-    @permissions.has_permissions(manage_guild=True)
-    async def clearprefix(self, ctx):
-        """
-        Usage: -clearprefix
-        Aliases:
-            -clearprefixes, -removeprefixes, -remprefixes,
-            -rmprefixes, -purgeprefixes, -purgeprefix
-        Output: Clears all custom server prefixes
-        Notes:
-
-
-        """
-        current_prefixes = self.bot.server_settings[ctx.guild.id]["prefixes"].copy()
-        try:
-            current_prefixes.remove(f"<@!{self.bot.user.id}>")
-        except ValueError:
-            pass
-        if current_prefixes == []:
-            return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['exclamation']} I currently have no prefixes set.",
-            )
-        c = await pagination.Confirmation(
-            msg=f"{self.bot.emote_dict['exclamation']} "
-            "**This action will clear all my set prefixes "
-            f"I will only respond to <@!{self.bot.user.id}>. "
-            "Do you wish to continue?**"
-        ).prompt(ctx)
-        if c:
-            query = """
-                    DELETE FROM prefixes
-                    WHERE server_id = $1
-                    """
-            await self.bot.cxn.execute(query, ctx.guild.id)
-
-            query = """
-                    INSERT INTO prefixes
-                    VALUES ($1, $2)
-                    """
-            await self.bot.cxn.execute(query, ctx.guild.id, f"<@!{self.bot.user.id}>")
-            self.bot.server_settings[ctx.guild.id]["prefixes"] = [
-                f"<@!{self.bot.user.id}>"
-            ]
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['success']} **Successfully cleared all prefixes.**",
-            )
-            return
-        await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
-        )
-
-    @commands.command(
-        brief="Show all server prefixes.",
-        aliases=[
-            "showprefix",
-            "showprefixes",
-            "listprefixes",
-            "listprefix",
-            "displayprefix",
-            "displayprefixes",
-        ],
-    )
-    @commands.guild_only()
-    async def prefixes(self, ctx):
-        """
-        Usage: -prefixes
-        Aliases:
-            -showprefix, -showprefixes, -listprefixes,
-            -listprefix, -displayprefixes, -displayprefix
-        Output: Shows all the current server prefixes
-        """
-        current_prefixes = self.bot.server_settings[ctx.guild.id]["prefixes"].copy()
-        try:
-            current_prefixes.remove(f"<@!{self.bot.user.id}>")
-        except ValueError:
-            pass
-        if current_prefixes == []:
-            return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['exclamation']} I currently have no prefixes set.",
-            )
-        if len(current_prefixes) == 0:
-            return await ctx.send_or_reply(
-                content=f"My current prefix is {self.bot.constants.prefix}",
-            )
-        await ctx.send_or_reply(
-            f"{self.bot.emote_dict['info']} My current prefix{' is' if len(current_prefixes) == 1 else 'es are '} `{', '.join(current_prefixes)}`"
-        )
 
     @commands.command(brief="Setup server muting system.", aliases=["setmuterole"])
     @commands.guild_only()
@@ -1323,3 +1127,145 @@ class Admin(commands.Cog):
             results[x[0][1]] = x[0][0]
 
         return results
+
+    @commands.group(name='prefix', invoke_without_command=True, case_insensitive=True, brief="Show all server prefixes.", hidden=True)
+    async def prefix(self, ctx):
+        await ctx.invoke(self.prefixes)
+
+    @prefix.command(name='add', ignore_extra=False, hidden=True)
+    @permissions.has_permissions(manage_guild=True)
+    async def prefix_add(self, ctx, prefix: converters.Prefix = None):
+        await ctx.invoke(self.addprefix, prefix)
+
+
+    @prefix.command(name='remove', aliases=['delete','rm','rem'], ignore_extra=False, hidden=True)
+    @permissions.has_permissions(manage_guild=True)
+    async def prefix_remove(self, ctx, prefix: converters.Prefix = None):
+        await ctx.invoke(self.removeprefix, prefix)
+
+
+    @prefix.command(name='clear', hidden=True)
+    @permissions.has_permissions(manage_guild=True)
+    async def prefix_clear(self, ctx, prefix: converters.Prefix = None):
+        await ctx.invoke(self.clearprefix, prefix)
+
+    
+    @commands.command(brief="Show all server prefixes.", aliases=['showprefixes','showprefix','displayprefix','displayprefixes','whatprefix'])
+    async def prefixes(self, ctx):
+        """
+        Usage: -prefix
+        Aliases:
+            -prefix, -prefix show, -prefix display,
+            -showprefixes, -showprefix, -whatprefix
+            -displayprefixes, -displayprefix
+        Output:
+            Shows all my current server prefixes.
+        """
+
+        prefixes = self.bot.get_guild_prefixes(ctx.guild)
+
+        # Lets remove the mentions and replace with @name
+        del prefixes[0]
+        del prefixes[0]
+        prefixes.insert(0, f"@{ctx.guild.me.display_name}")
+
+        await ctx.success(f"My current prefix{' is' if len(prefixes) == 1 else 'es are'} `{', '.join(prefixes)}`")
+
+    @commands.command(brief="Add a custom server prefix.", aliases=['createprefix'])
+    @permissions.has_permissions(manage_guild=True)
+    async def addprefix(self, ctx, prefix: converters.Prefix = None):
+        """
+        Usage: -addprefix <new prefix>
+        Aliases:
+            -addprefix, -prefix add,
+            -prefix create, createprefix
+        Output:
+            Adds a prefix to the list of custom prefixes.
+        Notes:
+            Previously set prefixes are not overridden.
+            The max prefixes to add is 10 per server, 
+            each a maximum of 20 characters in length.
+            Multi-word prefixes must be quoted.
+        """
+        if prefix is None:
+            return await ctx.usage("<new prefix>")
+
+        current_prefixes = self.bot.get_raw_guild_prefixes(ctx.guild.id)
+        if prefix in current_prefixes:
+            return await ctx.fail(f"`{prefix}` is already a registered prefix.")
+        current_prefixes.append(prefix)
+        try:
+            await self.bot.set_guild_prefixes(ctx.guild, current_prefixes)
+        except Exception as e:
+            await ctx.send(f'{e}')
+        else:
+            await ctx.success(f"Successfully added prefix: `{prefix}`")
+
+    @addprefix.error
+    async def prefix_add_error(self, ctx, error):
+        if isinstance(error, commands.TooManyArguments):
+            await ctx.fail(
+                "If your prefix is multiple words, surround it in quotes. Otherwise, add them one at a time."
+            )
+    @commands.command(brief="Remove a custom server prefix", ignore_extra=False, aliases=['deleteprefix','rmprefix', 'remprefix','delprefix'])
+    async def removeprefix(self, ctx, prefix: converters.Prefix = None):
+        """
+        Usage: -removeprefix <new prefix>
+        Aliases:
+            -rmprefix, -prefix remove, -prefix rm
+            -prefix rem, prefix del, prefix delete,
+            -deleteprefix, delprefix, remprefix
+        Permission: Manage Server
+        Output:
+            Removes a prefix from the list of custom prefixes.
+        Notes:
+            Will ask for confirmation if only one
+            custom prefix is currently in use.
+        """
+        if prefix is None:
+            return await ctx.usage("<current prefix>")
+
+        current_prefixes = self.bot.get_raw_guild_prefixes(ctx.guild.id)
+        if len(current_prefixes) == 0:
+            return await ctx.fail("I currently have no prefixes registered.")
+        if len(current_prefixes) == 1:
+            c = await pagination.Confirmation(
+                msg=f"{self.bot.emote_dict['exclamation']} **Upon confirmation, I will only respond to `@{ctx.guild.me.display_name}` Do you wish to continue?**"
+            ).prompt(ctx)
+            if c:
+                await self.bot.set_guild_prefixes(ctx.guild, [])
+                await ctx.success(f"Successfully cleared all prefixes. I will now only respond to <@!{self.bot.user.id}>")
+            else:
+                await ctx.send(f"**Cancelled.**")
+            return
+
+        try:
+            current_prefixes.remove(prefix)
+        except ValueError:
+            return await ctx.fail('I do not have this prefix registered.')
+
+        try:
+            await self.bot.set_guild_prefixes(ctx.guild, current_prefixes)
+        except Exception as e:
+            await ctx.send(f'{e}')
+        else:
+            await ctx.success(f"Successfully removed prefix: `{prefix}`")
+
+    @commands.command()
+    async def clearprefix(self, ctx, prefix: converters.Prefix = None):
+        """
+        Removes all custom prefixes.
+        After this, the bot will listen to only mention prefixes.
+        You must have Manage Server permission to use this command.
+        """
+        current_prefixes = self.bot.get_raw_guild_prefixes(ctx.guild.id)
+        if len(current_prefixes) == 0:
+            return await ctx.fail("I currently have no prefixes registered.")
+        c = await pagination.Confirmation(
+            msg=f"{self.bot.emote_dict['exclamation']} **Upon confirmation, I will only respond to `@{ctx.guild.me.display_name}` Do you wish to continue?**"
+        ).prompt(ctx)
+        if c:
+            await self.bot.set_guild_prefixes(ctx.guild, [])
+            await ctx.success(f"Successfully cleared all prefixes. I will now only respond to @`{ctx.guild.me.display_name}`")
+        else:
+            await ctx.send(f"**Cancelled.**")

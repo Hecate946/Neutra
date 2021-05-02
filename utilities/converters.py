@@ -296,3 +296,12 @@ class ActionReason(commands.Converter):
 class Arguments(argparse.ArgumentParser):
     def error(self, message):
         raise RuntimeError(message)
+
+class Prefix(commands.Converter):
+    async def convert(self, ctx, argument):
+        user_id = ctx.bot.user.id
+        if argument.startswith((f'<@{user_id}>', f'<@!{user_id}>')):
+            raise commands.BadArgument('That prefix cannot be modified.')
+        elif len(argument) > 20:
+            raise commands.BadArgument("Max prefix length is 20 characters.")
+        return argument

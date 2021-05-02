@@ -66,13 +66,12 @@ class Batch(commands.Cog):
                 for data in self.status_batch.items():
                     user_id = data[1]["user_id"]
                     bstatus = data[1]["bstatus"]
-                    res1 = time.time()
                     query = """
                             SELECT last_changed FROM userstatus;
                             """
                     res2 = await self.bot.cxn.fetchval(query)
                     if res2 is not None:
-                        if res1 < res2:
+                        if time.time() < res2:
                             await self.bot.bot_channel.send(f"fuck res1 < res2")
                     query = """
                             INSERT INTO userstatus (user_id, last_changed)
@@ -166,21 +165,6 @@ class Batch(commands.Cog):
                     ),
                 )
             self.member_batch.clear()
-            # for data in self.member_batch.items():
-            #     user_id = data[1][0]["user_id"]
-            #     server_id = data[1][0]["server_id"]
-            #     username = data[1][0]["username"]
-            #     nickname = data[1][0]["nickname"]
-            #     roles = data[1][0]["roles"]
-
-            #     await self.bot.cxn.execute(
-            #         query,
-            #         user_id,
-            #         username,
-            #         server_id,
-            #         nickname,
-            #         roles,
-            #     )
 
         # Emoji usage tracking
         if self.emoji_batch:
