@@ -1073,13 +1073,6 @@ class Mod(commands.Cog):
         else:
             await self.do_removal(ctx, 100, lambda e: substr in e.content)
 
-    async def get_server_prefixes(self, guild):
-        prefixes = self.bot.server_settings[guild.id]["prefixes"]
-        if prefixes == []:
-            prefixes.append(self.bot.constants.prefix)
-        prefixes.append(f"<@{self.bot.constants.client}")
-        prefixes.append(f"<@!{self.bot.constants.client}")
-        return prefixes
 
     @purge.command(
         name="bots", brief="Purge messages sent by bots.", aliases=["robots"]
@@ -1102,7 +1095,7 @@ class Mod(commands.Cog):
             for removing command invocations
         """
 
-        if not search.isdigit():
+        if not str(search).isdigit():
             prefix = search
             search = 100
         if prefix:
@@ -1250,22 +1243,32 @@ class Mod(commands.Cog):
         await channel.purge(after=message)
         return True
 
-    async def get_server_prefixes(self, guild):
-        prefixes = self.bot.server_settings[guild.id]["prefixes"].copy()
-        if prefixes == []:
-            prefixes.append(self.bot.constants.prefix)
-        prefixes.append(f"<@!{self.bot.constants.client}>")
-        prefixes.append(f"<@{self.bot.constants.client}>")
-        return prefixes
 
-    async def cleanup_strategy(self, ctx, search):
-        prefixes = tuple(await self.get_server_prefixes(ctx.guild))
+    async def _basic_cleanup_strategy(self, ctx, search):
+        count = 0
+        async for msg in ctx.history(limit=search, before=ctx.message):
+            if msg.author == ctx.me and not (msg.mentions or msg.role_mentions):
+                await msg.delete()
+                count += 1
+        return { 'Bot': count }
+
+    async def _complex_cleanup_strategy(self, ctx, search):
+        prefixes = tuple(self.bot.get_guild_prefixes(ctx.guild)) # thanks startswith
 
         def check(m):
             return m.author == ctx.me or m.content.startswith(prefixes)
 
         deleted = await ctx.channel.purge(limit=search, check=check, before=ctx.message)
-        return Counter(str(m.author) for m in deleted)
+        return Counter(m.author.display_name for m in deleted)
+
+    async def _regular_user_cleanup_strategy(self, ctx, search):
+        prefixes = tuple(self.bot.get_guild_prefixes(ctx.guild))
+
+        def check(m):
+            return (m.author == ctx.me or m.content.startswith(prefixes)) and not (m.mentions or m.role_mentions)
+
+        deleted = await ctx.channel.purge(limit=search, check=check, before=ctx.message)
+        return Counter(m.author.display_name for m in deleted)
 
     @decorators.command(brief="Clean up command usage.", search=200, aliases=["clean"])
     @commands.guild_only()
@@ -1283,9 +1286,21 @@ class Mod(commands.Cog):
             messages that look like they invoked the bot as well.
             After the cleanup is completed, the bot will send you a message with
             which people got their messages deleted and their count. This is useful
-            to see which users are spammers.
+            to see which users are spammers. Regular users can delete up to 25 while
+            moderators can delete up to 2000 messages
         """
-        strategy = self.cleanup_strategy
+        strategy = self._basic_cleanup_strategy
+        is_mod = ctx.channel.permissions_for(ctx.author).manage_messages
+        if ctx.channel.permissions_for(ctx.me).manage_messages:
+            if is_mod:
+                strategy = self._complex_cleanup_strategy
+            else:
+                strategy = self._regular_user_cleanup_strategy
+
+        if is_mod:
+            search = min(max(2, search), 2000)
+        else:
+            search = min(max(2, search), 25)
 
         spammers = await strategy(ctx, search)
         deleted = sum(spammers.values())
