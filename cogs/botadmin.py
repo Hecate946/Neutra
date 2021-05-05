@@ -886,59 +886,6 @@ class Botadmin(commands.Cog):
                 help_embed.set_footer(text="{} Extensions Total".format(len(ext_list)))
             await self._send_embed(ctx, help_embed, to_pm)
 
-    @decorators.command(brief="Show the bot's admins.")
-    async def botadmins(self, ctx):
-        """
-        Usage: -botadmins
-        Output: An embed of all my current admins
-        """
-        our_list = []
-        for user_id in self.bot.constants.admins:
-            user = self.bot.get_user(user_id)
-            our_list.append({"name": f"**{str(user)}**", "value": f"ID: `{user.id}`"})
-        p = pagination.MainMenu(
-            pagination.FieldPageSource(
-                entries=[
-                    ("{}. {}".format(y + 1, x["name"]), x["value"])
-                    for y, x in enumerate(our_list)
-                ],
-                title="My Admins ({:,} total)".format(len(self.bot.constants.admins)),
-                per_page=15,
-            )
-        )
-
-        try:
-            await p.start(ctx)
-        except menus.MenuError as e:
-            await ctx.send_or_reply(e)
-
-    @decorators.command(brief="Show the bot's owners.", aliases=["owners"])
-    async def botowners(self, ctx):
-        """
-        Usage: -botowners
-        Alias: -owners
-        Output: An embed of all my current owners
-        """
-        our_list = []
-        for user_id in self.bot.constants.owners:
-            user = self.bot.get_user(user_id)
-            our_list.append({"name": f"**{str(user)}**", "value": f"ID: `{user.id}`"})
-        p = pagination.MainMenu(
-            pagination.FieldPageSource(
-                entries=[
-                    ("{}. {}".format(y + 1, x["name"]), x["value"])
-                    for y, x in enumerate(our_list)
-                ],
-                title="My Owners ({:,} total)".format(len(self.bot.constants.owners)),
-                per_page=15,
-            )
-        )
-
-        try:
-            await p.start(ctx)
-        except menus.MenuError as e:
-            await ctx.send_or_reply(e)
-
     @decorators.command(
         aliases=["emojicount", "ec", "botemojis"],
         brief="Bot emoji count across all servers.",
@@ -983,93 +930,6 @@ class Botadmin(commands.Cog):
         embed.add_field(name="Total Emote Count", value=str(totalecount), inline=False)
         await ctx.send_or_reply(embed=embed)
 
-    @decorators.command(hidden=True, brief="Generate an oauth url for a bot ID.")
-    async def genoauth(self, ctx, client_id: int, perms=None):
-        """
-        Usage: -genoauth <client id> [perms]
-        Generates an oauth url (aka invite link) for a bot, for permissions goto https://discordapi.com/permissions.html. Or just put 'all' or 'admin'.
-        """
-        url = str(discord.utils.oauth_url(client_id))
-        if perms == "all":
-            await ctx.send_or_reply(
-                ""
-                "{}, here you go:\n"
-                "<{}&permissions=-1>".format(ctx.message.author.mention, url)
-            )
-        elif perms == "admin":
-            await ctx.send_or_reply(
-                ""
-                "{}, here you go:\n"
-                "<{}&permissions=8>".format(ctx.message.author.mention, url)
-            )
-        elif perms:
-            await ctx.send_or_reply(
-                ""
-                "{}, here you go:\n"
-                "<{}&permissions={}>".format(ctx.message.author.mention, url, perms)
-            )
-        else:
-            await ctx.send_or_reply(
-                "" "{}, here you go:\n" "<{}>".format(ctx.message.author.mention, url)
-            )
-
-    @decorators.command(hidden=True, brief="Generate an oauth url for a bot.")
-    async def genbotoauth(self, ctx, bot: discord.Member, perms=None):
-        """
-        Usage: -genbotoauth <bot> [perms]
-        Generates an oauth url (aka invite link) for a bot.
-        For permissions goto https://discordapi.com/permissions.html. Or just put 'all' or 'admin'.
-        Doesn't always work
-        """
-        url = str(discord.utils.oauth_url(bot.id))
-        if not bot.bot:
-            await ctx.send_or_reply(content="User is not a bot.")
-            return
-        if perms == "all":
-            await ctx.send_or_reply(
-                ""
-                "{}, here you go:\n"
-                "<{}&permissions=-1>".format(ctx.message.author.mention, url)
-            )
-        elif perms == "admin":
-            await ctx.send_or_reply(
-                ""
-                "{}, here you go:\n"
-                "<{}&permissions=8>".format(ctx.message.author.mention, url)
-            )
-        elif perms:
-            await ctx.send_or_reply(
-                ""
-                "{}, here you go:\n"
-                "<{}&permissions={}>".format(ctx.message.author.mention, url, perms)
-            )
-        else:
-            await ctx.send_or_reply(
-                "" "{}, here you go:\n" "<{}>".format(ctx.message.author.mention, url)
-            )
-
-    @decorators.command(
-        aliases=["listcogs"], hidden=True, brief="List all my cogs in an embed."
-    )
-    async def cogs(self, ctx):
-        """
-        Usage: -cogs
-        Output: An embed of all my current cogs
-        """
-        cog_list = []
-        for cog in os.listdir("./cogs"):
-            if cog.endswith(".py"):
-                cog_list.append(f"{cog}")
-        if len(cog_list):
-            cog_list = sorted(cog_list)
-
-        embed = discord.Embed(
-            title="Extensions",
-            description="```css\n" + "\n".join(cog_list) + "```",
-            color=self.bot.constants.embed,
-        )
-        await ctx.send_or_reply(embed=embed)
-
     @decorators.command(
         rest_is_raw=True,
         hidden=True,
@@ -1112,3 +972,24 @@ class Botadmin(commands.Cog):
         except Exception as e:
             ctx.author.fail(e)
         await ctx.react(self.bot.emote_dict["success"])
+
+    @decorators.command()
+    async def sss(self, ctx, user: converters.DiscordUser = None):
+        if user is None:
+            user = ctx.author
+
+        shared = []
+        for guild in self.bot.guilds:
+            for member in guild.members:
+                if member.id == user.id:
+                    shared.append((guild.name, guild.id))
+
+
+        formatted = '\n'.join([f'{x[0]} ({x[1]})' for x in shared])
+        details = f"```prolog\n{formatted}```"
+        await ctx.send_or_reply(f"**`{user}` shares {len(shared)} servers with me.**{details}")
+
+        
+
+        
+

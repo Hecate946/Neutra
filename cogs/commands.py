@@ -1,12 +1,14 @@
 import asyncio
-import os
-from datetime import datetime
-
 import discord
-from discord.ext import commands
 
-from utilities import checks, converters
+from datetime import datetime
+from discord.ext import commands, menus
+
+from utilities import checks
+from utilities import converters
 from utilities import decorators
+from utilities import pagination
+from utilities import utils
 
 COMMAND_EXCEPTIONS = []
 
@@ -139,6 +141,7 @@ class Commands(commands.Cog):
         name="help",
         brief="My documentation for all commands.",
         aliases=["commands", "documentation", "docs", "helpme"],
+        implemented="2021-02-22 05:04:47.433000",
         updated="2021-05-05 05:08:05.642637",
     )
     async def _help(self, ctx, *, invokercommand: str = None):
@@ -500,7 +503,7 @@ class Commands(commands.Cog):
                     )
                     help_embed.add_field(
                         name=f"**Command Name:** `{valid_commands.title()}`\n**Description:** `{valid_brief}`\n",
-                        value=f"** **" f"```yaml\n{valid_help}```",
+                        value=f"** **" f"```yaml\n{valid_help.format(ctx.prefix)}```",
                     )
                     await self.send_help(ctx, help_embed, pm, delete_after)
                     return
@@ -528,7 +531,7 @@ class Commands(commands.Cog):
                     if not x.help or x.help == "":
                         _help = "No help"
                     else:
-                        _help = x.help
+                        _help = x.help.format(ctx.prefix)
                     help_embed = discord.Embed(
                         title=f"Category: `{str(command.cog.qualified_name).title()}`",
                         description=f"**Bot Invite Link:** [https://snowbot.discord.bot]({self.bot.oauth})\n"
@@ -557,7 +560,7 @@ class Commands(commands.Cog):
         if not command.help or command.help == "":
             _help = "No help"
         else:
-            _help = command.help
+            _help = command.help.format(ctx.prefix)
         help_embed = discord.Embed(
             title=f"Category: `{str(command.cog.qualified_name).title()}`",
             description=f"**Bot Invite Link:** [https://snowbot.discord.bot]({self.bot.oauth})\n"
@@ -636,7 +639,7 @@ class Commands(commands.Cog):
         Output:
             The usage of a command
         """
-        await ctx.usage(command.signature)
+        await ctx.usage(command.signature, command)
 
     @decorators.command(
         brief="Show permissions to run a command.",
@@ -696,3 +699,63 @@ class Commands(commands.Cog):
         await ctx.send_or_reply(
             f"{heart} The command `{command}` was made by `{writer}`"
         )
+
+    @decorators.command(
+        brief="Get attribute info on a command.",
+        aliases=['cmdinfo'],
+        implemented="2021-05-05 18:41:26.960101",
+        updated="2021-05-05 18:41:26.960101"
+    )
+    async def commandinfo(self, ctx, command: converters.DiscordCommand):
+        """
+        Usage: {0}commandinfo <command>
+        Alias: {0}cmdinfo
+        Output:
+            Specific command information
+        """
+        writer = f"{self.bot.get_user(command.writer)} [{command.writer}]"
+        query = """
+                SELECT (COUNT(*), MAX(timestamp))
+                FROM commands
+                WHERE command = $1
+                """
+        stats = await self.bot.cxn.fetchval(query, command.qualified_name)
+        last_run = utils.format_time(stats[1])
+        total_runs = stats[0]
+        title = f"{self.bot.emote_dict['commands']} **Information on `{command.qualified_name}`**"
+        collection = []
+        collection.append({"Name": command.qualified_name})
+        collection.append({"Description": command.brief})
+        if command.aliases:
+            collection.append({f"Alias{'' if len(command.aliases) == 1 else 'es'}": "|".join(command.aliases)})
+        collection.append({"Usage": f"{ctx.prefix}{command.qualified_name} {command.signature}"})
+        collection.append({"Status": f"{'Enabled' if command.enabled else 'Disabled'}"})
+        collection.append({"Hidden": command.hidden})
+        if hasattr(command, "permissions"):
+            perms = ', '.join(command.permissions) if command.permissions else "No permissions required"
+            collection.append({"Permissions": perms})
+        if hasattr(command, "botperms"):
+            botperms = ', '.join(command.botperms) if command.botperms else "No bot permissions required"
+            collection.append({"Bot Permissions": botperms})
+        if hasattr(command, "implemented"):
+            implemented = utils.format_time(datetime.strptime(command.implemented, "%Y-%m-%d %H:%M:%S.%f")) if command.implemented else "Not documented"
+            collection.append({"Implemented": implemented})
+        if hasattr(command, "updated"):
+            updated = utils.format_time(datetime.strptime(command.updated, "%Y-%m-%d %H:%M:%S.%f")) if command.updated else "Not documented"
+            collection.append({"Last Updated": updated})
+        collection.append({"Last Run": last_run})
+        collection.append({"Total Runs": total_runs})
+        if hasattr(command, "writer"):
+            collection.append({"Writer": writer})
+
+        width = max([len(x[0]) for x in [list(x) for x in [x.keys() for x in collection]]])
+        msg = ""
+        for item in collection:
+            for key, value in item.items():
+                msg += f"{str(key).ljust(width)} : {value}\n"
+        p = pagination.MainMenu(pagination.TextPageSource(msg, prefix="```yaml"))
+        await ctx.send_or_reply(title)
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send_or_reply(e)

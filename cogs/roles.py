@@ -229,7 +229,7 @@ class Roles(commands.Cog):
             f'the role{"" if len(role_list) == 1 else "s"} `{", ".join(role_names)}`'
         )
 
-    @commands.group(
+    @decorators.group(
         brief="Mass adds or removes a role to users.", aliases=["multirole"]
     )
     @commands.guild_only()

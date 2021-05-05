@@ -4,12 +4,17 @@ import copy
 import shlex
 import discord
 
-from datetime import datetime, timedelta
+from datetime import datetime
+from datetime import timedelta
 from discord.ext import commands
 from unidecode import unidecode
 
-from utilities import pagination, checks, utils, helpers, converters
+from utilities import checks
+from utilities import utils
+from utilities import helpers
+from utilities import converters
 from utilities import decorators
+from utilities import pagination
 
 
 def setup(bot):
@@ -23,8 +28,6 @@ class Admin(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.bot = bot
-        self.emote_dict = bot.emote_dict
         self.exceptions = []
 
     def _get_our_comms(self):
@@ -429,10 +432,10 @@ class Admin(commands.Cog):
         ).send(ctx)
 
     @decorators.command(brief="Disallow users from using the bot.")
-    @checks.has_perms(manage_guilld=True)
+    @checks.has_perms(manage_guild=True)
     async def ignore(self, ctx, user: discord.Member = None, react: str = ""):
         """
-        Usage: -ignore <user> [react] [reason]
+        Usage: {0}ignore <user> [react] [reason]
         Output: Will not process commands from the passed user.
         Permission: Administrator
         Notes:
@@ -445,15 +448,15 @@ class Admin(commands.Cog):
 
         if user.guild_permissions.administrator:
             return await ctx.send_or_reply(
-                content=f"{self.emote_dict['failed']} You cannot punish other staff members",
+                content=f"{self.bot.emote_dict['failed']} You cannot punish other staff members",
             )
         if user.id in self.bot.constants.owners:
             return await ctx.send_or_reply(
-                content=f"{self.emote_dict['failed']} You cannot punish my creator.",
+                content=f"{self.bot.emote_dict['failed']} You cannot punish my creator.",
             )
         if user.top_role.position > ctx.author.top_role.position:
             return await ctx.send_or_reply(
-                content=f"{self.emote_dict['failed']} User `{user}` is higher in the role hierarchy than you.",
+                content=f"{self.bot.emote_dict['failed']} User `{user}` is higher in the role hierarchy than you.",
             )
 
         if react is None:
@@ -473,7 +476,7 @@ class Admin(commands.Cog):
 
         if already_ignored is not None:
             return await ctx.send_or_reply(
-                content=f"{self.emote_dict['warn']} User `{user}` is already being ignored.",
+                content=f"{self.bot.emote_dict['warn']} User `{user}` is already being ignored.",
             )
 
         query = """INSERT INTO ignored VALUES ($1, $2, $3, $4, $5)"""
@@ -489,18 +492,27 @@ class Admin(commands.Cog):
         self.bot.server_settings[ctx.guild.id]["ignored_users"][user.id] = react
 
         await ctx.send_or_reply(
-            content=f"{self.emote_dict['success']} Ignored `{user}`",
+            content=f"{self.bot.emote_dict['success']} Ignored `{user}`",
         )
 
-    @decorators.command(brief="Reallow users to use the bot.", aliases=["listen"])
+    @decorators.command(
+        aliases=["listen"],
+        brief="Reallow users to use the bot.",
+        permissions=["manage_guild"],
+        updated="2021-05-05 19:48:06.478774",
+    )
     @commands.guild_only()
-    @checks.has_perms(manage_guilld=True)
+    @checks.has_perms(manage_guild=True)
     async def unignore(self, ctx, user: discord.Member = None):
         """
-        Usage: -unignore <user>
-        Alias: -listen
-        Output: Will delete the passed user from the ignored list
-        Permission: Administrator
+        Usage: {0}unignore <user>
+        Alias: {0}listen
+        Permission: Manage Server
+        Output:
+            Will delete the passed user
+            from the bots ignored list
+            and once again respond to
+            commands executed by the user
         """
 
         if user is None:
@@ -510,7 +522,7 @@ class Admin(commands.Cog):
         blacklisted = await self.bot.cxn.fetchval(query, user.id, ctx.guild.id) or None
         if blacklisted is None:
             return await ctx.send_or_reply(
-                content=f"{self.emote_dict['warn']} User was not ignored.",
+                content=f"{self.bot.emote_dict['warn']} User was not ignored.",
             )
 
         query = """DELETE FROM ignored WHERE user_id = $1 AND server_id = $2"""
@@ -519,7 +531,7 @@ class Admin(commands.Cog):
         self.bot.server_settings[ctx.guild.id]["ignored_users"].pop(user.id, None)
 
         await ctx.send_or_reply(
-            f"{self.emote_dict['success']} Removed `{user}` from the ignore list."
+            f"{self.bot.emote_dict['success']} Removed `{user}` from the ignore list."
         )
 
     async def message(self, message):
@@ -542,7 +554,7 @@ class Admin(commands.Cog):
             return
 
         if react is True:
-            await message.add_reaction(self.emote_dict["failed"])
+            await message.add_reaction(self.bot.emote_dict["failed"])
         # We have an ignored user
         return {"Ignore": True, "Delete": False}
 
@@ -588,17 +600,17 @@ class Admin(commands.Cog):
     @checks.has_perms(manage_guild=True)
     async def muterole(self, ctx, role: discord.Role = None):
         """
-        Usage:      -muterole <role>
-        Alias:      -setmuterole
-        Example:    -muterole @Muted
+        Usage:      {0}muterole <role>
+        Alias:      {0}setmuterole
+        Example:    {0}muterole @Muted
         Permission: Manage Server
         Output:
             This command will set a role of your choice as the
-            "Muted" role. The bot will also create a channel
-            named "muted" specifically for muted members.
+            "Muted" role.
         Notes:
-            Channel "muted" may be deleted after command execution
-            if so desired.
+            When this command is run, the permissions for every
+            channel will have the Send Messages permission set
+            to false for the muted role.
         """
         msg = await ctx.send_or_reply(
             f"{self.bot.emote_dict['warn']} Creating mute system. This process may take several minutes."
@@ -638,57 +650,30 @@ class Admin(commands.Cog):
             content=f"{self.bot.emote_dict['success']} Saved `{role.name}` as this server's mute role."
         )
 
-    # @decorators.command(aliases=["setprefix"], brief="Set your server's custom prefix.")
-    # @commands.guild_only()
-    # @checks.has_perms(manage_guild=True)
-    # async def prefix(self, ctx, new: str = None):
-    #     """
-    #     Usage: -prefix [new prefix]
-    #     Alias: -setprefix
-    #     Output: A new prefix for the server
-    #     Example: -prefix $
-    #     Permission: Manage Server
-    #     Notes:
-    #         The bot will always respond to @Snowbot in addition
-    #         to the set prefix. The default prefix is -.
-    #         The bot will only respond to that prefix in DMs.
-    #         The new prefix set must be under 5 characters.
-    #     """
-    #     if new is None:
-    #         prefix = self.bot.server_settings[ctx.guild.id]["prefix"]
-    #         await ctx.reply(f"The current prefix is `{prefix}`")
-    #     else:
-    #         if len(new) > 5:
-    #             await ctx.send_or_reply(
-    #                 f"{ctx.author.mention}, that prefix is too long. The prefix must be five characters maximum."
-    #             )
-    #         else:
-    #             self.bot.server_settings[ctx.guild.id]["prefix"] = new
-    #             query = """
-    #                     UPDATE servers
-    #                     SET prefix = $1
-    #                     WHERE server_id = $2
-    #                     """
-    #             await self.bot.cxn.execute(query, new, ctx.guild.id)
-    #             await ctx.reply(
-    #                 f"{self.bot.emote_dict['success']} The prefix has been set to `{new}`"
-    #             )
 
-    @decorators.command(brief="Have the bot leave the server.", aliases=["kill", "die"])
+    @decorators.command(
+        aliases=["kill", "die"],
+        brief="Have the bot leave the server.",
+        permissions=['administrator'],
+        implemented="2021-04-28 20:21:42.190256",
+        updated="2021-05-05 19:43:51.209242"
+    )
     @commands.guild_only()
     @checks.has_perms(manage_guild=True)
     async def leave(self, ctx):
         """
-        Usage: -leave
-        Aliases: -kill, -die
-        Output: Clears all stored server data and kicks me.
+        Usage: {0}leave
+        Aliases: {0}kill, {0}die
+        Output:
+            Clears all stored server data
+            and kicks the bot from the server.
         Notes:
             You will receive confirmation, upon executing this
             command, all emoji stats, messages, last seen data
             roles, nicknames, and usernames will be deleted.
         """
         c = await pagination.Confirmation(
-            f"{self.bot.emote_dict['exclamation']} **This action will remove me from this server and clear all my collected data. Do you wish to continue?**"
+            f"{self.bot.emote_dict['delete']} **This action will remove me from this server and clear all my collected data. Do you wish to continue?**"
         ).prompt(ctx)
         if c:
             await ctx.guild.leave()
@@ -702,10 +687,10 @@ class Admin(commands.Cog):
     @checks.has_perms(manage_guild=True)
     async def massdehoist(self, ctx, symbol: str = None):
         """
-        Usage: -massdehoist [symbol]
+        Usage: {0}massdehoist [symbol]
         Permission: Manage Server
         Output:
-            Re nicknames all users who hoist
+            Re-nicknames all users who hoist
             their names with characters like "!"
         Notes:
             Pass an optional symbol to only nickname
@@ -792,7 +777,7 @@ class Admin(commands.Cog):
     @checks.has_perms(manage_guild=True)
     async def massascify(self, ctx):
         """
-        Usage: -massascify
+        Usage: {0}massascify
         Permission: Manage Server
         Output:
             The bot will attempt to edit the
@@ -845,14 +830,21 @@ class Admin(commands.Cog):
                 content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
             )
 
-    @decorators.command(brief="Massban users matching a search.", aliases=["multiban"])
+    @decorators.command(
+        aliases=["multiban"],
+        brief="Massban users matching a search.",
+        botperms=["ban_members"],
+        permissions=["manage_guild", "ban_members"],
+        implemented="2021-05-02 04:12:14.126319",
+        updated="2021-05-05 19:23:39.306805",
+    )
     @commands.guild_only()
     @checks.bot_has_perms(ban_members=True)
     @checks.has_perms(manage_guild=True, ban_members=True)
     async def massban(self, ctx, *, args=None):
         """
-        Usage: -massban <arguments>
-        Aliases: -multiban
+        Usage: {0}massban <arguments>
+        Aliases: {0}multiban
         Permissions: Manage Server, Ban Members
         Output:
             Massbans users matching searches
@@ -1128,7 +1120,7 @@ class Admin(commands.Cog):
 
         return results
 
-    @commands.group(
+    @decorators.group(
         name="prefix",
         invoke_without_command=True,
         case_insensitive=True,
@@ -1150,13 +1142,12 @@ class Admin(commands.Cog):
     async def prefix_remove(self, ctx, prefix: converters.Prefix = None):
         await ctx.invoke(self.removeprefix, prefix)
 
-    @prefix.command(name="clear", hidden=True)
     @checks.has_perms(manage_guild=True)
+    @prefix.command(name="clear", hidden=True)
     async def prefix_clear(self, ctx, prefix: converters.Prefix = None):
         await ctx.invoke(self.clearprefix, prefix)
 
     @decorators.command(
-        brief="Show all server prefixes.",
         aliases=[
             "showprefixes",
             "showprefix",
@@ -1164,14 +1155,17 @@ class Admin(commands.Cog):
             "displayprefixes",
             "whatprefix",
         ],
+        brief="Show all server prefixes.",
+        implemented="2021-05-03 09:14:59.219515",
+        updated="2021-05-05 19:23:39.306805",
     )
     async def prefixes(self, ctx):
         """
         Usage: -prefix
         Aliases:
-            -prefix, -prefix show, -prefix display,
-            -showprefixes, -showprefix, -whatprefix
-            -displayprefixes, -displayprefix
+            {0}prefix, {0}prefix show, {0}prefix display,
+            {0}showprefixes, {0}showprefix, {0}whatprefix
+            {0}displayprefixes, {0}displayprefix
         Output:
             Shows all my current server prefixes.
         """
@@ -1187,14 +1181,20 @@ class Admin(commands.Cog):
             f"My current prefix{' is' if len(prefixes) == 1 else 'es are'} `{', '.join(prefixes)}`"
         )
 
-    @decorators.command(brief="Add a custom server prefix.", aliases=["createprefix"])
     @checks.has_perms(manage_guild=True)
+    @decorators.command(
+        aliases=["createprefix"],
+        brief="Add a custom server prefix.",
+        permissions=["manage_guild"],
+        implemented="2021-05-03 09:14:59.219515",
+        updated="2021-05-05 19:23:39.306805",
+    )
     async def addprefix(self, ctx, prefix: converters.Prefix = None):
         """
-        Usage: -addprefix <new prefix>
+        Usage: {0}addprefix <new prefix>
         Aliases:
-            -addprefix, -prefix add,
-            -prefix create, createprefix
+            {0}addprefix, {0}prefix add,
+            {0}prefix create, {0}createprefix
         Output:
             Adds a prefix to the list of custom prefixes.
         Notes:
@@ -1224,18 +1224,22 @@ class Admin(commands.Cog):
                 "If your prefix is multiple words, surround it in quotes. Otherwise, add them one at a time."
             )
 
+    @checks.has_perms(manage_guild=True)
     @decorators.command(
+        aliases=["deleteprefix", "rmprefix", "remprefix", "delprefix"],
         brief="Remove a custom server prefix",
         ignore_extra=False,
-        aliases=["deleteprefix", "rmprefix", "remprefix", "delprefix"],
+        permissions=["manage_guild"],
+        implemented="2021-05-03 09:14:59.219515",
+        updated="2021-05-05 19:23:39.306805",
     )
     async def removeprefix(self, ctx, prefix: converters.Prefix = None):
         """
-        Usage: -removeprefix <new prefix>
+        Usage: {0}removeprefix <new prefix>
         Aliases:
-            -rmprefix, -prefix remove, -prefix rm
-            -prefix rem, prefix del, prefix delete,
-            -deleteprefix, delprefix, remprefix
+            {0}rmprefix, {0}prefix remove, {0}prefix rm
+            {0}prefix rem, {0}prefix del, {0}prefix delete,
+            {0}deleteprefix, {0}delprefix, {0}remprefix
         Permission: Manage Server
         Output:
             Removes a prefix from the list of custom prefixes.
@@ -1274,12 +1278,26 @@ class Admin(commands.Cog):
         else:
             await ctx.success(f"Successfully removed prefix: `{prefix}`")
 
-    @decorators.command()
-    async def clearprefix(self, ctx, prefix: converters.Prefix = None):
+    @checks.has_perms(manage_guild=True)
+    @decorators.command(
+        aliases=['clearprefixes', 'resetprefix','resetprefixes'],
+        brief="Clear all custom prefixes.",
+        permissions=["manage_guild"],
+        implemented="2021-05-03 09:14:59.219515",
+        updated="2021-05-05 19:23:39.306805",
+    )
+    async def clearprefix(self, ctx):
         """
-        Removes all custom prefixes.
-        After this, the bot will listen to only mention prefixes.
-        You must have Manage Server permission to use this command.
+        Usage: {0}clearprefix
+        Aliases:
+            {0}clearprefixes, {0}prefix clear,
+            {0}resetprefix, {0}resetprefixes,
+        Permission: Manage Server
+        Output:
+            Removes all custom prefixes.
+        Notes:
+            After this, the bot will listen to only mention prefixes.
+            To add a new custom prefix, use {0}prefix add <new prefix>
         """
         current_prefixes = self.bot.get_raw_guild_prefixes(ctx.guild.id)
         if len(current_prefixes) == 0:

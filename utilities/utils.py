@@ -438,7 +438,7 @@ UNKNOWN_CUTOFF_TZ = UNKNOWN_CUTOFF.replace(tzinfo=timezone.utc)
 def format_time(time):
     if time is None or time < UNKNOWN_CUTOFF:
         return "Unknown"
-    return "{} - [{}+00:00]".format(
+    return "{} - [{}+00:00 UTC]".format(
         humanize.naturaltime(time + (datetime.now() - datetime.utcnow())), time
     )
 

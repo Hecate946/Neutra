@@ -91,6 +91,23 @@ class Utility(commands.Cog):
             timestamp = datetime.utcfromtimestamp(decoded + token_epoch)
         return timestamp
 
+    @decorators.command(
+        aliases=["genoauth", "oauth2", "genbotoauth"],
+        brief="Generate a bot invite link.",
+        implemented="2021-05-05 17:59:12.441533",
+        updated="2021-05-05 17:59:12.441533",
+    )
+    async def oauth(
+        self, ctx, bot: converters.DiscordBot = None, permissions: int = None
+    ):
+        if not bot:
+            await ctx.reply(f"<{self.bot.oauth}>")
+            return
+        if permissions:
+            permissions = discord.Permissions(permissions)
+        oauth_url = discord.utils.oauth_url(bot.id, permissions=permissions)
+        await ctx.reply("<" + oauth_url + ">")
+
     @decorators.command(aliases=["pt", "parsetoken"], brief="Decode a discord token.")
     async def ptoken(self, ctx, token=None):
         """
@@ -668,7 +685,7 @@ class Utility(commands.Cog):
     # command idea from Alex Flipnote's discord_bot.py bot
     # https://github.com/AlexFlipnote/discord_bot.py
 
-    @commands.group(brief="Find any user using a search.", aliases=["search"])
+    @decorators.group(brief="Find any user using a search.", aliases=["search"])
     @commands.guild_only()
     @checks.has_perms(manage_messages=True)
     async def find(self, ctx):

@@ -63,11 +63,12 @@ CREATE TABLE IF NOT EXISTS warn (
     server_id bigint,
     warnings smallint
 );
-
-CREATE TABLE IF NOT EXISTS tasks (
-    user_id BIGINT,
-    server_id BIGINT,
-    command VARCHAR(50),
-    endtime TIMESTAMP,
-    UNIQUE (user_id, server_id)
-);
+-- DROP TABLE tasks;
+-- CREATE TABLE IF NOT EXISTS tasks (
+--     task_id BIGSERIAL PRIMARY KEY,
+--     user_id BIGINT,
+--     server_id BIGINT,
+--     event VARCHAR(50),
+--     starttime TIMESTAMP,
+--     endtime TIMESTAMP
+-- );

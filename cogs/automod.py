@@ -351,7 +351,7 @@ class Automod(commands.Cog):
             await self.bot.cxn.execute(query, removeinvitelinks, ctx.guild.id)
         await ctx.send_or_reply(msg)
 
-    @commands.group(
+    @decorators.group(
         case_insensitive=True,
         aliases=["autoroles", "autoassign"],
         brief="Assign roles to new members.",
@@ -661,7 +661,7 @@ class Automod(commands.Cog):
                     except Exception as e:
                         print(e)
 
-    @commands.group(
+    @decorators.group(
         invoke_without_command=True,
         case_insensitive=True,
         name="filter",

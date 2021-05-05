@@ -186,8 +186,7 @@ class Manager(commands.Cog):
         self.bot.constants.avchan = config["avchan"]
         self.bot.constants.botlog = config["botlog"]
         self.bot.constants.timezonedb = config["timezonedb"]
-        self.bot.constants.bitly = config['bitly']
-
+        self.bot.constants.bitly = config["bitly"]
 
         self.bot.owner_ids = self.bot.constants.owners
 
@@ -382,7 +381,7 @@ class Manager(commands.Cog):
     ## Shell Commands ##
     ####################
 
-    @commands.group(
+    @decorators.group(
         hidden=True, brief="View logging files.", aliases=["l"], case_insensitive=True
     )
     async def logger(self, ctx):
@@ -418,7 +417,7 @@ class Manager(commands.Cog):
         sh = self.bot.get_command("sh")
         await ctx.invoke(sh, prefix="prolog", command="cat ./data/logs/errors.log")
 
-    @commands.group(hidden=True, brief="View pm2 files.", case_insensitive=True)
+    @decorators.group(hidden=True, brief="View pm2 files.", case_insensitive=True)
     async def pm2(self, ctx):
         """
         Usage: -pm2 <option>
@@ -456,7 +455,7 @@ class Manager(commands.Cog):
             if filename.startswith("pid"):
                 await ctx.invoke(sh, prefix="yml", command=f"cat ./data/pm2/{filename}")
 
-    @commands.group(
+    @decorators.group(
         hidden=True,
         brief="View ./data/json files.",
         aliases=["j"],
@@ -610,7 +609,7 @@ class Manager(commands.Cog):
         else:
             await ctx.send_or_reply(content=fmt)
 
-    @commands.group(hidden=True, brief="Show info on the database.", aliases=["pg"])
+    @decorators.group(hidden=True, brief="Show info on the database.", aliases=["pg"])
     async def postgres(self, ctx):
         """
         Usage: -postgres <option>
@@ -898,7 +897,7 @@ class Manager(commands.Cog):
         else:
             await ctx.send_or_reply(content=fmt)
 
-    @commands.group(
+    @decorators.group(
         hidden=True,
         invoke_without_command=True,
         brief="Show command history.",

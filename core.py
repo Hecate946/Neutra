@@ -191,7 +191,7 @@ class Snowbot(commands.AutoShardedBot):
                         "avatar changes": self.avchanges,
                     }
                     json.dump(stats, fp, indent=2)
-            except:
+            except AttributeError:
                 pass
 
     def setup(self):
@@ -228,7 +228,7 @@ class Snowbot(commands.AutoShardedBot):
             await self.cxn.execute(
                 query, self.user.id, runtime, statustime
             )  # Runtime stats and status info for %uptime cmd.
-        except:
+        except AttributeError:
             # Probably because the process
             # was killed before the bot
             # was established. Let's silence errors.

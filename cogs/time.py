@@ -327,12 +327,21 @@ class Time(commands.Cog):
             )
             self.stopwatches.pop(author.id, None)
 
-    @checks.has_perms(manage_guild=True)
+
     @decorators.command(
+        aliases=["utctime", "utc"],
+        brief="Show the current utc time.",
         implemented="2021-05-05 02:04:35.619602",
-        aliases=["utctime"],
+        updated="2021-05-05 19:17:21.775487",
     )
     async def utcnow(self, ctx):
+        """
+        Usage: {0}utcnow
+        Aliases: {0}utctime, {0}utc
+        Output:
+            datetime.datetime.utcnow()
+            time format.
+        """
         await ctx.send_or_reply(
-            f"{self.bot.emote_dict['stopwatch']} `{datetime.utcnow()}`"
+            f"{self.bot.emote_dict['clock']} `{datetime.utcnow()}`"
         )

@@ -360,7 +360,7 @@ class Conversion(commands.Cog):
 
         await ctx.send_or_reply(content="{:08b}".format(input_int))
 
-    @commands.group(brief="Encode to: b32, b64, b85, rot13, hex.")
+    @decorators.group(brief="Encode to: b32, b64, b85, rot13, hex.")
     async def encode(self, ctx):
         """
         Usage: -encode <method>
@@ -374,7 +374,7 @@ class Conversion(commands.Cog):
         if ctx.invoked_subcommand is None:
             await ctx.send_help(str(ctx.command))
 
-    @commands.group(brief="Decode from b32, b64, b85, rot13, hex.")
+    @decorators.group(brief="Decode from b32, b64, b85, rot13, hex.")
     async def decode(self, ctx):
         """
         Usage: -decode <method>

@@ -5,6 +5,7 @@ from discord.ext import commands
 from utilities import override
 
 command = functools.partial(commands.command, cls=override.BotCommand)
+group = functools.partial(commands.group, cls=override.BotGroup)
 
 
 def is_home():

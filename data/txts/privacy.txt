@@ -1,16 +1,14 @@
-USER PRIVACY POLICY:
-
-By being in a server where Snowbot#7630 (810377376269205546)
+By being in a server where {0} ({1})
 is present, you consent to have your user statistics recorded
 for moderational use by the server owners and administrators.
 This data is collected for informative purposes and will not be
 disclosed by the bot's developer. All liability lies in the hands
 of server owners, administrators, and moderators. Any form of user data,
 including but not limited to messages, attachments, emoji usage,
-and last online timestamps, will be recorded by Snowbot#7630
+and last online timestamps, will be recorded by {0}
 to be used by server owners, administrators, and moderators.
 If you do not consent to having your user data recorded, consult
 your server managers. Additionally, if you have concerns regarding user
-data collection, voice them by using the {}request command in DMs with the bot.
+data collection, voice them by using the {2}request command in DMs with the bot.
 Note that if your collected user data is purged from the bot's database,
 all logs (if present) remain in control of server moderators.

@@ -54,7 +54,7 @@ class Info(commands.Cog):
         Aliases: -info, -bot, -botstats, botinfo
         Output: Version info and bot stats
         """
-        msg = await ctx.send_or_reply(content="**Collecting Info...**")
+        msg = await ctx.send_or_reply(content=f"**{self.bot.emote_dict['loading']} Collecting Bot Info...**")
         version_query = """
                         SELECT version
                         FROM config
@@ -71,14 +71,14 @@ class Info(commands.Cog):
         text = len(text_channels)
         voice = len(voice_channels)
 
-        ramUsage = self.process.memory_full_info().rss / 1024 ** 2
+        ram_usage = self.process.memory_full_info().rss / 1024 ** 2
         proc = psutil.Process()
         with proc.oneshot():
             mem_total = psutil.virtual_memory().total / (1024 ** 2)
             mem_of_total = proc.memory_percent()
 
         embed = discord.Embed(colour=self.bot.constants.embed)
-        embed.set_thumbnail(url=ctx.bot.user.avatar_url)
+        embed.set_thumbnail(url=self.bot.user.avatar_url)
         embed.add_field(
             name="Last boot",
             value=utils.timeago(datetime.datetime.utcnow() - self.bot.uptime),
@@ -120,7 +120,7 @@ class Info(commands.Cog):
             value=f"{await self.total_global_messages():,}",
             inline=True,
         )
-        embed.add_field(name="RAM", value=f"{ramUsage:.2f} MB", inline=True)
+        embed.add_field(name="RAM", value=f"{ram_usage:.2f} MB", inline=True)
 
         await msg.edit(
             content=f"About **{ctx.bot.user}** | **{round(bot_version, 1)}**",
@@ -533,16 +533,46 @@ class Info(commands.Cog):
         msg = f"**__My source {'' if command is None else f'for {command}'} is located at:__**\n\n{final_url}"
         await ctx.send_or_reply(msg)
 
-    @decorators.command(brief="Invite me to your server!", aliases=["bi", "invite"])
-    async def botinvite(self, ctx):
+    @decorators.command(
+        aliases=["listcogs"],
+        brief="List all my cogs in an embed.",
+        implemented="2021-05-05 19:01:15.387930",
+        updated="2021-05-05 19:01:15.387930"
+    )
+    async def cogs(self, ctx):
         """
-        Usage: -botinvite
-        Aliases: -bi, -invite
-        Output: An invite link to invite me to your server
+        Usage: -cogs
+        Output: An embed of all my current cogs
         """
-        await ctx.send_or_reply(
-            f"**{ctx.author.name}**, use this URL to invite me\n<{self.bot.oauth}>"
+        cog_list = []
+        for cog in os.listdir("./cogs"):
+            if cog.endswith(".py"):
+                cog_list.append(f"{cog}")
+        if len(cog_list):
+            cog_list = sorted(cog_list)
+
+        embed = discord.Embed(
+            title="Extensions",
+            description="```css\n" + "\n".join(cog_list) + "```",
+            color=self.bot.constants.embed,
         )
+        await ctx.send_or_reply(embed=embed)
+
+    @decorators.command(
+        brief="Invite me to your server!",
+        aliases=["botinvite", "bi"],
+        implemented="2021-05-05 18:05:30.156694",
+        updated="2021-05-05 18:05:30.156694",
+    )
+    async def invite(self, ctx):
+        """
+        Usage: -invite
+        Aliases:
+            -bi, botinvite
+        Output:
+            An invite link to invite me to your server
+        """
+        await self.bot.get_command("oauth").__call__(ctx)
 
     @decorators.command(
         brief="Join my support server!", aliases=["sup", "assistance", "assist"]
@@ -694,11 +724,11 @@ class Info(commands.Cog):
     )
     async def lines(self, ctx):
         """
-        Usage: -lines
-        Aliases: -cloc, -code, codeinfo
+        Usage: {0}lines
+        Aliases: {0}cloc, {0}code, {0}codeinfo
         Output:
-            Gives lines, characters, imports, functions,
-            classes, comments, and files in the source code
+            Gives the linecount, characters, imports, functions,
+            classes, comments, and files within the source code.
         """
         async with ctx.channel.typing():
             msg = "```fix\n"
@@ -765,19 +795,34 @@ class Info(commands.Cog):
             em.description = msg
             await ctx.send_or_reply(embed=em)
 
-    @decorators.command()
+    @decorators.command(
+        aliases=['policy'],
+        brief="View the privacy policy.",
+        implemented="2021-04-26 17:22:59.340513",
+        updated="2021-05-05 22:15:27.364699"
+    )
     async def privacy(self, ctx):
+        """
+        Usage: {0}privacy
+        Alias: {0}policy
+        Output:
+            Details on terms of use and privacy
+            regarding the bot and its database.
+        """
         with open("./data/txts/privacy.txt") as fp:
             privacy = fp.read()
-        await ctx.send_or_reply("```fix\n" + privacy.format(ctx.prefix) + "```")
+        policy = f"```fix\n{privacy.format(self.bot.user, self.bot.user.id, ctx.prefix)}```"
+        await ctx.send_or_reply(
+            f"{self.bot.emote_dict['privacy']} **{self.bot.user}'s Privacy Policy**{policy}"
+        )
 
     @decorators.command(brief="Send a request to the developer.", aliases=["contact"])
     @commands.dm_only()
     @commands.cooldown(2, 60, commands.BucketType.user)
     async def request(self, ctx, *, request: str = None):
         """
-        Usage: -request <request content>
-        Alias: -contact
+        Usage: {0}request <request content>
+        Alias: {0}contact
         Examples: -suggest Hello! I request...
         Output:
             Confirmation that your request has been sent.
@@ -806,8 +851,83 @@ class Info(commands.Cog):
         else:
             await ctx.success(content="Your request has been submitted.")
 
-    @decorators.command(hidden=True, aliases=[r"%uptime"])
-    async def percentuptime(self, ctx):
+
+    @decorators.command(
+        brief="Show the bot's admins.",
+        implemented="2021-04-02 21:37:49.068681",
+        updated="2021-05-05 19:08:47.761913",
+    )
+    async def botadmins(self, ctx):
+        """
+        Usage: {0}botadmins
+        Output: An embed of all my current admins
+        """
+        our_list = []
+        for user_id in self.bot.constants.admins:
+            user = self.bot.get_user(user_id)
+            our_list.append({"name": f"**{str(user)}**", "value": f"ID: `{user.id}`"})
+        p = pagination.MainMenu(
+            pagination.FieldPageSource(
+                entries=[
+                    ("{}. {}".format(y + 1, x["name"]), x["value"])
+                    for y, x in enumerate(our_list)
+                ],
+                title="My Admins ({:,} total)".format(len(self.bot.constants.admins)),
+                per_page=15,
+            )
+        )
+
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send_or_reply(e)
+
+    @decorators.command(
+        brief="Show the bot's owners.",
+        aliases=["owners"],
+        updated="2021-05-05 19:08:47.761913"
+    )
+    async def botowners(self, ctx):
+        """
+        Usage: {0}botowners
+        Alias: {0}owners
+        Output: An embed of all my current owners
+        """
+        our_list = []
+        for user_id in self.bot.constants.owners:
+            user = self.bot.get_user(user_id)
+            our_list.append({"name": f"**{str(user)}**", "value": f"ID: `{user.id}`"})
+        p = pagination.MainMenu(
+            pagination.FieldPageSource(
+                entries=[
+                    ("{}. {}".format(y + 1, x["name"]), x["value"])
+                    for y, x in enumerate(our_list)
+                ],
+                title="My Owners ({:,} total)".format(len(self.bot.constants.owners)),
+                per_page=15,
+            )
+        )
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send_or_reply(e)
+
+
+    @decorators.command(
+        aliases=[r"%uptime", "percentuptime"],
+        brief="Show a graph of uptime stats",
+        implemented="2021-04-28 00:34:35.847886",
+        updated="2021-05-05 19:23:39.306805"
+    )
+    async def pieuptime(self, ctx):
+        """
+        Usage: {0}pieuptime
+        Aliases: {0}%uptime, {0}percentuptime
+        Output:
+            Shows a pie-chart graph
+            of my uptime across all time
+        """
+        # Need to get member obj to check status.
         me = self.bot.home.get_member(self.bot.user.id)
         query = """
                 SELECT (

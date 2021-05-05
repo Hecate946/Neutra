@@ -71,7 +71,7 @@ class Config(commands.Cog):
             f"{self.bot.emote_dict['success']} Edited key `{key}` to `{value}`"
         )
 
-    @commands.group(case_insensitive=True, brief="Change the bot's specifications.")
+    @decorators.group(case_insensitive=True, brief="Change the bot's specifications.")
     async def change(self, ctx):
         """
         Usage: -change <options> <new>
@@ -236,7 +236,7 @@ class Config(commands.Cog):
             content=f"{self.bot.emote_dict['success']} status now set as `{activity}`",
         )
 
-    @commands.group(
+    @decorators.group(
         case_insensitive=True,
         aliases=["to-do"],
         invoke_without_command=True,
@@ -329,7 +329,7 @@ class Config(commands.Cog):
             f"{self.bot.emote_dict['success']} Successfully cleared the todo list."
         )
 
-    @commands.group(
+    @decorators.group(
         case_insensitive=True,
         aliases=["set", "add"],
         invoke_without_command=True,

@@ -819,6 +819,8 @@ class Logging(commands.Cog):
 
     @decorators.command(
         brief="Enable specific logging events.",
+        implemented="2021-03-17 07:09:57.666073",
+        updated="2021-04-09 17:56:27.841985",
         writer=782479134436753428,
     )
     @commands.guild_only()

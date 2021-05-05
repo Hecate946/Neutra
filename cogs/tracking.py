@@ -581,40 +581,33 @@ class Tracking(commands.Cog):
 
     @decorators.command(
         brief="Check when a user was last seen.",
-        aliases=["lastseen", "track", "tracker"],
+        aliases=["lastseen", "track", "tracker", "observed"],
     )
     @checks.has_perms(view_audit_log=True)
-    async def seen(self, ctx, user: converters.DiscordUser = None):
+    async def seen(self, ctx, *, user: converters.DiscordUser):
         """
-        Usage:  -seen [user]
-        Alias:  -lastseen, -track, -tracker
+        Usage:  {0}seen [user]
+        Alias:  {0}lastseen, {0}track, {0}tracker, {0}observed
         Output: Get when a user was last observed on discord.
-        Permission: Manage Messages
+        Permission: View Audit Log
         Notes:
             User can be a mention, user id, or full discord
             username with discrim Username#0001.
             Will default to yourself if no user is passed
         """
-        if user is None:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}seen <user>`",
+        async with ctx.typing():
+            if user.bot:
+                raise commands.BadArgument("I do not track bots.")
+
+            tracker = self.bot.get_cog("Batch")
+            data = await tracker.last_observed(user)
+
+            if not data["last_seen"]:
+                return await ctx.send_or_reply(content=f"I have not seen `{user}`")
+
+            await ctx.send_or_reply(
+                content=f"{self.bot.emote_dict['clock']} User `{user}` was last observed {data['last_seen']} ago.",
             )
-
-        if user.bot:
-            return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['warn']} I do not track bots.",
-            )
-
-        tracker = self.bot.get_cog("Batch")
-
-        data = await tracker.last_observed(user)
-
-        if data["last_seen"] is None:
-            return await ctx.send_or_reply(content=f"I have not seen `{user}`")
-
-        await ctx.send_or_reply(
-            content=f"User `{user}` was last seen {data['last_seen']} ago.",
-        )
 
     @decorators.command(brief="Bot commands listed by popularity.")
     @commands.guild_only()
@@ -892,7 +885,7 @@ class Tracking(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-    @commands.group(
+    @decorators.group(
         brief="Show the most active server users.", invoke_without_command=True
     )
     @commands.guild_only()

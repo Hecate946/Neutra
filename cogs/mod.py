@@ -808,7 +808,7 @@ class Mod(commands.Cog):
     ## Prune Command ##
     ###################
 
-    @commands.group(
+    @decorators.group(
         brief="Remove any type of content.",
         aliases=["prune", "delete", "remove"],
         description="Methods:"
@@ -1073,7 +1073,6 @@ class Mod(commands.Cog):
         else:
             await self.do_removal(ctx, 100, lambda e: substr in e.content)
 
-
     @purge.command(
         name="bots", brief="Purge messages sent by bots.", aliases=["robots"]
     )
@@ -1243,17 +1242,16 @@ class Mod(commands.Cog):
         await channel.purge(after=message)
         return True
 
-
     async def _basic_cleanup_strategy(self, ctx, search):
         count = 0
         async for msg in ctx.history(limit=search, before=ctx.message):
             if msg.author == ctx.me and not (msg.mentions or msg.role_mentions):
                 await msg.delete()
                 count += 1
-        return { 'Bot': count }
+        return {"Bot": count}
 
     async def _complex_cleanup_strategy(self, ctx, search):
-        prefixes = tuple(self.bot.get_guild_prefixes(ctx.guild)) # thanks startswith
+        prefixes = tuple(self.bot.get_guild_prefixes(ctx.guild))  # thanks startswith
 
         def check(m):
             return m.author == ctx.me or m.content.startswith(prefixes)
@@ -1265,21 +1263,24 @@ class Mod(commands.Cog):
         prefixes = tuple(self.bot.get_guild_prefixes(ctx.guild))
 
         def check(m):
-            return (m.author == ctx.me or m.content.startswith(prefixes)) and not (m.mentions or m.role_mentions)
+            return (m.author == ctx.me or m.content.startswith(prefixes)) and not (
+                m.mentions or m.role_mentions
+            )
 
         deleted = await ctx.channel.purge(limit=search, check=check, before=ctx.message)
         return Counter(m.author.display_name for m in deleted)
 
-    @decorators.command(brief="Clean up command usage.", search=200, aliases=["clean"])
+    @decorators.command(
+        brief="Clean up bot command usage.",
+        aliases=["clean"],
+        updated="2021-05-05 16:00:23.974656",
+    )
     @commands.guild_only()
-    @checks.bot_has_perms(manage_messages=True)
-    @checks.has_perms(manage_messages=True)
     async def cleanup(self, ctx, search=100):
         """
         Usage: -cleanup [search]
         Alias: -clean
         Output: Cleans up the bot's messages from the channel.
-        Permission: Manage Messages
         Notes:
             If a search number is specified, it searches that many messages to delete.
             If the bot has Manage Messages permissions then it will try to delete
@@ -1305,10 +1306,9 @@ class Mod(commands.Cog):
         spammers = await strategy(ctx, search)
         deleted = sum(spammers.values())
         messages = [
-            f'**{self.bot.emote_dict["trash"]} {deleted} message{" was" if deleted == 1 else "s were"} deleted.**'
+            f"**{self.bot.emote_dict['trash']} Deleted {deleted} message{'' if deleted == 1 else 's'}\n**"
         ]
         if deleted:
-            messages.append("")
             spammers = sorted(spammers.items(), key=lambda t: t[1], reverse=True)
             messages.extend(f"`{author}`: {count}" for author, count in spammers)
         desc = "\n".join(messages)

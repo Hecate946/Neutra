@@ -585,9 +585,10 @@ class Stats(commands.Cog):
         else:
             guild = await converters.DiscordGuild().convert(ctx, _input)
 
-        author = guild.get_member(ctx.author.id)
-        if author is None:
-            raise commands.BadArgument(f"Server `{_input}` not found.")
+        if not checks.is_admin(ctx):
+            author = guild.get_member(ctx.author.id)
+            if author is None:
+                raise commands.BadArgument(f"Server `{_input}` not found.")
 
         list_of_bots = [x for x in guild.members if x.bot]
         if not len(list_of_bots):
