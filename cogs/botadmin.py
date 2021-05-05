@@ -982,12 +982,16 @@ class Botadmin(commands.Cog):
         for guild in self.bot.guilds:
             for member in guild.members:
                 if member.id == user.id:
-                    shared.append((guild.name, guild.id))
+                    shared.append((guild.id, guild.name))
 
-        width = max([len(x[0]) for x in shared])
-        formatted = '\n'.join([f'{str(x[0]).ljust(width)} : ({x[1]})' for x in shared])
-        details = f"```yaml\n{formatted}```"
-        await ctx.send_or_reply(f"** I share {len(shared)} servers with `{user}`.**{details}")
+        width = max([len(str(x[0])) for x in shared])
+        formatted = '\n'.join([f'{str(x[0]).ljust(width)} : {x[1]}' for x in shared])
+        p = pagination.MainMenu(pagination.TextPageSource(formatted, prefix="```fix", max_size=500))
+        await ctx.send_or_reply(f"** I share {len(shared)} servers with `{user}`**")
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send_or_reply(e)
 
         
 
