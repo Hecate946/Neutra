@@ -984,10 +984,10 @@ class Botadmin(commands.Cog):
                 if member.id == user.id:
                     shared.append((guild.name, guild.id))
 
-
-        formatted = '\n'.join([f'{x[0]} ({x[1]})' for x in shared])
-        details = f"```prolog\n{formatted}```"
-        await ctx.send_or_reply(f"**`{user}` shares {len(shared)} servers with me.**{details}")
+        width = max([len(x[0]) for x in shared])
+        formatted = '\n'.join([f'{str(x[0]).ljust(width)} : ({x[1]})' for x in shared])
+        details = f"```yaml\n{formatted}```"
+        await ctx.send_or_reply(f"** I share {len(shared)} servers with `{user}`.**{details}")
 
         
 
