@@ -12,7 +12,8 @@ from discord.ext import commands
 
 
 from settings import database
-from utilities import converters, permissions, utils, helpers, time
+from utilities import converters, checks, utils, helpers, time
+from utilities import decorators
 
 
 def setup(bot):
@@ -38,10 +39,10 @@ class Mod(commands.Cog):
     ## VOICE COMMANDS ##
     ####################
 
-    @commands.command(brief="Move a user from a voice channel.")
+    @decorators.command(brief="Move a user from a voice channel.")
     @commands.guild_only()
-    @permissions.bot_has_permissions(move_members=True)
-    @permissions.has_permissions(move_members=True)
+    @checks.bot_has_perms(move_members=True)
+    @checks.has_perms(move_members=True)
     async def vcmove(
         self,
         ctx,
@@ -76,10 +77,10 @@ class Mod(commands.Cog):
                 content=f"{self.bot.emote_dict['success']} VC Moved `{', '.join(vcmoved)}`"
             )
 
-    @commands.command(brief="Kick all users from a voice channel.")
+    @decorators.command(brief="Kick all users from a voice channel.")
     @commands.guild_only()
-    @permissions.has_permissions(move_members=True)
-    @permissions.bot_has_permissions(move_members=True)
+    @checks.has_perms(move_members=True)
+    @checks.bot_has_perms(move_members=True)
     async def vcpurge(self, ctx, channel: discord.VoiceChannel = None):
         """
         Usage: -vcpurge <voice channel>
@@ -109,10 +110,10 @@ class Mod(commands.Cog):
                 content=f"{self.bot.emote_dict['success']} Failed to vckick {len(failed)} user{'' if len(failed) == 1 else 's'}.",
             )
 
-    @commands.command(brief="Kick users from a voice channel.")
+    @decorators.command(brief="Kick users from a voice channel.")
     @commands.guild_only()
-    @permissions.has_permissions(move_members=True)
-    @permissions.bot_has_permissions(move_members=True)
+    @checks.has_perms(move_members=True)
+    @checks.bot_has_perms(move_members=True)
     async def vckick(self, ctx, targets: commands.Greedy[discord.Member]):
         """
         Usage: -vckick <target> <target>..
@@ -141,11 +142,11 @@ class Mod(commands.Cog):
     ## Mute Commands ##
     ###################
 
-    @commands.command(
+    @decorators.command(
         brief="Mute users for misbehaving.", aliases=["hackmute", "hardmute"]
     )
     @commands.guild_only()
-    @permissions.has_permissions(kick_members=True)
+    @checks.has_perms(kick_members=True)
     async def mute(
         self,
         ctx,
@@ -343,12 +344,12 @@ class Mod(commands.Cog):
             )
             self.bot.dispatch("mod_action", ctx, targets=unmuted)
 
-    @commands.command(
+    @decorators.command(
         name="unmute", brief="Unmute previously muted members.", aliases=["endmute"]
     )
     @commands.guild_only()
-    @permissions.bot_has_permissions(manage_roles=True)
-    @permissions.has_permissions(kick_members=True)
+    @checks.bot_has_perms(manage_roles=True)
+    @checks.has_perms(kick_members=True)
     async def unmute_members(self, ctx, targets: commands.Greedy[discord.Member]):
         """
         Usage: -unmute <target> [target]...
@@ -382,7 +383,7 @@ class Mod(commands.Cog):
         restrict = []
         failed = []
         for target in targets:
-            res = await permissions.check_priv(ctx, target)
+            res = await checks.check_priv(ctx, target)
             if res:
                 failed.append((str(target), res))
                 continue
@@ -400,9 +401,9 @@ class Mod(commands.Cog):
         if failed:
             await helpers.error_info(ctx, failed)
 
-    @commands.command(brief="Restrict users from sending messages.")
+    @decorators.command(brief="Restrict users from sending messages.")
     @commands.guild_only()
-    @permissions.has_permissions(kick_members=True)
+    @checks.has_perms(kick_members=True)
     async def block(self, ctx, targets: commands.Greedy[discord.Member]):
         """
         Usage: -block <target> [target]...
@@ -416,9 +417,9 @@ class Mod(commands.Cog):
             )
         await self.restrictor(ctx, targets, "on", "block")
 
-    @commands.command(brief="Reallow users to send messages.")
+    @decorators.command(brief="Reallow users to send messages.")
     @commands.guild_only()
-    @permissions.has_permissions(kick_members=True)
+    @checks.has_perms(kick_members=True)
     async def unblock(self, ctx, targets: commands.Greedy[discord.Member] = None):
         """
         Usage:      -unblock <target> [target]...
@@ -432,9 +433,9 @@ class Mod(commands.Cog):
             )
         await self.restrictor(ctx, targets, "off", "unblock")
 
-    @commands.command(brief="Hide a channel from a user.")
+    @decorators.command(brief="Hide a channel from a user.")
     @commands.guild_only()
-    @permissions.has_permissions(kick_members=True)
+    @checks.has_perms(kick_members=True)
     async def blind(self, ctx, targets: commands.Greedy[discord.Member] = None):
         """
         Usage:      -blind <target> [target]...
@@ -448,9 +449,9 @@ class Mod(commands.Cog):
             )
         await self.restrictor(ctx, targets, "on", "blind")
 
-    @commands.command(brief="Reallow users see a channel.")
+    @decorators.command(brief="Reallow users see a channel.")
     @commands.guild_only()
-    @permissions.has_permissions(kick_members=True)
+    @checks.has_perms(kick_members=True)
     async def unblind(self, ctx, targets: commands.Greedy[discord.Member] = None):
         """
         Usage:      -unblind <target> [target]...
@@ -468,10 +469,10 @@ class Mod(commands.Cog):
     ## Kick Command ##
     ##################
 
-    @commands.command(brief="Kick users from the server.")
+    @decorators.command(brief="Kick users from the server.")
     @commands.guild_only()
-    @permissions.bot_has_permissions(kick_members=True)
-    @permissions.has_permissions(kick_members=True)
+    @checks.bot_has_perms(kick_members=True)
+    @checks.has_perms(kick_members=True)
     async def kick(
         self,
         ctx,
@@ -493,7 +494,7 @@ class Mod(commands.Cog):
         kicked = []
         failed = []
         for target in users:
-            res = await permissions.check_priv(ctx, target)
+            res = await checks.check_priv(ctx, target)
             if res:
                 failed.append((str(target), res))
                 continue
@@ -515,10 +516,10 @@ class Mod(commands.Cog):
     ## Ban Commands ##
     ##################
 
-    @commands.command(brief="Ban users from the server.")
+    @decorators.command(brief="Ban users from the server.")
     @commands.guild_only()
-    @permissions.bot_has_permissions(ban_members=True)
-    @permissions.has_permissions(ban_members=True)
+    @checks.bot_has_perms(ban_members=True)
+    @checks.has_perms(ban_members=True)
     async def ban(
         self,
         ctx,
@@ -546,7 +547,7 @@ class Mod(commands.Cog):
         banned = []
         failed = []
         for target in targets:
-            res = await permissions.check_priv(ctx, target)
+            res = await checks.check_priv(ctx, target)
             if res:
                 failed.append((str(target), res))
                 continue
@@ -566,7 +567,7 @@ class Mod(commands.Cog):
         if failed:
             await helpers.error_info(ctx, failed)
 
-    @commands.command(brief="Temporarily ban users.")
+    @decorators.command(brief="Temporarily ban users.")
     async def tempban(
         self,
         ctx,
@@ -600,7 +601,7 @@ class Mod(commands.Cog):
         banned = []
         failed = []
         for target in targets:
-            res = await permissions.check_priv(ctx, target)
+            res = await checks.check_priv(ctx, target)
             if res:
                 failed.append((str(target), res))
                 continue
@@ -643,10 +644,10 @@ class Mod(commands.Cog):
                 except Exception as e:
                     print(e)
 
-    @commands.command(brief="Softban users from the server.")
+    @decorators.command(brief="Softban users from the server.")
     @commands.guild_only()
-    @permissions.bot_has_permissions(ban_members=True)
-    @permissions.has_permissions(kick_members=True)
+    @checks.bot_has_perms(ban_members=True)
+    @checks.has_perms(kick_members=True)
     async def softban(
         self,
         ctx,
@@ -676,7 +677,7 @@ class Mod(commands.Cog):
         banned = []
         failed = []
         for target in targets:
-            res = await permissions.check_priv(ctx, target)
+            res = await checks.check_priv(ctx, target)
             if res:
                 failed.append((str(target), res))
                 continue
@@ -699,9 +700,9 @@ class Mod(commands.Cog):
         if failed:
             await helpers.error_info(ctx, failed)
 
-    @commands.command(brief="Hackban multiple users.")
-    @permissions.bot_has_permissions(ban_members=True)
-    @permissions.has_permissions(ban_members=True)
+    @decorators.command(brief="Hackban multiple users.")
+    @checks.bot_has_perms(ban_members=True)
+    @checks.has_perms(ban_members=True)
     async def hackban(
         self,
         ctx,
@@ -749,7 +750,7 @@ class Mod(commands.Cog):
         failed = []
         for user in users:
             if isinstance(user, discord.Member):
-                res = await permissions.check_priv(ctx, user)
+                res = await checks.check_priv(ctx, user)
                 if res:
                     failed.append((str(user), res))
                     continue
@@ -769,9 +770,9 @@ class Mod(commands.Cog):
         if failed:
             await helpers.error_info(ctx, failed)
 
-    @commands.command(brief="Unban a previously banned user.", aliases=["revokeban"])
+    @decorators.command(brief="Unban a previously banned user.", aliases=["revokeban"])
     @commands.guild_only()
-    @permissions.has_permissions(ban_members=True)
+    @checks.has_perms(ban_members=True)
     async def unban(self, ctx, member: converters.BannedMember, *, reason: str = None):
         """
         Usage:      -unban <user> [reason]
@@ -829,8 +830,8 @@ class Mod(commands.Cog):
     )
     @commands.guild_only()
     @commands.max_concurrency(5, per=commands.BucketType.guild)
-    @permissions.bot_has_permissions(manage_messages=True)
-    @permissions.has_permissions(manage_messages=True)
+    @checks.bot_has_perms(manage_messages=True)
+    @checks.has_perms(manage_messages=True)
     async def purge(self, ctx):
         """
         Usage: -purge <option> <amount>
@@ -1266,10 +1267,10 @@ class Mod(commands.Cog):
         deleted = await ctx.channel.purge(limit=search, check=check, before=ctx.message)
         return Counter(str(m.author) for m in deleted)
 
-    @commands.command(brief="Clean up command usage.", search=200, aliases=["clean"])
+    @decorators.command(brief="Clean up command usage.", search=200, aliases=["clean"])
     @commands.guild_only()
-    @permissions.bot_has_permissions(manage_messages=True)
-    @permissions.has_permissions(manage_messages=True)
+    @checks.bot_has_perms(manage_messages=True)
+    @checks.has_perms(manage_messages=True)
     async def cleanup(self, ctx, search=100):
         """
         Usage: -cleanup [search]
@@ -1381,10 +1382,10 @@ class Mod(commands.Cog):
                 except Exception:
                     return
 
-    @commands.command(brief="Set the slowmode for a channel")
+    @decorators.command(brief="Set the slowmode for a channel")
     @commands.guild_only()
-    @permissions.bot_has_permissions(manage_channels=True)
-    @permissions.has_permissions(manage_channels=True)
+    @checks.bot_has_perms(manage_channels=True)
+    @checks.has_perms(manage_channels=True)
     async def slowmode(self, ctx, channel=None, time: float = None):
         """
         Usage: -slowmode [channel] [seconds]
@@ -1419,10 +1420,10 @@ class Mod(commands.Cog):
                 content=f'{self.bot.emote_dict["success"]} Slowmode for {channel_obj.mention} set to `{time}s`',
             )
 
-    @commands.command(aliases=["lockdown", "lockchannel"], brief="Lock a channel")
+    @decorators.command(aliases=["lockdown", "lockchannel"], brief="Lock a channel")
     @commands.guild_only()
-    @permissions.bot_has_permissions(manage_channels=True, manage_roles=True)
-    @permissions.has_permissions(administrator=True)
+    @checks.bot_has_perms(manage_channels=True, manage_roles=True)
+    @checks.has_perms(administrator=True)
     async def lock(self, ctx, channel=None, minutes_: int = None):
         """
         Usage: -lock [channel] [minutes]
@@ -1497,10 +1498,10 @@ class Mod(commands.Cog):
                 content=f"{self.bot.emote_dict['failed']} I have insufficient permission to lock channels."
             )
 
-    @commands.command(brief="Unlock a channel.", aliases=["unlockchannel"])
+    @decorators.command(brief="Unlock a channel.", aliases=["unlockchannel"])
     @commands.guild_only()
-    @permissions.bot_has_permissions(manage_channels=True)
-    @permissions.has_permissions(administrator=True)
+    @checks.bot_has_perms(manage_channels=True)
+    @checks.has_perms(administrator=True)
     async def unlock(self, ctx, channel: discord.TextChannel = None, surpress=False):
         """
         Usage: -unlock [channel]

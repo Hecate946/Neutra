@@ -8,7 +8,8 @@ from datetime import datetime
 from discord.ext import commands, menus
 from PIL import Image, ImageDraw, ImageFont
 
-from utilities import converters, pagination, permissions, utils
+from utilities import converters, pagination, checks, utils
+from utilities import decorators
 
 
 def setup(bot):
@@ -23,7 +24,7 @@ class Tracking(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(aliases=["mobile"], brief="Show which platform a user is on.")
+    @decorators.command(aliases=["mobile"], brief="Show which platform a user is on.")
     @commands.guild_only()
     async def platform(self, ctx, members: commands.Greedy[discord.Member]):
         """
@@ -105,113 +106,114 @@ class Tracking(commands.Cog):
                 content=f"{self.bot.emote_dict['offline']} User{'' if len(mobile) == 1 else 's'} `{', '.join(mobile)}` {'is' if len(mobile) == 1 else 'are'} offline",
             )
 
-    # @commands.command(
-    #     brief="Show information on a user.",
-    #     aliases=["whois", "ui", "profile", "user", "rawuser", "lookup"],
-    # )
-    # async def userinfo(self, ctx, member: converters.DiscordUser = None):
-    #     """
-    #     Usage:    -userinfo <member>
-    #     Aliases:  -profile, -ui, -whois
-    #     Examples: -userinfo Snowbot, -userinfo 810377376269205546
-    #     Output:   Roles, permissions, and general stats on a user.
-    #     Notes:
-    #         Invoke command with -user, -rawuser, or -lookup
-    #         to see all information collected on the user.
-    #     """
-
-    # if member is None:
-    #     member = ctx.author
-
-    # if member is None:
-    #     member = ctx.author
-
-    # if ctx.invoked_with in ["user", "rawuser", "lookup"]:
-    #     return await self.user(ctx, user=member)
-
-    # joinedList = []
-    # for mem in ctx.guild.members:
-    #     joinedList.append({"ID": mem.id, "Joined": mem.joined_at})
-
-    # # sort the users by join date
-    # joinedList = sorted(
-    #     joinedList,
-    #     key=lambda x: x["Joined"].timestamp() if x["Joined"] is not None else -1,
-    # )
-
-    # check_item = {"ID": member.id, "Joined": member.joined_at}
-
-    # position = joinedList.index(check_item) + 1
-
-    # msg = "{:,}".format(position)
-
-    # query = '''
-    #         SELECT COUNT(*)
-    #         FROM commands
-    #         WHERE author_id = $1
-    #         AND server_id = $2;
-    #         '''
-    # command_count = (
-    #     await self.bot.cxn.fetchrow(query, member.id, ctx.guild.id) or None
-    # )
-    # if command_count is None:
-    #     command_count = 0
-
-    # query = """
-    #         SELECT COUNT(*)
-    #         FROM messages
-    #         WHERE author_id = $1
-    #         AND server_id = $2;
-    #         """
-    # messages = await self.bot.cxn.fetchrow(query, member.id, ctx.guild.id) or None
-    # if messages is None:
-    #     messages = 0
-
-    # status_dict = {
-    #     "online": f"{self.bot.emote_dict['online']} Online",
-    #     "offline": f"{self.bot.emote_dict['offline']} Offline",
-    #     "dnd": f"{self.bot.emote_dict['dnd']} Do Not Disturb",
-    #     "idle": f"{self.bot.emote_dict['idle']} Idle",
-    # }
-    # embed = discord.Embed(color=self.bot.constants.embed)
-    # embed.set_author(name=f"{member}", icon_url=member.avatar_url)
-    # embed.set_thumbnail(url=member.avatar_url)
-    # embed.set_footer(
-    #     text=f"User ID: {member.id} | Created on {member.created_at.__format__('%m/%d/%Y')}"
-    # )
-    # embed.add_field(
-    #     name="Nickname",
-    #     value=f"{self.bot.emote_dict['owner'] if member.id == ctx.guild.owner.id else self.bot.emote_dict['bot'] if member.bot else ''} {member.display_name}",
-    # )
-    # embed.add_field(
-    #     name="Messages", value=f"{self.bot.emote_dict['messages']}  {messages[0]}"
-    # )
-    # embed.add_field(
-    #     name="Commands",
-    #     value=f"{self.bot.emote_dict['commands']}  {command_count[0]}",
-    # )
-    # embed.add_field(name="Status", value=f"{status_dict[str(member.status)]}")
-    # embed.add_field(
-    #     name="Highest Role",
-    #     value=f"{self.bot.emote_dict['role']} {'@everyone' if member.top_role.name == '@everyone' else member.top_role.mention}",
-    # )
-    # embed.add_field(
-    #     name="Join Position", value=f"{self.bot.emote_dict['invite']} #{msg}"
-    # )
-    # # perm_list = [Perm[0] for Perm in member.guild_permissions if Perm[1]]
-    # # if len(member.roles) > 1:
-    # #    role_list = member.roles[::-1]
-    # #    role_list.remove(member.roles[0])
-    # #    embed.add_field(name=f"Roles: [{len(role_list)}]", value =" ".join([role.mention for role in role_list]), inline=False)
-    # # else:
-    # #    embed.add_field(name=f"Roles: [0]", value ="** **", inline=False)
-    # # embed.add_field(name="Permissions:", value=", ".join(perm_list).replace("_", " ").replace("guild", "server").title().replace("Tts", "TTS"), inline=False)
-    # await ctx.send_or_reply(embed=embed)
-
-    @commands.command(
+    @decorators.command(
         brief="Show information on a user.",
-        aliases=["whois", "ui", "profile", "userinfo", "rawuser", "lookup"],
+        aliases=["whois", "ui", "profile"],
     )
+    async def userinfo(self, ctx, member: converters.DiscordUser = None):
+        """
+        Usage:    -userinfo <member>
+        Aliases:  -profile, -ui, -whois
+        Examples: -userinfo Snowbot, -userinfo 810377376269205546
+        Output:   Roles, permissions, and general stats on a user.
+        Notes:
+            Invoke command with -user, -rawuser, or -lookup
+            to see all information collected on the user.
+        """
+
+        if member is None:
+            member = ctx.author
+
+        if member is None:
+            member = ctx.author
+
+        if ctx.invoked_with in ["user", "rawuser", "lookup"]:
+            return await self.user(ctx, user=member)
+
+        joinedList = []
+        for mem in ctx.guild.members:
+            joinedList.append({"ID": mem.id, "Joined": mem.joined_at})
+
+        # sort the users by join date
+        joinedList = sorted(
+            joinedList,
+            key=lambda x: x["Joined"].timestamp() if x["Joined"] is not None else -1,
+        )
+
+        check_item = {"ID": member.id, "Joined": member.joined_at}
+
+        position = joinedList.index(check_item) + 1
+
+        msg = "{:,}".format(position)
+
+        query = """
+                SELECT COUNT(*)
+                FROM commands
+                WHERE author_id = $1
+                AND server_id = $2;
+                """
+        command_count = (
+            await self.bot.cxn.fetchrow(query, member.id, ctx.guild.id) or None
+        )
+        if command_count is None:
+            command_count = 0
+
+        query = """
+                SELECT COUNT(*)
+                FROM messages
+                WHERE author_id = $1
+                AND server_id = $2;
+                """
+        messages = await self.bot.cxn.fetchrow(query, member.id, ctx.guild.id) or None
+        if messages is None:
+            messages = 0
+
+        status_dict = {
+            "online": f"{self.bot.emote_dict['online']} Online",
+            "offline": f"{self.bot.emote_dict['offline']} Offline",
+            "dnd": f"{self.bot.emote_dict['dnd']} Do Not Disturb",
+            "idle": f"{self.bot.emote_dict['idle']} Idle",
+        }
+        embed = discord.Embed(color=self.bot.constants.embed)
+        embed.set_author(name=f"{member}", icon_url=member.avatar_url)
+        embed.set_thumbnail(url=member.avatar_url)
+        embed.set_footer(
+            text=f"User ID: {member.id} | Created on {member.created_at.__format__('%m/%d/%Y')}"
+        )
+        embed.add_field(
+            name="Nickname",
+            value=f"{self.bot.emote_dict['owner'] if member.id == ctx.guild.owner.id else self.bot.emote_dict['bot'] if member.bot else ''} {member.display_name}",
+        )
+        embed.add_field(
+            name="Messages", value=f"{self.bot.emote_dict['messages']}  {messages[0]}"
+        )
+        embed.add_field(
+            name="Commands",
+            value=f"{self.bot.emote_dict['commands']}  {command_count[0]}",
+        )
+        embed.add_field(name="Status", value=f"{status_dict[str(member.status)]}")
+        embed.add_field(
+            name="Highest Role",
+            value=f"{self.bot.emote_dict['role']} {'@everyone' if member.top_role.name == '@everyone' else member.top_role.mention}",
+        )
+        embed.add_field(
+            name="Join Position", value=f"{self.bot.emote_dict['invite']} #{msg}"
+        )
+        # perm_list = [Perm[0] for Perm in member.guild_permissions if Perm[1]]
+        # if len(member.roles) > 1:
+        #    role_list = member.roles[::-1]
+        #    role_list.remove(member.roles[0])
+        #    embed.add_field(name=f"Roles: [{len(role_list)}]", value =" ".join([role.mention for role in role_list]), inline=False)
+        # else:
+        #    embed.add_field(name=f"Roles: [0]", value ="** **", inline=False)
+        # embed.add_field(name="Permissions:", value=", ".join(perm_list).replace("_", " ").replace("guild", "server").title().replace("Tts", "TTS"), inline=False)
+        await ctx.send_or_reply(embed=embed)
+
+    @decorators.command(
+        brief="Show information on a user.",
+        aliases=["rawuser", "lookup"],
+    )
+    @checks.has_perms(view_audit_log=True)
     async def user(self, ctx, *, user: converters.DiscordUser = None):
         """
         Usage:   -user <user>
@@ -350,7 +352,7 @@ class Tracking(commands.Cog):
             except menus.MenuError as e:
                 await ctx.send_or_reply(e)
 
-    @commands.command(name="status", brief="Show a user's status")
+    @decorators.command(name="status", brief="Show a user's status")
     async def status_(self, ctx, *, member: discord.Member = None):
         """
         Usage: -status <member>
@@ -392,7 +394,7 @@ class Tracking(commands.Cog):
         ts = td.total_seconds()
         return "{:02d}:{:06.3f}".format(int(ts // 60), ts % 60)
 
-    @commands.command(aliases=["mc"], brief="Count the messages a user sent.")
+    @decorators.command(aliases=["mc"], brief="Count the messages a user sent.")
     @commands.guild_only()
     async def messagecount(self, ctx, member: discord.Member = None):
         """
@@ -417,8 +419,9 @@ class Tracking(commands.Cog):
                 content=f"`{user}` has sent **{a}** message{'' if a == 1 else 's'}",
             )
 
-    @commands.command(brief="Show the top message senders.", aliases=["top"])
+    @decorators.command(brief="Show the top message senders.", aliases=["top"])
     @commands.guild_only()
+    @checks.has_perms(manage_messages=True)
     async def messagestats(self, ctx, limit: int = 100):
         """
         Usage: -messagestats
@@ -452,9 +455,9 @@ class Tracking(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-    @commands.command(brief="Show a user's nicknames.", aliases=["nicknames"])
+    @decorators.command(brief="Show a user's nicknames.", aliases=["nicknames"])
     @commands.guild_only()
-    @permissions.has_permissions(manage_messages=True)
+    @checks.has_perms(view_audit_log=True)
     async def nicks(self, ctx, user: discord.Member = None):
         """
         Usage: -nicks [user]
@@ -481,9 +484,9 @@ class Tracking(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-    @commands.command(brief="Show a user's usernames.", aliases=["usernames"])
+    @decorators.command(brief="Show a user's usernames.", aliases=["usernames"])
     @commands.guild_only()
-    @permissions.has_permissions(manage_messages=True)
+    @checks.has_perms(view_audit_log=True)
     async def names(self, ctx, user: discord.Member = None):
         """
         Usage: -names [user]
@@ -513,8 +516,9 @@ class Tracking(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-    @commands.command(brief="Show a user's avatars.", aliases=["avs"])
+    @decorators.command(brief="Show a user's avatars.", aliases=["avs"])
     @commands.guild_only()
+    @checks.has_perms(view_audit_log=True)
     async def avatars(self, ctx, user: discord.Member = None):
         """
         Usage: -avatars [user]
@@ -575,11 +579,11 @@ class Tracking(commands.Cog):
         await msg.delete()
         await ctx.send_or_reply(embed=em, file=dfile)
 
-    @commands.command(
+    @decorators.command(
         brief="Check when a user was last seen.",
         aliases=["lastseen", "track", "tracker"],
     )
-    @permissions.has_permissions(manage_messages=True)
+    @checks.has_perms(view_audit_log=True)
     async def seen(self, ctx, user: converters.DiscordUser = None):
         """
         Usage:  -seen [user]
@@ -612,9 +616,9 @@ class Tracking(commands.Cog):
             content=f"User `{user}` was last seen {data['last_seen']} ago.",
         )
 
-    @commands.command(brief="Bot commands listed by popularity.")
+    @decorators.command(brief="Bot commands listed by popularity.")
     @commands.guild_only()
-    @permissions.has_permissions(manage_messages=True)
+    @checks.has_perms(manage_messages=True)
     async def commandstats(self, ctx, user: discord.Member = None, limit=100):
         """
         Usage: -commandstats [user] [limit]
@@ -667,11 +671,13 @@ class Tracking(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(str(e))
 
-    @commands.command(
-        name="commands", brief="Count the commands run.", aliases=["commandcount"]
+    @decorators.command(
+        brief="Count the commands run by a user.",
+        aliases=["cc"],
+        updated="2021-05-05 04:49:50.161683",
     )
     @commands.guild_only()
-    @permissions.has_permissions(manage_messages=True)
+    @checks.has_perms(manage_messages=True)
     async def commandcount(self, ctx, user: discord.Member = None):
         """
         Usage:  -commands [user]
@@ -697,10 +703,10 @@ class Tracking(commands.Cog):
                 content=f"User `{user}` has executed **{int(command_count[0]):,}** commands.",
             )
 
-    @commands.command(brief="Show the top bot users.", aliases=["botusage"])
+    @decorators.command(brief="Show the top bot users.")
     @commands.guild_only()
-    @permissions.has_permissions(manage_messages=True)
-    async def usage(self, ctx, unit: str = "month"):
+    @checks.has_perms(manage_messages=True)
+    async def botusage(self, ctx, unit: str = "month"):
         """
         Usage: -usage [unit of time]
         ALias: -botusage
@@ -727,9 +733,9 @@ class Tracking(commands.Cog):
 
         await ctx.send_or_reply(embed=e)
 
-    @commands.command(brief="Most used words from a user.")
+    @decorators.command(brief="Most used words from a user.")
     @commands.guild_only()
-    @permissions.has_permissions(manage_messages=True)
+    @checks.has_perms(manage_messages=True)
     async def words(self, ctx, mem_input=None, limit: int = 100):
         """
         Usage: -words [user]
@@ -790,9 +796,9 @@ class Tracking(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(str(e))
 
-    @commands.command(brief="Usage for a specific word.")
+    @decorators.command(brief="Usage for a specific word.")
     @commands.guild_only()
-    @permissions.has_permissions(manage_messages=True)
+    @checks.has_perms(manage_messages=True)
     async def word(self, ctx, word: str = None, member: discord.Member = None):
         """
         Usage: -word <word> [user]
@@ -847,8 +853,8 @@ class Tracking(commands.Cog):
             content=f"The word `{word}` has been used {found[0][1]} time{'' if found[0][1] == 1 else 's'} and is the {common} most common word used by **{member.display_name}**"
         )
 
-    @commands.command(brief="Show all users who spam.")
-    @permissions.has_permissions(manage_messages=True)
+    @decorators.command(brief="Show all users who spam.")
+    @checks.has_perms(manage_messages=True)
     async def spammers(self, ctx):
         """
         Usage: -spammers
@@ -878,7 +884,7 @@ class Tracking(commands.Cog):
                     for y, x in enumerate(page_list)
                 ],
                 per_page=10,
-                title=f"Recorded spammers in **{ctx.guild.name}** ({len(page_list):,} total)",
+                title=f"Spammers in **{ctx.guild.name}** ({len(page_list):,} total)",
             )
         )
         try:
@@ -890,7 +896,7 @@ class Tracking(commands.Cog):
         brief="Show the most active server users.", invoke_without_command=True
     )
     @commands.guild_only()
-    @permissions.has_permissions(manage_messages=True)
+    @checks.has_perms(manage_messages=True)
     async def activity(self, ctx, unit: str = "month"):
         """
         Usage: -activity [unit of time]
@@ -927,8 +933,6 @@ class Tracking(commands.Cog):
     @activity.command(aliases=["characters"])
     @commands.guild_only()
     async def char(self, ctx, unit: str = "day"):
-        if ctx.author.id not in self.bot.constants.owners:
-            return
         unit = unit.lower()
         time_dict = {"day": 86400, "week": 604800, "month": 2592000, "year": 31556952}
         if unit not in time_dict:
@@ -954,10 +958,11 @@ class Tracking(commands.Cog):
 
         await ctx.send_or_reply(embed=e)
 
-    @commands.command(
+    @decorators.command(
         brief="Status info and online time.",
-        aliases=["onlinetime", r"%status", r"%online", "statusstats"],
+        aliases=["onlinetime", "piestatus", "ps", r"%status", "statusstats"],
     )
+    @checks.has_perms(view_audit_log=True)
     async def statusinfo(self, ctx, user: discord.Member = None):
         """
         Usage: -statusinfo <user>

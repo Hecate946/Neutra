@@ -7,7 +7,8 @@ import time
 import discord
 from discord.ext import commands, menus
 
-from utilities import converters, pagination, permissions, utils
+from utilities import converters, pagination, checks, utils
+from utilities import decorators
 
 
 def setup(bot):
@@ -26,7 +27,7 @@ class Config(commands.Cog):
 
     # this cog is owner only
     async def cog_check(self, ctx):
-        return permissions.is_owner(ctx)
+        return checks.is_owner(ctx)
 
     ##############################
     ## Aiohttp Helper Functions ##
@@ -44,7 +45,7 @@ class Config(commands.Cog):
     async def post(self, url, *args, **kwargs):
         return await self.query(url, "post", *args, **kwargs)
 
-    @commands.command(hidden=True, brief="Change a config.json value.")
+    @decorators.command(hidden=True, brief="Change a config.json value.")
     async def config(self, ctx, key=None, value=None):
         """
         Usage: -config <Key to change> <New Value>
@@ -383,7 +384,7 @@ class Config(commands.Cog):
                 content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
             )
 
-    @commands.command(brief="Blacklist users or servers.")
+    @decorators.command(brief="Blacklist users or servers.")
     async def blacklist(
         self,
         ctx,
@@ -425,7 +426,7 @@ class Config(commands.Cog):
                 content=f"{self.bot.emote_dict['success']} `{', '.join(already_blacklisted)}` {ternary} already blacklisted",
             )
 
-    @commands.command(brief="Remove users or servers from the blacklist.")
+    @decorators.command(brief="Remove users or servers from the blacklist.")
     async def unblacklist(
         self, ctx, _object: typing.Union[discord.User, converters.DiscordGuild] = None
     ):
@@ -445,7 +446,7 @@ class Config(commands.Cog):
             content=f"{self.bot.emote_dict['success']} Removed `{str(_object)}` from the blacklist.",
         )
 
-    @commands.command(brief="Toggle disabling a command.")
+    @decorators.command(brief="Toggle disabling a command.")
     async def toggle(self, ctx, *, command):
         """
         Usage: -toggle <command>
@@ -468,7 +469,7 @@ class Config(commands.Cog):
             f"{self.bot.emote_dict['success']} {ternary} {command.qualified_name}."
         )
 
-    @commands.command(hidden=True, brief="Have the bot leave a server.")
+    @decorators.command(hidden=True, brief="Have the bot leave a server.")
     async def leaveserver(self, ctx, *, target_server: converters.DiscordGuild = None):
         """Leaves a server - can take a name or id (owner only)."""
         if target_server is None:
@@ -495,7 +496,7 @@ class Config(commands.Cog):
             content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
         )
 
-    @commands.command(hidden=True, brief="Add a new bot owner.")
+    @decorators.command(hidden=True, brief="Add a new bot owner.")
     async def addowner(self, ctx, member: converters.DiscordUser = None):
         """
         Usage: -addowner <user>
@@ -508,7 +509,7 @@ class Config(commands.Cog):
             root privileges. To reflect changes instantly, use the
             -refresh command
         """
-        if ctx.author.id is not self.bot.hecate:
+        if ctx.author.id is not self.bot.hecate.id:
             return
         if member is None:
             return await ctx.send_or_reply(
@@ -542,7 +543,7 @@ class Config(commands.Cog):
             content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
         )
 
-    @commands.command(
+    @decorators.command(
         hidden=True, aliases=["removeowner", "rmowner"], brief="Remove a bot owner."
     )
     async def remowner(self, ctx, member: converters.DiscordUser = None):
@@ -557,7 +558,7 @@ class Config(commands.Cog):
             To reflect changes instantly, use the
             -refresh command
         """
-        if ctx.author.id is not self.bot.hecate:
+        if ctx.author.id is not self.bot.hecate.id:
             return
         if member is None:
             return await ctx.send_or_reply(
@@ -592,7 +593,7 @@ class Config(commands.Cog):
             content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
         )
 
-    @commands.command(hidden=True, brief="Add a new bot admin.")
+    @decorators.command(hidden=True, brief="Add a new bot admin.")
     async def addadmin(self, ctx, member: converters.DiscordUser = None):
         """
         Usage: -addadmin <user>
@@ -606,7 +607,7 @@ class Config(commands.Cog):
             s complete server list, member list, etc.
             To reflect changes instantly, use -refresh.
         """
-        if ctx.author.id is not self.bot.hecate:
+        if ctx.author.id is not self.bot.hecate.id:
             return
         if member is None:
             return await ctx.send_or_reply(
@@ -640,7 +641,7 @@ class Config(commands.Cog):
             content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
         )
 
-    @commands.command(
+    @decorators.command(
         hidden=True, aliases=["removeadmin", "rmadmin"], brief="Remove a bot admin."
     )
     async def remadmin(self, ctx, member: converters.DiscordUser = None):
@@ -655,7 +656,7 @@ class Config(commands.Cog):
             To reflect changes instantly, use the
             -refresh command
         """
-        if ctx.author.id is not self.bot.hecate:
+        if ctx.author.id is not self.bot.hecate.id:
             return
         if member is None:
             return await ctx.send_or_reply(
@@ -690,7 +691,7 @@ class Config(commands.Cog):
             content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
         )
 
-    @commands.command(brief="Toggle locking the bot to owners.")
+    @decorators.command(brief="Toggle locking the bot to owners.")
     async def ownerlock(self, ctx):
         """
         Usage: -ownerlock
@@ -728,7 +729,7 @@ class Config(commands.Cog):
             # No command - no need to check
             return
         if self.is_ownerlocked is True:
-            if not permissions.is_owner(ctx):
+            if not checks.is_owner(ctx):
                 return {
                     "Ignore": True,
                     "Delete": False,

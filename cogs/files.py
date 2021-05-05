@@ -1,13 +1,12 @@
 import io
 import os
-from datetime import datetime
-
-import discord
 import pytz
+import discord
+from datetime import datetime
 from discord.ext import commands
 
-from core import COG_EXCEPTIONS, USELESS_COGS
-from utilities import permissions, utils
+from utilities import checks, utils
+from utilities import decorators
 
 
 def setup(bot):
@@ -56,7 +55,7 @@ class Files(commands.Cog):
     def _is_submodule(self, parent, child):
         return parent == child or child.startswith(parent + ".")
 
-    @commands.command(
+    @decorators.command(
         brief="DMs you a file of commands.", aliases=["txthelp", "helpfile"]
     )
     async def dumphelp(self, ctx):
@@ -78,7 +77,7 @@ class Files(commands.Cog):
 
         # Get and format the help
         for cog in sorted(self.bot.cogs):
-            if cog.upper() in COG_EXCEPTIONS + USELESS_COGS:
+            if cog.upper() in self.bot.cog_exceptions + self.bot.useless_cogs:
                 continue
             cog_commands = sorted(
                 self.bot.get_cog(cog).get_commands(), key=lambda x: x.name
@@ -142,7 +141,7 @@ class Files(commands.Cog):
         )
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
-    @commands.command(hidden=True, brief="DMs you a list of my servers.")
+    @decorators.command(hidden=True, brief="DMs you a list of my servers.")
     async def dumpservers(self, ctx):
         """
         Usage: -dumpservers
@@ -151,7 +150,7 @@ class Files(commands.Cog):
             DMs you a file with all my servers,
             their member count, owners, and their IDs
         """
-        if not permissions.is_admin(ctx):
+        if not checks.is_admin(ctx):
             return
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
         server_file = "Servers-{}.txt".format(timestamp)
@@ -190,11 +189,11 @@ class Files(commands.Cog):
         )
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
-    @commands.command(
+    @decorators.command(
         brief="DMs you a file of server settings.", aliases=["serversettings"]
     )
     @commands.guild_only()
-    @permissions.has_permissions(manage_guild=True)
+    @checks.has_perms(manage_guild=True)
     async def dumpsettings(self, ctx):
         """
         Usage: -dumpsettings
@@ -242,9 +241,9 @@ class Files(commands.Cog):
         await mess.add_reaction(self.bot.emote_dict["letter"])
         os.remove(settings_file)
 
-    @commands.command(brief="DMs you a file of server roles.")
+    @decorators.command(brief="DMs you a file of server roles.")
     @commands.guild_only()
-    @permissions.has_permissions(manage_roles=True)
+    @checks.has_perms(manage_roles=True)
     async def dumproles(self, ctx):
         """
         Usage:  -dumproles
@@ -286,11 +285,11 @@ class Files(commands.Cog):
         )
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
-    @commands.command(
+    @decorators.command(
         brief="DMs you a file of text channels.", aliases=["dumptc", "dumptextchannels"]
     )
     @commands.guild_only()
-    @permissions.has_permissions(manage_channels=True)
+    @checks.has_perms(manage_channels=True)
     async def dumpchannels(self, ctx):
         """
         Usage:  -dumptextchannels
@@ -338,9 +337,9 @@ class Files(commands.Cog):
         )
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
-    @commands.command(brief="DMs you a file of voice channels.", aliases=["dumpvc"])
+    @decorators.command(brief="DMs you a file of voice channels.", aliases=["dumpvc"])
     @commands.guild_only()
-    @permissions.has_permissions(manage_channels=True)
+    @checks.has_perms(manage_channels=True)
     async def dumpvoicechannels(self, ctx):
         """
         Usage:  -dumpvoicechannels
@@ -388,9 +387,9 @@ class Files(commands.Cog):
         )
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
-    @commands.command(brief="DMs you a file of voice channels.", aliases=["dumpcc"])
+    @decorators.command(brief="DMs you a file of voice channels.", aliases=["dumpcc"])
     @commands.guild_only()
-    @permissions.has_permissions(manage_channels=True)
+    @checks.has_perms(manage_channels=True)
     async def dumpcategories(self, ctx):
         """
         Usage:  -dumpcategories
@@ -438,9 +437,11 @@ class Files(commands.Cog):
         )
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
-    @commands.command(brief="DMs you a file of server emojis.", aliases=["dumpemojis"])
+    @decorators.command(
+        brief="DMs you a file of server emojis.", aliases=["dumpemojis"]
+    )
     @commands.guild_only()
-    @permissions.has_permissions(manage_emojis=True)
+    @checks.has_perms(manage_emojis=True)
     async def dumpemotes(self, ctx):
         """
         Usage:  -dumpemotes
@@ -485,12 +486,12 @@ class Files(commands.Cog):
         )
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
-    @commands.command(
+    @decorators.command(
         aliases=["logmessages", "messagedump"],
         brief="DMs you a file of channel messages.",
     )
     @commands.guild_only()
-    @permissions.has_permissions(manage_messages=True)
+    @checks.has_perms(manage_messages=True)
     async def dumpmessages(
         self, ctx, messages: int = 25, *, chan: discord.TextChannel = None
     ):
@@ -556,7 +557,7 @@ class Files(commands.Cog):
         )
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
-    @commands.command(
+    @decorators.command(
         aliases=["timezonelist", "listtimezones"], brief="DMs you a file of time zones."
     )
     @commands.guild_only()
@@ -603,9 +604,9 @@ class Files(commands.Cog):
         )
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
-    @commands.command(aliases=["humanlist"], brief="DMs you a file of server humans.")
+    @decorators.command(aliases=["humanlist"], brief="DMs you a file of server humans.")
     @commands.guild_only()
-    @permissions.has_permissions(manage_messages=True)
+    @checks.has_perms(manage_messages=True)
     async def dumphumans(self, ctx):
         """
         Usage:      -dumphumans
@@ -655,12 +656,12 @@ class Files(commands.Cog):
         )
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
-    @commands.command(
+    @decorators.command(
         aliases=["dumprobots", "robotlist", "botlist"],
         brief="DMs you a file of server bots.",
     )
     @commands.guild_only()
-    @permissions.has_permissions(manage_messages=True)
+    @checks.has_perms(manage_messages=True)
     async def dumpbots(self, ctx):
         """
         Usage:      -dumphumans
@@ -710,12 +711,12 @@ class Files(commands.Cog):
         )
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
-    @commands.command(
+    @decorators.command(
         aliases=["dumpusers", "memberlist", "userlist"],
         brief="DMs you a file of server members.",
     )
     @commands.guild_only()
-    @permissions.has_permissions(manage_messages=True)
+    @checks.has_perms(manage_messages=True)
     async def dumpmembers(self, ctx):
         """
         Usage:      -dumpmembers
@@ -760,13 +761,13 @@ class Files(commands.Cog):
         )
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
-    @commands.command(
+    @decorators.command(
         aliases=["banlist", "txtbans"],
         brief="DMs you a file of server bans.",
     )
     @commands.guild_only()
-    @permissions.bot_has_permissions(ban_members=True)
-    @permissions.has_permissions(ban_members=True)
+    @checks.bot_has_perms(ban_members=True)
+    @checks.has_perms(ban_members=True)
     async def dumpbans(self, ctx):
         """
         Usage:      -dumpbans
@@ -811,7 +812,7 @@ class Files(commands.Cog):
         )
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
-    @commands.command(aliases=["md"], brief="DMs you my readme file.")
+    @decorators.command(aliases=["md"], brief="DMs you my readme file.")
     async def readme(self, ctx):
         """
         Usage: -readme
@@ -847,7 +848,10 @@ class Files(commands.Cog):
 
         cog_list = [self.bot.get_cog(cog) for cog in self.bot.cogs]
         for cog in cog_list:
-            if cog.qualified_name.upper() in COG_EXCEPTIONS + USELESS_COGS:
+            if (
+                cog.qualified_name.upper()
+                in self.bot.cog_exceptions + self.bot.useless_cogs
+            ):
                 continue
             premsg += f"##### [{cog.qualified_name}](#{cog.qualified_name}-1)\n"
             cmds = [c for c in cog.get_commands() if not c.hidden]

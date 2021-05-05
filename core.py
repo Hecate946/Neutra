@@ -10,20 +10,17 @@ import sys
 import time
 import traceback
 
-from datetime import datetime
-from logging.handlers import RotatingFileHandler
-
 from colr import color
+from datetime import datetime
 from discord.ext import commands, tasks
 from discord_slash.client import SlashCommand
+from logging.handlers import RotatingFileHandler
 
 from settings import cleanup, database, constants
-from utilities import utils, context as cx
+from utilities import utils, override as cx
 
 MAX_LOGGING_BYTES = 32 * 1024 * 1024  # 32 MiB
 COGS = [x[:-3] for x in sorted(os.listdir("././cogs")) if x.endswith(".py")]
-USELESS_COGS = ["HELP", "TESTING", "BATCH", "SLASH"]
-COG_EXCEPTIONS = ["CONFIG", "BOTADMIN", "MANAGER", "JISHAKU", "MASTER"]
 
 cxn = database.postgres
 
@@ -116,17 +113,20 @@ traceback_logger_handler.setFormatter(traceback_logger_format)
 #     return commands.when_mentioned_or(*prefixes_and_spaces)(bot, message)
 def get_prefix(bot, msg):
     user_id = bot.user.id
-    base = [f'<@!{user_id}> ', f'<@{user_id}> ']
+    base = [f"<@!{user_id}> ", f"<@{user_id}> "]
     if msg.guild is None:
         base.append(constants.prefix)
     else:
         base.extend(bot.prefixes.get(msg.guild.id, [constants.prefix]))
     return base
 
+
 # Main bot class. Heart of the application
 class Snowbot(commands.AutoShardedBot):
     def __init__(self):
-        allowed_mentions = discord.AllowedMentions(roles=False, everyone=False, users=True, replied_user=True)
+        allowed_mentions = discord.AllowedMentions(
+            roles=False, everyone=False, users=True, replied_user=True
+        )
         super().__init__(
             allowed_mentions=allowed_mentions,
             command_prefix=get_prefix,
@@ -153,6 +153,9 @@ class Snowbot(commands.AutoShardedBot):
         self.session = aiohttp.ClientSession(loop=self.loop)
         self.slash = SlashCommand(self, sync_commands=True)
         self.socket_events = collections.Counter()
+
+        self.cog_exceptions = ["CONFIG", "BOTADMIN", "MANAGER", "JISHAKU"]
+        self.useless_cogs = ["TESTING", "BATCH", "SLASH"]
 
     def run(self, token):  # Everything starts from here
         self.setup()  # load the cogs
@@ -254,12 +257,14 @@ class Snowbot(commands.AutoShardedBot):
             x.name
             for x in self.commands
             if not x.hidden
-            and x.cog.qualified_name.upper not in USELESS_COGS + COG_EXCEPTIONS
+            and x.cog.qualified_name.upper
+            not in self.bot.useless_cogs + self.bot.cog_exceptions
         ]
         category_list = [
             x.qualified_name.capitalize()
             for x in [self.get_cog(cog) for cog in self.cogs]
-            if x.qualified_name.upper() not in USELESS_COGS + COG_EXCEPTIONS
+            if x.qualified_name.upper()
+            not in self.bot.useless_cogs + self.bot.cog_exceptions
         ]
         return (owner, command_list, category_list)
 
@@ -489,7 +494,7 @@ class Snowbot(commands.AutoShardedBot):
         so we can give the user feedback
         """
         # This prevents any commands with local handlers being handled here in on_command_error.
-        if hasattr(ctx.command, 'on_error'):
+        if hasattr(ctx.command, "on_error"):
             return
 
         # This prevents any cogs with an overwritten cog_command_error being handled here.
@@ -498,13 +503,14 @@ class Snowbot(commands.AutoShardedBot):
                 return
 
         if isinstance(error, commands.MissingRequiredArgument):
-            name = (
-                str(ctx.command.qualified_name)
-                if ctx.command.parent is None
-                else str(ctx.command.full_parent_name)
-            )
-            help_command = self.get_command("help")
-            await help_command(ctx, invokercommand=name)
+            # name = (
+            #     str(ctx.command.qualified_name)
+            #     if ctx.command.parent is None
+            #     else str(ctx.command.full_parent_name)
+            # )
+            # help_command = self.get_command("help")
+            # await help_command(ctx, invokercommand=name)
+            await ctx.usage(ctx.command.signature)
 
         elif isinstance(error, commands.BadArgument):
             await ctx.send_or_reply(
@@ -544,7 +550,7 @@ class Snowbot(commands.AutoShardedBot):
             # Previous checks didn't catch this one.
             # Readable error so just send it to where the error occurred.
             pass
-            #await ctx.send_or_reply(content=f"{self.emote_dict['failed']} {error}")
+            # await ctx.send_or_reply(content=f"{self.emote_dict['failed']} {error}")
 
         elif isinstance(error, commands.CommandInvokeError):
             err = utils.traceback_maker(error.original, advance=True)
@@ -665,7 +671,7 @@ class Snowbot(commands.AutoShardedBot):
             await self.put(guild.id, [None])
             self.prefixes[guild.id] = prefixes
         elif len(prefixes) > 10:
-            raise RuntimeError('Cannot have more than 10 custom prefixes.')
+            raise RuntimeError("Cannot have more than 10 custom prefixes.")
         else:
             await self.put(guild.id, prefixes)
             self.prefixes[guild.id] = prefixes

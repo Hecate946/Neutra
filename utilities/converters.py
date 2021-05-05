@@ -79,6 +79,18 @@ class SearchEmojiConverter(commands.Converter):
         raise commands.BadArgument('Emoji "{}" not found'.format(argument))
 
 
+class DiscordCommand(commands.Converter):
+    """
+    Basic command converter.
+    """
+
+    async def convert(self, ctx, argument):
+        command = ctx.bot.get_command(argument.lower())
+        if not command:
+            raise commands.BadArgument(f"Command `{argument}` not found.")
+        return command
+
+
 class DiscordUser(commands.Converter):
     """Resolve users/members.
     If given a username only checks current server. (Ease of use)
@@ -180,6 +192,8 @@ class BotServer(commands.Converter):
                 server = ctx.bot.get_guild(server_id)
                 if server is None:
                     raise commands.BadArgument("Server `{}` not found".format(argument))
+                else:
+                    return server
             except discord.HTTPException:
                 raise commands.BadArgument("Server `{}` not found".format(argument))
             except discord.Forbidden:
@@ -189,7 +203,9 @@ class BotServer(commands.Converter):
             except Exception as e:
                 await ctx.send_or_reply(e)
         options = [
-            f"{s.id}" for s in ctx.bot.guilds if argument.lower() in s.name.lower()
+            (s, f"{s.id}: {s.name}")
+            for s in ctx.bot.guilds
+            if argument.lower() in s.name.lower()
         ]
         if options == []:
             raise commands.BadArgument("Server `{}` not found".format(argument))
@@ -297,11 +313,12 @@ class Arguments(argparse.ArgumentParser):
     def error(self, message):
         raise RuntimeError(message)
 
+
 class Prefix(commands.Converter):
     async def convert(self, ctx, argument):
         user_id = ctx.bot.user.id
-        if argument.startswith((f'<@{user_id}>', f'<@!{user_id}>')):
-            raise commands.BadArgument('That prefix cannot be modified.')
+        if argument.startswith((f"<@{user_id}>", f"<@!{user_id}>")):
+            raise commands.BadArgument("That prefix cannot be modified.")
         elif len(argument) > 20:
             raise commands.BadArgument("Max prefix length is 20 characters.")
         return argument

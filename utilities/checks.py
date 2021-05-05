@@ -1,6 +1,6 @@
+from re import L
 import discord
 from discord.ext import commands
-from discord.ext.commands.errors import BadArgument
 
 from settings import constants
 
@@ -27,7 +27,6 @@ async def check_permissions(ctx, perms, *, check=all):
     if ctx.author.id in owners:
         return True
 
-    # resolved = ctx.channel.permissions_for(ctx.author)
     resolved = ctx.author.guild_permissions
     guild_perm_checker = check(
         getattr(resolved, name, None) == value for name, value in perms.items()
@@ -43,7 +42,6 @@ async def check_permissions(ctx, perms, *, check=all):
 async def check_bot_permissions(ctx, perms, *, check=all):
     """ Checks if author has permissions to a permission """
 
-    # resolved = ctx.channel.permissions_for(ctx.author)
     resolved = ctx.guild.me.guild_permissions
     guild_perm_checker = check(
         getattr(resolved, name, None) == value for name, value in perms.items()
@@ -56,7 +54,7 @@ async def check_bot_permissions(ctx, perms, *, check=all):
     )
 
 
-def has_permissions(*, check=all, **perms):
+def has_perms(*, check=all, **perms):
     """ discord.Commands method to check if author has permissions """
 
     async def pred(ctx):
@@ -74,7 +72,7 @@ def has_permissions(*, check=all, **perms):
     return commands.check(pred)
 
 
-def bot_has_permissions(*, check=all, **perms):
+def bot_has_perms(*, check=all, **perms):
     """ discord.Commands method to check if bot has permissions """
 
     async def pred(ctx):

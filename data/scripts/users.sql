@@ -40,12 +40,18 @@ CREATE TABLE IF NOT EXISTS useravatars (
     unix REAL
 );
 
+-- ALTER TABLE userstatus
+--     ALTER COLUMN online TYPE NUMERIC,
+--     ALTER COLUMN idle TYPE NUMERIC,
+--     ALTER COLUMN dnd TYPE NUMERIC,
+--     ALTER COLUMN offline TYPE NUMERIC,
+--     ALTER COLUMN last_changed TYPE NUMERIC;
 CREATE TABLE IF NOT EXISTS userstatus (
     user_id BIGINT PRIMARY KEY,
-    online REAL DEFAULT 0 NOT NULL,
-    idle REAL DEFAULT 0 NOT NULL,
-    dnd REAL DEFAULT 0 NOT NULL,
-    offline REAL DEFAULT 0 NOT NULL,
-    last_changed REAL,
+    online NUMERIC DEFAULT 0 NOT NULL,
+    idle NUMERIC DEFAULT 0 NOT NULL,
+    dnd NUMERIC DEFAULT 0 NOT NULL,
+    offline NUMERIC DEFAULT 0 NOT NULL,
+    last_changed NUMERIC,
     startdate timestamp without time zone default (now() at time zone 'utc')
 );

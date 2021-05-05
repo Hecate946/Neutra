@@ -4,7 +4,8 @@ import discord
 from collections import Counter
 from discord.ext import commands, menus
 
-from utilities import converters, utils, pagination, permissions
+from utilities import converters, utils, pagination, checks
+from utilities import decorators
 
 
 def setup(bot):
@@ -19,7 +20,7 @@ class Stats(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(brief="Get info about a channel.")
+    @decorators.command(brief="Get info about a channel.", aliases=["ci"])
     @commands.guild_only()
     async def channelinfo(self, ctx, *, channel: converters.DiscordChannel = None):
         """
@@ -49,7 +50,7 @@ class Stats(commands.Cog):
         )
         await ctx.send_or_reply(embed=em)
 
-    @commands.command(brief="Show a channel topic.")
+    @decorators.command(brief="Show a channel topic.")
     @commands.guild_only()
     async def topic(self, ctx, *, channel: converters.DiscordChannel = None):
         """Quote the channel topic at people."""
@@ -61,7 +62,7 @@ class Stats(commands.Cog):
             else "No topic set.",
         )
 
-    @commands.command(
+    @decorators.command(
         brief="Show server information.", aliases=["si", "serverstats", "ss", "server"]
     )
     @commands.guild_only()
@@ -171,7 +172,7 @@ class Stats(commands.Cog):
         )
         await ctx.send_or_reply(embed=em)
 
-    @commands.command(brief="Show the server mods.", aliases=["moderators"])
+    @decorators.command(brief="Show the server mods.", aliases=["moderators"])
     @commands.guild_only()
     async def mods(self, ctx):
         """
@@ -203,7 +204,7 @@ class Stats(commands.Cog):
             content=f"Mods in **{ctx.guild.name}:**\n\n{message}",
         )
 
-    @commands.command(brief="Show the server admins.", aliases=["administrators"])
+    @decorators.command(brief="Show the server admins.", aliases=["administrators"])
     @commands.guild_only()
     async def admins(self, ctx):
         """
@@ -235,8 +236,9 @@ class Stats(commands.Cog):
             content=f"Admins in **{ctx.guild.name}:**\n\n{message}",
         )
 
-    @commands.command(brief="Emoji usage tracking.", aliases=["estats"])
+    @decorators.command(brief="Emoji usage tracking.", aliases=["estats"])
     @commands.guild_only()
+    @checks.has_perms(view_audit_log=True)
     async def emojistats(self, ctx, user: discord.Member = None):
         """
         Usage -emojistats
@@ -317,7 +319,8 @@ class Stats(commands.Cog):
                 except menus.MenuError as e:
                     await ctx.send_or_reply(e)
 
-    @commands.command(brief="Get usage stats on an emoji.")
+    @decorators.command(brief="Get usage stats on an emoji.")
+    @checks.has_perms(view_audit_log=True)
     async def emoji(self, ctx, emoji: converters.SearchEmojiConverter = None):
         """
         Usage: -emoji <custom emoji>
@@ -364,8 +367,9 @@ class Stats(commands.Cog):
             except menus.MenuError as e:
                 await ctx.send_or_reply(e)
 
-    @commands.command(brief="Check when a user joined the server.")
+    @decorators.command(brief="Check when a user joined the server.")
     @commands.guild_only()
+    @checks.has_perms(view_audit_log=True)
     async def joinedat(self, ctx, *, user: discord.Member = None):
         """
         Usage: -joinedat <member>
@@ -382,10 +386,11 @@ class Stats(commands.Cog):
         )
         await ctx.send_or_reply(embed=embed)
 
-    @commands.command(
+    @decorators.command(
         brief="Show the join position of a user.", aliases=["joinposition"]
     )
     @commands.guild_only()
+    @checks.has_perms(view_audit_log=True)
     async def joinpos(self, ctx, *, member: discord.Member = None):
         """
         Usage: -joinpos <member>
@@ -440,10 +445,11 @@ class Stats(commands.Cog):
             msg += "\n\n{} joined after.".format(after)
         await ctx.send_or_reply(msg)
 
-    @commands.command(
+    @decorators.command(
         brief="Show who joined at a position.", aliases=["joinedatposition"]
     )
     @commands.guild_only()
+    @checks.has_perms(view_audit_log=True)
     async def joinedatpos(self, ctx, *, position):
         """
         Usage: -joinedatpos <integer>
@@ -474,9 +480,9 @@ class Stats(commands.Cog):
         )
         await ctx.send_or_reply(msg)
 
-    @commands.command(brief="Show the first users to join.")
+    @decorators.command(brief="Show the first users to join.")
     @commands.guild_only()
-    @permissions.has_permissions(manage_guild=True)
+    @checks.has_perms(view_audit_log=True)
     async def firstjoins(self, ctx):
         """
         Usage: -firstjoins
@@ -517,9 +523,9 @@ class Stats(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-    @commands.command(brief="Show the latest users to join.")
+    @decorators.command(brief="Show the latest users to join.")
     @commands.guild_only()
-    @permissions.has_permissions(manage_guild=True)
+    @checks.has_perms(view_audit_log=True)
     async def recentjoins(self, ctx):
         """
         Usage: -recentjoins
@@ -562,10 +568,10 @@ class Stats(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-    @commands.command(brief="Shows all the server's bots.")
-    @permissions.bot_has_permissions(embed_links=True)
-    @permissions.has_permissions(manage_guild=True)
+    @decorators.command(brief="Shows all the server's bots.")
     @commands.guild_only()
+    @checks.bot_has_perms(embed_links=True)
+    @checks.has_perms(view_audit_log=True)
     async def listbots(self, ctx, *, _input=None):
         """
         Usage: -listbots [server]
@@ -614,11 +620,11 @@ class Stats(commands.Cog):
             except menus.MenuError as e:
                 await ctx.send_or_reply(e)
 
-    @commands.command(brief="Show the server's channels.", aliases=["channels"])
+    @decorators.command(brief="Show the server's channels.", aliases=["channels"])
     @commands.guild_only()
-    @permissions.bot_has_permissions(embed_links=True)
+    @checks.bot_has_perms(embed_links=True)
+    @checks.has_perms(manage_channels=True)
     @commands.cooldown(1, 20, commands.BucketType.guild)
-    @permissions.has_permissions(manage_channels=True)
     async def listchannels(self, ctx, guild: int = None):
         """
         Usage: -listchannels
@@ -679,9 +685,9 @@ class Stats(commands.Cog):
         for page in paginator.pages:
             await ctx.send_or_reply(embed=page)
 
-    @commands.command(name="permissions", brief="Show a user's permissions.")
+    @decorators.command(name="permissions", brief="Show a user's permissions.")
     @commands.guild_only()
-    @permissions.has_permissions(manage_messages=True)
+    @checks.has_perms(view_audit_log=True)
     async def _permissions(
         self, ctx, member: discord.Member = None, channel: discord.TextChannel = None
     ):

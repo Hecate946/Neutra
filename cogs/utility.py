@@ -33,7 +33,8 @@ from pyparsing import (
     oneOf,
 )
 
-from utilities import converters, pagination, permissions, utils
+from utilities import converters, pagination, checks, utils
+from utilities import decorators
 
 
 def setup(bot):
@@ -90,7 +91,7 @@ class Utility(commands.Cog):
             timestamp = datetime.utcfromtimestamp(decoded + token_epoch)
         return timestamp
 
-    @commands.command(aliases=["pt", "parsetoken"], brief="Decode a discord token.")
+    @decorators.command(aliases=["pt", "parsetoken"], brief="Decode a discord token.")
     async def ptoken(self, ctx, token=None):
         """
         Usage: -ptoken <token>
@@ -134,7 +135,7 @@ class Utility(commands.Cog):
         embed.set_thumbnail(url=member.avatar_url)
         await ctx.send_or_reply(embed=embed)
 
-    @commands.command(
+    @decorators.command(
         aliases=["gt", "generatetoken"], brief="Generate a discord token for a user."
     )
     async def gtoken(self, ctx, member: Union[discord.Member, discord.User] = None):
@@ -181,7 +182,7 @@ class Utility(commands.Cog):
         embed.set_thumbnail(url=member.avatar_url)
         await ctx.send_or_reply(embed=embed)
 
-    @commands.command(brief="Find the first message of a reply thread.")
+    @decorators.command(brief="Find the first message of a reply thread.")
     async def replies(self, ctx, message: discord.Message):
         """
         Usage: -replies <message>
@@ -214,7 +215,7 @@ class Utility(commands.Cog):
 
         await ctx.send_or_reply(embed=em)
 
-    @commands.command(
+    @decorators.command(
         name="type",
         aliases=["objtype", "findtype"],
         brief="Find the type of a discord object.",
@@ -330,7 +331,7 @@ class Utility(commands.Cog):
         embed.set_image(url=url)
         await ctx.send_or_reply(embed=embed)
 
-    @commands.command(brief="Show a given color and its values.")
+    @decorators.command(brief="Show a given color and its values.")
     async def color(self, ctx, *, value=None):
         """
         Usage: -color <value>
@@ -454,7 +455,7 @@ class Utility(commands.Cog):
             em.set_image(url="attachment://color.png")
             await ctx.send_or_reply(embed=em, file=dfile)
 
-    @commands.command(brief="Send an image with some hex codes.")
+    @decorators.command(brief="Send an image with some hex codes.")
     async def colors(self, ctx):
         """
         Usage: -colors
@@ -466,9 +467,9 @@ class Utility(commands.Cog):
             file=discord.File("./data/assets/colors.png", filename="colors.png")
         )
 
-    @commands.command(brief="Dehoist a specified user.")
-    @permissions.bot_has_permissions(manage_nicknames=True)
-    @permissions.has_permissions(manage_nicknames=True)
+    @decorators.command(brief="Dehoist a specified user.")
+    @checks.bot_has_perms(manage_nicknames=True)
+    @checks.has_perms(manage_nicknames=True)
     async def dehoist(self, ctx, user: discord.Member = None):
         """
         Usage: -dehoist <user>
@@ -526,7 +527,7 @@ class Utility(commands.Cog):
                 content=f"{self.bot.emote_dict['failed']} User `{user}` is not hoisting.",
             )
 
-    @commands.command(brief="Convert special characters to ascii.")
+    @decorators.command(brief="Convert special characters to ascii.")
     async def ascify(self, ctx, *, str_or_member=None):
         """
         Usage: -ascify <string/member>
@@ -567,7 +568,7 @@ class Utility(commands.Cog):
             content=f"{self.bot.emote_dict['success']} Result: **{ascified}**",
         )
 
-    @commands.command(brief="Show information on a character.")
+    @decorators.command(brief="Show information on a character.")
     async def charinfo(self, ctx, *, characters: str):
         """Shows you information about a number of characters.
 
@@ -584,7 +585,7 @@ class Utility(commands.Cog):
             return await ctx.send_or_reply("Output too long to display.")
         await ctx.send_or_reply(msg)
 
-    @commands.command(brief="Show a user's avatar.", aliases=["av", "pfp"])
+    @decorators.command(brief="Show a user's avatar.", aliases=["av", "pfp"])
     async def avatar(self, ctx, *, user: converters.DiscordUser = None):
         """
         Usage:    -avatar [user]
@@ -603,7 +604,7 @@ class Utility(commands.Cog):
             )
         await self.do_avatar(ctx, user, url=user.avatar_url)
 
-    @commands.command(
+    @decorators.command(
         brief="Show a user's default avatar.", aliases=["dav", "dpfp", "davatar"]
     )
     async def defaultavatar(self, ctx, *, user: converters.DiscordUser = None):
@@ -624,11 +625,11 @@ class Utility(commands.Cog):
             )
         await self.do_avatar(ctx, user, user.default_avatar_url)
 
-    @commands.command(
+    @decorators.command(
         aliases=["nick", "setnick"], brief="Edit or reset a user's nickname"
     )
     @commands.guild_only()
-    @permissions.has_permissions(manage_nicknames=True)
+    @checks.has_perms(manage_nicknames=True)
     async def nickname(self, ctx, user: discord.Member, *, nickname: str = None):
         """
         Usage:      -nickname <member> [nickname]
@@ -669,7 +670,7 @@ class Utility(commands.Cog):
 
     @commands.group(brief="Find any user using a search.", aliases=["search"])
     @commands.guild_only()
-    @permissions.has_permissions(manage_messages=True)
+    @checks.has_perms(manage_messages=True)
     async def find(self, ctx):
         """
         Usage: -find <option> <search>
@@ -967,7 +968,7 @@ class Utility(commands.Cog):
         except menus.MenuError as e:
             await ctx.send(e)
 
-    @commands.command(brief="Show info on a discord snowflake.", aliases=["id"])
+    @decorators.command(brief="Show info on a discord snowflake.", aliases=["id"])
     async def snowflake(self, ctx, *, sid=None):
         """
         Usage: -snowflake <id>
@@ -997,7 +998,7 @@ class Utility(commands.Cog):
         )
         return await ctx.send_or_reply(msg)
 
-    @commands.command(brief="Shows the raw content of a message.")
+    @decorators.command(brief="Shows the raw content of a message.")
     async def raw(self, ctx, *, message: discord.Message):
         """
         Usage: -raw [message id]
@@ -1034,8 +1035,9 @@ class Utility(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(str(e))
 
-    @commands.command(brief="Snipe a deleted message.", aliases=["retrieve"])
+    @decorators.command(brief="Snipe a deleted message.", aliases=["retrieve"])
     @commands.guild_only()
+    @checks.has_perms(manage_messages=True)
     async def snipe(self, ctx, *, member: discord.Member = None):
         """
         Usage: -snipe [user]
@@ -1086,7 +1088,7 @@ class Utility(commands.Cog):
         embed.set_footer(text=f"Message ID: {message_id}")
         await ctx.send_or_reply(embed=embed)
 
-    @commands.command(brief="Shorten URLs to a bitly links.")
+    @decorators.command(brief="Shorten URLs to a bitly links.")
     async def shorten(self, ctx, url=None):
         """
         Usage: -shorten <url>
@@ -1189,7 +1191,7 @@ class Utility(commands.Cog):
             msg = msg.content
         return msg
 
-    @commands.command(
+    @decorators.command(
         brief="Create an embed interactively.",
         description="============================================\n"
         "Hello there! Welcome to my interactive embed creating session.\n"
@@ -1198,8 +1200,8 @@ class Utility(commands.Cog):
         "Type `end` at any time to finalize the embed and end the session.\n"
         "============================================\n",
     )
-    @permissions.bot_has_permissions(embed_links=True)
-    @permissions.has_permissions(manage_messages=True, embed_links=True)
+    @checks.bot_has_perms(embed_links=True)
+    @checks.has_perms(manage_messages=True, embed_links=True)
     async def embed(self, ctx):
         """
         Usage: -embed
@@ -1509,7 +1511,7 @@ class Utility(commands.Cog):
         else:
             self.msg_collection.clear()
 
-    @commands.command(aliases=["math", "calc"], brief="Calculate a math formula.")
+    @decorators.command(aliases=["math", "calc"], brief="Calculate a math formula.")
     async def calculate(self, ctx, *, formula=None):
         """
         Usage: calculate <expression>

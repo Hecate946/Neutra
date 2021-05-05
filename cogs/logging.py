@@ -5,7 +5,8 @@ import discord
 from datetime import datetime
 from discord.ext import commands
 
-from utilities import permissions
+from utilities import checks
+from utilities import decorators
 
 
 def setup(bot):
@@ -742,12 +743,12 @@ class Logging(commands.Cog):
             "By default, all events will be logged."
         )
 
-    @commands.command(
+    @decorators.command(
         brief="Set your server's logging channel.",
         aliases=["logserver", "setlogchannel"],
     )
     @commands.guild_only()
-    @permissions.has_permissions(manage_guild=True)
+    @checks.has_perms(manage_guild=True)
     async def logchannel(self, ctx, channel: discord.TextChannel = None):
         """
         Usage: -logchannel [channel]
@@ -779,9 +780,9 @@ class Logging(commands.Cog):
 
         await self.do_logging(ctx, channel)
 
-    @commands.command(brief="Remove the logging channel.", aliases=["unlogserver"])
+    @decorators.command(brief="Remove the logging channel.", aliases=["unlogserver"])
     @commands.guild_only()
-    @permissions.has_permissions(manage_guild=True)
+    @checks.has_perms(manage_guild=True)
     async def unlogchannel(self, ctx):
         """
         Usage: -unlogchannel
@@ -816,9 +817,12 @@ class Logging(commands.Cog):
                 content=f"{self.bot.emote_dict['warn']} Logging is not enabled on this server.",
             )
 
-    @commands.command(brief="Enable specific logging events.")
+    @decorators.command(
+        brief="Enable specific logging events.",
+        writer=782479134436753428,
+    )
     @commands.guild_only()
-    @permissions.has_permissions(manage_guild=True)
+    @checks.has_perms(manage_guild=True)
     async def log(self, ctx, log_arg):
         """
         Usage:      -log <option>
@@ -843,9 +847,9 @@ class Logging(commands.Cog):
         """
         await self.log_or_unlog(ctx, log_arg)
 
-    @commands.command(brief="Disable specific logging events.")
+    @decorators.command(brief="Disable specific logging events.")
     @commands.guild_only()
-    @permissions.has_permissions(manage_guild=True)
+    @checks.has_perms(manage_guild=True)
     async def unlog(self, ctx, log_arg):
         """
         Usage:      -unlog <option>

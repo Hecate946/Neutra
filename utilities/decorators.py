@@ -2,6 +2,10 @@ import discord
 import functools
 from discord.ext import commands
 
+from utilities import override
+
+command = functools.partial(commands.command, cls=override.BotCommand)
+
 
 def is_home():
     """

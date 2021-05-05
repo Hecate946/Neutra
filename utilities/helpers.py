@@ -1,7 +1,7 @@
 import discord
 import asyncio
 from discord.ext import menus
-from utilities import pagination
+from utilities import pagination, utils
 
 
 async def error_info(ctx, failed):
@@ -44,41 +44,23 @@ async def error_info(ctx, failed):
             await mess.remove_reaction(ctx.bot.emote_dict["error"], ctx.bot.user)
 
 
-async def success_info(ctx, success, total, count=False):
-    mess = await ctx.send_or_reply(
-        content=f"{ctx.bot.emote_dict['success']} Successfully {ctx.command.name}ed `{f'{len(success)}/{total}' if count else ', '.join([x[0] for x in success])}`",
-    )
-    try:
-        await mess.add_reaction(ctx.bot.emote_dict["info"])
-    except Exception:
-        return
+async def choose(ctx, search, options):
+    option_list = utils.disambiguate(search, options, None, 5)
+    if not option_list[0]["ratio"] == 1:
+        option_list = [x["result"] for x in option_list]
+        index, message = await pagination.Picker(
+            embed_title="Select one of the 5 closest matches.",
+            list=option_list,
+            ctx=ctx,
+        ).pick(embed=True, syntax="prolog")
 
-    def rxn_check(r):
-        if (
-            r.message_id == mess.id
-            and r.user_id == ctx.author.id
-            and str(r.emoji) == ctx.bot.emote_dict["info"]
-        ):
-            return True
-        return False
+        if index < 0:
+            return await message.edit(
+                content=f"{ctx.bot.emote_dict['info']} Selection cancelled.",
+                embed=None,
+            )
 
-    try:
-        await ctx.bot.wait_for("raw_reaction_add", timeout=30.0, check=rxn_check)
-        await mess.delete()
-        await ctx.send_or_reply(
-            f"{ctx.bot.emote_dict['announce']} **Completion information:**"
-        )
-        text = "\n".join([f"User: {x[0]} Reason: {x[1]}" for x in success])
-        p = pagination.MainMenu(
-            pagination.TextPageSource(text=text, prefix="```prolog")
-        )
-        try:
-            await p.start(ctx)
-        except menus.MenuError as e:
-            await ctx.send_or_reply(e)
-
-    except asyncio.TimeoutError:
-        try:
-            await mess.clear_reactions()
-        except Exception:
-            await mess.remove_reaction(ctx.bot.emote_dict["info"], ctx.bot.user)
+        selection = option_list[index]
+    else:
+        selection = option_list[0]["result"]
+    return selection

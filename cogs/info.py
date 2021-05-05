@@ -18,6 +18,7 @@ from discord.ext import commands, menus
 from PIL import Image, ImageDraw, ImageFont
 
 from utilities import converters, pagination, speedtest, utils
+from utilities import decorators
 
 
 def setup(bot):
@@ -43,7 +44,7 @@ class Info(commands.Cog):
         value = await self.bot.cxn.fetchrow(query)
         return int(value[0])
 
-    @commands.command(
+    @decorators.command(
         aliases=["info", "bot", "botstats", "botinfo"],
         brief="Display information about the bot.",
     )
@@ -59,9 +60,7 @@ class Info(commands.Cog):
                         FROM config
                         WHERE client_id = $1;
                         """
-        bot_version = await self.bot.cxn.fetchval(
-            version_query, self.bot.user.id
-        )
+        bot_version = await self.bot.cxn.fetchval(version_query, self.bot.user.id)
         total_members = sum(1 for x in self.bot.get_all_members())
         voice_channels = []
         text_channels = []
@@ -128,7 +127,7 @@ class Info(commands.Cog):
             embed=embed,
         )
 
-    @commands.command(brief="Check if the bot is rate limited")
+    @decorators.command(brief="Check if the bot is rate limited")
     async def is_ratelimited(self, ctx):
         """
         Usage: -is_ratelimited
@@ -141,7 +140,7 @@ class Info(commands.Cog):
             + str(self.bot.is_ws_ratelimited())
         )
 
-    @commands.command(
+    @decorators.command(
         brief="Send a bugreport to the developer.",
         aliases=["reportbug", "reportissue", "issuereport"],
     )
@@ -191,7 +190,7 @@ class Info(commands.Cog):
                 content="Your bug report has been sent.",
             )
 
-    @commands.command(
+    @decorators.command(
         brief="Send a suggestion to the developer.", aliases=["suggestion"]
     )
     @commands.cooldown(2, 60, commands.BucketType.user)
@@ -235,7 +234,7 @@ class Info(commands.Cog):
         else:
             await ctx.send_or_reply(content="Your message has been sent.")
 
-    @commands.command(brief="Show the bot's uptime.", aliases=["runtime"])
+    @decorators.command(brief="Show the bot's uptime.", aliases=["runtime"])
     async def uptime(self, ctx):
         """
         Usage: -uptime
@@ -246,7 +245,7 @@ class Info(commands.Cog):
             f"{self.bot.emote_dict['stopwatch']} I've been running for `{utils.time_between(self.bot.starttime, int(time.time()))}`"
         )
 
-    @commands.command(
+    @decorators.command(
         brief="Bot network speed.",
         aliases=["speedtest", "network", "wifi", "download", "upload"],
     )
@@ -313,7 +312,7 @@ class Info(commands.Cog):
             msg += "```"
         await message.edit(content=msg)
 
-    @commands.command(
+    @decorators.command(
         brief="Test the bot's response latency.",
         aliases=["latency", "response"],
     )
@@ -356,7 +355,7 @@ class Info(commands.Cog):
             msg += "```"
         await message.edit(content=msg)
 
-    @commands.command(brief="Show the bot's host environment.")
+    @decorators.command(brief="Show the bot's host environment.")
     async def hostinfo(self, ctx):
         """
         Usage: -hostinfo
@@ -450,7 +449,7 @@ class Info(commands.Cog):
 
         await message.edit(content=msg)
 
-    @commands.command(
+    @decorators.command(
         brief="Show some info on the bot's purpose.", aliases=["boss", "botowner"]
     )
     async def overview(self, ctx):
@@ -472,7 +471,7 @@ class Info(commands.Cog):
         embed.set_author(name=owner, icon_url=owner.avatar_url)
         await ctx.send_or_reply(embed=embed)
 
-    @commands.command(brief="Show my changelog.", aliases=["updates"])
+    @decorators.command(brief="Show my changelog.", aliases=["updates"])
     async def changelog(self, ctx):
         """
         Usage: -changelog
@@ -492,7 +491,7 @@ class Info(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-    @commands.command(brief="Display the source code.", aliases=["sourcecode"])
+    @decorators.command(brief="Display the source code.", aliases=["sourcecode"])
     async def source(self, ctx, *, command: str = None):
         """
         Usage: -source [command]
@@ -534,7 +533,7 @@ class Info(commands.Cog):
         msg = f"**__My source {'' if command is None else f'for {command}'} is located at:__**\n\n{final_url}"
         await ctx.send_or_reply(msg)
 
-    @commands.command(brief="Invite me to your server!", aliases=["bi", "invite"])
+    @decorators.command(brief="Invite me to your server!", aliases=["bi", "invite"])
     async def botinvite(self, ctx):
         """
         Usage: -botinvite
@@ -545,7 +544,7 @@ class Info(commands.Cog):
             f"**{ctx.author.name}**, use this URL to invite me\n<{self.bot.oauth}>"
         )
 
-    @commands.command(
+    @decorators.command(
         brief="Join my support server!", aliases=["sup", "assistance", "assist"]
     )
     async def support(self, ctx):
@@ -558,7 +557,7 @@ class Info(commands.Cog):
             f"**{ctx.author.name}**, use this URL to join my support server\n{self.bot.constants.support}"
         )
 
-    @commands.command(brief="Shows all users I'm connected to.")
+    @decorators.command(brief="Shows all users I'm connected to.")
     async def users(self, ctx):
         """
         Usage: -users
@@ -615,7 +614,7 @@ class Info(commands.Cog):
             )
             await msg.edit(content=None, embed=e)
 
-    @commands.command(brief="Servers you and the bot share.")
+    @decorators.command(brief="Servers you and the bot share.")
     @commands.guild_only()
     async def sharedservers(self, ctx, *, member: converters.DiscordUser = None):
         """
@@ -668,7 +667,7 @@ class Info(commands.Cog):
             for output in result
         ]
 
-    @commands.command(brief="Run the neofetch command.")
+    @decorators.command(brief="Run the neofetch command.")
     async def neofetch(self, ctx):
         """
         Usage: -neofetch
@@ -690,7 +689,7 @@ class Info(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(str(e))
 
-    @commands.command(
+    @decorators.command(
         aliases=["code", "cloc", "codeinfo"], brief="Show sourcecode statistics."
     )
     async def lines(self, ctx):
@@ -762,17 +761,17 @@ class Info(commands.Cog):
             msg += f"{comments.ljust(width)} Comments"
             msg += "```"
             em = discord.Embed(color=self.bot.constants.embed)
-            em.title = f"{self.bot.emote_dict['info']} Source information"
+            em.title = f"{self.bot.emote_dict['info']}  Source information"
             em.description = msg
             await ctx.send_or_reply(embed=em)
 
-    @commands.command()
+    @decorators.command()
     async def privacy(self, ctx):
         with open("./data/txts/privacy.txt") as fp:
             privacy = fp.read()
         await ctx.send_or_reply("```fix\n" + privacy.format(ctx.prefix) + "```")
 
-    @commands.command(brief="Send a request to the developer.", aliases=["contact"])
+    @decorators.command(brief="Send a request to the developer.", aliases=["contact"])
     @commands.dm_only()
     @commands.cooldown(2, 60, commands.BucketType.user)
     async def request(self, ctx, *, request: str = None):
@@ -807,7 +806,7 @@ class Info(commands.Cog):
         else:
             await ctx.success(content="Your request has been submitted.")
 
-    @commands.command(hidden=True, aliases=[r"%uptime"])
+    @decorators.command(hidden=True, aliases=[r"%uptime"])
     async def percentuptime(self, ctx):
         me = self.bot.home.get_member(self.bot.user.id)
         query = """

@@ -3,7 +3,8 @@ import colorsys
 
 from discord.ext import commands, menus
 
-from utilities import pagination, permissions
+from utilities import pagination, checks
+from utilities import decorators
 
 
 EMBED_MAX_LEN = 2048  # constant for paginating embeds
@@ -34,7 +35,7 @@ class Roles(commands.Cog):
 
         self.emote_dict = bot.emote_dict
 
-    @commands.command(brief="Get info on a specific role.", aliases=["ri"])
+    @decorators.command(brief="Get info on a specific role.", aliases=["ri"])
     @commands.guild_only()
     async def roleinfo(self, ctx, *, role: discord.Role):
         """
@@ -78,12 +79,12 @@ class Roles(commands.Cog):
         # .replace("_", " ").replace("guild", "server").title().replace("Tts", "TTS")
         await ctx.send_or_reply(embed=embed)
 
-    @commands.command(
+    @decorators.command(
         aliases=["ar", "adrl", "addrl", "adrole"], brief="Adds roles to users."
     )
     @commands.guild_only()
-    @permissions.bot_has_permissions(manage_roles=True)
-    @permissions.has_permissions(manage_roles=True)
+    @checks.bot_has_perms(manage_roles=True)
+    @checks.has_perms(manage_roles=True)
     async def addrole(
         self, ctx, targets: commands.Greedy[discord.Member], *roles: discord.Role
     ):
@@ -147,12 +148,12 @@ class Roles(commands.Cog):
             f'the role{"" if len(role_list) == 1 else "s"} `{", ".join(role_names)}`'
         )
 
-    @commands.command(
+    @decorators.command(
         aliases=["rr", "remrole", "rmrole", "rmrl"], brief="Removes roles from users."
     )
     @commands.guild_only()
-    @permissions.bot_has_permissions(manage_roles=True)
-    @permissions.has_permissions(manage_roles=True)
+    @checks.bot_has_perms(manage_roles=True)
+    @checks.has_perms(manage_roles=True)
     async def removerole(
         self, ctx, targets: commands.Greedy[discord.Member], *roles: discord.Role
     ):
@@ -232,8 +233,8 @@ class Roles(commands.Cog):
         brief="Mass adds or removes a role to users.", aliases=["multirole"]
     )
     @commands.guild_only()
-    @permissions.bot_has_permissions(manage_guild=True, manage_roles=True)
-    @permissions.has_permissions(manage_roles=True)
+    @checks.bot_has_perms(manage_guild=True, manage_roles=True)
+    @checks.has_perms(manage_roles=True)
     async def massrole(self, ctx):
         """
         Usage:      -massrole <method> <role1> <role2>
@@ -460,9 +461,8 @@ class Roles(commands.Cog):
     # The next couple commands are mostly from CorpBot.py with a few modifications
     # https://github.com/corpnewt/CorpBot.py
 
-    @commands.command(brief="Show an embed of all server roles.", aliases=["roles"])
+    @decorators.command(brief="Show an embed of all server roles.", aliases=["roles"])
     @commands.guild_only()
-    @permissions.has_permissions(manage_messages=True)
     async def listroles(self, ctx, sort_order: str = "default"):
         """
         Usage: -listroles
@@ -522,7 +522,7 @@ class Roles(commands.Cog):
             ctx, sorted_list
         )  # send the list to get actually printed to discord
 
-    @commands.command(brief="Counts the users with a role.")
+    @decorators.command(brief="Counts the users with a role.")
     @commands.guild_only()
     async def rolecall(self, ctx, *, role: discord.Role = None):
         """
@@ -551,9 +551,8 @@ class Roles(commands.Cog):
         embed.set_footer(text="ID: {}".format(role.id))
         await ctx.send_or_reply(embed=embed)
 
-    @commands.command(brief="Show the people who have a role.")
+    @decorators.command(brief="Show the people who have a role.")
     @commands.guild_only()
-    @permissions.has_permissions(manage_messages=True)
     async def whohas(self, ctx, *, role: discord.Role = None):
         """
         Usage: -whohas <role>
@@ -591,7 +590,7 @@ class Roles(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-    @commands.command(aliases=["rp"], brief="Show the permissions for a role.")
+    @decorators.command(aliases=["rp"], brief="Show the permissions for a role.")
     @commands.guild_only()
     async def roleperms(self, ctx, *, role: discord.Role = None):
         """
@@ -630,7 +629,7 @@ class Roles(commands.Cog):
                 )
             )
 
-    @commands.command(brief="Counts the roles on the server.")
+    @decorators.command(brief="Counts the roles on the server.")
     @commands.guild_only()
     async def rolecount(self, ctx):
         """
@@ -641,7 +640,7 @@ class Roles(commands.Cog):
             "This server has {:,} total roles.".format(len(ctx.guild.roles) - 1)
         )
 
-    @commands.command(brief="Show roles that have no users.")
+    @decorators.command(brief="Show roles that have no users.")
     @commands.guild_only()
     async def emptyroles(self, ctx):
         """

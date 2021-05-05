@@ -8,7 +8,8 @@ from datetime import datetime, timedelta
 from discord.ext import commands, menus
 from geopy import geocoders
 
-from utilities import utils, pagination, converters
+from utilities import utils, pagination, converters, checks
+from utilities import decorators
 
 
 def setup(bot):
@@ -25,7 +26,7 @@ class Time(commands.Cog):
         self.stopwatches = {}
         self.geo = geocoders.Nominatim(user_agent="Snowbot")
 
-    @commands.command(
+    @decorators.command(
         brief="Remove your timezone.",
         aliases=["rmtz", "removetz", "removetimzone", "rmtimezone", "remtimezone"],
     )
@@ -39,7 +40,7 @@ class Time(commands.Cog):
             f"{self.bot.emote_dict['success']} Your timezone has been removed."
         )
 
-    @commands.command(brief="List all available timezones.")
+    @decorators.command(brief="List all available timezones.")
     async def listtz(self, ctx):
         """
         Usage: -listtz
@@ -49,7 +50,7 @@ class Time(commands.Cog):
         """
         await ctx.invoke(self.settz, tz_search=None)
 
-    @commands.command(brief="Set your timezone.", aliases=["settimezone", "settime"])
+    @decorators.command(brief="Set your timezone.", aliases=["settimezone", "settime"])
     async def settz(self, ctx, *, tz_search=None):
         """
         Usage: -settz <timezone>
@@ -114,7 +115,7 @@ class Time(commands.Cog):
             else:
                 await ctx.send_or_reply(msg)
 
-    @commands.command(
+    @decorators.command(
         brief="Show times for all users.", aliases=["alltime", "alltimes"]
     )
     async def usertimes(self, ctx):
@@ -165,7 +166,7 @@ class Time(commands.Cog):
                 content=f"{self.bot.emote_dict['failed']} No users have set their timezones.",
             )
 
-    @commands.command(brief="See a member's timezone.", aliases=["tz"])
+    @decorators.command(brief="See a member's timezone.", aliases=["tz"])
     async def timezone(self, ctx, *, member: converters.DiscordUser = None):
         """
         Usage: -timezone <user>
@@ -193,7 +194,7 @@ class Time(commands.Cog):
             content=f"{self.bot.emote_dict['announce']} `{member}'s timezone is {timezone}`",
         )
 
-    @commands.command(brief="Show a user's current time.", aliases=["time"])
+    @decorators.command(brief="Show a user's current time.", aliases=["time"])
     async def usertime(self, ctx, *, member: discord.Member = None):
         """
         Usage: -usertime [member]
@@ -249,7 +250,7 @@ class Time(commands.Cog):
             zone_now = t.astimezone(zone)
         return {"zone": tz_list[0]["result"], "time": zone_now.strftime("%a %I:%M %p")}
 
-    @commands.command(
+    @decorators.command(
         brief="Get the time of any location", aliases=["worldclock", "worldtime"]
     )
     async def clock(self, ctx, *, place=None):
@@ -301,7 +302,7 @@ class Time(commands.Cog):
         except Exception as e:
             await ctx.send_or_reply(e)
 
-    @commands.command(aliases=["sw"], brief="Start or stop a stopwatch.")
+    @decorators.command(aliases=["sw"], brief="Start or stop a stopwatch.")
     async def stopwatch(self, ctx):
         """
         Usage: -stopwatch
@@ -325,3 +326,13 @@ class Time(commands.Cog):
                 content=f"{self.bot.emote_dict['stopwatch']} Stopwatch stopped! Time: **{tmp}**",
             )
             self.stopwatches.pop(author.id, None)
+
+    @checks.has_perms(manage_guild=True)
+    @decorators.command(
+        implemented="2021-05-05 02:04:35.619602",
+        aliases=["utctime"],
+    )
+    async def utcnow(self, ctx):
+        await ctx.send_or_reply(
+            f"{self.bot.emote_dict['stopwatch']} `{datetime.utcnow()}`"
+        )

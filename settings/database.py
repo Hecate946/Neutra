@@ -498,11 +498,3 @@ async def load_prefixes():
     records = await postgres.fetch(query)
     for server_id, prefix_list in records:
         prefixes[server_id] = prefix_list
-        print(prefixes)
-        
-
-
-async def fetch_prefix(server):
-    server_prefixes = prefixes.get(server, None)
-    print(server_prefixes)
-    return server_prefixes

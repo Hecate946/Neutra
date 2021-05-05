@@ -13,7 +13,8 @@ import discord
 from discord.ext import commands, menus
 from PythonGists import PythonGists
 
-from utilities import converters, pagination, permissions
+from utilities import converters, pagination, checks, helpers
+from utilities import decorators
 
 
 def setup(bot):
@@ -33,10 +34,7 @@ class Botadmin(commands.Cog):
 
     # This is a bot admin only cog
     async def cog_check(self, ctx):
-        if (
-            ctx.author.id in self.bot.constants.admins
-            or ctx.author.id in self.bot.constants.owners
-        ):
+        if checks.is_admin(ctx):
             return True
         return
 
@@ -47,7 +45,7 @@ class Botadmin(commands.Cog):
             self.socket_event_total += 1
             self.bot.socket_events[event_type] += 1
 
-    @commands.command(brief="Show global socket stats.", aliases=["socketstats"])
+    @decorators.command(brief="Show global socket stats.", aliases=["socketstats"])
     async def socket(self, ctx):
         """
         Usage: -socket
@@ -84,7 +82,7 @@ class Botadmin(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-    @commands.command(
+    @decorators.command(
         name="message",
         aliases=["pm", "dm"],
         brief="DM any user the bot knows.",
@@ -114,7 +112,7 @@ class Botadmin(commands.Cog):
                 "This user might be having DMs blocked or it's a bot account..."
             )
 
-    @commands.command(brief="Create a server invite.")
+    @decorators.command(brief="Create a server invite.")
     async def inv(self, ctx, server: converters.BotServer = None):
         """
         Usage: -inv <server>
@@ -153,7 +151,7 @@ class Botadmin(commands.Cog):
             return await ctx.send_or_reply(e)
         await ctx.send_or_reply(inv)
 
-    @commands.command(brief="Show members for a server.")
+    @decorators.command(brief="Show members for a server.")
     async def members(self, ctx, *, server: converters.BotServer = None):
         """
         Usage: -members
@@ -222,7 +220,7 @@ class Botadmin(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-    @commands.command(
+    @decorators.command(
         brief="Lists the servers I'm connected to.", aliases=["servers", "serverlist"]
     )
     async def listservers(self, ctx):
@@ -262,7 +260,7 @@ class Botadmin(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-    @commands.command(brief="Show most member servers.")
+    @decorators.command(brief="Show most member servers.")
     async def topservers(self, ctx):
         """
         Usage: -topservers
@@ -298,7 +296,7 @@ class Botadmin(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-    @commands.command(brief="Show least member servers.")
+    @decorators.command(brief="Show least member servers.")
     async def bottomservers(self, ctx):
         """
         Usage: -bottomservers
@@ -334,7 +332,7 @@ class Botadmin(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-    @commands.command(brief="Show first joined servers.")
+    @decorators.command(brief="Show first joined servers.")
     async def firstservers(self, ctx):
         """
         Usage: -firstservers
@@ -380,7 +378,7 @@ class Botadmin(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-    @commands.command(brief="Show latest joined servers.", aliases=["lastservers"])
+    @decorators.command(brief="Show latest joined servers.", aliases=["lastservers"])
     async def recentservers(self, ctx):
         """
         Usage: -recentservers
@@ -429,7 +427,7 @@ class Botadmin(commands.Cog):
             await ctx.send_or_reply(e)
 
     # Basic info commands
-    @commands.command(brief="Show commands in the cache.")
+    @decorators.command(brief="Show commands in the cache.")
     async def cachedcommands(self, ctx, limit=20):
         """
         Usage: -cachedcommands
@@ -447,51 +445,51 @@ class Botadmin(commands.Cog):
 
         await ctx.send_or_reply(content="```yaml\n{}\n```".format(output))
 
-    @commands.command(aliases=["guildinfo", "gi"], brief="Get stats on a bot server.")
-    async def guild(self, ctx, *, guild: converters.BotServer = None):
+    @decorators.command(aliases=["guildinfo", "gi"], brief="Get stats on a bot server.")
+    async def guild(self, ctx, *, argument=None):
         """
         Usage: -guild
         Alias: -guildinfo, -gi
         Output:
             Lists some info about the current or passed server
         """
+        if argument is None:
+            return await ctx.usage("<guild>")
+        options = await converters.BotServer().convert(ctx, argument)
+        if isinstance(options, list):
+            selection = await helpers.choose(ctx, argument, options)
+            print(selection)
+            # if len(guild) > 1:
+            #     my_dict = {}
+            #     for x in guild:
+            #         guild = self.bot.get_guild(int(x))
+            #         my_dict[guild.id] = f"ID: {guild.id} Name: {guild.name}\n"
+            #     the_list = [my_dict[x] for x in my_dict]
+            #     index, message = await pagination.Picker(
+            #         embed_title="Multiple results. Please choose one.",
+            #         list=the_list,
+            #         ctx=ctx,
+            #     ).pick(embed=True, syntax="py")
+            #     if index < 0:
+            #         return await message.edit(
+            #             content=f"{self.bot.emote_dict['exclamation']} Server selection cancelled.",
+            #             embed=None,
+            #         )
 
-        if guild is None:
-            if ctx.guild:
-                guild = ctx.guild
-            else:
-                raise commands.NoPrivateMessage()
+            #     key_list = list(my_dict.keys())
+            #     selection = key_list[index]
 
-        if isinstance(guild, list):
-            if len(guild) > 1:
-                my_dict = {}
-                for x in guild:
-                    guild = self.bot.get_guild(int(x))
-                    my_dict[guild.id] = f"ID: {guild.id} Name: {guild.name}\n"
-                the_list = [my_dict[x] for x in my_dict]
-                index, message = await pagination.Picker(
-                    embed_title="Multiple results. Please choose one.",
-                    list=the_list,
-                    ctx=ctx,
-                ).pick(embed=True, syntax="py")
-                if index < 0:
-                    return await message.edit(
-                        content=f"{self.bot.emote_dict['exclamation']} Server selection cancelled.",
-                        embed=None,
-                    )
-
-                key_list = list(my_dict.keys())
-                selection = key_list[index]
-
-                try:
-                    guild = self.bot.get_guild(int(selection))
-                except Exception:
-                    raise commands.BadArgument(f"Server `{guild}` not found.")
-            else:
-                try:
-                    guild = self.bot.get_guild(int(guild[0]))
-                except IndexError:
-                    raise commands.BadArgument(f"Server `{guild}` not found.")
+            #     try:
+            #         guild = self.bot.get_guild(int(selection))
+            #     except Exception:
+            #         raise commands.BadArgument(f"Server `{guild}` not found.")
+            # else:
+            #     try:
+            #         guild = self.bot.get_guild(int(guild[0]))
+            #     except IndexError:
+            #         raise commands.BadArgument(f"Server `{guild}` not found.")
+        else:
+            guild = options
         server_embed = discord.Embed(color=self.bot.constants.embed)
         server_embed.title = guild.name
 
@@ -528,26 +526,28 @@ class Botadmin(commands.Cog):
             value=user_string,
             inline=True,
         )
-        server_embed.add_field(name="Roles", value=str(len(guild.roles)), inline=True)
+        server_embed.add_field(name="Roles", value=str(len(guild.roles)), inline=False)
         chandesc = "{:,} text, {:,} voice".format(
             len(guild.text_channels), len(guild.voice_channels)
         )
-        server_embed.add_field(name="Channels", value=chandesc, inline=True)
+        server_embed.add_field(name="Channels", value=chandesc, inline=False)
         server_embed.add_field(
-            name="Default Role", value=guild.default_role, inline=True
+            name="Default Role", value=guild.default_role, inline=False
         )
         server_embed.add_field(
             name="Owner",
             value=guild.owner.name + "#" + guild.owner.discriminator,
             inline=True,
         )
-        server_embed.add_field(name="AFK Channel", value=guild.afk_channel, inline=True)
         server_embed.add_field(
-            name="Verification", value=guild.verification_level, inline=True
+            name="AFK Channel", value=guild.afk_channel, inline=False
         )
-        server_embed.add_field(name="Voice Region", value=guild.region, inline=True)
-        server_embed.add_field(name="Considered Large", value=guild.large, inline=True)
-        # server_embed.add_field(name="Shard ID", value="{}/{}".format(guild.shard_id+1, self.bot.shard_count), inline=True)
+        server_embed.add_field(
+            name="Verification", value=guild.verification_level, inline=False
+        )
+        server_embed.add_field(name="Voice Region", value=guild.region, inline=False)
+        server_embed.add_field(name="Considered Large", value=guild.large, inline=False)
+        # server_embed.add_field(name="Shard ID", value="{}/{}".format(guild.shard_id+1, self.bot.shard_count), inline=False)
         server_embed.add_field(
             name="Nitro Boosts",
             value="{} (level {})".format(
@@ -632,7 +632,7 @@ class Botadmin(commands.Cog):
                 if e.lower().endswith("managed")
                 else "Emojis ({} of {})".format(i + 1, len(emojifields))
             )
-            server_embed.add_field(name=name, value=e, inline=True)
+            server_embed.add_field(name=name, value=e, inline=False)
             if len(server_embed) > 6000:  # too big
                 server_embed.remove_field(len(server_embed.fields) - 1)
                 await ctx.send_or_reply(embed=server_embed)
@@ -645,14 +645,14 @@ class Botadmin(commands.Cog):
                 )
                 server_embed.set_footer(text="Server ID: {}".format(guild.id))
                 server_embed.description = "Continued Emojis:"
-                server_embed.add_field(name=name, value=e, inline=True)
+                server_embed.add_field(name=name, value=e, inline=False)
         if len(server_embed.fields):
             try:
                 await message.edit(embed=server_embed)
             except BaseException:
                 await ctx.send_or_reply(embed=server_embed)
 
-    @commands.command(aliases=["ns"], brief="List all bot nicknames.")
+    @decorators.command(aliases=["ns"], brief="List all bot nicknames.")
     async def nickscan(self, ctx):
         """
         Usage: -nickscan
@@ -741,7 +741,9 @@ class Botadmin(commands.Cog):
     def _is_submodule(self, parent, child):
         return parent == child or child.startswith(parent + ".")
 
-    @commands.command(hidden=True, brief="Show info on an extension.", aliases=["ext"])
+    @decorators.command(
+        hidden=True, brief="Show info on an extension.", aliases=["ext"]
+    )
     async def extension(self, ctx, *, extension=None):
         """
         Usage: -extension <extension>
@@ -798,7 +800,7 @@ class Botadmin(commands.Cog):
             return
         await ctx.send_or_reply(content="I couldn't find that extension.")
 
-    @commands.command(
+    @decorators.command(
         hidden=True, brief="List all extensions and cogs.", aliases=["exts"]
     )
     async def extensions(self, ctx):
@@ -884,7 +886,7 @@ class Botadmin(commands.Cog):
                 help_embed.set_footer(text="{} Extensions Total".format(len(ext_list)))
             await self._send_embed(ctx, help_embed, to_pm)
 
-    @commands.command(brief="Show the bot's admins.")
+    @decorators.command(brief="Show the bot's admins.")
     async def botadmins(self, ctx):
         """
         Usage: -botadmins
@@ -910,7 +912,7 @@ class Botadmin(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-    @commands.command(brief="Show the bot's owners.", aliases=["owners"])
+    @decorators.command(brief="Show the bot's owners.", aliases=["owners"])
     async def botowners(self, ctx):
         """
         Usage: -botowners
@@ -937,7 +939,7 @@ class Botadmin(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-    @commands.command(
+    @decorators.command(
         aliases=["emojicount", "ec", "botemojis"],
         brief="Bot emoji count across all servers.",
     )
@@ -981,7 +983,7 @@ class Botadmin(commands.Cog):
         embed.add_field(name="Total Emote Count", value=str(totalecount), inline=False)
         await ctx.send_or_reply(embed=embed)
 
-    @commands.command(hidden=True, brief="Generate an oauth url for a bot ID.")
+    @decorators.command(hidden=True, brief="Generate an oauth url for a bot ID.")
     async def genoauth(self, ctx, client_id: int, perms=None):
         """
         Usage: -genoauth <client id> [perms]
@@ -1011,7 +1013,7 @@ class Botadmin(commands.Cog):
                 "" "{}, here you go:\n" "<{}>".format(ctx.message.author.mention, url)
             )
 
-    @commands.command(hidden=True, brief="Generate an oauth url for a bot.")
+    @decorators.command(hidden=True, brief="Generate an oauth url for a bot.")
     async def genbotoauth(self, ctx, bot: discord.Member, perms=None):
         """
         Usage: -genbotoauth <bot> [perms]
@@ -1046,10 +1048,9 @@ class Botadmin(commands.Cog):
                 "" "{}, here you go:\n" "<{}>".format(ctx.message.author.mention, url)
             )
 
-    @commands.command(
+    @decorators.command(
         aliases=["listcogs"], hidden=True, brief="List all my cogs in an embed."
     )
-    @commands.is_owner()
     async def cogs(self, ctx):
         """
         Usage: -cogs
@@ -1069,10 +1070,15 @@ class Botadmin(commands.Cog):
         )
         await ctx.send_or_reply(embed=embed)
 
-    @commands.command(
-        rest_is_raw=True, hidden=True, aliases=["say"], brief="Echo a message."
+    @decorators.command(
+        rest_is_raw=True,
+        hidden=True,
+        aliases=["say"],
+        brief="Echo a message.",
+        permissions=["bot_admin"],
+        botperms=["manage_messages"],
     )
-    @permissions.bot_has_permissions(manage_messages=True)
+    @checks.bot_has_perms(manage_messages=True)
     async def echo(self, ctx, *, content):
         """
         Usage -echo
@@ -1083,3 +1089,26 @@ class Botadmin(commands.Cog):
         """
         await ctx.message.delete()
         await ctx.send_or_reply(content)
+
+    @decorators.command(
+        name="del",
+        rest_is_raw=True,
+        hidden=True,
+        brief="Delete a message.",
+        implemented="2021-05-05 05:12:24.354214",
+        updated="2021-05-05 05:12:24.354214",
+    )
+    async def _del(self, ctx, *, msg_id: int):
+        """
+        Usage -del
+        Output:
+            Delete a specific message ID.
+        """
+        # Ever accidentally have the bot post a password
+        # in a server you can't delete it's message in?
+        msg = ctx.channel.get_partial_message(msg_id)
+        try:
+            await msg.delete()
+        except Exception as e:
+            ctx.author.fail(e)
+        await ctx.react(self.bot.emote_dict["success"])

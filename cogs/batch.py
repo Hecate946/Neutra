@@ -12,7 +12,8 @@ import traceback
 from collections import Counter, defaultdict
 from discord.ext import commands, tasks
 
-from utilities import utils, converters, decorators
+from utilities import utils, converters
+from utilities import decorators
 
 command_logger = logging.getLogger("Snowbot")
 

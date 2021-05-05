@@ -80,3 +80,42 @@ class BotContext(commands.Context):
     #         self.bot.emote_dict["log"]
     #         + f" **Logged to `{filename}`**```prolog\n{log_format}{content}```"
     #     )
+
+
+class BotCommand(commands.Command):
+    def __init__(self, func, **kwargs):
+        super().__init__(func, **kwargs)
+        self.permissions = kwargs.pop("permissions", [])
+        self.botperms = kwargs.pop("botperms", [])
+        self.implemented = kwargs.pop("implemented", None)
+        self.updated = kwargs.pop("updated", None)
+        self.writer = kwargs.pop(
+            "writer", 708584008065351681
+        )  # Maybe someday more will contribute... :((
+
+        if self.permissions:
+            valid_perms = [x[0] for x in discord.Permissions.all()] + [
+                "bot_admin",
+                "bot_owner",
+            ]
+            if not isinstance(self.permissions, (list, tuple)):
+                raise TypeError(
+                    "Permissions of a command must be a list or a tuple of strings."
+                )
+            for x in self.permissions:
+                if x not in valid_perms:
+                    raise ValueError(
+                        f"Command permissions must in the following list:\n{', '.join(sorted(valid_perms))}"
+                    )
+
+        if self.botperms:
+            valid_perms = [x[0] for x in discord.Permissions.all()]
+            if not isinstance(self.botperms, (list, tuple)):
+                raise TypeError(
+                    "Permissions of a command must be a list or a tuple of strings."
+                )
+            for x in self.botperms:
+                if x not in valid_perms:
+                    raise ValueError(
+                        f"Command permissions must in the following list:\n{', '.join(sorted(valid_perms))}"
+                    )

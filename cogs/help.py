@@ -5,26 +5,24 @@ from datetime import datetime
 import discord
 from discord.ext import commands
 
-from core import COG_EXCEPTIONS, USELESS_COGS
-from utilities import permissions
+from utilities import checks, converters
+from utilities import decorators
 
 COMMAND_EXCEPTIONS = []
 
 
 def setup(bot):
     bot.remove_command("help")
-    bot.add_cog(Help(bot))
+    bot.add_cog(Commands(bot))
 
 
-class Help(commands.Cog):
+class Commands(commands.Cog):
     """
-    My help category.
+    My extensive help category.
     """
 
     def __init__(self, bot):
         self.bot = bot
-
-        self.emote_dict = bot.emote_dict
 
     ############################
     ## Get Commands From Cogs ##
@@ -38,7 +36,7 @@ class Help(commands.Cog):
             try:
                 msg = await ctx.author.send(embed=embed)
                 try:
-                    await ctx.message.add_reaction(self.emote_dict["letter"])
+                    await ctx.message.add_reaction(self.bot.emote_dict["letter"])
                 except Exception:
                     return
             except Exception:
@@ -53,13 +51,13 @@ class Help(commands.Cog):
             if (
                 m.message_id == msg.id
                 and m.user_id == ctx.author.id
-                and str(m.emoji) == self.emote_dict["trash"]
+                and str(m.emoji) == self.bot.emote_dict["trash"]
             ):
                 return True
             return False
 
         try:
-            await msg.add_reaction(self.emote_dict["trash"])
+            await msg.add_reaction(self.bot.emote_dict["trash"])
         except discord.Forbidden:
             return
 
@@ -78,13 +76,11 @@ class Help(commands.Cog):
         the_cog = sorted(cog.get_commands(), key=lambda x: x.name)
         cog_commands = []
         for c in the_cog:
-            if c.hidden and not permissions.is_admin(ctx):
+            if c.hidden and not checks.is_admin(ctx):
                 continue
-            if str(c.name).upper() in COMMAND_EXCEPTIONS and not permissions.is_admin(
-                ctx
-            ):
+            if str(c.name).upper() in COMMAND_EXCEPTIONS and not checks.is_admin(ctx):
                 await ctx.send_or_reply(
-                    f"{self.emote_dict['warn']} No command named `{name}` found."
+                    f"{self.bot.emote_dict['warn']} No command named `{name}` found."
                 )
                 continue
             cog_commands.append(c)
@@ -99,7 +95,7 @@ class Help(commands.Cog):
             return
         else:
             return await ctx.send_or_reply(
-                content=f"{self.emote_dict['warn']} No command named `{name}` found.",
+                content=f"{self.bot.emote_dict['warn']} No command named `{name}` found.",
             )
 
     ##########################
@@ -139,7 +135,12 @@ class Help(commands.Cog):
         except discord.Forbidden:
             pass
 
-    @commands.command(name="help", brief="Snowbot's Help Command")
+    @decorators.command(
+        name="help",
+        brief="My documentation for all commands.",
+        aliases=["commands", "documentation", "docs", "helpme"],
+        updated="2021-05-05 05:08:05.642637",
+    )
     async def _help(self, ctx, *, invokercommand: str = None):
         """
         Usage:  -help [command/category] [pm = true]
@@ -180,9 +181,12 @@ class Help(commands.Cog):
             for cog in sorted(self.bot.cogs):
                 c = self.bot.get_cog(cog)
                 command_list = c.get_commands()
-                if c.qualified_name.upper() in COG_EXCEPTIONS:
+                if c.qualified_name.upper() in self.bot.cog_exceptions:
                     continue
-                if c.qualified_name.upper() in USELESS_COGS or len(command_list) == 0:
+                if (
+                    c.qualified_name.upper() in self.bot.useless_cogs
+                    or len(command_list) == 0
+                ):
                     continue
                 valid_cogs.append(c)
             for c in valid_cogs:
@@ -200,7 +204,7 @@ class Help(commands.Cog):
                     msg += line
 
             embed.add_field(name=f"**Current Categories**", value=f"** **{msg}**\n**")
-            if not permissions.is_admin(ctx):
+            if not checks.is_admin(ctx):
                 await self.send_help(ctx, embed, pm, delete_after)
             else:
                 hidden_cogs = []
@@ -208,7 +212,7 @@ class Help(commands.Cog):
                 for cog in sorted(self.bot.cogs):
                     c = self.bot.get_cog(cog)
                     command_list = c.get_commands()
-                    if c.qualified_name.upper() in COG_EXCEPTIONS:
+                    if c.qualified_name.upper() in self.bot.cog_exceptions:
                         hidden_cogs.append(c)
                 for c in hidden_cogs:
                     if c.qualified_name.upper() == "JISHAKU":
@@ -261,6 +265,19 @@ class Help(commands.Cog):
                 "information",
             ]:
                 cog = self.bot.get_cog("Info")
+                return await self.helper_func(
+                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
+                )
+
+            if invokercommand.lower() in [
+                "help",
+                "helpme",
+                "assist",
+                "assistance",
+                "commands",
+                "cmds",
+            ]:
+                cog = self.bot.get_cog("Commands")
                 return await self.helper_func(
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )
@@ -388,16 +405,16 @@ class Help(commands.Cog):
                 )
 
             if invokercommand.lower() in ["jsk", "jish", "jishaku"]:
-                if not permissions.is_owner(ctx):
+                if not checks.is_owner(ctx):
                     return await ctx.send_or_reply(
-                        f"{self.emote_dict['warn']} No command named `{invokercommand}` found."
+                        f"{self.bot.emote_dict['warn']} No command named `{invokercommand}` found."
                     )
                 return await ctx.send_help("jishaku")
 
             if invokercommand.lower() in ["conf", "config", "owner", "owners"]:
-                if not permissions.is_owner(ctx):
+                if not checks.is_owner(ctx):
                     return await ctx.send_or_reply(
-                        f"{self.emote_dict['warn']} No command named `{invokercommand}` found."
+                        f"{self.bot.emote_dict['warn']} No command named `{invokercommand}` found."
                     )
                 cog = self.bot.get_cog("Config")
                 return await self.helper_func(
@@ -405,9 +422,9 @@ class Help(commands.Cog):
                 )
 
             if invokercommand.lower() in ["hidden", "botadmin", "admins", "botadmins"]:
-                if not permissions.is_admin(ctx):
+                if not checks.is_admin(ctx):
                     return await ctx.send_or_reply(
-                        f"{self.emote_dict['warn']} No command named `{invokercommand}` found."
+                        f"{self.bot.emote_dict['warn']} No command named `{invokercommand}` found."
                     )
                 cog = self.bot.get_cog("Botadmin")
                 return await self.helper_func(
@@ -415,9 +432,9 @@ class Help(commands.Cog):
                 )
 
             if invokercommand.lower() in ["manage", "manager", "master", "heart"]:
-                if not permissions.is_owner(ctx):
+                if not checks.is_owner(ctx):
                     return await ctx.send_or_reply(
-                        f"{self.emote_dict['warn']} No command named `{invokercommand}` found."
+                        f"{self.bot.emote_dict['warn']} No command named `{invokercommand}` found."
                     )
                 cog = self.bot.get_cog("Manager")
                 return await self.helper_func(
@@ -489,7 +506,7 @@ class Help(commands.Cog):
                     return
                 else:
                     await ctx.send_or_reply(
-                        f"{self.emote_dict['warn']} No command named `{invokercommand}` found."
+                        f"{self.bot.emote_dict['warn']} No command named `{invokercommand}` found."
                     )
 
     async def send_group_help(
@@ -529,7 +546,7 @@ class Help(commands.Cog):
                     return await self.send_help(ctx, help_embed, pm, delete_after)
             if not found:
                 await ctx.send_or_reply(
-                    f"{self.emote_dict['warn']} No command named `{invokercommand}` found."
+                    f"{self.bot.emote_dict['warn']} No command named `{invokercommand}` found."
                 )
                 return
 
@@ -557,39 +574,125 @@ class Help(commands.Cog):
         )
         return await self.send_help(ctx, help_embed, pm, delete_after)
 
-    @commands.command(hidden=True, brief="Get the brief of a command.")
-    async def brief(self, ctx, command=None):
+    @decorators.command(
+        brief="Get the short description of a command.",
+        aliases=["shortdoc", "shortdocs"],
+        implemented="2021-05-03 02:26:36.434933",
+        updated="2021-05-05 04:28:36.454921",
+    )
+    async def brief(self, ctx, command: converters.DiscordCommand):
         """
         Usage: -brief <command>
+        Aliases: -shortdocs, -shortdoc
         Output:
             The short description of the passed command
         """
-        if command is None:
-            return await ctx.usage("<command>")
-        _command = self.bot.get_command(command)
-        if _command is None:
-            return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['failed']} No command named `{command}` found.",
-            )
         await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['announce']} Command brief for **{_command.name}**: `{_command.brief}`",
+            content=f"{self.bot.emote_dict['announce']} Command brief for **{command.name}**: `{command.brief}`",
         )
 
-    @commands.command(hidden=True, brief="Get the help docstring of a command.")
-    async def docstring(self, ctx, command=None):
+    @decorators.command(
+        brief="See if a command can be executed.",
+        aliases=["checker"],
+        implemented="2021-05-03 02:26:36.434933",
+        updated="2021-05-05 04:28:36.454933",
+    )
+    async def canrun(self, ctx, command: converters.DiscordCommand):
+        """
+        Usage: -canrun <command>
+        Output:
+            Tells you whether or not you have
+            permission to run a command
+        """
+        if await command.can_run(ctx):
+            await ctx.success(f"You can successfully run the command: `{command}`")
+
+    @decorators.command(
+        brief="Get the help docstring of a command.",
+        aliases=["helpstr"],
+        implemented="2021-05-03 02:26:36.434933",
+        updated="2021-05-05 04:28:36.454933",
+    )
+    async def docstring(self, ctx, command: converters.DiscordCommand):
         """
         Usage: -docstring <command>
         Output:
             The long description of the passed command
         """
-
-        if command is None:
-            return await ctx.usage("<command>")
-        _command = self.bot.get_command(command)
-        if _command is None:
-            return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['failed']} No command named `{command}` found.",
-            )
         await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['announce']} Command docstring for **{_command.name}**:```yaml\n{_command.help}```",
+            content=f"{self.bot.emote_dict['announce']} Command docstring for **{command.name}**:```yaml\n{command.help}```",
+        )
+
+    @decorators.command(
+        brief="Get a usage example for a command.",
+        aliases=["signature"],
+        implemented="2021-05-03 02:26:36.434933",
+        updated="2021-05-05 04:28:36.454933",
+    )
+    async def usage(self, ctx, command: converters.DiscordCommand):
+        """
+        Usage: -usage <command>
+        Aliases: -signature, -usage
+        Output:
+            The usage of a command
+        """
+        await ctx.usage(command.signature)
+
+    @decorators.command(
+        brief="Show permissions to run a command.",
+        aliases=["requiredperms", "requiredpermissions"],
+        implemented="2021-05-05 04:13:51.523561",
+        updated="2021-05-05 04:13:51.523561",
+    )
+    async def reqperms(self, ctx, command: converters.DiscordCommand):
+        if command.permissions:
+            await ctx.send_or_reply(
+                f"The command `{command}` requires the permissions: `{command.permissions}`"
+            )
+        else:
+            await ctx.success(f"No permissions are required for `{command}`")
+
+    @decorators.command(
+        brief="Show when a command was first made.",
+        aliases=["changed"],
+        implemented="2021-05-05 04:09:30.395495",
+        updated="2021-05-05 04:09:30.395495",
+    )
+    async def updated(self, ctx, command: converters.DiscordCommand):
+        stopwatch = self.bot.emote_dict["stopwatch"]
+        if command.updated:
+            await ctx.send_or_reply(
+                f"{stopwatch} The command `{command}` was last updated at `{command.updated} UTC`"
+            )
+        else:
+            await ctx.fail(f"The last update on `{command}` was not documented.")
+
+    @decorators.command(
+        brief="Show when a command was updated.",
+        aliases=["implemented"],
+        implemented="2021-05-05 04:09:30.395495",
+        updated="2021-05-05 04:09:30.395495",
+    )
+    async def made(self, ctx, command: converters.DiscordCommand):
+        stopwatch = self.bot.emote_dict["stopwatch"]
+        if command.updated:
+            await ctx.send_or_reply(
+                f"{stopwatch} The command `{command}` was implemented at `{command.updated} UTC`"
+            )
+        else:
+            await ctx.fail(
+                f"The implementation date for `{command}` was not documented."
+            )
+
+    @decorators.command(
+        brief="Show who wrote a command.",
+        aliases=["whowrote"],
+        implemented="2021-05-05 04:09:30.395495",
+        updated="2021-05-05 04:09:30.395495",
+    )
+    async def writer(self, ctx, command: converters.DiscordCommand):
+        heart = self.bot.emote_dict["heart"]
+        writer = f"{self.bot.get_user(command.writer)} ({command.writer})"
+        await ctx.send_or_reply(
+            f"{heart} The command `{command}` was made by `{writer}`"
         )

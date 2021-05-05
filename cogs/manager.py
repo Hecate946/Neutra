@@ -20,6 +20,7 @@ from collections import defaultdict
 from discord.ext import commands, menus
 
 from utilities import converters, formatting, pagination, utils
+from utilities import decorators
 
 
 def setup(bot):
@@ -42,7 +43,52 @@ class Manager(commands.Cog):
             return
         return True
 
-    @commands.command(brief="Get the batch insert count.")
+    async def reloader(self, folder_or_file):
+        error_collection = []
+        to_reload = []
+        exclude = set([".testervenv", ".git", "__pycache__", ".vscode"])
+        for path, subdirs, files in os.walk("."):
+            [subdirs.remove(d) for d in list(subdirs) if d in exclude]
+            files = [n for n in files if n.endswith(".py") and n != "__init__.py"]
+            for fname in files:
+                if folder_or_file == fname or folder_or_file == fname.split(".")[0]:
+                    to_reload.append((fname, path.strip("./")))
+                    continue
+        if to_reload:
+            for x in to_reload:
+                print(x)
+                importlib.import_module(x[0], x[1])
+            return
+        if not to_reload:
+            for folder in subdirs:
+                print(folder)
+        return
+        utilities = [x[:-3] for x in sorted(os.listdir(folder)) if x.endswith(".py")]
+        for module in utilities:
+            try:
+                module_name = importlib.import_module(f"{folder}.{module}")
+                importlib.reload(module_name)
+            except Exception as e:
+                error_collection.append(
+                    [module, utils.traceback_maker(e, advance=False)]
+                )
+
+        if error_collection:
+            output = "\n".join(
+                [f"**{g[0]}** ```diff\n- {g[1]}```" for g in error_collection]
+            )
+            reply = f"{self.bot.emote_dict['failed']} Reloading failure...\n\n{output}"
+        else:
+            reply = f"{self.bot.emote_dict['success']} Successfully reloaded ./{folder}/{fname}"
+        return reply
+
+    @decorators.command()
+    async def waa(self, ctx, fname):
+        print("hi")
+        await self.reloader(fname)
+        await ctx.react(self.bot.emote_dict["db"])
+
+    @decorators.command(brief="Get the batch insert count.")
     async def batches(self, ctx):
         """
         Usage: -batches
@@ -51,7 +97,7 @@ class Manager(commands.Cog):
             f"{self.bot.emote_dict['db']} {self.bot.user} ({self.bot.user.id}) Batch Inserts: {self.bot.batch_inserts}"
         )
 
-    @commands.command(
+    @decorators.command(
         name="eval", aliases=["evaluate", "e"], brief="Evaluate python code."
     )
     async def _eval(self, ctx, *, body: str):
@@ -116,7 +162,7 @@ class Manager(commands.Cog):
         # remove `foo`
         return content.strip("` \n")
 
-    @commands.command(brief="Refresh the bot variables.")
+    @decorators.command(brief="Refresh the bot variables.")
     async def refresh(self, ctx):
         """
         Usage: -refresh
@@ -129,19 +175,19 @@ class Manager(commands.Cog):
         """
         config = utils.config().copy()
         self.bot.constants.token = config["token"]
+        self.bot.constants.tester = config["tester"]
+        self.bot.constants.home = config["home"]
         self.bot.constants.postgres = config["postgres"]
         self.bot.constants.github = config["github"]
-        self.bot.constants.webhook = config["webhook"]
-        self.bot.constants.imgur = config["imgur"]
         self.bot.constants.prefix = config["prefix"]
         self.bot.constants.owners = config["owners"]
         self.bot.constants.admins = config["admins"]
         self.bot.constants.embed = config["embed"]
-        self.bot.constants.status = config["status"]
-        self.bot.constants.activity = config["activity"]
-        self.bot.constants.presence = config["presence"]
-        self.bot.constants.version = config["version"]
-        self.bot.constants.reboot = config["reboot"]
+        self.bot.constants.avchan = config["avchan"]
+        self.bot.constants.botlog = config["botlog"]
+        self.bot.constants.timezonedb = config["timezonedb"]
+        self.bot.constants.bitly = config['bitly']
+
 
         self.bot.owner_ids = self.bot.constants.owners
 
@@ -149,7 +195,7 @@ class Manager(commands.Cog):
             content=f"{self.bot.emote_dict['success']} **Refreshed Configuration.**",
         )
 
-    @commands.command(hidden=True, brief="Load an extension.")
+    @decorators.command(hidden=True, brief="Load an extension.")
     async def load(self, ctx, name: str):
         """ Loads an extension. """
         try:
@@ -163,7 +209,7 @@ class Manager(commands.Cog):
             content=f"{self.bot.emote_dict['success']} Loaded extension **{name}**",
         )
 
-    @commands.command(hidden=True, brief="Unload an extension.")
+    @decorators.command(hidden=True, brief="Unload an extension.")
     async def unload(self, ctx, name: str):
         """ Unloads an extension. """
         try:
@@ -177,7 +223,7 @@ class Manager(commands.Cog):
             content=f"{self.bot.emote_dict['success']} Unloaded extension **{name}**",
         )
 
-    @commands.command(name="reload", hidden=True, brief="Reload an extension.")
+    @decorators.command(name="reload", hidden=True, brief="Reload an extension.")
     async def _reload(self, ctx, name: str):
         """ Reloads an extension. """
         try:
@@ -191,18 +237,18 @@ class Manager(commands.Cog):
             content=f"{self.bot.emote_dict['success']} Reloaded extension **{name}.py**",
         )
 
-    @commands.command(hidden=True, brief="Reload all extensions.")
+    @decorators.command(hidden=True, brief="Reload all extensions.")
     async def reloadall(self, ctx):
         """ Reloads all extensions. """
         error_collection = []
-        for file in os.listdir("cogs"):
-            if file.endswith(".py"):
-                name = file[:-3]
+        for fname in os.listdir("cogs"):
+            if fname.endswith(".py"):
+                name = fname[:-3]
                 try:
                     self.bot.reload_extension(f"cogs.{name}")
                 except Exception as e:
                     error_collection.append(
-                        [file, utils.traceback_maker(e, advance=False)]
+                        [fname, utils.traceback_maker(e, advance=False)]
                     )
 
         if error_collection:
@@ -218,10 +264,10 @@ class Manager(commands.Cog):
             content=f"{self.bot.emote_dict['success']} Successfully reloaded all extensions",
         )
 
-    @commands.command(
+    @decorators.command(
         hidden=True,
         brief="Reload a utilities module.",
-        aliases=["reloadutil", "reloadutility"],
+        aliases=["reloadutil", "reloadutility", "ru"],
     )
     async def reloadutils(self, ctx, name: str):
         """ Reloads a utils module. """
@@ -242,7 +288,9 @@ class Manager(commands.Cog):
             content=f"{self.bot.emote_dict['success']} Reloaded module **{name_maker}**",
         )
 
-    @commands.command(hidden=True, brief="Reload all utilities modules.")
+    @decorators.command(
+        hidden=True, brief="Reload all utilities modules.", aliases=["rau"]
+    )
     async def reloadallutils(self, ctx):
         """ Reloads a utils module. """
         error_collection = []
@@ -271,7 +319,7 @@ class Manager(commands.Cog):
             content=f"{self.bot.emote_dict['success']} Successfully reloaded all utilities.",
         )
 
-    @commands.command(hidden=True, brief="Reload all settings modules.")
+    @decorators.command(hidden=True, brief="Reload all settings modules.")
     async def reloadallsettings(self, ctx):
         """ Reloads a settings module. """
         error_collection = []
@@ -300,7 +348,7 @@ class Manager(commands.Cog):
             content=f"{self.bot.emote_dict['success']} Successfully reloaded all utilities.",
         )
 
-    @commands.command(hidden=True, aliases=["restart"], brief="Reboot the bot.")
+    @decorators.command(hidden=True, aliases=["restart"], brief="Reboot the bot.")
     async def reboot(self, ctx):
         """
         Usage:       -reboot
@@ -448,7 +496,9 @@ class Manager(commands.Cog):
         sh = self.bot.get_command("sh")
         await ctx.invoke(sh, prefix="json", command="cat ./data/json/settings.log")
 
-    @commands.command(hidden=True, brief="Update the database.", aliases=["update_db"])
+    @decorators.command(
+        hidden=True, brief="Update the database.", aliases=["update_db"]
+    )
     async def update(self, ctx):
         """
         Usage: -update
@@ -475,7 +525,7 @@ class Manager(commands.Cog):
         return content.strip("` \n")
 
     # Thank you R. Danny
-    @commands.command(hidden=True, brief="Run sql and get results in rst fmt.")
+    @decorators.command(hidden=True, brief="Run sql and get results in rst fmt.")
     async def sql(self, ctx, *, query: str):
         """
         Usage: -sql <query>
@@ -521,7 +571,7 @@ class Manager(commands.Cog):
         else:
             await ctx.send_or_reply(content=fmt)
 
-    @commands.command(
+    @decorators.command(
         hidden=True, brief="Show info on a sql table.", aliases=["tables", "database"]
     )
     async def table(self, ctx, *, table_name: str = None):
@@ -789,7 +839,7 @@ class Manager(commands.Cog):
         return [output.decode() for output in result]
 
     # https://github.com/Rapptz/RoboDanny
-    @commands.command(
+    @decorators.command(
         hidden=True, aliases=["shell", "bash"], brief="Run a shell command."
     )
     async def sh(self, ctx, prefix=None, *, command):
@@ -811,7 +861,7 @@ class Manager(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(str(e))
 
-    @commands.command(hidden=True, aliases=["repeat"], brief="Repeat a command.")
+    @decorators.command(hidden=True, aliases=["repeat"], brief="Repeat a command.")
     async def do(self, ctx, times: int, *, command):
         """Repeats a command a specified number of times."""
         msg = copy.copy(ctx.message)
@@ -1063,7 +1113,7 @@ class Manager(commands.Cog):
         render = table.render()
         await ctx.safe_send(f"```\n{render}\n```")
 
-    @commands.command(hidden=True, brief="Bot health monitoring tools.")
+    @decorators.command(hidden=True, brief="Bot health monitoring tools.")
     @commands.is_owner()
     async def bothealth(self, ctx):
         """Various bot health monitoring tools."""
@@ -1154,7 +1204,7 @@ class Manager(commands.Cog):
         embed.description = "\n".join(description)
         await ctx.send_or_reply(embed=embed)
 
-    @commands.command(
+    @decorators.command(
         hidden=True, aliases=["perf", "elapsed"], brief="Time a command response."
     )
     async def elapse(self, ctx, *, command):
@@ -1198,7 +1248,7 @@ class Manager(commands.Cog):
             content=f"{emote} `{(end - start) * 1000:.2f}ms`",
         )
 
-    @commands.command(aliases=["github"], brief="Update to and from github repo.")
+    @decorators.command(aliases=["github"], brief="Update to and from github repo.")
     async def git(self, ctx, *, subcommand):
         """Updates from git."""
         if subcommand is None:
@@ -1230,7 +1280,7 @@ class Manager(commands.Cog):
 
         await message.edit(content=f"{self.bot.emote_dict['success']} **Completed.**")
 
-    @commands.command(hidden=True, brief="Run a command as another user.")
+    @decorators.command(hidden=True, brief="Run a command as another user.")
     async def sudo(
         self,
         ctx,

@@ -3,7 +3,8 @@ import re
 from discord.ext import commands, menus, tasks
 import datetime
 from collections import Counter
-from utilities import pagination, permissions
+from utilities import pagination, checks
+from utilities import decorators
 
 
 def setup(bot):
@@ -26,9 +27,9 @@ class Automod(commands.Cog):
     ## Warn Commands ##
     ###################
 
-    @commands.command(brief="Warn users with an optional reason.")
+    @decorators.command(brief="Warn users with an optional reason.")
     @commands.guild_only()
-    @permissions.has_permissions(kick_members=True)
+    @checks.has_perms(kick_members=True)
     async def warn(
         self, ctx, targets: commands.Greedy[discord.Member], *, reason: str = None
     ):
@@ -119,7 +120,7 @@ class Automod(commands.Cog):
                 content=f'{self.bot.emote_dict["success"]} Warned `{", ".join(warned)}`',
             )
 
-    @commands.command(brief="Count the warnings a user has.", aliases=["listwarns"])
+    @decorators.command(brief="Count the warnings a user has.", aliases=["listwarns"])
     @commands.guild_only()
     async def warncount(self, ctx, *, target: discord.Member = None):
         """
@@ -150,7 +151,7 @@ class Automod(commands.Cog):
         except Exception as e:
             return await ctx.send_or_reply(e)
 
-    @commands.command(
+    @decorators.command(
         brief="Clear a user's warnings",
         aliases=[
             "deletewarnings",
@@ -161,7 +162,7 @@ class Automod(commands.Cog):
         ],
     )
     @commands.guild_only()
-    @permissions.has_permissions(kick_members=True)
+    @checks.has_perms(kick_members=True)
     async def clearwarns(self, ctx, *, target: discord.Member = None):
         """
         Usage: -clearwarns [user]
@@ -204,12 +205,12 @@ class Automod(commands.Cog):
         except Exception as e:
             return await ctx.send_or_reply(e)
 
-    @commands.command(
+    @decorators.command(
         brief="Revoke a warning from a user",
         aliases=["revokewarning", "undowarning", "undowarn"],
     )
     @commands.guild_only()
-    @permissions.has_permissions(kick_members=True)
+    @checks.has_perms(kick_members=True)
     async def revokewarn(self, ctx, *, target: discord.Member = None):
         """
         Usage: -revokewarn [user]
@@ -262,9 +263,9 @@ class Automod(commands.Cog):
         except Exception as e:
             return await ctx.send_or_reply(e)
 
-    @commands.command(brief="Display the server warnlist.", aliases=["warns"])
+    @decorators.command(brief="Display the server warnlist.", aliases=["warns"])
     @commands.guild_only()
-    @permissions.has_permissions(manage_messages=True)
+    @checks.has_perms(manage_messages=True)
     async def serverwarns(self, ctx):
         """
         Usage: -serverwarns
@@ -299,11 +300,11 @@ class Automod(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-    @commands.command(
+    @decorators.command(
         brief="Enable or disable auto-deleting invite links",
         aliases=["removeinvitelinks", "deleteinvites", "antiinvites"],
     )
-    @permissions.has_permissions(manage_guild=True)
+    @checks.has_perms(manage_guild=True)
     async def antiinvite(self, ctx, *, yes_no=None):
         """
         Usage:      -antiinvite <yes|enable|true|on||no|disable|false|off>
@@ -355,8 +356,8 @@ class Automod(commands.Cog):
         aliases=["autoroles", "autoassign"],
         brief="Assign roles to new members.",
     )
-    @permissions.bot_has_permissions(manage_roles=True)
-    @permissions.has_permissions(manage_guild=True, manage_roles=True)
+    @checks.bot_has_perms(manage_roles=True)
+    @checks.has_perms(manage_guild=True, manage_roles=True)
     async def autorole(self, ctx):
         """
         Usage: -autorole <option>
@@ -559,10 +560,10 @@ class Automod(commands.Cog):
         except Exception:
             return
 
-    @commands.command(brief="Reassign roles on user rejoin.", aliases=["stickyroles"])
+    @decorators.command(brief="Reassign roles on user rejoin.", aliases=["stickyroles"])
     @commands.guild_only()
-    @permissions.bot_has_permissions(manage_roles=True)
-    @permissions.has_permissions(manage_guild=True, manage_roles=True)
+    @checks.bot_has_perms(manage_roles=True)
+    @checks.has_perms(manage_guild=True, manage_roles=True)
     async def reassign(self, ctx, *, yes_no=None):
         """
         Usage:      -reassign <yes|enable|true|on||no|disable|false|off>
@@ -668,7 +669,7 @@ class Automod(commands.Cog):
         brief="Manage the server's word filter.",
     )
     @commands.guild_only()
-    @permissions.has_permissions(manage_guild=True)
+    @checks.has_perms(manage_guild=True)
     async def _filter(self, ctx):
         """
         Usage: -filter <option>
@@ -694,7 +695,7 @@ class Automod(commands.Cog):
             await help_command(ctx, invokercommand="filter")
 
     @_filter.command(name="add", aliases=["+"], brief="Add words to the filter.")
-    @permissions.has_permissions(manage_guild=True)
+    @checks.has_perms(manage_guild=True)
     async def add_words(self, ctx, *, words_to_filter: str = None):
         """
         Usage: -filter add <words>
@@ -745,7 +746,7 @@ class Automod(commands.Cog):
         aliases=["-", "rm", "rem"],
         brief="Removes words from the filter.",
     )
-    @permissions.has_permissions(manage_guild=True)
+    @checks.has_perms(manage_guild=True)
     async def remove_words(self, ctx, *, words: str = None):
         """
         Usage: -filter remove <words>
@@ -803,7 +804,7 @@ class Automod(commands.Cog):
             )
 
     @_filter.command(brief="Show all filtered words.", aliases=["show"])
-    @permissions.has_permissions(manage_guild=True)
+    @checks.has_perms(manage_guild=True)
     async def display(self, ctx):
         """
         Usage: -filter display
@@ -830,7 +831,7 @@ class Automod(commands.Cog):
             await ctx.send_or_reply(e)
 
     @_filter.command(name="clear", brief="Clear all words from the filer.")
-    @permissions.has_permissions(manage_guild=True)
+    @checks.has_perms(manage_guild=True)
     async def _clear(self, ctx):
         """
         Usage: -filter clear
