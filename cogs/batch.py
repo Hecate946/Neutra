@@ -394,6 +394,8 @@ class Batch(commands.Cog):
     async def dispatch_avatars(self):
         if len(self.to_upload) > 9:
             async with self.batch_lock:
+                if len(self.to_upload) > 10:
+                    await self.bot.bot_channel.send(f"FUCK worst nightmare")
                 try:
                     upload_batch = await self.avatar_webhook.send(
                         files=self.to_upload, wait=True
@@ -409,7 +411,7 @@ class Batch(commands.Cog):
                 except discord.errors.HTTPException:
                     pass
             self.to_upload.clear()
-            
+
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
