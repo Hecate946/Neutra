@@ -4,12 +4,17 @@ import pytz
 import time
 import discord
 
-from datetime import datetime, timedelta
-from discord.ext import commands, menus
+from datetime import datetime
+from datetime import timedelta
+from discord.ext import commands
+from discord.ext import menus
 from geopy import geocoders
 
-from utilities import utils, pagination, converters, checks
+from utilities import utils
+from utilities import checks
+from utilities import converters
 from utilities import decorators
+from utilities import pagination
 
 
 def setup(bot):
@@ -27,12 +32,36 @@ class Time(commands.Cog):
         self.geo = geocoders.Nominatim(user_agent="Snowbot")
 
     @decorators.command(
+        aliases=["rmtz", "remtz", "remtimezone", "removetimzone", "rmtimezone"],
         brief="Remove your timezone.",
-        aliases=["rmtz", "removetz", "removetimzone", "rmtimezone", "remtimezone"],
+        implemented="2021-04-05 18:24:17.716638",
+        updated="2021-05-06 21:01:36.198294",
+        examples="""
+                {0}rmtz
+                {0}remtz
+                {0}removetz
+                {0}rmtimezone
+                {0}remtimezone
+                {0}removetimzone
+                """,
     )
-    async def remtz(self, ctx):
-        """Remove your timezone"""
-
+    async def removetz(self, ctx):
+        """
+        Usage: {0}removetz
+        Aliases:
+            {0}rmtz,
+            {0}remtz,
+            {0}removetz,
+            {0}rmtimezone,
+            {0}remtimezone,
+            {0}removetimzone
+        Output:
+            Removes your set timezone
+            from the bot's timezone list.
+        Notes:
+            Will not inform you if you did
+            not previously set your timezone.
+        """
         await self.bot.cxn.execute(
             "DELETE FROM usertime WHERE user_id = $1;", ctx.author.id
         )
@@ -40,31 +69,60 @@ class Time(commands.Cog):
             f"{self.bot.emote_dict['success']} Your timezone has been removed."
         )
 
-    @decorators.command(brief="List all available timezones.")
+    @decorators.command(
+        aliases=["listtzs", "listtimezone"],
+        brief="List all available timezones.",
+        implemented="2021-04-01 14:40:28.719199",
+        updated="2021-05-06 21:07:24.328765",
+        examples="""
+                {0}listtz
+                {0}listtzs
+                {0}listtimezone
+                """,
+    )
+    @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     async def listtz(self, ctx):
         """
-        Usage: -listtz
+        Usage: {0}listtz
+        Aliases:
+            {0}listtzs
+            {0}listtimezone
         Output:
-            A pagination session that shows
-            all available timezones.
+            A pagination session that
+            shows all valid timezones.
         """
-        await ctx.invoke(self.settz, tz_search=None)
+        await ctx.invoke(self.settz)
 
-    @decorators.command(brief="Set your timezone.", aliases=["settimezone", "settime"])
-    async def settz(self, ctx, *, tz_search=None):
+    @decorators.command(
+        aliases=["settimezone", "settime"],
+        brief="Set your timezone.",
+        implemented="2021-04-01 14:40:01.850145",
+        updated="2021-05-06 21:10:01.049494",
+        examples="""
+                {0}settz los angeles
+                {0}settz America/Los_Angeles
+                {0}settime new york
+                {0}settime America/New_York
+                {0}settimezone arctic
+                {0}settimezone Arctic/Longyearbyen
+                """,
+    )
+    @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
+    async def settz(self, ctx, *, timezone=None):
         """
-        Usage: -settz <timezone>
-        Aliases: -settimezone, -settime
-        Output: Sets your timezone
+        Usage: {0}settz [timezone]
+        Aliases: {0}settimezone, {0}settime
+        Output:
+            Sets your timezone to a valid
+            timezone based off of your input.
         Notes:
             Will provide you with the 5 closest
             timezone matches if the supplied timezone
             is invalid. Invoke with no arguments to
             show all available timezones.
         """
-
         msg = ""
-        if tz_search is None:
+        if timezone is None:
             title = "Available Timezones"
             entry = [x for x in pytz.all_timezones]
             p = pagination.SimplePages(
@@ -80,7 +138,7 @@ class Time(commands.Cog):
             except menus.MenuError as e:
                 await ctx.send_or_reply(e)
         else:
-            tz_list = utils.disambiguate(tz_search, pytz.all_timezones, None, 5)
+            tz_list = utils.disambiguate(timezone, pytz.all_timezones, None, 5)
             if not tz_list[0]["ratio"] == 1:
                 edit = True
                 tz_list = [x["result"] for x in tz_list]
@@ -116,12 +174,21 @@ class Time(commands.Cog):
                 await ctx.send_or_reply(msg)
 
     @decorators.command(
-        brief="Show times for all users.", aliases=["alltime", "alltimes"]
+        aliases=["alltime", "alltimes"],
+        brief="Show times for all users.",
+        implemented="2021-04-21 19:11:27.501917",
+        updated="2021-05-06 21:16:29.417030",
+        examples="""
+                {0}alltime
+                {0}alltimes
+                {0}usertimes
+                """,
     )
+    @checks.bot_has_perms(add_reactions=True, external_emojis=True)
     async def usertimes(self, ctx):
         """
-        Usage: -usertimes
-        Aliases: -alltime, -alltimes
+        Usage: {0}usertimes
+        Aliases: {0}alltime, {0}alltimes
         Output:
             Shows the current time for all
             users who set their timezone
@@ -166,41 +233,90 @@ class Time(commands.Cog):
                 content=f"{self.bot.emote_dict['failed']} No users have set their timezones.",
             )
 
-    @decorators.command(brief="See a member's timezone.", aliases=["tz"])
-    async def timezone(self, ctx, *, member: converters.DiscordUser = None):
+    @decorators.command(
+        aliases=["tz", "showtz", "showtimezone"],
+        brief="See a member's timezone.",
+        implemented="2021-04-05 19:16:57.722357",
+        updated="2021-05-06 21:20:23.225596",
+        examples="""
+                {0}tz
+                {0}tz Hecate
+                {0}tz @Hecate
+                {0}tz Hecate#3523
+                {0}tz 708584008065351681
+                {0}showtz
+                {0}showtz Hecate
+                {0}showtz @Hecate
+                {0}showtz Hecate#3523
+                {0}showtz 708584008065351681
+                {0}timezone
+                {0}timezone Hecate
+                {0}timezone @Hecate
+                {0}timezone Hecate#3523
+                {0}timezone 708584008065351681
+                {0}showtimezone
+                {0}showtimezone Hecate
+                {0}showtimezone @Hecate
+                {0}showtimezone Hecate#3523
+                {0}showtimezone 708584008065351681
+                """,
+    )
+    async def timezone(self, ctx, *, user: converters.DiscordUser = None):
         """
-        Usage: -timezone <user>
-        Aliases: -tz
+        Usage: {0}timezone [user]
+        Aliases:
+            {0}tz, {0}showtz, {0}showtimezone
         Output:
-            Shows you the passed member's timezone, if applicable
+            Shows you the passed user's timezone, if applicable
+        Notes:
+            Will default to yourself if no user is passed
         """
-
-        if member is None:
-            member = ctx.author
+        if user is None:
+            user = ctx.author
 
         query = """
                 SELECT timezone
                 FROM usertime
                 WHERE user_id = $1;
                 """
-        timezone = await self.bot.cxn.fetchval(query, member.id) or None
+        timezone = await self.bot.cxn.fetchval(query, user.id) or None
         if timezone is None:
             return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['warn']} `{member}` has not set their timezone. "
+                content=f"{self.bot.emote_dict['warn']} `{user}` has not set their timezone. "
                 f"Use the `{ctx.prefix}settz [Region/City]` command.",
             )
 
         await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['announce']} `{member}'s timezone is {timezone}`",
+            content=f"{self.bot.emote_dict['announce']} `{user}'s timezone is {timezone}`",
         )
 
-    @decorators.command(brief="Show a user's current time.", aliases=["time"])
+    @decorators.command(
+        aliases=["time"],
+        brief="Show a user's current time.",
+        implemented="2021-04-24 08:58:32.644191",
+        updated="2021-05-06 21:24:58.166767",
+        examples="""
+                {0}time
+                {0}time Hecate
+                {0}time @Hecate
+                {0}time Hecate#3523
+                {0}time 708584008065351681
+                {0}usertime
+                {0}usertime Hecate
+                {0}usertime @Hecate
+                {0}usertime Hecate#3523
+                {0}usertime 708584008065351681
+                """,
+    )
     async def usertime(self, ctx, *, member: discord.Member = None):
         """
-        Usage: -usertime [member]
-        Alias: -time
-        Output: Time for the passed user, if set.
-        Notes: Will default to you if no user is specified
+        Usage: {0}usertime [user]
+        Alias: {0}time
+        Output:
+            Show's the current time for the passed user,
+            if they previously set their timezone.
+        Notes:
+            Will default to you if no user is specified
         """
         timenow = utils.getClockForTime(datetime.utcnow().strftime("%a %I:%M %p"))
         if member is None:
@@ -224,9 +340,7 @@ class Time(commands.Cog):
 
         t = self.getTimeFromTZ(tz)
         if t is None:
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['failed']} I couldn't find that timezone.",
-            )
+            await ctx.fail("I couldn't find that timezone.")
             return
         t["time"] = utils.getClockForTime(t["time"])
         if member:
@@ -251,25 +365,30 @@ class Time(commands.Cog):
         return {"zone": tz_list[0]["result"], "time": zone_now.strftime("%a %I:%M %p")}
 
     @decorators.command(
-        brief="Get the time of any location", aliases=["worldclock", "worldtime"]
+        aliases=["worldclock", "worldtime"],
+        brief="Get the time of any location",
+        implemented="2021-04-15 06:20:17.433895",
+        updated="2021-05-06 21:28:57.052612",
+        examples="""
+                {0}clock Los Angeles
+                {0}clock Netherlands
+                {0}worldtime Los Angeles
+                {0}worldtime Netherlands
+                {0}worldclock Los Angeles
+                {0}worldclock Netherlands
+                """,
     )
-    async def clock(self, ctx, *, place=None):
+    async def clock(self, ctx, *, place):
         """
-        Usage: -clock <location>
-        Aliases: -worldclock, -worldtime
-        Examples:
-            -clock Los Angeles
-            -clock Netherlands
+        Usage: {0}clock <place>
+        Aliases: {0}worldclock, {0}worldtime
         Output:
-            The current time in the specified location
+            Shows the current time of day
+            it is in the specified location.
         Notes:
             Can accept cities, states, provinces,
-            and countries as valid locations
+            and countries as valid locations.
         """
-        if place is None:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}clock <location>`",
-            )
         try:
             if place.lower() == "la":
                 city_name = "Los Angeles"
@@ -302,16 +421,31 @@ class Time(commands.Cog):
         except Exception as e:
             await ctx.send_or_reply(e)
 
-    @decorators.command(aliases=["sw"], brief="Start or stop a stopwatch.")
+    @decorators.command(
+        aliases=["sw"],
+        brief="Start or stop a stopwatch.",
+        implemented="2021-04-28 02:38:06.104546",
+        updated="2021-05-06 21:32:55.642104",
+        examples="""
+                {0}stopwatch
+                {0}sw
+                """,
+    )
     async def stopwatch(self, ctx):
         """
-        Usage: -stopwatch
-        Alias: -sw
-        Output: Starts or ends a stopwatch
+        Usage: {0}stopwatch
+        Alias: {0}sw
+        Output:
+            Starts a stopwatch unique to you.
+            If you have a current stopwatch,
+            the bot will end that stopwatch
+            and calculate the time passed.
         Notes:
-             One stopwatch is available per user.
-             Your stopwatch will not be interrupted
-             if another user executes the command.
+            One stopwatch is available per user.
+            Your stopwatch will not be interrupted
+            if another user executes the command.
+            If not stopped by the user, stopwatches
+            will automatically be stopped after 12 hours.
         """
         author = ctx.author
         if author.id not in self.stopwatches:
@@ -332,6 +466,11 @@ class Time(commands.Cog):
         brief="Show the current utc time.",
         implemented="2021-05-05 02:04:35.619602",
         updated="2021-05-05 19:17:21.775487",
+        examples="""
+                {0}utc
+                {0}utcnow
+                {0}utctime
+                """,
     )
     async def utcnow(self, ctx):
         """
@@ -339,6 +478,6 @@ class Time(commands.Cog):
         Aliases: {0}utctime, {0}utc
         Output:
             datetime.datetime.utcnow()
-            time format.
+            python time format.
         """
         await ctx.send_or_reply(f"{self.bot.emote_dict['clock']} `{datetime.utcnow()}`")

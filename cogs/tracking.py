@@ -24,24 +24,29 @@ class Tracking(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @decorators.command(aliases=["mobile"], brief="Show which platform a user is on.")
+    @decorators.command(
+        aliases=["mobile", "web", "desktop"],
+        brief="Show a user's discord platform.",
+    )
     @commands.guild_only()
-    async def platform(self, ctx, members: commands.Greedy[discord.Member]):
+    async def platform(self, ctx, users: commands.Greedy[discord.Member]):
         """
-        Usage:  -mobile <member> [member] [member]...
-        Alias:  -platform
-        Output: Shows whether a user is on desktop or mobile.
-        Notes:  Cannot determine platform when users are offline.
+        Usage:  {0}platform [users]...
+        Alias:  {0}mobile, {0}desktop, {0}web
+        Output:
+            Shows which discord platform a user
+            is currently on. Can be discord desktop,
+            discord mobile, or discord web.
+        Notes:
+            The bot cannot determine platform
+            when users are offline or if their
+            status is invisible.
         """
-        if not len(members):
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}platform <member> [member] [member]...`",
-            )
         mobilestatus = []
         notmobilestatus = []
         web_status = []
         offline = []
-        for member in members:
+        for member in users:
             try:
                 mobile = member.is_on_mobile()
             except Exception as e:
@@ -128,17 +133,6 @@ class Tracking(commands.Cog):
             message = await ctx.send_or_reply(
                 content=f"**{self.bot.emote_dict['loading']} Collecting User Data...**",
             )
-
-            sid = int(user.id)
-            timestamp = ((sid >> 22) + 1420070400000) / 1000
-            cdate = datetime.utcfromtimestamp(timestamp)
-            fdate = cdate.strftime("%A, %B %d, %Y at %H:%M:%S")
-
-            try:
-                member = self.bot.get_member(sid)
-                user = member
-            except Exception:
-                pass
 
             tracking = self.bot.get_cog("Batch")
 
