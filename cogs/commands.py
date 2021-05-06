@@ -5,13 +5,11 @@ import traceback
 from datetime import datetime
 from discord.ext import commands, menus
 
+from utilities import utils
 from utilities import checks
 from utilities import converters
 from utilities import decorators
 from utilities import pagination
-from utilities import utils
-
-COMMAND_EXCEPTIONS = []
 
 
 def setup(bot):
@@ -26,35 +24,36 @@ class Commands(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.command_exception = []  # pass command names to hide from help command
 
     ############################
     ## Get Commands From Cogs ##
     ############################
 
     async def send_help(self, ctx, embed, pm, delete_after):
-        if pm is True:
-            if not ctx.guild:
+        if pm is True:  # We're DMing the user
+            if not ctx.guild:  # They invoked from a DM
                 msg = await ctx.send_or_reply(embed=embed)
                 return
             try:
                 msg = await ctx.author.send(embed=embed)
                 try:
                     await ctx.message.add_reaction(self.bot.emote_dict["letter"])
-                except Exception:
-                    return
-            except Exception:
+                except Exception: # Probably no perms. Ignore
+                    pass
+            except Exception:  # Couldn't send the message to the user. Send it to the channel.
                 msg = await ctx.send_or_reply(
                     embed=embed,
                     delete_after=delete_after,
                 )
-        else:
+        else: # Not trying to DM the user, send to the channel.
             msg = await ctx.send_or_reply(embed=embed, delete_after=delete_after)
 
         def reaction_check(m):
             if (
-                m.message_id == msg.id
-                and m.user_id == ctx.author.id
-                and str(m.emoji) == self.bot.emote_dict["trash"]
+                m.message_id == msg.id  # Same message
+                and m.user_id == ctx.author.id  # Only the author
+                and str(m.emoji) == self.bot.emote_dict["trash"]  # Same emoji
             ):
                 return True
             return False
@@ -62,17 +61,17 @@ class Commands(commands.Cog):
         try:
             await msg.add_reaction(self.bot.emote_dict["trash"])
         except discord.Forbidden:
-            return
+            return  # Can't react so give up.
 
         try:
             await self.bot.wait_for(
                 "raw_reaction_add", timeout=60.0, check=reaction_check
             )
             await msg.delete()
-        except asyncio.TimeoutError:
+        except asyncio.TimeoutError:  # Been a minute.
             try:
                 await msg.clear_reactions()
-            except Exception:
+            except Exception:  # No perms to clear rxns, delete manually.
                 await msg.remove_reaction(self.bot.emote_dict["trash"], self.bot.user)
 
     async def helper_func(self, ctx, cog, name, pm, delete_after):
@@ -81,7 +80,7 @@ class Commands(commands.Cog):
         for c in the_cog:
             if c.hidden and not checks.is_admin(ctx):
                 continue
-            if str(c.name).upper() in COMMAND_EXCEPTIONS and not checks.is_admin(ctx):
+            if str(c.name).upper() in self.command_exceptions and not checks.is_admin(ctx):
                 await ctx.send_or_reply(
                     f"{self.bot.emote_dict['warn']} No command named `{name}` found."
                 )
@@ -140,8 +139,8 @@ class Commands(commands.Cog):
 
     @decorators.command(
         name="help",
-        brief="My documentation for all commands.",
         aliases=["commands", "documentation", "docs", "helpme"],
+        brief="My documentation for all commands.",
         implemented="2021-02-22 05:04:47.433000",
         updated="2021-05-05 05:08:05.642637",
     )
@@ -235,10 +234,6 @@ class Commands(commands.Cog):
             ## Manages Cog Help ##
             ######################
 
-            # cog = self.bot.get_cog(invokercommand.capitalize())
-            # if cog is not None:
-            #     return await self.helper_func(ctx, cog=cog, name=invokercommand, pm = pm, delete_after=delete_after)
-
             if invokercommand.lower() in [
                 "admin",
                 "administration",
@@ -250,12 +245,6 @@ class Commands(commands.Cog):
                 "configuration",
             ]:
                 cog = self.bot.get_cog("Admin")
-                return await self.helper_func(
-                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
-                )
-
-            if invokercommand.lower() in ["auto", "automod", "automoderation"]:
-                cog = self.bot.get_cog("Automod")
                 return await self.helper_func(
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )
@@ -386,20 +375,11 @@ class Commands(commands.Cog):
             #         ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
             #     )
 
-            if invokercommand.lower() in [
-                "tools",
-                "miscellaneous",
-                "random",
-                "misc",
-            ]:
-                cog = self.bot.get_cog("Misc")
-                return await self.helper_func(
-                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
-                )
 
             if invokercommand.lower() in [
                 "automod",
                 "warning",
+                "auto",
                 "automoderation",
                 "system",
             ]:
@@ -409,13 +389,13 @@ class Commands(commands.Cog):
                 )
 
             if invokercommand.lower() in ["jsk", "jish", "jishaku"]:
-                if not checks.is_owner(ctx):
-                    return await ctx.send_or_reply(
+                if not checks.is_owner(ctx): # Jishaku is owner-only
+                    return await ctx.send_or_reply(  # Pretend like it doesn't exist
                         f"{self.bot.emote_dict['warn']} No command named `{invokercommand}` found."
                     )
                 return await ctx.send_help("jishaku")
 
-            if invokercommand.lower() in ["conf", "config", "owner", "owners"]:
+            if invokercommand.lower() in ["conf", "config", "owner"]:
                 if not checks.is_owner(ctx):
                     return await ctx.send_or_reply(
                         f"{self.bot.emote_dict['warn']} No command named `{invokercommand}` found."
@@ -425,7 +405,7 @@ class Commands(commands.Cog):
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )
 
-            if invokercommand.lower() in ["hidden", "botadmin", "admins", "botadmins"]:
+            if invokercommand.lower() in ["botadmin","badmin"]:
                 if not checks.is_admin(ctx):
                     return await ctx.send_or_reply(
                         f"{self.bot.emote_dict['warn']} No command named `{invokercommand}` found."
@@ -646,7 +626,7 @@ class Commands(commands.Cog):
 
 
     @decorators.command(
-        brief="Show when a command was first made.",
+        brief="Show when a command was last updated.",
         aliases=["changed"],
         implemented="2021-05-05 04:09:30.395495",
         updated="2021-05-05 04:09:30.395495",
@@ -668,7 +648,7 @@ class Commands(commands.Cog):
             await ctx.fail(f"The last update on `{command}` was not documented.")
 
     @decorators.command(
-        brief="Show when a command was updated.",
+        brief="Show when a command was first made.",
         aliases=["implemented"],
         implemented="2021-05-05 04:09:30.395495",
         updated="2021-05-05 04:09:30.395495",

@@ -37,25 +37,25 @@ class Batch(commands.Cog):
         self.command_batch = list()
         self.message_batch = list()
         self.tracker_batch = dict()
-        # self.tracker_batch = defaultdict(list)
         self.snipe_batch = list()
         self.member_batch = defaultdict(list)
         self.emoji_batch = defaultdict(Counter)
-        # self.message_batch = defaultdict(list)
         self.usernames_batch = defaultdict(list)
         self.nicknames_batch = defaultdict(list)
         self.roles_batch = defaultdict(list)
         self.status_batch = defaultdict(list)
         self.spammer_batch = dict()
+        self.to_upload = list()
         self.batch_lock = asyncio.Lock(loop=bot.loop)
         self.spam_control = commands.CooldownMapping.from_cooldown(
             10, 12, commands.BucketType.user
         )
         self._auto_spam_count = Counter()
         self.bulk_inserter.start()
-        # self.status_inserter.start()
+        self.background_task = bot.loop.create_task(self.dispatch_avatars())
 
     def cog_unload(self):
+        self.background_task.cancel()
         self.bulk_inserter.stop()
 
     @tasks.loop(seconds=2.0)
@@ -390,6 +390,27 @@ class Batch(commands.Cog):
         await self.bot.cxn.execute(query, webhook.id, webhook.token, self.bot.user.id)
         return webhook
 
+    async def dispatch_avatars(self):
+        while not self.bot.is_closed():
+            if len(self.to_upload) >= 10:
+                async with self.batch_lock:
+                    files = [x for x in self.to_upload]
+                    upload_batch = await self.avatar_webhook.send(
+                        files=files, wait=True
+                    )
+                    for x in upload_batch.attachments:
+                        self.avatar_batch.append(
+                            {
+                                "user_id": int(x.filename.split('.')[0]),
+                                "avatar_id": x.id,
+                                "unix": time.time(),
+                            }
+                        )
+                self.to_upload.clear()
+            else:
+                await asyncio.sleep(1)
+
+
     @commands.Cog.listener()
     @decorators.wait_until_ready()
     async def on_command(self, ctx):
@@ -497,30 +518,23 @@ class Batch(commands.Cog):
     @commands.Cog.listener()
     @decorators.wait_until_ready()
     async def on_user_update(self, before, after):
-
+        """
+        Here's where we get notified of avatar,
+        username, and discriminator changes.
+        """
         if after.bot:
-            return
+            return  # Don't care about bots
         async with self.batch_lock:
-            self.tracker_batch[before.id] = time.time()
-        if self.avatar_webhook:
+            self.tracker_batch[before.id] = time.time()  # Update last seen time
+        if self.avatar_webhook:  # Check if we have the webhook set up.
             if await self.avatar_changed(before, after):
                 try:
                     avatar_url = str(after.avatar_url_as(format="png", size=1024))
                     resp = await self.bot.get((avatar_url), res_method="read")
                     data = io.BytesIO(resp)
                     dfile = discord.File(data, filename=f"{after.id}.png")
-                    upload = await self.avatar_webhook.send(
-                        content=f"**UID: {after.id}**", file=dfile, wait=True
-                    )
-                    attachment_id = upload.attachments[0].id
-                    async with self.batch_lock:
-                        self.avatar_batch.append(
-                            {
-                                "user_id": after.id,
-                                "avatar_id": attachment_id,
-                                "unix": time.time(),
-                            }
-                        )
+                    self.to_upload.append(dfile)
+                    await self.dispatch_avatars()
                 except Exception as e:
                     await self.bot.bot_channel.send(f"Error in avatar_batcher: {e}")
                     await self.bot.bot_channel.send(
