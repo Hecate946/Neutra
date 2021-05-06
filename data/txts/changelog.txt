@@ -7,3 +7,5 @@
 (2021-04-21 05:45:47.548010+00:00) Add massascify command
 (2021-04-21 05:46:01.079785+00:00) Add massdehoist command
 (2021-04-21 19:26:40.744981+00:00) Add usertimes command
+(2021-05-06 16:30:58.580511+00:00) Cleanup files cog, add implementation dates, elaborate help docstrings
+(2021-05-06 16:31:39.001011+00:00) Rename help.py to commands.py, add multiple command info helper commands

@@ -2,10 +2,12 @@ import io
 import os
 import pytz
 import discord
+
 from datetime import datetime
 from discord.ext import commands
 
-from utilities import checks, utils
+from utilities import utils
+from utilities import checks
 from utilities import decorators
 
 
@@ -20,22 +22,6 @@ class Files(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-
-    ##############################
-    ## Aiohttp Helper Functions ##
-    ##############################
-
-    async def query(self, url, method="get", res_method="text", *args, **kwargs):
-        async with getattr(self.bot.session, method.lower())(
-            url, *args, **kwargs
-        ) as res:
-            return await getattr(res, res_method)()
-
-    async def get(self, url, *args, **kwargs):
-        return await self.query(url, "get", *args, **kwargs)
-
-    async def post(self, url, *args, **kwargs):
-        return await self.query(url, "post", *args, **kwargs)
 
     def _get_help(self, command, max_len=0):
         # A helper method to return the command help - or a placeholder if none
@@ -56,15 +42,22 @@ class Files(commands.Cog):
         return parent == child or child.startswith(parent + ".")
 
     @decorators.command(
-        brief="DMs you a file of commands.", aliases=["txthelp", "helpfile"]
+        aliases=["txthelp", "helpfile"],
+        brief="DMs you a file of commands.",
+        implemented="2021-03-15 21:08:44.890889",
+        updated="2021-05-06 15:48:48.484178",
     )
     async def dumphelp(self, ctx):
         """
-        Usage: -dumphelp
-        Aliases: -txthelp, -helpfile
+        Usage: {0}dumphelp
+        Aliases: {0}txthelp, {0}helpfile
         Output:
             DMs you a file with all my commands
             and their descriptions.
+        Notes:
+            If you have your DMs blocked, the bot
+            will send the file to the channel
+            where the the command was invoked.
         """
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
         help_file = "Help-{}.txt".format(timestamp)
@@ -141,17 +134,28 @@ class Files(commands.Cog):
         )
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
-    @decorators.command(hidden=True, brief="DMs you a list of my servers.")
+    @decorators.command(
+        aliases=['dumpguilds','txtguilds','txtservers'],
+        brief="DMs you a list of my servers.",
+        hidden=True,
+        implemented="2021-04-09 02:05:49.278468",
+        updated="2021-05-06 15:57:20.290636",
+    )
+    @checks.is_bot_admin()
     async def dumpservers(self, ctx):
         """
-        Usage: -dumpservers
+        Usage: {0}dumpservers
+        ALiases:
+            {0}dumpguilds, {0]txtguilds, {0}txtservers
         Permission: Bot Admin
         Output:
             DMs you a file with all my servers,
             their member count, owners, and their IDs
+        Notes:
+            If you have your DMs blocked, the bot
+            will send the file to the channel
+            where the the command was invoked.
         """
-        if not checks.is_admin(ctx):
-            return
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
         server_file = "Servers-{}.txt".format(timestamp)
 
@@ -190,16 +194,25 @@ class Files(commands.Cog):
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
     @decorators.command(
-        brief="DMs you a file of server settings.", aliases=["serversettings"]
+        aliases=["serversettings","dumpserversettings"],
+        brief="DMs you a file of server settings.",
+        implemented="2021-03-29 21:22:04.309922",
+        updated="2021-05-06 16:08:45.057353",
     )
     @commands.guild_only()
     @checks.has_perms(manage_guild=True)
     async def dumpsettings(self, ctx):
         """
-        Usage: -dumpsettings
-        Alias: -serversettings
+        Usage: {0}dumpsettings
+        Aliases:
+            {0}serversettings, {0}dumpserversettings
         Permission: Manage Server
-        Output: Sends a json file of server settings to your DMs.
+        Output:
+            Sends a json file of server settings to your DMs.
+        Notes:
+            If you have your DMs blocked, the bot
+            will send the file to the channel
+            where the the command was invoked.
         """
 
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
@@ -241,15 +254,25 @@ class Files(commands.Cog):
         await mess.add_reaction(self.bot.emote_dict["letter"])
         os.remove(settings_file)
 
-    @decorators.command(brief="DMs you a file of server roles.")
+    @decorators.command(
+        aliases=['txtroles','rolefile'],
+        brief="DMs you a file of server roles.",
+        implemented="2021-03-29 21:28:14.146367",
+        updated="2021-05-06 16:15:01.162059",
+    )
     @commands.guild_only()
     @checks.has_perms(manage_roles=True)
     async def dumproles(self, ctx):
         """
-        Usage:  -dumproles
-        Alias:  -txtroles
+        Usage: {0}dumproles
+        Aliases: {0}txtroles, {0}rolefile
         Permission: Manage Roles
-        Output:  Sends a list of roles for the server to your DMs
+        Output:
+            Sends a list of roles for the server to your DMs
+        Notes:
+            If you have your DMs blocked, the bot
+            will send the file to the channel
+            where the the command was invoked.
         """
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
         role_file = "Roles-{}.txt".format(timestamp)
@@ -286,16 +309,24 @@ class Files(commands.Cog):
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
     @decorators.command(
-        brief="DMs you a file of text channels.", aliases=["dumptc", "dumptextchannels"]
+        aliases=["dumptc", "dumptcc", "dumptextchannels"],
+        brief="DMs you a file of text channels.",
+        implemented="2021-04-08 17:46:29.171255",
+        updated="2021-05-06 16:10:22.394728",
     )
     @commands.guild_only()
     @checks.has_perms(manage_channels=True)
     async def dumpchannels(self, ctx):
         """
-        Usage:  -dumptextchannels
-        Alias:  -dumptc, -dumptextchannels
-        Output:  Sends a list of channels for the server to your DMs
+        Usage: {0}dumptextchannels
+        Aliases: {0}dumptc, {0}dumptcs, {0}dumptextchannels
         Permission: Manage Channels
+        Output:
+            Sends a list of channels for the server to your DMs
+        Notes:
+            If you have your DMs blocked, the bot
+            will send the file to the channel
+            where the the command was invoked.
         """
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
         role_file = "Channels-{}.txt".format(timestamp)
@@ -337,15 +368,25 @@ class Files(commands.Cog):
         )
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
-    @decorators.command(brief="DMs you a file of voice channels.", aliases=["dumpvc"])
+    @decorators.command(
+        aliases=["dumpvc","dumpvcs"],
+        brief="DMs you a file of voice channels.",
+        implemented="2021-04-08 18:03:17.759494",
+        updated="2021-05-06 16:12:56.649004",
+    )
     @commands.guild_only()
     @checks.has_perms(manage_channels=True)
     async def dumpvoicechannels(self, ctx):
         """
-        Usage:  -dumpvoicechannels
-        Alias:  -dumpvc
-        Output:  Sends a list of voice channels to your DMs
+        Usage: {0}dumpvoicechannels
+        Aliases: {0}dumpvc, {0}dumpvcs
         Permission: Manage Channels
+        Output:
+            Sends a list of voice channels to your DMs
+        Notes:
+            If you have your DMs blocked, the bot
+            will send the file to the channel
+            where the the command was invoked.
         """
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
         role_file = "Channels-{}.txt".format(timestamp)
@@ -387,15 +428,25 @@ class Files(commands.Cog):
         )
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
-    @decorators.command(brief="DMs you a file of voice channels.", aliases=["dumpcc"])
+    @decorators.command(
+        aliases=["dumpcc","dumpccs"],
+        brief="DMs you a file of voice channels.",
+        implemented="2021-04-08 18:03:28.697338",
+        updated="2021-05-06 16:17:04.697120",
+    )
     @commands.guild_only()
     @checks.has_perms(manage_channels=True)
     async def dumpcategories(self, ctx):
         """
-        Usage:  -dumpcategories
-        Alias:  -dumpcc
+        Usage: {0}dumpcategories
+        Alias: {0}dumpcc, {0}dumpccs
         Permission: Manage Channels
-        Output:  Sends a list of categories to your DMs
+        Output:
+            Sends a list of categories to your DMs
+        Notes:
+            If you have your DMs blocked, the bot
+            will send the file to the channel
+            where the the command was invoked.
         """
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
         role_file = "Channels-{}.txt".format(timestamp)
@@ -438,16 +489,24 @@ class Files(commands.Cog):
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
     @decorators.command(
-        brief="DMs you a file of server emojis.", aliases=["dumpemojis"]
+        aliases=["dumpemojis"],
+        brief="DMs you a file of server emojis.",
+        implemented="2021-03-30 23:00:39.720920",
+        updated="2021-05-06 16:18:48.309094",
     )
     @commands.guild_only()
     @checks.has_perms(manage_emojis=True)
     async def dumpemotes(self, ctx):
         """
-        Usage:  -dumpemotes
-        Alias:  -dumpemojis
+        Usage: {0}dumpemotes
+        Alias: {0}dumpemojis
         Permission: Manage Emojis
-        Output:  Sends a list of server emojis to your DMs
+        Output:
+            Sends a list of server emojis to your DMs
+        Notes:
+            If you have your DMs blocked, the bot
+            will send the file to the channel
+            where the the command was invoked.
         """
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
         role_file = "Emotes-{}.txt".format(timestamp)
@@ -489,6 +548,8 @@ class Files(commands.Cog):
     @decorators.command(
         aliases=["logmessages", "messagedump"],
         brief="DMs you a file of channel messages.",
+        implemented="2021-03-30 05:29:13.886950",
+        updated="2021-05-06 16:19:33.543435",
     )
     @commands.guild_only()
     @checks.has_perms(manage_messages=True)
@@ -496,12 +557,16 @@ class Files(commands.Cog):
         self, ctx, messages: int = 25, *, chan: discord.TextChannel = None
     ):
         """
-        Usage:      -dumpmessages [message amount] [channel]
-        Aliases:    -messagedump, -dumpmessages, logmessages
+        Usage: {0}dumpmessages [message amount] [channel]
+        Aliases: {0}messagedump, {0}dumpmessages, {0}logmessages
         Permission: Manage Messages
         Output:
             Logs a passed number of messages from a specified channel
             - 25 by default.
+        Notes:
+            If you have your DMs blocked, the bot
+            will send the file to the channel
+            where the the command was invoked.
         """
 
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
@@ -558,16 +623,23 @@ class Files(commands.Cog):
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
     @decorators.command(
-        aliases=["timezonelist", "listtimezones"], brief="DMs you a file of time zones."
+        aliases=["timezonelist", "listtimezones"],
+        brief="DMs you a file of time zones.",
+        implemented="2021-03-31 06:56:01.017282",
+        updated="2021-05-06 16:20:59.298405",
     )
     @commands.guild_only()
     async def dumptimezones(self, ctx):
         """
-        Usage:      -dumptimezones
-        Aliases:    -listtimezones, -timezonelist
+        Usage: {0}dumptimezones
+        Aliases: {0}listtimezones, {0}timezonelist
         Output:
             Sends a txt file to your DMs with all
-            available timezones to set using -settz
+            available timezones to set using {0}settz
+        Notes:
+            If you have your DMs blocked, the bot
+            will send the file to the channel
+            where the the command was invoked.
         """
 
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
@@ -604,17 +676,26 @@ class Files(commands.Cog):
         )
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
-    @decorators.command(aliases=["humanlist"], brief="DMs you a file of server humans.")
+    @decorators.command(
+        aliases=["humanlist"],
+        brief="DMs you a file of server humans.",
+        implemented="2021-04-07 23:11:42.549620",
+        updated="2021-05-06 16:22:31.888866",
+    )
     @commands.guild_only()
-    @checks.has_perms(manage_messages=True)
+    @checks.has_perms(manage_guild=True)
     async def dumphumans(self, ctx):
         """
-        Usage:      -dumphumans
-        Aliases:    -humanlist
-        Permission: Manage Messages
+        Usage: {0}dumphumans
+        Aliases: {0}humanlist
+        Permission: Manage Server
         Output:
             Sends a txt file to your DMs with all
             server humans
+        Notes:
+            If you have your DMs blocked, the bot
+            will send the file to the channel
+            where the the command was invoked.
         """
 
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
@@ -659,17 +740,24 @@ class Files(commands.Cog):
     @decorators.command(
         aliases=["dumprobots", "robotlist", "botlist"],
         brief="DMs you a file of server bots.",
+        implemented="2021-04-07 23:11:37.665030",
+        updated="2021-05-06 16:23:46.251790",
     )
     @commands.guild_only()
-    @checks.has_perms(manage_messages=True)
+    @checks.has_perms(manage_guild=True)
     async def dumpbots(self, ctx):
         """
-        Usage:      -dumphumans
-        Aliases:    -botlist, -robotlist, dumprobots
-        Permission: Manage Messages
+        Usage: {0}dumpbots
+        Aliases:
+            {0}botlist, {0}robotlist, {0}dumprobots
+        Permission: Manage Server
         Output:
             Sends a txt file to your DMs with all
-            server bots
+            bots currently in the server.
+        Notes:
+            If you have your DMs blocked, the bot
+            will send the file to the channel
+            where the the command was invoked.
         """
 
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
@@ -712,19 +800,25 @@ class Files(commands.Cog):
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
     @decorators.command(
-        aliases=["dumpusers", "memberlist", "userlist"],
+        aliases=["dumpmembers", "memberlist", "userlist"],
         brief="DMs you a file of server members.",
+        implemented="2021-04-07 23:06:22.487209",
+        updated="2021-05-06 16:27:03.146078",
     )
     @commands.guild_only()
-    @checks.has_perms(manage_messages=True)
-    async def dumpmembers(self, ctx):
+    @checks.has_perms(manage_guild=True)
+    async def dumpusers(self, ctx):
         """
-        Usage:      -dumpmembers
-        Aliases:    -dumpusers, -memberlist, -userlist
-        Permission: Manage Messages
+        Usage: {0}dumpusers
+        Aliases: {0}dumpmembers, {0}memberlist, {0}userlist
+        Permission: Manage Server
         Output:
             Sends a txt file to your DMs with all
-            server members.
+            server members. Bots are included.
+        Notes:
+            If you have your DMs blocked, the bot
+            will send the file to the channel
+            where the the command was invoked.
         """
 
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
@@ -764,20 +858,25 @@ class Files(commands.Cog):
     @decorators.command(
         aliases=["banlist", "txtbans"],
         brief="DMs you a file of server bans.",
+        implemented="2021-04-09 21:29:18.563027",
+        updated="2021-05-06 16:26:05.161487",
     )
     @commands.guild_only()
     @checks.bot_has_perms(ban_members=True)
     @checks.has_perms(ban_members=True)
     async def dumpbans(self, ctx):
         """
-        Usage:      -dumpbans
-        Aliases:    -banlist, txtbans
+        Usage: {0}dumpbans
+        Aliases: {0}banlist, {0}txtbans
         Permission: Ban Members
         Output:
             Sends a txt file to your DMs with all
-            server bans.
+            past server bans.
+        Notes:
+            If you have your DMs blocked, the bot
+            will send the file to the channel
+            where the the command was invoked.
         """
-
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
         time_file = "Bans-{}.txt".format(timestamp)
 
@@ -812,14 +911,20 @@ class Files(commands.Cog):
         )
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
-    @decorators.command(aliases=["md"], brief="DMs you my readme file.")
+    @decorators.command(
+        aliases=["md"],
+        brief="DMs you my readme file.",
+        implemented="2021-04-14 00:48:12.179355",
+        updated="2021-05-06 16:30:04.761423",
+    )
+    @commands.cooldown(2, 60, commands.BucketType.user)
     async def readme(self, ctx):
         """
-        Usage: -readme
-        Alias: -md
+        Usage: {0}readme
+        Alias: {0}md
         Output: Sends my readme file on github to your DMs
         Notes:
-            This command actually updates the readme file
+            This command updates the readme file
             to include all the current command descriptions
             for each registered category.
         """
