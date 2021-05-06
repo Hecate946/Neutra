@@ -237,7 +237,16 @@ class Commands(commands.Cog):
                 "group",
                 "subcommand",
             ]:  # Someone took the embed footer too literally.
-                await ctx.fail(f"Please specify a valid {invokercommand.lower()} name.")
+                if invokercommand.lower() == "subcommand":
+                    example = f"{ctx.prefix}help purge until"
+                elif invokercommand.lower() == "group":
+                    example = f"{ctx.prefix}help purge"
+                elif invokercommand.lower() == "command":
+                    example = f"{ctx.prefix}help userinfo"
+                else:
+                    example = f"{ctx.prefix}help info"
+                await ctx.fail(f"Please specify a valid {invokercommand.lower()} name. Example: `{example}`")
+                return
             ######################
             ## Manages Cog Help ##
             ######################
