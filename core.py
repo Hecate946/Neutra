@@ -33,8 +33,6 @@ if not os.path.exists("./data/pm2"):
     os.mkdir("./data/pm2")
 if not os.path.exists("./data/json"):
     os.mkdir("./data/json")
-if not os.path.exists("./data/wastebin"):
-    os.mkdir("./data/wastebin")
 
 # Set up our command logger
 command_logger = logging.getLogger("HYPERNOVA")
