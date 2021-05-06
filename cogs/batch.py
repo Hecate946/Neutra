@@ -392,7 +392,7 @@ class Batch(commands.Cog):
 
     async def dispatch_avatars(self):
         while not self.bot.is_closed():
-            if len(self.to_upload) >= 20:
+            if len(self.to_upload) >= 10:
                 async with self.batch_lock:
                     files = [x for x in self.to_upload]
                     upload_batch = await self.avatar_webhook.send(
