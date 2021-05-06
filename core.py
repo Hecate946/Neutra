@@ -118,7 +118,8 @@ def get_prefix(bot, msg):
         base.append(constants.prefix)
     else:
         base.extend(bot.prefixes.get(msg.guild.id, [constants.prefix]))
-    return base
+    base_and_spaces = [str(x) + " " for x in base] + base
+    return base_and_spaces
 
 
 # Main bot class. Heart of the application

@@ -1308,7 +1308,7 @@ class Admin(commands.Cog):
         if c:
             await self.bot.set_guild_prefixes(ctx.guild, [])
             await ctx.success(
-                f"Successfully cleared all prefixes. I will now only respond to @`{ctx.guild.me.display_name}`"
+                f"Successfully cleared all prefixes. I will now only respond to `@{ctx.guild.me.display_name}`"
             )
         else:
             await ctx.send(f"**Cancelled.**")
