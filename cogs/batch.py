@@ -52,10 +52,10 @@ class Batch(commands.Cog):
         )
         self._auto_spam_count = Counter()
         self.bulk_inserter.start()
-        self.background_task = bot.loop.create_task(self.dispatch_avatars())
+        self.dispatch_avatars.start()
 
     def cog_unload(self):
-        self.background_task.cancel()
+        self.background_task.stop()
         self.bulk_inserter.stop()
 
     @tasks.loop(seconds=2.0)
@@ -390,28 +390,26 @@ class Batch(commands.Cog):
         await self.bot.cxn.execute(query, webhook.id, webhook.token, self.bot.user.id)
         return webhook
 
+    @tasks.loop(seconds=1)
     async def dispatch_avatars(self):
-        while not self.bot.is_closed():
-            count = 0
-            print(len(self.to_upload))
-            if len(self.to_upload) >= 10:
-                async with self.batch_lock:
-                    count += 1
-                    files = [x for x in self.to_upload]
-                    upload_batch = await self.avatar_webhook.send(
-                        content=f"**Batch {count}**", files=files, wait=True
+        count = 0
+        print(len(self.to_upload))
+        if len(self.to_upload) >= 10:
+            async with self.batch_lock:
+                count += 1
+                files = [x for x in self.to_upload]
+                upload_batch = await self.avatar_webhook.send(
+                    content=f"**Batch {count}**", files=files, wait=True
+                )
+                for x in upload_batch.attachments:
+                    self.avatar_batch.append(
+                        {
+                            "user_id": int(x.filename.split('.')[0]),
+                            "avatar_id": x.id,
+                            "unix": time.time(),
+                        }
                     )
-                    for x in upload_batch.attachments:
-                        self.avatar_batch.append(
-                            {
-                                "user_id": int(x.filename.split('.')[0]),
-                                "avatar_id": x.id,
-                                "unix": time.time(),
-                            }
-                        )
-                self.to_upload.clear()
-            else:
-                await asyncio.sleep(1)
+            self.to_upload.clear()
 
 
     @commands.Cog.listener()
