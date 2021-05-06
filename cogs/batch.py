@@ -390,9 +390,9 @@ class Batch(commands.Cog):
         await self.bot.cxn.execute(query, webhook.id, webhook.token, self.bot.user.id)
         return webhook
 
-    @tasks.loop(seconds=2.5)
+    @tasks.loop(seconds=0.5)
     async def dispatch_avatars(self):
-        if len(self.to_upload) == 10:
+        if len(self.to_upload) > 9:
             async with self.batch_lock:
                 try:
                     upload_batch = await self.avatar_webhook.send(
@@ -407,9 +407,9 @@ class Batch(commands.Cog):
                             }
                         )
                 except discord.errors.HTTPException:
-                    return
+                    pass
             self.to_upload.clear()
-
+            
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
