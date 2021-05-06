@@ -649,8 +649,9 @@ class Commands(commands.Cog):
     )
     async def reqperms(self, ctx, command: converters.DiscordCommand):
         if command.permissions:
+            perm_list = [x.title().replace("_", " ").replace("Tts", "TTS") for x in command.permissions]
             await ctx.send_or_reply(
-                f"The command `{command}` requires the permissions: `{command.permissions}`"
+                f"The command `{command}` requires the permissions: `{', '.join(perm_list)}`"
             )
         else:
             await ctx.success(f"No permissions are required for `{command}`")
