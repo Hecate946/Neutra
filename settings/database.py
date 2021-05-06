@@ -282,7 +282,6 @@ async def load_settings():
             autoroles = [x for x in autoroles.split(",")]
 
         settings[server_id] = {
-            "prefix": prefix,
             "prefixes": [],
             "profanities": profanities,
             "disabled_commands": disabled_commands,
@@ -408,7 +407,6 @@ async def fix_server(server):
             autoroles = [x for x in autoroles.split(",")]
 
         settings[server_id] = {
-            "prefix": prefix,
             "prefixes": [],
             "profanities": profanities,
             "disabled_commands": disabled_commands,
