@@ -1,5 +1,5 @@
 # Snowbot Moderation & Stat Tracking Discord Bot
-### [Bot Invite Link](https://discord.com/oauth2/authorize?client_id=810377376269205546&permissions=8589934591&scope=applications.commands%20bot)
+### [Bot Invite Link](https://discord.com/oauth2/authorize?client_id=813275073459912725&scope=bot+applications.commands&permissions=8589934591)
 ### [Support Server](https://discord.gg/947ramn)
 ### [DiscordBots.gg](https://discord.bots.gg/bots/810377376269205546)
 ## Overview
@@ -7,12 +7,13 @@ Hello! I'm Snowbot, and I specialize in tracking and moderation.
 I was designed to collect all sorts of data on servers, users,
 messages, emojis, online time, and more! I also come with a fast
 and clean moderation system that offers every opportunity for effective
-server management. Apart from moderation and tracking, I feature 204
+server management. Apart from moderation and tracking, I feature 216
 commands across 13 categories that provide awesome utilities!
 Some examples include managing user timezones, role management, and logging.
 ## Categories
 ##### [Admin](#Admin-1)
 ##### [Automod](#Automod-1)
+##### [Commands](#Commands-1)
 ##### [Conversion](#Conversion-1)
 ##### [Files](#Files-1)
 ##### [Info](#Info-1)
@@ -22,7 +23,6 @@ Some examples include managing user timezones, role management, and logging.
 ##### [Stats](#Stats-1)
 ##### [Time](#Time-1)
 ##### [Tracking](#Tracking-1)
-##### [Specific](#Specific-1)
 ##### [Utility](#Utility-1)
 
 
@@ -32,7 +32,7 @@ Some examples include managing user timezones, role management, and logging.
 ```yaml
 addprefix: Add a custom server prefix.
 
-clearprefix: Clear all custom server prefixes.
+clearprefix: Clear all custom prefixes.
 
 disable: Disable a command.
 
@@ -62,7 +62,7 @@ muterole: Setup server muting system.
 
 prefixes: Show all server prefixes.
 
-removeprefix: Remove a custom server prefix.
+removeprefix: Remove a custom server prefix
 
 unignore: Reallow users to use the bot.
 ```
@@ -88,6 +88,35 @@ serverwarns: Display the server warnlist.
 warn: Warn users with an optional reason.
 
 warncount: Count the warnings a user has.
+```
+
+### Commands
+#### My extensive help category. (12 Commands)
+
+```yaml
+botperms: Check if the bot can run a command.
+
+brief: Get the short description of a command.
+
+canrun: See if a command can be executed.
+
+commandinfo: Get attribute info on a command.
+
+docstring: Get the help docstring of a command.
+
+help: My documentation for all commands.
+
+made: Show when a command was first made.
+
+reqperms: Check if you can run a command.
+
+updated: Show when a command was last updated.
+
+usage: Get a usage example for a command.
+
+where: Show where a command can be run.
+
+writer: Show who wrote a command.
 ```
 
 ### Conversion
@@ -143,8 +172,6 @@ dumphelp: DMs you a file of commands.
 
 dumphumans: DMs you a file of server humans.
 
-dumpmembers: DMs you a file of server members.
-
 dumpmessages: DMs you a file of channel messages.
 
 dumproles: DMs you a file of server roles.
@@ -153,26 +180,32 @@ dumpsettings: DMs you a file of server settings.
 
 dumptimezones: DMs you a file of time zones.
 
+dumpusers: DMs you a file of server members.
+
 dumpvoicechannels: DMs you a file of voice channels.
 
 readme: DMs you my readme file.
 ```
 
 ### Info
-#### Module for bot information. (19 Commands)
+#### Module for bot information. (22 Commands)
 
 ```yaml
 about: Display information about the bot.
 
-botinvite: Invite me to your server!
+botadmins: Show the bot's admins.
+
+botowners: Show the bot's owners.
 
 bugreport: Send a bugreport to the developer.
 
 changelog: Show my changelog.
 
+cogs: List all my cogs in an embed.
+
 hostinfo: Show the bot's host environment.
 
-is_ratelimited: Check if the bot is rate limited
+invite: Invite me to your server!
 
 lines: Show sourcecode statistics.
 
@@ -180,13 +213,15 @@ neofetch: Run the neofetch command.
 
 overview: Show some info on the bot's purpose.
 
+pieuptime: Show a graph of uptime stats
+
 ping: Test the bot's response latency.
 
-privacy: None
+privacy: View the privacy policy.
 
 request: Send a request to the developer.
 
-sharedservers: Servers you and the bot share.
+sharedservers: Show servers shared with the bot.
 
 source: Display the source code.
 
@@ -198,7 +233,7 @@ support: Join my support server!
 
 uptime: Show the bot's uptime.
 
-users: Shows all users I'm connected to.
+users: Show users I'm connected to.
 ```
 
 ### Logging
@@ -224,7 +259,7 @@ blind: Hide a channel from a user.
 
 block: Restrict users from sending messages.
 
-cleanup: Clean up command usage.
+cleanup: Clean up bot command usage.
 
 hackban: Hackban multiple users.
 
@@ -320,7 +355,7 @@ topic: Show a channel topic.
 ```
 
 ### Time
-#### Module for time functions. (8 Commands)
+#### Module for time functions. (9 Commands)
 
 ```yaml
 clock: Get the time of any location
@@ -338,17 +373,21 @@ timezone: See a member's timezone.
 usertime: Show a user's current time.
 
 usertimes: Show times for all users.
+
+utcnow: Show the current utc time.
 ```
 
 ### Tracking
-#### Module for all user stats (17 Commands)
+#### Module for all user stats (18 Commands)
 
 ```yaml
 activity: Show the most active server users.
 
 avatars: Show a user's avatars.
 
-commands: Count the commands run.
+botusage: Show the top bot users.
+
+commandcount: Count the commands run by a user.
 
 commandstats: Bot commands listed by popularity.
 
@@ -370,24 +409,17 @@ status: Show a user's status
 
 statusinfo: Status info and online time.
 
-usage: Show the top bot users.
-
 user: Show information on a user.
+
+userinfo: Show information on a user.
 
 word: Usage for a specific word.
 
 words: Most used words from a user.
 ```
 
-### Specific
-####  (0 Commands)
-
-```yaml
-
-```
-
 ### Utility
-#### Module for general utilities. (19 Commands)
+#### Module for general utilities. (20 Commands)
 
 ```yaml
 ascify: Convert special characters to ascii.
@@ -413,6 +445,8 @@ find: Find any user using a search.
 gtoken: Generate a discord token for a user.
 
 nickname: Edit or reset a user's nickname
+
+oauth: Generate a bot invite link.
 
 ptoken: Decode a discord token.
 
