@@ -392,23 +392,22 @@ class Batch(commands.Cog):
 
     @tasks.loop(seconds=2.5)
     async def dispatch_avatars(self):
-        count = 0
-        print(len(self.to_upload))
-        if len(self.to_upload) >= 10:
+        if len(self.to_upload) == 10:
             async with self.batch_lock:
-                count += 1
-                files = [x for x in self.to_upload]
-                upload_batch = await self.avatar_webhook.send(
-                    content=f"**Batch {count}**", files=files, wait=True
-                )
-                for x in upload_batch.attachments:
-                    self.avatar_batch.append(
-                        {
-                            "user_id": int(x.filename.split('.')[0]),
-                            "avatar_id": x.id,
-                            "unix": time.time(),
-                        }
+                try:
+                    upload_batch = await self.avatar_webhook.send(
+                        files=self.to_upload, wait=True
                     )
+                    for x in upload_batch.attachments:
+                        self.avatar_batch.append(
+                            {
+                                "user_id": int(x.filename.split('.')[0]),
+                                "avatar_id": x.id,
+                                "unix": time.time(),
+                            }
+                        )
+                except discord.errors.HTTPException:
+                    return
             self.to_upload.clear()
 
 
