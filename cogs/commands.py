@@ -247,6 +247,7 @@ class Commands(commands.Cog):
                     example = f"{ctx.prefix}help info"
                 await ctx.fail(f"Please specify a valid {invokercommand.lower()} name. Example: `{example}`")
                 return
+
             ######################
             ## Manages Cog Help ##
             ######################
@@ -379,18 +380,18 @@ class Commands(commands.Cog):
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )
 
-            # if invokercommand.lower() in [
-            #     "conversions",
-            #     "conversion",
-            #     "encoding",
-            #     "encryption",
-            #     "decryption",
-            #     "decrypt",
-            # ]:
-            #     cog = self.bot.get_cog("Conversion")
-            #     return await self.helper_func(
-            #         ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
-            #     )
+            if invokercommand.lower() in [
+                "conversions",
+                "conversion",
+                "encoding",
+                "encryption",
+                "decryption",
+                "decrypt",
+            ]:
+                cog = self.bot.get_cog("Conversion")
+                return await self.helper_func(
+                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
+                )
 
 
             if invokercommand.lower() in [
@@ -404,6 +405,10 @@ class Commands(commands.Cog):
                 return await self.helper_func(
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )
+
+            ########################
+            ## Botadmin Only Help ##
+            ########################
 
             if invokercommand.lower() in ["jsk", "jish", "jishaku"]:
                 if not checks.is_owner(ctx): # Jishaku is owner-only
@@ -445,6 +450,7 @@ class Commands(commands.Cog):
             ##########################
             ## Manages Command Help ##
             ##########################
+            
             else:
                 valid_cog = ""
                 valid_commands = ""

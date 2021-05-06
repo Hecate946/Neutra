@@ -41,6 +41,7 @@ emotes = {
     "idle": "<:idle:810650560146833429>",
     "owner": "<:owner:810678076497068032>",
     "emoji": "<:emoji:810678717482532874>",
+    "members": "<:members:810677596453863444>",
     "categories": "<:categories:810671569440473119>",
     "textchannel": "<:textchannel:810659118045331517>",
     "voicechannel": "<:voicechannel:810659257296879684>",
