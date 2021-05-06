@@ -390,7 +390,7 @@ class Batch(commands.Cog):
         await self.bot.cxn.execute(query, webhook.id, webhook.token, self.bot.user.id)
         return webhook
 
-    @tasks.loop(seconds=1)
+    @tasks.loop(seconds=2.5)
     async def dispatch_avatars(self):
         count = 0
         print(len(self.to_upload))
