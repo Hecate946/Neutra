@@ -4,6 +4,7 @@ import typing
 
 import discord
 from discord.ext import commands
+from discord.ext.commands import bot
 
 EMOJI_REGEX = re.compile(r"<a?:.+?:([0-9]{15,21})>")
 EMOJI_NAME_REGEX = re.compile(r"[0-9a-zA-Z\_]{2,32}")
@@ -12,6 +13,10 @@ EMOJI_NAME_REGEX = re.compile(r"[0-9a-zA-Z\_]{2,32}")
 tag_regex = re.compile(r"(.*)#(\d{4})")
 lax_id_regex = re.compile(r"([0-9]{15,21})$")
 mention_regex = re.compile(r"<@!?([0-9]+)>$")
+
+async def prettify(ctx, arg):
+    pretty_arg = await commands.clean_content().convert(ctx, arg)
+    return pretty_arg
 
 
 class SearchEmojiConverter(commands.Converter):
@@ -76,7 +81,7 @@ class SearchEmojiConverter(commands.Converter):
                 name="unknown", id=int(lax_id_match.group(1)), animated=False
             )
 
-        raise commands.BadArgument('Emoji "{}" not found'.format(argument))
+        raise commands.BadArgument('Emoji "{}" not found'.format(await prettify(ctx, argument)))
 
 
 class DiscordCommand(commands.Converter):
@@ -87,7 +92,7 @@ class DiscordCommand(commands.Converter):
     async def convert(self, ctx, argument):
         command = ctx.bot.get_command(argument.lower())
         if not command:
-            raise commands.BadArgument(f"Command `{argument}` not found.")
+            raise commands.BadArgument(f"Command `{await prettify(ctx, argument)}` not found.")
         return command
 
 
@@ -107,7 +112,7 @@ class DiscordBot(commands.Converter):
             try:
                 result = await ctx.bot.fetch_user(bot_id)
             except discord.NotFound:
-                raise commands.BadArgument(f"Bot `{bot_id}` not found")
+                raise commands.BadArgument(f"Bot `{await prettify(ctx, bot_id)}` not found.")
         return result
 
     async def get_by_name(self, ctx, bot_name):
@@ -174,8 +179,11 @@ class DiscordBot(commands.Converter):
         match = await self.find_match(ctx, argument)
 
         if not match:
-            raise commands.BadArgument(f"Bot `{argument}` not found")
-        return match
+            raise commands.BadArgument(f"Bot `{await prettify(ctx, argument)}` not found.")
+        if match.bot:
+            return match
+        else:
+            raise commands.BadArgument(f"User `{await prettify(ctx, argument)}` is not a bot.")
 
 
 class DiscordUser(commands.Converter):
@@ -194,7 +202,7 @@ class DiscordUser(commands.Converter):
             try:
                 result = await ctx.bot.fetch_user(user_id)
             except discord.NotFound:
-                raise commands.BadArgument(f"User {user_id} not found")
+                raise commands.BadArgument(f"User `{await prettify(ctx, user_id)}` not found.")
         return result
 
     async def get_by_name(self, ctx, user_name):
@@ -267,7 +275,7 @@ class DiscordUser(commands.Converter):
         match = await self.find_match(ctx, argument)
 
         if not match:
-            raise commands.BadArgument("User `{}` not found".format(argument))
+            raise commands.BadArgument(f"User `{await prettify(ctx, argument)}` not found.")
         return match
 
 
@@ -278,15 +286,15 @@ class BotServer(commands.Converter):
             try:
                 server = ctx.bot.get_guild(server_id)
                 if server is None:
-                    raise commands.BadArgument("Server `{}` not found".format(argument))
+                    raise commands.BadArgument(f"Server `{await prettify(ctx, argument)}` not found.")
                 else:
                     return server
             except discord.HTTPException:
-                raise commands.BadArgument("Server `{}` not found".format(argument))
+                raise commands.BadArgument(f"Server `{await prettify(ctx, argument)}` not found.")
             except discord.Forbidden:
-                raise commands.BadArgument("Server `{}` not found".format(argument))
+                raise commands.BadArgument(f"Server `{await prettify(ctx, argument)}` not found.")
             except discord.NotFound:
-                raise commands.BadArgument("Server `{}` not found".format(argument))
+                raise commands.BadArgument(f"Server `{await prettify(ctx, argument)}` not found")
             except Exception as e:
                 await ctx.send_or_reply(e)
         options = [
@@ -295,7 +303,7 @@ class BotServer(commands.Converter):
             if argument.lower() in s.name.lower()
         ]
         if options == []:
-            raise commands.BadArgument("Server `{}` not found".format(argument))
+            raise commands.BadArgument(f"Server `{await prettify(ctx, argument)}` not found.")
         return options
 
 
@@ -306,14 +314,14 @@ class DiscordGuild(commands.Converter):
             server_id = int(argument, base=10)
             server = ctx.bot.get_guild(server_id)
             if not server:
-                raise commands.BadArgument(f"Server `{argument}` not found.")
+                raise commands.BadArgument(f"Server `{await prettify(ctx, argument)}` not found.")
             return server
         else:
             server = discord.utils.find(
                 lambda s: argument.lower() in str(s.name).lower(), ctx.bot.guilds
             )
             if not server:
-                raise commands.BadArgument(f"Server `{argument}` not found.")
+                raise commands.BadArgument(f"Server `{await prettify(ctx, argument)}` not found.")
             return server
 
 
@@ -326,14 +334,16 @@ class BannedMember(commands.Converter):
                 return await ctx.guild.fetch_ban(discord.Object(id=member_id))
             except discord.NotFound:
                 raise commands.BadArgument(
-                    "This member has not been banned before."
+                    f"Member {await prettify(ctx, argument)} has not been previously banned."
                 ) from None
 
         ban_list = await ctx.guild.bans()
         entity = discord.utils.find(lambda u: str(u.user) == argument, ban_list)
 
         if entity is None:
-            raise commands.BadArgument("This member has not been banned before.")
+            raise commands.BadArgument(
+                f"Member {await prettify(ctx, argument)} has not been previously banned."
+            )
         return entity
 
 

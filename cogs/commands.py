@@ -1,5 +1,6 @@
 import asyncio
 import discord
+import traceback
 
 from datetime import datetime
 from discord.ext import commands, menus
@@ -585,8 +586,8 @@ class Commands(commands.Cog):
     )
     async def brief(self, ctx, command: converters.DiscordCommand):
         """
-        Usage: -brief <command>
-        Aliases: -shortdocs, -shortdoc
+        Usage: {0}brief <command>
+        Aliases: {0}shortdocs, {0}shortdoc
         Output:
             The short description of the passed command
         """
@@ -602,7 +603,8 @@ class Commands(commands.Cog):
     )
     async def canrun(self, ctx, command: converters.DiscordCommand):
         """
-        Usage: -canrun <command>
+        Usage: {0}canrun <command>
+        Alias: {0}checker
         Output:
             Tells you whether or not you have
             permission to run a command
@@ -618,7 +620,8 @@ class Commands(commands.Cog):
     )
     async def docstring(self, ctx, command: converters.DiscordCommand):
         """
-        Usage: -docstring <command>
+        Usage: {0}docstring <command>
+        Alias: {0}helpstr <command>
         Output:
             The long description of the passed command
         """
@@ -634,27 +637,13 @@ class Commands(commands.Cog):
     )
     async def usage(self, ctx, command: converters.DiscordCommand):
         """
-        Usage: -usage <command>
-        Aliases: -signature, -usage
+        Usage: {0}usage <command>
+        Aliases: {0}signature, {0}usage
         Output:
             The usage of a command
         """
         await ctx.usage(command.signature, command)
 
-    @decorators.command(
-        brief="Show permissions to run a command.",
-        aliases=["requiredperms", "requiredpermissions"],
-        implemented="2021-05-05 04:13:51.523561",
-        updated="2021-05-05 04:13:51.523561",
-    )
-    async def reqperms(self, ctx, command: converters.DiscordCommand):
-        if command.permissions:
-            perm_list = [x.title().replace("_", " ").replace("Tts", "TTS") for x in command.permissions]
-            await ctx.send_or_reply(
-                f"The command `{command}` requires the permissions: `{', '.join(perm_list)}`"
-            )
-        else:
-            await ctx.success(f"No permissions are required for `{command}`")
 
     @decorators.command(
         brief="Show when a command was first made.",
@@ -663,6 +652,13 @@ class Commands(commands.Cog):
         updated="2021-05-05 04:09:30.395495",
     )
     async def updated(self, ctx, command: converters.DiscordCommand):
+        """
+        Usage: {0}updated <command>
+        Alias: {0}changed
+        Output:
+            Show exactly when a command
+            was last updated by the owner.
+        """
         stopwatch = self.bot.emote_dict["stopwatch"]
         if command.updated:
             await ctx.send_or_reply(
@@ -678,6 +674,13 @@ class Commands(commands.Cog):
         updated="2021-05-05 04:09:30.395495",
     )
     async def made(self, ctx, command: converters.DiscordCommand):
+        """
+        Usage: {0}made <command>
+        Alias: {0}implemented
+        Output:
+            Show exactly when a command
+            was first added to the bot.
+        """
         stopwatch = self.bot.emote_dict["stopwatch"]
         if command.updated:
             await ctx.send_or_reply(
@@ -695,6 +698,13 @@ class Commands(commands.Cog):
         updated="2021-05-05 04:09:30.395495",
     )
     async def writer(self, ctx, command: converters.DiscordCommand):
+        """
+        Usage: {0}writer <command>
+        Alias: {0}whowrote <command>
+        Output:
+            Show the developer who created
+            a specific command.
+        """
         heart = self.bot.emote_dict["heart"]
         writer = f"{self.bot.get_user(command.writer)} ({command.writer})"
         await ctx.send_or_reply(
@@ -715,6 +725,8 @@ class Commands(commands.Cog):
             Specific command information
         """
         writer = f"{self.bot.get_user(command.writer)} [{command.writer}]"
+        uperms = await self.required_permissions(command, "")
+        bperms = await self.required_permissions(command)
         query = """
                 SELECT (COUNT(*), MAX(timestamp))
                 FROM commands
@@ -732,12 +744,18 @@ class Commands(commands.Cog):
         collection.append({"Usage": f"{ctx.prefix}{command.qualified_name} {command.signature}"})
         collection.append({"Status": f"{'Enabled' if command.enabled else 'Disabled'}"})
         collection.append({"Hidden": command.hidden})
-        if hasattr(command, "permissions"):
-            perms = ', '.join(command.permissions) if command.permissions else "No permissions required"
-            collection.append({"Permissions": perms})
-        if hasattr(command, "botperms"):
-            botperms = ', '.join(command.botperms) if command.botperms else "No bot permissions required"
-            collection.append({"Bot Permissions": botperms})
+        if uperms:
+            pretty_uperms = [x.title().replace("_", " ").replace("Tts", "TTS") for x in uperms]
+            userperms = ', '.join(pretty_uperms)
+        else:
+            userperms = "No user permissions required."
+        collection.append({"Permissions": userperms})
+        if bperms:
+            pretty_bperms = [x.title().replace("_", " ").replace("Tts", "TTS") for x in bperms]
+            botperms = ', '.join(pretty_bperms)
+        else:
+            botperms = "No bot permissions required."
+        collection.append({"Bot Permissions": botperms})
         if hasattr(command, "implemented"):
             implemented = utils.format_time(datetime.strptime(command.implemented, "%Y-%m-%d %H:%M:%S.%f")) if command.implemented else "Not documented"
             collection.append({"Implemented": implemented})
@@ -760,3 +778,136 @@ class Commands(commands.Cog):
             await p.start(ctx)
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
+
+
+    @decorators.command(
+        aliases=['dmonly', 'serveronly','guildonly'],
+        brief="Show where a command can be run.",
+        implemented="2021-05-06 03:00:02.824483",
+        updated="2021-05-06 04:31:04.798398",
+    )
+    async def where(self, ctx, command: converters.DiscordCommand):
+        """
+        Usage: {0}where <command>
+        Aliases:
+            {0}dmonly
+            {0}guildonly
+            {0}serveronly
+        Output:
+            Show where a command can be run.
+            Can either be exclusive to servers,
+            restricted to bot-user DMs only, 
+            or available in both.
+        """
+        checks = []
+        for x in command.checks:
+            checks.append(str(x.__qualname__).split('.')[0])
+        if "dm_only" in checks:
+            msg = f"The command `{command}` can only be run in direct messages."
+        elif "guild_only" in checks:
+            msg = f"The command `{command}` can only be run within servers."
+        else:
+            msg = f'The command `{command}` can be run in servers and in direct messages.'
+        await ctx.success(msg)
+
+
+    @decorators.command(
+        aliases=['bothasperms', 'bothaspermissions','botpermissions'],
+        brief="Check if the bot can run a command.",
+        implemented="2021-05-06 03:08:59.775868",
+        updated="2021-05-06 04:32:54.549795",
+    )
+    async def botperms(self, ctx, command: converters.DiscordCommand):
+        """
+        Usage: {0}botperms <command>
+        Aliases:
+            {0}bothasperms,
+            {0}botpermissions,
+            {0}bothaspermissions
+        Output:
+            Check which permissions the bot
+            requires to run that command.
+        Notes:
+            The emote will signify whether or not the bot
+            has the permissions needed to run that command.
+        """
+        perms = await self.required_permissions(command, "")
+        if perms:
+            if not ctx.guild:
+                emote = self.bot.emote_dict['info']
+            else:
+                channel_perms = [x[0] for x in ctx.channel.permissions_for(ctx.author) if x[1] is True]
+                guild_perms = [x[0] for x in ctx.author.guild_permissions if x[1] is True]
+                userperms = guild_perms + channel_perms
+                if all([x in userperms for x in perms]):
+                    emote = self.bot.emote_dict['success']
+                else:
+                    emote = self.bot.emote_dict['failed']
+            pretty_perms = [x.title().replace("_", " ").replace("Tts", "TTS") for x in perms]
+            finalized = ', '.join(pretty_perms)
+            return await ctx.send_or_reply(
+                f"{emote} The command `{command}` requires me to have the permission{'' if len(pretty_perms) == 1 else 's'}: `{finalized}`"
+            )
+        else:
+            return await ctx.success(f"I require no permissions to run the command `{command}`")
+
+    @decorators.command(
+        aliases=['userperms','userhasperms','authorhaspermissions','authorhasperms','userhaspermissions'],
+        brief="Check if you can run a command.",
+        implemented="2021-05-06 03:33:53.038375",
+        updated="2021-05-06 04:38:47.396955",
+    )
+    async def reqperms(self, ctx, command: converters.DiscordCommand):
+        """
+        Usage: {0}authorperms <command>
+        Aliases:
+            {0}userperms,
+            {0}userhasperms,
+            {0}requiredperms,
+            {0}userhaspermissions,
+            {0}requiredpermissions
+        Output:
+            Check which permissions the command
+            user requires to run that command.
+        Notes:
+            The emote will signify whether or not you
+            have permission to run that command.
+        """
+        perms = await self.required_permissions(command, "")
+        if perms:
+            if not ctx.guild:
+                emote = self.bot.emote_dict['info']
+            else:
+                channel_perms = [x[0] for x in ctx.channel.permissions_for(ctx.author) if x[1] is True]
+                guild_perms = [x[0] for x in ctx.author.guild_permissions if x[1] is True]
+                userperms = guild_perms + channel_perms
+                if all([x in userperms for x in perms]):
+                    emote = self.bot.emote_dict['success']
+                else:
+                    emote = self.bot.emote_dict['failed']
+            pretty_perms = [x.title().replace("_", " ").replace("Tts", "TTS") for x in perms]
+            finalized = ', '.join(pretty_perms)
+            return await ctx.send_or_reply(
+                f"{emote} The command `{command}` requires you to have the permission{'' if len(pretty_perms) == 1 else 's'}: `{finalized}`"
+            )
+        else:
+            return await ctx.success(f"You require no permissions to run the command `{command}`")
+
+
+    async def required_permissions(self, command, bot_or_author = "bot_"):
+        checks = [x for x in command.checks]
+        perms = []
+        # Thanks Stella#2000
+        for check in checks:
+            if str(check.__qualname__).split('.')[0] == bot_or_author + "has_perms":
+                try:
+                    await check(0) # This would raise an error, because `0` is passed as ctx
+                except Exception as e:
+                    frames = [*traceback.walk_tb(e.__traceback__)] # Iterate through the generator
+                    last_trace = frames[-1] # get the last trace
+                    frame = last_trace[0] # get the first element to get the trace
+                    for x in frame.f_locals['perms']:
+                        perms.append(x)
+        if perms:
+            return perms
+        return

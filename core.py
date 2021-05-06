@@ -114,6 +114,17 @@ def get_prefix(bot, msg):
     base_and_spaces = [str(x) + " " for x in base] + base
     return base_and_spaces
 
+def get_pretty_prefixes(bot, msg):
+    """
+    Basically the same but don't return aliases
+    """
+    user_id = bot.user.id
+    base = [f"<@!{user_id}> ", f"<@{user_id}> "]
+    if msg.guild is None:
+        base.append(constants.prefix)
+    else:
+        base.extend(bot.prefixes.get(msg.guild.id, [constants.prefix]))
+    return base
 
 # Main bot class. Heart of the application
 class Snowbot(commands.AutoShardedBot):
@@ -654,7 +665,7 @@ class Snowbot(commands.AutoShardedBot):
         context = await super().get_context(message, cls=cx.BotContext)
         return context
 
-    def get_guild_prefixes(self, guild, *, local_inject=get_prefix):
+    def get_guild_prefixes(self, guild, *, local_inject=get_pretty_prefixes):
         proxy_msg = discord.Object(id=0)
         proxy_msg.guild = guild
         return local_inject(self, proxy_msg)
