@@ -3,6 +3,7 @@ import os
 import sys
 import time
 import codecs
+from discord.ext.commands.core import check
 import psutil
 import struct
 import asyncio
@@ -17,8 +18,12 @@ from discord import __version__ as dv
 from discord.ext import commands, menus
 from PIL import Image, ImageDraw, ImageFont
 
-from utilities import converters, pagination, speedtest, utils
+from utilities import utils
+from utilities import checks
+from utilities import speedtest
+from utilities import converters
 from utilities import decorators
+from utilities import pagination
 
 
 def setup(bot):
@@ -47,11 +52,14 @@ class Info(commands.Cog):
     @decorators.command(
         aliases=["info", "bot", "botstats", "botinfo"],
         brief="Display information about the bot.",
+        implemented="2021-03-15 22:27:29.973811",
+        updated="2021-05-06 00:06:19.096095"
     )
+    @checks.has_perms()
     async def about(self, ctx):
         """
-        Usage: -about
-        Aliases: -info, -bot, -botstats, botinfo
+        Usage: {0}about
+        Aliases: {0}info, {0}bot, {0}botstats, {0}botinfo
         Output: Version info and bot stats
         """
         msg = await ctx.send_or_reply(content=f"**{self.bot.emote_dict['loading']} Collecting Bot Info...**")
@@ -127,10 +135,17 @@ class Info(commands.Cog):
             embed=embed,
         )
 
-    @decorators.command(brief="Check if the bot is rate limited")
-    async def is_ratelimited(self, ctx):
+    @decorators.command(
+        aliases=['isratelimited'],
+        brief="Check if the bot is rate limited",
+        hidden=True,
+        implemented="2021-04-25 17:30:11.328279",
+        updated="2021-05-06 00:18:04.665898",
+    )
+    async def ratelimited(self, ctx):
         """
-        Usage: -is_ratelimited
+        Usage: {0}ratelimited
+        Alias: {0}isratelimited
         Output:
             Boolean value stating whether
             or not the bot is rate-limited
@@ -141,15 +156,16 @@ class Info(commands.Cog):
         )
 
     @decorators.command(
-        brief="Send a bugreport to the developer.",
         aliases=["reportbug", "reportissue", "issuereport"],
+        brief="Send a bugreport to the developer.",
+        implemented="2021-03-26 19:10:10.345853",
     )
     @commands.cooldown(2, 60, commands.BucketType.user)
-    async def bugreport(self, ctx, *, bug: str = None):
+    async def bugreport(self, ctx, *, bug):
         """
-        Usage:    -bugreport <report>
-        Aliases:  -issuereport, -reportbug, -reportissue
-        Examples: -bugreport Hello! I found a bug with Snowbot
+        Usage:    {0}bugreport <report>
+        Aliases:  {0}issuereport, {0}reportbug, {0}reportissue
+        Examples: {0}bugreport Hello! I found a bug with Snowbot
         Output:   Confirmation that your bug report has been sent.
         Notes:
             Do not hesitate to use this command,
@@ -157,12 +173,6 @@ class Info(commands.Cog):
             that the developer may easily see the issue and
             correct it as soon as possible.
         """
-        if bug is None:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}bugreport <bug>`",
-            )
-
-        owner = discord.utils.get(self.bot.get_all_members(), id=self.bot.hecate)
         author = ctx.message.author
         if ctx.guild:
             server = ctx.message.guild
@@ -174,7 +184,7 @@ class Info(commands.Cog):
         )
         message = sender + bug
         try:
-            await owner.send(message)
+            await self.bot.hecate.send(message)
         except discord.errors.InvalidArgument:
             await ctx.send_or_reply(
                 "I cannot send your bug report, I'm unable to find my owner."
@@ -196,9 +206,9 @@ class Info(commands.Cog):
     @commands.cooldown(2, 60, commands.BucketType.user)
     async def suggest(self, ctx, *, suggestion: str = None):
         """
-        Usage:    -suggest <report>
-        Aliases:  -suggestion
-        Examples: -suggest Hello! You should add this feature...
+        Usage:    {0}suggest <report>
+        Alias:  {0}suggestion
+        Examples: {0}suggest Hello! You should add this feature...
         Output:   Confirmation that your suggestion has been sent.
         Notes:
             Do not hesitate to use this command,
@@ -209,7 +219,6 @@ class Info(commands.Cog):
             return await ctx.send_or_reply(
                 content=f"Usage `{ctx.prefix}suggest <suggestion>`",
             )
-        owner = discord.utils.get(self.bot.get_all_members(), id=self.bot.hecate)
         author = ctx.author
         if ctx.guild:
             server = ctx.guild
@@ -221,7 +230,7 @@ class Info(commands.Cog):
         )
         message = sender + suggestion
         try:
-            await owner.send(message)
+            await self.bot.hecate.send(message)
         except discord.errors.InvalidArgument:
             await ctx.send_or_reply(content="I cannot send your message")
         except discord.errors.HTTPException:
