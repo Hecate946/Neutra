@@ -516,7 +516,10 @@ class Mod(commands.Cog):
     ## Ban Commands ##
     ##################
 
-    @decorators.command(brief="Ban users from the server.")
+    @decorators.command(
+        brief="Ban users from the server.",
+        permissions=["ban_members"],
+    )
     @commands.guild_only()
     @checks.bot_has_perms(ban_members=True)
     @checks.has_perms(ban_members=True)

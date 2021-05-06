@@ -1,6 +1,7 @@
 from re import L
 import discord
 from discord.ext import commands
+from discord.ext.commands import bot
 
 from settings import constants
 
@@ -39,19 +40,22 @@ async def check_permissions(ctx, perms, *, check=all):
     )
 
 
+
 async def check_bot_permissions(ctx, perms, *, check=all):
     """ Checks if author has permissions to a permission """
-
-    resolved = ctx.guild.me.guild_permissions
-    guild_perm_checker = check(
-        getattr(resolved, name, None) == value for name, value in perms.items()
-    )
-    if guild_perm_checker is False:
-        # Try to see if the user has channel permissions that override
-        resolved = ctx.channel.permissions_for(ctx.guild.me)
-    return check(
-        getattr(resolved, name, None) == value for name, value in perms.items()
-    )
+    if ctx.guild:
+        resolved = ctx.guild.me.guild_permissions
+        guild_perm_checker = check(
+            getattr(resolved, name, None) == value for name, value in perms.items()
+        )
+        if guild_perm_checker is False:
+            # Try to see if the user has channel permissions that override
+            resolved = ctx.channel.permissions_for(ctx.guild.me)
+        return check(
+            getattr(resolved, name, None) == value for name, value in perms.items()
+        )
+    else:
+        return True
 
 
 def has_perms(*, check=all, **perms):
@@ -77,8 +81,16 @@ def bot_has_perms(*, check=all, **perms):
 
     async def pred(ctx):
         result = await check_bot_permissions(ctx, perms, check=check)
-        perm_list = [x.title().replace("_", " ").replace("Tts", "TTS") for x in perms]
-        if result is False:
+        if result is False: # We know its a guild because permissions failed in check_bot_permissions()
+            guild_perms = [x[0] for x in ctx.guild.me.guild_permissions if x[1] is True]
+            channel_perms = [x[0] for x in ctx.channel.permissions_for(ctx.guild.me) if x[1] is True]
+            botperms = guild_perms + channel_perms
+            perms_needed = []
+            for x in perms:
+                if not x in botperms:
+                    perms_needed.append(x)
+
+            perm_list = [x.title().replace("_", " ").replace("Tts", "TTS") for x in perms_needed]
             raise commands.BadArgument(
                 message=f"I require the following permission{'' if len(perm_list) == 1 else 's'}: `{', '.join(perm_list)}`"
             )

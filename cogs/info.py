@@ -55,7 +55,7 @@ class Info(commands.Cog):
         implemented="2021-03-15 22:27:29.973811",
         updated="2021-05-06 00:06:19.096095"
     )
-    @checks.has_perms()
+    @checks.bot_has_perms(embed_links=True)
     async def about(self, ctx):
         """
         Usage: {0}about
@@ -190,13 +190,16 @@ class Info(commands.Cog):
                 "I cannot send your bug report, I'm unable to find my owner."
             )
         except discord.errors.HTTPException:
-            await ctx.send_or_reply(content="Your bug report is too long.")
+            await ctx.fail("Your bug report is too long.")
         except Exception:
-            await ctx.send_or_reply(
-                content="I'm unable to deliver your bug report. Sorry.",
-            )
+            await ctx.fail("I'm currently unable to deliver your bug report.")
         else:
-            await ctx.send_or_reply(
+            if ctx.guild:
+                if ctx.channel.permissions_for(ctx.guild.me):
+                    await ctx.react(self.bot.emote_dict['letter'])
+            else:
+                await ctx.react(self.bot.emote_dict['letter'])
+            await ctx.success(
                 content="Your bug report has been sent.",
             )
 
@@ -234,14 +237,18 @@ class Info(commands.Cog):
         except discord.errors.InvalidArgument:
             await ctx.send_or_reply(content="I cannot send your message")
         except discord.errors.HTTPException:
-            await ctx.send_or_reply(content="Your message is too long.")
-        except Exception as e:
-            await ctx.send_or_reply(
-                content="I failed to send your message.",
-            )
-            print(e)
+            await ctx.fail("Your message is too long.")
+        except Exception:
+            await ctx.fail("I'm currently unable to deliver your message.")
         else:
-            await ctx.send_or_reply(content="Your message has been sent.")
+            if ctx.guild:
+                if ctx.channel.permissions_for(ctx.guild.me):
+                    await ctx.react(self.bot.emote_dict['letter'])
+            else:
+                await ctx.react(self.bot.emote_dict['letter'])
+            await ctx.success(
+                content="Your message has been sent.",
+            )
 
     @decorators.command(brief="Show the bot's uptime.", aliases=["runtime"])
     async def uptime(self, ctx):
@@ -250,15 +257,16 @@ class Info(commands.Cog):
         Alias: -runtime
         Output: Time since last boot.
         """
+        uptime = utils.time_between(self.bot.starttime, int(time.time()))
         await ctx.send_or_reply(
-            f"{self.bot.emote_dict['stopwatch']} I've been running for `{utils.time_between(self.bot.starttime, int(time.time()))}`"
+            f"{self.bot.emote_dict['stopwatch']} I've been running for `{uptime}`"
         )
 
     @decorators.command(
         brief="Bot network speed.",
         aliases=["speedtest", "network", "wifi", "download", "upload"],
     )
-    @commands.cooldown(1, 30, commands.BucketType.guild)
+    @commands.cooldown(1, 60, commands.BucketType.guild)
     async def speed(self, ctx):
         """
         Usage: -speed
@@ -459,12 +467,17 @@ class Info(commands.Cog):
         await message.edit(content=msg)
 
     @decorators.command(
-        brief="Show some info on the bot's purpose.", aliases=["boss", "botowner"]
+        aliases=["purpose"],
+        brief="Show some info on the bot's purpose.",
+        botperms=["embed_links"],
+        implemented="2021-03-15 19:38:03.463155",
+        updated="2021-05-06 01:12:57.626085",
     )
+    @checks.bot_has_perms(embed_links=True)
     async def overview(self, ctx):
         """
-        Usage:  -overview
-        Alias:  -boss, botowner
+        Usage:  {0}overview
+        Alias:  {0}purpose
         Output: Me and my purpose
         """
 
@@ -545,9 +558,11 @@ class Info(commands.Cog):
     @decorators.command(
         aliases=["listcogs"],
         brief="List all my cogs in an embed.",
+        botperms=["embed_links"],
         implemented="2021-05-05 19:01:15.387930",
-        updated="2021-05-05 19:01:15.387930"
+        updated="2021-05-05 19:01:15.387930",
     )
+    @checks.bot_has_perms(embed_links=True)
     async def cogs(self, ctx):
         """
         Usage: -cogs
@@ -584,27 +599,38 @@ class Info(commands.Cog):
         await self.bot.get_command("oauth").__call__(ctx)
 
     @decorators.command(
-        brief="Join my support server!", aliases=["sup", "assistance", "assist"]
+        aliases=["sup", "assistance", "assist"],
+        brief="Join my support server!",
+        implemented="2021-04-12 23:31:35.165019",
+        updated="2021-05-06 01:24:02.569676"
     )
     async def support(self, ctx):
         """
-        Usage: -support
-        Aliases: -sup, -assist, -assistance
+        Usage: {0}support
+        Aliases: {0}sup, {0}assist, {0}assistance
         Output: An invite link to my support server
         """
-        await ctx.send_or_reply(
-            f"**{ctx.author.name}**, use this URL to join my support server\n{self.bot.constants.support}"
-        )
+        await ctx.reply(self.bot.constants.support)
 
-    @decorators.command(brief="Shows all users I'm connected to.")
+    @decorators.command(
+        aliases=['userstats', 'usercount'],
+        brief="Show users I'm connected to.",
+        botperms=["embed_links"],
+        implemented="2021-03-23 04:20:58.938991",
+        updated="2021-05-06 01:30:32.347076",
+    )
+    @checks.bot_has_perms(embed_links=True)
     async def users(self, ctx):
         """
-        Usage: -users
-        Output: Detailed information on my user stats
+        Usage: {0}users
+        Aliases: {0}userstats, {0}usercount
+        Output:
+            Shows users and bots I'm connected to and
+            percentages of unique and online members.
         """
         async with ctx.channel.typing():
             msg = await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['loading']} **Collecting User Statistics**",
+                content=f"{self.bot.emote_dict['loading']} **Collecting User Stats...**",
             )
             users = [x for x in self.bot.get_all_members() if not x.bot]
             users_online = [x for x in users if x.status != discord.Status.offline]
@@ -653,20 +679,27 @@ class Info(commands.Cog):
             )
             await msg.edit(content=None, embed=e)
 
-    @decorators.command(brief="Servers you and the bot share.")
-    @commands.guild_only()
-    async def sharedservers(self, ctx, *, member: converters.DiscordUser = None):
+    @decorators.command(
+        aliases=['shared'],
+        brief="Show servers shared with the bot.",
+        implemented="2021-03-16 18:59:54.146823",
+        updated="2021-05-06 01:30:32.347076",
+    )
+    async def sharedservers(self, ctx, *, user: converters.DiscordUser = None):
         """
-        Usage: -sharedservers [member]
-        Output: The servers that the passed member share with the bot
+        Usage: {0}sharedservers [user]
+        Alias: {0}shared
+        Output:
+            Counts the servers in common between
+            the user passed and the bot.
         Notes:
-            Will default to youself if no member is passed
+            Will default to youself if no user is passed
         """
 
-        if member is None:
-            member = ctx.author
+        if user is None:
+            user = ctx.author
 
-        if member.id == self.bot.user.id:
+        if user.id == self.bot.user.id:
             return await ctx.send_or_reply(
                 "I'm on **{:,}** server{}. ".format(
                     len(self.bot.guilds), "" if len(self.bot.guilds) == 1 else "s"
@@ -676,12 +709,12 @@ class Info(commands.Cog):
         count = 0
         for guild in self.bot.guilds:
             for mem in guild.members:
-                if mem.id == member.id:
+                if mem.id == user.id:
                     count += 1
-        if ctx.author.id == member.id:
+        if ctx.author.id == user.id:
             targ = "You share"
         else:
-            targ = "**{}** shares".format(member.display_name)
+            targ = "**{}** shares".format(user.display_name)
 
         await ctx.send_or_reply(
             "{} **{:,}** server{} with me.".format(
@@ -729,8 +762,13 @@ class Info(commands.Cog):
             await ctx.send_or_reply(str(e))
 
     @decorators.command(
-        aliases=["code", "cloc", "codeinfo"], brief="Show sourcecode statistics."
+        aliases=["code", "cloc", "codeinfo"],
+        brief="Show sourcecode statistics.",
+        botperms=["embed_links"],
+        implemented="2021-03-22 08:19:35.838365",
+        updated="2021-05-06 01:21:46.580294",
     )
+    @checks.bot_has_perms(embed_links=True)
     async def lines(self, ctx):
         """
         Usage: {0}lines
@@ -862,14 +900,23 @@ class Info(commands.Cog):
 
 
     @decorators.command(
+        aliases=['badmins'],
         brief="Show the bot's admins.",
+        botperms=["embed_links", "external_emojis", "add_reactions"],
         implemented="2021-04-02 21:37:49.068681",
         updated="2021-05-05 19:08:47.761913",
+    )
+    @checks.bot_has_perms(
+        embed_links=True,
+        add_reactions=True,
+        external_emojis=True,
     )
     async def botadmins(self, ctx):
         """
         Usage: {0}botadmins
-        Output: An embed of all my current admins
+        Alias: {0}badmins
+        Output:
+            An embed of all the current bot admins
         """
         our_list = []
         for user_id in self.bot.constants.admins:
@@ -892,15 +939,23 @@ class Info(commands.Cog):
             await ctx.send_or_reply(e)
 
     @decorators.command(
-        brief="Show the bot's owners.",
         aliases=["owners"],
-        updated="2021-05-05 19:08:47.761913"
+        brief="Show the bot's owners.",
+        botperms=["embed_links", "external_emojis", "add_reactions"],
+        implemented="2021-04-12 06:23:15.545363",
+        updated="2021-05-05 19:08:47.761913",
+    )
+    @checks.bot_has_perms(
+        embed_links=True,
+        add_reactions=True,
+        external_emojis=True,
     )
     async def botowners(self, ctx):
         """
         Usage: {0}botowners
         Alias: {0}owners
-        Output: An embed of all my current owners
+        Output:
+            An embed of the bot's owners
         """
         our_list = []
         for user_id in self.bot.constants.owners:
@@ -925,8 +980,13 @@ class Info(commands.Cog):
     @decorators.command(
         aliases=[r"%uptime", "percentuptime"],
         brief="Show a graph of uptime stats",
+        botperms=["attach_files", "embed_links"],
         implemented="2021-04-28 00:34:35.847886",
-        updated="2021-05-05 19:23:39.306805"
+        updated="2021-05-05 19:23:39.306805",
+    )
+    @checks.bot_has_perms(
+        attach_files=True,
+        embed_links=True,
     )
     async def pieuptime(self, ctx):
         """

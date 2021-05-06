@@ -46,10 +46,11 @@ async def error_info(ctx, failed):
 
 async def choose(ctx, search, options):
     option_list = utils.disambiguate(search, options, None, 5)
+    print(option_list)
     if not option_list[0]["ratio"] == 1:
         option_list = [x["result"] for x in option_list]
         index, message = await pagination.Picker(
-            embed_title="Select one of the 5 closest matches.",
+            embed_title="Select one of the closest matches.",
             list=option_list,
             ctx=ctx,
         ).pick(embed=True, syntax="prolog")

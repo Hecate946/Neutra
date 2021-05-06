@@ -102,15 +102,6 @@ traceback_logger_format = logging.Formatter(
 traceback_logger_handler.setFormatter(traceback_logger_format)
 
 
-# async def get_prefix(bot, message):
-#     if not message.guild:  # DM commands, only default
-#         prefixes = [constants.prefix]
-#     else:
-#         prefixes = bot.prefixes.get(message.guild.id, [constants.prefix])
-#     prefixes_and_spaces = [
-#         x + " " for x in prefixes
-#     ] + prefixes  # This adds spaces so that -help and - help will both work
-#     return commands.when_mentioned_or(*prefixes_and_spaces)(bot, message)
 def get_prefix(bot, msg):
     user_id = bot.user.id
     base = [f"<@!{user_id}> ", f"<@{user_id}> "]
@@ -118,6 +109,8 @@ def get_prefix(bot, msg):
         base.append(constants.prefix)
     else:
         base.extend(bot.prefixes.get(msg.guild.id, [constants.prefix]))
+    # This allows word prefixes to be used with a space between
+    # The bot will respond to bot 'hellohelp' and 'hello help'
     base_and_spaces = [str(x) + " " for x in base] + base
     return base_and_spaces
 
@@ -193,7 +186,7 @@ class Snowbot(commands.AutoShardedBot):
                     }
                     json.dump(stats, fp, indent=2)
             except AttributeError:
-                pass
+                pass # Killed the bot before it established attributes so ignore errors
 
     def setup(self):
         # Start the task loop
@@ -231,8 +224,8 @@ class Snowbot(commands.AutoShardedBot):
             )  # Runtime stats and status info for %uptime cmd.
         except AttributeError:
             # Probably because the process
-            # was killed before the bot
-            # was established. Let's silence errors.
+            # was killed before the bot attrs were set
+            # Let's silence errors.
             pass
 
         await super().close()
@@ -253,21 +246,20 @@ class Snowbot(commands.AutoShardedBot):
         return await self.query(url, "post", *args, **kwargs)
 
     def public_stats(self):
-        owner = discord.utils.get(self.get_all_members(), id=self.owner_ids[0])
         command_list = [
             x.name
             for x in self.commands
             if not x.hidden
             and x.cog.qualified_name.upper
-            not in self.bot.useless_cogs + self.bot.cog_exceptions
+            not in self.useless_cogs + self.cog_exceptions
         ]
         category_list = [
             x.qualified_name.capitalize()
             for x in [self.get_cog(cog) for cog in self.cogs]
             if x.qualified_name.upper()
-            not in self.bot.useless_cogs + self.bot.cog_exceptions
+            not in self.useless_cogs + self.cog_exceptions
         ]
-        return (owner, command_list, category_list)
+        return (self.hecate, command_list, category_list)
 
     async def process_commands(self, message):
         ctx = await self.get_context(message, cls=commands.Context)
@@ -454,13 +446,16 @@ class Snowbot(commands.AutoShardedBot):
     async def finalize_startup(self):
         # Delete all records of servers that kicked the bot
         await cleanup.cleanup_servers(self.guilds)
+        self.ready = True
 
         # loads all the cogs in ./cogs and prints them on sys.stdout
-        for cog in COGS:
-            self.load_extension(f"cogs.{cog}")
+        try:
+            for cog in COGS:
+                self.load_extension(f"cogs.{cog}")
+        except Exception as e:
+            print(utils.traceback_maker(e))
             # print(color(fore="#88ABB4", text=f"Loaded: {str(cog).upper()}"))
 
-        self.ready = True
         print(f"{self.user} ({self.user.id})")
 
         # See if we were rebooted by a command and send confirmation if we were.

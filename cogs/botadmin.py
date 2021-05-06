@@ -445,212 +445,6 @@ class Botadmin(commands.Cog):
 
         await ctx.send_or_reply(content="```yaml\n{}\n```".format(output))
 
-    @decorators.command(aliases=["guildinfo", "gi"], brief="Get stats on a bot server.")
-    async def guild(self, ctx, *, argument=None):
-        """
-        Usage: -guild
-        Alias: -guildinfo, -gi
-        Output:
-            Lists some info about the current or passed server
-        """
-        if argument is None:
-            return await ctx.usage("<guild>")
-        options = await converters.BotServer().convert(ctx, argument)
-        if isinstance(options, list):
-            selection = await helpers.choose(ctx, argument, options)
-            print(selection)
-            # if len(guild) > 1:
-            #     my_dict = {}
-            #     for x in guild:
-            #         guild = self.bot.get_guild(int(x))
-            #         my_dict[guild.id] = f"ID: {guild.id} Name: {guild.name}\n"
-            #     the_list = [my_dict[x] for x in my_dict]
-            #     index, message = await pagination.Picker(
-            #         embed_title="Multiple results. Please choose one.",
-            #         list=the_list,
-            #         ctx=ctx,
-            #     ).pick(embed=True, syntax="py")
-            #     if index < 0:
-            #         return await message.edit(
-            #             content=f"{self.bot.emote_dict['exclamation']} Server selection cancelled.",
-            #             embed=None,
-            #         )
-
-            #     key_list = list(my_dict.keys())
-            #     selection = key_list[index]
-
-            #     try:
-            #         guild = self.bot.get_guild(int(selection))
-            #     except Exception:
-            #         raise commands.BadArgument(f"Server `{guild}` not found.")
-            # else:
-            #     try:
-            #         guild = self.bot.get_guild(int(guild[0]))
-            #     except IndexError:
-            #         raise commands.BadArgument(f"Server `{guild}` not found.")
-        else:
-            guild = options
-        server_embed = discord.Embed(color=self.bot.constants.embed)
-        server_embed.title = guild.name
-
-        # Get localized user time
-        local_time = datetime.datetime.utcnow()
-        # local_time = UserTime.getUserTime(ctx.author, self.settings, guild.created_at)
-        time_str = "{}".format(local_time)
-
-        server_embed.description = "Created at {}".format(time_str)
-        online_members = 0
-        bot_member = 0
-        bot_online = 0
-        for member in guild.members:
-            if member.bot:
-                bot_member += 1
-                if not member.status == discord.Status.offline:
-                    bot_online += 1
-                continue
-            if not member.status == discord.Status.offline:
-                online_members += 1
-        # bot_percent = "{:,g}%".format((bot_member/len(guild.members))*100)
-        user_string = "{:,}/{:,} online ({:,g}%)".format(
-            online_members,
-            len(guild.members) - bot_member,
-            round((online_members / (len(guild.members) - bot_member) * 100), 2),
-        )
-        b_string = "bot" if bot_member == 1 else "bots"
-        user_string += "\n{:,}/{:,} {} online ({:,g}%)".format(
-            bot_online, bot_member, b_string, round((bot_online / bot_member) * 100, 2)
-        )
-        # server_embed.add_field(name="Members", value="{:,}/{:,} online ({:.2f}%)\n{:,} {} ({}%)".format(online_members, len(guild.members), bot_percent), inline=True)
-        server_embed.add_field(
-            name="Members ({:,} total)".format(len(guild.members)),
-            value=user_string,
-            inline=True,
-        )
-        server_embed.add_field(name="Roles", value=str(len(guild.roles)), inline=False)
-        chandesc = "{:,} text, {:,} voice".format(
-            len(guild.text_channels), len(guild.voice_channels)
-        )
-        server_embed.add_field(name="Channels", value=chandesc, inline=False)
-        server_embed.add_field(
-            name="Default Role", value=guild.default_role, inline=False
-        )
-        server_embed.add_field(
-            name="Owner",
-            value=guild.owner.name + "#" + guild.owner.discriminator,
-            inline=True,
-        )
-        server_embed.add_field(
-            name="AFK Channel", value=guild.afk_channel, inline=False
-        )
-        server_embed.add_field(
-            name="Verification", value=guild.verification_level, inline=False
-        )
-        server_embed.add_field(name="Voice Region", value=guild.region, inline=False)
-        server_embed.add_field(name="Considered Large", value=guild.large, inline=False)
-        # server_embed.add_field(name="Shard ID", value="{}/{}".format(guild.shard_id+1, self.bot.shard_count), inline=False)
-        server_embed.add_field(
-            name="Nitro Boosts",
-            value="{} (level {})".format(
-                guild.premium_subscription_count, guild.premium_tier
-            ),
-        )
-        # Find out where in our join position this server is
-        joinedList = []
-        popList = []
-        for g in self.bot.guilds:
-            joinedList.append({"ID": g.id, "Joined": g.me.joined_at})
-            popList.append({"ID": g.id, "Population": len(g.members)})
-
-        # sort the guilds by join date
-        joinedList = sorted(
-            joinedList,
-            key=lambda x: x["Joined"].timestamp() if x["Joined"] is not None else -1,
-        )
-        popList = sorted(popList, key=lambda x: x["Population"], reverse=True)
-
-        check_item = {"ID": guild.id, "Joined": guild.me.joined_at}
-        total = len(joinedList)
-        position = joinedList.index(check_item) + 1
-        server_embed.add_field(
-            name="Join Position",
-            value="{:,} of {:,}".format(position, total),
-            inline=True,
-        )
-
-        # Get our population position
-        check_item = {"ID": guild.id, "Population": len(guild.members)}
-        total = len(popList)
-        position = popList.index(check_item) + 1
-        server_embed.add_field(
-            name="Population Rank",
-            value="{:,} of {:,}".format(position, total),
-            inline=True,
-        )
-
-        emojitext = ""
-        emojifields = []
-        disabledemojis = 0
-        twitchemojis = 0
-        for i, emoji in enumerate(guild.emojis):
-            if not emoji.available:
-                disabledemojis += 1
-                continue
-            if emoji.managed:
-                twitchemojis += 1
-                continue
-            emojiMention = "<{}:{}:{}>".format(
-                "a" if emoji.animated else "", emoji.name, emoji.id
-            )
-            test = emojitext + emojiMention
-            if len(test) > 1024:
-                # TOOO BIIIIIIIIG
-                emojifields.append(emojitext)
-                emojitext = emojiMention
-            else:
-                emojitext = emojitext + emojiMention
-
-        if len(emojitext):
-            emojifields.append(emojitext)  # Add any leftovers
-        if twitchemojis:
-            emojifields.append("{:,} managed".format(twitchemojis))
-        if disabledemojis:
-            emojifields.append(
-                "{:,} unavailable".format(disabledemojis)
-            )  # Add the disabled if any
-
-        server_embed.set_thumbnail(
-            url=guild.icon_url if len(guild.icon_url) else ctx.author.default_avatar_url
-        )
-        server_embed.set_footer(text="Server ID: {}".format(guild.id))
-        # Let's send all the embeds we need finishing off with extra emojis as
-        # needed
-        for i, e in enumerate(emojifields):
-            name = (
-                "Disabled Emojis"
-                if e.lower().endswith("unavailable")
-                else "Twitch Emojis"
-                if e.lower().endswith("managed")
-                else "Emojis ({} of {})".format(i + 1, len(emojifields))
-            )
-            server_embed.add_field(name=name, value=e, inline=False)
-            if len(server_embed) > 6000:  # too big
-                server_embed.remove_field(len(server_embed.fields) - 1)
-                await ctx.send_or_reply(embed=server_embed)
-                server_embed = discord.Embed(color=self.bot.constants.embed)
-                server_embed.title = guild.name
-                server_embed.set_thumbnail(
-                    url=guild.icon_url
-                    if len(guild.icon_url)
-                    else ctx.author.default_avatar_url
-                )
-                server_embed.set_footer(text="Server ID: {}".format(guild.id))
-                server_embed.description = "Continued Emojis:"
-                server_embed.add_field(name=name, value=e, inline=False)
-        if len(server_embed.fields):
-            try:
-                await message.edit(embed=server_embed)
-            except BaseException:
-                await ctx.send_or_reply(embed=server_embed)
 
     @decorators.command(aliases=["ns"], brief="List all bot nicknames.")
     async def nickscan(self, ctx):
@@ -960,7 +754,7 @@ class Botadmin(commands.Cog):
     )
     async def _del(self, ctx, *, msg_id: int):
         """
-        Usage -del
+        Usage {0}del
         Output:
             Delete a specific message ID.
         """
@@ -997,3 +791,218 @@ class Botadmin(commands.Cog):
 
         
 
+
+    @decorators.command(
+        aliases=["guildinfo", "gi"],
+        brief="Get stats on a bot server.",
+        permissions=["bot_admin"],
+        implemented="2021-03-17 22:48:40.720122",
+        updated="2021-05-06 00:57:41.774846",
+    )
+    async def guild(self, ctx, *, argument=None):
+        """
+        Usage: -guild
+        Alias: -guildinfo, -gi
+        Output:
+            Lists some info about the current or passed server
+        Notes:
+            
+        """
+        if argument is None:
+            return await ctx.usage("<guild>")
+        options = await converters.BotServer().convert(ctx, argument)
+        if isinstance(options, list):
+            selection = await helpers.choose(ctx, argument, options)
+            print(selection)
+            # if len(guild) > 1:
+            #     my_dict = {}
+            #     for x in guild:
+            #         guild = self.bot.get_guild(int(x))
+            #         my_dict[guild.id] = f"ID: {guild.id} Name: {guild.name}\n"
+            #     the_list = [my_dict[x] for x in my_dict]
+            #     index, message = await pagination.Picker(
+            #         embed_title="Multiple results. Please choose one.",
+            #         list=the_list,
+            #         ctx=ctx,
+            #     ).pick(embed=True, syntax="py")
+            #     if index < 0:
+            #         return await message.edit(
+            #             content=f"{self.bot.emote_dict['exclamation']} Server selection cancelled.",
+            #             embed=None,
+            #         )
+
+            #     key_list = list(my_dict.keys())
+            #     selection = key_list[index]
+
+            #     try:
+            #         guild = self.bot.get_guild(int(selection))
+            #     except Exception:
+            #         raise commands.BadArgument(f"Server `{guild}` not found.")
+            # else:
+            #     try:
+            #         guild = self.bot.get_guild(int(guild[0]))
+            #     except IndexError:
+            #         raise commands.BadArgument(f"Server `{guild}` not found.")
+        else:
+            guild = options
+        server_embed = discord.Embed(color=self.bot.constants.embed)
+        server_embed.title = guild.name
+
+        # Get localized user time
+        local_time = datetime.datetime.utcnow()
+        # local_time = UserTime.getUserTime(ctx.author, self.settings, guild.created_at)
+        time_str = "{}".format(local_time)
+
+        server_embed.description = "Created at {}".format(time_str)
+        online_members = 0
+        bot_member = 0
+        bot_online = 0
+        for member in guild.members:
+            if member.bot:
+                bot_member += 1
+                if not member.status == discord.Status.offline:
+                    bot_online += 1
+                continue
+            if not member.status == discord.Status.offline:
+                online_members += 1
+        # bot_percent = "{:,g}%".format((bot_member/len(guild.members))*100)
+        user_string = "{:,}/{:,} online ({:,g}%)".format(
+            online_members,
+            len(guild.members) - bot_member,
+            round((online_members / (len(guild.members) - bot_member) * 100), 2),
+        )
+        b_string = "bot" if bot_member == 1 else "bots"
+        user_string += "\n{:,}/{:,} {} online ({:,g}%)".format(
+            bot_online, bot_member, b_string, round((bot_online / bot_member) * 100, 2)
+        )
+        # server_embed.add_field(name="Members", value="{:,}/{:,} online ({:.2f}%)\n{:,} {} ({}%)".format(online_members, len(guild.members), bot_percent), inline=True)
+        server_embed.add_field(
+            name="Members ({:,} total)".format(len(guild.members)),
+            value=user_string,
+            inline=True,
+        )
+        server_embed.add_field(name="Roles", value=str(len(guild.roles)), inline=False)
+        chandesc = "{:,} text, {:,} voice".format(
+            len(guild.text_channels), len(guild.voice_channels)
+        )
+        server_embed.add_field(name="Channels", value=chandesc, inline=False)
+        server_embed.add_field(
+            name="Default Role", value=guild.default_role, inline=False
+        )
+        server_embed.add_field(
+            name="Owner",
+            value=guild.owner.name + "#" + guild.owner.discriminator,
+            inline=True,
+        )
+        server_embed.add_field(
+            name="AFK Channel", value=guild.afk_channel, inline=False
+        )
+        server_embed.add_field(
+            name="Verification", value=guild.verification_level, inline=False
+        )
+        server_embed.add_field(name="Voice Region", value=guild.region, inline=False)
+        server_embed.add_field(name="Considered Large", value=guild.large, inline=False)
+        # server_embed.add_field(name="Shard ID", value="{}/{}".format(guild.shard_id+1, self.bot.shard_count), inline=False)
+        server_embed.add_field(
+            name="Nitro Boosts",
+            value="{} (level {})".format(
+                guild.premium_subscription_count, guild.premium_tier
+            ),
+        )
+        # Find out where in our join position this server is
+        joinedList = []
+        popList = []
+        for g in self.bot.guilds:
+            joinedList.append({"ID": g.id, "Joined": g.me.joined_at})
+            popList.append({"ID": g.id, "Population": len(g.members)})
+
+        # sort the guilds by join date
+        joinedList = sorted(
+            joinedList,
+            key=lambda x: x["Joined"].timestamp() if x["Joined"] is not None else -1,
+        )
+        popList = sorted(popList, key=lambda x: x["Population"], reverse=True)
+
+        check_item = {"ID": guild.id, "Joined": guild.me.joined_at}
+        total = len(joinedList)
+        position = joinedList.index(check_item) + 1
+        server_embed.add_field(
+            name="Join Position",
+            value="{:,} of {:,}".format(position, total),
+            inline=True,
+        )
+
+        # Get our population position
+        check_item = {"ID": guild.id, "Population": len(guild.members)}
+        total = len(popList)
+        position = popList.index(check_item) + 1
+        server_embed.add_field(
+            name="Population Rank",
+            value="{:,} of {:,}".format(position, total),
+            inline=True,
+        )
+
+        emojitext = ""
+        emojifields = []
+        disabledemojis = 0
+        twitchemojis = 0
+        for i, emoji in enumerate(guild.emojis):
+            if not emoji.available:
+                disabledemojis += 1
+                continue
+            if emoji.managed:
+                twitchemojis += 1
+                continue
+            emojiMention = "<{}:{}:{}>".format(
+                "a" if emoji.animated else "", emoji.name, emoji.id
+            )
+            test = emojitext + emojiMention
+            if len(test) > 1024:
+                # TOOO BIIIIIIIIG
+                emojifields.append(emojitext)
+                emojitext = emojiMention
+            else:
+                emojitext = emojitext + emojiMention
+
+        if len(emojitext):
+            emojifields.append(emojitext)  # Add any leftovers
+        if twitchemojis:
+            emojifields.append("{:,} managed".format(twitchemojis))
+        if disabledemojis:
+            emojifields.append(
+                "{:,} unavailable".format(disabledemojis)
+            )  # Add the disabled if any
+
+        server_embed.set_thumbnail(
+            url=guild.icon_url if len(guild.icon_url) else ctx.author.default_avatar_url
+        )
+        server_embed.set_footer(text="Server ID: {}".format(guild.id))
+        # Let's send all the embeds we need finishing off with extra emojis as
+        # needed
+        for i, e in enumerate(emojifields):
+            name = (
+                "Disabled Emojis"
+                if e.lower().endswith("unavailable")
+                else "Twitch Emojis"
+                if e.lower().endswith("managed")
+                else "Emojis ({} of {})".format(i + 1, len(emojifields))
+            )
+            server_embed.add_field(name=name, value=e, inline=False)
+            if len(server_embed) > 6000:  # too big
+                server_embed.remove_field(len(server_embed.fields) - 1)
+                await ctx.send_or_reply(embed=server_embed)
+                server_embed = discord.Embed(color=self.bot.constants.embed)
+                server_embed.title = guild.name
+                server_embed.set_thumbnail(
+                    url=guild.icon_url
+                    if len(guild.icon_url)
+                    else ctx.author.default_avatar_url
+                )
+                server_embed.set_footer(text="Server ID: {}".format(guild.id))
+                server_embed.description = "Continued Emojis:"
+                server_embed.add_field(name=name, value=e, inline=False)
+        if len(server_embed.fields):
+            try:
+                await message.edit(embed=server_embed)
+            except BaseException:
+                await ctx.send_or_reply(embed=server_embed)
