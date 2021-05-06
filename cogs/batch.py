@@ -403,7 +403,7 @@ class Batch(commands.Cog):
                     for x in upload_batch.attachments:
                         self.avatar_batch.append(
                             {
-                                "user_id": int(x.filename.split('.')[0]),
+                                "user_id": int(x.filename.split(".")[0]),
                                 "avatar_id": x.id,
                                 "unix": time.time(),
                             }
@@ -411,7 +411,6 @@ class Batch(commands.Cog):
                 except discord.errors.HTTPException:
                     pass
             self.to_upload.clear()
-
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()

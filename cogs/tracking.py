@@ -106,7 +106,6 @@ class Tracking(commands.Cog):
                 content=f"{self.bot.emote_dict['offline']} User{'' if len(mobile) == 1 else 's'} `{', '.join(mobile)}` {'is' if len(mobile) == 1 else 'are'} offline",
             )
 
-
     @decorators.command(
         brief="Show information on a user.",
         aliases=["rawuser", "lookup"],

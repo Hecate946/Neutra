@@ -327,7 +327,6 @@ class Time(commands.Cog):
             )
             self.stopwatches.pop(author.id, None)
 
-
     @decorators.command(
         aliases=["utctime", "utc"],
         brief="Show the current utc time.",
@@ -342,6 +341,4 @@ class Time(commands.Cog):
             datetime.datetime.utcnow()
             time format.
         """
-        await ctx.send_or_reply(
-            f"{self.bot.emote_dict['clock']} `{datetime.utcnow()}`"
-        )
+        await ctx.send_or_reply(f"{self.bot.emote_dict['clock']} `{datetime.utcnow()}`")

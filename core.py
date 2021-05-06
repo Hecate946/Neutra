@@ -112,6 +112,7 @@ def get_prefix(bot, msg):
     base_and_spaces = [str(x) + " " for x in base] + base
     return base_and_spaces
 
+
 def get_pretty_prefixes(bot, msg):
     """
     Basically the same but don't return aliases
@@ -123,6 +124,7 @@ def get_pretty_prefixes(bot, msg):
     else:
         base.extend(bot.prefixes.get(msg.guild.id, [constants.prefix]))
     return base
+
 
 # Main bot class. Heart of the application
 class Snowbot(commands.AutoShardedBot):
@@ -195,7 +197,7 @@ class Snowbot(commands.AutoShardedBot):
                     }
                     json.dump(stats, fp, indent=2)
             except AttributeError:
-                pass # Killed the bot before it established attributes so ignore errors
+                pass  # Killed the bot before it established attributes so ignore errors
 
     def setup(self):
         # Start the task loop
@@ -265,8 +267,7 @@ class Snowbot(commands.AutoShardedBot):
         category_list = [
             x.qualified_name.capitalize()
             for x in [self.get_cog(cog) for cog in self.cogs]
-            if x.qualified_name.upper()
-            not in self.useless_cogs + self.cog_exceptions
+            if x.qualified_name.upper() not in self.useless_cogs + self.cog_exceptions
         ]
         return (self.hecate, command_list, category_list)
 

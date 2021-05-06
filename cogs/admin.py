@@ -650,13 +650,12 @@ class Admin(commands.Cog):
             content=f"{self.bot.emote_dict['success']} Saved `{role.name}` as this server's mute role."
         )
 
-
     @decorators.command(
         aliases=["kill", "die"],
         brief="Have the bot leave the server.",
-        permissions=['administrator'],
+        permissions=["administrator"],
         implemented="2021-04-28 20:21:42.190256",
-        updated="2021-05-05 19:43:51.209242"
+        updated="2021-05-05 19:43:51.209242",
     )
     @commands.guild_only()
     @checks.has_perms(manage_guild=True)
@@ -1280,7 +1279,7 @@ class Admin(commands.Cog):
 
     @checks.has_perms(manage_guild=True)
     @decorators.command(
-        aliases=['clearprefixes', 'resetprefix','resetprefixes'],
+        aliases=["clearprefixes", "resetprefix", "resetprefixes"],
         brief="Clear all custom prefixes.",
         permissions=["manage_guild"],
         implemented="2021-05-03 09:14:59.219515",

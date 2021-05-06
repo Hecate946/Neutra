@@ -85,7 +85,6 @@ class BotContext(commands.Context):
     #     )
 
 
-
 class BotCommand(commands.Command):
     def __init__(self, func, **kwargs):
         super().__init__(func, **kwargs)
@@ -124,6 +123,7 @@ class BotCommand(commands.Command):
                     raise ValueError(
                         f"Command permissions must in the following list:\n{', '.join(sorted(valid_perms))}"
                     )
+
 
 class BotGroup(commands.Group):
     def __init__(self, func, **kwargs):

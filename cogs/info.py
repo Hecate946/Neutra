@@ -53,7 +53,7 @@ class Info(commands.Cog):
         aliases=["info", "bot", "botstats", "botinfo"],
         brief="Display information about the bot.",
         implemented="2021-03-15 22:27:29.973811",
-        updated="2021-05-06 00:06:19.096095"
+        updated="2021-05-06 00:06:19.096095",
     )
     @checks.bot_has_perms(embed_links=True)
     async def about(self, ctx):
@@ -62,7 +62,9 @@ class Info(commands.Cog):
         Aliases: {0}info, {0}bot, {0}botstats, {0}botinfo
         Output: Version info and bot stats
         """
-        msg = await ctx.send_or_reply(content=f"**{self.bot.emote_dict['loading']} Collecting Bot Info...**")
+        msg = await ctx.send_or_reply(
+            content=f"**{self.bot.emote_dict['loading']} Collecting Bot Info...**"
+        )
         version_query = """
                         SELECT version
                         FROM config
@@ -136,7 +138,7 @@ class Info(commands.Cog):
         )
 
     @decorators.command(
-        aliases=['isratelimited'],
+        aliases=["isratelimited"],
         brief="Check if the bot is rate limited",
         hidden=True,
         implemented="2021-04-25 17:30:11.328279",
@@ -196,9 +198,9 @@ class Info(commands.Cog):
         else:
             if ctx.guild:
                 if ctx.channel.permissions_for(ctx.guild.me):
-                    await ctx.react(self.bot.emote_dict['letter'])
+                    await ctx.react(self.bot.emote_dict["letter"])
             else:
-                await ctx.react(self.bot.emote_dict['letter'])
+                await ctx.react(self.bot.emote_dict["letter"])
             await ctx.success(
                 content="Your bug report has been sent.",
             )
@@ -243,9 +245,9 @@ class Info(commands.Cog):
         else:
             if ctx.guild:
                 if ctx.channel.permissions_for(ctx.guild.me):
-                    await ctx.react(self.bot.emote_dict['letter'])
+                    await ctx.react(self.bot.emote_dict["letter"])
             else:
-                await ctx.react(self.bot.emote_dict['letter'])
+                await ctx.react(self.bot.emote_dict["letter"])
             await ctx.success(
                 content="Your message has been sent.",
             )
@@ -602,7 +604,7 @@ class Info(commands.Cog):
         aliases=["sup", "assistance", "assist"],
         brief="Join my support server!",
         implemented="2021-04-12 23:31:35.165019",
-        updated="2021-05-06 01:24:02.569676"
+        updated="2021-05-06 01:24:02.569676",
     )
     async def support(self, ctx):
         """
@@ -613,7 +615,7 @@ class Info(commands.Cog):
         await ctx.reply(self.bot.constants.support)
 
     @decorators.command(
-        aliases=['userstats', 'usercount'],
+        aliases=["userstats", "usercount"],
         brief="Show users I'm connected to.",
         botperms=["embed_links"],
         implemented="2021-03-23 04:20:58.938991",
@@ -680,7 +682,7 @@ class Info(commands.Cog):
             await msg.edit(content=None, embed=e)
 
     @decorators.command(
-        aliases=['shared'],
+        aliases=["shared"],
         brief="Show servers shared with the bot.",
         implemented="2021-03-16 18:59:54.146823",
         updated="2021-05-06 01:30:32.347076",
@@ -843,10 +845,10 @@ class Info(commands.Cog):
             await ctx.send_or_reply(embed=em)
 
     @decorators.command(
-        aliases=['policy'],
+        aliases=["policy"],
         brief="View the privacy policy.",
         implemented="2021-04-26 17:22:59.340513",
-        updated="2021-05-05 22:15:27.364699"
+        updated="2021-05-05 22:15:27.364699",
     )
     async def privacy(self, ctx):
         """
@@ -858,7 +860,9 @@ class Info(commands.Cog):
         """
         with open("./data/txts/privacy.txt") as fp:
             privacy = fp.read()
-        policy = f"```fix\n{privacy.format(self.bot.user, self.bot.user.id, ctx.prefix)}```"
+        policy = (
+            f"```fix\n{privacy.format(self.bot.user, self.bot.user.id, ctx.prefix)}```"
+        )
         await ctx.send_or_reply(
             f"{self.bot.emote_dict['privacy']} **{self.bot.user}'s Privacy Policy**{policy}"
         )
@@ -898,9 +902,8 @@ class Info(commands.Cog):
         else:
             await ctx.success(content="Your request has been submitted.")
 
-
     @decorators.command(
-        aliases=['badmins'],
+        aliases=["badmins"],
         brief="Show the bot's admins.",
         botperms=["embed_links", "external_emojis", "add_reactions"],
         implemented="2021-04-02 21:37:49.068681",
@@ -975,7 +978,6 @@ class Info(commands.Cog):
             await p.start(ctx)
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
-
 
     @decorators.command(
         aliases=[r"%uptime", "percentuptime"],

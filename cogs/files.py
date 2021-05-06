@@ -135,7 +135,7 @@ class Files(commands.Cog):
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
     @decorators.command(
-        aliases=['dumpguilds','txtguilds','txtservers'],
+        aliases=["dumpguilds", "txtguilds", "txtservers"],
         brief="DMs you a list of my servers.",
         hidden=True,
         implemented="2021-04-09 02:05:49.278468",
@@ -194,7 +194,7 @@ class Files(commands.Cog):
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
     @decorators.command(
-        aliases=["serversettings","dumpserversettings"],
+        aliases=["serversettings", "dumpserversettings"],
         brief="DMs you a file of server settings.",
         implemented="2021-03-29 21:22:04.309922",
         updated="2021-05-06 16:08:45.057353",
@@ -255,7 +255,7 @@ class Files(commands.Cog):
         os.remove(settings_file)
 
     @decorators.command(
-        aliases=['txtroles','rolefile'],
+        aliases=["txtroles", "rolefile"],
         brief="DMs you a file of server roles.",
         implemented="2021-03-29 21:28:14.146367",
         updated="2021-05-06 16:15:01.162059",
@@ -369,7 +369,7 @@ class Files(commands.Cog):
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
     @decorators.command(
-        aliases=["dumpvc","dumpvcs"],
+        aliases=["dumpvc", "dumpvcs"],
         brief="DMs you a file of voice channels.",
         implemented="2021-04-08 18:03:17.759494",
         updated="2021-05-06 16:12:56.649004",
@@ -429,7 +429,7 @@ class Files(commands.Cog):
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
     @decorators.command(
-        aliases=["dumpcc","dumpccs"],
+        aliases=["dumpcc", "dumpccs"],
         brief="DMs you a file of voice channels.",
         implemented="2021-04-08 18:03:28.697338",
         updated="2021-05-06 16:17:04.697120",

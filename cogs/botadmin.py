@@ -445,7 +445,6 @@ class Botadmin(commands.Cog):
 
         await ctx.send_or_reply(content="```yaml\n{}\n```".format(output))
 
-
     @decorators.command(aliases=["ns"], brief="List all bot nicknames.")
     async def nickscan(self, ctx):
         """
@@ -779,18 +778,15 @@ class Botadmin(commands.Cog):
                     shared.append((guild.id, guild.name))
 
         width = max([len(str(x[0])) for x in shared])
-        formatted = '\n'.join([f'{str(x[0]).ljust(width)} : {x[1]}' for x in shared])
-        p = pagination.MainMenu(pagination.TextPageSource(formatted, prefix="```fix", max_size=500))
+        formatted = "\n".join([f"{str(x[0]).ljust(width)} : {x[1]}" for x in shared])
+        p = pagination.MainMenu(
+            pagination.TextPageSource(formatted, prefix="```fix", max_size=500)
+        )
         await ctx.send_or_reply(f"** I share {len(shared)} servers with `{user}`**")
         try:
             await p.start(ctx)
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
-
-        
-
-        
-
 
     @decorators.command(
         aliases=["guildinfo", "gi"],
@@ -806,7 +802,7 @@ class Botadmin(commands.Cog):
         Output:
             Lists some info about the current or passed server
         Notes:
-            
+
         """
         if argument is None:
             return await ctx.usage("<guild>")

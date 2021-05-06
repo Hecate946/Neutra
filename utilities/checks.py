@@ -40,7 +40,6 @@ async def check_permissions(ctx, perms, *, check=all):
     )
 
 
-
 async def check_bot_permissions(ctx, perms, *, check=all):
     """ Checks if author has permissions to a permission """
     if ctx.guild:
@@ -77,16 +76,22 @@ def has_perms(*, check=all, **perms):  # Decorator to check if a user has perms
 def bot_has_perms(*, check=all, **perms):  # Decorator to check if the bot has perms
     async def pred(ctx):
         result = await check_bot_permissions(ctx, perms, check=check)
-        if result is False: # We know its a guild because permissions failed in check_bot_permissions()
+        if (
+            result is False
+        ):  # We know its a guild because permissions failed in check_bot_permissions()
             guild_perms = [x[0] for x in ctx.guild.me.guild_permissions if x[1] is True]
-            channel_perms = [x[0] for x in ctx.channel.permissions_for(ctx.guild.me) if x[1] is True]
+            channel_perms = [
+                x[0] for x in ctx.channel.permissions_for(ctx.guild.me) if x[1] is True
+            ]
             botperms = guild_perms + channel_perms
             perms_needed = []
             for x in perms:
                 if not x in botperms:  # Only complain about the perms we don't have
                     perms_needed.append(x)
 
-            perm_list = [x.title().replace("_", " ").replace("Tts", "TTS") for x in perms_needed]
+            perm_list = [
+                x.title().replace("_", " ").replace("Tts", "TTS") for x in perms_needed
+            ]
             raise commands.BadArgument(
                 message=f"I require the following permission{'' if len(perm_list) == 1 else 's'}: `{', '.join(perm_list)}`"
             )
@@ -94,10 +99,13 @@ def bot_has_perms(*, check=all, **perms):  # Decorator to check if the bot has p
 
     return commands.check(pred)
 
-def is_bot_admin(): # Decorator for bot admin commands
+
+def is_bot_admin():  # Decorator for bot admin commands
     async def pred(ctx):
         return is_admin(ctx)
+
     return commands.check(pred)
+
 
 async def check_priv(ctx, member):
     """

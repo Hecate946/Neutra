@@ -35,7 +35,7 @@ class Stats(commands.Cog):
                 {0}ci
                 {0}ci 805638877762420789
                 {0}ci general
-                """
+                """,
     )
     @commands.guild_only()
     @checks.bot_has_perms(embed_links=True)
@@ -68,17 +68,40 @@ class Stats(commands.Cog):
         await ctx.send_or_reply(embed=em)
 
     @decorators.command(
-        brief="Show a channel topic."
+        aliases=["channeltopic"],
+        brief="Show the topic of a channel.",
+        implemented="2021-03-25 01:42:51.969489",
+        updated="2021-05-06 19:42:21.176961",
+        examples="""
+                {0}topic
+                {0}topic general
+                {0}topic 805638877762420789
+                {0}topic <#805638877762420789>
+                {0}channeltopic
+                {0}channeltopic general
+                {0}channeltopic 805638877762420789
+                {0}channeltopic <#805638877762420789>
+                """,
     )
     @commands.guild_only()
     async def topic(self, ctx, *, channel: converters.DiscordChannel = None):
-        """Quote the channel topic at people."""
+        """
+        Usage: {0}topic [channel]
+        Alias: {0}channeltopic
+        Output:
+            Shows a channel's topic.
+            Useful for replying to users
+            not abiding by the channel's topic.
+        Notes:
+            Will default to the current channel
+            if not alternative channel is passed.
+        """
         if channel is None:
             channel = ctx.channel
         await ctx.send_or_reply(
             content=("**Channel topic:** " + channel.topic)
             if channel.topic
-            else "No topic set.",
+            else "No topic set."
         )
 
     @decorators.command(
@@ -91,7 +114,7 @@ class Stats(commands.Cog):
                 {0}whois 810377376269205546
                 {0}profile Hecate#3523
                 {0}ui @Snowbot
-                """
+                """,
     )
     @checks.bot_has_perms(embed_links=True)
     async def userinfo(self, ctx, member: discord.Member = None):
@@ -183,7 +206,6 @@ class Stats(commands.Cog):
         )
         await ctx.send_or_reply(embed=embed)
 
-
     @decorators.command(
         aliases=["si", "serverstats", "ss", "server"],
         brief="Show server information.",
@@ -195,7 +217,7 @@ class Stats(commands.Cog):
                 {0}server
                 {0}si
                 {0}ss
-                """
+                """,
     )
     @commands.guild_only()
     @checks.bot_has_perms(embed_links=True)
@@ -322,7 +344,7 @@ class Stats(commands.Cog):
         examples="""
                 {0}mods
                 {0}moderators
-                """
+                """,
     )
     @commands.guild_only()
     async def mods(self, ctx):
@@ -335,10 +357,10 @@ class Stats(commands.Cog):
         """
         message = ""
         all_status = {
-            "online": {"users": [], "emoji": self.bot.emote_dict['online']},
-            "idle": {"users": [], "emoji": self.bot.emote_dict['idle']},
-            "dnd": {"users": [], "emoji": self.bot.emote_dict['dnd']},
-            "offline": {"users": [], "emoji": self.bot.emote_dict['offline']},
+            "online": {"users": [], "emoji": self.bot.emote_dict["online"]},
+            "idle": {"users": [], "emoji": self.bot.emote_dict["idle"]},
+            "dnd": {"users": [], "emoji": self.bot.emote_dict["dnd"]},
+            "offline": {"users": [], "emoji": self.bot.emote_dict["offline"]},
         }
 
         for user in ctx.guild.members:
@@ -365,7 +387,7 @@ class Stats(commands.Cog):
         examples="""
                 {0}admins
                 {0}administrators
-                """
+                """,
     )
     @commands.guild_only()
     async def admins(self, ctx):
@@ -378,10 +400,10 @@ class Stats(commands.Cog):
         """
         message = ""
         all_status = {
-            "online": {"users": [], "emoji": self.bot.emote_dict['online']},
-            "idle": {"users": [], "emoji": self.bot.emote_dict['idle']},
-            "dnd": {"users": [], "emoji": self.bot.emote_dict['dnd']},
-            "offline": {"users": [], "emoji": self.bot.emote_dict['offline']},
+            "online": {"users": [], "emoji": self.bot.emote_dict["online"]},
+            "idle": {"users": [], "emoji": self.bot.emote_dict["idle"]},
+            "dnd": {"users": [], "emoji": self.bot.emote_dict["dnd"]},
+            "offline": {"users": [], "emoji": self.bot.emote_dict["offline"]},
         }
 
         for user in ctx.guild.members:
@@ -416,7 +438,7 @@ class Stats(commands.Cog):
                 {0}estats @Hecate
                 {0}estats Hecate#3523
                 {0}estats 839929135988342824
-                """
+                """,
     )
     @commands.guild_only()
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
@@ -526,7 +548,7 @@ class Stats(commands.Cog):
                 {0}emotestats pepe
                 {0}emotestats :pepe:
                 {0}emotestats <:pepe:779433733400166420>
-                """
+                """,
     )
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.has_perms(view_audit_log=True)
@@ -579,7 +601,7 @@ class Stats(commands.Cog):
                 await ctx.send_or_reply(e)
 
     @decorators.command(
-        aliases=["joinedat","jointime"],
+        aliases=["joinedat", "jointime"],
         brief="Check when a user joined the server.",
         implemented="2021-03-30 07:33:29.174265",
         updated="2021-05-06 18:34:44.223170",
@@ -599,7 +621,7 @@ class Stats(commands.Cog):
                 {0}jointime @Hecate
                 {0}jointime Hecate#3523
                 {0}jointime 708584008065351681
-                """
+                """,
     )
     @commands.guild_only()
     @checks.has_perms(view_audit_log=True)
@@ -638,7 +660,7 @@ class Stats(commands.Cog):
                 {0}joinposition @Hecate
                 {0}joinposition Hecate#3523
                 {0}joinposition 839934336363134976
-                """
+                """,
     )
     @commands.guild_only()
     @checks.has_perms(view_audit_log=True)
@@ -676,9 +698,7 @@ class Stats(commands.Cog):
         before = ""
         after = ""
 
-        msg = "`{}'s` join position is **#{:,}**.".format(
-            user, position, total
-        )
+        msg = "`{}'s` join position is **#{:,}**.".format(user, position, total)
         if position - 1 == 1:
             # We have previous users
             before = "**1** user"
@@ -709,7 +729,7 @@ class Stats(commands.Cog):
         examples="""
                 {0}joinedatpos 3
                 {0}joinedatposition 7
-                """
+                """,
     )
     @commands.guild_only()
     @checks.has_perms(view_audit_log=True)
@@ -745,14 +765,14 @@ class Stats(commands.Cog):
         await ctx.send_or_reply(msg)
 
     @decorators.command(
-        aliases=['earlyjoins'],
+        aliases=["earlyjoins"],
         brief="Show the first users to join.",
         implemented="2021-03-11 23:57:16.694491",
         updated="2021-05-06 18:48:42.837329",
         examples="""
                 {0}firstjoins
                 {0}earlyjoins
-                """
+                """,
     )
     @commands.guild_only()
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
@@ -801,7 +821,7 @@ class Stats(commands.Cog):
             await ctx.send_or_reply(e)
 
     @decorators.command(
-        aliases=["latestjoins","recentjoins"],
+        aliases=["latestjoins", "recentjoins"],
         brief="Show the latest users to join.",
         implemented="2021-03-16 19:00:01.981909",
         updated="2021-05-06 18:51:13.775928",
@@ -809,7 +829,7 @@ class Stats(commands.Cog):
                 {0}lastjoins
                 {0}latestjoins
                 {0}recentjoins
-                """
+                """,
     )
     @commands.guild_only()
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
@@ -869,7 +889,7 @@ class Stats(commands.Cog):
                 {0}listbots
                 {0}guildbots
                 {0}serverbots
-                """
+                """,
     )
     @commands.guild_only()
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
@@ -899,7 +919,9 @@ class Stats(commands.Cog):
             pagination.FieldPageSource(
                 entries=[
                     ("{}. {}".format(y + 1, x["name"]), x["value"])
-                    for y, x in enumerate(sorted(bot_list, key=lambda x: x['name'].lower()))
+                    for y, x in enumerate(
+                        sorted(bot_list, key=lambda x: x["name"].lower())
+                    )
                 ],
                 title="Bots in **{}** ({:,} total)".format(
                     ctx.guild.name, len(list_of_bots)
@@ -922,8 +944,7 @@ class Stats(commands.Cog):
                 {0}allchannels
                 {0}listchannels
                 {0}serverchannels
-                """
-
+                """,
     )
     @commands.guild_only()
     @checks.bot_has_perms(embed_links=True)
