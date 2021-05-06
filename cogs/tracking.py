@@ -110,7 +110,7 @@ class Tracking(commands.Cog):
         brief="Show information on a user.",
         aliases=["whois", "ui", "profile"],
     )
-    async def userinfo(self, ctx, member: converters.DiscordUser = None):
+    async def userinfo(self, ctx, member: discord.Member = None):
         """
         Usage:    -userinfo <member>
         Aliases:  -profile, -ui, -whois
@@ -123,12 +123,6 @@ class Tracking(commands.Cog):
 
         if member is None:
             member = ctx.author
-
-        if member is None:
-            member = ctx.author
-
-        if ctx.invoked_with in ["user", "rawuser", "lookup"]:
-            return await self.user(ctx, user=member)
 
         joinedList = []
         for mem in ctx.guild.members:

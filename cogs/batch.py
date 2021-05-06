@@ -393,6 +393,7 @@ class Batch(commands.Cog):
     async def dispatch_avatars(self):
         while not self.bot.is_closed():
             count = 0
+            print(len(self.to_upload))
             if len(self.to_upload) >= 10:
                 async with self.batch_lock:
                     count += 1
