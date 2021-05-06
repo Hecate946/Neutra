@@ -91,6 +91,7 @@ class BotCommand(commands.Command):
         super().__init__(func, **kwargs)
         self.permissions = kwargs.pop("permissions", [])
         self.botperms = kwargs.pop("botperms", [])
+        self.examples = kwargs.pop("examples", None)
         self.implemented = kwargs.pop("implemented", None)
         self.updated = kwargs.pop("updated", None)
         self.writer = kwargs.pop(
@@ -129,6 +130,7 @@ class BotGroup(commands.Group):
         super().__init__(func, **kwargs)
         self.permissions = kwargs.pop("permissions", [])
         self.botperms = kwargs.pop("botperms", [])
+        self.examples = kwargs.pop("examples", None)
         self.implemented = kwargs.pop("implemented", None)
         self.updated = kwargs.pop("updated", None)
         self.writer = kwargs.pop(

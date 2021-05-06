@@ -4,8 +4,11 @@ import discord
 from collections import Counter
 from discord.ext import commands, menus
 
-from utilities import converters, utils, pagination, checks
+from utilities import utils
+from utilities import checks
+from utilities import converters
 from utilities import decorators
+from utilities import pagination
 
 
 def setup(bot):
@@ -20,11 +23,24 @@ class Stats(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @decorators.command(brief="Get info about a channel.", aliases=["ci"])
+    @decorators.command(
+        aliases=["ci"],
+        brief="Get info about a channel.",
+        implemented="2021-03-25 01:42:04.359878",
+        updated="2021-05-06 17:33:15.040085",
+        examples="""
+                {0}channelinfo
+                {0}channelinfo 805638877762420789
+                {0}channelinfo general
+                {0}ci
+                {0}ci 805638877762420789
+                {0}ci general
+                """
+    )
     @commands.guild_only()
     async def channelinfo(self, ctx, *, channel: converters.DiscordChannel = None):
         """
-        Usage: -channelinfo
+        Usage: {0}channelinfo [channel]
         Output:
             Specific info on a given channel
         Notes:
@@ -50,7 +66,9 @@ class Stats(commands.Cog):
         )
         await ctx.send_or_reply(embed=em)
 
-    @decorators.command(brief="Show a channel topic.")
+    @decorators.command(
+        brief="Show a channel topic."
+    )
     @commands.guild_only()
     async def topic(self, ctx, *, channel: converters.DiscordChannel = None):
         """Quote the channel topic at people."""
@@ -61,6 +79,109 @@ class Stats(commands.Cog):
             if channel.topic
             else "No topic set.",
         )
+
+    @decorators.command(
+        aliases=["whois", "ui", "profile"],
+        brief="Show information on a user.",
+        implemented="2021-03-11 18:42:18.403948",
+        updated="2021-05-06 16:46:39.043980",
+        examples="""
+                {0}userinfo Snowbot
+                {0}whois 810377376269205546
+                {0}profile Hecate#3523
+                {0}ui @Snowbot
+                """
+    )
+    @checks.bot_has_perms(embed_links=True)
+    async def userinfo(self, ctx, member: discord.Member = None):
+        """
+        Usage: {0}userinfo <member>
+        Aliases: {0}profile, {0}ui, {0}whois
+        Output:
+            General stats on a discord user.
+            Includes, ID, name, highest role,
+            status, messages sent, commands run
+            join position, and registration date.
+        Notes:
+            Moderators, incoke command with {0}user,
+            {0}rawuser, or {0}lookup to see all information
+            currently available on a discord user.
+        """
+
+        if member is None:
+            member = ctx.author
+
+        joinedList = []
+        for mem in ctx.guild.members:
+            joinedList.append({"ID": mem.id, "Joined": mem.joined_at})
+
+        # sort the users by join date
+        joinedList = sorted(
+            joinedList,
+            key=lambda x: x["Joined"].timestamp() if x["Joined"] is not None else -1,
+        )
+
+        check_item = {"ID": member.id, "Joined": member.joined_at}
+
+        position = joinedList.index(check_item) + 1
+
+        msg = "{:,}".format(position)
+
+        query = """
+                SELECT COUNT(*)
+                FROM commands
+                WHERE author_id = $1
+                AND server_id = $2;
+                """
+        command_count = (
+            await self.bot.cxn.fetchrow(query, member.id, ctx.guild.id) or None
+        )
+        if command_count is None:
+            command_count = 0
+
+        query = """
+                SELECT COUNT(*)
+                FROM messages
+                WHERE author_id = $1
+                AND server_id = $2;
+                """
+        messages = await self.bot.cxn.fetchrow(query, member.id, ctx.guild.id) or None
+        if messages is None:
+            messages = 0
+
+        status_dict = {
+            "online": f"{self.bot.emote_dict['online']} Online",
+            "offline": f"{self.bot.emote_dict['offline']} Offline",
+            "dnd": f"{self.bot.emote_dict['dnd']} Do Not Disturb",
+            "idle": f"{self.bot.emote_dict['idle']} Idle",
+        }
+        embed = discord.Embed(color=self.bot.constants.embed)
+        embed.set_author(name=f"{member}", icon_url=member.avatar_url)
+        embed.set_thumbnail(url=member.avatar_url)
+        embed.set_footer(
+            text=f"User ID: {member.id} | Created on {member.created_at.__format__('%m/%d/%Y')}"
+        )
+        embed.add_field(
+            name="Nickname",
+            value=f"{self.bot.emote_dict['owner'] if member.id == ctx.guild.owner.id else self.bot.emote_dict['bot'] if member.bot else ''} {member.display_name}",
+        )
+        embed.add_field(
+            name="Messages", value=f"{self.bot.emote_dict['messages']}  {messages[0]}"
+        )
+        embed.add_field(
+            name="Commands",
+            value=f"{self.bot.emote_dict['commands']}  {command_count[0]}",
+        )
+        embed.add_field(name="Status", value=f"{status_dict[str(member.status)]}")
+        embed.add_field(
+            name="Highest Role",
+            value=f"{self.bot.emote_dict['role']} {'@everyone' if member.top_role.name == '@everyone' else member.top_role.mention}",
+        )
+        embed.add_field(
+            name="Join Position", value=f"{self.bot.emote_dict['invite']} #{msg}"
+        )
+        await ctx.send_or_reply(embed=embed)
+
 
     @decorators.command(
         brief="Show server information.", aliases=["si", "serverstats", "ss", "server"]

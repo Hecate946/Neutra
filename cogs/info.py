@@ -870,7 +870,7 @@ class Info(commands.Cog):
         """
         Usage: {0}request <request content>
         Alias: {0}contact
-        Examples: -suggest Hello! I request...
+        Examples: {0}suggest Hello! I request...
         Output:
             Confirmation that your request has been sent.
         Notes:

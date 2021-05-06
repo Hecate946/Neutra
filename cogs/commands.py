@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import discord
 import traceback
 
@@ -24,7 +25,7 @@ class Commands(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.command_exception = []  # pass command names to hide from help command
+        self.command_exceptions = []  # pass command names to hide from help command
 
     ############################
     ## Get Commands From Cogs ##
@@ -230,6 +231,13 @@ class Commands(commands.Cog):
 
         elif trigger is True:
 
+            if invokercommand.lower() in [
+                "category",
+                "command",
+                "group",
+                "subcommand",
+            ]:  # Someone took the embed footer too literally.
+                await ctx.fail(f"Please specify a valid {invokercommand.lower()} name.")
             ######################
             ## Manages Cog Help ##
             ######################
@@ -623,6 +631,29 @@ class Commands(commands.Cog):
             The usage of a command
         """
         await ctx.usage(command.signature, command)
+
+    @decorators.command(
+        brief="Get specific examples for a command.",
+        aliases=["ex", "example"],
+        implemented="2021-05-06 16:54:55.398618",
+        updated="2021-05-06 16:54:55.398618",
+    )
+    async def examples(self, ctx, command: converters.DiscordCommand):
+        """
+        Usage: {0}example <command>
+        Alias: {0}ex
+        Output:
+            Shows all possible command usages
+            with aliases and valid arguments.
+        """
+        if not command.examples:
+            return await ctx.fail(f"No examples are currently available for the command `{command}`")
+        examples = inspect.cleandoc(command.examples.format(ctx.prefix))
+        p = pagination.MainMenu(pagination.TextPageSource(examples, prefix="```prolog"))
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send_or_reply(e)
 
 
     @decorators.command(
