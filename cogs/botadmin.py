@@ -798,9 +798,6 @@ class Botadmin(commands.Cog):
         )
         server_embed.add_field(name="Channels", value=chandesc, inline=False)
         server_embed.add_field(
-            name="Default Role", value=guild.default_role, inline=False
-        )
-        server_embed.add_field(
             name="Owner",
             value=guild.owner.name + "#" + guild.owner.discriminator,
             inline=True,
@@ -812,13 +809,13 @@ class Botadmin(commands.Cog):
             name="Verification", value=guild.verification_level, inline=False
         )
         server_embed.add_field(name="Voice Region", value=guild.region, inline=False)
-        server_embed.add_field(name="Considered Large", value=guild.large, inline=False)
         # server_embed.add_field(name="Shard ID", value="{}/{}".format(guild.shard_id+1, self.bot.shard_count), inline=False)
         server_embed.add_field(
             name="Nitro Boosts",
             value="{} (level {})".format(
                 guild.premium_subscription_count, guild.premium_tier
             ),
+            inline=False,
         )
         # Find out where in our join position this server is
         joinedList = []
@@ -840,7 +837,7 @@ class Botadmin(commands.Cog):
         server_embed.add_field(
             name="Join Position",
             value="{:,} of {:,}".format(position, total),
-            inline=True,
+            inline=False,
         )
 
         # Get our population position
@@ -850,7 +847,7 @@ class Botadmin(commands.Cog):
         server_embed.add_field(
             name="Population Rank",
             value="{:,} of {:,}".format(position, total),
-            inline=True,
+            inline=False,
         )
 
         emojitext = ""
