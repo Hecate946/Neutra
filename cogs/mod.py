@@ -165,7 +165,7 @@ class Mod(commands.Cog):
             Command -muterole must be executed prior to usage of
             this command. Upon usage, will not be able to read
             messages in any channel. Roles will be given back to
-            the user upon -unmute, or when their timed mute ends.
+            the user upon {0}unmute, or when their timed mute ends.
         """
         global target
         if not len(targets):
@@ -360,13 +360,7 @@ class Mod(commands.Cog):
         Permissiom: Kick Members
         Output: Unmutes members muted by the -hardmute command.
         """
-        if not len(targets):
-            await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}unmute <target> [target]...`",
-            )
-
-        else:
-            await self.unmute(ctx, targets)
+        await self.unmute(ctx, targets)
 
     ##########################
     ## Restriction Commands ##
