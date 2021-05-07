@@ -59,8 +59,10 @@ Make sure you enable both privileged gateway intents
 
 ## Step Five: Pip Install
 
-To install the libraries for Snowbot, navigate to the bot's folder and type 
+To install the libraries for Snowbot, navigate to the bot's folder and run:
+```yaml 
 pip install -r requirements.txt
+```
 
 If you are on windows, do this in cmd instead of ubuntu.
 
