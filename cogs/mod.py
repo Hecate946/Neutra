@@ -350,7 +350,9 @@ class Mod(commands.Cog):
     @commands.guild_only()
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(kick_members=True)
-    async def unmute_members(self, ctx, targets: commands.Greedy[converters.DiscordMember]):
+    async def unmute_members(
+        self, ctx, targets: commands.Greedy[converters.DiscordMember]
+    ):
         """
         Usage: -unmute <target> [target]...
         Alias: -endmute
@@ -420,7 +422,9 @@ class Mod(commands.Cog):
     @decorators.command(brief="Reallow users to send messages.")
     @commands.guild_only()
     @checks.has_perms(kick_members=True)
-    async def unblock(self, ctx, targets: commands.Greedy[converters.DiscordMember] = None):
+    async def unblock(
+        self, ctx, targets: commands.Greedy[converters.DiscordMember] = None
+    ):
         """
         Usage:      -unblock <target> [target]...
         Example:    -unblock Hecate 708584008065351681 @Elizabeth
@@ -436,7 +440,9 @@ class Mod(commands.Cog):
     @decorators.command(brief="Hide a channel from a user.")
     @commands.guild_only()
     @checks.has_perms(kick_members=True)
-    async def blind(self, ctx, targets: commands.Greedy[converters.DiscordMember] = None):
+    async def blind(
+        self, ctx, targets: commands.Greedy[converters.DiscordMember] = None
+    ):
         """
         Usage:      -blind <target> [target]...
         Example:    -blind Hecate 708584008065351681 @Elizabeth
@@ -452,7 +458,9 @@ class Mod(commands.Cog):
     @decorators.command(brief="Reallow users see a channel.")
     @commands.guild_only()
     @checks.has_perms(kick_members=True)
-    async def unblind(self, ctx, targets: commands.Greedy[converters.DiscordMember] = None):
+    async def unblind(
+        self, ctx, targets: commands.Greedy[converters.DiscordMember] = None
+    ):
         """
         Usage:      -unblind <target> [target]...
         Example:    -unblind Hecate 708584008065351681 @Elizabeth

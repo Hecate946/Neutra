@@ -88,7 +88,10 @@ class Roles(commands.Cog):
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(manage_roles=True)
     async def addrole(
-        self, ctx, targets: commands.Greedy[converters.DiscordMember], *roles: discord.Role
+        self,
+        ctx,
+        targets: commands.Greedy[converters.DiscordMember],
+        *roles: discord.Role,
     ):
         """
         Usage:      -addrole [user] [user...] [role] [role]...
@@ -157,7 +160,10 @@ class Roles(commands.Cog):
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(manage_roles=True)
     async def removerole(
-        self, ctx, targets: commands.Greedy[converters.DiscordMember], *roles: discord.Role
+        self,
+        ctx,
+        targets: commands.Greedy[converters.DiscordMember],
+        *roles: discord.Role,
     ):
         """
         Usage:      -removerole [user] [user...] [role] [role]...

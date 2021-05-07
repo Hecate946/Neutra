@@ -742,7 +742,9 @@ class Utility(commands.Cog):
     )
     @commands.guild_only()
     @checks.has_perms(manage_nicknames=True)
-    async def nickname(self, ctx, user: converters.DiscordMember, *, nickname: str = None):
+    async def nickname(
+        self, ctx, user: converters.DiscordMember, *, nickname: str = None
+    ):
         """
         Usage: {0}nickname <user> [nickname]
         Aliases: {0}nick, {0}setnick

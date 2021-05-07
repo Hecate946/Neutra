@@ -100,6 +100,7 @@ class DiscordCommand(commands.Converter):
             )
         return command
 
+
 class DiscordBot(commands.Converter):
     """Resolve users/members.
     If given a username only checks current server. (Ease of use)
@@ -374,6 +375,7 @@ class BannedMember(commands.Converter):
             )
         return entity
 
+
 # class DiscordMember(commands.Converter):
 #     """
 #     Basically the same as discord.Member
@@ -399,6 +401,7 @@ class BannedMember(commands.Converter):
 #                 entity = discord.utils.find(lambda m: str(m.name).lower() == argument.lower(), member_list)
 
 #         print(entity)
+
 
 class Arguments(argparse.ArgumentParser):
     def error(self, message):

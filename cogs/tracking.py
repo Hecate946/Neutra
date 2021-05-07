@@ -388,7 +388,7 @@ class Tracking(commands.Cog):
     @commands.guild_only()
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.has_perms(view_audit_log=True)
-    async def messagestats(self, ctx, limit=100):
+    async def messagestats(self, ctx, limit: str = "100"):
         """
         Usage: {0}messagestats
         Alias: {0}top, {0}messagestatistics
@@ -402,6 +402,7 @@ class Tracking(commands.Cog):
         """
         if not limit.isdigit():
             raise commands.BadArgument("The `limit` argument must be an integer.")
+        limit = int(limit)
         query = """
                 SELECT author_id,
                 count(author_id)

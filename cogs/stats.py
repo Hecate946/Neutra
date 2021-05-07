@@ -1016,7 +1016,10 @@ class Stats(commands.Cog):
     @commands.guild_only()
     @checks.has_perms(view_audit_log=True)
     async def _permissions(
-        self, ctx, member: converters.DiscordMember = None, channel: discord.TextChannel = None
+        self,
+        ctx,
+        member: converters.DiscordMember = None,
+        channel: discord.TextChannel = None,
     ):
         """
         Usage:  -permissions [member] [channel]

@@ -33,7 +33,11 @@ class Automod(commands.Cog):
     @commands.guild_only()
     @checks.has_perms(kick_members=True)
     async def warn(
-        self, ctx, targets: commands.Greedy[converters.DiscordMember], *, reason: str = None
+        self,
+        ctx,
+        targets: commands.Greedy[converters.DiscordMember],
+        *,
+        reason: str = None,
     ):
         """
         Usage: -warn [target] [target]... [reason]
