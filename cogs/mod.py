@@ -351,7 +351,7 @@ class Mod(commands.Cog):
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(kick_members=True)
     async def unmute_members(
-        self, ctx, targets: commands.Greedy[converters.DiscordMember]
+        self, ctx, *, targets: commands.Greedy[converters.DiscordMember]
     ):
         """
         Usage: -unmute <target> [target]...
