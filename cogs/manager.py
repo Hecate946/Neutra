@@ -86,12 +86,6 @@ class Manager(commands.Cog):
             reply = f"{self.bot.emote_dict['success']} Successfully reloaded ./{folder}/{fname}"
         return reply
 
-    @decorators.command()
-    async def waa(self, ctx, fname):
-        print("hi")
-        await self.reloader(fname)
-        await ctx.react(self.bot.emote_dict["db"])
-
     @decorators.command(brief="Get the batch insert count.")
     async def batches(self, ctx):
         """

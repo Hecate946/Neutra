@@ -110,6 +110,18 @@ class Utility(commands.Cog):
     async def oauth(
         self, ctx, bot: converters.DiscordBot = None, permissions: int = None
     ):
+        """
+        Usage: {0}oauth [bot] [permissions]
+        Aliases:
+            {0}oauth2
+            {0}genoauth
+            {0}genbotoauth
+        Output:
+            Generates a bot invite oauth URL
+            with your specified permissions.
+        Notes:
+            Defaults to me if no bot is specified.
+        """
         if not bot:
             await ctx.reply(f"<{self.bot.oauth}>")
             return
