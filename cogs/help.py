@@ -742,6 +742,29 @@ class Help(commands.Cog):
         )
 
     @decorators.command(
+        brief="Show the parent category of a command.",
+        aliases=["cog"],
+        implemented="2021-05-07 18:12:17.837263",
+        updated="2021-05-07 18:12:17.837263",
+        examples="""
+                {0}cog help
+                {0}category prune
+                """
+    )
+    async def category(self, ctx, command: converters.DiscordCommand):
+        """
+        Usage: {0}category <command>
+        Alias: {0}cog <command>
+        Output:
+            Show the parent category (cog)
+            of a passed command.
+        """
+        right = self.bot.emote_dict["right"]
+        await ctx.send_or_reply(
+            f"{right} The command `{command}` resides in the `{command.cog_name}` {ctx.command.invoked_with.lower()}"
+        )
+
+    @decorators.command(
         brief="Get attribute info on a command.",
         aliases=["cmdinfo"],
         implemented="2021-05-05 18:41:26.960101",
