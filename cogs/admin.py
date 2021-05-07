@@ -433,7 +433,7 @@ class Admin(commands.Cog):
 
     @decorators.command(brief="Disallow users from using the bot.")
     @checks.has_perms(manage_guild=True)
-    async def ignore(self, ctx, user: discord.Member = None, react: str = ""):
+    async def ignore(self, ctx, user: converters.DiscordMember = None, react: str = ""):
         """
         Usage: {0}ignore <user> [react] [reason]
         Output: Will not process commands from the passed user.
@@ -503,7 +503,7 @@ class Admin(commands.Cog):
     )
     @commands.guild_only()
     @checks.has_perms(manage_guild=True)
-    async def unignore(self, ctx, user: discord.Member = None):
+    async def unignore(self, ctx, user: converters.DiscordMember = None):
         """
         Usage: {0}unignore <user>
         Alias: {0}listen

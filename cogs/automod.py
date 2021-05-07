@@ -1,10 +1,12 @@
-import discord
 import re
-from discord.ext import commands, menus, tasks
-import datetime
-from collections import Counter
-from utilities import pagination, checks
+import discord
+
+from discord.ext import commands, menus
+
+from utilities import checks
+from utilities import converters
 from utilities import decorators
+from utilities import pagination
 
 
 def setup(bot):
@@ -31,7 +33,7 @@ class Automod(commands.Cog):
     @commands.guild_only()
     @checks.has_perms(kick_members=True)
     async def warn(
-        self, ctx, targets: commands.Greedy[discord.Member], *, reason: str = None
+        self, ctx, targets: commands.Greedy[converters.DiscordMember], *, reason: str = None
     ):
         """
         Usage: -warn [target] [target]... [reason]
@@ -122,7 +124,7 @@ class Automod(commands.Cog):
 
     @decorators.command(brief="Count the warnings a user has.", aliases=["listwarns"])
     @commands.guild_only()
-    async def warncount(self, ctx, *, target: discord.Member = None):
+    async def warncount(self, ctx, *, target: converters.DiscordMember = None):
         """
         Usage: -warncount [member]
         Alias: -listwarns
@@ -163,7 +165,7 @@ class Automod(commands.Cog):
     )
     @commands.guild_only()
     @checks.has_perms(kick_members=True)
-    async def clearwarns(self, ctx, *, target: discord.Member = None):
+    async def clearwarns(self, ctx, *, target: converters.DiscordMember = None):
         """
         Usage: -clearwarns [user]
         Aliases: -deletewarnings, -removewarns, -removewarnings, -deletewarns, -clearwarnings
@@ -211,7 +213,7 @@ class Automod(commands.Cog):
     )
     @commands.guild_only()
     @checks.has_perms(kick_members=True)
-    async def revokewarn(self, ctx, *, target: discord.Member = None):
+    async def revokewarn(self, ctx, *, target: converters.DiscordMember = None):
         """
         Usage: -revokewarn [user]
         Aliases: -revokewarning, -undowarning, -undowarn

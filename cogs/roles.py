@@ -3,7 +3,9 @@ import colorsys
 
 from discord.ext import commands, menus
 
-from utilities import pagination, checks
+from utilities import checks
+from utilities import pagination
+from utilities import converters
 from utilities import decorators
 
 
@@ -86,7 +88,7 @@ class Roles(commands.Cog):
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(manage_roles=True)
     async def addrole(
-        self, ctx, targets: commands.Greedy[discord.Member], *roles: discord.Role
+        self, ctx, targets: commands.Greedy[converters.DiscordMember], *roles: discord.Role
     ):
         """
         Usage:      -addrole [user] [user...] [role] [role]...
@@ -155,7 +157,7 @@ class Roles(commands.Cog):
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(manage_roles=True)
     async def removerole(
-        self, ctx, targets: commands.Greedy[discord.Member], *roles: discord.Role
+        self, ctx, targets: commands.Greedy[converters.DiscordMember], *roles: discord.Role
     ):
         """
         Usage:      -removerole [user] [user...] [role] [role]...

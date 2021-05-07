@@ -100,7 +100,6 @@ class DiscordCommand(commands.Converter):
             )
         return command
 
-
 class DiscordBot(commands.Converter):
     """Resolve users/members.
     If given a username only checks current server. (Ease of use)
@@ -375,6 +374,31 @@ class BannedMember(commands.Converter):
             )
         return entity
 
+# class DiscordMember(commands.Converter):
+#     """
+#     Basically the same as discord.Member
+#     Only difference is that this accepts
+#     case insensitive user inputs and
+#     resolves to member instances.
+#     """
+#     async def convert(self, ctx, argument):
+#         if argument.isdigit():
+#             member_id = int(argument)
+#             try:
+#                 ctx.guild.get_member(member_id)
+#             except Exception as e:
+#                 print(e)
+#         member_list = ctx.guild.members
+#         # check for nickname
+#         entity = discord.utils.find(lambda m: str(m.display_name.lower()) == argument.lower(), member_list)
+#         if not entity:
+#             # check for username#discriminator
+#             entity = discord.utils.find(lambda m: str(m).lower() == argument.lower(), member_list)
+#             if not entity:
+#                 #check for just name
+#                 entity = discord.utils.find(lambda m: str(m.name).lower() == argument.lower(), member_list)
+
+#         print(entity)
 
 class Arguments(argparse.ArgumentParser):
     def error(self, message):
@@ -448,3 +472,97 @@ class Prefix(commands.Converter):
         elif len(argument) > 20:
             raise commands.BadArgument("Max prefix length is 20 characters.")
         return argument
+
+
+class DiscordMember(commands.Converter):
+    """
+    Basically the same as discord.Member
+    Only difference is that this accepts
+    case insensitive user inputs and
+    resolves to member instances.
+    """
+
+    async def get_by_id(self, ctx, user_id):
+        """Exact user_id lookup."""
+        result = None
+        result = ctx.guild.get_member(user_id)
+        if not result:
+            raise commands.BadArgument(
+                f"User `{await prettify(ctx, user_id)}` not found."
+            )
+        return result
+
+    async def get_by_name(self, ctx, user_name):
+        """Lookup by name.
+        Returns list of possible matches. For user#discrim will only give exact
+        matches.
+        Try doing an exact match.
+        If within guild context, fall back to inexact match.
+        If found in current guild, return Member, else User.
+        (Will not do bot-wide inexact match)
+        """
+        tag_match = tag_regex.match(user_name)
+
+        if tag_match:
+
+            def pred(member):
+                return member.name == tag_match.group(
+                    1
+                ) and member.discriminator == tag_match.group(2)
+
+            result = None
+            if ctx.guild:
+                result = discord.utils.get(
+                    ctx.guild.members,
+                    name=tag_match.group(1),
+                    discriminator=tag_match.group(2),
+                )
+            if not result:
+                raise commands.BadArgument(
+                    f"User `{await prettify(ctx, user_name)}` not found."
+                )
+            if result:
+                return [result]
+
+        if ctx.guild:
+            user_name = user_name.lower()
+
+            def pred(member):
+                return (
+                    member.nick and member.nick.lower() == user_name
+                ) or member.name.lower() == user_name
+
+            return [m for m in ctx.guild.members if pred(m)]
+        return []
+
+    async def find_match(self, ctx, argument):
+        """Get a match...
+        If we have a mention, try and get an exact match.
+        If we have a number, try lookup by id.
+        Fallback to lookup by name.
+        Disambiguate in case we have multiple name results.
+        """
+        mention_match = mention_regex.match(argument)
+        if mention_match:
+            return await self.get_by_id(ctx, int(mention_match.group(1)))
+
+        lax_id_match = lax_id_regex.match(argument)
+        if lax_id_match:
+            result = await self.get_by_id(ctx, int(lax_id_match.group(1)))
+            if result:
+                return result
+
+        results = await self.get_by_name(ctx, argument)
+        if results:
+            return results[0]
+
+    async def convert(self, ctx, argument):
+        if not ctx.guild:
+            raise commands.NoPrivateMessage()
+        match = await self.find_match(ctx, argument)
+
+        if not match:
+            raise commands.BadArgument(
+                f"User `{await prettify(ctx, argument)}` not found."
+            )
+        return match

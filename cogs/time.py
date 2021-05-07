@@ -308,7 +308,7 @@ class Time(commands.Cog):
                 {0}usertime 708584008065351681
                 """,
     )
-    async def usertime(self, ctx, *, member: discord.Member = None):
+    async def usertime(self, ctx, *, member: converters.DiscordMember = None):
         """
         Usage: {0}usertime [user]
         Alias: {0}time

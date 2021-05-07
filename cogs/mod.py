@@ -46,7 +46,7 @@ class Mod(commands.Cog):
     async def vcmove(
         self,
         ctx,
-        targets: commands.Greedy[discord.Member] = None,
+        targets: commands.Greedy[converters.DiscordMember] = None,
         channel: discord.VoiceChannel = None,
     ):
         """
@@ -114,7 +114,7 @@ class Mod(commands.Cog):
     @commands.guild_only()
     @checks.has_perms(move_members=True)
     @checks.bot_has_perms(move_members=True)
-    async def vckick(self, ctx, targets: commands.Greedy[discord.Member]):
+    async def vckick(self, ctx, targets: commands.Greedy[converters.DiscordMember]):
         """
         Usage: -vckick <target> <target>..
         Output: Kicks passed members from their channel
@@ -150,7 +150,7 @@ class Mod(commands.Cog):
     async def mute(
         self,
         ctx,
-        targets: commands.Greedy[discord.Member],
+        targets: commands.Greedy[converters.DiscordMember],
         minutes: typing.Optional[int],
         *,
         reason: typing.Optional[str] = None,
@@ -350,7 +350,7 @@ class Mod(commands.Cog):
     @commands.guild_only()
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(kick_members=True)
-    async def unmute_members(self, ctx, targets: commands.Greedy[discord.Member]):
+    async def unmute_members(self, ctx, targets: commands.Greedy[converters.DiscordMember]):
         """
         Usage: -unmute <target> [target]...
         Alias: -endmute
@@ -404,7 +404,7 @@ class Mod(commands.Cog):
     @decorators.command(brief="Restrict users from sending messages.")
     @commands.guild_only()
     @checks.has_perms(kick_members=True)
-    async def block(self, ctx, targets: commands.Greedy[discord.Member]):
+    async def block(self, ctx, targets: commands.Greedy[converters.DiscordMember]):
         """
         Usage: -block <target> [target]...
         Example: -block Hecate 708584008065351681 @Elizabeth
@@ -420,7 +420,7 @@ class Mod(commands.Cog):
     @decorators.command(brief="Reallow users to send messages.")
     @commands.guild_only()
     @checks.has_perms(kick_members=True)
-    async def unblock(self, ctx, targets: commands.Greedy[discord.Member] = None):
+    async def unblock(self, ctx, targets: commands.Greedy[converters.DiscordMember] = None):
         """
         Usage:      -unblock <target> [target]...
         Example:    -unblock Hecate 708584008065351681 @Elizabeth
@@ -436,7 +436,7 @@ class Mod(commands.Cog):
     @decorators.command(brief="Hide a channel from a user.")
     @commands.guild_only()
     @checks.has_perms(kick_members=True)
-    async def blind(self, ctx, targets: commands.Greedy[discord.Member] = None):
+    async def blind(self, ctx, targets: commands.Greedy[converters.DiscordMember] = None):
         """
         Usage:      -blind <target> [target]...
         Example:    -blind Hecate 708584008065351681 @Elizabeth
@@ -452,7 +452,7 @@ class Mod(commands.Cog):
     @decorators.command(brief="Reallow users see a channel.")
     @commands.guild_only()
     @checks.has_perms(kick_members=True)
-    async def unblind(self, ctx, targets: commands.Greedy[discord.Member] = None):
+    async def unblind(self, ctx, targets: commands.Greedy[converters.DiscordMember] = None):
         """
         Usage:      -unblind <target> [target]...
         Example:    -unblind Hecate 708584008065351681 @Elizabeth
@@ -476,7 +476,7 @@ class Mod(commands.Cog):
     async def kick(
         self,
         ctx,
-        users: commands.Greedy[discord.Member],
+        users: commands.Greedy[converters.DiscordMember],
         *,
         reason: typing.Optional[str] = "No reason",
     ):
@@ -526,7 +526,7 @@ class Mod(commands.Cog):
     async def ban(
         self,
         ctx,
-        targets: commands.Greedy[discord.Member],
+        targets: commands.Greedy[converters.DiscordMember],
         delete_message_days: typing.Optional[int] = 1,
         *,
         reason: typing.Optional[str] = "No reason.",
@@ -574,7 +574,7 @@ class Mod(commands.Cog):
     async def tempban(
         self,
         ctx,
-        targets: commands.Greedy[discord.Member],
+        targets: commands.Greedy[converters.DiscordMember],
         duration: time.FutureTime,
         delete_message_days: typing.Optional[int] = 0,
         reason: typing.Optional[str] = "No reason.",
@@ -654,7 +654,7 @@ class Mod(commands.Cog):
     async def softban(
         self,
         ctx,
-        targets: commands.Greedy[discord.Member],
+        targets: commands.Greedy[converters.DiscordMember],
         delete_message_days: typing.Optional[int] = 7,
         *,
         reason: typing.Optional[str] = "No reason.",
@@ -1037,7 +1037,7 @@ class Mod(commands.Cog):
         await self.do_removal(ctx, search, lambda e: True)
 
     @purge.command(brief="Purge messages sent by a user.", aliases=["member"])
-    async def user(self, ctx, member: discord.Member = None, search=100):
+    async def user(self, ctx, member: converters.DiscordMember = None, search=100):
         """
         Usage: -purge user <user> [amount]
         Aliases:

@@ -523,7 +523,7 @@ class Utility(commands.Cog):
     )
     @checks.bot_has_perms(manage_nicknames=True)
     @checks.has_perms(manage_nicknames=True)
-    async def dehoist(self, ctx, user: discord.Member):
+    async def dehoist(self, ctx, user: converters.DiscordMember):
         """
         Usage: {0}dehoist <user>
         Permission: Manage Nicknames
@@ -742,7 +742,7 @@ class Utility(commands.Cog):
     )
     @commands.guild_only()
     @checks.has_perms(manage_nicknames=True)
-    async def nickname(self, ctx, user: discord.Member, *, nickname: str = None):
+    async def nickname(self, ctx, user: converters.DiscordMember, *, nickname: str = None):
         """
         Usage: {0}nickname <user> [nickname]
         Aliases: {0}nick, {0}setnick
@@ -1165,7 +1165,7 @@ class Utility(commands.Cog):
     @decorators.command(brief="Snipe a deleted message.", aliases=["retrieve"])
     @commands.guild_only()
     @checks.has_perms(manage_messages=True)
-    async def snipe(self, ctx, *, member: discord.Member = None):
+    async def snipe(self, ctx, *, member: converters.DiscordMember = None):
         """
         Usage: -snipe [user]
         Alias: -retrieve

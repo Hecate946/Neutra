@@ -117,7 +117,7 @@ class Stats(commands.Cog):
                 """,
     )
     @checks.bot_has_perms(embed_links=True)
-    async def userinfo(self, ctx, member: discord.Member = None):
+    async def userinfo(self, ctx, member: converters.DiscordMember = None):
         """
         Usage: {0}userinfo <member>
         Aliases: {0}profile, {0}ui, {0}whois
@@ -443,7 +443,7 @@ class Stats(commands.Cog):
     @commands.guild_only()
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.has_perms(view_audit_log=True)
-    async def emojistats(self, ctx, user: discord.Member = None):
+    async def emojistats(self, ctx, user: converters.DiscordMember = None):
         """
         Usage: {0}emojistats [user]
         Alias: {0}estats
@@ -625,7 +625,7 @@ class Stats(commands.Cog):
     )
     @commands.guild_only()
     @checks.has_perms(view_audit_log=True)
-    async def joined(self, ctx, *, user: discord.Member = None):
+    async def joined(self, ctx, *, user: converters.DiscordMember = None):
         """
         Usage: {0}joined [user]
         Aliases: {0}joinedat, {0}jointime
@@ -664,7 +664,7 @@ class Stats(commands.Cog):
     )
     @commands.guild_only()
     @checks.has_perms(view_audit_log=True)
-    async def joinpos(self, ctx, *, user: discord.Member = None):
+    async def joinpos(self, ctx, *, user: converters.DiscordMember = None):
         """
         Usage: {0}joinpos [user]
         Alias: {0}joinposition
@@ -1016,7 +1016,7 @@ class Stats(commands.Cog):
     @commands.guild_only()
     @checks.has_perms(view_audit_log=True)
     async def _permissions(
-        self, ctx, member: discord.Member = None, channel: discord.TextChannel = None
+        self, ctx, member: converters.DiscordMember = None, channel: discord.TextChannel = None
     ):
         """
         Usage:  -permissions [member] [channel]

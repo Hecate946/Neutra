@@ -37,7 +37,7 @@ class Tracking(commands.Cog):
                 """,
     )
     @commands.guild_only()
-    async def platform(self, ctx, users: commands.Greedy[discord.Member]):
+    async def platform(self, ctx, users: commands.Greedy[converters.DiscordMember]):
         """
         Usage:  {0}platform [users]...
         Alias:  {0}mobile, {0}desktop, {0}web
@@ -299,7 +299,7 @@ class Tracking(commands.Cog):
                 {0}presence 708584008065351681
                 """,
     )
-    async def status(self, ctx, *, user: discord.Member = None):
+    async def status(self, ctx, *, user: converters.DiscordMember = None):
         """
         Usage: {0}status [user]
         Aliases:
@@ -348,7 +348,7 @@ class Tracking(commands.Cog):
 
     @decorators.command(aliases=["mc"], brief="Count the messages a user sent.")
     @commands.guild_only()
-    async def messagecount(self, ctx, member: discord.Member = None):
+    async def messagecount(self, ctx, member: converters.DiscordMember = None):
         """
         Usage:  -messagecount [user]
         Alias:  -mc
@@ -448,7 +448,7 @@ class Tracking(commands.Cog):
     @commands.guild_only()
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.has_perms(view_audit_log=True)
-    async def nicknames(self, ctx, user: discord.Member = None):
+    async def nicknames(self, ctx, user: converters.DiscordMember = None):
         """
         Usage: {0}nicknames [user]
         Alias: {0}nicks
@@ -499,7 +499,7 @@ class Tracking(commands.Cog):
     @commands.guild_only()
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.has_perms(view_audit_log=True)
-    async def usernames(self, ctx, user: discord.Member = None):
+    async def usernames(self, ctx, user: converters.DiscordMember = None):
         """
         Usage: {0}usernames [user]
         Alias: {0}names
@@ -551,7 +551,7 @@ class Tracking(commands.Cog):
         add_reactions=True, attach_files=True, embed_links=True, external_emojis=True
     )
     @checks.has_perms(view_audit_log=True)
-    async def avatars(self, ctx, user: discord.Member = None):
+    async def avatars(self, ctx, user: converters.DiscordMember = None):
         """
         Usage: {0}avatars [user]
         Alias: {0}avs
@@ -688,7 +688,7 @@ class Tracking(commands.Cog):
     @commands.guild_only()
     @checks.bot_has_perms(add_reactions=True, external_emojis=True)
     @checks.has_perms(view_audit_log=True)
-    async def commandstats(self, ctx, user: discord.Member = None, limit=100):
+    async def commandstats(self, ctx, user: converters.DiscordMember = None, limit=100):
         """
         Usage: {0}commandstats [user] [limit]
         Alias: {0}cs
@@ -773,7 +773,7 @@ class Tracking(commands.Cog):
     )
     @commands.guild_only()
     @checks.has_perms(view_audit_log=True)
-    async def commandcount(self, ctx, user: discord.Member = None):
+    async def commandcount(self, ctx, user: converters.DiscordMember = None):
         """
         Usage: {0}commandcount [user]
         Alias: {0}cc
@@ -959,7 +959,7 @@ class Tracking(commands.Cog):
     @commands.guild_only()
     @checks.bot_has_perms(add_reactions=True, external_emojis=True)
     @checks.has_perms(manage_messages=True)
-    async def word(self, ctx, word, member: discord.Member = None):
+    async def word(self, ctx, word, member: converters.DiscordMember = None):
         """
         Usage: {0}word <word> [user]
         Permission: Manage Messages
@@ -1206,7 +1206,7 @@ class Tracking(commands.Cog):
     )
     @checks.bot_has_perms(attach_files=True, embed_links=True)
     @checks.has_perms(view_audit_log=True)
-    async def statusinfo(self, ctx, user: discord.Member = None):
+    async def statusinfo(self, ctx, user: converters.DiscordMember = None):
         """
         Usage: {0}statusinfo [user]
         Aliases: {0}piestatus, {0}ps,
