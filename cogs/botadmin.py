@@ -702,7 +702,7 @@ class Botadmin(commands.Cog):
 
     @decorators.command()
     @checks.is_bot_admin()
-    @checks.bot_has_perms(add_reaction=True, external_reactions=True)
+    @checks.bot_has_perms(add_reaction=True, external_emojis=True)
     async def sss(self, ctx, user: converters.DiscordUser = None):
         if user is None:
             user = ctx.author
@@ -730,7 +730,7 @@ class Botadmin(commands.Cog):
         implemented="2021-03-17 22:48:40.720122",
         updated="2021-05-06 00:57:41.774846",
     )
-    @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emoji=True)
+    @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.is_bot_admin()
     async def guild(self, ctx, *, argument=None):
         """
@@ -923,6 +923,7 @@ class Botadmin(commands.Cog):
 
 
     @decorators.command(brief="Show members for a server.")
+    @checks.bot_has_perms(add_reaction=True, embed_links=True, external_emojis=True)
     async def members(self, ctx, *, argument = None):
         """
         Usage: {0}members

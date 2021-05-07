@@ -721,5 +721,4 @@ class Snowbot(commands.AutoShardedBot):
     def bot_channel(self):
         return self.get_channel(self.constants.botlog)
 
-
 bot = Snowbot()
