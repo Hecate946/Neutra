@@ -19,8 +19,12 @@ import subprocess
 from collections import defaultdict
 from discord.ext import commands, menus
 
-from utilities import converters, formatting, pagination, utils
+from settings import constants
+from utilities import utils
+from utilities import converters
 from utilities import decorators
+from utilities import formatting
+from utilities import pagination
 
 
 def setup(bot):
@@ -187,6 +191,7 @@ class Manager(commands.Cog):
         self.bot.constants.botlog = config["botlog"]
         self.bot.constants.timezonedb = config["timezonedb"]
         self.bot.constants.bitly = config["bitly"]
+        self.bot.emote_dict = constants.emote_dict
 
         self.bot.owner_ids = self.bot.constants.owners
 
