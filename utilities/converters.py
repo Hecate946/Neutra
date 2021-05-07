@@ -321,7 +321,7 @@ class BotServer(commands.Converter):
             except Exception as e:
                 await ctx.send_or_reply(e)
         options = [
-            (s, f"{s.id}: {s.name}")
+            s
             for s in ctx.bot.guilds
             if argument.lower() in s.name.lower()
         ]

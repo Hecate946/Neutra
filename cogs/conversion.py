@@ -1,24 +1,18 @@
-import base64
-import binascii
-import codecs
-import json
-import math
-import os
+import io
 import re
-from io import BytesIO
-
+import base64
+import codecs
 import discord
-from discord.ext import commands
-from PIL import Image
+import binascii
 
-from utilities import pagination, utils
+from discord.ext import commands
+
+from utilities import utils
 from utilities import decorators
 
 
 def setup(bot):
-    # Add the bot and deps
-    settings = bot.get_cog("Settings")
-    bot.add_cog(Conversion(bot, settings))
+    bot.add_cog(Conversion(bot))
 
 
 class Conversion(commands.Cog):
@@ -26,9 +20,8 @@ class Conversion(commands.Cog):
     Module for unit conversions.
     """
 
-    def __init__(self, bot, settings):
+    def __init__(self, bot):
         self.bot = bot
-        self.settings = settings
         self.regex = re.compile(
             r"(http|ftp|https)://([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?"
         )
@@ -415,9 +408,9 @@ class Conversion(commands.Cog):
         async with ctx.channel.typing():
             if len(input) > 1900:
                 try:
-                    data = BytesIO(input.encode("utf-8"))
+                    data = io.BytesIO(input.encode("utf-8"))
                 except AttributeError:
-                    data = BytesIO(input)
+                    data = io.BytesIO(input)
 
                 try:
                     return await ctx.send_or_reply(

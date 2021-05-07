@@ -715,7 +715,6 @@ class Snowbot(commands.AutoShardedBot):
     @property
     def home(self):
         home = self.get_guild(self.constants.home)
-        print(home)
         return home
 
     @property

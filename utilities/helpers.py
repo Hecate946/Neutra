@@ -54,24 +54,30 @@ async def userperms(ctx):
     return userperms
 
 
-async def choose(ctx, search, options):
+async def choose(ctx, search, option_dict):
+    options = [x for x in option_dict]
     option_list = utils.disambiguate(search, options, None, 5)
-    print(option_list)
-    if not option_list[0]["ratio"] == 1:
-        option_list = [x["result"] for x in option_list]
-        index, message = await pagination.Picker(
-            embed_title="Select one of the closest matches.",
-            list=option_list,
-            ctx=ctx,
-        ).pick(embed=True, syntax="prolog")
+    if len(option_list) != 1:
+        if not option_list[0]["ratio"] == 1:
+            option_list = [x["result"] for x in option_list]
+            index, message = await pagination.Picker(
+                embed_title="Select one of the closest matches.",
+                list=option_list,
+                ctx=ctx,
+            ).pick(embed=True, syntax="prolog")
 
-        if index < 0:
-            return await message.edit(
-                content=f"{ctx.bot.emote_dict['info']} Selection cancelled.",
-                embed=None,
-            )
+            if index < 0:
+                await message.edit(
+                    content=f"{ctx.bot.emote_dict['info']} Selection cancelled.",
+                    embed=None,
+                )
+                return (None, None)
 
-        selection = option_list[index]
+            selection = option_list[index]
+            return (option_dict[selection], message)
+        else:
+            selection = option_list[0]["result"]
+            return (option_dict[selection], None)
     else:
         selection = option_list[0]["result"]
-    return selection
+    return (option_dict[selection], None)

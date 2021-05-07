@@ -10,6 +10,7 @@ import textwrap
 import traceback
 
 import discord
+from discord import message
 from discord.ext import commands, menus
 from PythonGists import PythonGists
 
@@ -150,75 +151,6 @@ class Botadmin(commands.Cog):
         except Exception as e:
             return await ctx.send_or_reply(e)
         await ctx.send_or_reply(inv)
-
-    @decorators.command(brief="Show members for a server.")
-    async def members(self, ctx, *, server: converters.BotServer = None):
-        """
-        Usage: -members
-        Output: Lists the members of a passed server
-        """
-        if server is None:
-            server = ctx.guild
-        if isinstance(server, list):
-            if len(server) > 1:
-                my_dict = {}
-                for x in server:
-                    guild = self.bot.get_guild(int(x))
-                    my_dict[guild.id] = f"ID: {guild.id} Name: {guild.name}\n"
-                the_list = [my_dict[x] for x in my_dict]
-                index, message = await pagination.Picker(
-                    embed_title="Multiple results. Please choose one.",
-                    list=the_list,
-                    ctx=ctx,
-                ).pick(embed=True, syntax="py")
-                if index < 0:
-                    return await message.edit(
-                        content=f"{self.bot.emote_dict['info']} Server selection cancelled.",
-                        embed=None,
-                    )
-
-                key_list = list(my_dict.keys())
-                selection = key_list[index]
-
-                try:
-                    server = self.bot.get_guild(int(selection))
-                except Exception as e:
-                    return await ctx.send_or_reply(
-                        content=f"Couldn't find that server.",
-                    )
-            else:
-                try:
-                    server = self.bot.get_guild(int(server[0]))
-                except IndexError:
-                    return await ctx.send_or_reply(
-                        content=f"Couldn't find that server.",
-                    )
-        members = server.members
-        member_list = []
-        for entity in members:
-            member_list.append(
-                {
-                    "name": entity,
-                    "value": "Mention: {}\nID: `{}`\nNickname: {}".format(
-                        entity.mention, entity.id, entity.display_name
-                    ),
-                }
-            )
-        p = pagination.MainMenu(
-            pagination.FieldPageSource(
-                entries=[
-                    ("{}. {}".format(y + 1, x["name"]), x["value"])
-                    for y, x in enumerate(member_list)
-                ],
-                per_page=10,
-                title=f"Member list for **{server.name}** ({len(members):,} total)",
-            )
-        )
-        await message.delete()
-        try:
-            await p.start(ctx)
-        except menus.MenuError as e:
-            await ctx.send_or_reply(e)
 
     @decorators.command(
         brief="Lists the servers I'm connected to.", aliases=["servers", "serverlist"]
@@ -686,7 +618,7 @@ class Botadmin(commands.Cog):
     async def emotecount(self, ctx):
         """
         Usage: emotecount
-        Aliases: -emojicount, -ec, botemojis
+        Aliases: {0}emojicount, {0}ec, {0}botemojis
         Output:
             Emoji count accross all servers
         """
@@ -732,10 +664,11 @@ class Botadmin(commands.Cog):
         botperms=["manage_messages"],
     )
     @checks.bot_has_perms(manage_messages=True)
+    @checks.is_bot_admin()
     async def echo(self, ctx, *, content):
         """
-        Usage -echo
-        Alias: -say
+        Usage {0}echo
+        Alias: {0}say
         Output:
             Deletes the command invocation
             and resends the exact content.
@@ -751,6 +684,7 @@ class Botadmin(commands.Cog):
         implemented="2021-05-05 05:12:24.354214",
         updated="2021-05-05 05:12:24.354214",
     )
+    @checks.is_bot_admin()
     async def _del(self, ctx, *, msg_id: int):
         """
         Usage {0}del
@@ -767,6 +701,8 @@ class Botadmin(commands.Cog):
         await ctx.react(self.bot.emote_dict["success"])
 
     @decorators.command()
+    @checks.is_bot_admin()
+    @checks.bot_has_perms(add_reaction=True, external_reactions=True)
     async def sss(self, ctx, user: converters.DiscordUser = None):
         if user is None:
             user = ctx.author
@@ -791,54 +727,29 @@ class Botadmin(commands.Cog):
     @decorators.command(
         aliases=["guildinfo", "gi"],
         brief="Get stats on a bot server.",
-        permissions=["bot_admin"],
         implemented="2021-03-17 22:48:40.720122",
         updated="2021-05-06 00:57:41.774846",
     )
+    @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emoji=True)
+    @checks.is_bot_admin()
     async def guild(self, ctx, *, argument=None):
         """
-        Usage: -guild
-        Alias: -guildinfo, -gi
+        Usage: {0}guild [server]
+        Alias: {0}guildinfo, {0}gi
         Output:
-            Lists some info about the current or passed server
-        Notes:
-
+            Lists some info about the
+            current or specified server.
         """
-        if argument is None:
-            return await ctx.usage("<guild>")
+        if not argument:
+            guild = ctx.guild
         options = await converters.BotServer().convert(ctx, argument)
+        option_dict = dict()
         if isinstance(options, list):
-            selection = await helpers.choose(ctx, argument, options)
-            print(selection)
-            # if len(guild) > 1:
-            #     my_dict = {}
-            #     for x in guild:
-            #         guild = self.bot.get_guild(int(x))
-            #         my_dict[guild.id] = f"ID: {guild.id} Name: {guild.name}\n"
-            #     the_list = [my_dict[x] for x in my_dict]
-            #     index, message = await pagination.Picker(
-            #         embed_title="Multiple results. Please choose one.",
-            #         list=the_list,
-            #         ctx=ctx,
-            #     ).pick(embed=True, syntax="py")
-            #     if index < 0:
-            #         return await message.edit(
-            #             content=f"{self.bot.emote_dict['exclamation']} Server selection cancelled.",
-            #             embed=None,
-            #         )
-
-            #     key_list = list(my_dict.keys())
-            #     selection = key_list[index]
-
-            #     try:
-            #         guild = self.bot.get_guild(int(selection))
-            #     except Exception:
-            #         raise commands.BadArgument(f"Server `{guild}` not found.")
-            # else:
-            #     try:
-            #         guild = self.bot.get_guild(int(guild[0]))
-            #     except IndexError:
-            #         raise commands.BadArgument(f"Server `{guild}` not found.")
+            for x in options:
+                option_dict[x.name] = x
+            guild, message = await helpers.choose(ctx, argument, option_dict)
+            if not guild:
+                return
         else:
             guild = options
         server_embed = discord.Embed(color=self.bot.constants.embed)
@@ -862,10 +773,14 @@ class Botadmin(commands.Cog):
             if not member.status == discord.Status.offline:
                 online_members += 1
         # bot_percent = "{:,g}%".format((bot_member/len(guild.members))*100)
+        try:
+            rounded = round((online_members / (len(guild.members) - bot_member) * 100), 2)
+        except ZeroDivisionError:
+            rounded = 0
         user_string = "{:,}/{:,} online ({:,g}%)".format(
             online_members,
             len(guild.members) - bot_member,
-            round((online_members / (len(guild.members) - bot_member) * 100), 2),
+            rounded
         )
         b_string = "bot" if bot_member == 1 else "bots"
         user_string += "\n{:,}/{:,} {} online ({:,g}%)".format(
@@ -998,7 +913,57 @@ class Botadmin(commands.Cog):
                 server_embed.description = "Continued Emojis:"
                 server_embed.add_field(name=name, value=e, inline=False)
         if len(server_embed.fields):
-            try:
-                await message.edit(embed=server_embed)
-            except BaseException:
+            if message:
+                try:
+                    await message.edit(embed=server_embed)
+                except BaseException:
+                    await ctx.send_or_reply(embed=server_embed)
+            else:
                 await ctx.send_or_reply(embed=server_embed)
+
+
+    @decorators.command(brief="Show members for a server.")
+    async def members(self, ctx, *, argument = None):
+        """
+        Usage: {0}members
+        Output: Lists the members of a passed server
+        """
+        if not argument:
+            guild = ctx.guild
+        options = await converters.BotServer().convert(ctx, argument)
+        option_dict = dict()
+        if isinstance(options, list):
+            for x in options:
+                option_dict[x.name] = x
+            guild, message = await helpers.choose(ctx, argument, option_dict)
+            if not guild:
+                return
+        else:
+            guild = options
+        members = guild.members
+        member_list = []
+        for entity in members:
+            member_list.append(
+                {
+                    "name": entity,
+                    "value": "Mention: {}\nID: `{}`\nNickname: {}".format(
+                        entity.mention, entity.id, entity.display_name
+                    ),
+                }
+            )
+        p = pagination.MainMenu(
+            pagination.FieldPageSource(
+                entries=[
+                    ("{}. {}".format(y + 1, x["name"]), x["value"])
+                    for y, x in enumerate(member_list)
+                ],
+                per_page=10,
+                title=f"Member list for **{guild.name}** ({len(members):,} total)",
+            )
+        )
+        if message:
+            await message.delete()
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send_or_reply(e)
