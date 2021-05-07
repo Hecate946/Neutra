@@ -416,9 +416,9 @@ class Snowbot(commands.AutoShardedBot):
             utils.modify_config("home", int(home.id))
             utils.modify_config("avchan", int(avchan.id))
             utils.modify_config("botlog", int(botlog.id))
-        self.constants.home = home.id
-        self.constants.avchan = avchan.id
-        self.constants.botlog = botlog.id
+            self.constants.home = home.id
+            self.constants.avchan = avchan.id
+            self.constants.botlog = botlog.id
 
         await self.finalize_startup()
 
