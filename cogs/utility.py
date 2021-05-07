@@ -115,8 +115,8 @@ class Utility(commands.Cog):
     @decorators.command(aliases=["pt", "parsetoken"], brief="Decode a discord token.")
     async def ptoken(self, ctx, token=None):
         """
-        Usage: -ptoken <token>
-        Aliases: -pt, -parsetoken
+        Usage: {0}ptoken <token>
+        Aliases: {0}pt, {0}parsetoken
         Output:
             Decodes the token by splitting the token into 3 parts.
         Notes:
@@ -152,7 +152,7 @@ class Utility(commands.Cog):
             f"**Created:** `{member.created_at}`\n"
             f"**Token Created:** `{timestamp}`",
         )
-        embed.color = self.bot.constants.color
+        embed.color = self.bot.constants.embed
         embed.set_thumbnail(url=member.avatar_url)
         await ctx.send_or_reply(embed=embed)
 
@@ -479,7 +479,7 @@ class Utility(commands.Cog):
     @decorators.command(brief="Send an image with some hex codes.")
     async def colors(self, ctx):
         """
-        Usage: -colors
+        Usage: {0}colors
         Output:
             An image showing a few
             hex colors and codes
@@ -548,11 +548,19 @@ class Utility(commands.Cog):
                 content=f"{self.bot.emote_dict['failed']} User `{user}` is not hoisting.",
             )
 
-    @decorators.command(brief="Convert special characters to ascii.")
-    async def ascify(self, ctx, *, str_or_member=None):
+    @decorators.command(
+        brief="Convert special characters to ascii.",
+        implemented="2021-04-21 05:14:23.747367",
+        updated="2021-05-07 05:34:35.645870",
+        examples="""
+                {0}ascify H̷̗́̊ẻ̵̩̚ċ̷͎̖̚a̴̛͎͊t̸̳̭̂͌ȇ̴̲̯
+                {0}ascify 708584008065351681
+                """
+    )
+    async def ascify(self, ctx, *, string_or_member):
         """
-        Usage: -ascify <string/member>
-        Aliases: -ascii, -normalize
+        Usage: {0}ascify <string/member>
+        Aliases: {0}ascii, {0}normalize
         Output:
             Attempts to convert a string or member's
             nickname to ascii by replacing special
@@ -568,7 +576,7 @@ class Utility(commands.Cog):
             it will return the same result.
         """
         try:
-            member = await commands.MemberConverter().convert(ctx, str_or_member)
+            member = await commands.MemberConverter().convert(ctx, string_or_member)
             if member:
                 current_name = copy.copy(member.display_name)
                 ascified = unidecode(member.display_name)
@@ -582,20 +590,32 @@ class Utility(commands.Cog):
                 except Exception:
                     pass
             else:
-                ascified = unidecode(str_or_member)
+                ascified = unidecode(string_or_member)
         except commands.MemberNotFound:
-            ascified = unidecode(str_or_member)
+            ascified = unidecode(string_or_member)
         await ctx.send_or_reply(
             content=f"{self.bot.emote_dict['success']} Result: **{ascified}**",
         )
 
-    @decorators.command(brief="Show information on a character.")
+    @decorators.command(  # R. Danny https://github.com/Rapptz/RoboDanny/
+        aliases=["unicode"],
+        brief="Show information on a character.",
+        implemented="2021-04-21 17:56:54.079348",
+        updated="2021-05-07 05:25:52.622127",
+        examples="""
+                {0}charinfo hello
+                {0}unicode :emoji:
+                """
+    )
     async def charinfo(self, ctx, *, characters: str):
-        """Shows you information about a number of characters.
-
-        Only up to 25 characters at a time.
         """
-
+        Usage: {0}charinfo <characters>
+        Alias: {0}unicode
+        Output:
+            Shows information on the passed characters.
+        Notes:
+            Maximum of 25 characters per command.
+        """
         def to_string(c):
             digit = f"{ord(c):x}"
             name = unicodedata.name(c, "Name not found.")
@@ -606,14 +626,24 @@ class Utility(commands.Cog):
             return await ctx.send_or_reply("Output too long to display.")
         await ctx.send_or_reply(msg)
 
-    @decorators.command(brief="Show a user's avatar.", aliases=["av", "pfp"])
+    @decorators.command(
+        aliases=["av", "pfp"],
+        brief="Show a user's avatar.",
+        implemented="",
+        updated="",
+        examples="""
+                {0}avatar
+                {0}av @Hecate
+                {0}pfp 708584008065351681
+                """
+    )
     async def avatar(self, ctx, *, user: converters.DiscordUser = None):
         """
-        Usage:    -avatar [user]
-        Aliases:  -av, -pfp
-        Examples: -avatar 810377376269205546, -avatar Snowbot
-        Output:   Shows an enlarged embed of a user's avatar.
-        Notes:    Will default to yourself if no user is passed.
+        Usage: {0}avatar [user]
+        Aliases: {0}av, {0}pfp
+        Examples: {0}avatar 810377376269205546, {0}avatar Snowbot
+        Output: Shows an enlarged embed of a user's avatar.
+        Notes: Will default to you if no user is passed.
         """
         if user is None:
             user = ctx.author
@@ -626,15 +656,25 @@ class Utility(commands.Cog):
         await self.do_avatar(ctx, user, url=user.avatar_url)
 
     @decorators.command(
-        brief="Show a user's default avatar.", aliases=["dav", "dpfp", "davatar"]
+        aliases=["dav", "dpfp", "davatar"],
+        brief="Show a user's default avatar.",
+        implemented="2021-03-25 17:11:21.634209",
+        updated="2021-05-07 05:21:05.999642",
+        examples="""
+                {0}dav
+                {0}dpfp 810377376269205546
+                {0}davatar Hecate
+                {0}defaultavatar @Hecate
+                """
     )
     async def defaultavatar(self, ctx, *, user: converters.DiscordUser = None):
         """
-        Usage:    -defaultavatar [user]
-        Aliases:  -dav, -dpfp, davatar
-        Examples: -defaultavatar 810377376269205546, -davatar Snowbot
-        Output:   Shows an enlarged embed of a user's default avatar.
-        Notes:    Will default to yourself if no user is passed.
+        Usage: {0}defaultavatar [user]
+        Aliases: {0}dav, {0}dpfp, {0}davatar
+        Output:
+            Shows an enlarged embed of a user's default avatar.
+        Notes:
+            Will default to you if no user is passed.
         """
         if user is None:
             user = ctx.author
@@ -647,23 +687,28 @@ class Utility(commands.Cog):
         await self.do_avatar(ctx, user, user.default_avatar_url)
 
     @decorators.command(
-        aliases=["nick", "setnick"], brief="Edit or reset a user's nickname"
+        aliases=["nick", "setnick"],
+        brief="Edit or reset a user's nickname",
+        implemented="2021-03-14 04:33:34.557509",
+        updated="2021-05-07 05:17:42.736370",
+        examples="""
+            {0}nick Snowbot
+            {0}setnick @Tester Tester2
+            {0}nickname Snowbot Tester
+            """
     )
     @commands.guild_only()
     @checks.has_perms(manage_nicknames=True)
     async def nickname(self, ctx, user: discord.Member, *, nickname: str = None):
         """
-        Usage:      -nickname <member> [nickname]
-        Aliases:    -nick, -setnick
-        Examples:   -nickname Snowbot NGC, -nickname Snowbot
+        Usage: {0}nickname <user> [nickname]
+        Aliases: {0}nick, {0}setnick
         Permission: Manage Nicknames
-        Output:     Edits a member's nickname on the server.
-        Notes:      Nickname will reset if no member is passed.
+        Output:
+            Edits a member's nickname on the server.
+        Notes:
+            Nickname will be reset if no new nickname is passed.
         """
-        if user is None:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}nickname <user> <nickname>`",
-            )
         if user.id == ctx.guild.owner.id:
             return await ctx.send_or_reply(
                 content=f"{self.bot.emote_dict['failed']} User `{user}` is the server owner. I cannot edit the nickname of the server owner.",
@@ -688,18 +733,24 @@ class Utility(commands.Cog):
 
     # command idea from Alex Flipnote's discord_bot.py bot
     # https://github.com/AlexFlipnote/discord_bot.py
+    # Subcommands added & converted to use a paginator.
 
-    @decorators.group(brief="Find any user using a search.", aliases=["search"])
+    @decorators.group(
+        aliases=["search"],
+        brief="Find any user using a search.",
+        implemented="2021-03-14 18:18:20.175991",
+        updated="2021-05-07 05:13:20.340824",
+    )
     @commands.guild_only()
     @checks.has_perms(manage_messages=True)
     async def find(self, ctx):
         """
-        Usage: -find <option> <search>
-        Alias: -search
+        Usage: {0}find <option> <search>
+        Alias: {0}search
         Output: Users matching your search.
         Examples:
-            -find name Hecate
-            -find id 70858400
+            {0}find name Hecate
+            {0}find id 708584008065351681
         Options:
             duplicates
             hardmention
@@ -719,8 +770,8 @@ class Utility(commands.Cog):
     )
     async def find_playing(self, ctx, *, search: str):
         """
-        Usage: -find playing <activity>
-        Alias: -find status, -find activity
+        Usage: {0}find playing <search>
+        Alias: {0}find status, {0}find activity
         Output:
             All the users currently playing
             the specified activity
@@ -753,10 +804,10 @@ class Utility(commands.Cog):
     )
     async def find_name(self, ctx, *, search: str):
         """
-        Usage: -find username <search>
+        Usage: {0}find username <search>
         Aliases:
-            -find name
-            -find user
+            {0}find name
+            {0}find user
         Output:
             A pagination session with all user's
             usernames that match your search
@@ -789,11 +840,11 @@ class Utility(commands.Cog):
     )
     async def find_nickname(self, ctx, *, search: str):
         """
-        Usage: -find nicknames <search>
+        Usage: {0}find nicknames <search>
         Aliases:
-            -find nicks
-            -find nick
-            -find nickname
+            {0}find nicks
+            {0}find nick
+            {0}find nickname
         Output:
             A pagination session with all user's
             nicknames that match your search
@@ -823,12 +874,12 @@ class Utility(commands.Cog):
     @find.command(name="id", aliases=["snowflake"], brief="Search for users by id.")
     async def find_id(self, ctx, *, search: int):
         """
-        Usage: -find id <search>
-        Alias: -find snowflake
+        Usage: {0}find id <search>
+        Alias: {0}find snowflake
         Output:
             Starts a pagination session
             showing all users who's IDs
-            contain your search
+            contain your search.
         """
         loop = [
             f"{i} | {i} ({i.id})"
@@ -858,10 +909,10 @@ class Utility(commands.Cog):
     )
     async def find_discrim(self, ctx, *, search: str):
         """
-        Usage: -find hash <search>
+        Usage: {0}find hash <search>
         Aliases:
-            -find discrim
-            -find discriminator
+            {0}find discrim
+            {0}find discriminator
         Output:
             Starts a pagination session
             showing all users who's hash
@@ -894,8 +945,8 @@ class Utility(commands.Cog):
     )
     async def find_duplicates(self, ctx):
         """
-        Usage: -find duplicates
-        Alias: -find dups
+        Usage: {0}find duplicates
+        Alias: {0}find dups
         Output:
             Starts a pagination session
             showing all users who's nicknames
@@ -946,11 +997,11 @@ class Utility(commands.Cog):
     )
     async def hardmentions(self, ctx, username: str = None):
         """
-        Usage: -find hardmentions [username=False]
+        Usage: {0}find hardmentions [username]
         Alias:
-            -find weird
-            -find special
-            -find hardmention
+            {0}find weird
+            {0}find special
+            {0}find hardmention
         Output:
             Starts a pagination session showing
             all users who use special characters
@@ -989,27 +1040,30 @@ class Utility(commands.Cog):
         except menus.MenuError as e:
             await ctx.send(e)
 
-    @decorators.command(brief="Show info on a discord snowflake.", aliases=["id"])
-    async def snowflake(self, ctx, *, sid=None):
+    @decorators.command(
+        aliases=["id"],
+        brief="Show info on a discord snowflake.",
+        implemented="2021-04-05 18:28:55.338390",
+        updated="2021-05-07 05:05:13.464282",
+        examples="""
+                {0}snowflake 81037737626
+                {0}id 810377376269205546
+                """
+    )
+    async def snowflake(self, ctx, *, snowflake):
         """
-        Usage: -snowflake <id>
-        Alias: -id
+        Usage: {0}snowflake <id>
+        Alias: {0}id
         Output:
             The exact date & time that the
             discord snowflake was created
-        Examples:
-            -snowflake 81037737626
-            -id 810377376269205546
         Notes:
-            Will calculate when the snowflake
-            will be created if it does not exist
+            Will calculate when the snowflake will
+            be created if it does not yet exist.
         """
-        if not str(sid).isdigit():
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}snowflake <id>`"
-            )
-
-        sid = int(sid)
+        if not snowflake.isdigit():
+            raise commands.BadArgument("The `snowflake` argument must be an integer.")
+        sid = int(snowflake)
         timestamp = (
             (sid >> 22) + 1420070400000
         ) / 1000  # python uses seconds not milliseconds
@@ -1019,13 +1073,22 @@ class Utility(commands.Cog):
         )
         return await ctx.send_or_reply(msg)
 
-    @decorators.command(brief="Shows the raw content of a message.")
+    @decorators.command(
+        aliases=["content"],
+        brief="Shows the raw content of a message.",
+        implemented="2021-03-15 03:07:09.177084",
+        updated="2021-05-07 05:05:13.464282",
+        examples="""
+                {0}raw 840091302532087838
+                {0}content 840091302532087838
+                """
+    )
     async def raw(self, ctx, *, message: discord.Message):
         """
-        Usage: -raw [message id]
+        Usage: raw [message id]
+        Alias: {0}content
         Output: Raw message content
         """
-
         raw_data = await self.bot.http.get_message(message.channel.id, message.id)
 
         if message.content:
@@ -1109,18 +1172,24 @@ class Utility(commands.Cog):
         embed.set_footer(text=f"Message ID: {message_id}")
         await ctx.send_or_reply(embed=embed)
 
-    @decorators.command(brief="Shorten URLs to a bitly links.")
-    async def shorten(self, ctx, url=None):
+    @decorators.command(
+        aliases=["bitly"],
+        brief="Shorten URLs to bitly links.",
+        implemented="2021-04-15 05:17:23.532870",
+        updated="2021-05-07 05:02:01.750279",
+        examples="""
+                {0}shorten https://discord.gg/947ramn
+                {0}bitly https://discord.gg/947ramn
+                """
+    )
+    async def shorten(self, ctx, url):
         """
-        Usage: -shorten <url>
+        Usage: {0}shorten <url>
+        Alias: {0}bitly
         Output:
-            A short url that will redirect to
-            the url that was passed.
+            A bitly url that will redirect to the
+            destination of the url that was passed.
         """
-        if url is None:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}shorten <url>`",
-            )
         params = {"access_token": self.bot.constants.bitly, "longUrl": url}
 
         response = await self.bot.get(
@@ -1213,6 +1282,7 @@ class Utility(commands.Cog):
         return msg
 
     @decorators.command(
+        aliases=["embedder"],
         brief="Create an embed interactively.",
         description="============================================\n"
         "Hello there! Welcome to my interactive embed creating session.\n"
@@ -1220,20 +1290,32 @@ class Utility(commands.Cog):
         "Type `none` to leave any portion of the embed empty.\n"
         "Type `end` at any time to finalize the embed and end the session.\n"
         "============================================\n",
+        implemented="2021-04-26 03:38:21.466614",
+        updated="2021-05-07 04:58:48.454818",
+        examples="""
+                {0}embed
+                {0}embedder
+                """
     )
     @checks.bot_has_perms(embed_links=True)
     @checks.has_perms(manage_messages=True, embed_links=True)
     async def embed(self, ctx):
         """
-        Usage: -embed
+        Usage: {0}embed
+        Alias: {0}embedder
         Permissions: Manage Messages, Embed Links
         Output:
             Starts an interactive embed
             creating session.
-        Notes:
+        Instructions:
             Use "cancel" at any time to cancel the session
             Use "none" at any time to skip the value
             Use "end" at any time to end the session and send the embed.
+        Notes:
+            If the bot has the Manage Messages permission,
+            it will prompt you for a cleanup option after
+            completion. This will purge all messages sent as
+            a result of this embed session and leave the embed.
         """
 
         m = await ctx.send_or_reply(
@@ -1532,48 +1614,38 @@ class Utility(commands.Cog):
         else:
             self.msg_collection.clear()
 
-    @decorators.command(aliases=["math", "calc"], brief="Calculate a math formula.")
-    async def calculate(self, ctx, *, formula=None):
+    @decorators.command(
+        aliases=["math", "calc"],
+        brief="Calculate a math formula.",
+        implemented="2021-04-19 03:04:41.003346",
+        updated="2021-05-07 04:54:31.680310",
+        examples="""
+            {0}calc (2 + 2) - 4 / 5
+            {0}math sqrt(532)
+            {0}calculate log(2)
+            {0}calc sin(PI * E)
+            {0}math arctan(PI + 30)
+            """
+    )
+    async def calculate(self, ctx, *, formula):
         """
-        Usage: calculate <expression>
-        Aliases: -math, -calc
-        Output: The result of your input
-        Examples:
-            -calc 2 + 2 + 4 + 5
-            -calc sqrt(532)
-            -calc log(2)
-            -calc sin(PI * E)
-        exponentiation: '^'
-        multiplication: 'x' | '*'
-        division: '/'
-        addition: '+' | '-'
-        integer: ['+' | '-'] '0'..'9'+
-        constants: PI | E
-        Functions:  # To be used in the form -calc function(expression)
-            sqrt
-            log
-            sin
-            cos
-            tan
-            arcsin
-            arccos
-            arctan
-            sinh
-            cosh
-            tanh
-            arcsinh
-            arccosh
-            arctanh
-            abs
-            trunc
-            round
-            sgn"""
-        if formula is None:
-            return await ctx.send_or_reply(
-                content="Usage: `{}calculate <formula>`".format(ctx.prefix),
-            )
+        Usage: calculate <formula>
+        Aliases: {0}math, {0}calc
+        Output:
+            The caluculated result of your input formula
+        Keys:
+            exponentiation: '^'
+            multiplication: 'x' | '*'
+            division: '/'
+            addition: '+' | '-'
+            integer: ['+' | '-'] '0'..'9'+
+            constants: PI | E
+        Functions:  # To be used in the form {0}calc function(expression)
+            sqrt, log, sin, cos, tan, arcsin, arccos,
+            arctan, sinh, cosh, tanh, arcsinh, arccosh,
+            arctanh, abs, trunc, round, sgn
+        """
         formula = formula.replace("*", "x")
-
         try:
             answer = NumericStringParser().eval(formula)
             await ctx.message.add_reaction(self.bot.emote_dict["success"])
