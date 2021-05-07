@@ -761,7 +761,7 @@ class Help(commands.Cog):
         """
         right = self.bot.emote_dict["right"]
         await ctx.send_or_reply(
-            f"{right} The command `{command}` resides in the `{command.cog_name}` {ctx.command.invoked_with.lower()}"
+            f"{right} The command `{command}` resides in the `{command.cog_name}` {ctx.invoked_with.lower()}"
         )
 
     @decorators.command(
