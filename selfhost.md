@@ -65,4 +65,4 @@ pip install -r requirements.txt
 If you are on windows, do this in cmd instead of ubuntu.
 
 <h2>Step Six: Configure Bot</h2>
-Run: `python starter.py setup` to start an interactive session that will set up your configuration
+Run: ```python starter.py setup``` to start an interactive session that will set up your configuration
