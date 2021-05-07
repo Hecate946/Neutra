@@ -15,10 +15,10 @@ from utilities import pagination
 
 def setup(bot):
     bot.remove_command("help")
-    bot.add_cog(Commands(bot))
+    bot.add_cog(Help(bot))
 
 
-class Commands(commands.Cog):
+class Help(commands.Cog):
     """
     My extensive help category.
     """
