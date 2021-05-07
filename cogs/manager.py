@@ -435,10 +435,11 @@ class Manager(commands.Cog):
         sh = self.bot.get_command("sh")
         pm2dir = os.listdir("./data/pm2/")
         for filename in pm2dir:
-            print(filename)
             if filename.startswith("out"):
                 await ctx.invoke(sh, prefix="yml", command=f"cat ./data/pm2/{filename}")
-
+                return
+        else:
+            raise commands.BadArgument(f"No stdout file currently exists.")
     @pm2.command(aliases=["err", "error", "errors"])
     async def stderr(self, ctx):
         sh = self.bot.get_command("sh")
@@ -446,6 +447,9 @@ class Manager(commands.Cog):
         for filename in pm2dir:
             if filename.startswith("err"):
                 await ctx.invoke(sh, prefix="yml", command=f"cat ./data/pm2/{filename}")
+                return
+        else:
+            raise commands.BadArgument(f"No stderr file currently exists.")
 
     @pm2.command(aliases=["process", "processid"])
     async def pid(self, ctx):
@@ -454,6 +458,29 @@ class Manager(commands.Cog):
         for filename in pm2dir:
             if filename.startswith("pid"):
                 await ctx.invoke(sh, prefix="yml", command=f"cat ./data/pm2/{filename}")
+                return
+        else:
+            raise commands.BadArgument(f"No pid file currently exists.")
+            
+    @pm2.command(name="clear")
+    async def _clear(self, ctx, search):
+        if search in ["out", "output", "stdout"]:
+            search = "out"
+            msg = "stdout"
+        elif search in ["err", "stderr", "error", "errors"]:
+            search = "err"
+            msg = "stderr"
+        elif search in ["pid", "p", "process", "processid"]:
+            search = "pid"
+            msg = "pid"
+        else:
+            raise commands.BadArgument(f"Invalid file search.")
+        pm2dir = os.listdir("./data/pm2/")
+        for filename in pm2dir:
+            if filename.startswith(search):
+                os.remove("./data/pm2/" + filename)
+                break
+        await ctx.success(f"Cleared the pm2 {msg} log.")
 
     @decorators.group(
         hidden=True,
