@@ -819,6 +819,7 @@ class Tracking(commands.Cog):
                 """
     )
     @commands.guild_only()
+    @checks.bot_has_perms(embed_links=True)
     @checks.has_perms(view_audit_log=True)
     async def botusage(self, ctx, unit: str = "month"):
         """
@@ -870,6 +871,7 @@ class Tracking(commands.Cog):
                 """
     )
     @commands.guild_only()
+    @checks.bot_has_perms(add_reactions=True, external_emojis=True)
     @checks.has_perms(manage_messages=True)
     async def words(self, ctx, user = None, limit:str = "100"):
         """
@@ -938,36 +940,45 @@ class Tracking(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(str(e))
 
-    @decorators.command(brief="Usage for a specific word.")
+    @decorators.command(
+        brief="Usage for a specific word.",
+        implemented="2021-03-13 18:18:34.790741",
+        updated="2021-05-07 03:51:54.934511",
+        examples="""
+                {0}word Hello
+                {0}word Hello Hecate
+                {0}word Hello @Hecate
+                {0}word Hello Hecate#3523
+                {0}word Hello 708584008065351681
+                """
+    )
     @commands.guild_only()
+    @checks.bot_has_perms(add_reactions=True, external_emojis=True)
     @checks.has_perms(manage_messages=True)
-    async def word(self, ctx, word: str = None, member: discord.Member = None):
+    async def word(self, ctx, word, member: discord.Member = None):
         """
-        Usage: -word <word> [user]
-        Output: Number of times a word has been used by a user
+        Usage: {0}word <word> [user]
         Permission: Manage Messages
+        Output:
+            Show how many times a specific word
+            has been used by a user.
         Notes:
             Will default to you if no user is passed.
         """
-        if word is None:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}word <word> [user]`",
-            )
         if member is None:
             member = ctx.author
         if member.bot:
-            return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['warn']} I do not track bots.",
-            )
-
+            raise commands.BadArgument("I do not track bots.")
         message = await ctx.send_or_reply(
             content=f"**{self.bot.emote_dict['loading']} Collecting Word Statistics...**",
         )
-        all_msgs = await self.bot.cxn.fetch(
-            """SELECT content FROM messages WHERE author_id = $1 AND server_id = $2""",
-            member.id,
-            ctx.guild.id,
-        )
+        query = """
+                SELECT content
+                FROM messages
+                WHERE author_id = $1
+                AND server_id = $2
+                """
+        all_msgs = await self.bot.cxn.fetch(query, member.id, ctx.guild.id)
         all_msgs = [x[0] for x in all_msgs]
         all_msgs = " ".join(all_msgs).split()
         all_msgs = list(filter(lambda x: len(x) > 0, all_msgs))
@@ -995,13 +1006,23 @@ class Tracking(commands.Cog):
             content=f"The word `{word}` has been used {found[0][1]} time{'' if found[0][1] == 1 else 's'} and is the {common} most common word used by **{member.display_name}**"
         )
 
-    @decorators.command(brief="Show all users who spam.")
+    @decorators.command(
+        brief="Show all recorded spammers.",
+        implemented="2021-04-25 01:32:06.151615",
+        updated="2021-05-07 04:15:46.972946",
+        examples="""
+                {0}spammers
+                """
+    )
+    @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.has_perms(manage_messages=True)
     async def spammers(self, ctx):
         """
-        Usage: -spammers
+        Usage: {0}spammers
         Permission: Manage Messages
-        Output: Users recorded spamming
+        Output:
+            Shows a pagination session with users
+            who were recorded spamming in the server.
         """
         query = """
                 SELECT (user_id, spamcount)
@@ -1034,16 +1055,35 @@ class Tracking(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-    @decorators.group(
-        brief="Show the most active server users.", invoke_without_command=True
+    @decorators.command(
+        brief="Show the most active server users.",
+        invoke_without_command=True,
+        case_insensitive=True,
+        implemented="2021-03-13 04:47:25.624232",
+        updated="2021-05-07 04:26:00.620200",
+        examples="""
+                {0}activity
+                {0}activity day
+                {0}activity week
+                {0}activity month
+                {0}activity year
+                """
     )
     @commands.guild_only()
+    @checks.bot_has_perms(embed_links=True)
     @checks.has_perms(manage_messages=True)
     async def activity(self, ctx, unit: str = "month"):
         """
         Usage: {0}activity [unit of time]
-        Output: Top message senders in the server
         Permission: Manage Messages
+        Output:
+            Shows the most active server
+            users ordered by the number
+            of messages they've sent.
+        Notes:
+            If no unit of time is specified,
+            of if the unit is invalid, the bot
+            will default to month for its unit.
         """
         unit = unit.lower()
         time_dict = {"day": 86400, "week": 604800, "month": 2592000, "year": 31556952}
@@ -1063,15 +1103,15 @@ class Tracking(commands.Cog):
         stuff = await self.bot.cxn.fetch(query, ctx.guild.id, diff)
 
         e = discord.Embed(
-            title=f"Activity for the last {unit}",
-            description=f"{sum(x[0] for x in stuff)} messages from {len(stuff)} user{'' if len(stuff) == 1 else 's'}",
+            title=f"Message Leaderboard",
+            description=f"{sum(x[0] for x in stuff)} messages from {len(stuff)} user{'' if len(stuff) == 1 else 's'} in the last {unit}",
             color=self.bot.constants.embed,
         )
         for n, v in enumerate(stuff[:24]):
             try:
                 name = ctx.guild.get_member(int(v[1])).name
             except AttributeError:
-                name = f"Unknown member"
+                continue
             e.add_field(
                 name=f"{n+1}. {name}",
                 value=f"{v[0]} message{'' if int(v[0]) == 1 else 's'}",
@@ -1079,48 +1119,98 @@ class Tracking(commands.Cog):
 
         await ctx.send_or_reply(embed=e)
 
-    @activity.command(aliases=["characters"])
+    @decorators.command(
+        aliases=["chars"],
+        brief="Show character usage.",
+        implemented="2021-04-19 06:02:49.713396",
+        updated="2021-05-07 04:31:07.411009",
+        examples="""
+                {0}chars
+                {0}chars day
+                {0}chars week
+                {0}chars month
+                {0}chars year
+                {0}characters
+                {0}characters day
+                {0}characters week
+                {0}characters month
+                {0}characters year
+                """
+    )
     @commands.guild_only()
-    async def char(self, ctx, unit: str = "day"):
+    @checks.bot_has_perms(embed_links=True)
+    @checks.has_perms(manage_messages=True)
+    async def characters(self, ctx, unit: str = "day"):
+        """
+        Usage: {0}characters [unit of time]
+        Alias: {0}chars
+        Permission: Manage Messages
+        Output:
+            Shows the most active server
+            users ordered by the number
+            of characters they've sent.
+        Notes:
+            If no unit of time is specified,
+            of if the unit is invalid, the bot
+            will default to day for its unit.
+        """
         unit = unit.lower()
         time_dict = {"day": 86400, "week": 604800, "month": 2592000, "year": 31556952}
         if unit not in time_dict:
-            unit = "month"
+            unit = "day"
         time_seconds = time_dict.get(unit, 2592000)
         now = int(datetime.utcnow().timestamp())
         diff = now - time_seconds
         query = """SELECT SUM(LENGTH(content)) as c, author_id, COUNT(*) FROM messages WHERE server_id = $1 AND unix > $2 GROUP BY author_id ORDER BY c DESC LIMIT 25"""
         stuff = await self.bot.cxn.fetch(query, ctx.guild.id, diff)
         e = discord.Embed(
-            title="Current leaderboard",
-            description=f"Activity for the last {unit}",
+            title="Character Leaderboard",
+            description=f"{sum(x[0] for x in stuff)} characters from {len(stuff)} user{'' if len(stuff) == 1 else 's'} in the last {unit}",
             color=self.bot.constants.embed,
         )
         for n, v in enumerate(stuff):
             try:
                 name = ctx.guild.get_member(int(v[1])).name
             except AttributeError:
-                name = "Unknown member"
-            # ratio = int(v[0] / 1440)
-            # e.add_field(name=f"{n+1}. {name}", value=f"{v[0]:,} chars ({ratio} chars/minute)")
+                continue
             e.add_field(name=f"{n+1}. {name}", value=f"{v[0]:,} chars")
 
         await ctx.send_or_reply(embed=e)
 
     @decorators.command(
-        brief="Status info and online time.",
-        aliases=["onlinetime", "piestatus", "ps", r"%status", "statusstats"],
+        aliases=["piestatus", "ps"],
+        brief="Status info and online time stats.",
+        implemented="2021-04-29 22:10:20.348498",
+        updated="2021-05-07 04:15:46.972946",
+        examples="""
+                {0}ps
+                {0}ps Hecate
+                {0}ps @Hecate
+                {0}ps Hecate#3523
+                {0}ps 708584008065351681
+                {0}piestatus
+                {0}piestatus Hecate
+                {0}piestatus @Hecate
+                {0}piestatus Hecate#3523
+                {0}piestatus 708584008065351681
+                {0}statusinfo
+                {0}statusinfo Hecate
+                {0}statusinfo @Hecate
+                {0}statusinfo Hecate#3523
+                {0}statusinfo 708584008065351681
+                """
     )
+    @checks.bot_has_perms(attach_files=True, embed_links=True)
     @checks.has_perms(view_audit_log=True)
     async def statusinfo(self, ctx, user: discord.Member = None):
         """
-        Usage: -statusinfo <user>
+        Usage: {0}statusinfo [user]
+        Aliases: {0}piestatus, {0}ps,
         Output:
-            A pie chart graph with details
-            of the passed user's status
+            Show a pie chart graph with details of the
+            passed user's status statistics.
         Notes:
-            Will default to yourself
-            if no user is passed.
+            Will default to yourself if no user is passed.
         """
         async with ctx.typing():
             if not user:
@@ -1429,5 +1519,4 @@ class Tracking(commands.Cog):
                     """.format(
             str(user.status)
         )
-
         await self.bot.cxn.execute(query, user.id, time.time())

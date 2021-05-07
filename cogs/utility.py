@@ -33,15 +33,19 @@ from pyparsing import (
     oneOf,
 )
 
-from utilities import converters, pagination, checks, utils
+from utilities import utils
+from utilities import checks
+from utilities import converters
 from utilities import decorators
+from utilities import pagination
 
 
 def setup(bot):
     bot.add_cog(Utility(bot))
 
 
-# Couple of commands taken and edited from Stella_bot.
+# Couple of commands taken and edited from Stella#2000's bot
+# https://github.com/InterStella0/stella_bot
 
 
 class Utility(commands.Cog):

@@ -73,5 +73,7 @@ emotes = {
     "privacy": "<:privacy:839574405541134346>",
     "delete": "<:deletedata:839587782091735040>",
     "heart": "<:heart:839354647546298399>",
-    "graph": "<:graph:840046538340040765>"
+    "graph": "<:graph:840046538340040765>",
+    "upload":"<:upload:840086768497983498>",
+    "download": "<:download:840086726209961984>"
 }
