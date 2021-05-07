@@ -43,9 +43,6 @@ CREATE DATABASE <db_name>;
 
 For example, 
 CREATE DATABASE Snowbot;
-Discord
-Discord - A New Way to Chat with Friends & Communities
-Discord is the easiest way to communicate over voice, video, and text. Chat, hang out, and stay close with your friends and communities.
 
 ## Step Four: Create A Discord Application
 
