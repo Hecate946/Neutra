@@ -191,7 +191,7 @@ class Manager(commands.Cog):
         self.bot.constants.botlog = config["botlog"]
         self.bot.constants.timezonedb = config["timezonedb"]
         self.bot.constants.bitly = config["bitly"]
-        self.bot.emote_dict = constants.emote_dict
+        self.bot.emote_dict = constants.emotes
 
         self.bot.owner_ids = self.bot.constants.owners
 
