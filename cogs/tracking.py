@@ -34,7 +34,7 @@ class Tracking(commands.Cog):
                 {0}mobile @Hecate Snowbot 708584008065351681
                 {0}desktop @Hecate Snowbot 708584008065351681
                 {0}platform @Hecate Snowbot 708584008065351681
-                """
+                """,
     )
     @commands.guild_only()
     async def platform(self, ctx, users: commands.Greedy[discord.Member]):
@@ -140,7 +140,7 @@ class Tracking(commands.Cog):
                 {0}rawuser @Hecate
                 {0}rawuser Hecate#3523
                 {0}rawuser 708584008065351681
-                """
+                """,
     )
     @checks.has_perms(view_audit_log=True)
     async def user(self, ctx, *, user: converters.DiscordUser = None):
@@ -297,7 +297,7 @@ class Tracking(commands.Cog):
                 {0}presence @Hecate
                 {0}presence Hecate#3523
                 {0}presence 708584008065351681
-                """
+                """,
     )
     async def status(self, ctx, *, user: discord.Member = None):
         """
@@ -383,12 +383,12 @@ class Tracking(commands.Cog):
                 {0}messagestats 200
                 {0}messagestatistics 
                 {0}messagestatistics 40
-                """
+                """,
     )
     @commands.guild_only()
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.has_perms(view_audit_log=True)
-    async def messagestats(self, ctx, limit = 100):
+    async def messagestats(self, ctx, limit=100):
         """
         Usage: {0}messagestats
         Alias: {0}top, {0}messagestatistics
@@ -443,7 +443,7 @@ class Tracking(commands.Cog):
                 {0}nicknames @Hecate
                 {0}nicknames Hecate#3523
                 {0}nicknames 708584008065351681
-                """
+                """,
     )
     @commands.guild_only()
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
@@ -454,7 +454,7 @@ class Tracking(commands.Cog):
         Alias: {0}nicks
         Permission: View Audit Log
         Output:
-            Shows an embed of all the passed user's 
+            Shows an embed of all the passed user's
             nicknames (past and present).
         Notes:
             Will default to yourself if no user is passed
@@ -494,7 +494,7 @@ class Tracking(commands.Cog):
                 {0}usernames @Hecate
                 {0}usernames Hecate#3523
                 {0}usernames 708584008065351681
-                """
+                """,
     )
     @commands.guild_only()
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
@@ -544,10 +544,12 @@ class Tracking(commands.Cog):
                 {0}avatars @Hecate
                 {0}avatars Hecate#3523
                 {0}avatars 708584008065351681
-                """
+                """,
     )
     @commands.guild_only()
-    @checks.bot_has_perms(add_reactions=True, attach_files=True, embed_links=True, external_emojis=True)
+    @checks.bot_has_perms(
+        add_reactions=True, attach_files=True, embed_links=True, external_emojis=True
+    )
     @checks.has_perms(view_audit_log=True)
     async def avatars(self, ctx, user: discord.Member = None):
         """
@@ -638,7 +640,7 @@ class Tracking(commands.Cog):
                 {0}observed @Hecate
                 {0}observed Hecate#3523
                 {0}observed 708584008065351681
-                """
+                """,
     )
     @checks.has_perms(view_audit_log=True)
     async def seen(self, ctx, *, user: converters.DiscordUser):
@@ -681,7 +683,7 @@ class Tracking(commands.Cog):
                 {0}commandstats
                 {0}commandstats @Hecate
                 {0}commandstats @Hecate 200
-                """
+                """,
     )
     @commands.guild_only()
     @checks.bot_has_perms(add_reactions=True, external_emojis=True)
@@ -693,7 +695,7 @@ class Tracking(commands.Cog):
         Permission: View Audit Log
         Output:
             Show the most popular commands in
-            a pagination session. 
+            a pagination session.
         Notes:
             If no user is passed, the bot will
             show the most popular commands across
@@ -767,7 +769,7 @@ class Tracking(commands.Cog):
                 {0}commandcount @Hecate
                 {0}commandcount Hecate#3523
                 {0}commandcount 708584008065351681
-                """
+                """,
     )
     @commands.guild_only()
     @checks.has_perms(view_audit_log=True)
@@ -816,7 +818,7 @@ class Tracking(commands.Cog):
                 {0}botusage week
                 {0}botusage month
                 {0}botusage year
-                """
+                """,
     )
     @commands.guild_only()
     @checks.bot_has_perms(embed_links=True)
@@ -868,12 +870,12 @@ class Tracking(commands.Cog):
                 {0}words @Hecate 400
                 {0}words Hecate#3523 500
                 {0}words 708584008065351681 600
-                """
+                """,
     )
     @commands.guild_only()
     @checks.bot_has_perms(add_reactions=True, external_emojis=True)
     @checks.has_perms(manage_messages=True)
-    async def words(self, ctx, user = None, limit:str = "100"):
+    async def words(self, ctx, user=None, limit: str = "100"):
         """
         Usage: {0}words [user] [limit]
         Output: Most commonly used words by the passed user
@@ -890,7 +892,9 @@ class Tracking(commands.Cog):
             try:
                 member = await commands.MemberConverter().convert(ctx, user)
                 if not limit.isdigit():
-                    raise commands.BadArgument("The `limit` argument must be an integer.")
+                    raise commands.BadArgument(
+                        "The `limit` argument must be an integer."
+                    )
                 else:
                     limit = int(limit)
             except commands.MemberNotFound:
@@ -950,7 +954,7 @@ class Tracking(commands.Cog):
                 {0}word Hello @Hecate
                 {0}word Hello Hecate#3523
                 {0}word Hello 708584008065351681
-                """
+                """,
     )
     @commands.guild_only()
     @checks.bot_has_perms(add_reactions=True, external_emojis=True)
@@ -1012,7 +1016,7 @@ class Tracking(commands.Cog):
         updated="2021-05-07 04:15:46.972946",
         examples="""
                 {0}spammers
-                """
+                """,
     )
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.has_perms(manage_messages=True)
@@ -1067,7 +1071,7 @@ class Tracking(commands.Cog):
                 {0}activity week
                 {0}activity month
                 {0}activity year
-                """
+                """,
     )
     @commands.guild_only()
     @checks.bot_has_perms(embed_links=True)
@@ -1135,7 +1139,7 @@ class Tracking(commands.Cog):
                 {0}characters week
                 {0}characters month
                 {0}characters year
-                """
+                """,
     )
     @commands.guild_only()
     @checks.bot_has_perms(embed_links=True)
@@ -1198,7 +1202,7 @@ class Tracking(commands.Cog):
                 {0}statusinfo @Hecate
                 {0}statusinfo Hecate#3523
                 {0}statusinfo 708584008065351681
-                """
+                """,
     )
     @checks.bot_has_perms(attach_files=True, embed_links=True)
     @checks.has_perms(view_audit_log=True)

@@ -2,6 +2,7 @@ import sys
 import json
 from re import match
 
+
 def start():
     config = {}
     msg = "Hello! My name is Snowbot, and I'm a moderation bot made by Hecate#3523\n"
@@ -39,7 +40,9 @@ def start():
     print(msg)
     embed = input("Enter my embed color code: ")
     while len(embed) != 6:
-        print("That does not seem like a valid hex code. It should be 6 digits in hexadecimal.")
+        print(
+            "That does not seem like a valid hex code. It should be 6 digits in hexadecimal."
+        )
         embed = input("Enter my embed color code: ")
         try:
             test = int(embed, 16)
@@ -52,7 +55,9 @@ def start():
     print(msg)
     owners = input("Enter your discord ID here: ")
     while len(owners) > 20 or len(owners) < 16:
-        print("That does not seem like a valid discord ID. Enable developer mode and right click on your avatar to find your ID.")
+        print(
+            "That does not seem like a valid discord ID. Enable developer mode and right click on your avatar to find your ID."
+        )
         owners = input("Enter your discord ID here: ")
         try:
             stuff = [int(owners)]

@@ -100,6 +100,12 @@ class Utility(commands.Cog):
         brief="Generate a bot invite link.",
         implemented="2021-05-05 17:59:12.441533",
         updated="2021-05-05 17:59:12.441533",
+        examples="""
+                {0}oauth
+                {0}oauth2 810377376269205546 8
+                {0}genoauth Snowbot#7630 359867
+                {0}genbotoauth @Snowbot 34985
+                """,
     )
     async def oauth(
         self, ctx, bot: converters.DiscordBot = None, permissions: int = None
@@ -112,8 +118,19 @@ class Utility(commands.Cog):
         oauth_url = discord.utils.oauth_url(bot.id, permissions=permissions)
         await ctx.reply("<" + oauth_url + ">")
 
-    @decorators.command(aliases=["pt", "parsetoken"], brief="Decode a discord token.")
-    async def ptoken(self, ctx, token=None):
+    @decorators.command(  # For anyone looking here, these tokens are not valid.
+        aliases=["pt", "parsetoken"],
+        brief="Decode a discord token.",
+        implemented="2021-05-06 01:09:46.734485",
+        updated="2021-05-07 05:47:26.758031",
+        examples="""
+                {0}pt NzA4NTg0MDA4MDY1MzUxNjgx.YJU29g.K8lush3e6flT9Of7d7bp4rj6aU2
+                {0}ptoken NzA4NTg0MDA4MDY1MzUxNjgx.YJU29g.K8lush3e6flT9Of7d7bp4rj6aU2
+                {0}parsetoken NzA4NTg0MDA4MDY1MzUxNjgx.YJU29g.K8lush3e6flT9Of7d7bp4rj6aU2
+                """,
+    )
+    @checks.bot_has_perms(embed_links=True)
+    async def ptoken(self, ctx, token):
         """
         Usage: {0}ptoken <token>
         Aliases: {0}pt, {0}parsetoken
@@ -124,8 +141,6 @@ class Utility(commands.Cog):
             is the creation of the token, which is converted from base 64 into int. The last part
             cannot be decoded due to discord encryption.
         """
-        if token is None:
-            return await ctx.send_or_reply(f"Usage: `{ctx.prefix}ptoken <token>`")
         token_part = token.split(".")
         if len(token_part) != 3:
             return await ctx.send_or_reply("Invalid token")
@@ -157,20 +172,29 @@ class Utility(commands.Cog):
         await ctx.send_or_reply(embed=embed)
 
     @decorators.command(
-        aliases=["gt", "generatetoken"], brief="Generate a discord token for a user."
+        aliases=["gt", "generatetoken"],
+        brief="Generate a discord token.",
+        implemented="2021-05-06 02:26:12.925925",
+        updated="2021-05-07 05:49:40.401151",
+        examples="""
+                {0}gt
+                {0}gtoken 708584008065351681
+                {0}generatetoken Hecate
+                """,
     )
-    async def gtoken(self, ctx, member: Union[discord.Member, discord.User] = None):
+    @checks.bot_has_perms(embed_links=True)
+    async def gtoken(self, ctx, user: Union[discord.Member, discord.User] = None):
         """
-        Usage: -gtoken <user>
-        Aliases: -gt, -generatetoken
+        Usage: {0}gtoken <user>
+        Aliases: {0}gt, {0}generatetoken
         Output:
             Generates a discord token for a user
         Notes:
-            Defaults to command author
+            Defaults to you if no user is passed.
         """
-        if not member:
-            member = ctx.author
-        byte_first = str(member.id).encode("ascii")
+        if not user:
+            user = ctx.author
+        byte_first = str(user.id).encode("ascii")
         first_encode = base64.b64encode(byte_first)
         first = first_encode.decode("ascii")
         time_rn = datetime.utcnow()
@@ -192,27 +216,33 @@ class Utility(commands.Cog):
         complete = ".".join((first, middle, last))
 
         embed = discord.Embed(
-            title=f"{member.display_name}'s token",
-            description=f"**User:** `{member}`\n"
-            f"**ID:** `{member.id}`\n"
-            f"**Bot:** `{member.bot}`\n"
+            title=f"{user.display_name}'s token",
+            description=f"**User:** `{user}`\n"
+            f"**ID:** `{user.id}`\n"
+            f"**Bot:** `{user.bot}`\n"
             f"**Token created:** `{time_rn}`\n"
             f"**Generated token:** `{complete}`\n",
         )
         embed.color = self.bot.constants.embed
-        embed.set_thumbnail(url=member.avatar_url)
+        embed.set_thumbnail(url=user.avatar_url)
         await ctx.send_or_reply(embed=embed)
 
-    @decorators.command(brief="Find the first message of a reply thread.")
+    @decorators.command(
+        brief="Find the first message of a reply thread.",
+        implemented="2021-05-06 01:10:04.331672",
+        updated="2021-05-07 05:49:40.401151",
+        examples="""
+                {0}replies 840103070402740274
+                """,
+    )
+    @checks.bot_has_perms(embed_links=True)
     async def replies(self, ctx, message: discord.Message):
         """
-        Usage: -replies <message>
+        Usage: {0}replies <message>
         Output:
             The author, replies, message
             and jump_url to the message.
         """
-        if message is None:
-            return await ctx.send_or_reply(f"Usage: `{ctx.prefix}replies <message>`")
 
         def count_reply(m, replies=0):
             if isinstance(m, discord.MessageReference):
@@ -240,18 +270,21 @@ class Utility(commands.Cog):
         name="type",
         aliases=["objtype", "findtype"],
         brief="Find the type of a discord object.",
+        implemented="",
+        updated="",
+        examples="""
+                {0}type <:forward:816458167835820093>
+                {0}objtype 708584008065351681
+                {0}findtype 840103070402740274
+                """,
     )
-    async def type_(self, ctx, obj_id: discord.Object = None):
+    async def type_(self, ctx, obj_id: discord.Object):
         """
         Usage: -type <discord object>
         Aliases: -findtype, -objtype
         Output:
             Attemps to find the type of the object presented.
         """
-        if obj_id is None:
-            return await ctx.send_or_reply(
-                f"Usage: `{ctx.prefix}findtype <discord object>`"
-            )
 
         async def found_message(type_id):
             embed = discord.Embed(title="Result")
@@ -340,40 +373,29 @@ class Utility(commands.Cog):
                 f"{self.bot.emote_dict['failed']} I could not find that object."
             )
 
-    async def do_avatar(self, ctx, user, url):
-        embed = discord.Embed(
-            title=f"**{user.display_name}'s avatar.**",
-            description=f"Links to `{user}'s` avatar:  "
-            f"[webp]({(str(url))}) | "
-            f'[png]({(str(url).replace("webp", "png"))}) | '
-            f'[jpeg]({(str(url).replace("webp", "jpg"))})  ',
-            color=self.bot.constants.embed,
-        )
-        embed.set_image(url=url)
-        await ctx.send_or_reply(embed=embed)
-
-    @decorators.command(brief="Show a given color and its values.")
-    async def color(self, ctx, *, value=None):
+    @decorators.command(
+        brief="Show a given color and its values.",
+        implemented="2021-04-16 00:19:02.842207",
+        updated="2021-05-07 05:44:12.543100",
+        examples="""
+                {0}color #3399cc
+                {0}color rgb(3, 4, 5)
+                {0}color cmyk(1, 2, 3, 4)
+                {0}color 0xFF00FF
+                """,
+    )
+    async def color(self, ctx, *, value):
         """
-        Usage: -color <value>
+        Usage: {0}color <value>
         Output:
             View info on a rgb, hex or cmyk color and their
             values in other formats
-        Examples:
-            -color #3399cc
-            -color rgb(3, 4, 5)
-            -color cmyk(1, 2, 3, 4)
-            -color 0xFF00FF
         Notes:
             Will try to convert value into role
             and return role color before searching
             for hex, decimal, rgb, and cmyk
         """
         async with ctx.channel.typing():
-            if not value:
-                return await ctx.send_or_reply(
-                    content="Usage: `{}color [value]`".format(ctx.prefix),
-                )
             try:
                 role = await commands.RoleConverter().convert(ctx, value)
                 color_values = [role.color.value]
@@ -488,23 +510,31 @@ class Utility(commands.Cog):
             file=discord.File("./data/assets/colors.png", filename="colors.png")
         )
 
-    @decorators.command(brief="Dehoist a specified user.")
+    @decorators.command(
+        brief="Dehoist a specified user.",
+        implemented="2021-05-06 02:22:00.614849",
+        updated="2021-05-07 05:42:25.333804",
+        examples="""
+                {0}dehoist Hecate
+                {0}dehoist @Hecate
+                {0}dehoist Hecate#3523
+                {0}dehoist 708584008065351681
+                """,
+    )
     @checks.bot_has_perms(manage_nicknames=True)
     @checks.has_perms(manage_nicknames=True)
-    async def dehoist(self, ctx, user: discord.Member = None):
+    async def dehoist(self, ctx, user: discord.Member):
         """
-        Usage: -dehoist <user>
+        Usage: {0}dehoist <user>
         Permission: Manage Nicknames
         Output:
             Re nicknames a single user who hoists
             themselves at the top of the member
             list by using special characters
         Notes:
-            To dehoist all users, use -massdehoist
-            instead.
+            To dehoist all users with a single command,
+            use {0}massdehoist instead.
         """
-        if user is None:
-            return await ctx.send_or_reply(f"Usage: `{ctx.prefix}dehoist <user>`")
         characters = [
             "!",
             '"',
@@ -555,7 +585,7 @@ class Utility(commands.Cog):
         examples="""
                 {0}ascify H̷̗́̊ẻ̵̩̚ċ̷͎̖̚a̴̛͎͊t̸̳̭̂͌ȇ̴̲̯
                 {0}ascify 708584008065351681
-                """
+                """,
     )
     async def ascify(self, ctx, *, string_or_member):
         """
@@ -605,7 +635,7 @@ class Utility(commands.Cog):
         examples="""
                 {0}charinfo hello
                 {0}unicode :emoji:
-                """
+                """,
     )
     async def charinfo(self, ctx, *, characters: str):
         """
@@ -616,6 +646,7 @@ class Utility(commands.Cog):
         Notes:
             Maximum of 25 characters per command.
         """
+
         def to_string(c):
             digit = f"{ord(c):x}"
             name = unicodedata.name(c, "Name not found.")
@@ -626,6 +657,18 @@ class Utility(commands.Cog):
             return await ctx.send_or_reply("Output too long to display.")
         await ctx.send_or_reply(msg)
 
+    async def do_avatar(self, ctx, user, url):
+        embed = discord.Embed(
+            title=f"**{user.display_name}'s avatar.**",
+            description=f"Links to `{user}'s` avatar:  "
+            f"[webp]({(str(url))}) | "
+            f'[png]({(str(url).replace("webp", "png"))}) | '
+            f'[jpeg]({(str(url).replace("webp", "jpg"))})  ',
+            color=self.bot.constants.embed,
+        )
+        embed.set_image(url=url)
+        await ctx.send_or_reply(embed=embed)
+
     @decorators.command(
         aliases=["av", "pfp"],
         brief="Show a user's avatar.",
@@ -635,7 +678,7 @@ class Utility(commands.Cog):
                 {0}avatar
                 {0}av @Hecate
                 {0}pfp 708584008065351681
-                """
+                """,
     )
     async def avatar(self, ctx, *, user: converters.DiscordUser = None):
         """
@@ -665,7 +708,7 @@ class Utility(commands.Cog):
                 {0}dpfp 810377376269205546
                 {0}davatar Hecate
                 {0}defaultavatar @Hecate
-                """
+                """,
     )
     async def defaultavatar(self, ctx, *, user: converters.DiscordUser = None):
         """
@@ -695,7 +738,7 @@ class Utility(commands.Cog):
             {0}nick Snowbot
             {0}setnick @Tester Tester2
             {0}nickname Snowbot Tester
-            """
+            """,
     )
     @commands.guild_only()
     @checks.has_perms(manage_nicknames=True)
@@ -1048,7 +1091,7 @@ class Utility(commands.Cog):
         examples="""
                 {0}snowflake 81037737626
                 {0}id 810377376269205546
-                """
+                """,
     )
     async def snowflake(self, ctx, *, snowflake):
         """
@@ -1081,7 +1124,7 @@ class Utility(commands.Cog):
         examples="""
                 {0}raw 840091302532087838
                 {0}content 840091302532087838
-                """
+                """,
     )
     async def raw(self, ctx, *, message: discord.Message):
         """
@@ -1180,7 +1223,7 @@ class Utility(commands.Cog):
         examples="""
                 {0}shorten https://discord.gg/947ramn
                 {0}bitly https://discord.gg/947ramn
-                """
+                """,
     )
     async def shorten(self, ctx, url):
         """
@@ -1295,7 +1338,7 @@ class Utility(commands.Cog):
         examples="""
                 {0}embed
                 {0}embedder
-                """
+                """,
     )
     @checks.bot_has_perms(embed_links=True)
     @checks.has_perms(manage_messages=True, embed_links=True)
@@ -1625,7 +1668,7 @@ class Utility(commands.Cog):
             {0}calculate log(2)
             {0}calc sin(PI * E)
             {0}math arctan(PI + 30)
-            """
+            """,
     )
     async def calculate(self, ctx, *, formula):
         """

@@ -247,7 +247,10 @@ class Batch(commands.Cog):
             async with self.batch_lock:
                 await self.bot.cxn.executemany(
                     query,
-                    ((entry[0], entry[1][0], entry[1][1]) for entry in self.tracker_batch.items()),
+                    (
+                        (entry[0], entry[1][0], entry[1][1])
+                        for entry in self.tracker_batch.items()
+                    ),
                 )
             self.tracker_batch.clear()
 
