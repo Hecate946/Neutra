@@ -29,59 +29,12 @@ class Botadmin(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.emote_dict = bot.emote_dict
-        self.socket_since = datetime.datetime.utcnow()
-        self.socket_event_total = 0
 
     # This is a bot admin only cog
     async def cog_check(self, ctx):
         if checks.is_admin(ctx):
             return True
         return
-
-    @commands.Cog.listener()
-    async def on_socket_response(self, msg: dict):
-        """When a websocket event is received, increase our counters."""
-        if event_type := msg.get("t"):
-            self.socket_event_total += 1
-            self.bot.socket_events[event_type] += 1
-
-    @decorators.command(brief="Show global socket stats.", aliases=["socketstats"])
-    async def socket(self, ctx):
-        """
-        Usage: -socket
-        Alias: -socketstats
-        Output:
-            Fetch information on the socket events received from Discord.
-        """
-        running_s = (datetime.datetime.utcnow() - self.socket_since).total_seconds()
-
-        per_s = self.socket_event_total / running_s
-
-        width = len(max(self.bot.socket_events, key=lambda x: len(str(x))))
-
-        line = "\n".join(
-            "{0:<{1}} : {2:>{3}}".format(
-                str(event_type), width, count, len(max(str(count)))
-            )
-            for event_type, count in self.bot.socket_events.most_common()
-        )
-
-        header = (
-            "**Receiving {0:0.2f} socket events per second** | **Total: {1}**\n".format(
-                per_s, self.socket_event_total
-            )
-        )
-
-        m = pagination.MainMenu(
-            pagination.TextPageSource(line, prefix="```yaml", max_size=500)
-        )
-        await ctx.send_or_reply(header)
-        try:
-
-            await m.start(ctx)
-        except menus.MenuError as e:
-            await ctx.send_or_reply(e)
 
     @decorators.command(
         name="message",
@@ -363,7 +316,8 @@ class Botadmin(commands.Cog):
     async def cachedcommands(self, ctx, limit=20):
         """
         Usage: -cachedcommands
-        Output: All commands in the bot cache
+        Output:
+            Show the commands in the bot's cache
         """
         counter = self.bot.command_stats
         width = len(max(counter, key=len))
@@ -375,7 +329,11 @@ class Botadmin(commands.Cog):
             common = counter.most_common()[limit:]
         output = "\n".join("{0:<{1}} : {2}".format(k, width, c) for k, c in common)
 
-        await ctx.send_or_reply(content="```yaml\n{}\n```".format(output))
+        p = pagination.MainMenu(pagination.TextPageSource(output, prefix="```yaml"))
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send_or_reply(e)
 
     @decorators.command(aliases=["ns"], brief="List all bot nicknames.")
     async def nickscan(self, ctx):

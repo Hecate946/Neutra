@@ -37,17 +37,26 @@ class Info(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.socket_event_total = 0
         self.process = psutil.Process(os.getpid())
+        self.socket_since = datetime.datetime.utcnow()
+
+    @commands.Cog.listener()  # Update our socket counters
+    async def on_socket_response(self, msg: dict):
+        """When a websocket event is received, increase our counters."""
+        if event_type := msg.get("t"):
+            self.socket_event_total += 1
+            self.bot.socket_events[event_type] += 1
 
     async def total_global_commands(self):
-        query = """SELECT COUNT(*) as c FROM commands"""
-        value = await self.bot.cxn.fetchrow(query)
-        return int(value[0])
+        query = """SELECT COUNT(*) FROM commands"""
+        value = await self.bot.cxn.fetchval(query)
+        return value
 
     async def total_global_messages(self):
-        query = """SELECT COUNT(*) as c FROM messages"""
-        value = await self.bot.cxn.fetchrow(query)
-        return int(value[0])
+        query = """SELECT COUNT(*) FROM messages"""
+        value = await self.bot.cxn.fetchval(query)
+        return value
 
     @decorators.command(
         aliases=["info", "bot", "botstats", "botinfo"],
@@ -136,6 +145,56 @@ class Info(commands.Cog):
             content=f"About **{ctx.bot.user}** | **{round(bot_version, 1)}**",
             embed=embed,
         )
+
+
+    @decorators.command(
+        aliases=["socketstats"],
+        brief="Show global bot socket stats.",
+        implemented="2021-03-18 17:55:01.726405",
+        updated="2021-05-07 18:00:54.076428",
+        examples="""
+                {0}socket
+                {0}socketstats
+                """
+    )
+    @checks.bot_has_perms(add_reactions=True, external_emojis=True)
+    async def socket(self, ctx):
+        """
+        Usage: {0}socket
+        Alias: {0}socketstats
+        Output:
+            Fetch information on the socket
+            events received from Discord.
+        """
+        running_s = (datetime.datetime.utcnow() - self.socket_since).total_seconds()
+
+        per_s = self.socket_event_total / running_s
+
+        width = len(max(self.bot.socket_events, key=lambda x: len(str(x))))
+
+        line = "\n".join(
+            "{0:<{1}} : {2:>{3}}".format(
+                str(event_type), width, count, len(max(str(count)))
+            )
+            for event_type, count in self.bot.socket_events.most_common()
+        )
+
+        header = (
+            "**Receiving {0:0.2f} socket events per second** | **Total: {1}**\n".format(
+                per_s, self.socket_event_total
+            )
+        )
+
+        m = pagination.MainMenu(
+            pagination.TextPageSource(line, prefix="```yaml", max_size=500)
+        )
+        await ctx.send_or_reply(header)
+        try:
+
+            await m.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send_or_reply(e)
+
 
     @decorators.command(
         aliases=["isratelimited"],
