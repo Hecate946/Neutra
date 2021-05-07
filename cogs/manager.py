@@ -563,7 +563,7 @@ class Manager(commands.Cog):
         table.add_rows(list(r.values()) for r in results)
         render = table.render()
 
-        fmt = f"```\n{render}\n```\n*Returned {formatting.plural(rows):row} in {dt:.2f}ms*"
+        fmt = f"```sml\n{render}\n```\n*Returned {formatting.plural(rows):row} in {dt:.2f}ms*"
         if len(fmt) > 2000:
             fp = io.BytesIO(fmt.encode("utf-8"))
             await ctx.send_or_reply(file=discord.File(fp, "results.txt"))
