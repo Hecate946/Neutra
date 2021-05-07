@@ -754,15 +754,30 @@ class Tracking(commands.Cog):
     @decorators.command(
         brief="Count the commands run by a user.",
         aliases=["cc"],
+        implemented="2021-03-11 18:22:43.628118",
         updated="2021-05-05 04:49:50.161683",
+        examples="""
+                {0}cc
+                {0}cc Hecate
+                {0}cc @Hecate
+                {0}cc Hecate#3523
+                {0}cc 708584008065351681
+                {0}commandcount
+                {0}commandcount Hecate
+                {0}commandcount @Hecate
+                {0}commandcount Hecate#3523
+                {0}commandcount 708584008065351681
+                """
     )
     @commands.guild_only()
     @checks.has_perms(view_audit_log=True)
     async def commandcount(self, ctx, user: discord.Member = None):
         """
-        Usage:  {0}commands [user]
-        Output: Command count for the user or server
+        Usage: {0}commandcount [user]
+        Alias: {0}cc
         Permission: View Audit Log
+        Output:
+            Command count for a specific user.
         Notes:
             If no user is passed, the bot
             will show total server commands.
@@ -775,34 +790,53 @@ class Tracking(commands.Cog):
                     """
             command_count = await self.bot.cxn.fetchrow(query, ctx.guild.id)
             return await ctx.send_or_reply(
-                content=f"A total of **{command_count[0]:,}** command{' has' if int(command_count[0]) == 1 else 's have'} been executed on this server.",
+                f"{self.bot.emote_dict['graph']} A total of **{command_count[0]:,}** command{' has' if int(command_count[0]) == 1 else 's have'} been executed on this server.",
             )
         else:
             if user.bot:
-                return await ctx.send_or_reply(
-                    f"{self.bot.emote_dict['warn']} I do not track bots."
-                )
-            query = """SELECT COUNT(*) as c FROM commands WHERE author_id = $1 AND server_id = $2"""
+                return await ctx.fail("I do not track bots.")
+            query = """
+                    SELECT COUNT(*) as c
+                    FROM commands
+                    WHERE author_id = $1
+                    AND server_id = $2;
+                    """
             command_count = await self.bot.cxn.fetchrow(query, user.id, ctx.guild.id)
             return await ctx.send_or_reply(
-                content=f"User `{user}` has executed **{int(command_count[0]):,}** commands.",
+                f"{self.bot.emote_dict['graph']} User `{user}` has executed **{int(command_count[0]):,}** commands.",
             )
 
-    @decorators.command(brief="Show the top bot users.")
+    @decorators.command(
+        brief="Show the top bot users.",
+        implemented="2021-03-27 22:05:32.358714",
+        updated="2021-05-07 02:24:13.585137",
+        examples="""
+                {0}botusage
+                {0}botusage day
+                {0}botusage week
+                {0}botusage month
+                {0}botusage year
+                """
+    )
     @commands.guild_only()
-    @checks.has_perms(manage_messages=True)
+    @checks.has_perms(view_audit_log=True)
     async def botusage(self, ctx, unit: str = "month"):
         """
-        Usage: -usage [unit of time]
-        ALias: -botusage
+        Usage: {0}botusage [unit of time]
+        Permission: View Audit Log
         Output: Top bot users in the server
-        Permission: Manage Messages
         """
         unit = unit.lower()
         time_dict = {"day": 86400, "week": 604800, "month": 2592000, "year": 31556952}
         if unit not in time_dict:
             unit = "month"
-        query = """SELECT COUNT(*) as c, author_id FROM commands WHERE server_id = $1 GROUP BY author_id ORDER BY c DESC LIMIT 25"""
+        query = """
+                SELECT COUNT(*) as c, author_id
+                FROM commands
+                WHERE server_id = $1
+                GROUP BY author_id
+                ORDER BY c DESC LIMIT 25;
+                """
         usage = await self.bot.cxn.fetch(query, ctx.guild.id)
         e = discord.Embed(
             title=f"Bot usage for the last {unit}",
@@ -818,31 +852,53 @@ class Tracking(commands.Cog):
 
         await ctx.send_or_reply(embed=e)
 
-    @decorators.command(brief="Most used words from a user.")
+    @decorators.command(
+        brief="Most used words from a user.",
+        implemented="2021-03-11 20:10:05.766906",
+        updated="2021-05-07 02:24:13.585137",
+        examples="""
+                {0}words
+                {0}words 700
+                {0}words Hecate
+                {0}words @Hecate
+                {0}words Hecate#3523
+                {0}words 708584008065351681
+                {0}words Hecate 300
+                {0}words @Hecate 400
+                {0}words Hecate#3523 500
+                {0}words 708584008065351681 600
+                """
+    )
     @commands.guild_only()
     @checks.has_perms(manage_messages=True)
-    async def words(self, ctx, mem_input=None, limit: int = 100):
+    async def words(self, ctx, user = None, limit:str = "100"):
         """
-        Usage: -words [user]
+        Usage: {0}words [user] [limit]
         Output: Most commonly used words by the passed user
         Permission: Manage Messages
         Notes:
             Will default to yourself if no user is passed.
+            Pass a limit argument after or instead of a user
+            argument to limit the number of common words to show.
         """
-        if mem_input is None:
+        if user is None:
             member = ctx.author
         else:
             try:
-                member = await commands.MemberConverter().convert(ctx, mem_input)
+                member = await commands.MemberConverter().convert(ctx, user)
+                if not limit.isdigit():
+                    raise commands.BadArgument("The `limit` argument must be an integer.")
+                else:
+                    limit = int(limit)
             except commands.MemberNotFound:
                 member = ctx.author
-                if mem_input.isdigit():
-                    limit = int(mem_input)
+                if user.isdigit():
+                    limit = int(user)
+                else:
+                    raise commands.BadArgument(f"User `{user}` not found.")
 
         if member.bot:
-            return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['warn']} I do not track bots.",
-            )
+            return await ctx.fail("I do not track bots.")
         message = await ctx.send_or_reply(
             content=f"**{self.bot.emote_dict['loading']} Collecting Word Statistics...**",
         )
@@ -984,7 +1040,7 @@ class Tracking(commands.Cog):
     @checks.has_perms(manage_messages=True)
     async def activity(self, ctx, unit: str = "month"):
         """
-        Usage: -activity [unit of time]
+        Usage: {0}activity [unit of time]
         Output: Top message senders in the server
         Permission: Manage Messages
         """
@@ -995,7 +1051,14 @@ class Tracking(commands.Cog):
         time_seconds = time_dict.get(unit, 2592000)
         now = int(datetime.utcnow().timestamp())
         diff = now - time_seconds
-        query = """SELECT COUNT(*) as c, author_id FROM messages WHERE server_id = $1 AND unix > $2 GROUP BY author_id ORDER BY c DESC LIMIT 25"""
+        query = """
+                SELECT COUNT(*) as c, author_id
+                FROM messages
+                WHERE server_id = $1
+                AND unix > $2
+                GROUP BY author_id
+                ORDER BY c DESC LIMIT 25;
+                """
         stuff = await self.bot.cxn.fetch(query, ctx.guild.id, diff)
 
         e = discord.Embed(
