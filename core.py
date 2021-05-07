@@ -405,6 +405,21 @@ class Snowbot(commands.AutoShardedBot):
         if not hasattr(self, "server_settings"):
             self.server_settings = database.settings
 
+        # We need to have a "home" server. So lets create one if not exists.
+        if not self.constants.home:
+            try:
+                home = await self.create_guild(f"{self.user.name}'s Home Server.")
+            except discord.errors.HTTPException:
+                raise RuntimeError("I am currently in too many servers to run properly.")
+            avchan = await home.create_text_channel("avchan")
+            botlog = await home.create_text_channel("botlog")
+            utils.modify_config("home", int(home.id))
+            utils.modify_config("avchan", int(avchan.id))
+            utils.modify_config("botlog", int(botlog.id))
+        self.constants.home = home.id
+        self.constants.avchan = avchan.id
+        self.constants.botlog = botlog.id
+
         await self.finalize_startup()
 
     async def set_status(self):
@@ -699,7 +714,9 @@ class Snowbot(commands.AutoShardedBot):
 
     @property
     def home(self):
-        return self.get_guild(self.constants.home)
+        home = self.get_guild(self.constants.home)
+        print(home)
+        return home
 
     @property
     def bot_channel(self):
