@@ -883,6 +883,7 @@ class Tracking(commands.Cog):
         """
         if user is None:
             member = ctx.author
+            limit = int(limit)
         else:
             try:
                 member = await commands.MemberConverter().convert(ctx, user)
