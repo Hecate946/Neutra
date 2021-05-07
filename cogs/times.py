@@ -18,10 +18,10 @@ from utilities import pagination
 
 
 def setup(bot):
-    bot.add_cog(Time(bot))
+    bot.add_cog(Times(bot))
 
 
-class Time(commands.Cog):
+class Times(commands.Cog):
     """
     Module for time functions.
     """
