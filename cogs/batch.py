@@ -236,17 +236,18 @@ class Batch(commands.Cog):
             query = """
                     INSERT INTO tracker (
                         user_id,
-                        unix
+                        unix,
+                        action
                     )
-                    VALUES ($1, $2)
+                    VALUES ($1, $2, $3)
                     ON CONFLICT (user_id)
-                    DO UPDATE SET unix = $2
+                    DO UPDATE SET unix = $2, action = $3
                     WHERE tracker.user_id = $1;
                     """
             async with self.batch_lock:
                 await self.bot.cxn.executemany(
                     query,
-                    ((entry[0], entry[1]) for entry in self.tracker_batch.items()),
+                    ((entry[0], entry[1][0], entry[1][1]) for entry in self.tracker_batch.items()),
                 )
             self.tracker_batch.clear()
 
@@ -392,7 +393,7 @@ class Batch(commands.Cog):
 
     @tasks.loop(seconds=0.5)
     async def dispatch_avatars(self):
-        if len(self.to_upload) > 9:
+        if len(self.to_upload) > 8:
             async with self.batch_lock:
                 if len(self.to_upload) > 10:
                     await self.bot.bot_channel.send(f"FUCK worst nightmare")
@@ -495,7 +496,7 @@ class Batch(commands.Cog):
 
         if await self.status_changed(before, after):
             async with self.batch_lock:
-                self.tracker_batch[before.id] = time.time()
+                self.tracker_batch[before.id] = (time.time(), "updating their status")
 
         if await self.nickname_changed(before, after):
             async with self.batch_lock:
@@ -524,11 +525,11 @@ class Batch(commands.Cog):
         username, and discriminator changes.
         """
         if after.bot:
-            return  # Don't care about bots
-        async with self.batch_lock:
-            self.tracker_batch[before.id] = time.time()  # Update last seen time
-        if self.avatar_webhook:  # Check if we have the webhook set up.
-            if await self.avatar_changed(before, after):
+            return  # Don't care about bots  # Update last seen time
+        if await self.avatar_changed(before, after):
+            async with self.batch_lock:
+                self.tracker_batch[before.id] = (time.time(), "updating their avatar")
+            if self.avatar_webhook:  # Check if we have the webhook set up.
                 try:
                     avatar_url = str(after.avatar_url_as(format="png", size=1024))
                     resp = await self.bot.get((avatar_url), res_method="read")
@@ -548,6 +549,7 @@ class Batch(commands.Cog):
                     "user_id": after.id,
                     "username": str(after),
                 }
+                self.tracker_batch[before.id] = (time.time(), "updating their username")
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -569,7 +571,7 @@ class Batch(commands.Cog):
                     "server_id": message.guild.id,
                 }
             )
-            self.tracker_batch[message.author.id] = time.time()
+            self.tracker_batch[message.author.id] = (time.time(), "sending a message")
 
         matches = EMOJI_REGEX.findall(message.content)
         if matches:
@@ -600,7 +602,7 @@ class Batch(commands.Cog):
         if user.bot:
             return
         async with self.batch_lock:
-            self.tracker_batch[user.id] = time.time()
+            self.tracker_batch[user.id] = (time.time(), "typing")
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -617,7 +619,7 @@ class Batch(commands.Cog):
             return
         author_id = message.author.id
         async with self.batch_lock:
-            self.tracker_batch[author_id] = time.time()
+            self.tracker_batch[author_id] = (time.time(), "editing a message")
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -627,7 +629,7 @@ class Batch(commands.Cog):
         if user.bot:
             return
         async with self.batch_lock:
-            self.tracker_batch[payload.user_id] = time.time()
+            self.tracker_batch[payload.user_id] = (time.time(), "reacting to a message")
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -636,7 +638,7 @@ class Batch(commands.Cog):
         if member.bot:
             return
         async with self.batch_lock:
-            self.tracker_batch[member.id] = time.time()
+            self.tracker_batch[member.id] = (time.time(), "changing their voice state")
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -645,7 +647,7 @@ class Batch(commands.Cog):
         if invite.inviter.bot:
             return
         async with self.batch_lock:
-            self.tracker_batch[invite.inviter.id] = time.time()
+            self.tracker_batch[invite.inviter.id] = (time.time(), "creating an invite")
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -654,7 +656,7 @@ class Batch(commands.Cog):
         if member.bot:
             return
         async with self.batch_lock:
-            self.tracker_batch[member.id] = time.time()
+            self.tracker_batch[member.id] = (time.time(), "joining a server")
 
         await asyncio.sleep(2)
 
@@ -678,16 +680,17 @@ class Batch(commands.Cog):
         if member.bot:
             return
         async with self.batch_lock:
-            self.tracker_batch[member.id] = time.time()
+            self.tracker_batch[member.id] = (time.time(), "leaving a server")
 
     async def last_observed(self, member: converters.DiscordUser):
         """Lookup last_observed data."""
         query = """
-                SELECT MAX(unix)
+                SELECT DISTINCT ON (unix) unix, action
                 FROM tracker
-                WHERE user_id = $1;
+                WHERE user_id = $1
+                ORDER BY unix DESC;
                 """
-        last_seen = await self.bot.cxn.fetchval(query, member.id) or None
+        last_seen = await self.bot.cxn.fetchrow(query, member.id) or None
 
         query = """
                 SELECT MAX(unix)
@@ -715,7 +718,8 @@ class Batch(commands.Cog):
             server_last_spoke = None
 
         if last_seen:
-            # last_seen = utils.format_time(datetime.datetime.utcfromtimestamp(last_seen))
+            action = last_seen[1]
+            last_seen = last_seen[0]
             last_seen = utils.time_between(int(last_seen), int(time.time()))
         if last_spoke:
             last_spoke = utils.time_between(int(last_spoke), int(time.time()))
@@ -725,6 +729,7 @@ class Batch(commands.Cog):
             )
 
         observed_data = {
+            "action": action or None,
             "last_seen": last_seen or None,
             "last_spoke": last_spoke or None,
             "server_last_spoke": server_last_spoke or None,

@@ -351,9 +351,7 @@ class Snowbot(commands.AutoShardedBot):
         st = time.time()
         print("Initializing Cache...")
         await self.wait_until_ready()
-        print(
-            color(fore="#FFFFFF", text=f"Elapsed time: {str(time.time() - st)[:10]} s")
-        )
+        print(f"Elapsed time: {str(time.time() - st)[:10]} s")
         SEPARATOR = "=" * 33
         print(color(fore="#46648F", text=SEPARATOR))
         st = time.time()

@@ -24,7 +24,8 @@ CREATE TABLE IF NOT EXISTS usertime (
 
 CREATE TABLE IF NOT EXISTS tracker (
     user_id BIGINT PRIMARY KEY,
-    unix BIGINT
+    unix NUMERIC,
+    action TEXT
 );
 
 CREATE TABLE IF NOT EXISTS spammers (

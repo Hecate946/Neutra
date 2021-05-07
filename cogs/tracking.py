@@ -27,6 +27,14 @@ class Tracking(commands.Cog):
     @decorators.command(
         aliases=["mobile", "web", "desktop"],
         brief="Show a user's discord platform.",
+        implemented="2021-03-25 05:56:35.053930",
+        updated="2021-05-06 23:25:08.685407",
+        examples="""
+                {0}web @Hecate Snowbot 708584008065351681
+                {0}mobile @Hecate Snowbot 708584008065351681
+                {0}desktop @Hecate Snowbot 708584008065351681
+                {0}platform @Hecate Snowbot 708584008065351681
+                """
     )
     @commands.guild_only()
     async def platform(self, ctx, users: commands.Greedy[discord.Member]):
@@ -114,17 +122,36 @@ class Tracking(commands.Cog):
     @decorators.command(
         brief="Show information on a user.",
         aliases=["rawuser", "lookup"],
+        implemented="2021-03-11 23:54:09.760439",
+        updated="2021-05-06 23:25:08.683192",
+        examples="""
+                {0}user
+                {0}user Hecate
+                {0}user @Hecate
+                {0}user Hecate#3523
+                {0}user 708584008065351681
+                {0}lookup
+                {0}lookup Hecate
+                {0}lookup @Hecate
+                {0}lookup Hecate#3523
+                {0}lookup 708584008065351681
+                {0}rawuser
+                {0}rawuser Hecate
+                {0}rawuser @Hecate
+                {0}rawuser Hecate#3523
+                {0}rawuser 708584008065351681
+                """
     )
     @checks.has_perms(view_audit_log=True)
     async def user(self, ctx, *, user: converters.DiscordUser = None):
         """
-        Usage:   -user <user>
-        Alias:   -lookup
-        Example: -user 810377376269205546
+        Usage:   {0}user [user]
+        Alias:   {0}lookup
         Output:  General information on any discord user.
         Notes:
             Accepts nickname, ID, mention, username, and username+discrim
-            Neither you nor the bot must share a server with the user.
+            Neither you nor the bot must share a server with the passed user.
+            Will default to you if no user is passed into the command.
         """
         async with ctx.channel.typing():
             if user is None:
@@ -243,19 +270,53 @@ class Tracking(commands.Cog):
             except menus.MenuError as e:
                 await ctx.send_or_reply(e)
 
-    @decorators.command(name="status", brief="Show a user's status")
-    async def status_(self, ctx, *, member: discord.Member = None):
+    @decorators.command(
+        name="status",
+        aliases=["game", "presence", "playing"],
+        brief="Show a user's discord status.",
+        implemented="2021-03-22 16:31:55.693675",
+        updated="2021-05-06 23:31:16.992062",
+        examples="""
+                {0}game
+                {0}game Hecate
+                {0}game @Hecate
+                {0}game Hecate#3523
+                {0}game 708584008065351681
+                {0}status
+                {0}status Hecate
+                {0}status @Hecate
+                {0}status Hecate#3523
+                {0}status 708584008065351681
+                {0}playing
+                {0}playing Hecate
+                {0}playing @Hecate
+                {0}playing Hecate#3523
+                {0}playing 708584008065351681
+                {0}presence
+                {0}presence Hecate
+                {0}presence @Hecate
+                {0}presence Hecate#3523
+                {0}presence 708584008065351681
+                """
+    )
+    async def status(self, ctx, *, user: discord.Member = None):
         """
-        Usage: -status <member>
+        Usage: {0}status [user]
+        Aliases:
+            {0}game, {0}playing, {0}activity, {0}presence
+        Output:
+            Shows a user's current activity (if exists).
+        Notes:
+            Will default to you if no user is passed.
         """
-        if member is None:
-            member = ctx.author
-        status = "\n".join(self.activity_string(a) for a in member.activities)
+        if user is None:
+            user = ctx.author
+        status = "\n".join(self.activity_string(a) for a in user.activities)
         if status == "":
             return await ctx.send_or_reply(
-                content=f"**{member.display_name}** has no current status.",
+                content=f"**{user.display_name}** has no current status.",
             )
-        msg = f"**{member.display_name}'s** Status: {status}\n"
+        msg = f"**{user.display_name}'s** Status: {status}\n"
         await ctx.send_or_reply(msg)
 
     def activity_string(self, activity):
@@ -310,17 +371,37 @@ class Tracking(commands.Cog):
                 content=f"`{user}` has sent **{a}** message{'' if a == 1 else 's'}",
             )
 
-    @decorators.command(brief="Show the top message senders.", aliases=["top"])
+    @decorators.command(
+        aliases=["top", "messagestatistics"],
+        brief="Show the top message senders.",
+        implemented="2021-04-03 01:56:35.751553",
+        updated="2021-05-06 23:36:18.959143",
+        examples="""
+                {0}top
+                {0}top 500
+                {0}messagestats
+                {0}messagestats 200
+                {0}messagestatistics 
+                {0}messagestatistics 40
+                """
+    )
     @commands.guild_only()
-    @checks.has_perms(manage_messages=True)
-    async def messagestats(self, ctx, limit: int = 100):
+    @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
+    @checks.has_perms(view_audit_log=True)
+    async def messagestats(self, ctx, limit = 100):
         """
-        Usage: -messagestats
-        Alias: -top
-        Output: Top message senders in the server
-        Permission: Manage Messages
+        Usage: {0}messagestats
+        Alias: {0}top, {0}messagestatistics
+        Permission: View Audit Log
+        Output:
+            Show top message senders in the server
+        Notes:
+            Specify the limit kwarg to adjust the
+            number of members to include in the
+            messagestats embed
         """
-
+        if not limit.isdigit():
+            raise commands.BadArgument("The `limit` argument must be an integer.")
         query = """
                 SELECT author_id,
                 count(author_id)
@@ -346,20 +427,42 @@ class Tracking(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-    @decorators.command(brief="Show a user's nicknames.", aliases=["nicknames"])
+    @decorators.command(
+        aliases=["nicks"],
+        brief="Show a user's past nicknames.",
+        implemented="2021-03-12 00:00:21.562534",
+        updated="2021-05-06 23:43:13.297667",
+        examples="""
+                {0}nicks
+                {0}nicks Hecate
+                {0}nicks @Hecate
+                {0}nicks Hecate#3523
+                {0}nicks 708584008065351681
+                {0}nicknames
+                {0}nicknames Hecate
+                {0}nicknames @Hecate
+                {0}nicknames Hecate#3523
+                {0}nicknames 708584008065351681
+                """
+    )
     @commands.guild_only()
+    @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.has_perms(view_audit_log=True)
-    async def nicks(self, ctx, user: discord.Member = None):
+    async def nicknames(self, ctx, user: discord.Member = None):
         """
-        Usage: -nicks [user]
-        Alias: -nicknames
-        Output: Embed of all user's nicknames.
-        Permission: Manage Messages
+        Usage: {0}nicknames [user]
+        Alias: {0}nicks
+        Permission: View Audit Log
+        Output:
+            Shows an embed of all the passed user's 
+            nicknames (past and present).
         Notes:
             Will default to yourself if no user is passed
         """
         if user is None:
             user = ctx.author
+        if user.bot:
+            return await ctx.fail("I do not track bots.")
         query = (
             """SELECT nicknames FROM nicknames WHERE server_id = $1 AND user_id = $2"""
         )
@@ -375,24 +478,42 @@ class Tracking(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-    @decorators.command(brief="Show a user's usernames.", aliases=["usernames"])
+    @decorators.command(
+        aliases=["names"],
+        brief="Show a user's past usernames.",
+        implemented="2021-03-27 03:31:08.799676",
+        updated="2021-05-06 23:43:13.297667",
+        examples="""
+                {0}names
+                {0}names Hecate
+                {0}names @Hecate
+                {0}names Hecate#3523
+                {0}names 708584008065351681
+                {0}usernames
+                {0}usernames Hecate
+                {0}usernames @Hecate
+                {0}usernames Hecate#3523
+                {0}usernames 708584008065351681
+                """
+    )
     @commands.guild_only()
+    @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.has_perms(view_audit_log=True)
-    async def names(self, ctx, user: discord.Member = None):
+    async def usernames(self, ctx, user: discord.Member = None):
         """
-        Usage: -names [user]
-        Alias: -usernames
-        Output: Embed of all user's names.
-        Permission: Manage Messages
+        Usage: {0}usernames [user]
+        Alias: {0}names
+        Output:
+            Shows an mbed of all past and present
+            usernames of the passed user.
+        Permission: View Audit Log
         Notes:
-            Will default to yourself if no user is passed
+            Will default to you if no user is passed.
         """
         if user is None:
             user = ctx.author
         if user.bot:
-            return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['warn']} I do not track bots.",
-            )
+            return await ctx.fail("I do not track bots.")
 
         query = """SELECT usernames FROM usernames WHERE user_id = $1"""
         name_list = await self.bot.cxn.fetchrow(query, user.id)
@@ -407,22 +528,43 @@ class Tracking(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-    @decorators.command(brief="Show a user's avatars.", aliases=["avs"])
+    @decorators.command(
+        aliases=["avs"],
+        brief="Show a user's past avatars.",
+        implemented="2021-03-27 01:14:06.076262",
+        updated="2021-05-06 23:50:27.540481",
+        examples="""
+                {0}avs
+                {0}avs Hecate
+                {0}avs @Hecate
+                {0}avs Hecate#3523
+                {0}avs 708584008065351681
+                {0}avatars
+                {0}avatars Hecate
+                {0}avatars @Hecate
+                {0}avatars Hecate#3523
+                {0}avatars 708584008065351681
+                """
+    )
     @commands.guild_only()
+    @checks.bot_has_perms(add_reactions=True, attach_files=True, embed_links=True, external_emojis=True)
     @checks.has_perms(view_audit_log=True)
     async def avatars(self, ctx, user: discord.Member = None):
         """
-        Usage: -avatars [user]
-        Alias: -avs
+        Usage: {0}avatars [user]
+        Alias: {0}avs
         Output:
-            Embed of the past 16 avatars
-            A user has had
-        Permission: Manage Messages
+            Shows an embed containing up to
+            the 16 last avatars of a user.
+        Permission: View Audit Log
         Notes:
-            Will default to yourself if no user is passed
+            Will default to you if no user is passed.
         """
         if user is None:
             user = ctx.author
+        if user.bot:
+            return await ctx.fail("I do not track bots.")
+
         tracking = self.bot.get_cog("Batch")
         if not tracking:
             return await ctx.fail(
@@ -471,20 +613,46 @@ class Tracking(commands.Cog):
         await ctx.send_or_reply(embed=em, file=dfile)
 
     @decorators.command(
-        brief="Check when a user was last seen.",
         aliases=["lastseen", "track", "tracker", "observed"],
+        brief="Check when a user was last seen.",
+        implemented="2021-03-12 00:02:48.206914",
+        updated="2021-05-06 23:52:15.847160",
+        examples="""
+                {0}seen Hecate
+                {0}seen @Hecate
+                {0}seen Hecate#3523
+                {0}seen 708584008065351681
+                {0}track Hecate
+                {0}track @Hecate
+                {0}track Hecate#3523
+                {0}track 708584008065351681
+                {0}tracker Hecate
+                {0}tracker @Hecate
+                {0}tracker Hecate#3523
+                {0}tracker 708584008065351681
+                {0}lastseen Hecate
+                {0}lastseen @Hecate
+                {0}lastseen Hecate#3523
+                {0}lastseen 708584008065351681
+                {0}observed Hecate
+                {0}observed @Hecate
+                {0}observed Hecate#3523
+                {0}observed 708584008065351681
+                """
     )
     @checks.has_perms(view_audit_log=True)
     async def seen(self, ctx, *, user: converters.DiscordUser):
         """
-        Usage:  {0}seen [user]
-        Alias:  {0}lastseen, {0}track, {0}tracker, {0}observed
-        Output: Get when a user was last observed on discord.
+        Usage: {0}seen <user>
+        Aliases:
+            {0}lastseen, {0}track, {0}tracker, {0}observed
         Permission: View Audit Log
+        Output:
+            Show how long its been since a user
+            was last observed using discord.
         Notes:
             User can be a mention, user id, or full discord
             username with discrim Username#0001.
-            Will default to yourself if no user is passed
         """
         async with ctx.typing():
             if user.bot:
@@ -495,24 +663,53 @@ class Tracking(commands.Cog):
 
             if not data["last_seen"]:
                 return await ctx.send_or_reply(content=f"I have not seen `{user}`")
+            if data["action"]:
+                msg = f"User `{user}` was last seen {data['action']} **{data['last_seen']}** ago."
+            else:
+                msg = f"User `{user}` was last seen **{data['last_seen']}** ago."
+            await ctx.send_or_reply(f"{self.bot.emote_dict['clock']} {msg}")
 
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['clock']} User `{user}` was last observed {data['last_seen']} ago.",
-            )
-
-    @decorators.command(brief="Bot commands listed by popularity.")
+    @decorators.command(
+        aliases=["cs"],
+        brief="Bot commands listed by popularity.",
+        implemented="2021-03-11 20:07:53.950050",
+        updated="2021-05-07 00:03:33.918725",
+        examples="""
+                {0}cs
+                {0}cs @Hecate
+                {0}cs @Hecate 200
+                {0}commandstats
+                {0}commandstats @Hecate
+                {0}commandstats @Hecate 200
+                """
+    )
     @commands.guild_only()
-    @checks.has_perms(manage_messages=True)
+    @checks.bot_has_perms(add_reactions=True, external_emojis=True)
+    @checks.has_perms(view_audit_log=True)
     async def commandstats(self, ctx, user: discord.Member = None, limit=100):
         """
-        Usage: -commandstats [user] [limit]
-        Output: Most popular commands
-        Permission: Manage Messages
+        Usage: {0}commandstats [user] [limit]
+        Alias: {0}cs
+        Permission: View Audit Log
+        Output:
+            Show the most popular commands in
+            a pagination session. 
+        Notes:
+            If no user is passed, the bot will
+            show the most popular commands across
+            the entire server. Specify a limit
+            argument to control how many commands
+            should be included (100 by default).
         """
         if user is None:
-            query = """SELECT command FROM commands WHERE server_id = $1"""
+            query = """
+                    SELECT command
+                    FROM commands
+                    WHERE server_id = $1;
+                    """
             command_list = await self.bot.cxn.fetch(query, ctx.guild.id)
-            premsg = f"Commands most frequently used in **{ctx.guild.name}**"
+        if not limit.isdigit():
+            raise commands.BadArgument("The `limit` argument must be an integer.")
         else:
             if user.bot:
                 return await ctx.send_or_reply(
@@ -540,7 +737,6 @@ class Tracking(commands.Cog):
         output = "\n".join("{0:<{1}} : {2}".format(str(k), width, c) for k, c in common)
 
         msg = "{0} \n\nTOTAL: {1}".format(output, total)
-        # await ctx.send_or_reply(premsg + '```yaml\n{}\n\nTOTAL: {}```'.format(output, total))
         pages = pagination.MainMenu(
             pagination.TextPageSource(msg, prefix="```yaml", max_size=500)
         )
@@ -561,17 +757,22 @@ class Tracking(commands.Cog):
         updated="2021-05-05 04:49:50.161683",
     )
     @commands.guild_only()
-    @checks.has_perms(manage_messages=True)
+    @checks.has_perms(view_audit_log=True)
     async def commandcount(self, ctx, user: discord.Member = None):
         """
-        Usage:  -commands [user]
+        Usage:  {0}commands [user]
         Output: Command count for the user or server
-        Permission: Manage Messages
+        Permission: View Audit Log
         Notes:
-            If no user is passed, will show total server commands
+            If no user is passed, the bot
+            will show total server commands.
         """
         if user is None:
-            query = """SELECT COUNT(*) as c FROM commands WHERE server_id = $1"""
+            query = """
+                    SELECT COUNT(*) as c
+                    FROM commands
+                    WHERE server_id = $1;
+                    """
             command_count = await self.bot.cxn.fetchrow(query, ctx.guild.id)
             return await ctx.send_or_reply(
                 content=f"A total of **{command_count[0]:,}** command{' has' if int(command_count[0]) == 1 else 's have'} been executed on this server.",

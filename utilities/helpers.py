@@ -1,5 +1,6 @@
 import discord
 import asyncio
+from discord import user
 from discord.ext import menus
 from utilities import pagination, utils
 
@@ -43,6 +44,17 @@ async def error_info(ctx, failed):
         except Exception:
             await mess.remove_reaction(ctx.bot.emote_dict["error"], ctx.bot.user)
 
+async def userperms(ctx):
+    channel_perms = [
+        x[0]
+        for x in ctx.channel.permissions_for(ctx.author)
+        if x[1] is True
+    ]
+    guild_perms = [
+        x[0] for x in ctx.author.guild_permissions if x[1] is True
+    ]
+    userperms = guild_perms + channel_perms
+    return userperms
 
 async def choose(ctx, search, options):
     option_list = utils.disambiguate(search, options, None, 5)
