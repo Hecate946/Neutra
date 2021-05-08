@@ -50,6 +50,9 @@ class Tracking(commands.Cog):
             when users are offline or if their
             status is invisible.
         """
+        if not len(users):
+            raise commands.MissingRequiredArgument()
+        mobilestatus = []
         mobilestatus = []
         notmobilestatus = []
         web_status = []
