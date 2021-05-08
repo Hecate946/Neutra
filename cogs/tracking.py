@@ -104,7 +104,7 @@ class Tracking(commands.Cog):
                     username = f"{user.name}#{user.discriminator}"
                     mobile += [username]
             await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['web']} User{'' if len(mobile) == 1 else 's'} `{', '.join(mobile)}` {'is' if len(mobile) == 1 else 'are'} on discord web.",
+                content=f"{self.bot.emote_dict['search']} User{'' if len(mobile) == 1 else 's'} `{', '.join(mobile)}` {'is' if len(mobile) == 1 else 'are'} on discord web.",
             )
         if offline:
             mobile = []
