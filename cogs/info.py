@@ -100,7 +100,7 @@ class Info(commands.Cog):
         embed.set_thumbnail(url=self.bot.user.avatar_url)
         embed.add_field(
             name="Last boot",
-            value=utils.timeago(datetime.datetime.utcnow() - self.bot.uptime),
+            value=str(utils.timeago(datetime.datetime.utcnow() - self.bot.uptime)).capitalize(),
             inline=True,
         )
         embed.add_field(
