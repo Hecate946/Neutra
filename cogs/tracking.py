@@ -51,7 +51,7 @@ class Tracking(commands.Cog):
             status is invisible.
         """
         if not len(users):
-            raise commands.MissingRequiredArgument()
+            raise commands.MissingRequiredArgument(users)
         mobilestatus = []
         mobilestatus = []
         notmobilestatus = []
