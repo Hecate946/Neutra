@@ -660,7 +660,7 @@ class Botadmin(commands.Cog):
 
     @decorators.command()
     @checks.is_bot_admin()
-    @checks.bot_has_perms(add_reaction=True, external_emojis=True)
+    @checks.bot_has_perms(add_reactions=True, external_emojis=True)
     async def sss(self, ctx, user: converters.DiscordUser = None):
         if user is None:
             user = ctx.author
@@ -878,7 +878,7 @@ class Botadmin(commands.Cog):
 
 
     @decorators.command(brief="Show members for a server.")
-    @checks.bot_has_perms(add_reaction=True, embed_links=True, external_emojis=True)
+    @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     async def members(self, ctx, *, argument = None):
         """
         Usage: {0}members

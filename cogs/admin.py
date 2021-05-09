@@ -2,11 +2,13 @@ import io
 import re
 import copy
 import shlex
+import typing
 import discord
 
 from datetime import datetime
 from datetime import timedelta
 from discord.ext import commands
+from discord.ext.commands.core import check
 from unidecode import unidecode
 
 from utilities import checks
@@ -1311,3 +1313,54 @@ class Admin(commands.Cog):
             )
         else:
             await ctx.send(f"**Cancelled.**")
+
+    @decorators.command(
+        aliases=["pruneinactive"],
+        brief="Kick all inactive server members",
+        implemented="2021-05-09 02:09:40.842333",
+        updated="2021-05-09 02:09:40.842333",
+        examples="""
+                {0}kickinactive
+                {0}kickinactive 25
+                {0}kickinactive 12 @Helper
+                {0}kickinactive @Verified
+                {0}pruneinactive
+                {0}pruneinactive 25
+                {0}pruneinactive 12 @Helper
+                {0}pruneinactive @Verified
+                """
+    )
+    @checks.bot_has_perms(kick_members=True)
+    @checks.has_perms(administrator=True)
+    async def kickinactive(self, ctx, days: typing.Optional[int] = 30, roles: commands.Greedy[discord.Role] = None):
+        """
+        Usage: {0}kickinactive [days] [roles]
+        Alias: {0}pruneinactive
+        Permission: Administrator
+        Output:
+            Searches for all users who have the
+            specified roles (@everyone by default)
+            who have not logged into discord over
+            the specified duration (30 days default).
+            The bot will then show how many inactive
+            users were found, and prompt you for
+            confirmation to kick the users.
+        Notes:
+            The bot will say no inactive
+            users have been found if any
+            of the given roles are above
+            the bot's highest role.
+            All arguments are optional.
+        """
+        if days > 30:
+            raise commands.BadArgument("The `days` argument must be fewer than 30.")
+        to_be_pruned = await ctx.guild.estimate_pruned_members(days=days, roles=roles)
+        if to_be_pruned == 0:
+            return await ctx.success(f"Your server has no inactive users to prune within your specifications.")
+        c = await pagination.Confirmation(f"**{self.bot.emote_dict['exclamation']} This action will kick {to_be_pruned} users. Do you wish to continue?**").prompt(ctx)
+        if c:
+            reason = await converters.ActionReason().convert(ctx, "Kick inactive users")
+            await ctx.guild.prune_members(days=days, compute_prune_count=True, roles=roles, reason=reason)
+        else:
+            await ctx.send(f"**{self.bot.emote_dict['exclamation']} Cancelled.**")
+        

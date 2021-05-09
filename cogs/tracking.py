@@ -186,11 +186,9 @@ class Tracking(commands.Cog):
                             if nicknames != user.display_name:
                                 msg += f"Nicknames     : {nicknames}\n"
             msg += f"Common Servers: {sum(g.get_member(user.id) is not None for g in ctx.bot.guilds)}\n"
-            unix = user.created_at.timestamp()
             msg += f"Created       : {utils.format_time(user.created_at)}\n"
             if ctx.guild:
                 if isinstance(user, discord.Member):
-                    unix = user.joined_at.timestamp()
                     msg += f"Joined        : {utils.format_time(user.joined_at)}\n"
                     joined_list = []
                     for mem in ctx.guild.members:
@@ -251,9 +249,12 @@ class Tracking(commands.Cog):
 
             if ctx.guild:
                 if isinstance(user, discord.Member) and user.activities:
-                    msg += "Status        : {}\n".format(
-                        "\n".join(self.activity_string(a) for a in user.activities)
-                    )
+                    try:
+                        msg += "Status        : {}\n".format(
+                            "\n".join(self.activity_string(a) for a in user.activities)
+                        )
+                    except Exception:
+                        pass
             if ctx.guild:
                 if isinstance(user, discord.Member):
                     msg += f"Roles         : {', '.join([r.name for r in sorted(user.roles, key=lambda r: -r.position) if r.name != '@everyone'])}\n"

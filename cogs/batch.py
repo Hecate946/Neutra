@@ -724,18 +724,25 @@ class Batch(commands.Cog):
             action = last_seen[1]
             last_seen = last_seen[0]
             last_seen = utils.time_between(int(last_seen), int(time.time()))
+        else:
+            action = None
+            last_seen = None
         if last_spoke:
             last_spoke = utils.time_between(int(last_spoke), int(time.time()))
+        else:
+            last_spoke = None
         if server_last_spoke:
             server_last_spoke = utils.time_between(
                 int(server_last_spoke), int(time.time())
             )
+        else:
+            server_last_spoke = None
 
         observed_data = {
-            "action": action or None,
-            "last_seen": last_seen or None,
-            "last_spoke": last_spoke or None,
-            "server_last_spoke": server_last_spoke or None,
+            "action": action,
+            "last_seen": last_seen,
+            "last_spoke": last_spoke,
+            "server_last_spoke": server_last_spoke,
         }
         return observed_data
 

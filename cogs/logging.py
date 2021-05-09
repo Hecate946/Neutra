@@ -1074,7 +1074,7 @@ class Logging(commands.Cog):
 
 
     @decorators.group(
-        aliases=['auditcount', 'ac'],
+        aliases=['actioncount', 'ac'],
         brief="Count the audit log entries of a user.",
         case_insensitive=True,
         invoke_without_command=True,
@@ -1100,10 +1100,22 @@ class Logging(commands.Cog):
     )
     @checks.bot_has_perms(view_audit_log=True)
     @checks.has_perms(view_audit_log=True)
-    async def actioncount(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def auditcount(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
         """
-        Usage: {0}actioncount <user> [unit]
-        Aliases: {0}auditcount, {0}ac
+        Usage: {0}auditcount <user> [unit]
+        Aliases: {0}actioncount, {0}ac
+        Options:
+            bans, botadds, bulkdeletes,
+            channeladds, channeldeletes,
+            channelupdates, deletes, emojiadds,
+            emojideletes, emojiupdates,
+            integrationadds, integrationdeletes,
+            integrationupdates, inviteadds,
+            invitedeletes, inviteupdates, kicks,
+            moves, pins, roleadds, roledeletes,
+            roleupdates, serverupdates, unbans,
+            unpins, vckicks, webhookadds,
+            webhookdeletes, webhookupdates
         Output:
             The number of audit log
             actions a user has caused
@@ -1114,7 +1126,9 @@ class Logging(commands.Cog):
             user is specified. Enter a
             past time argument to only
             check entry counts from after
-            that day.
+            that day. If no subcommands
+            are entered, the bot will
+            count all the actions made.
         Explanation:
             {0}auditcount Hecate 3d
             This will select all audit
@@ -1126,7 +1140,7 @@ class Logging(commands.Cog):
         msg = await self.get_action_count(ctx, user, after, None, "executed", "audit log actions")
         await ctx.send_or_reply(self.bot.emote_dict['search'] + msg)
 
-    @actioncount.command(
+    @auditcount.command(
         aliases=['bc'],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
@@ -1167,7 +1181,7 @@ class Logging(commands.Cog):
             specify a past time argument,
             you must mention yourself.
         Explanation:
-            {0}bans Hecate 3d
+            {0}auditcount bans Hecate 3d
             This will select all ban
             entries made by the user
             Hecate in the past 3 days.
@@ -1177,7 +1191,7 @@ class Logging(commands.Cog):
         msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.ban, "banned", "users")
         await ctx.send_or_reply(self.bot.emote_dict['ban'] + msg)
 
-    @actioncount.command()
+    @auditcount.command()
     async def botadds(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
         """
         Usage: {0}botadds <user> [unit]
@@ -1196,7 +1210,7 @@ class Logging(commands.Cog):
             specify a past time argument,
             you must mention yourself.
         Explanation:
-            {0}botadds Hecate 3d
+            {0}auditcount botadds Hecate 3d
             This will select all audit
             entries made by the user Hecate
             in the past 3 days.
@@ -1206,7 +1220,7 @@ class Logging(commands.Cog):
         msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.bot_add, "added", "bots")
         await ctx.send_or_reply(self.bot.emote_dict['robot'] + msg)
 
-    @actioncount.command(
+    @auditcount.command(
         aliases=["channelcreates"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
@@ -1248,7 +1262,7 @@ class Logging(commands.Cog):
             specify a past time argument,
             you must mention yourself.
         Explanation:
-            {0}channeladds Hecate 3d
+            {0}auditcount channeladds Hecate 3d
             This will select all audit
             entries made by the user Hecate
             in the past 3 days.
@@ -1258,7 +1272,7 @@ class Logging(commands.Cog):
         msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.channel_create, "created", "channels")
         await ctx.send_or_reply(self.bot.emote_dict['plus'] + msg)
 
-    @actioncount.command(
+    @auditcount.command(
         aliases=["channelchanges"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
@@ -1299,7 +1313,7 @@ class Logging(commands.Cog):
             specify a past time argument,
             you must mention yourself.
         Explanation:
-            {0}channelupdates Hecate 3d
+            {0}auditcount channelupdates Hecate 3d
             This will select all audit
             entries made by the user Hecate
             in the past 3 days.
@@ -1309,7 +1323,7 @@ class Logging(commands.Cog):
         msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.channel_update, "updated", "channels")
         await ctx.send_or_reply(self.bot.emote_dict['redo'] + msg)
 
-    @actioncount.command(
+    @auditcount.command(
         aliases=["channelremoves"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
@@ -1350,7 +1364,7 @@ class Logging(commands.Cog):
             specify a past time argument,
             you must mention yourself.
         Explanation:
-            {0}channeldeletes Hecate 3d
+            {0}auditcount channeldeletes Hecate 3d
             This will select all audit
             entries made by the user Hecate
             in the past 3 days.
@@ -1360,7 +1374,7 @@ class Logging(commands.Cog):
         msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.channel_delete, "deleted", "channels")
         await ctx.send_or_reply(self.bot.emote_dict['minus'] + msg)
 
-    @actioncount.command(
+    @auditcount.command(
         aliases=["emojicreates","emoteadds", "emotecreates"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
@@ -1405,7 +1419,7 @@ class Logging(commands.Cog):
             specify a past time argument,
             you must mention yourself.
         Explanation:
-            {0}channeldeletes Hecate 3d
+            {0}auditcount channeldeletes Hecate 3d
             This will select all audit
             entries made by the user Hecate
             in the past 3 days.
@@ -1415,7 +1429,7 @@ class Logging(commands.Cog):
         msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.emoji_create, "created", "emojis")
         await ctx.send_or_reply(self.bot.emote_dict['plus'] + msg)
 
-    @actioncount.command(
+    @auditcount.command(
         aliases=["emojichanges"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
@@ -1457,7 +1471,7 @@ class Logging(commands.Cog):
             specify a past time argument,
             you must mention yourself.
         Explanation:
-            {0}emojiupdates Hecate 3d
+            {0}auditcount emojiupdates Hecate 3d
             This will select all audit
             entries made by the user Hecate
             in the past 3 days.
@@ -1467,7 +1481,7 @@ class Logging(commands.Cog):
         msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.emoji_update, "updated", "emojis")
         await ctx.send_or_reply(self.bot.emote_dict['redo'] + msg)
 
-    @actioncount.command(
+    @auditcount.command(
         aliases=["emojiremoves"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
@@ -1509,7 +1523,7 @@ class Logging(commands.Cog):
             specify a past time argument,
             you must mention yourself.
         Explanation:
-            {0}emojiremoves Hecate 3d
+            {0}auditcount emojiremoves Hecate 3d
             This will select all audit
             entries made by the user Hecate
             in the past 3 days.
@@ -1519,7 +1533,7 @@ class Logging(commands.Cog):
         msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.emoji_delete, "deleted", "emojis")
         await ctx.send_or_reply(self.bot.emote_dict['minus'] + msg)
 
-    @actioncount.command(
+    @auditcount.command(
         aliases=["serverchanges", "guildupdates","guildchanges"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
@@ -1563,7 +1577,7 @@ class Logging(commands.Cog):
             specify a past time argument,
             you must mention yourself.
         Explanation:
-            {0}serverupdates Hecate 3d
+            {0}auditcount serverupdates Hecate 3d
             This will select all audit
             entries made by the user
             Hecate in the past 3 days.
@@ -1573,7 +1587,7 @@ class Logging(commands.Cog):
         msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.guild_update, "updated the server", "times")
         await ctx.send_or_reply(self.bot.emote_dict['redo'] + msg)
 
-    @actioncount.command(
+    @auditcount.command(
         aliases=["integrationcreates"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
@@ -1624,7 +1638,7 @@ class Logging(commands.Cog):
         msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.integration_create, "created", "integrations")
         await ctx.send_or_reply(self.bot.emote_dict['plus'] + msg)
 
-    @actioncount.command(
+    @auditcount.command(
         aliases=["integrationchanges"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
@@ -1665,7 +1679,7 @@ class Logging(commands.Cog):
             specify a past time argument,
             you must mention yourself.
         Explanation:
-            {0}integrationupdates Hecate 3d
+            {0}auditcount integrationupdates Hecate 3d
             This will select all audit
             entries made by the user
             Hecate in the past 3 days.
@@ -1675,7 +1689,7 @@ class Logging(commands.Cog):
         msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.integration_update, "updated", "integrations")
         await ctx.send_or_reply(self.bot.emote_dict['redo'] + msg)
 
-    @actioncount.command(
+    @auditcount.command(
         aliases=["integrationremoves"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
@@ -1716,7 +1730,7 @@ class Logging(commands.Cog):
             specify a past time argument,
             you must mention yourself.
         Explanation:
-            {0}integrationdeletes Hecate 3d
+            {0}auditcount integrationdeletes Hecate 3d
             This will select all audit
             entries made by the user
             Hecate in the past 3 days.
@@ -1726,7 +1740,7 @@ class Logging(commands.Cog):
         msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.integration_delete, "deleted", "integrations")
         await ctx.send_or_reply(self.bot.emote_dict['minus'] + msg)
 
-    @actioncount.command(
+    @auditcount.command(
         aliases=["invitecreates"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
@@ -1767,7 +1781,7 @@ class Logging(commands.Cog):
             specify a past time argument,
             you must mention yourself.
         Explanation:
-            {0}inviteadds Hecate 3d
+            {0}auditcount inviteadds Hecate 3d
             This will select all audit
             entries made by the user
             Hecate in the past 3 days.
@@ -1777,7 +1791,7 @@ class Logging(commands.Cog):
         msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.invite_create, "created", "invite links")
         await ctx.send_or_reply(self.bot.emote_dict['plus'] + msg)
 
-    @actioncount.command(
+    @auditcount.command(
         aliases=["invitechanges"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
@@ -1818,7 +1832,7 @@ class Logging(commands.Cog):
             specify a past time argument,
             you must mention yourself.
         Explanation:
-            {0}inviteupdates Hecate 3d
+            {0}auditcount inviteupdates Hecate 3d
             This will select all audit
             entries made by the user
             Hecate in the past 3 days.
@@ -1828,7 +1842,7 @@ class Logging(commands.Cog):
         msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.invite_update, "updated", "invite links")
         await ctx.send_or_reply(self.bot.emote_dict['redo'] + msg)
 
-    @actioncount.command(
+    @auditcount.command(
         aliases=["inviteremoves"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
@@ -1869,7 +1883,7 @@ class Logging(commands.Cog):
             specify a past time argument,
             you must mention yourself.
         Explanation:
-            {0}inviteupdates Hecate 3d
+            {0}auditcount inviteupdates Hecate 3d
             This will select all audit
             entries made by the user
             Hecate in the past 3 days.
@@ -1879,7 +1893,7 @@ class Logging(commands.Cog):
         msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.invite_delete, "deleted", "invite links")
         await ctx.send_or_reply(self.bot.emote_dict['minus'] + msg)
 
-    @actioncount.command(
+    @auditcount.command(
         aliases=["kickcount","kc"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
@@ -1920,7 +1934,7 @@ class Logging(commands.Cog):
             specify a past time argument,
             you must mention yourself.
         Explanation:
-            {0}kicks Hecate 3d
+            {0}auditcount kicks Hecate 3d
             This will select all audit
             entries made by the user
             Hecate in the past 3 days.
@@ -1930,7 +1944,7 @@ class Logging(commands.Cog):
         msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.kick, "kicked", "users")
         await ctx.send_or_reply(self.bot.emote_dict['kick'] + msg)
 
-    @actioncount.command(
+    @auditcount.command(
         aliases=["vckickvount","vckc"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
@@ -1971,7 +1985,7 @@ class Logging(commands.Cog):
             specify a past time argument,
             you must mention yourself.
         Explanation:
-            {0}vckicks Hecate 3d
+            {0}auditcount vckicks Hecate 3d
             This will select all audit
             entries made by the user
             Hecate in the past 3 days.
@@ -1981,7 +1995,7 @@ class Logging(commands.Cog):
         msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.member_disconnect, "vckicked", "users")
         await ctx.send_or_reply(self.bot.emote_dict['audioremove'] + msg)
 
-    @actioncount.command(
+    @auditcount.command(
         aliases=["vcmoves","vcmvs"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
@@ -2022,7 +2036,7 @@ class Logging(commands.Cog):
             specify a past time argument,
             you must mention yourself.
         Explanation:
-            {0}moves Hecate 3d
+            {0}auditcount moves Hecate 3d
             This will select all audit
             entries made by the user
             Hecate in the past 3 days.
@@ -2032,7 +2046,7 @@ class Logging(commands.Cog):
         msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.member_move, "vcmoved", "users")
         await ctx.send_or_reply(self.bot.emote_dict['forward1'] + msg)
 
-    @actioncount.command(
+    @auditcount.command(
         aliases=["bds","bd"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
@@ -2073,7 +2087,7 @@ class Logging(commands.Cog):
             specify a past time argument,
             you must mention yourself.
         Explanation:
-            {0}bulkdeletes Hecate 3d
+            {0}auditcount bulkdeletes Hecate 3d
             This will select all audit
             entries made by the user
             Hecate in the past 3 days.
@@ -2083,7 +2097,7 @@ class Logging(commands.Cog):
         msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.message_bulk_delete, "bulk deleted messages", "times")
         await ctx.send_or_reply(self.bot.emote_dict['trash'] + msg)
 
-    @actioncount.command(
+    @auditcount.command(
         aliases=["removes"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
@@ -2124,7 +2138,7 @@ class Logging(commands.Cog):
             specify a past time argument,
             you must mention yourself.
         Explanation:
-            {0}deletes Hecate 3d
+            {0}auditcount deletes Hecate 3d
             This will select all audit
             entries made by the user
             Hecate in the past 3 days.
@@ -2134,7 +2148,7 @@ class Logging(commands.Cog):
         msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.message_delete, "deleted", "messages")
         await ctx.send_or_reply(self.bot.emote_dict['trash'] + msg)
 
-    @actioncount.command(
+    @auditcount.command(
         aliases=["pincount","pc"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
@@ -2176,7 +2190,7 @@ class Logging(commands.Cog):
             specify a past time argument,
             you must mention yourself.
         Explanation:
-            {0}pins Hecate 3d
+            {0}auditcount pins Hecate 3d
             This will select all audit
             entries made by the user
             Hecate in the past 3 days.
@@ -2186,7 +2200,7 @@ class Logging(commands.Cog):
         msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.message_pin, "pinned", "messages")
         await ctx.send_or_reply(self.bot.emote_dict['pin'] + msg)
 
-    @actioncount.command(
+    @auditcount.command(
         aliases=["unpincount","upc"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
@@ -2228,7 +2242,7 @@ class Logging(commands.Cog):
             specify a past time argument,
             you must mention yourself.
         Explanation:
-            {0}unpins Hecate 3d
+            {0}auditcount unpins Hecate 3d
             This will select all audit
             entries made by the user
             Hecate in the past 3 days.
@@ -2238,7 +2252,7 @@ class Logging(commands.Cog):
         msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.message_unpin, "unpinned", "messages")
         await ctx.send_or_reply(self.bot.emote_dict['pin'] + msg)
 
-    @actioncount.command(
+    @auditcount.command(
         aliases=["rolecreates"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
@@ -2280,7 +2294,7 @@ class Logging(commands.Cog):
             specify a past time argument,
             you must mention yourself.
         Explanation:
-            {0}roleadds Hecate 3d
+            {0}auditcount roleadds Hecate 3d
             This will select all audit
             entries made by the user
             Hecate in the past 3 days.
@@ -2290,7 +2304,7 @@ class Logging(commands.Cog):
         msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.role_create, "created", "roles")
         await ctx.send_or_reply(self.bot.emote_dict['plus'] + msg)
 
-    @actioncount.command(
+    @auditcount.command(
         aliases=["rolechanges"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
@@ -2332,7 +2346,7 @@ class Logging(commands.Cog):
             specify a past time argument,
             you must mention yourself.
         Explanation:
-            {0}roleupdates Hecate 3d
+            {0}auditcount roleupdates Hecate 3d
             This will select all audit
             entries made by the user
             Hecate in the past 3 days.
@@ -2342,7 +2356,7 @@ class Logging(commands.Cog):
         msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.role_update, "updated", "roles")
         await ctx.send_or_reply(self.bot.emote_dict['redo'] + msg)
 
-    @actioncount.command(
+    @auditcount.command(
         aliases=["roleremoves"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
@@ -2384,7 +2398,7 @@ class Logging(commands.Cog):
             specify a past time argument,
             you must mention yourself.
         Explanation:
-            {0}roledeletes Hecate 3d
+            {0}auditcount roledeletes Hecate 3d
             This will select all audit
             entries made by the user
             Hecate in the past 3 days.
@@ -2394,7 +2408,7 @@ class Logging(commands.Cog):
         msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.role_delete, "deleted", "roles")
         await ctx.send_or_reply(self.bot.emote_dict['minus'] + msg)
 
-    @actioncount.command(
+    @auditcount.command(
         aliases=["unbancount","ubc"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
@@ -2436,7 +2450,7 @@ class Logging(commands.Cog):
             specify a past time argument,
             you must mention yourself.
         Explanation:
-            {0}unbans Hecate 3d
+            {0}auditcount unbans Hecate 3d
             This will select all audit
             entries made by the user
             Hecate in the past 3 days.
@@ -2446,7 +2460,7 @@ class Logging(commands.Cog):
         msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.unban, "unbanned", "users")
         await ctx.send_or_reply(self.bot.emote_dict['hammer'] + msg)
 
-    @actioncount.command(
+    @auditcount.command(
         aliases=["webhookcreates"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
@@ -2488,7 +2502,7 @@ class Logging(commands.Cog):
             specify a past time argument,
             you must mention yourself.
         Explanation:
-            {0}webhookadds Hecate 3d
+            {0}auditcount webhookadds Hecate 3d
             This will select all audit
             entries made by the user
             Hecate in the past 3 days.
@@ -2498,7 +2512,7 @@ class Logging(commands.Cog):
         msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.webhook_create, "created", "webhooks")
         await ctx.send_or_reply(self.bot.emote_dict['plus'] + msg)
 
-    @actioncount.command(
+    @auditcount.command(
         aliases=["webhookchanges"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
@@ -2540,7 +2554,7 @@ class Logging(commands.Cog):
             specify a past time argument,
             you must mention yourself.
         Explanation:
-            {0}webhookupdates Hecate 3d
+            {0}auditcount webhookupdates Hecate 3d
             This will select all audit
             entries made by the user
             Hecate in the past 3 days.
@@ -2550,7 +2564,7 @@ class Logging(commands.Cog):
         msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.webhook_update, "updated", "webhooks")
         await ctx.send_or_reply(self.bot.emote_dict['redo'] + msg)
 
-    @actioncount.command(
+    @auditcount.command(
         aliases=["webhookremoves"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
@@ -2592,7 +2606,7 @@ class Logging(commands.Cog):
             specify a past time argument,
             you must mention yourself.
         Explanation:
-            {0}webhookdeletes Hecate 3d
+            {0}auditcount webhookdeletes Hecate 3d
             This will select all audit
             entries made by the user
             Hecate in the past 3 days.
