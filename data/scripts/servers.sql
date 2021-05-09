@@ -58,17 +58,9 @@ CREATE TABLE IF NOT EXISTS warn (
 );
 
 CREATE TABLE IF NOT EXISTS tasks (
-    task_id BIGSERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     expires TIMESTAMP,
     created TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC'),
     event TEXT,
     extra jsonb DEFAULT '{}'::jsonb 
-);
-
-
-CREATE TABLE IF NOT EXISTS mutes (
-    user_id BIGINT,
-    mod_id BIGINT,
-    server_id BIGINT,
-    role_ids TEXT
 );
