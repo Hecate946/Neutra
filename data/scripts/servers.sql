@@ -44,13 +44,6 @@ CREATE TABLE IF NOT EXISTS ignored (
     timestamp TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS mutes (
-    muted_user bigint,
-    server_id bigint,
-    role_ids text,
-    endtime timestamp
-);
-
 CREATE TABLE IF NOT EXISTS lockedchannels (
     channel_id bigint PRIMARY KEY,
     server_id bigint,
@@ -63,12 +56,19 @@ CREATE TABLE IF NOT EXISTS warn (
     server_id bigint,
     warnings smallint
 );
--- DROP TABLE tasks;
--- CREATE TABLE IF NOT EXISTS tasks (
---     task_id BIGSERIAL PRIMARY KEY,
---     user_id BIGINT,
---     server_id BIGINT,
---     event VARCHAR(50),
---     starttime TIMESTAMP,
---     endtime TIMESTAMP
--- );
+
+CREATE TABLE IF NOT EXISTS tasks (
+    task_id BIGSERIAL PRIMARY KEY,
+    expires TIMESTAMP,
+    created TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    event TEXT,
+    extra jsonb DEFAULT '{}'::jsonb 
+);
+
+
+CREATE TABLE IF NOT EXISTS mutes (
+    user_id BIGINT,
+    mod_id BIGINT,
+    server_id BIGINT,
+    role_ids TEXT
+);

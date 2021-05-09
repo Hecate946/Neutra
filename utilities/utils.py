@@ -443,6 +443,14 @@ def format_time(time):
     )
 
 
+def short_time(time):
+    if time is None or time < UNKNOWN_CUTOFF:
+        return "Unknown"
+    return "{}".format(
+        humanize.naturaltime(time + (datetime.now() - datetime.utcnow())), time
+    )
+
+
 def format_time_tz(time):
     if time is None or time < UNKNOWN_CUTOFF_TZ:
         return "Unknown"

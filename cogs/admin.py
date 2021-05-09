@@ -842,7 +842,7 @@ class Admin(commands.Cog):
     @commands.guild_only()
     @checks.bot_has_perms(ban_members=True)
     @checks.has_perms(manage_guild=True, ban_members=True)
-    async def massban(self, ctx, *, args=None):
+    async def massban(self, ctx, *, args):
         """
         Usage: {0}massban <arguments>
         Aliases: {0}multiban
@@ -902,9 +902,6 @@ class Admin(commands.Cog):
             "\t\t--embeds: Checks if the message has embeds (no arguments).\n"
         )
         help_docstr += "```"
-
-        if args is None:
-            return await ctx.usage("<arguments>")
 
         parser = converters.Arguments(add_help=False, allow_abbrev=False)
         parser.add_argument("--help", "-h", action="store_true")
@@ -1328,11 +1325,16 @@ class Admin(commands.Cog):
                 {0}pruneinactive 25
                 {0}pruneinactive 12 @Helper
                 {0}pruneinactive @Verified
-                """
+                """,
     )
     @checks.bot_has_perms(kick_members=True)
     @checks.has_perms(administrator=True)
-    async def kickinactive(self, ctx, days: typing.Optional[int] = 30, roles: commands.Greedy[discord.Role] = None):
+    async def kickinactive(
+        self,
+        ctx,
+        days: typing.Optional[int] = 30,
+        roles: commands.Greedy[discord.Role] = None,
+    ):
         """
         Usage: {0}kickinactive [days] [roles]
         Alias: {0}pruneinactive
@@ -1356,11 +1358,16 @@ class Admin(commands.Cog):
             raise commands.BadArgument("The `days` argument must be fewer than 30.")
         to_be_pruned = await ctx.guild.estimate_pruned_members(days=days, roles=roles)
         if to_be_pruned == 0:
-            return await ctx.success(f"Your server has no inactive users to prune within your specifications.")
-        c = await pagination.Confirmation(f"**{self.bot.emote_dict['exclamation']} This action will kick {to_be_pruned} users. Do you wish to continue?**").prompt(ctx)
+            return await ctx.success(
+                f"Your server has no inactive users to prune within your specifications."
+            )
+        c = await pagination.Confirmation(
+            f"**{self.bot.emote_dict['exclamation']} This action will kick {to_be_pruned} users. Do you wish to continue?**"
+        ).prompt(ctx)
         if c:
             reason = await converters.ActionReason().convert(ctx, "Kick inactive users")
-            await ctx.guild.prune_members(days=days, compute_prune_count=True, roles=roles, reason=reason)
+            await ctx.guild.prune_members(
+                days=days, compute_prune_count=True, roles=roles, reason=reason
+            )
         else:
             await ctx.send(f"**{self.bot.emote_dict['exclamation']} Cancelled.**")
-        

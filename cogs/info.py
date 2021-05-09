@@ -100,7 +100,9 @@ class Info(commands.Cog):
         embed.set_thumbnail(url=self.bot.user.avatar_url)
         embed.add_field(
             name="Last boot",
-            value=str(utils.timeago(datetime.datetime.utcnow() - self.bot.uptime)).capitalize(),
+            value=str(
+                utils.timeago(datetime.datetime.utcnow() - self.bot.uptime)
+            ).capitalize(),
             inline=True,
         )
         embed.add_field(
@@ -146,7 +148,6 @@ class Info(commands.Cog):
             embed=embed,
         )
 
-
     @decorators.command(
         aliases=["socketstats"],
         brief="Show global bot socket stats.",
@@ -155,7 +156,7 @@ class Info(commands.Cog):
         examples="""
                 {0}socket
                 {0}socketstats
-                """
+                """,
     )
     @checks.bot_has_perms(add_reactions=True, external_emojis=True)
     async def socket(self, ctx):
@@ -194,7 +195,6 @@ class Info(commands.Cog):
             await m.start(ctx)
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
-
 
     @decorators.command(
         aliases=["isratelimited"],

@@ -749,7 +749,7 @@ class Help(commands.Cog):
         examples="""
                 {0}cog help
                 {0}category prune
-                """
+                """,
     )
     async def category(self, ctx, command: converters.DiscordCommand):
         """

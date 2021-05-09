@@ -732,13 +732,13 @@ class Botadmin(commands.Cog):
                 online_members += 1
         # bot_percent = "{:,g}%".format((bot_member/len(guild.members))*100)
         try:
-            rounded = round((online_members / (len(guild.members) - bot_member) * 100), 2)
+            rounded = round(
+                (online_members / (len(guild.members) - bot_member) * 100), 2
+            )
         except ZeroDivisionError:
             rounded = 0
         user_string = "{:,}/{:,} online ({:,g}%)".format(
-            online_members,
-            len(guild.members) - bot_member,
-            rounded
+            online_members, len(guild.members) - bot_member, rounded
         )
         b_string = "bot" if bot_member == 1 else "bots"
         user_string += "\n{:,}/{:,} {} online ({:,g}%)".format(
@@ -876,10 +876,9 @@ class Botadmin(commands.Cog):
             else:
                 await ctx.send_or_reply(embed=server_embed)
 
-
     @decorators.command(brief="Show members for a server.")
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
-    async def members(self, ctx, *, argument = None):
+    async def members(self, ctx, *, argument=None):
         """
         Usage: {0}members
         Output: Lists the members of a passed server

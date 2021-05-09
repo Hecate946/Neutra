@@ -1072,9 +1072,8 @@ class Logging(commands.Cog):
                     f"{self.bot.emote_dict['success']} {type_of_log.capitalize()} will no longer be logged in {logchan.mention}"
                 )
 
-
     @decorators.group(
-        aliases=['actioncount', 'ac'],
+        aliases=["actioncount", "ac"],
         brief="Count the audit log entries of a user.",
         case_insensitive=True,
         invoke_without_command=True,
@@ -1096,11 +1095,13 @@ class Logging(commands.Cog):
                 {0}actioncount @Hecate yesterday
                 {0}actioncount Hecate#3523 2m
                 {0}actioncount 708584008065351681 5 months
-                """
+                """,
     )
     @checks.bot_has_perms(view_audit_log=True)
     @checks.has_perms(view_audit_log=True)
-    async def auditcount(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def auditcount(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: {0}auditcount <user> [unit]
         Aliases: {0}actioncount, {0}ac
@@ -1137,11 +1138,13 @@ class Logging(commands.Cog):
         """
         if not user:
             user = ctx.author
-        msg = await self.get_action_count(ctx, user, after, None, "executed", "audit log actions")
-        await ctx.send_or_reply(self.bot.emote_dict['search'] + msg)
+        msg = await self.get_action_count(
+            ctx, user, after, None, "executed", "audit log actions"
+        )
+        await ctx.send_or_reply(self.bot.emote_dict["search"] + msg)
 
     @auditcount.command(
-        aliases=['bc'],
+        aliases=["bc"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
         updated="2021-05-07 22:34:00.515826",
@@ -1161,9 +1164,11 @@ class Logging(commands.Cog):
                 {0}bancount @Hecate yesterday
                 {0}bancount Hecate#3523 2m
                 {0}bancount 708584008065351681 5 months
-                """
+                """,
     )
-    async def bans(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def bans(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: {0}bans <user> [unit]
         Aliases: {0}bancount, {0}bc
@@ -1177,7 +1182,7 @@ class Logging(commands.Cog):
             past time argument to only
             check entry counts from after
             that day. If you wish to
-            select audits by you and 
+            select audits by you and
             specify a past time argument,
             you must mention yourself.
         Explanation:
@@ -1188,15 +1193,19 @@ class Logging(commands.Cog):
         """
         if not user:
             user = ctx.author
-        msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.ban, "banned", "users")
-        await ctx.send_or_reply(self.bot.emote_dict['ban'] + msg)
+        msg = await self.get_action_count(
+            ctx, user, after, discord.AuditLogAction.ban, "banned", "users"
+        )
+        await ctx.send_or_reply(self.bot.emote_dict["ban"] + msg)
 
     @auditcount.command()
-    async def botadds(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def botadds(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: {0}botadds <user> [unit]
         Output:
-            The number of bots  a user 
+            The number of bots  a user
             has invited to the server
             across all time unless a time
             is specified.
@@ -1206,7 +1215,7 @@ class Logging(commands.Cog):
             past time argument to only
             check entry counts from after
             that day. If you wish to
-            select audits by you and 
+            select audits by you and
             specify a past time argument,
             you must mention yourself.
         Explanation:
@@ -1217,8 +1226,10 @@ class Logging(commands.Cog):
         """
         if not user:
             user = ctx.author
-        msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.bot_add, "added", "bots")
-        await ctx.send_or_reply(self.bot.emote_dict['robot'] + msg)
+        msg = await self.get_action_count(
+            ctx, user, after, discord.AuditLogAction.bot_add, "added", "bots"
+        )
+        await ctx.send_or_reply(self.bot.emote_dict["robot"] + msg)
 
     @auditcount.command(
         aliases=["channelcreates"],
@@ -1241,14 +1252,16 @@ class Logging(commands.Cog):
                 {0}bancount @Hecate yesterday
                 {0}bancount Hecate#3523 2m
                 {0}bancount 708584008065351681 5 months
-                """
+                """,
     )
-    async def channeladds(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def channeladds(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: {0}channeladds <user> [unit]
         Aliases: {0}channelcreates
         Output:
-            The number of channels a user 
+            The number of channels a user
             has created in the server
             across all time unless a time
             is specified.
@@ -1258,7 +1271,7 @@ class Logging(commands.Cog):
             past time argument to only
             check entry counts from after
             that day. If you wish to
-            select audits by you and 
+            select audits by you and
             specify a past time argument,
             you must mention yourself.
         Explanation:
@@ -1269,8 +1282,15 @@ class Logging(commands.Cog):
         """
         if not user:
             user = ctx.author
-        msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.channel_create, "created", "channels")
-        await ctx.send_or_reply(self.bot.emote_dict['plus'] + msg)
+        msg = await self.get_action_count(
+            ctx,
+            user,
+            after,
+            discord.AuditLogAction.channel_create,
+            "created",
+            "channels",
+        )
+        await ctx.send_or_reply(self.bot.emote_dict["plus"] + msg)
 
     @auditcount.command(
         aliases=["channelchanges"],
@@ -1293,9 +1313,11 @@ class Logging(commands.Cog):
                 {0}bancount @Hecate yesterday
                 {0}bancount Hecate#3523 2m
                 {0}bancount 708584008065351681 5 months
-                """
+                """,
     )
-    async def channelupdates(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def channelupdates(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: {0}channelupdates <user> [unit]
         Aliases: {0}channelchanges
@@ -1309,7 +1331,7 @@ class Logging(commands.Cog):
             past time argument to only
             check entry counts from after
             that day. If you wish to
-            select audits by you and 
+            select audits by you and
             specify a past time argument,
             you must mention yourself.
         Explanation:
@@ -1320,8 +1342,15 @@ class Logging(commands.Cog):
         """
         if not user:
             user = ctx.author
-        msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.channel_update, "updated", "channels")
-        await ctx.send_or_reply(self.bot.emote_dict['redo'] + msg)
+        msg = await self.get_action_count(
+            ctx,
+            user,
+            after,
+            discord.AuditLogAction.channel_update,
+            "updated",
+            "channels",
+        )
+        await ctx.send_or_reply(self.bot.emote_dict["redo"] + msg)
 
     @auditcount.command(
         aliases=["channelremoves"],
@@ -1344,9 +1373,11 @@ class Logging(commands.Cog):
                 {0}bancount @Hecate yesterday
                 {0}bancount Hecate#3523 2m
                 {0}bancount 708584008065351681 5 months
-                """
+                """,
     )
-    async def channeldeletes(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def channeldeletes(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: {0}channeldeletes <user> [unit]
         Aliases: {0}channelremoves
@@ -1360,7 +1391,7 @@ class Logging(commands.Cog):
             past time argument to only
             check entry counts from after
             that day. If you wish to
-            select audits by you and 
+            select audits by you and
             specify a past time argument,
             you must mention yourself.
         Explanation:
@@ -1371,11 +1402,18 @@ class Logging(commands.Cog):
         """
         if not user:
             user = ctx.author
-        msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.channel_delete, "deleted", "channels")
-        await ctx.send_or_reply(self.bot.emote_dict['minus'] + msg)
+        msg = await self.get_action_count(
+            ctx,
+            user,
+            after,
+            discord.AuditLogAction.channel_delete,
+            "deleted",
+            "channels",
+        )
+        await ctx.send_or_reply(self.bot.emote_dict["minus"] + msg)
 
     @auditcount.command(
-        aliases=["emojicreates","emoteadds", "emotecreates"],
+        aliases=["emojicreates", "emoteadds", "emotecreates"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
         updated="2021-05-07 22:34:00.515826",
@@ -1395,9 +1433,11 @@ class Logging(commands.Cog):
                 {0}bancount @Hecate yesterday
                 {0}bancount Hecate#3523 2m
                 {0}bancount 708584008065351681 5 months
-                """
+                """,
     )
-    async def emojiadds(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def emojiadds(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: {0}emojiadds <user> [unit]
         Aliases:
@@ -1405,7 +1445,7 @@ class Logging(commands.Cog):
             {0}emoteadds,
             {0}emotecreates
         Output:
-            The number of emojis a user 
+            The number of emojis a user
             has created in the server
             across all time unless a time
             is specified.
@@ -1415,7 +1455,7 @@ class Logging(commands.Cog):
             past time argument to only
             check entry counts from after
             that day. If you wish to
-            select audits by you and 
+            select audits by you and
             specify a past time argument,
             you must mention yourself.
         Explanation:
@@ -1426,8 +1466,10 @@ class Logging(commands.Cog):
         """
         if not user:
             user = ctx.author
-        msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.emoji_create, "created", "emojis")
-        await ctx.send_or_reply(self.bot.emote_dict['plus'] + msg)
+        msg = await self.get_action_count(
+            ctx, user, after, discord.AuditLogAction.emoji_create, "created", "emojis"
+        )
+        await ctx.send_or_reply(self.bot.emote_dict["plus"] + msg)
 
     @auditcount.command(
         aliases=["emojichanges"],
@@ -1450,14 +1492,16 @@ class Logging(commands.Cog):
                 {0}bancount @Hecate yesterday
                 {0}bancount Hecate#3523 2m
                 {0}bancount 708584008065351681 5 months
-                """
+                """,
     )
-    async def emojiupdates(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def emojiupdates(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: {0}emojiupdates <user> [unit]
         Aliases: {0}emojichanges
         Output:
-            The number of emojis a user 
+            The number of emojis a user
             has updated in the server
             across all time unless a time
             is specified.
@@ -1467,7 +1511,7 @@ class Logging(commands.Cog):
             past time argument to only
             check entry counts from after
             that day. If you wish to
-            select audits by you and 
+            select audits by you and
             specify a past time argument,
             you must mention yourself.
         Explanation:
@@ -1478,8 +1522,10 @@ class Logging(commands.Cog):
         """
         if not user:
             user = ctx.author
-        msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.emoji_update, "updated", "emojis")
-        await ctx.send_or_reply(self.bot.emote_dict['redo'] + msg)
+        msg = await self.get_action_count(
+            ctx, user, after, discord.AuditLogAction.emoji_update, "updated", "emojis"
+        )
+        await ctx.send_or_reply(self.bot.emote_dict["redo"] + msg)
 
     @auditcount.command(
         aliases=["emojiremoves"],
@@ -1502,14 +1548,16 @@ class Logging(commands.Cog):
                 {0}bancount @Hecate yesterday
                 {0}bancount Hecate#3523 2m
                 {0}bancount 708584008065351681 5 months
-                """
+                """,
     )
-    async def emojideletes(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def emojideletes(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: {0}emojideletes <user> [unit]
         Aliases: {0}emojiremoves
         Output:
-            The number of emojis a user 
+            The number of emojis a user
             has deleted in the server
             across all time unless a time
             is specified.
@@ -1519,7 +1567,7 @@ class Logging(commands.Cog):
             past time argument to only
             check entry counts from after
             that day. If you wish to
-            select audits by you and 
+            select audits by you and
             specify a past time argument,
             you must mention yourself.
         Explanation:
@@ -1530,11 +1578,13 @@ class Logging(commands.Cog):
         """
         if not user:
             user = ctx.author
-        msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.emoji_delete, "deleted", "emojis")
-        await ctx.send_or_reply(self.bot.emote_dict['minus'] + msg)
+        msg = await self.get_action_count(
+            ctx, user, after, discord.AuditLogAction.emoji_delete, "deleted", "emojis"
+        )
+        await ctx.send_or_reply(self.bot.emote_dict["minus"] + msg)
 
     @auditcount.command(
-        aliases=["serverchanges", "guildupdates","guildchanges"],
+        aliases=["serverchanges", "guildupdates", "guildchanges"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
         updated="2021-05-07 22:34:00.515826",
@@ -1554,9 +1604,11 @@ class Logging(commands.Cog):
                 {0}bancount @Hecate yesterday
                 {0}bancount Hecate#3523 2m
                 {0}bancount 708584008065351681 5 months
-                """
+                """,
     )
-    async def serverupdates(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def serverupdates(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: {0}serverupdates <user> [unit]
         Aliases:
@@ -1573,7 +1625,7 @@ class Logging(commands.Cog):
             past time argument to only
             check entry counts from after
             that day. If you wish to
-            select audits by you and 
+            select audits by you and
             specify a past time argument,
             you must mention yourself.
         Explanation:
@@ -1584,8 +1636,15 @@ class Logging(commands.Cog):
         """
         if not user:
             user = ctx.author
-        msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.guild_update, "updated the server", "times")
-        await ctx.send_or_reply(self.bot.emote_dict['redo'] + msg)
+        msg = await self.get_action_count(
+            ctx,
+            user,
+            after,
+            discord.AuditLogAction.guild_update,
+            "updated the server",
+            "times",
+        )
+        await ctx.send_or_reply(self.bot.emote_dict["redo"] + msg)
 
     @auditcount.command(
         aliases=["integrationcreates"],
@@ -1608,14 +1667,16 @@ class Logging(commands.Cog):
                 {0}bancount @Hecate yesterday
                 {0}bancount Hecate#3523 2m
                 {0}bancount 708584008065351681 5 months
-                """
+                """,
     )
-    async def integrationadds(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def integrationadds(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: {0}integrationadds <user> [unit]
         Alias: {0}integrationcreates
         Output:
-            The number of integrations a user 
+            The number of integrations a user
             has created in the server across
             all time unless a time is specified.
         Notes:
@@ -1624,7 +1685,7 @@ class Logging(commands.Cog):
             past time argument to only
             check entry counts from after
             that day. If you wish to
-            select audits by you and 
+            select audits by you and
             specify a past time argument,
             you must mention yourself.
         Explanation:
@@ -1635,8 +1696,15 @@ class Logging(commands.Cog):
         """
         if not user:
             user = ctx.author
-        msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.integration_create, "created", "integrations")
-        await ctx.send_or_reply(self.bot.emote_dict['plus'] + msg)
+        msg = await self.get_action_count(
+            ctx,
+            user,
+            after,
+            discord.AuditLogAction.integration_create,
+            "created",
+            "integrations",
+        )
+        await ctx.send_or_reply(self.bot.emote_dict["plus"] + msg)
 
     @auditcount.command(
         aliases=["integrationchanges"],
@@ -1659,14 +1727,16 @@ class Logging(commands.Cog):
                 {0}bancount @Hecate yesterday
                 {0}bancount Hecate#3523 2m
                 {0}bancount 708584008065351681 5 months
-                """
+                """,
     )
-    async def integrationupdates(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def integrationupdates(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: {0}integrationupdates <user> [unit]
         Alias: {0}integrationchanges
         Output:
-            The number of integrations a user 
+            The number of integrations a user
             has created in the server across
             all time unless a time is specified.
         Notes:
@@ -1675,7 +1745,7 @@ class Logging(commands.Cog):
             past time argument to only
             check entry counts from after
             that day. If you wish to
-            select audits by you and 
+            select audits by you and
             specify a past time argument,
             you must mention yourself.
         Explanation:
@@ -1686,8 +1756,15 @@ class Logging(commands.Cog):
         """
         if not user:
             user = ctx.author
-        msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.integration_update, "updated", "integrations")
-        await ctx.send_or_reply(self.bot.emote_dict['redo'] + msg)
+        msg = await self.get_action_count(
+            ctx,
+            user,
+            after,
+            discord.AuditLogAction.integration_update,
+            "updated",
+            "integrations",
+        )
+        await ctx.send_or_reply(self.bot.emote_dict["redo"] + msg)
 
     @auditcount.command(
         aliases=["integrationremoves"],
@@ -1710,14 +1787,16 @@ class Logging(commands.Cog):
                 {0}bancount @Hecate yesterday
                 {0}bancount Hecate#3523 2m
                 {0}bancount 708584008065351681 5 months
-                """
+                """,
     )
-    async def integrationdeletes(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def integrationdeletes(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: {0}integrationdeletes <user> [unit]
         Alias: {0}integrationremoves
         Output:
-            The number of integrations a user 
+            The number of integrations a user
             has deleted in the server across
             all time unless a time is specified.
         Notes:
@@ -1726,7 +1805,7 @@ class Logging(commands.Cog):
             past time argument to only
             check entry counts from after
             that day. If you wish to
-            select audits by you and 
+            select audits by you and
             specify a past time argument,
             you must mention yourself.
         Explanation:
@@ -1737,8 +1816,15 @@ class Logging(commands.Cog):
         """
         if not user:
             user = ctx.author
-        msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.integration_delete, "deleted", "integrations")
-        await ctx.send_or_reply(self.bot.emote_dict['minus'] + msg)
+        msg = await self.get_action_count(
+            ctx,
+            user,
+            after,
+            discord.AuditLogAction.integration_delete,
+            "deleted",
+            "integrations",
+        )
+        await ctx.send_or_reply(self.bot.emote_dict["minus"] + msg)
 
     @auditcount.command(
         aliases=["invitecreates"],
@@ -1761,9 +1847,11 @@ class Logging(commands.Cog):
                 {0}bancount @Hecate yesterday
                 {0}bancount Hecate#3523 2m
                 {0}bancount 708584008065351681 5 months
-                """
+                """,
     )
-    async def inviteadds(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def inviteadds(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: {0}inviteadds <user> [unit]
         Alias: {0}invitecreates
@@ -1777,7 +1865,7 @@ class Logging(commands.Cog):
             past time argument to only
             check entry counts from after
             that day. If you wish to
-            select audits by you and 
+            select audits by you and
             specify a past time argument,
             you must mention yourself.
         Explanation:
@@ -1788,8 +1876,15 @@ class Logging(commands.Cog):
         """
         if not user:
             user = ctx.author
-        msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.invite_create, "created", "invite links")
-        await ctx.send_or_reply(self.bot.emote_dict['plus'] + msg)
+        msg = await self.get_action_count(
+            ctx,
+            user,
+            after,
+            discord.AuditLogAction.invite_create,
+            "created",
+            "invite links",
+        )
+        await ctx.send_or_reply(self.bot.emote_dict["plus"] + msg)
 
     @auditcount.command(
         aliases=["invitechanges"],
@@ -1812,9 +1907,11 @@ class Logging(commands.Cog):
                 {0}bancount @Hecate yesterday
                 {0}bancount Hecate#3523 2m
                 {0}bancount 708584008065351681 5 months
-                """
+                """,
     )
-    async def inviteupdates(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def inviteupdates(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: {0}inviteupdates <user> [unit]
         Alias: {0}invitechanges
@@ -1828,7 +1925,7 @@ class Logging(commands.Cog):
             past time argument to only
             check entry counts from after
             that day. If you wish to
-            select audits by you and 
+            select audits by you and
             specify a past time argument,
             you must mention yourself.
         Explanation:
@@ -1839,8 +1936,15 @@ class Logging(commands.Cog):
         """
         if not user:
             user = ctx.author
-        msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.invite_update, "updated", "invite links")
-        await ctx.send_or_reply(self.bot.emote_dict['redo'] + msg)
+        msg = await self.get_action_count(
+            ctx,
+            user,
+            after,
+            discord.AuditLogAction.invite_update,
+            "updated",
+            "invite links",
+        )
+        await ctx.send_or_reply(self.bot.emote_dict["redo"] + msg)
 
     @auditcount.command(
         aliases=["inviteremoves"],
@@ -1863,9 +1967,11 @@ class Logging(commands.Cog):
                 {0}bancount @Hecate yesterday
                 {0}bancount Hecate#3523 2m
                 {0}bancount 708584008065351681 5 months
-                """
+                """,
     )
-    async def invitedeletes(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def invitedeletes(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: {0}invitedeletes <user> [unit]
         Alias: {0}inviteremoves
@@ -1879,7 +1985,7 @@ class Logging(commands.Cog):
             past time argument to only
             check entry counts from after
             that day. If you wish to
-            select audits by you and 
+            select audits by you and
             specify a past time argument,
             you must mention yourself.
         Explanation:
@@ -1890,11 +1996,18 @@ class Logging(commands.Cog):
         """
         if not user:
             user = ctx.author
-        msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.invite_delete, "deleted", "invite links")
-        await ctx.send_or_reply(self.bot.emote_dict['minus'] + msg)
+        msg = await self.get_action_count(
+            ctx,
+            user,
+            after,
+            discord.AuditLogAction.invite_delete,
+            "deleted",
+            "invite links",
+        )
+        await ctx.send_or_reply(self.bot.emote_dict["minus"] + msg)
 
     @auditcount.command(
-        aliases=["kickcount","kc"],
+        aliases=["kickcount", "kc"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
         updated="2021-05-07 22:34:00.515826",
@@ -1914,9 +2027,11 @@ class Logging(commands.Cog):
                 {0}bancount @Hecate yesterday
                 {0}bancount Hecate#3523 2m
                 {0}bancount 708584008065351681 5 months
-                """
+                """,
     )
-    async def kicks(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def kicks(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: {0}kicks <user> [unit]
         Aliases: {0}kickcount, {0}kc
@@ -1930,7 +2045,7 @@ class Logging(commands.Cog):
             past time argument to only
             check entry counts from after
             that day. If you wish to
-            select audits by you and 
+            select audits by you and
             specify a past time argument,
             you must mention yourself.
         Explanation:
@@ -1941,11 +2056,13 @@ class Logging(commands.Cog):
         """
         if not user:
             user = ctx.author
-        msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.kick, "kicked", "users")
-        await ctx.send_or_reply(self.bot.emote_dict['kick'] + msg)
+        msg = await self.get_action_count(
+            ctx, user, after, discord.AuditLogAction.kick, "kicked", "users"
+        )
+        await ctx.send_or_reply(self.bot.emote_dict["kick"] + msg)
 
     @auditcount.command(
-        aliases=["vckickvount","vckc"],
+        aliases=["vckickvount", "vckc"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
         updated="2021-05-07 22:34:00.515826",
@@ -1965,9 +2082,11 @@ class Logging(commands.Cog):
                 {0}bancount @Hecate yesterday
                 {0}bancount Hecate#3523 2m
                 {0}bancount 708584008065351681 5 months
-                """
+                """,
     )
-    async def vckicks(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def vckicks(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: {0}vckicks <user> [unit]
         Aliases: {0}vckickcount, {0}vckc
@@ -1981,7 +2100,7 @@ class Logging(commands.Cog):
             past time argument to only
             check entry counts from after
             that day. If you wish to
-            select audits by you and 
+            select audits by you and
             specify a past time argument,
             you must mention yourself.
         Explanation:
@@ -1992,11 +2111,18 @@ class Logging(commands.Cog):
         """
         if not user:
             user = ctx.author
-        msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.member_disconnect, "vckicked", "users")
-        await ctx.send_or_reply(self.bot.emote_dict['audioremove'] + msg)
+        msg = await self.get_action_count(
+            ctx,
+            user,
+            after,
+            discord.AuditLogAction.member_disconnect,
+            "vckicked",
+            "users",
+        )
+        await ctx.send_or_reply(self.bot.emote_dict["audioremove"] + msg)
 
     @auditcount.command(
-        aliases=["vcmoves","vcmvs"],
+        aliases=["vcmoves", "vcmvs"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
         updated="2021-05-07 22:34:00.515826",
@@ -2016,9 +2142,11 @@ class Logging(commands.Cog):
                 {0}bancount @Hecate yesterday
                 {0}bancount Hecate#3523 2m
                 {0}bancount 708584008065351681 5 months
-                """
+                """,
     )
-    async def moves(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def moves(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: {0}moves <user> [unit]
         Aliases: {0}vcmoves, {0}vcmvs
@@ -2032,7 +2160,7 @@ class Logging(commands.Cog):
             past time argument to only
             check entry counts from after
             that day. If you wish to
-            select audits by you and 
+            select audits by you and
             specify a past time argument,
             you must mention yourself.
         Explanation:
@@ -2043,11 +2171,13 @@ class Logging(commands.Cog):
         """
         if not user:
             user = ctx.author
-        msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.member_move, "vcmoved", "users")
-        await ctx.send_or_reply(self.bot.emote_dict['forward1'] + msg)
+        msg = await self.get_action_count(
+            ctx, user, after, discord.AuditLogAction.member_move, "vcmoved", "users"
+        )
+        await ctx.send_or_reply(self.bot.emote_dict["forward1"] + msg)
 
     @auditcount.command(
-        aliases=["bds","bd"],
+        aliases=["bds", "bd"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
         updated="2021-05-07 22:34:00.515826",
@@ -2067,9 +2197,11 @@ class Logging(commands.Cog):
                 {0}bancount @Hecate yesterday
                 {0}bancount Hecate#3523 2m
                 {0}bancount 708584008065351681 5 months
-                """
+                """,
     )
-    async def bulkdeletes(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def bulkdeletes(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: {0}bulkdeletes <user> [unit]
         Aliases: {0}bds, {0}bd
@@ -2083,7 +2215,7 @@ class Logging(commands.Cog):
             past time argument to only
             check entry counts from after
             that day. If you wish to
-            select audits by you and 
+            select audits by you and
             specify a past time argument,
             you must mention yourself.
         Explanation:
@@ -2094,8 +2226,15 @@ class Logging(commands.Cog):
         """
         if not user:
             user = ctx.author
-        msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.message_bulk_delete, "bulk deleted messages", "times")
-        await ctx.send_or_reply(self.bot.emote_dict['trash'] + msg)
+        msg = await self.get_action_count(
+            ctx,
+            user,
+            after,
+            discord.AuditLogAction.message_bulk_delete,
+            "bulk deleted messages",
+            "times",
+        )
+        await ctx.send_or_reply(self.bot.emote_dict["trash"] + msg)
 
     @auditcount.command(
         aliases=["removes"],
@@ -2118,9 +2257,11 @@ class Logging(commands.Cog):
                 {0}bancount @Hecate yesterday
                 {0}bancount Hecate#3523 2m
                 {0}bancount 708584008065351681 5 months
-                """
+                """,
     )
-    async def deletes(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def deletes(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: {0}deletes <user> [unit]
         Alias: {0}removes
@@ -2134,7 +2275,7 @@ class Logging(commands.Cog):
             past time argument to only
             check entry counts from after
             that day. If you wish to
-            select audits by you and 
+            select audits by you and
             specify a past time argument,
             you must mention yourself.
         Explanation:
@@ -2145,11 +2286,18 @@ class Logging(commands.Cog):
         """
         if not user:
             user = ctx.author
-        msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.message_delete, "deleted", "messages")
-        await ctx.send_or_reply(self.bot.emote_dict['trash'] + msg)
+        msg = await self.get_action_count(
+            ctx,
+            user,
+            after,
+            discord.AuditLogAction.message_delete,
+            "deleted",
+            "messages",
+        )
+        await ctx.send_or_reply(self.bot.emote_dict["trash"] + msg)
 
     @auditcount.command(
-        aliases=["pincount","pc"],
+        aliases=["pincount", "pc"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
         updated="2021-05-07 22:34:00.515826",
@@ -2169,9 +2317,11 @@ class Logging(commands.Cog):
                 {0}bancount @Hecate yesterday
                 {0}bancount Hecate#3523 2m
                 {0}bancount 708584008065351681 5 months
-                """
+                """,
     )
-    async def pins(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def pins(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: {0}pins <user> [unit]
         Aliases: {0}pincount, {0}pc
@@ -2186,7 +2336,7 @@ class Logging(commands.Cog):
             past time argument to only
             check entry counts from after
             that day. If you wish to
-            select audits by you and 
+            select audits by you and
             specify a past time argument,
             you must mention yourself.
         Explanation:
@@ -2197,11 +2347,13 @@ class Logging(commands.Cog):
         """
         if not user:
             user = ctx.author
-        msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.message_pin, "pinned", "messages")
-        await ctx.send_or_reply(self.bot.emote_dict['pin'] + msg)
+        msg = await self.get_action_count(
+            ctx, user, after, discord.AuditLogAction.message_pin, "pinned", "messages"
+        )
+        await ctx.send_or_reply(self.bot.emote_dict["pin"] + msg)
 
     @auditcount.command(
-        aliases=["unpincount","upc"],
+        aliases=["unpincount", "upc"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
         updated="2021-05-07 22:34:00.515826",
@@ -2221,9 +2373,11 @@ class Logging(commands.Cog):
                 {0}bancount @Hecate yesterday
                 {0}bancount Hecate#3523 2m
                 {0}bancount 708584008065351681 5 months
-                """
+                """,
     )
-    async def unpins(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def unpins(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: {0}pins <user> [unit]
         Aliases: {0}unpincount, {0}upc
@@ -2238,7 +2392,7 @@ class Logging(commands.Cog):
             past time argument to only
             check entry counts from after
             that day. If you wish to
-            select audits by you and 
+            select audits by you and
             specify a past time argument,
             you must mention yourself.
         Explanation:
@@ -2249,8 +2403,15 @@ class Logging(commands.Cog):
         """
         if not user:
             user = ctx.author
-        msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.message_unpin, "unpinned", "messages")
-        await ctx.send_or_reply(self.bot.emote_dict['pin'] + msg)
+        msg = await self.get_action_count(
+            ctx,
+            user,
+            after,
+            discord.AuditLogAction.message_unpin,
+            "unpinned",
+            "messages",
+        )
+        await ctx.send_or_reply(self.bot.emote_dict["pin"] + msg)
 
     @auditcount.command(
         aliases=["rolecreates"],
@@ -2273,9 +2434,11 @@ class Logging(commands.Cog):
                 {0}bancount @Hecate yesterday
                 {0}bancount Hecate#3523 2m
                 {0}bancount 708584008065351681 5 months
-                """
+                """,
     )
-    async def roleadds(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def roleadds(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: {0}pins <user> [unit]
         Aliases: {0}rolecreates
@@ -2290,7 +2453,7 @@ class Logging(commands.Cog):
             past time argument to only
             check entry counts from after
             that day. If you wish to
-            select audits by you and 
+            select audits by you and
             specify a past time argument,
             you must mention yourself.
         Explanation:
@@ -2301,8 +2464,10 @@ class Logging(commands.Cog):
         """
         if not user:
             user = ctx.author
-        msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.role_create, "created", "roles")
-        await ctx.send_or_reply(self.bot.emote_dict['plus'] + msg)
+        msg = await self.get_action_count(
+            ctx, user, after, discord.AuditLogAction.role_create, "created", "roles"
+        )
+        await ctx.send_or_reply(self.bot.emote_dict["plus"] + msg)
 
     @auditcount.command(
         aliases=["rolechanges"],
@@ -2325,9 +2490,11 @@ class Logging(commands.Cog):
                 {0}bancount @Hecate yesterday
                 {0}bancount Hecate#3523 2m
                 {0}bancount 708584008065351681 5 months
-                """
+                """,
     )
-    async def roleupdates(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def roleupdates(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: {0}roleupdates <user> [unit]
         Aliases: {0}rolechanges
@@ -2342,7 +2509,7 @@ class Logging(commands.Cog):
             past time argument to only
             check entry counts from after
             that day. If you wish to
-            select audits by you and 
+            select audits by you and
             specify a past time argument,
             you must mention yourself.
         Explanation:
@@ -2353,8 +2520,10 @@ class Logging(commands.Cog):
         """
         if not user:
             user = ctx.author
-        msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.role_update, "updated", "roles")
-        await ctx.send_or_reply(self.bot.emote_dict['redo'] + msg)
+        msg = await self.get_action_count(
+            ctx, user, after, discord.AuditLogAction.role_update, "updated", "roles"
+        )
+        await ctx.send_or_reply(self.bot.emote_dict["redo"] + msg)
 
     @auditcount.command(
         aliases=["roleremoves"],
@@ -2377,9 +2546,11 @@ class Logging(commands.Cog):
                 {0}bancount @Hecate yesterday
                 {0}bancount Hecate#3523 2m
                 {0}bancount 708584008065351681 5 months
-                """
+                """,
     )
-    async def roledeletes(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def roledeletes(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: {0}roledeletes <user> [unit]
         Alias: {0}roleremoves
@@ -2394,7 +2565,7 @@ class Logging(commands.Cog):
             past time argument to only
             check entry counts from after
             that day. If you wish to
-            select audits by you and 
+            select audits by you and
             specify a past time argument,
             you must mention yourself.
         Explanation:
@@ -2405,11 +2576,13 @@ class Logging(commands.Cog):
         """
         if not user:
             user = ctx.author
-        msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.role_delete, "deleted", "roles")
-        await ctx.send_or_reply(self.bot.emote_dict['minus'] + msg)
+        msg = await self.get_action_count(
+            ctx, user, after, discord.AuditLogAction.role_delete, "deleted", "roles"
+        )
+        await ctx.send_or_reply(self.bot.emote_dict["minus"] + msg)
 
     @auditcount.command(
-        aliases=["unbancount","ubc"],
+        aliases=["unbancount", "ubc"],
         brief="Count the audit log entries of a user.",
         implemented="2021-05-07 22:34:00.515826",
         updated="2021-05-07 22:34:00.515826",
@@ -2429,9 +2602,11 @@ class Logging(commands.Cog):
                 {0}bancount @Hecate yesterday
                 {0}bancount Hecate#3523 2m
                 {0}bancount 708584008065351681 5 months
-                """
+                """,
     )
-    async def unbans(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def unbans(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: {0}unbans <user> [after]
         Aliases: {0}unbancount, {0}ubc
@@ -2446,7 +2621,7 @@ class Logging(commands.Cog):
             past time argument to only
             check entry counts from after
             that day. If you wish to
-            select audits by you and 
+            select audits by you and
             specify a past time argument,
             you must mention yourself.
         Explanation:
@@ -2457,8 +2632,10 @@ class Logging(commands.Cog):
         """
         if not user:
             user = ctx.author
-        msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.unban, "unbanned", "users")
-        await ctx.send_or_reply(self.bot.emote_dict['hammer'] + msg)
+        msg = await self.get_action_count(
+            ctx, user, after, discord.AuditLogAction.unban, "unbanned", "users"
+        )
+        await ctx.send_or_reply(self.bot.emote_dict["hammer"] + msg)
 
     @auditcount.command(
         aliases=["webhookcreates"],
@@ -2481,9 +2658,11 @@ class Logging(commands.Cog):
                 {0}bancount @Hecate yesterday
                 {0}bancount Hecate#3523 2m
                 {0}bancount 708584008065351681 5 months
-                """
+                """,
     )
-    async def webhookadds(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def webhookadds(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: {0}webhookadds <user> [after]
         Aliases: {0}webhookcreates
@@ -2498,7 +2677,7 @@ class Logging(commands.Cog):
             past time argument to only
             check entry counts from after
             that day. If you wish to
-            select audits by you and 
+            select audits by you and
             specify a past time argument,
             you must mention yourself.
         Explanation:
@@ -2509,8 +2688,15 @@ class Logging(commands.Cog):
         """
         if not user:
             user = ctx.author
-        msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.webhook_create, "created", "webhooks")
-        await ctx.send_or_reply(self.bot.emote_dict['plus'] + msg)
+        msg = await self.get_action_count(
+            ctx,
+            user,
+            after,
+            discord.AuditLogAction.webhook_create,
+            "created",
+            "webhooks",
+        )
+        await ctx.send_or_reply(self.bot.emote_dict["plus"] + msg)
 
     @auditcount.command(
         aliases=["webhookchanges"],
@@ -2533,9 +2719,11 @@ class Logging(commands.Cog):
                 {0}bancount @Hecate yesterday
                 {0}bancount Hecate#3523 2m
                 {0}bancount 708584008065351681 5 months
-                """
+                """,
     )
-    async def webhookupdates(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def webhookupdates(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: {0}webhookupdates <user> [after]
         Aliases: {0}webhookchanges
@@ -2550,7 +2738,7 @@ class Logging(commands.Cog):
             past time argument to only
             check entry counts from after
             that day. If you wish to
-            select audits by you and 
+            select audits by you and
             specify a past time argument,
             you must mention yourself.
         Explanation:
@@ -2561,8 +2749,15 @@ class Logging(commands.Cog):
         """
         if not user:
             user = ctx.author
-        msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.webhook_update, "updated", "webhooks")
-        await ctx.send_or_reply(self.bot.emote_dict['redo'] + msg)
+        msg = await self.get_action_count(
+            ctx,
+            user,
+            after,
+            discord.AuditLogAction.webhook_update,
+            "updated",
+            "webhooks",
+        )
+        await ctx.send_or_reply(self.bot.emote_dict["redo"] + msg)
 
     @auditcount.command(
         aliases=["webhookremoves"],
@@ -2585,9 +2780,11 @@ class Logging(commands.Cog):
                 {0}bancount @Hecate yesterday
                 {0}bancount Hecate#3523 2m
                 {0}bancount 708584008065351681 5 months
-                """
+                """,
     )
-    async def webhookdeletes(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def webhookdeletes(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: {0}webhookdeletes <user> [after]
         Aliases: {0}webhookremoves
@@ -2602,7 +2799,7 @@ class Logging(commands.Cog):
             past time argument to only
             check entry counts from after
             that day. If you wish to
-            select audits by you and 
+            select audits by you and
             specify a past time argument,
             you must mention yourself.
         Explanation:
@@ -2613,15 +2810,24 @@ class Logging(commands.Cog):
         """
         if not user:
             user = ctx.author
-        msg = await self.get_action_count(ctx, user, after, discord.AuditLogAction.webhook_delete, "deleted", "webhooks")
-        await ctx.send_or_reply(self.bot.emote_dict['minus'] + msg)
+        msg = await self.get_action_count(
+            ctx,
+            user,
+            after,
+            discord.AuditLogAction.webhook_delete,
+            "deleted",
+            "webhooks",
+        )
+        await ctx.send_or_reply(self.bot.emote_dict["minus"] + msg)
 
     async def get_action_count(self, ctx, user, after, action, string1, string2):
         """
         Helper function to get audit counts
         from a user object and an action
         """
-        entries = await ctx.guild.audit_logs(limit=None, user=user, action=action).flatten()
+        entries = await ctx.guild.audit_logs(
+            limit=None, user=user, action=action
+        ).flatten()
         if after:
             valid = []
             for entry in entries:

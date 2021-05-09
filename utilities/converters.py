@@ -320,11 +320,7 @@ class BotServer(commands.Converter):
                 )
             except Exception as e:
                 await ctx.send_or_reply(e)
-        options = [
-            s
-            for s in ctx.bot.guilds
-            if argument.lower() in s.name.lower()
-        ]
+        options = [s for s in ctx.bot.guilds if argument.lower() in s.name.lower()]
         if options == []:
             raise commands.BadArgument(
                 f"Server `{await prettify(ctx, argument)}` not found."

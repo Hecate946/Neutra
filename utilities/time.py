@@ -39,6 +39,8 @@ class ShortTime:
     @classmethod
     async def convert(cls, ctx, argument):
         return cls(argument, now=ctx.message.created_at)
+
+
 class PastShortTime:
     compiled = re.compile(
         """(?:(?P<years>[0-9])(?:years?|y))?             # e.g. 2y
@@ -93,6 +95,7 @@ class HumanTime:
     async def convert(cls, ctx, argument):
         return cls(argument, now=ctx.message.created_at)
 
+
 class PastHumanTime:
     calendar = pdt.Calendar(version=pdt.VERSION_CONTEXT_STYLE)
 
@@ -120,8 +123,10 @@ class PastHumanTime:
     @classmethod
     async def convert(cls, ctx, argument):
         return cls(argument, now=ctx.message.created_at)
+
+
 class Time(HumanTime):
-    def __init__(self, argument,*, now=None):
+    def __init__(self, argument, *, now=None):
         try:
             o = ShortTime(argument, now=now)
         except Exception as e:
@@ -130,8 +135,9 @@ class Time(HumanTime):
             self.dt = o.dt
             self._past = False
 
+
 class NegativeTime(PastHumanTime):
-    def __init__(self, argument,*, now=None):
+    def __init__(self, argument, *, now=None):
         try:
             o = PastShortTime(argument, now=now)
         except Exception as e:
@@ -140,12 +146,14 @@ class NegativeTime(PastHumanTime):
             self.dt = o.dt
             self._past = False
 
+
 class FutureTime(Time):
     def __init__(self, argument, *, now=None):
         super().__init__(argument, now=now)
 
         if self._past:
             raise commands.BadArgument("this time is in the past")
+
 
 class PastTime(NegativeTime):
     def __init__(self, argument, *, now=None):

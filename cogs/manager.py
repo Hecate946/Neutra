@@ -439,6 +439,7 @@ class Manager(commands.Cog):
                 return
         else:
             raise commands.BadArgument(f"No stdout file currently exists.")
+
     @pm2.command(aliases=["err", "error", "errors"])
     async def stderr(self, ctx):
         sh = self.bot.get_command("sh")
@@ -460,7 +461,7 @@ class Manager(commands.Cog):
                 return
         else:
             raise commands.BadArgument(f"No pid file currently exists.")
-            
+
     @pm2.command(name="clear")
     async def _clear(self, ctx, search):
         if search in ["out", "output", "stdout"]:

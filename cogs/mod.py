@@ -1,4 +1,5 @@
 import re
+import json
 import shlex
 import typing
 import asyncio
@@ -10,9 +11,13 @@ from collections import Counter
 from datetime import datetime, timedelta
 from discord.ext import commands
 
-
 from settings import database
-from utilities import converters, checks, utils, helpers, time
+
+from utilities import time
+from utilities import utils
+from utilities import checks
+from utilities import helpers
+from utilities import converters
 from utilities import decorators
 
 
@@ -50,7 +55,7 @@ class Mod(commands.Cog):
         channel: discord.VoiceChannel = None,
     ):
         """
-        Usage: -vcmove <target> <target>... <channel>
+        Usage: {0}vcmove <target> <target>... <channel>
         Output: Moves members into a new voice channel
         Permission: Move Members
         """
@@ -137,230 +142,6 @@ class Mod(commands.Cog):
             await ctx.send_or_reply(
                 content=f"{self.bot.emote_dict['success']} VC Kicked `{', '.join(vckicked)}`"
             )
-
-    ###################
-    ## Mute Commands ##
-    ###################
-
-    @decorators.command(
-        brief="Mute users for misbehaving.", aliases=["hackmute", "hardmute"]
-    )
-    @commands.guild_only()
-    @checks.has_perms(kick_members=True)
-    async def mute(
-        self,
-        ctx,
-        targets: commands.Greedy[converters.DiscordMember],
-        minutes: typing.Optional[int],
-        *,
-        reason: typing.Optional[str] = None,
-    ):
-        """
-        Usage:     -hardmute <target> [target]... [minutes] [reason]
-        Alias:     -hackmute
-        Example:   -hardmute person1 person2 10 for spamming
-        Pemission: Kick Members
-        Output:    Takes all roles from passed users and mutes them.
-        Notes:
-            Command -muterole must be executed prior to usage of
-            this command. Upon usage, will not be able to read
-            messages in any channel. Roles will be given back to
-            the user upon {0}unmute, or when their timed mute ends.
-        """
-        global target
-        if not len(targets):
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}mute <target> [target]... [minutes] [reason]`",
-            )
-
-        else:
-            unmutes = []
-            try:
-                self.mute_role = (
-                    await self.bot.cxn.fetchval(
-                        "SELECT muterole FROM servers WHERE server_id = $1",
-                        ctx.guild.id,
-                    )
-                    or None
-                )
-                if self.mute_role is None:
-                    return await ctx.send_or_reply(
-                        f"use `{ctx.prefix}muterole <role>` to initialize the muted role."
-                    )
-                self.mute_role = ctx.guild.get_role(int(self.mute_role))
-            except Exception as e:
-                print("really?")
-                return await ctx.send_or_reply(e)
-            muted = []
-            for target in targets:
-                if target.bot:
-                    await ctx.send_or_reply(
-                        f"{self.bot.emote_dict['failed']} I cannot mute bots."
-                    )
-                    continue
-                if self.mute_role not in target.roles:
-                    role_ids = ",".join([str(r.id) for r in target.roles])
-                    end_time = (
-                        datetime.utcnow() + timedelta(seconds=minutes * 60)
-                        if minutes
-                        else None
-                    )
-                    if target.id in self.bot.constants.owners:
-                        return await ctx.send_or_reply(
-                            content="You cannot mute my developer.",
-                        )
-                    if target.id == ctx.author.id:
-                        return await ctx.send_or_reply(
-                            "I don't think you really want to mute yourself..."
-                        )
-                    if target.id == self.bot.user.id:
-                        return await ctx.send_or_reply(
-                            content="I don't think I want to mute myself...",
-                        )
-                    if (
-                        target.guild_permissions.kick_members
-                        and ctx.author.id != ctx.guild.owner.id
-                    ):
-                        return await ctx.send_or_reply(
-                            content="You cannot punish other staff members.",
-                        )
-                    if ctx.guild.me.top_role.position < target.top_role.position:
-                        return await ctx.send_or_reply(
-                            f"My highest role is below `{target}'s` highest role. Aborting mute."
-                        )
-
-                    if ctx.guild.me.top_role.position == target.top_role.position:
-                        return await ctx.send_or_reply(
-                            f"I have the same permissions as `{target}`. Aborting mute."
-                        )
-                    if ctx.guild.me.top_role.position < self.mute_role.position:
-                        return await ctx.send_or_reply(
-                            "My highest role is below the mute role. Aborting mute."
-                        )
-                    try:
-                        await self.bot.cxn.execute(
-                            "INSERT INTO mutes VALUES ($1, $2, $3, $4)",
-                            target.id,
-                            ctx.guild.id,
-                            role_ids,
-                            getattr(end_time, "isoformat", lambda: None)(),
-                        )
-                    except Exception as e:
-                        return await ctx.send_or_reply(e)
-                    try:
-                        await target.edit(roles=[self.mute_role])
-                        muted.append(target)
-                    except Exception as e:
-                        return await ctx.send_or_reply(e)
-                    if reason:
-                        try:
-                            await target.send(
-                                f"{self.bot.emote_dict['announce']} You have been muted in **{ctx.guild.name}** {reason}. Mute duration: `{minutes if minutes is not None else 'Infinite'} minute{'' if minutes == 1 else 's'}`"
-                            )
-                        except Exception:
-                            return
-                    global unmutereason
-                    unmutereason = reason
-
-                    if minutes:
-                        unmutes.append(target)
-                else:
-                    await ctx.send_or_reply(
-                        f"{self.bot.emote_dict['warn']} Member `{target.display_name}` is already muted."
-                    )
-            if muted:
-                allmuted = []
-                for member in muted:
-                    users = []
-                    people = self.bot.get_user(int(member.id))
-                    users.append(people)
-                    for user in users:
-                        username = f"{user.name}#{user.discriminator}"
-                        allmuted += [username]
-                if minutes is None:
-                    msg = f'{self.bot.emote_dict["success"]} Muted `{", ".join(allmuted)}` indefinetely'
-                else:
-                    msg = f'{self.bot.emote_dict["success"]} Muted `{", ".join(allmuted)}` for {minutes:,} minute{"" if minutes == 1 else "s"}'
-                await ctx.send_or_reply(msg)
-                self.bot.dispatch("mod_action", ctx, targets=allmuted)
-            if len(unmutes):
-                await asyncio.sleep(minutes * 60)
-                await self.unmute(ctx, targets)
-
-    async def unmute(self, ctx, targets):
-        try:
-            self.mute_role = (
-                await self.bot.cxn.fetchrow(
-                    "SELECT muterole FROM servers WHERE server_id = $1", ctx.guild.id
-                )
-                or None
-            )
-            self.mute_role = self.mute_role[0]
-            self.mute_role = ctx.guild.get_role(int(self.mute_role))
-        except Exception as e:
-            return await ctx.send_or_reply(e)
-        unmuted = []
-        for target in targets:
-            if self.mute_role in target.roles:
-                role_ids = (
-                    await self.bot.cxn.fetchrow(
-                        "SELECT role_ids FROM mutes WHERE muted_user = $1", target.id
-                    )
-                    or None
-                )
-                if str(role_ids) == "None":
-                    await target.remove_roles(self.mute_role)
-                    unmuted.append(str(target))
-                    continue
-                role_ids = role_ids[0]
-                roles = [
-                    ctx.guild.get_role(int(id_))
-                    for id_ in role_ids.split(",")
-                    if len(id_)
-                ]
-
-                await self.bot.cxn.execute(
-                    "DELETE FROM mutes WHERE muted_user = $1", target.id
-                )
-
-                await target.edit(roles=roles)
-                unmuted.append(str(target))
-                if unmutereason:
-                    try:
-                        await target.send(
-                            f"{self.bot.emote_dict['announce']} You have been unmuted in **{ctx.guild.name}**"
-                        )
-                    except Exception:
-                        return
-
-            else:
-                return await ctx.send_or_reply(
-                    content=f"{self.bot.emote_dict['warn']} Member is not muted",
-                )
-
-        if unmuted:
-            await ctx.send_or_reply(
-                content=f'{self.bot.emote_dict["success"]} Unmuted `{", ".join(unmuted)}`',
-            )
-            self.bot.dispatch("mod_action", ctx, targets=unmuted)
-
-    @decorators.command(
-        name="unmute", brief="Unmute previously muted members.", aliases=["endmute"]
-    )
-    @commands.guild_only()
-    @checks.bot_has_perms(manage_roles=True)
-    @checks.has_perms(kick_members=True)
-    async def unmute_members(
-        self, ctx, targets: commands.Greedy[converters.DiscordMember]
-    ):
-        """
-        Usage: -unmute <target> [target]...
-        Alias: -endmute
-        Example: -unmute Hecate @Elizabeth 708584008065351681
-        Permissiom: Kick Members
-        Output: Unmutes members muted by the -hardmute command.
-        """
-        await self.unmute(ctx, targets)
 
     ##########################
     ## Restriction Commands ##
@@ -1584,3 +1365,283 @@ class Mod(commands.Cog):
             await msg.edit(
                 content=f"{self.bot.emote_dict['failed']} I have insufficient permission to unlock channels."
             )
+
+    ###################
+    ## Mute Commands ##
+    ###################
+
+    @decorators.command(
+        aliases=["tempmute"],
+        brief="Mute users for a duration.",
+        implemented="2021-04-02 00:16:54.164723",
+        updated="2021-05-09 15:44:25.714321",
+        examples="""
+                {0}mute @Hecate
+                {0}mute Hecate#3523 @John --nodm
+                {0}mute 708584008065351681 John --reason for advertising
+                {0}mute John --duration 3 hours
+                {0}mute Hecate --duration 2 minutes --reason for spamming --nodm
+                """,
+    )
+    @commands.guild_only()
+    @checks.bot_has_perms(manage_roles=True)
+    @checks.has_perms(manage_roles=True)
+    async def mute(
+        self, ctx, users: commands.Greedy[converters.DiscordMember], *, args=None
+    ):
+        """
+        Usage: {0}mute <users>... [--duration] [--reason] [--nodm]
+        Alias: {0}tempmute
+        Output:
+            Mutes multiple users.
+            This command takes 4 arguments:
+            users, duration, reason, nodm
+        Explanation:
+            Duration must be a valid time
+            passed after a --duration flag.
+            Reason can be any string passed
+            after the --reason flag.
+            Pass the --nodm flag to prevent
+            the bot from DMing the users
+            that they've been muted.
+        Flags:
+            --duration: Ex: --duration 3 days | [Aliases: -d, --time, -t]
+            --reason: Ex: --reason for spamming | [Aliases: -r]
+            --nodm: Ex --nodm
+        Notes:
+            Run the command: {0}examples mute
+            for specific usage examples.
+        """
+        task = self.bot.get_cog("Tasks")
+        if not task:
+            raise commands.BadArgument(f"This feature is unavailable.")
+        if not len(users):
+            return await ctx.usage(ctx.command.signature)
+
+        query = """
+                SELECT (muterole)
+                FROM servers
+                WHERE server_id = $1;
+                """
+        muterole = await self.bot.cxn.fetchval(query, ctx.guild.id)
+        muterole = ctx.guild.get_role(muterole)
+        if not muterole:
+            raise commands.BadArgument(
+                f"Run the `{ctx.prefix}muterole <role>` command to set up a mute role."
+            )
+
+        if args:
+            parser = converters.Arguments(add_help=False, allow_abbrev=False)
+            parser.add_argument("--duration", "-d", "--time", "-t", nargs="+")
+            parser.add_argument("--reason", "-r", nargs="+")
+            parser.add_argument("--nodm", action="store_true")
+
+            try:
+                args = parser.parse_args(shlex.split(args))
+            except Exception as e:
+                return await ctx.fail(str(e).capitalize())
+
+            if args.duration:
+                dur = " ".join(args.duration)
+                duration = await time.FutureTime(dur).convert(ctx, dur)
+                endtime = duration.dt
+            else:
+                endtime = None
+            if args.reason:
+                rawreason = " ".join(args.reason)
+                reason = await converters.ActionReason().convert(ctx, rawreason)
+            else:
+                rawreason = "No reason"
+                reason = await converters.ActionReason().convert(ctx, rawreason)
+            if args.nodm:
+                nodm = True
+            else:
+                nodm = False
+
+        else:
+            nodm = False
+            endtime = None
+            rawreason = "No reason"
+            reason = await converters.ActionReason().convert(ctx, rawreason)
+
+        failed = []
+        muted = []
+        for user in users:
+            if user.bot:
+                failed.append((str(user), "I cannot mute bots."))
+                continue
+            res = await checks.check_priv(ctx, user)
+            if res:
+                failed.append((str(user), res))
+                continue
+            try:
+                if endtime:
+                    expiration = duration.dt
+                else:
+                    expiration = None
+                timer = await task.create_timer(
+                    expiration,
+                    "mute",
+                    ctx.guild.id,
+                    ctx.author.id,
+                    user.id,
+                    nodm=nodm,
+                    user_id=user.id,
+                    roles=[x.id for x in user.roles],
+                    connection=self.bot.cxn,
+                    created=ctx.message.created_at,
+                )
+                await user.edit(roles=[muterole], reason=reason)
+                muted.append(str(user))
+                if not nodm:
+                    embed = discord.Embed(color=self.bot.constants.embed)
+                    embed.title = f"{self.bot.emote_dict['audioremove']} Mute Notice"
+                    embed.description = (
+                        f"**Server: `{ctx.guild.name} ({ctx.guild.id})`**\n"
+                    )
+                    embed.description += (
+                        f"**Moderator: `{ctx.author} ({ctx.author.id})`**\n"
+                    )
+                    if endtime:
+                        timefmt = time.human_timedelta(
+                            duration.dt, source=timer.created_at
+                        )
+                        embed.description += f"**Duration: `{timefmt}`**\n"
+                    embed.description += f"**Reason: `{rawreason}`**"
+                    try:
+                        await user.send(embed=embed)
+                    except Exception:  # We tried
+                        pass
+            except Exception as e:
+                failed.append((str(user), e))
+
+        if failed:
+            await helpers.error_info(ctx, failed)
+        if muted:
+            if endtime:
+                timefmt = time.human_timedelta(duration.dt, source=timer.created_at)
+                await ctx.success(f"Muted `{', '.join(muted)}` for **{timefmt}.**")
+
+            else:
+                await ctx.success(f"Muted `{', '.join(muted)}`")
+
+    @decorators.command(
+        brief="Unmute muted users.",
+        implemented="2021-05-09 19:44:24.756715",
+        updated="2021-05-09 19:44:24.756715",
+        examples="""
+                {0}unmute Hecate @John 708584008065351681 because I forgave them
+                {0}unmute Hecate#3523
+                """,
+    )
+    @commands.guild_only()
+    @checks.bot_has_perms(manage_roles=True)
+    @checks.has_perms(manage_roles=True)
+    async def unmute(
+        self,
+        ctx,
+        users: commands.Greedy[converters.DiscordMember],
+        *,
+        reason: typing.Optional[str] = "No reason",
+    ):
+        """
+        Usage: {0}unmute <users>... [reason]
+        Output:
+            Unmutes previously users previously
+            muted by the {0}mute command. The bot
+            will restore all the users' old roles
+            that they had before they were muted.
+        """
+        if not len(users):
+            return await ctx.usage(ctx.command.signature)
+        failed = []
+        unmuted = []
+        for user in users:
+            res = await checks.check_priv(ctx, user)
+            if res:
+                failed.append((str(user), res))
+                continue
+
+            query = """
+                    select (id, extra)
+                    from tasks
+                    where extra->'kwargs'->>'user_id' = $1;
+                    """
+            s = await self.bot.cxn.fetchval(query, str(user.id))
+            if not s:
+                return await ctx.fail(f"User `{user}` is not muted.")
+            task_id = s[0]
+            args_and_kwargs = json.loads(s[1])
+            nodm = args_and_kwargs["kwargs"]["nodm"]
+            roles = args_and_kwargs["kwargs"]["roles"]
+            try:
+                await user.edit(
+                    roles=[ctx.guild.get_role(x) for x in roles],
+                    reason=await converters.ActionReason().convert(ctx, reason),
+                )
+                query = """
+                        DELETE FROM tasks
+                        WHERE id = $1
+                        """
+                await self.bot.cxn.execute(query, task_id)
+                unmuted.append(str(user))
+            except Exception as e:
+                failed.append((str(user), e))
+                continue
+            if not nodm:
+                embed = discord.Embed(color=self.bot.constants.embed)
+                embed.title = f"{self.bot.emote_dict['audioadd']} Unmute Notice"
+                embed.description = f"**Server: `{ctx.guild.name} ({ctx.guild.id})`**\n"
+                embed.description += f"**Moderator: `{ctx.author} ({ctx.author.id})`**"
+                try:
+                    await user.send(embed=embed)
+                except Exception:
+                    pass
+        if failed:
+            await helpers.error_info(ctx, failed)
+        if unmuted:
+            await ctx.success(f"Unmuted `{' '.join(unmuted)}`")
+
+    @commands.Cog.listener()
+    @decorators.wait_until_ready()
+    async def on_mute_timer_complete(self, timer):
+        guild_id, mod_id, member_id = timer.args
+
+        guild = self.bot.get_guild(guild_id)
+        if guild is None:
+            # RIP
+            return
+
+        moderator = guild.get_member(mod_id)
+        if moderator is None:
+            try:
+                moderator = await self.bot.fetch_user(mod_id)
+            except:
+                # request failed somehow
+                moderator = f"Mod ID {mod_id}"
+            else:
+                moderator = f"{moderator} ({mod_id})"
+        else:
+            moderator = f"{moderator} ({mod_id})"
+
+        reason = (
+            f"Automatic unmute from timer made on {timer.created_at} by {moderator}."
+        )
+        member = guild.get_member(member_id)
+        if not member:
+            return  # They left...
+        roles = timer.kwargs["roles"]
+        nodm = timer.kwargs["nodm"]
+        try:
+            await member.edit(roles=[guild.get_role(x) for x in roles], reason=reason)
+        except Exception:  # They probably removed roles lmao.
+            return
+        if not nodm:
+            embed = discord.Embed(color=self.bot.constants.embed)
+            embed.title = f"{self.bot.emote_dict['audioadd']} Unmute Notice"
+            embed.description = f"**Server: `{guild.name} ({guild.id})`**\n"
+            embed.description += f"**Moderator: `{moderator}`**"
+            try:
+                await member.send(embed=embed)
+            except Exception:
+                pass

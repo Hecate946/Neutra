@@ -410,7 +410,9 @@ class Snowbot(commands.AutoShardedBot):
             try:
                 home = await self.create_guild(f"{self.user.name}'s Home Server.")
             except discord.errors.HTTPException:
-                raise RuntimeError("I am currently in too many servers to run properly.")
+                raise RuntimeError(
+                    "I am currently in too many servers to run properly."
+                )
             avchan = await home.create_text_channel("avchan")
             botlog = await home.create_text_channel("botlog")
             utils.modify_config("home", int(home.id))
@@ -720,5 +722,6 @@ class Snowbot(commands.AutoShardedBot):
     @property
     def bot_channel(self):
         return self.get_channel(self.constants.botlog)
+
 
 bot = Snowbot()
