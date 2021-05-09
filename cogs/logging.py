@@ -2825,6 +2825,7 @@ class Logging(commands.Cog):
         Helper function to get audit counts
         from a user object and an action
         """
+        await ctx.trigger_typing()
         entries = await ctx.guild.audit_logs(
             limit=None, user=user, action=action
         ).flatten()
