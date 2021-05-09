@@ -1387,15 +1387,19 @@ class Mod(commands.Cog):
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(manage_roles=True)
     async def mute(
-        self, ctx, users: commands.Greedy[converters.DiscordMember], *, args=None
+        self,
+        ctx,
+        users: commands.Greedy[converters.DiscordMember],
+        *,
+        flags=None
     ):
         """
         Usage: {0}mute <users>... [--duration] [--reason] [--nodm]
         Alias: {0}tempmute
         Output:
             Mutes multiple users.
-            This command takes 4 arguments:
-            users, duration, reason, nodm
+            This command takes 4 arguments
+            users, duration, reason, nodm.
         Explanation:
             Duration must be a valid time
             passed after a --duration flag.
@@ -1405,9 +1409,9 @@ class Mod(commands.Cog):
             the bot from DMing the users
             that they've been muted.
         Flags:
-            --duration: Ex: --duration 3 days | [Aliases: -d, --time, -t]
-            --reason: Ex: --reason for spamming | [Aliases: -r]
-            --nodm: Ex --nodm
+            --duration: [Aliases: -d, --time, -t]
+            --reason: [Aliases: -r]
+            --nodm:
         Notes:
             Run the command: {0}examples mute
             for specific usage examples.
@@ -1418,6 +1422,7 @@ class Mod(commands.Cog):
         if not len(users):
             return await ctx.usage(ctx.command.signature)
 
+        await ctx.trigger_typing()
         query = """
                 SELECT (muterole)
                 FROM servers
@@ -1430,14 +1435,14 @@ class Mod(commands.Cog):
                 f"Run the `{ctx.prefix}muterole <role>` command to set up a mute role."
             )
 
-        if args:
+        if flags:
             parser = converters.Arguments(add_help=False, allow_abbrev=False)
             parser.add_argument("--duration", "-d", "--time", "-t", nargs="+")
             parser.add_argument("--reason", "-r", nargs="+")
             parser.add_argument("--nodm", action="store_true")
 
             try:
-                args = parser.parse_args(shlex.split(args))
+                args = parser.parse_args(shlex.split(flags))
             except Exception as e:
                 return await ctx.fail(str(e).capitalize())
 
@@ -1473,6 +1478,15 @@ class Mod(commands.Cog):
             res = await checks.check_priv(ctx, user)
             if res:
                 failed.append((str(user), res))
+                continue
+            query = """
+                    select (id)
+                    from tasks
+                    where extra->'kwargs'->>'user_id' = $1;
+                    """
+            s = await self.bot.cxn.fetchval(query, str(user.id))
+            if s:
+                failed.append((str(user), "User is already muted."))
                 continue
             try:
                 if endtime:
@@ -1570,6 +1584,7 @@ class Mod(commands.Cog):
             s = await self.bot.cxn.fetchval(query, str(user.id))
             if not s:
                 return await ctx.fail(f"User `{user}` is not muted.")
+            await ctx.trigger_typing()
             task_id = s[0]
             args_and_kwargs = json.loads(s[1])
             nodm = args_and_kwargs["kwargs"]["nodm"]
