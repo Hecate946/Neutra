@@ -54,10 +54,31 @@ class Batch(commands.Cog):
         self.bulk_inserter.start()
         self.dispatch_avatars.start()
 
+        self.queue = asyncio.Queue(loop=bot.loop)
+
     def cog_unload(self):
         self.background_task.stop()
         self.bulk_inserter.stop()
 
+    @tasks.loop(seconds=0.0)
+    async def dispatch_avatars(self):
+        while True:
+            files = [await self.queue.get() for _ in range(10)]
+            try:
+                upload_batch = await self.avatar_webhook.send(
+                    files=files, wait=True
+                )
+                for x in upload_batch.attachments:
+                    self.avatar_batch.append(
+                        {
+                            "user_id": int(x.filename.split(".")[0]),
+                            "avatar_id": x.id,
+                            "unix": time.time(),
+                        }
+                    )
+            except Exception as e:
+                await self.bot.bot_channel.send(e)
+            
     @tasks.loop(seconds=2.0)
     async def bulk_inserter(self):
         self.bot.batch_inserts += 1
@@ -387,27 +408,6 @@ class Batch(commands.Cog):
         await self.bot.cxn.execute(query, webhook.id, webhook.token, self.bot.user.id)
         return webhook
 
-    @tasks.loop(seconds=0.5)
-    async def dispatch_avatars(self):
-        while len(self.to_upload) > 9:
-            to_upload = self.to_upload[:10]
-            try:
-                upload_batch = await self.avatar_webhook.send(
-                    files=to_upload, wait=True
-                )
-                for x in upload_batch.attachments:
-                    self.avatar_batch.append(
-                        {
-                            "user_id": int(x.filename.split(".")[0]),
-                            "avatar_id": x.id,
-                            "unix": time.time(),
-                        }
-                    )
-            except discord.errors.HTTPException:
-                pass
-            self.to_upload = [x for x in self.to_upload if x not in to_upload]
-            to_upload.clear()
-
     @commands.Cog.listener()
     @decorators.wait_until_ready()
     async def on_command(self, ctx):
@@ -530,8 +530,7 @@ class Batch(commands.Cog):
                     resp = await self.bot.get((avatar_url), res_method="read")
                     data = io.BytesIO(resp)
                     dfile = discord.File(data, filename=f"{after.id}.png")
-                    self.to_upload.append(dfile)
-                    await self.dispatch_avatars()
+                    self.queue.put_nowait(dfile)
                 except Exception as e:
                     await self.bot.bot_channel.send(f"Error in avatar_batcher: {e}")
                     await self.bot.bot_channel.send(
