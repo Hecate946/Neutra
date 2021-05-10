@@ -607,7 +607,8 @@ class Batch(commands.Cog):
         if retry_after:
             self._auto_spam_count[author.id] += 1
             if self._auto_spam_count[author.id] >= 5:
-                await ctx.bot_channel("Spammer")
+                fmt = f"{datetime.datetime.utcnow()}: {self.bot.user.name} || {author} in #{message.channel.name} [{message.channel.id}] ({message.guild.name}) [{message.guild.id}]"
+                await ctx.bot_channel(f"**Spammer Recorded**```prolog\n{fmt}```")
                 async with self.batch_lock:
                     self.spammer_batch[author.id] = message.guild.id
                 del self._auto_spam_count[author.id]

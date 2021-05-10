@@ -386,10 +386,29 @@ class Snowbot(commands.AutoShardedBot):
         """
         Sets up the remaining botvars
         """
+        # The permissions needed to use all commands.
+        perms = discord.Permissions.none()
+        perms.add_reactions = True
+        perms.attach_files = True
+        perms.ban_members = True
+        perms.embed_links = True
+        perms.external_emojis = True
+        perms.kick_members = True
+        perms.manage_channels = True
+        perms.manage_guild = True
+        perms.manage_messages = True
+        perms.manage_nicknames = True
+        perms.manage_roles = True
+        perms.manage_webhooks = True
+        perms.move_members = True
+        perms.read_message_history = True
+        perms.read_messages = True
+        perms.send_messages = True
+        perms.view_audit_log = True
         if not hasattr(self, "oauth"):
             self.oauth = discord.utils.oauth_url(
                 client_id=self.user.id,
-                permissions=discord.Permissions.all(),
+                permissions=perms,
                 scopes=("bot", "applications.commands"),
             )
 

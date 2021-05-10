@@ -6,7 +6,7 @@ import inspect
 from collections import Counter, OrderedDict
 from datetime import datetime
 from discord.ext import commands, menus
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
 from discord.ext.commands import converter
 
 from utilities import converters, pagination, checks, utils
@@ -684,7 +684,10 @@ class Tracking(commands.Cog):
             res = await self.bot.get(av, res_method="read")
             av_bytes = io.BytesIO(res)
             av_bytes.seek(0)
-            im = Image.open(av_bytes)
+            try:
+                im = Image.open(av_bytes)
+            except UnidentifiedImageError:
+                continue
             im = im.resize((256, 256))
             parent.paste(im, (x * 256, 256 * val))
             iteration += 1

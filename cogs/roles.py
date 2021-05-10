@@ -37,57 +37,6 @@ class Roles(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @decorators.command(brief="Get info on a specific role.", aliases=["ri"])
-    @commands.guild_only()
-    async def roleinfo(self, ctx, *, role: discord.Role):
-        """
-        Usage:  -roleinfo <role>
-        Alias:  -ri
-        Output: Info on the passed role
-        """
-        owner = ctx.guild.owner
-        guild = ctx.guild
-
-        # perm_list = [Perm[0] for Perm in role.permissions if Perm[1]]
-
-        embed = discord.Embed(
-            color=self.bot.constants.embed, timestamp=ctx.message.created_at
-        )
-
-        embed.set_author(name=f"{owner}", icon_url=owner.avatar_url)
-        embed.set_thumbnail(url=guild.icon_url)
-        embed.set_footer(
-            text=f"Requested by {ctx.author}", icon_url=ctx.author.avatar_url
-        )
-
-        embed.add_field(
-            name=f"**Role Info for {role.name}:**",
-            value=f"> **Name:** {role.mention}\n"
-            f"> **ID:** {role.id}\n"
-            f"> **Guild:** {role.guild}\n"
-            f"> **Members:** {sum(1 for member in role.guild.members if role in member.roles)}\n"
-            f"> **Created at:** {role.created_at.__format__('%B %d, %Y at %I:%M %p')}\n"
-            f"> **Position:** {role.position}\n"
-            f"> **Hoisted:** {role.hoist}\n"
-            f"> **Color:** {role.color}\n"
-            f"> **Mentionable:** {role.mentionable}\n"
-            f"> **Managed:** {role.managed}\n",
-            # f"> **Bot Role:** {role.is_bot_managed()}\n"
-            # f"> **Booster Role:** {role.is_premium_subscriber()}\n"
-            inline=False,
-        )
-        # embed.add_field(name="Permissions:", value=str(role.permissions), inline=False)
-        # embed.add_field(name="Permissions:", value=", ".join(perm_list).replace("_", " ").replace("guild", "server").title().replace("Tts", "TTS"), inline=False)
-        # .replace("_", " ").replace("guild", "server").title().replace("Tts", "TTS")
-        await ctx.send_or_reply(embed=embed)
-
-    @decorators.command()
-    async def whomade(self, ctx, role: discord.Role):
-        async for entry in ctx.guild.audit_logs(action=discord.AuditLogAction.role_create):
-            if entry.target.id == role.id:
-                print("HELLO")
-                print(entry.user)
-
     @decorators.command(
         aliases=['ri'],
         brief="Get information on a role.",
@@ -280,7 +229,7 @@ class Roles(commands.Cog):
         brief="Mass adds or removes a role to users.", aliases=["multirole"]
     )
     @commands.guild_only()
-    @checks.bot_has_perms(manage_guild=True, manage_roles=True)
+    @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(manage_roles=True)
     async def massrole(self, ctx):
         """

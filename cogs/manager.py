@@ -146,10 +146,24 @@ class Manager(commands.Cog):
 
             if ret is None:
                 if value:
-                    await ctx.send_or_reply(content=f"```py\n{value}\n```")
+                    try:
+                        p = pagination.MainMenu(pagination.TextPageSource(f"{value}", prefix="```py"))
+                    except Exception as e:
+                        return await ctx.send(e)
+                    try:
+                        await p.start(ctx)
+                    except menus.MenuError as e:
+                        await ctx.send(e)
             else:
+                try:
+                    p = pagination.MainMenu(pagination.TextPageSource(f"{value}{ret}", prefix="```py"))
+                except Exception as e:
+                    return await ctx.send(e)
                 self._last_result = ret
-                await ctx.send_or_reply(content=f"```py\n{value}{ret}\n```")
+                try:
+                    await p.start(ctx)
+                except menus.MenuError as e:
+                    await ctx.send(e)
 
     def cleanup_code(self, content):
         """Automatically removes code blocks from the code."""

@@ -709,6 +709,7 @@ class Botadmin(commands.Cog):
             if not guild:
                 return
         else:
+            message = None
             guild = options
         server_embed = discord.Embed(color=self.bot.constants.embed)
         server_embed.title = guild.name

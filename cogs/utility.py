@@ -1179,6 +1179,35 @@ class Utility(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(str(e))
 
+    @decorators.command(
+        aliases=['epost'],
+        brief="Sends all server emojis to your dms.",
+        implemented="2021-05-10 20:14:33.223405",
+        updated="2021-05-10 20:14:33.223405",
+    )
+    @checks.has_perms(manage_emojis=True)
+    async def emojipost(self, ctx, nodm=None):
+        """
+        Usage: {0}emojipost [nodm]
+        Alias: {0}epost
+        Output:
+            Sends a formatted list of
+            emojis and their IDs.
+            Specify the nodm argument
+            to avoid the bot from DMing you.
+        """
+        emojis = sorted([e for e in ctx.guild.emojis if len(e.roles) == 0 and e.available], key=lambda e: e.name.lower())
+        paginator = commands.Paginator(suffix='', prefix='')
+
+        for emoji in emojis:
+            paginator.add_line(f'{emoji} ➔ `{emoji}`')
+
+        for page in paginator.pages:
+            if nodm:
+                await ctx.send(page)
+            else:
+                await ctx.author.send(page)
+
     @decorators.command(brief="Snipe a deleted message.", aliases=["retrieve"])
     @commands.guild_only()
     @checks.has_perms(manage_messages=True)
