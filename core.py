@@ -408,7 +408,8 @@ class Snowbot(commands.AutoShardedBot):
         if not hasattr(self, "invites"):
             self.invites = {}
             for guild in self.guilds:
-                self.invites[guild.id] = await guild.invites()
+                if guild.me.guild_permissions.manage_guild:
+                    self.invites[guild.id] = await guild.invites()
 
         # We need to have a "home" server. So lets create one if not exists.
         if not self.constants.home:

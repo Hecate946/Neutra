@@ -668,11 +668,15 @@ class Batch(commands.Cog):
             return
         async with self.batch_lock:
             self.tracker_batch[invite.inviter.id] = (time.time(), "creating an invite")
+        if not invite.guild.me.guild_permissions.manage_guild:
+            return
         self.bot.invites[invite.guild.id] = await invite.guild.invites()
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
     async def on_invite_delete(self, invite):
+        if not invite.guild.me.guild_permissions.manage_guild:
+            return
         self.bot.invites[invite.guild.id] = await invite.guild.invites()
 
     @commands.Cog.listener()
@@ -698,7 +702,8 @@ class Batch(commands.Cog):
                     ),
                 }
             )
-        
+        if not member.guild.me.guild_permissions.manage_guild:
+            return
         old_invites = self.bot.invites[member.guild.id]
         new_invites = await member.guild.invites()
         for invite in old_invites:
@@ -713,12 +718,15 @@ class Batch(commands.Cog):
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
-    async def on_member_leave(self, member):
+    async def on_member_remove(self, member):
 
         if member.bot:
             return
         async with self.batch_lock:
             self.tracker_batch[member.id] = (time.time(), "leaving a server")
+        if not member.guild.me.guild_permissions.manage_guild:
+            return
+        self.bot.invites[member.guild.id] = await member.guild.invites()
 
     async def last_observed(self, member: converters.DiscordUser):
         """Lookup last_observed data."""
