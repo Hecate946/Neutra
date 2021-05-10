@@ -389,7 +389,7 @@ class Batch(commands.Cog):
 
     @tasks.loop(seconds=0.5)
     async def dispatch_avatars(self):
-        if len(self.to_upload) > 10:
+        if len(self.to_upload) > 9:
             to_upload = self.to_upload.copy()
             async with self.batch_lock:
                 if len(to_upload) > 10:
