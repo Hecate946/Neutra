@@ -389,11 +389,9 @@ class Batch(commands.Cog):
 
     @tasks.loop(seconds=0.5)
     async def dispatch_avatars(self):
-        if len(self.to_upload) > 9:
-            to_upload = self.to_upload.copy()
+        if len(self.to_upload) > 10:
+            to_upload = self.to_upload.copy()[:10]
             async with self.batch_lock:
-                if len(to_upload) > 10:
-                    await self.bot.bot_channel.send(f"Errors out")
                 try:
                     upload_batch = await self.avatar_webhook.send(
                         files=to_upload, wait=True
