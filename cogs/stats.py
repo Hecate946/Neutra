@@ -310,7 +310,7 @@ class Stats(commands.Cog):
         )
         em.add_field(
             name="Role Count",
-            value=f"{self.bot.emote_dict['announce']} {str(role_count)}",
+            value=f"{self.bot.emote_dict['role']} {str(role_count)}",
             inline=True,
         )
         em.add_field(name="Region", value=region, inline=True)

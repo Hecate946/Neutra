@@ -38,6 +38,8 @@ class Batch(commands.Cog):
         self.message_batch = list()
         self.tracker_batch = dict()
         self.snipe_batch = list()
+        self.invite_batch = list()
+        self.negative_invite_batch = list()
         self.member_batch = defaultdict(list)
         self.emoji_batch = defaultdict(Counter)
         self.usernames_batch = defaultdict(list)
@@ -338,6 +340,30 @@ class Batch(commands.Cog):
                     await self.bot.cxn.execute(query, str(roles), user_id, server_id)
                 self.bot.rolechanges += len(self.roles_batch.items())
                 self.roles_batch.clear()
+
+        if self.invite_batch:
+            query = """
+                    INSERT INTO invites
+                    VALUES ($1, $2, $3);
+                    """
+            async with self.batch_lock:
+                for data in self.invite_batch:
+                    invitee, inviter, server_id = data
+                    await self.bot.cxn.execute(query, invitee, inviter, server_id)
+                self.invite_batch.clear()
+
+        if self.negative_invite_batch:
+            query = """
+                    DELETE FROM invites
+                    WHERE invitee = $1
+                    AND inviter = $2
+                    AND server_id = $3;
+                    """
+            async with self.batch_lock:
+                for data in self.negative_invite_batch:
+                    invitee, inviter, server_id = data
+                    await self.bot.cxn.execute(query, invitee, inviter, server_id)
+                self.negative_invite_batch.clear()
 
     @bulk_inserter.before_loop
     async def get_webhook(self):
@@ -642,6 +668,12 @@ class Batch(commands.Cog):
             return
         async with self.batch_lock:
             self.tracker_batch[invite.inviter.id] = (time.time(), "creating an invite")
+        self.bot.invites[invite.guild.id] = await invite.guild.invites()
+
+    @commands.Cog.listener()
+    @decorators.wait_until_ready()
+    async def on_invite_delete(self, invite):
+        self.bot.invites[invite.guild.id] = await invite.guild.invites()
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -666,6 +698,18 @@ class Batch(commands.Cog):
                     ),
                 }
             )
+        
+        old_invites = self.bot.invites[member.guild.id]
+        new_invites = await member.guild.invites()
+        for invite in old_invites:
+            if invite.uses < self.get_invite(new_invites, invite.code).uses:
+                self.invite_batch.append((member.id, invite.inviter.id, member.guild.id))
+        self.bot.invites[member.guild.id] = new_invites
+
+    def get_invite(self, invite_list, code):
+        for invite in invite_list:
+            if invite.code == code:
+                return invite
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()

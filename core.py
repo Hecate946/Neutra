@@ -405,6 +405,11 @@ class Snowbot(commands.AutoShardedBot):
         if not hasattr(self, "server_settings"):
             self.server_settings = database.settings
 
+        if not hasattr(self, "invites"):
+            self.invites = {}
+            for guild in self.guilds:
+                self.invites[guild.id] = await guild.invites()
+
         # We need to have a "home" server. So lets create one if not exists.
         if not self.constants.home:
             try:
@@ -709,6 +714,38 @@ class Snowbot(commands.AutoShardedBot):
                 """
         await self.cxn.executemany(query, ((guild_id, prefix) for prefix in prefixes))
         self.prefixes[guild_id] = prefixes
+
+    async def get_or_fetch_member(self, guild, member_id):
+        """Looks up a member in cache or fetches if not found.
+        Parameters
+        -----------
+        guild: Guild
+            The guild to look in.
+        member_id: int
+            The member ID to search for.
+        Returns
+        ---------
+        Optional[Member]
+            The member or None if not found.
+        """
+
+        member = guild.get_member(member_id)
+        if member is not None:
+            return member
+
+        shard = self.get_shard(guild.shard_id)
+        if shard.is_ws_ratelimited():
+            try:
+                member = await guild.fetch_member(member_id)
+            except discord.HTTPException:
+                return None
+            else:
+                return member
+
+        members = await guild.query_members(limit=1, user_ids=[member_id], cache=True)
+        if not members:
+            return None
+        return members[0]
 
     @property
     def hecate(self):

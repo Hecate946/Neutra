@@ -7,6 +7,7 @@ from collections import Counter, OrderedDict
 from datetime import datetime
 from discord.ext import commands, menus
 from PIL import Image, ImageDraw, ImageFont
+from discord.ext.commands import converter
 
 from utilities import converters, pagination, checks, utils
 from utilities import decorators
@@ -23,6 +24,83 @@ class Tracking(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+
+    @decorators.command(
+        aliases=['inviter', 'whoinvited'],
+        brief="See who invited a user.",
+        implemented="2021-05-10 09:08:00.476972",
+        updated="2021-05-10 09:08:00.476972",
+        examples="""
+                {0}invited
+                {0}invited Hecate
+                {0}inviter Hecate#3523
+                {0}inviter 708584008065351681
+                """
+    )
+    @commands.guild_only()
+    @checks.has_perms(view_audit_log=True)
+    async def invited(self, ctx, user: converters.DiscordMember = None):
+        """
+        Usage: {0}invited [user]
+        Aliases: {0}inviter, {0}whoinvited
+        Permission: View Audit Log
+        Output:
+            Show who invited the passed user.
+        Notes:
+            Will default to you if 
+            no user is passed.
+        """
+        if user is None:
+            user = ctx.author
+        query = """
+                SELECT (inviter)
+                FROM invites
+                WHERE invitee = $1
+                AND server_id = $2;
+                """
+        await ctx.trigger_typing()
+        inviter_id = await self.bot.cxn.fetchval(query, user.id, ctx.guild.id)
+        if not inviter_id:
+            return await ctx.fail(f"I cannot trace who invited `{user}`")
+        inviter = await self.bot.get_or_fetch_member(ctx.guild, inviter_id)
+        await ctx.success(f"User `{user}` was invited by `{inviter}`")
+
+    @decorators.command(
+        brief="Count the invites of a user.",
+        implemented="2021-05-10 09:08:00.476972",
+        updated="2021-05-10 09:08:00.476972",
+        examples="""
+                {0}invites
+                {0}invites Hecate
+                {0}invites Hecate#3523
+                {0}inviter 708584008065351681
+                """
+    )
+    @commands.guild_only()
+    async def invites(self, ctx, user: converters.DiscordMember = None):
+        """
+        Usage: {0}invites [user]
+        Output:
+            Show how many users a user
+            has invited.
+        Notes:
+            Will default to you if 
+            no user is passed.
+        """
+        if user is None:
+            user = ctx.author
+        query = """
+                SELECT COUNT(*)
+                FROM invites
+                WHERE inviter = $1
+                AND server_id = $2;
+                """
+        await ctx.trigger_typing()
+        count = await self.bot.cxn.fetchval(query, user.id, ctx.guild.id)
+        if not count or count == 0:
+            return await ctx.fail(f"User `{user}` has invited zero new users.")
+        await ctx.success(f"User `{user}` has invited {count} new user{'' if count == 1 else 's'}.")
+
 
     @decorators.command(
         aliases=["mobile", "web", "desktop"],

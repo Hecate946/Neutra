@@ -64,3 +64,9 @@ CREATE TABLE IF NOT EXISTS tasks (
     event TEXT,
     extra jsonb DEFAULT '{}'::jsonb 
 );
+
+CREATE TABLE IF NOT EXISTS invites (
+    invitee BIGINT,
+    inviter BIGINT,
+    server_id BIGINT
+);

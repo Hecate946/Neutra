@@ -1,7 +1,9 @@
+import io
 import discord
 import colorsys
 
 from discord.ext import commands, menus
+from PIL import Image, ImageDraw
 
 from utilities import checks
 from utilities import pagination
@@ -78,6 +80,45 @@ class Roles(commands.Cog):
         # embed.add_field(name="Permissions:", value=", ".join(perm_list).replace("_", " ").replace("guild", "server").title().replace("Tts", "TTS"), inline=False)
         # .replace("_", " ").replace("guild", "server").title().replace("Tts", "TTS")
         await ctx.send_or_reply(embed=embed)
+
+    @decorators.command()
+    async def whomade(self, ctx, role: discord.Role):
+        async for entry in ctx.guild.audit_logs(action=discord.AuditLogAction.role_create):
+            if entry.target.id == role.id:
+                print("HELLO")
+                print(entry.user)
+
+    @decorators.command(
+        aliases=['ri'],
+        brief="Get information on a role.",
+        implemented="2021-03-12 04:03:05.031691",
+        updated="2021-05-10 07:11:40.514042",
+        examples="""
+                {0}ri @Helper
+                {0}roleinfo 708584008065351681
+                """
+    )
+    async def roleinfo(self, ctx, role: discord.Role):
+        roleinfo = {}
+        roleinfo["users"] = sum(1 for member in role.guild.members if role in member.roles)
+        roleinfo["created"] = f"Created on {role.created_at.__format__('%m/%d/%Y')}"
+        roleinfo["color"] = str(role.color).upper()
+        async for entry in ctx.guild.audit_logs(action=discord.AuditLogAction.role_create):
+            if entry.target.id == role.id:
+                roleinfo["creator"] = str(entry.user)
+                break
+        embed = discord.Embed(color=self.bot.constants.embed)
+        embed.set_author(name=role.name, icon_url=ctx.guild.icon_url)
+        embed.set_footer(text=f"Role ID: {role.id} | {roleinfo['created']}")
+        embed.set_thumbnail(url=ctx.guild.icon_url)
+        embed.add_field(name="Mention", value=role.mention)
+        embed.add_field(name="Users", value=roleinfo["users"])
+        embed.add_field(name="Creator", value=roleinfo["creator"])
+        embed.add_field(name="Color", value=roleinfo["color"])
+        embed.add_field(name="Position", value=role.position)
+        embed.add_field(name="Mentionable", value=role.mentionable)
+        await ctx.send_or_reply(embed=embed)
+
 
     @decorators.command(
         aliases=["ar", "adrl", "addrl", "adrole"], brief="Adds roles to users."
