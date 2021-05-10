@@ -35,8 +35,6 @@ class Roles(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-        self.emote_dict = bot.emote_dict
-
     @decorators.command(brief="Get info on a specific role.", aliases=["ri"])
     @commands.guild_only()
     async def roleinfo(self, ctx, *, role: discord.Role):
@@ -326,10 +324,10 @@ class Roles(commands.Cog):
         members_to_add_roles = len(number_of_members)
         if members_to_add_roles < 1:
             return await ctx.send_or_reply(
-                content=f"{self.emote_dict['warn']} No members to add roles to",
+                content=f"{self.bot.emote_dict['warn']} No members to add roles to",
             )
         msg = await ctx.send_or_reply(
-            f"{self.emote_dict['warn']} Adding role `{role2.name}` to `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}. This process may take several minutes."
+            f"{self.bot.emote_dict['warn']} Adding role `{role2.name}` to `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}. This process may take several minutes."
         )
         for member in role1.members:
             try:
@@ -340,7 +338,7 @@ class Roles(commands.Cog):
                 )
         # we made it
         await msg.edit(
-            content=f"{self.emote_dict['success']} Added role `{role2.name}` to `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}"
+            content=f"{self.bot.emote_dict['success']} Added role `{role2.name}` to `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}"
         )
 
     @massrole.command(
@@ -410,10 +408,10 @@ class Roles(commands.Cog):
         members_to_add_roles = len(number_of_members)
         if members_to_add_roles < 1:
             return await ctx.send_or_reply(
-                content=f"{self.emote_dict['warn']} No members to remove roles from",
+                content=f"{self.bot.emote_dict['warn']} No members to remove roles from",
             )
         msg = await ctx.send_or_reply(
-            f"{self.emote_dict['warn']} Removing role `{role2.name}` from `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}. This process may take several minutes."
+            f"{self.bot.emote_dict['warn']} Removing role `{role2.name}` from `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}. This process may take several minutes."
         )
         for member in role1.members:
             try:
@@ -424,7 +422,7 @@ class Roles(commands.Cog):
                 )
         # we made it
         await msg.edit(
-            content=f"{self.emote_dict['success']} Removed role `{role2.name}` from `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}"
+            content=f"{self.bot.emote_dict['success']} Removed role `{role2.name}` from `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}"
         )
 
     def role_accumulate(self, check_roles, members):
@@ -584,7 +582,7 @@ class Roles(commands.Cog):
 
         page = [
             "{} {}".format(
-                STATUSMAP2.get(member.status, self.emote_dict["offline"]),
+                STATUSMAP2.get(member.status, self.bot.emote_dict["offline"]),
                 member.mention,
             )
             for member in sorted_list

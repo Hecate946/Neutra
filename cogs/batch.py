@@ -68,13 +68,6 @@ class Batch(commands.Cog):
                     user_id = data[1]["user_id"]
                     bstatus = data[1]["bstatus"]
                     query = """
-                            SELECT last_changed FROM userstatus;
-                            """
-                    res2 = await self.bot.cxn.fetchval(query)
-                    if res2 is not None:
-                        if time.time() < res2:
-                            await self.bot.bot_channel.send(f"fuck res1 < res2")
-                    query = """
                             INSERT INTO userstatus (user_id, last_changed)
                             VALUES ($1, $2)
                             ON CONFLICT (user_id)
@@ -396,13 +389,14 @@ class Batch(commands.Cog):
 
     @tasks.loop(seconds=0.5)
     async def dispatch_avatars(self):
-        if len(self.to_upload) > 8:
+        if len(self.to_upload) > 10:
+            to_upload = self.to_upload.copy()
             async with self.batch_lock:
-                if len(self.to_upload) > 10:
-                    await self.bot.bot_channel.send(f"FUCK worst nightmare")
+                if len(to_upload) > 10:
+                    await self.bot.bot_channel.send(f"Errors out")
                 try:
                     upload_batch = await self.avatar_webhook.send(
-                        files=self.to_upload, wait=True
+                        files=to_upload, wait=True
                     )
                     for x in upload_batch.attachments:
                         self.avatar_batch.append(
@@ -414,7 +408,7 @@ class Batch(commands.Cog):
                         )
                 except discord.errors.HTTPException:
                     pass
-            self.to_upload.clear()
+            self.to_upload = [x for x in self.to_upload if x not in to_upload]
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()

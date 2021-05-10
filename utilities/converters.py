@@ -16,7 +16,7 @@ mention_regex = re.compile(r"<@!?([0-9]+)>$")
 
 
 async def prettify(ctx, arg):
-    pretty_arg = await commands.clean_content().convert(ctx, arg)
+    pretty_arg = await commands.clean_content().convert(ctx, str(arg))
     return pretty_arg
 
 

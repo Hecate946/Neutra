@@ -353,83 +353,6 @@ class Mod(commands.Cog):
         if failed:
             await helpers.error_info(ctx, failed)
 
-    @decorators.command(brief="Temporarily ban users.")
-    async def tempban(
-        self,
-        ctx,
-        targets: commands.Greedy[converters.DiscordMember],
-        duration: time.FutureTime,
-        delete_message_days: typing.Optional[int] = 0,
-        reason: typing.Optional[str] = "No reason.",
-    ):
-        """
-        Usage: -tempban <user> [user]... [hours till unban] [days to delete messages] [reason]
-        Alias: -timedban
-        Permission: Ban Members
-        """
-        if not len(targets):
-            return await ctx.usage(
-                "<user> [hours until unban] [days to delete messages] [reason]"
-            )
-
-        until = f"until {duration.dt:%Y-%m-%d %H:%M UTC}"
-
-        if delete_message_days > 7:
-            delete_message_days = 7
-        elif delete_message_days < 0:
-            delete_message_days = 0
-
-        query = """
-                INSERT INTO tasks
-                VALUES ($1, $2, $3, $4)
-                """
-
-        banned = []
-        failed = []
-        for target in targets:
-            res = await checks.check_priv(ctx, target)
-            if res:
-                failed.append((str(target), res))
-                continue
-            try:
-                await self.bot.cxn.execute(
-                    query, target.id, ctx.guild.id, "tempban", duration.dt
-                )
-            except asyncpg.UniqueViolationError:
-                failed.append((target.id, "User is already tempbanned."))
-                continue
-            try:
-                await ctx.guild.ban(
-                    target,
-                    reason=await converters.ActionReason().convert(ctx, reason),
-                    delete_message_days=delete_message_days,
-                )
-                banned.append(str(target))
-            except Exception as e:
-                failed.append((str(target), e))
-                continue
-        if banned:
-            await ctx.success(f"Tempbanned `{', '.join(banned)}` `{until}.`")
-            self.bot.dispatch("mod_action", ctx, targets=banned)
-            await self.do_timer(
-                ctx, banned, seconds=(duration.dt - datetime.utcnow()).total_seconds()
-            )
-        if failed:
-            await helpers.error_info(ctx, failed)
-
-    async def do_timer(self, ctx, users, seconds):
-        await asyncio.sleep(seconds)
-        for user in users:
-            try:
-                member = await converters.BannedMember().convert(ctx, user)
-            except Exception as e:
-                print(e)
-            if member:
-                try:
-                    await ctx.guild.unban(member.user, reason="Tempban timer expired.")
-                except Exception as e:
-                    print(e)
-
     @decorators.command(brief="Softban users from the server.")
     @commands.guild_only()
     @checks.bot_has_perms(ban_members=True)
@@ -1439,7 +1362,7 @@ class Mod(commands.Cog):
             parser = converters.Arguments(add_help=False, allow_abbrev=False)
             parser.add_argument("--duration", "-d", "--time", "-t", nargs="+")
             parser.add_argument("--reason", "-r", nargs="+")
-            parser.add_argument("--nodm", action="store_true")
+            parser.add_argument("--nodm", "-nodm", action="store_true")
 
             try:
                 args = parser.parse_args(shlex.split(flags))
@@ -1532,12 +1455,83 @@ class Mod(commands.Cog):
         if failed:
             await helpers.error_info(ctx, failed)
         if muted:
+            self.bot.dispatch("mod_action", ctx, targets=muted)
             if endtime:
                 timefmt = time.human_timedelta(duration.dt, source=timer.created_at)
                 await ctx.success(f"Muted `{', '.join(muted)}` for **{timefmt}.**")
 
             else:
                 await ctx.success(f"Muted `{', '.join(muted)}`")
+
+
+    @commands.command()
+    @commands.guild_only()
+    @checks.has_perms(ban_members=True)
+    async def tempban(self, ctx, users: commands.Greedy[converters.DiscordMember], duration: time.FutureTime, *, reason: converters.ActionReason = None):
+        """
+        Temporarily bans a member for the specified duration.
+        The duration can be a a short time form, e.g. 30d or a more human
+        duration such as "until thursday at 3PM" or a more concrete time
+        such as "2024-12-31". Note that if the time string is multiple words,
+        it MUST be surrounded in quotes.
+        """
+        task = self.bot.get_cog("Tasks")
+        if not task:
+            raise commands.BadArgument(f"This feature is unavailable.")
+        if not len(users):
+            return await ctx.usage(ctx.command.signature)
+    
+        banned = []
+        failed = []
+        for user in users:
+            res = await checks.check_priv(ctx, user)
+            if res:
+                failed.append((str(user), res))
+                continue
+            try:
+                await ctx.guild.ban(user, reason=reason)
+                timer = await task.create_timer(
+                    duration.dt,
+                    'tempban',
+                    ctx.guild.id,
+                    ctx.author.id,
+                    user.id,
+                    connection=self.bot.cxn,
+                    created=ctx.message.created_at
+                )
+                banned.append(str(user))
+            except Exception as e:
+                failed.append((str(user), e))
+        if failed:
+            await helpers.error_info(ctx, failed)
+        if banned:
+            self.bot.dispatch("mod_action", ctx, targets=banned)
+            await ctx.success(f"Banned `{', '.join(banned)}` for {time.human_timedelta(duration.dt, source=timer.created_at)}.")
+
+    @commands.Cog.listener()
+    async def on_tempban_timer_complete(self, timer):
+        guild_id, mod_id, member_id = timer.args
+        await self.bot.wait_until_ready()
+
+        guild = self.bot.get_guild(guild_id)
+        if guild is None:
+            # RIP
+            return
+
+        moderator = guild.get_member(mod_id)
+        if moderator is None:
+            try:
+                moderator = await self.bot.fetch_user(mod_id)
+            except:
+                # request failed somehow
+                moderator = f'Mod ID {mod_id}'
+            else:
+                moderator = f'{moderator} (ID: {mod_id})'
+        else:
+            moderator = f'{moderator} (ID: {mod_id})'
+
+        reason = f'Automatic unban from timer made on {timer.created_at} by {moderator}.'
+        await guild.unban(discord.Object(id=member_id), reason=reason)
 
     @decorators.command(
         brief="Unmute muted users.",

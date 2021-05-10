@@ -1356,6 +1356,8 @@ class Admin(commands.Cog):
         """
         if days > 30:
             raise commands.BadArgument("The `days` argument must be fewer than 30.")
+        elif days < 1:
+            raise commands.BadArgument("The `days` argument must be greater than 0.")
         to_be_pruned = await ctx.guild.estimate_pruned_members(days=days, roles=roles)
         if to_be_pruned == 0:
             return await ctx.success(
@@ -1371,3 +1373,42 @@ class Admin(commands.Cog):
             )
         else:
             await ctx.send(f"**{self.bot.emote_dict['exclamation']} Cancelled.**")
+
+
+    @decorators.command(
+        brief="Count the inactive users.",
+        implemented="2021-05-10 02:59:21.229362",
+        updated="2021-05-10 02:59:21.229362",
+    )
+    @checks.bot_has_perms(kick_members=True)
+    @checks.has_perms(view_audit_log=True)
+    async def checkinactive(
+        self,
+        ctx,
+        days: typing.Optional[int] = 30,
+        roles: commands.Greedy[discord.Role] = None,
+    ):
+        """
+        Usage: {0}checkinactive [days] [roles]
+        Permission: View Audit Log
+        Output:
+            Searches for all users who have the
+            specified roles (@everyone by default)
+            who have not logged into discord over
+            the specified duration (30 days default).
+            The bot will then show how many inactive
+            users were found if any.
+        Notes:
+            Run the command {0}kickinactive
+            to kick the users from the server.
+        """
+        if days > 30:
+            raise commands.BadArgument("The `days` argument must be fewer than 30.")
+        elif days < 1:
+            raise commands.BadArgument("The `days` argument must be greater than 0.")
+        to_be_pruned = await ctx.guild.estimate_pruned_members(days=days, roles=roles)
+        if to_be_pruned == 0:
+            return await ctx.success(
+                f"Your server has no inactive users to prune within your specifications."
+            )
+        await ctx.send_or_reply(f"{self.bot.emote_dict['graph']} Your server has {to_be_pruned} inactive users matching your specifications.")
