@@ -1,5 +1,7 @@
 import asyncio
 import inspect
+from os import write
+from typing import Counter
 import discord
 import traceback
 
@@ -740,6 +742,35 @@ class Help(commands.Cog):
         await ctx.send_or_reply(
             f"{heart} The command `{command}` was made by `{writer}`"
         )
+
+    @decorators.command(
+        brief="Show all people who wrote for me.",
+        implemented="2021-05-10 01:05:40.207559",
+        updated="2021-05-10 01:05:40.207559",
+    )
+    async def writers(self, ctx):
+        """
+        Usage: {0}writers
+        Output:
+            Show all the developers
+            who created commands for me.
+        """
+        heart = self.bot.emote_dict["heart"]
+        writers = []
+        for cmd in self.bot.commands:
+            try:
+                writers.append(cmd.writer)
+            except AttributeError:
+                continue
+        writers = Counter(writers)
+        writers = sorted([(str(await self.bot.fetch_user(x)), x, count) for x, count in writers.items()])
+        msg = ""
+        width = max([len(name) for name, user_id, count in writers])
+        id_width = max([len(str(user_id)) for name, user_id, count in writers])
+        for name, user_id, count in writers:
+            msg += f"{name.ljust(width)} ({str(user_id).ljust(id_width)}): {count}\n"
+
+        await ctx.send_or_reply(f"**{heart} My writers**```prolog\n{msg}```")
 
     @decorators.command(
         brief="Show the parent category of a command.",

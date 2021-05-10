@@ -551,7 +551,7 @@ class Manager(commands.Cog):
         return content.strip("` \n")
 
     # Thank you R. Danny
-    @decorators.command(hidden=True, brief="Run sql and get results in rst fmt.")
+    @decorators.command(hidden=True, brief="Run sql and get results in rst fmt.", writer=80088516616269824)
     async def sql(self, ctx, *, query: str):
         """
         Usage: -sql <query>
@@ -866,7 +866,7 @@ class Manager(commands.Cog):
 
     # https://github.com/Rapptz/RoboDanny
     @decorators.command(
-        hidden=True, aliases=["shell", "bash"], brief="Run a shell command."
+        hidden=True, aliases=["shell", "bash"], brief="Run a shell command.", writer=80088516616269824
     )
     async def sh(self, ctx, prefix=None, *, command):
         """Runs a shell command."""
@@ -887,7 +887,7 @@ class Manager(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(str(e))
 
-    @decorators.command(hidden=True, aliases=["repeat"], brief="Repeat a command.")
+    @decorators.command(hidden=True, aliases=["repeat"], brief="Repeat a command.", writer=80088516616269824)
     async def do(self, ctx, times: int, *, command):
         """Repeats a command a specified number of times."""
         msg = copy.copy(ctx.message)
@@ -929,6 +929,7 @@ class Manager(commands.Cog):
         invoke_without_command=True,
         brief="Show command history.",
         case_insensitive=True,
+        writer=80088516616269824,
     )
     @commands.is_owner()
     async def command_history(self, ctx):

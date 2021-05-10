@@ -135,6 +135,7 @@ class Utility(commands.Cog):
         brief="Decode a discord token.",
         implemented="2021-05-06 01:09:46.734485",
         updated="2021-05-07 05:47:26.758031",
+        writer=591135329117798400,
         examples="""
                 {0}pt NzA4NTg0MDA4MDY1MzUxNjgx.YJU29g.K8lush3e6flT9Of7d7bp4rj6aU2
                 {0}ptoken NzA4NTg0MDA4MDY1MzUxNjgx.YJU29g.K8lush3e6flT9Of7d7bp4rj6aU2
@@ -188,6 +189,7 @@ class Utility(commands.Cog):
         brief="Generate a discord token.",
         implemented="2021-05-06 02:26:12.925925",
         updated="2021-05-07 05:49:40.401151",
+        writer=591135329117798400,
         examples="""
                 {0}gt
                 {0}gtoken 708584008065351681
@@ -243,6 +245,7 @@ class Utility(commands.Cog):
         brief="Find the first message of a reply thread.",
         implemented="2021-05-06 01:10:04.331672",
         updated="2021-05-07 05:49:40.401151",
+        writer=591135329117798400,
         examples="""
                 {0}replies 840103070402740274
                 """,
