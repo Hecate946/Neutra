@@ -1186,14 +1186,15 @@ class Utility(commands.Cog):
         updated="2021-05-10 20:14:33.223405",
     )
     @checks.has_perms(manage_emojis=True)
-    async def emojipost(self, ctx, nodm=None):
+    async def emojipost(self, ctx, nodm: bool = None):
+        commands.BadBoolArgument
         """
         Usage: {0}emojipost [nodm]
         Alias: {0}epost
         Output:
             Sends a formatted list of
             emojis and their IDs.
-            Specify the nodm argument
+            Specify the nodm bool argument
             to avoid the bot from DMing you.
         """
         emojis = sorted([e for e in ctx.guild.emojis if len(e.roles) == 0 and e.available], key=lambda e: e.name.lower())

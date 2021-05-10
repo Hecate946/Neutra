@@ -1289,6 +1289,33 @@ class Manager(commands.Cog):
             content=f"{emote} `{(end - start) * 1000:.2f}ms`",
         )
 
+    @decorators.command(
+        aliases=['clearconsole', 'cl'],
+        brief="Clear the console."
+    )
+    async def cleartrace(self, ctx):
+        """Clear the console."""
+        if os.name == 'nt':
+            os.system('cls')
+        else:
+            try:
+                os.system('clear')
+            except Exception:
+                for _ in range(100):
+                    print()
+
+        message = 'Logged in as %s.' % self.bot.user
+        uid_message = 'User ID: %s.' % self.bot.user.id
+        separator = '-' * max(len(message), len(uid_message))
+        print(separator)
+        try:
+            print(message)
+        except: # some bot usernames with special chars fail on shitty platforms
+            print(message.encode(errors='replace').decode())
+        print(uid_message)
+        print(separator)
+        await ctx.success('Console cleared.')
+
     @decorators.command(aliases=["github"], brief="Update to and from github repo.")
     async def git(self, ctx, *, subcommand):
         """Updates from git."""

@@ -43,8 +43,8 @@ class Roles(commands.Cog):
         implemented="2021-03-12 04:03:05.031691",
         updated="2021-05-10 07:11:40.514042",
         examples="""
-                {0}ri @Helper
-                {0}roleinfo 708584008065351681
+                {0}ri 828763460346839050
+                {0}roleinfo @Helper
                 """
     )
     async def roleinfo(self, ctx, role: discord.Role):

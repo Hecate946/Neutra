@@ -549,14 +549,13 @@ class Snowbot(commands.AutoShardedBot):
                 return
 
         if isinstance(error, commands.MissingRequiredArgument):
-            # name = (
-            #     str(ctx.command.qualified_name)
-            #     if ctx.command.parent is None
-            #     else str(ctx.command.full_parent_name)
-            # )
-            # help_command = self.get_command("help")
-            # await help_command(ctx, invokercommand=name)
             await ctx.usage(ctx.command.signature)
+
+        if isinstance(error, commands.BadBoolArgument):
+            argument = str(error).split()[0]
+            await ctx.send_or_reply(
+                f"{self.emote_dict['failed']} The argument `{argument}` is not a valid boolean."
+            )
 
         elif isinstance(error, commands.BadArgument):
             await ctx.send_or_reply(
