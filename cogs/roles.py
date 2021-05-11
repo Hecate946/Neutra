@@ -38,21 +38,25 @@ class Roles(commands.Cog):
         self.bot = bot
 
     @decorators.command(
-        aliases=['ri'],
+        aliases=["ri"],
         brief="Get information on a role.",
         implemented="2021-03-12 04:03:05.031691",
         updated="2021-05-10 07:11:40.514042",
         examples="""
                 {0}ri 828763460346839050
                 {0}roleinfo @Helper
-                """
+                """,
     )
     async def roleinfo(self, ctx, role: discord.Role):
         roleinfo = {}
-        roleinfo["users"] = sum(1 for member in role.guild.members if role in member.roles)
+        roleinfo["users"] = sum(
+            1 for member in role.guild.members if role in member.roles
+        )
         roleinfo["created"] = f"Created on {role.created_at.__format__('%m/%d/%Y')}"
         roleinfo["color"] = str(role.color).upper()
-        async for entry in ctx.guild.audit_logs(action=discord.AuditLogAction.role_create):
+        async for entry in ctx.guild.audit_logs(
+            action=discord.AuditLogAction.role_create
+        ):
             if entry.target.id == role.id:
                 roleinfo["creator"] = str(entry.user)
                 break
@@ -67,7 +71,6 @@ class Roles(commands.Cog):
         embed.add_field(name="Position", value=role.position)
         embed.add_field(name="Mentionable", value=role.mentionable)
         await ctx.send_or_reply(embed=embed)
-
 
     @decorators.command(
         aliases=["ar", "adrl", "addrl", "adrole"], brief="Adds roles to users."

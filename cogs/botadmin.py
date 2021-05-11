@@ -28,6 +28,8 @@ def setup(bot):
 
 class GithubError(commands.CommandError):
     pass
+
+
 class Botadmin(commands.Cog):
     """
     Bot admin only stats cog.
@@ -43,69 +45,68 @@ class Botadmin(commands.Cog):
             return True
         return
 
-
-    async def github_request(self, method, url, *, params=None, data=None, headers=None):
+    async def github_request(
+        self, method, url, *, params=None, data=None, headers=None
+    ):
         hdrs = {
-            'Accept': 'application/vnd.github.inertia-preview+json',
-            'User-Agent': 'Snowbot Gist Creator',
-            'Authorization': f'token {self.bot.constants.gtoken}'
+            "Accept": "application/vnd.github.inertia-preview+json",
+            "User-Agent": "Snowbot Gist Creator",
+            "Authorization": f"token {self.bot.constants.gtoken}",
         }
 
-        req_url = yarl.URL('https://api.github.com') / url
+        req_url = yarl.URL("https://api.github.com") / url
 
         if headers is not None and isinstance(headers, dict):
             hdrs.update(headers)
 
         await self._req_lock.acquire()
         try:
-            async with self.bot.session.request(method, req_url, params=params, json=data, headers=hdrs) as r:
-                remaining = r.headers.get('X-Ratelimit-Remaining')
+            async with self.bot.session.request(
+                method, req_url, params=params, json=data, headers=hdrs
+            ) as r:
+                remaining = r.headers.get("X-Ratelimit-Remaining")
                 js = await r.json()
-                if r.status == 429 or remaining == '0':
+                if r.status == 429 or remaining == "0":
                     # wait before we release the lock
                     delta = discord.utils._parse_ratelimit_header(r)
                     await asyncio.sleep(delta)
                     self._req_lock.release()
-                    return await self.github_request(method, url, params=params, data=data, headers=headers)
+                    return await self.github_request(
+                        method, url, params=params, data=data, headers=headers
+                    )
                 elif 300 > r.status >= 200:
                     return js
                 else:
-                    raise GithubError(js['message'])
+                    raise GithubError(js["message"])
         finally:
             if self._req_lock.locked():
                 self._req_lock.release()
 
-    async def create_gist(self, content, *, description=None, filename=None, public=True):
+    async def create_gist(
+        self, content, *, description=None, filename=None, public=True
+    ):
         headers = {
-            'Accept': 'application/vnd.github.v3+json',
+            "Accept": "application/vnd.github.v3+json",
         }
 
-        filename = filename or 'output.txt'
-        data = {
-            'public': public,
-            'files': {
-                filename: {
-                    'content': content
-                }
-            }
-        }
+        filename = filename or "output.txt"
+        data = {"public": public, "files": {filename: {"content": content}}}
 
         if description:
-            data['description'] = description
+            data["description"] = description
 
-        js = await self.github_request('POST', 'gists', data=data, headers=headers)
-        return js['html_url']
+        js = await self.github_request("POST", "gists", data=data, headers=headers)
+        return js["html_url"]
 
     @decorators.command(hidden=True)
     async def picker(self, ctx):
-        p = await pagination.Confirmation("This will purge all data. Do you wish to continue?").prompt(ctx)
+        p = await pagination.Confirmation(
+            "This will purge all data. Do you wish to continue?"
+        ).prompt(ctx)
         if p:
             await ctx.send_or_reply("<:pepeLaugh:779433733400166420>")
 
-
-    @decorators.command(
-        brief="Send a file showing incomplete commands."
-    )
+    @decorators.command(brief="Send a file showing incomplete commands.")
     async def debug(self, ctx):
         await ctx.trigger_typing()
         cogs = []
@@ -120,7 +121,7 @@ class Botadmin(commands.Cog):
             for cmd in cog.get_commands():
                 if cmd.help is None:
                     msg += cmd.name + "\n"
-        
+
         msg2 = "#BRIEFLESS COMMANDS\n"
         for cog in cogs:
             if cog.qualified_name == "Testing":
@@ -130,20 +131,27 @@ class Botadmin(commands.Cog):
                     msg2 += cmd.name + "\n"
         msg = msg + "\n" + msg2
         import io
-        data = io.BytesIO(msg.encode('utf-8'))
-        await ctx.send_or_reply(file=discord.File(data, filename="helpless-commands.md"))
+
+        data = io.BytesIO(msg.encode("utf-8"))
+        await ctx.send_or_reply(
+            file=discord.File(data, filename="helpless-commands.md")
+        )
 
     @decorators.command()
-    async def gist(self, ctx, fname = "output.txt", *, content = None):
+    async def gist(self, ctx, fname="output.txt", *, content=None):
         if len(ctx.message.attachments):
             f = await ctx.message.attachments[0].read()
-            content = f.decode('utf-8')
+            content = f.decode("utf-8")
             fname = ctx.message.attachments[0].filename
         else:
             if not content:
                 return await ctx.usage(ctx.command.signature)
-            
-        url =  await self.create_gist(content, description=f'Uploaded by {ctx.author} ({ctx.author.id}) at {datetime.utcnow()}', filename=fname)
+
+        url = await self.create_gist(
+            content,
+            description=f"Uploaded by {ctx.author} ({ctx.author.id}) at {datetime.utcnow()}",
+            filename=fname,
+        )
         await ctx.reply(f"<:pepeLaugh:779433733400166420> <{url}>")
 
     @decorators.command(
@@ -1034,7 +1042,6 @@ class Botadmin(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-
     @decorators.command(
         brief="Debug memory leaks.",
         implemented="2021-05-11 01:47:43.865390",
@@ -1042,9 +1049,10 @@ class Botadmin(commands.Cog):
     )
     async def objgrowth(self, ctx):
         stdout = io.StringIO()
-        await ctx.bot.loop.run_in_executor(None, functools.partial(objgraph.show_growth, file=stdout))
+        await ctx.bot.loop.run_in_executor(
+            None, functools.partial(objgraph.show_growth, file=stdout)
+        )
         await ctx.send("```fix\n" + stdout.getvalue() + "```")
-
 
     async def tabulate_query(self, ctx, query, *args):
         records = await self.bot.cxn.fetch(query, *args)
@@ -1067,7 +1075,6 @@ class Botadmin(commands.Cog):
             )
         else:
             await ctx.send_or_reply(content=fmt)
-
 
     @decorators.group(
         hidden=True,

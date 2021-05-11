@@ -35,7 +35,9 @@ class BotContext(commands.Context):
         return await self.message.add_reaction(reaction)
 
     async def bold(self, content=None, **kwargs):
-        return await self.send_or_reply("**" + (content if content else "") + "**", **kwargs)
+        return await self.send_or_reply(
+            "**" + (content if content else "") + "**", **kwargs
+        )
 
     async def usage(self, usage=None, command=None, **kwargs):
         if command:

@@ -63,14 +63,14 @@ class Manager(commands.Cog):
         await ctx.success("**Completed**")
 
     @decorators.command(
-        aliases=['batchcount'],
+        aliases=["batchcount"],
         brief="Get the batch insert count.",
         implemented="2021-04-25 06:13:16.030615",
         updated="2021-05-11 02:02:21.935264",
         examples="""
                 {0}batches
                 {0}batchcount
-                """
+                """,
     )
     async def batches(self, ctx):
         """
@@ -84,7 +84,6 @@ class Manager(commands.Cog):
         await ctx.bold(
             f"{self.bot.emote_dict['db']} {self.bot.user} ({self.bot.user.id}) Batch Inserts: {self.bot.batch_inserts}"
         )
-    
 
     @decorators.command(
         brief="Reload the bot variables.",
@@ -92,7 +91,7 @@ class Manager(commands.Cog):
         updated="2021-05-11 02:41:27.186046",
         examples="""
                 {0}botvars
-                """
+                """,
     )
     async def botvars(self, ctx):
         """
@@ -110,7 +109,7 @@ class Manager(commands.Cog):
         await ctx.success("**Reloaded all botvars.**")
 
     @decorators.command(
-        aliases=['lc', 'loadcog'],
+        aliases=["lc", "loadcog"],
         brief="Load an extension.",
         implemented="2021-03-19 21:57:05.162549",
         updated="2021-05-11 02:51:30.992778",
@@ -118,7 +117,7 @@ class Manager(commands.Cog):
                 {0}lc manager
                 {0}load jishaku
                 {0}loadcog info
-                """
+                """,
     )
     async def load(self, ctx, file: str):
         """
@@ -138,7 +137,7 @@ class Manager(commands.Cog):
         await ctx.success(f"Loaded extension **{file}**")
 
     @decorators.command(
-        aliases=['uc','unloadcog'],
+        aliases=["uc", "unloadcog"],
         brief="Unload an extension.",
         implemented="2021-03-19 21:57:05.162549",
         updated="2021-05-11 02:51:30.992778",
@@ -146,7 +145,7 @@ class Manager(commands.Cog):
                 {0}uc manager
                 {0}unload jishaku
                 {0}unloadcog info
-                """
+                """,
     )
     async def unload(self, ctx, file: str):
         """
@@ -174,7 +173,7 @@ class Manager(commands.Cog):
         examples="""
                 {0}r manager
                 {0}reload jishaku
-                """
+                """,
     )
     async def _reload(self, ctx, file: str):
         """
@@ -201,7 +200,7 @@ class Manager(commands.Cog):
         examples="""
                 {0}ra
                 {0}reloadall
-                """
+                """,
     )
     async def reloadall(self, ctx):
         """
@@ -226,7 +225,9 @@ class Manager(commands.Cog):
             output = "\n".join(
                 [f"**{g[0]}** ```diff\n- {g[1]}```" for g in error_collection]
             )
-            return await ctx.fail(f"**Failed to reload following extensions.**\n\n{output}")
+            return await ctx.fail(
+                f"**Failed to reload following extensions.**\n\n{output}"
+            )
 
         await ctx.success("**Successfully reloaded all extensions.**")
 
@@ -238,7 +239,7 @@ class Manager(commands.Cog):
         examples="""
                 {0}ru converters
                 {0}reloadutil utils
-                """
+                """,
     )
     async def reloadutil(self, ctx, file: str):
         """
@@ -259,7 +260,9 @@ class Manager(commands.Cog):
             return await ctx.fail(f"Couldn't find module named **{name_maker}**")
         except Exception as e:
             error = utils.traceback_maker(e)
-            return await ctx.fail(f"Module **{name_maker}** returned error and was not reloaded...\n{error}")
+            return await ctx.fail(
+                f"Module **{name_maker}** returned error and was not reloaded...\n{error}"
+            )
         await ctx.success(f"Reloaded module **{name_maker}**")
 
     @decorators.command(
@@ -270,7 +273,7 @@ class Manager(commands.Cog):
         examples="""
                 {0}rss constants
                 {0}reloadsetting cache
-                """
+                """,
     )
     async def reloadsetting(self, ctx, file: str):
         """
@@ -292,7 +295,9 @@ class Manager(commands.Cog):
             )
         except Exception as e:
             error = utils.traceback_maker(e)
-            return await ctx.fail(f"Module **{name_maker}** errored and was not reloaded...\n{error}")
+            return await ctx.fail(
+                f"Module **{name_maker}** errored and was not reloaded...\n{error}"
+            )
         await ctx.success(f"Reloaded module **{name_maker}**")
 
     @decorators.command(
@@ -303,7 +308,7 @@ class Manager(commands.Cog):
         examples="""
                 {0}rau
                 {0}reloadallutils
-                """
+                """,
     )
     async def reloadallutils(self, ctx):
         """
@@ -331,7 +336,9 @@ class Manager(commands.Cog):
             output = "\n".join(
                 [f"**{g[0]}** ```diff\n- {g[1]}```" for g in error_collection]
             )
-            return await ctx.fail(f"**Failed to reload following utilities.**\n\n{output}")
+            return await ctx.fail(
+                f"**Failed to reload following utilities.**\n\n{output}"
+            )
 
         await ctx.success("**Successfully reloaded all utilities.**")
 
@@ -343,7 +350,7 @@ class Manager(commands.Cog):
         examples="""
                 {0}rau
                 {0}reloadallutils
-                """
+                """,
     )
     async def reloadallsettings(self, ctx):
         """
@@ -357,7 +364,9 @@ class Manager(commands.Cog):
         """
         error_collection = []
         utilities = [
-            x[:-3] for x in sorted(os.listdir("settings")) if x.endswith(".py") and x != "database.py"
+            x[:-3]
+            for x in sorted(os.listdir("settings"))
+            if x.endswith(".py") and x != "database.py"
         ]
         for module in utilities:
             try:
@@ -549,7 +558,6 @@ class Manager(commands.Cog):
         if ctx.invoked_subcommand is None:
             return await ctx.usage("<option>")
 
-
     @json.command(aliases=["bl"])
     async def blacklist(self, ctx):
         sh = self.bot.get_command("sh")
@@ -565,9 +573,7 @@ class Manager(commands.Cog):
         sh = self.bot.get_command("sh")
         await ctx.invoke(sh, prefix="json", command="cat ./data/json/settings.json")
 
-    @decorators.command(
-        brief="Update the database.", aliases=["updatedb"]
-    )
+    @decorators.command(brief="Update the database.", aliases=["updatedb"])
     async def update(self, ctx):
         """
         Usage: {0}update
@@ -576,7 +582,9 @@ class Manager(commands.Cog):
             Performs the mass database insertion
             that normally occurs on bot startup
         """
-        c = await pagination.Confirmation(f"**{self.bot.emote_dict['exclamation']} This action will restart my database. Do you wish to continue?**").prompt(ctx)
+        c = await pagination.Confirmation(
+            f"**{self.bot.emote_dict['exclamation']} This action will restart my database. Do you wish to continue?**"
+        ).prompt(ctx)
         if c:
             from settings.database import initialize
 
@@ -907,7 +915,10 @@ class Manager(commands.Cog):
 
     # https://github.com/Rapptz/RoboDanny
     @decorators.command(
-        hidden=True, aliases=["shell", "bash"], brief="Run a shell command.", writer=80088516616269824
+        hidden=True,
+        aliases=["shell", "bash"],
+        brief="Run a shell command.",
+        writer=80088516616269824,
     )
     async def sh(self, ctx, prefix=None, *, command):
         """Runs a shell command."""
@@ -928,7 +939,12 @@ class Manager(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(str(e))
 
-    @decorators.command(hidden=True, aliases=["repeat"], brief="Repeat a command.", writer=80088516616269824)
+    @decorators.command(
+        hidden=True,
+        aliases=["repeat"],
+        brief="Repeat a command.",
+        writer=80088516616269824,
+    )
     async def do(self, ctx, times: int, *, command):
         """Repeats a command a specified number of times."""
         msg = copy.copy(ctx.message)
@@ -943,9 +959,7 @@ class Manager(commands.Cog):
             except ValueError:
                 return await ctx.send_or_reply(content=f"Invalid Context")
 
-    @decorators.command(
-        brief="Show bot threadinfo."
-    )
+    @decorators.command(brief="Show bot threadinfo.")
     async def threadinfo(self, ctx):
         buf = io.StringIO()
         for th in threading.enumerate():
@@ -953,12 +967,13 @@ class Manager(commands.Cog):
             traceback.print_stack(sys._current_frames()[th.ident], file=buf)
             buf.write("\n")
 
-        p = pagination.MainMenu(pagination.TextPageSource(buf.getvalue(), prefix="```prolog"))
+        p = pagination.MainMenu(
+            pagination.TextPageSource(buf.getvalue(), prefix="```prolog")
+        )
         try:
             await p.start(ctx)
         except menus.MenuError as e:
             await ctx.send(e)
-
 
     @decorators.command(hidden=True, brief="Bot health monitoring tools.")
     @commands.is_owner()
@@ -1095,10 +1110,7 @@ class Manager(commands.Cog):
             content=f"{emote} `{(end - start) * 1000:.2f}ms`",
         )
 
-    @decorators.command(
-        aliases=['clearconsole', 'cl'],
-        brief="Clear the console."
-    )
+    @decorators.command(aliases=["clearconsole", "cl"], brief="Clear the console.")
     async def cleartrace(self, ctx):
         """
         Usage: {0}cleartrace
@@ -1108,26 +1120,26 @@ class Manager(commands.Cog):
             prints a clean nicely
             formatted message.
         """
-        if os.name == 'nt':
-            os.system('cls')
+        if os.name == "nt":
+            os.system("cls")
         else:
             try:
-                os.system('clear')
+                os.system("clear")
             except Exception:
                 for _ in range(100):
                     print()
 
-        message = 'Logged in as %s.' % self.bot.user
-        uid_message = 'User ID: %s.' % self.bot.user.id
-        separator = '-' * max(len(message), len(uid_message))
+        message = "Logged in as %s." % self.bot.user
+        uid_message = "User ID: %s." % self.bot.user.id
+        separator = "-" * max(len(message), len(uid_message))
         print(separator)
         try:
             print(message)
-        except: # some bot usernames with special chars fail on shitty platforms
-            print(message.encode(errors='replace').decode())
+        except:  # some bot usernames with special chars fail on shitty platforms
+            print(message.encode(errors="replace").decode())
         print(uid_message)
         print(separator)
-        await ctx.success('Console cleared.')
+        await ctx.success("Console cleared.")
 
     @decorators.command(aliases=["github"], brief="Run github commands.")
     async def git(self, ctx, *, subcommand):
@@ -1181,7 +1193,9 @@ class Manager(commands.Cog):
         await self.bot.invoke(new_ctx)
 
     @decorators.command(
-        name="eval", aliases=["evaluate", "e", "exe", "exec"], brief="Evaluate python code."
+        name="eval",
+        aliases=["evaluate", "e", "exe", "exec"],
+        brief="Evaluate python code.",
     )
     async def _eval(self, ctx, *, body: str):
         """
@@ -1250,7 +1264,9 @@ class Manager(commands.Cog):
             if ret is None:
                 if value:
                     try:
-                        p = pagination.MainMenu(pagination.TextPageSource(f"{value}", prefix="```py"))
+                        p = pagination.MainMenu(
+                            pagination.TextPageSource(f"{value}", prefix="```py")
+                        )
                     except Exception as e:
                         return await ctx.send(e)
                     try:
@@ -1259,7 +1275,9 @@ class Manager(commands.Cog):
                         await ctx.send(e)
             else:
                 try:
-                    p = pagination.MainMenu(pagination.TextPageSource(f"{value}{ret}", prefix="```py"))
+                    p = pagination.MainMenu(
+                        pagination.TextPageSource(f"{value}{ret}", prefix="```py")
+                    )
                 except Exception as e:
                     return await ctx.send(e)
                 self._last_result = ret
@@ -1267,6 +1285,8 @@ class Manager(commands.Cog):
                     await p.start(ctx)
                 except menus.MenuError as e:
                     await ctx.send(e)
+
+
 class PerformanceMocker:
     """A mock object that can also be used in await expressions."""
 

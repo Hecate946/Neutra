@@ -10,6 +10,7 @@ from discord.ext import commands
 
 from utilities import time
 
+
 class Timer:
     __slots__ = ("args", "kwargs", "event", "id", "created_at", "expires")
 

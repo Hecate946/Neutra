@@ -26,7 +26,7 @@ class Tracking(commands.Cog):
         self.bot = bot
 
     @decorators.command(
-        aliases=['inviter', 'whoinvited'],
+        aliases=["inviter", "whoinvited"],
         brief="See who invited a user.",
         implemented="2021-05-10 09:08:00.476972",
         updated="2021-05-10 09:08:00.476972",
@@ -35,7 +35,7 @@ class Tracking(commands.Cog):
                 {0}invited Hecate
                 {0}inviter Hecate#3523
                 {0}inviter 708584008065351681
-                """
+                """,
     )
     @commands.guild_only()
     @checks.has_perms(view_audit_log=True)
@@ -47,7 +47,7 @@ class Tracking(commands.Cog):
         Output:
             Show who invited the passed user.
         Notes:
-            Will default to you if 
+            Will default to you if
             no user is passed.
         """
         if user is None:
@@ -74,7 +74,7 @@ class Tracking(commands.Cog):
                 {0}invites Hecate
                 {0}invites Hecate#3523
                 {0}inviter 708584008065351681
-                """
+                """,
     )
     @commands.guild_only()
     async def invites(self, ctx, user: converters.DiscordMember = None):
@@ -84,7 +84,7 @@ class Tracking(commands.Cog):
             Show how many users a user
             has invited.
         Notes:
-            Will default to you if 
+            Will default to you if
             no user is passed.
         """
         if user is None:
@@ -99,8 +99,9 @@ class Tracking(commands.Cog):
         count = await self.bot.cxn.fetchval(query, user.id, ctx.guild.id)
         if not count or count == 0:
             return await ctx.fail(f"User `{user}` has invited zero new users.")
-        await ctx.success(f"User `{user}` has invited {count} new user{'' if count == 1 else 's'}.")
-
+        await ctx.success(
+            f"User `{user}` has invited {count} new user{'' if count == 1 else 's'}."
+        )
 
     @decorators.command(
         aliases=["mobile", "web", "desktop"],

@@ -763,7 +763,12 @@ class Help(commands.Cog):
             except AttributeError:
                 continue
         writers = Counter(writers)
-        writers = sorted([(str(await self.bot.fetch_user(x)), x, count) for x, count in writers.items()])
+        writers = sorted(
+            [
+                (str(await self.bot.fetch_user(x)), x, count)
+                for x, count in writers.items()
+            ]
+        )
         msg = ""
         width = max([len(name) for name, user_id, count in writers])
         id_width = max([len(str(user_id)) for name, user_id, count in writers])

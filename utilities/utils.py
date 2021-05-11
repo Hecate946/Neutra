@@ -465,14 +465,17 @@ def format_timedelta(td):
     ts = td.total_seconds()
     return "{:02d}:{:06.3f}".format(int(ts // 60), ts % 60)
 
+
 def hex_value(arg):
     return int(arg, base=16)
+
 
 def object_at(addr):
     for o in gc.get_objects():
         if id(o) == addr:
             return o
     return None
+
 
 def cleanup_code(content):
     """Automatically removes code blocks from the code."""
@@ -482,11 +485,20 @@ def cleanup_code(content):
 
     # remove `foo`
     return content.strip("` \n")
+
+
 class CachedHistoryIterator(HistoryIterator):
     """HistoryIterator, but we hit the cache first."""
 
-    def __init__(self, messageable, limit,
-                 before=None, after=None, around=None, oldest_first=None):
+    def __init__(
+        self,
+        messageable,
+        limit,
+        before=None,
+        after=None,
+        around=None,
+        oldest_first=None,
+    ):
         super().__init__(messageable, limit, before, after, around, oldest_first)
         self.prefill = self.reverse is False and around is None
 
@@ -497,13 +509,17 @@ class CachedHistoryIterator(HistoryIterator):
         return await super().next()
 
     async def prefill_from_cache(self):
-        if not hasattr(self, 'channel'):
+        if not hasattr(self, "channel"):
             # do the required set up
             channel = await self.messageable._get_channel()
             self.channel = channel
 
         for msg in reversed(self.channel._state._messages):
-            if msg.channel.id == self.channel.id and self.limit > 0 and (not self.before or msg.id < self.before.id):
+            if (
+                msg.channel.id == self.channel.id
+                and self.limit > 0
+                and (not self.before or msg.id < self.before.id)
+            ):
                 self.limit -= 1
                 self.before = discord.Object(id=msg.id)
                 await self.messages.put(msg)

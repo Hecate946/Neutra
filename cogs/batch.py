@@ -67,9 +67,7 @@ class Batch(commands.Cog):
         while True:
             files = [await self.queue.get() for _ in range(10)]
             try:
-                upload_batch = await self.avatar_webhook.send(
-                    files=files, wait=True
-                )
+                upload_batch = await self.avatar_webhook.send(files=files, wait=True)
                 for x in upload_batch.attachments:
                     self.avatar_batch.append(
                         {
@@ -80,7 +78,7 @@ class Batch(commands.Cog):
                     )
             except Exception as e:
                 await self.bot.bot_channel.send(e)
-            
+
     @tasks.loop(seconds=2.0)
     async def bulk_inserter(self):
         self.bot.batch_inserts += 1
@@ -709,7 +707,9 @@ class Batch(commands.Cog):
         new_invites = await member.guild.invites()
         for invite in old_invites:
             if invite.uses < self.get_invite(new_invites, invite.code).uses:
-                self.invite_batch.append((member.id, invite.inviter.id, member.guild.id))
+                self.invite_batch.append(
+                    (member.id, invite.inviter.id, member.guild.id)
+                )
         self.bot.invites[member.guild.id] = new_invites
 
     def get_invite(self, invite_list, code):

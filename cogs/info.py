@@ -206,7 +206,7 @@ class Info(commands.Cog):
             await ctx.send_or_reply(e)
 
     @decorators.command(
-        aliases=['averageping', 'averagelatency','averagelat'],
+        aliases=["averageping", "averagelatency", "averagelat"],
         brief="View the average message latency.",
         implemented="2021-05-10 22:39:37.374649",
         updated="2021-05-10 22:39:37.374649",
@@ -222,9 +222,14 @@ class Info(commands.Cog):
             Shows the average message latency
             over the past 500 messages send.
         """
-        await ctx.send("{:.2f}ms".format(
-            1000 * statistics.mean(
-                lat.total_seconds() for ts, lat in self.message_latencies)))
+        await ctx.send(
+            "{:.2f}ms".format(
+                1000
+                * statistics.mean(
+                    lat.total_seconds() for ts, lat in self.message_latencies
+                )
+            )
+        )
 
     @decorators.command(
         brief="Show reply latencies.",
@@ -241,10 +246,13 @@ class Info(commands.Cog):
         recv_time = ctx.message.created_at
         msg_content = "."
 
-        task = asyncio.ensure_future(ctx.bot.wait_for(
-            "message", timeout=15,
-            check=lambda m: (m.author == ctx.bot.user and
-                             m.content == msg_content)))
+        task = asyncio.ensure_future(
+            ctx.bot.wait_for(
+                "message",
+                timeout=15,
+                check=lambda m: (m.author == ctx.bot.user and m.content == msg_content),
+            )
+        )
         now = datetime.datetime.utcnow()
         sent_message = await ctx.send(msg_content)
         await task
@@ -258,7 +266,7 @@ class Info(commands.Cog):
             content=content.format(
                 (now - recv_time).total_seconds() * 1000,
                 (sent_message.created_at - recv_time).total_seconds() * 1000,
-                (rtt_time - now).total_seconds() * 1000
+                (rtt_time - now).total_seconds() * 1000,
             )
         )
 

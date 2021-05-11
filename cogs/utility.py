@@ -1182,7 +1182,7 @@ class Utility(commands.Cog):
             await ctx.send_or_reply(str(e))
 
     @decorators.command(
-        aliases=['epost'],
+        aliases=["epost"],
         brief="Sends all server emojis to your dms.",
         implemented="2021-05-10 20:14:33.223405",
         updated="2021-05-10 20:14:33.223405",
@@ -1199,11 +1199,14 @@ class Utility(commands.Cog):
             Specify the nodm bool argument
             to avoid the bot from DMing you.
         """
-        emojis = sorted([e for e in ctx.guild.emojis if len(e.roles) == 0 and e.available], key=lambda e: e.name.lower())
-        paginator = commands.Paginator(suffix='', prefix='')
+        emojis = sorted(
+            [e for e in ctx.guild.emojis if len(e.roles) == 0 and e.available],
+            key=lambda e: e.name.lower(),
+        )
+        paginator = commands.Paginator(suffix="", prefix="")
 
         for emoji in emojis:
-            paginator.add_line(f'{emoji} ➔ `{emoji}`')
+            paginator.add_line(f"{emoji} ➔ `{emoji}`")
 
         for page in paginator.pages:
             if nodm:
@@ -1706,9 +1709,7 @@ class Utility(commands.Cog):
         else:
             self.msg_collection.clear()
 
-    @decorators.command(
-        brief="Show reaction info in a channel."
-    )
+    @decorators.command(brief="Show reaction info in a channel.")
     async def reactinfo(self, ctx, limit: int = 100):
         if limit > 100 and ctx.author.id is not self.bot.hecate.id:
             raise commands.BadArgument("The `limit` argument must be less than 100.")
@@ -1718,15 +1719,14 @@ class Utility(commands.Cog):
         resp = ""
         async for msg in utils.CachedHistoryIterator(ctx, limit=limit):
             for r in msg.reactions:
-                if r.custom_emoji and getattr(r.emoji, 'guild', None):
-                    resp += '**%s** ' % str(r.emoji.guild)
+                if r.custom_emoji and getattr(r.emoji, "guild", None):
+                    resp += "**%s** " % str(r.emoji.guild)
                 resp += "{}: {} -- `{}`\n".format(r.emoji, r.count, str(r.emoji))
 
         if not resp:
             return await ctx.fail(f"No reactions in the past {limit} messages.")
         else:
             await ctx.send(resp)
-
 
     @decorators.command(
         aliases=["math", "calc"],

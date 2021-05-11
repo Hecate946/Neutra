@@ -1374,7 +1374,6 @@ class Admin(commands.Cog):
         else:
             await ctx.send(f"**{self.bot.emote_dict['exclamation']} Cancelled.**")
 
-
     @decorators.command(
         brief="Count the inactive users.",
         implemented="2021-05-10 02:59:21.229362",
@@ -1411,4 +1410,6 @@ class Admin(commands.Cog):
             return await ctx.success(
                 f"Your server has no inactive users to prune within your specifications."
             )
-        await ctx.send_or_reply(f"{self.bot.emote_dict['graph']} Your server has {to_be_pruned} inactive users matching your specifications.")
+        await ctx.send_or_reply(
+            f"{self.bot.emote_dict['graph']} Your server has {to_be_pruned} inactive users matching your specifications."
+        )

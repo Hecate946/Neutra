@@ -1,37 +1,37 @@
 import io
 import re
 import discord
- 
+
 from datetime import datetime
 from discord.ext import commands
- 
+
 from utilities import time
 from utilities import utils
 from utilities import checks
 from utilities import converters
 from utilities import decorators
- 
- 
+
+
 def setup(bot):
     bot.add_cog(Logging(bot))
- 
- 
+
+
 class Logging(commands.Cog):
     """
     Log all server events.
     """
- 
+
     def __init__(self, bot):
         self.bot = bot
         self.uregex = re.compile(
             r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
         )
         self.current_streamers = list()
- 
+
     #############################
     ## Logging Check Functions ##
     #############################
- 
+
     async def check(self, snowflake, event):  # This checks whether or not to log.
         try:
             logchannel = self.bot.server_settings[snowflake]["logging"]["logchannel"]
@@ -43,7 +43,7 @@ class Logging(commands.Cog):
         if indicator is not True:
             return
         return True
- 
+
     async def get_webhook(
         self, guild
     ):  # This gets the logging webhook for a guild if they have logging setup
@@ -66,27 +66,27 @@ class Logging(commands.Cog):
             return
         if logging_webhook.guild.id != logchannel.guild.id:
             return
- 
+
         if logging_webhook:
             return logging_webhook
         # Should never get here but if it does, just return so no logging occurs.
         return
- 
+
     #####################
     ## Event Listeners ##
     #####################
- 
+
     @commands.Cog.listener()
     async def on_guild_channel_create(self, channel):
         if not self.bot.ready:
             return
         if not await self.check(snowflake=channel.guild.id, event="channel_updates"):
             return
- 
+
         webhook = await self.get_webhook(guild=channel.guild)
         if webhook is None:
             return
- 
+
         embed = discord.Embed(
             description=f"**Channel:** `{channel.name}` **ID:** `{channel.id}`\n"
             f"**Server:** `{channel.guild.name}` **ID:** `{channel.guild.id},`\n\n",
@@ -99,19 +99,19 @@ class Logging(commands.Cog):
         )
         embed.set_footer(text=f"Channel ID: {channel.id}")
         await webhook.execute(embed=embed, username=self.bot.user.name)
- 
+
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel):
         if not self.bot.ready:
             return
- 
+
         if not await self.check(snowflake=channel.guild.id, event="channel_updates"):
             return
- 
+
         webhook = await self.get_webhook(guild=channel.guild)
         if webhook is None:
             return
- 
+
         embed = discord.Embed(
             description=f"**Channel:** `{channel.name}` **ID:** `{channel.id}`\n"
             f"**Server:** `{channel.guild.name}` **ID:** `{channel.guild.id},`\n\n",
@@ -124,19 +124,19 @@ class Logging(commands.Cog):
         )
         embed.set_footer(text=f"Channel ID: {channel.id}")
         await webhook.execute(embed=embed, username=self.bot.user.name)
- 
+
     @commands.Cog.listener()
     async def on_guild_channel_update(self, before, after):
         if not self.bot.ready:
             return
- 
+
         if not await self.check(snowflake=after.guild.id, event="channel_updates"):
             return
- 
+
         webhook = await self.get_webhook(guild=after.guild)
         if webhook is None:
             return
- 
+
         if before.name != after.name:
             embed = discord.Embed(
                 description=f"**Channel:** {after.mention} **Name:** `{after}`\n"
@@ -148,7 +148,7 @@ class Logging(commands.Cog):
             embed.set_author(name=f"Channel Update")
             embed.set_footer(text=f"Channel ID: {after.id}")
             await webhook.execute(embed=embed, username=self.bot.user.name)
- 
+
         elif before.category != after.category:
             embed = discord.Embed(
                 description=f"**Channel:** {after.mention} **Name:** `{after}`\n"
@@ -160,7 +160,7 @@ class Logging(commands.Cog):
             embed.set_author(name=f"Channel Update")
             embed.set_footer(text=f"Channel ID: {after.id}")
             await webhook.execute(embed=embed, username=self.bot.user.name)
- 
+
         if isinstance(before, discord.TextChannel):
             if before.topic != after.topic:
                 embed = discord.Embed(
@@ -173,7 +173,7 @@ class Logging(commands.Cog):
                 embed.set_author(name=f"Channel Update")
                 embed.set_footer(text=f"Channel ID: {after.id}")
                 await webhook.execute(embed=embed, username=self.bot.user.name)
- 
+
         # elif before.position != after.position:
         #     embed = discord.Embed(
         #         description=f"**Channel:** {after.mention} **Name:** `{after}`\n"
@@ -185,7 +185,7 @@ class Logging(commands.Cog):
         #     embed.set_author(name=f"Channel Update")
         #     embed.set_footer(text=f"Channel ID: {after.id}")
         #     await webhook.execute(embed=embed, username=self.bot.user.name)
- 
+
         if isinstance(before, discord.TextChannel):
             if before.slowmode_delay != after.slowmode_delay:
                 embed = discord.Embed(
@@ -198,7 +198,7 @@ class Logging(commands.Cog):
                 embed.set_author(name=f"Channel Update")
                 embed.set_footer(text=f"Channel ID: {after.id}")
                 await webhook.execute(embed=embed, username=self.bot.user.name)
- 
+
         if isinstance(before, discord.VoiceChannel):
             if before.user_limit != after.user_limit:
                 embed = discord.Embed(
@@ -211,7 +211,7 @@ class Logging(commands.Cog):
                 embed.set_author(name=f"Channel Update")
                 embed.set_footer(text=f"Channel ID: {after.id}")
                 await webhook.execute(embed=embed, username=self.bot.user.name)
- 
+
         elif before.changed_roles != after.changed_roles:
             old_overwrites = (
                 str(
@@ -247,17 +247,17 @@ class Logging(commands.Cog):
             embed.set_author(name=f"Channel Update")
             embed.set_footer(text=f"Channel ID: {after.id}")
             await webhook.execute(embed=embed, username=self.bot.user.name)
- 
+
     # Create our custom event listener for all moderation actions
     @commands.Cog.listener()
     async def on_mod_action(self, ctx, targets):
         webhook = await self.get_webhook(guild=ctx.guild)
         if webhook is None:
             return
- 
+
         if not await self.check(snowflake=ctx.guild.id, event="bans"):
             return
- 
+
         embed = discord.Embed(
             description=f"**Mod:**  {ctx.author.mention}, **ID:** `{ctx.author.id}`\n"
             f"**Command:** `{ctx.command}` **Category:** `{ctx.command.cog_name}`\n"
@@ -273,19 +273,19 @@ class Logging(commands.Cog):
         )
         embed.set_footer(text=f"Message ID: {ctx.message.id}")
         await webhook.execute(embed=embed, username=self.bot.user.name)
- 
+
     @commands.Cog.listener()
     async def on_member_join(self, member):
         if not self.bot.ready:
             return
- 
+
         if not await self.check(snowflake=member.guild.id, event="joins"):
             return
- 
+
         webhook = await self.get_webhook(guild=member.guild)
         if webhook is None:
             return
- 
+
         embed = discord.Embed(
             description=f"**User:** {member.mention} **Name:** `{member}`\n",
             colour=self.bot.constants.embed,
@@ -294,19 +294,19 @@ class Logging(commands.Cog):
         embed.set_author(name=f"User Joined")
         embed.set_footer(text=f"User ID: {member.id}")
         await webhook.execute(embed=embed, username=self.bot.user.name)
- 
+
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         if not self.bot.ready:
             return
- 
+
         if not await self.check(snowflake=member.guild.id, event="leaves"):
             return
- 
+
         webhook = await self.get_webhook(guild=member.guild)
         if webhook is None:
             return
- 
+
         embed = discord.Embed(
             description=f"**User:** {member.mention} **Name:** `{member}`\n",
             colour=self.bot.constants.embed,
@@ -315,24 +315,24 @@ class Logging(commands.Cog):
         embed.set_author(name=f"User Left")
         embed.set_footer(text=f"User ID: {member.id}")
         await webhook.execute(embed=embed, username=self.bot.user.name)
- 
+
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
         if not self.bot.ready:
             return
- 
+
         if after.bot:
             return
- 
+
         webhook = await self.get_webhook(guild=after.guild)
         if webhook is None:
             return
- 
+
         if before.display_name != after.display_name:
- 
+
             if not await self.check(snowflake=after.guild.id, event="name_updates"):
                 return
- 
+
             embed = discord.Embed(
                 description=f"**User:** {after.mention} **Name:** `{after}`\n"
                 f"**Old Nickname:** `{before.display_name}`\n"
@@ -342,17 +342,17 @@ class Logging(commands.Cog):
             )
             embed.set_author(name=f"Nickname Change")
             embed.set_footer(text=f"User ID: {after.id}")
- 
+
             await webhook.execute(embed=embed, username=self.bot.user.name)
- 
+
         elif before.roles != after.roles:
             if "@everyone" not in [x.name for x in before.roles]:
                 print("New Member")
                 return
- 
+
             if not await self.check(snowflake=after.guild.id, event="role_changes"):
                 return
- 
+
             embed = discord.Embed(
                 description=f"**User:** {after.mention} **Name:** `{after}`\n"
                 f"**Old Roles:** {', '.join([r.mention for r in before.roles if r != after.guild.default_role])}\n"
@@ -362,31 +362,31 @@ class Logging(commands.Cog):
             )
             embed.set_author(name=f"Role Updates")
             embed.set_footer(text=f"User ID: {after.id}")
- 
+
             await webhook.execute(embed=embed, username=self.bot.user.name)
- 
+
     @commands.Cog.listener()
     async def on_user_update(self, before, after):
         if not self.bot.ready:
             return
- 
+
         if after.bot:
             return
- 
+
         users_guilds = []
         for guild in self.bot.guilds:
             mem_obj = guild.get_member(after.id)
             if mem_obj is not None:
                 users_guilds.append(guild)
- 
+
         for guild in users_guilds:
             webhook = await self.get_webhook(guild=guild)
             if webhook is None:
                 continue
- 
+
             if before.name != after.name:
                 if await self.check(snowflake=guild.id, event="name_updates"):
- 
+
                     embed = discord.Embed(
                         description=f"**User:** {after.mention} **Name:** `{after}`\n"
                         f"**Old Username:** `{before.name}`\n"
@@ -396,12 +396,12 @@ class Logging(commands.Cog):
                     )
                     embed.set_author(name=f"Username Change")
                     embed.set_footer(text=f"User ID: {after.id}")
- 
+
                     await webhook.execute(embed=embed, username=self.bot.user.name)
- 
+
             elif before.discriminator != after.discriminator:
                 if await self.check(snowflake=guild.id, event="name_updates"):
- 
+
                     embed = discord.Embed(
                         description=f"**User:** {after.mention} **Name:** `{after}`\n"
                         f"**Old Discriminator:** `{before.discriminator}`\n"
@@ -411,42 +411,42 @@ class Logging(commands.Cog):
                     )
                     embed.set_author(name=f"Discriminator Change")
                     embed.set_footer(text=f"User ID: {after.id}")
- 
+
                     await webhook.execute(embed=embed, username=self.bot.user.name)
- 
+
             elif before.avatar_url != after.avatar_url:
                 if await self.check(snowflake=guild.id, event="avatar_changes"):
- 
+
                     embed = discord.Embed(
                         description=f"**User:** {after.mention} **Name:** `{after}`\n"
                         "New image below, old image to the right.",
                         colour=self.bot.constants.embed,
                         timestamp=datetime.utcnow(),
                     )
- 
+
                     embed.set_thumbnail(url=before.avatar_url)
                     embed.set_image(url=after.avatar_url)
                     embed.set_author(name=f"Avatar Change")
                     embed.set_footer(text=f"User ID: {after.id}")
                     await webhook.execute(embed=embed, username=self.bot.user.name)
- 
+
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         if not self.bot.ready:
             return
- 
+
         if member.bot:
             return
- 
+
         if not await self.check(snowflake=member.guild.id, event="voice_state_updates"):
             return
- 
+
         webhook = await self.get_webhook(guild=member.guild)
         if webhook is None:
             return
- 
+
         if not before.channel and after.channel:
- 
+
             embed = discord.Embed(
                 description=f"**User:** {member.mention} **Name:** `{member}`\n**Channel:** {after.channel.mention} ID: `{after.channel.id}`\n",
                 colour=self.bot.constants.embed,
@@ -454,11 +454,11 @@ class Logging(commands.Cog):
             )
             embed.set_author(name=f"User Joined Voice Channel")
             embed.set_footer(text=f"User ID: {member.id}")
- 
+
             await webhook.execute(embed=embed, username=self.bot.user.name)
- 
+
         if before.channel and not after.channel:
- 
+
             embed = discord.Embed(
                 description=f"**User:** {member.mention} **Name:** `{member}`\n**Channel:** {before.channel.mention} ID: `{before.channel.id}`\n",
                 colour=self.bot.constants.embed,
@@ -466,9 +466,9 @@ class Logging(commands.Cog):
             )
             embed.set_author(name=f"User Left Voice Channel")
             embed.set_footer(text=f"User ID: {member.id}")
- 
+
             await webhook.execute(embed=embed, username=self.bot.user.name)
- 
+
         if before.channel and after.channel:
             if before.channel.id != after.channel.id:
                 embed = discord.Embed(
@@ -480,7 +480,7 @@ class Logging(commands.Cog):
                 )
                 embed.set_author(name=f"User Switched Voice Channels")
                 embed.set_footer(text=f"User ID: {member.id}")
- 
+
                 await webhook.execute(embed=embed, username=self.bot.user.name)
             else:
                 if member.voice.self_stream:
@@ -492,11 +492,11 @@ class Logging(commands.Cog):
                     )
                     embed.set_author(name=f"User Started Streaming")
                     embed.set_footer(text=f"User ID: {member.id}")
- 
+
                     await webhook.execute(embed=embed, username=self.bot.user.name)
- 
+
                     self.current_streamers.append(member.id)
- 
+
                 elif member.voice.self_mute:
                     embed = discord.Embed(
                         description=f"**User:** {member.mention} **Name:** `{member}`\n"
@@ -506,9 +506,9 @@ class Logging(commands.Cog):
                     )
                     embed.set_author(name=f"User Muted")
                     embed.set_footer(text=f"User ID: {member.id}")
- 
+
                     await webhook.execute(embed=embed, username=self.bot.user.name)
- 
+
                 elif member.voice.self_deaf:
                     embed = discord.Embed(
                         description=f"**User:** {member.mention} **Name:** `{member}`\n"
@@ -518,9 +518,9 @@ class Logging(commands.Cog):
                     )
                     embed.set_author(name=f"User Deafened")
                     embed.set_footer(text=f"User ID: {member.id}")
- 
+
                     await webhook.execute(embed=embed, username=self.bot.user.name)
- 
+
                 else:
                     for streamer in self.current_streamers:
                         if member.id == streamer:
@@ -533,34 +533,34 @@ class Logging(commands.Cog):
                                 )
                                 embed.set_author(name=f"User Stopped Streaming")
                                 embed.set_footer(text=f"User ID: {member.id}")
- 
+
                                 await webhook.execute(
                                     embed=embed, username=self.bot.user.name
                                 )
                                 self.current_streamers.remove(member.id)
                             break
- 
+
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
         if not self.bot.ready:
             return
- 
+
         if not after.guild:
             return
- 
+
         if after.author.bot:
             return
- 
+
         if before.content == after.content:
             return  # giphy, tenor, and imgur links trigger this but they shouldn't be logged
- 
+
         if not await self.check(snowflake=after.guild.id, event="message_edits"):
             return
- 
+
         webhook = await self.get_webhook(guild=after.guild)
         if webhook is None:
             return
- 
+
         if before.content == "":
             before_content = f"**__Old Message Content__**\n ```fix\nNo Content```\n"
         elif before.content.startswith("```"):
@@ -569,7 +569,7 @@ class Logging(commands.Cog):
             before_content = (
                 f"**__Old Message Content__**\n ```fix\n{before.clean_content}```\n"
             )
- 
+
         if after.content == "":
             after_content = f"**__New Message Content__**\n ```fix\nNo Content```\n"
         elif after.content.startswith("```"):
@@ -578,7 +578,7 @@ class Logging(commands.Cog):
             after_content = (
                 f"**__New Message Content__**\n ```fix\n{after.clean_content}```\n"
             )
- 
+
         embed = discord.Embed(
             description=f"**Author:**  {after.author.mention}, **ID:** `{after.author.id}`\n"
             f"**Channel:** {after.channel.mention} **ID:** `{after.channel.id}`\n"
@@ -595,32 +595,32 @@ class Logging(commands.Cog):
         )
         embed.set_footer(text=f"Message ID: {after.id}")
         await webhook.execute(embed=embed, username=self.bot.user.name)
- 
+
     @commands.Cog.listener()
     async def on_message_delete(self, message):
         if not self.bot.ready:
             return
- 
+
         if not message.guild:
             return
- 
+
         if message.author.bot:
             return
- 
+
         if not await self.check(snowflake=message.guild.id, event="message_deletions"):
             return
- 
+
         webhook = await self.get_webhook(guild=message.guild)
         if webhook is None:
             return
- 
+
         if message.content == "":
             content = ""
         elif message.content.startswith("```"):
             content = f"**__Message Content__**\n {message.clean_content}"
         else:
             content = f"**__Message Content__**\n ```fix\n{message.clean_content}```"
- 
+
         if len(message.attachments):
             attachment_list = "\n".join(
                 [f"[**`{x.filename}`**]({x.url})" for x in message.attachments]
@@ -645,28 +645,28 @@ class Logging(commands.Cog):
         )
         embed.set_footer(text=f"Message ID: {message.id}")
         await webhook.execute(embed=embed, username=self.bot.user.name)
- 
+
     @commands.Cog.listener()
     async def on_bulk_message_delete(self, messages):
         if not self.bot.ready:
             return
- 
+
         if not messages[0].guild:
             return
         if not await self.check(
             snowflake=messages[0].guild.id, event="message_deletions"
         ):
             return
- 
+
         webhook = await self.get_webhook(guild=messages[0].guild)
         if webhook is None:
             return
- 
+
         allmessages = ""
- 
+
         for message in messages:
             allmessages += f"Content: {message.content}          Author: {message.author}          ID: {message.id}\n\n"
- 
+
         embed = discord.Embed(
             description=f"**Channel:** {message.channel.mention} **ID:** `{message.channel.id}`\n"
             f"**Server:** `{message.guild.name}` **ID:** `{message.guild.id},`\n\n",
@@ -677,9 +677,9 @@ class Logging(commands.Cog):
             name="Bulk Message Delete",
             icon_url="https://media.discordapp.net/attachments/506838906872922145/603642595419357190/messagedelete.png",
         )
- 
+
         await webhook.execute(embed=embed, username=self.bot.user.name)
- 
+
         counter = 0
         msg = ""
         for message in messages:
@@ -702,20 +702,20 @@ class Logging(commands.Cog):
                     + "\n"
                 )
             msg += "\n"
- 
+
         data = io.BytesIO(msg[:-2].encode("utf-8"))
- 
+
         await webhook.execute(
             file=discord.File(
                 data,
                 filename=f"'Bulk-Deleted-Messages-{datetime.now().__format__('%m-%d-%Y')}.txt",
             )
         )
- 
+
     ##############
     ## Commands ##
     ##############
- 
+
     async def do_logging(self, ctx, channel):
         bytes_avatar = await self.bot.get(
             str(ctx.guild.me.avatar_url), res_method="read"
@@ -745,7 +745,7 @@ class Logging(commands.Cog):
             f"Use `{ctx.prefix}log <option>` to set the specific events you want documented here. "
             "By default, all events will be logged."
         )
- 
+
     @decorators.command(
         brief="Set your server's logging channel.",
         aliases=["logserver", "setlogchannel"],
@@ -762,28 +762,35 @@ class Logging(commands.Cog):
             specific logging events that are sent to the logchannel
         """
         if channel is None:
-            channel = ctx.channel # no arguments sets current channel to logging channel
- 
+            channel = (
+                ctx.channel
+            )  # no arguments sets current channel to logging channel
+
         webhook_id = self.bot.server_settings[ctx.guild.id]["logging"]["webhook_id"]
         logchannel = self.bot.server_settings[ctx.guild.id]["logging"]["logchannel"]
- 
+
         try:
             self.bot.get_channel(logchannel)
         except:
             return await self.do_logging(ctx, channel)
         server_webhook_list = await ctx.guild.webhooks()
- 
+
         for webhook in server_webhook_list:
-            if str(webhook.id) == str(webhook_id): # if current log channel exists
-                if self.bot.get_channel(logchannel) == channel: # if log channel is same as current log channel
-                    return await ctx.send_or_reply(f"{self.bot.emote_dict['failed']} This is already the logging channel.")
- 
- 
-                await self.unlogchannel(ctx, write=False) # unlogs current channel
-                return await self.logchannel(ctx, channel) # does it again but with no existing log channel
- 
+            if str(webhook.id) == str(webhook_id):  # if current log channel exists
+                if (
+                    self.bot.get_channel(logchannel) == channel
+                ):  # if log channel is same as current log channel
+                    return await ctx.send_or_reply(
+                        f"{self.bot.emote_dict['failed']} This is already the logging channel."
+                    )
+
+                await self.unlogchannel(ctx, write=False)  # unlogs current channel
+                return await self.logchannel(
+                    ctx, channel
+                )  # does it again but with no existing log channel
+
         return await self.do_logging(ctx, channel)
- 
+
     @decorators.command(brief="Remove the logging channel.", aliases=["unlogserver"])
     @commands.guild_only()
     @checks.has_perms(manage_guild=True)
@@ -799,7 +806,7 @@ class Logging(commands.Cog):
         found = []
         for webhook in server_webhook_list:
             if str(webhook.id) == str(
-                    self.bot.server_settings[ctx.guild.id]["logging"]["webhook_id"]
+                self.bot.server_settings[ctx.guild.id]["logging"]["webhook_id"]
             ):
                 found.append(webhook.name)
         if found:
@@ -816,7 +823,7 @@ class Logging(commands.Cog):
             return await ctx.send_or_reply(
                 content=f"{self.bot.emote_dict['success' if found else 'warn']} Logging is {'now disabled' if found else 'not enabled'} on this server."
             )
- 
+
     @decorators.command(
         brief="Enable specific logging events.",
         implemented="2021-03-17 07:09:57.666073",
@@ -825,7 +832,7 @@ class Logging(commands.Cog):
     )
     @commands.guild_only()
     @checks.has_perms(manage_guild=True)
-    async def log(self, ctx, log_arg = None):
+    async def log(self, ctx, log_arg=None):
         """
         Usage:      -log <option>
         Example:    -log deletes
@@ -848,17 +855,40 @@ class Logging(commands.Cog):
             Use 'all' as an option to enable all options.
         """
         if log_arg is not None:
-            return await self.log_or_unlog(ctx, log_arg) # logs the argument passed
- 
+            return await self.log_or_unlog(ctx, log_arg)  # logs the argument passed
+
         if self.bot.server_settings[ctx.guild.id]["logging"]["logchannel"] is None:
-            return await ctx.send_or_reply(f"There is no logging channel setup. Use `{ctx.prefix}logchannel <channel name>` to set up a logging channel.")
-        log_types = ("message_deletions", "message_edits", "role_changes", "name_updates","voice_state_updates",
-                            "avatar_changes", "bans", "channel_updates", "leaves", "joins")
+            return await ctx.send_or_reply(
+                f"There is no logging channel setup. Use `{ctx.prefix}logchannel <channel name>` to set up a logging channel."
+            )
+        log_types = (
+            "message_deletions",
+            "message_edits",
+            "role_changes",
+            "name_updates",
+            "voice_state_updates",
+            "avatar_changes",
+            "bans",
+            "channel_updates",
+            "leaves",
+            "joins",
+        )
         embed = discord.Embed(title="Logging Settings", color=self.bot.constants.embed)
-        embed.description = '\n'.join([f"{self.bot.emote_dict['pass'] if log_bool else self.bot.emote_dict['fail']} {log_type.capitalize()}" for log_type, log_bool in {key: self.bot.server_settings[ctx.guild.id]["logging"][key] for key in log_types}.items()]).replace("_", " ")
-        embed.add_field(name=f"Logging Channel", value=f"{self.bot.get_channel(self.bot.server_settings[ctx.guild.id]['logging']['logchannel']).mention}")
+        embed.description = "\n".join(
+            [
+                f"{self.bot.emote_dict['pass'] if log_bool else self.bot.emote_dict['fail']} {log_type.capitalize()}"
+                for log_type, log_bool in {
+                    key: self.bot.server_settings[ctx.guild.id]["logging"][key]
+                    for key in log_types
+                }.items()
+            ]
+        ).replace("_", " ")
+        embed.add_field(
+            name=f"Logging Channel",
+            value=f"{self.bot.get_channel(self.bot.server_settings[ctx.guild.id]['logging']['logchannel']).mention}",
+        )
         await ctx.send(embed=embed)
- 
+
     @decorators.command(brief="Disable specific logging events.")
     @commands.guild_only()
     @checks.has_perms(manage_guild=True)
@@ -879,7 +909,7 @@ class Logging(commands.Cog):
             channels
             leaves
             joins
- 
+
         Notes:
             After your server's log channel has been setup,
             all actions are enabled by default.
@@ -887,7 +917,7 @@ class Logging(commands.Cog):
             Use 'all' as an option to disable all options.
         """
         await self.log_or_unlog(ctx, log_arg, False)
- 
+
     async def log_or_unlog(self, ctx, log_arg, log_bool=True):
         async with ctx.channel.typing():
             # aliases in lists (constants)
@@ -961,17 +991,8 @@ class Logging(commands.Cog):
                 "channel_edits",
                 "channel_changes",
             ]
-            leaves = [
-                "leaves",
-                "leave",
-                "left"
-            ]
-            joins = [
-                "joins",
-                "join",
-                "joined",
-                "member_join"
-            ]
+            leaves = ["leaves", "leave", "left"]
+            joins = ["joins", "join", "joined", "member_join"]
             all_option = ["all", "*"]
             types_of_logs = [
                 deletes,
@@ -988,14 +1009,18 @@ class Logging(commands.Cog):
             ]
             # finding type of log from argument using aliases
             try:
-                type_of_log = [log_type[0] for log_type in types_of_logs if log_arg in log_type][0]
+                type_of_log = [
+                    log_type[0] for log_type in types_of_logs if log_arg in log_type
+                ][0]
             except IndexError:
                 await ctx.send_or_reply(
                     f"{self.bot.emote_dict['failed']} `{log_arg.capitalize()}` is not a valid logging option. Use `{ctx.prefix}log help` for more info."
                 )
                 return
             if type_of_log == "all":
-                list_of_log_types = [aliases[0] for aliases in types_of_logs if aliases[0] != "all"]
+                list_of_log_types = [
+                    aliases[0] for aliases in types_of_logs if aliases[0] != "all"
+                ]
                 # first check if all logging is already enabled/disabled
                 log_dict = self.bot.server_settings[ctx.guild.id]["logging"]
                 current_list = [log_dict[item] for item in list_of_log_types]
@@ -1003,7 +1028,7 @@ class Logging(commands.Cog):
                     return await ctx.send_or_reply(
                         f"{self.bot.emote_dict['success']} All logging events are already {'enabled' if log_bool else 'disabled'}."
                     )
- 
+
                 for i in list_of_log_types:
                     query = f"""
                             UPDATE logging
@@ -1015,9 +1040,9 @@ class Logging(commands.Cog):
                 return await ctx.send_or_reply(
                     f"{self.bot.emote_dict['success']} All logging events have been {'enabled' if log_bool else 'disabled'}."
                 )
- 
+
             # converts data to the names in psql so the db can be updated
- 
+
             # get logging channel
             query = """
                     SELECT logchannel
@@ -1034,26 +1059,24 @@ class Logging(commands.Cog):
             logchan = ctx.guild.get_channel(int(logchan))
             # update db
             if (
-                    self.bot.server_settings[ctx.guild.id]["logging"][type_of_log]
-                    is log_bool
+                self.bot.server_settings[ctx.guild.id]["logging"][type_of_log]
+                is log_bool
             ):
                 return await ctx.send_or_reply(
                     f"{self.bot.emote_dict['success']} {type_of_log.replace('_', ' ').capitalize()} {'is' if type_of_log[-1] != 's' else 'are'} already {'enabled' if log_bool else 'disabled'}."
                 )
- 
+
             query = f"""
                     UPDATE logging
                     SET {type_of_log} = $1
                     WHERE server_id = $2;
                     """
             await self.bot.cxn.execute(query, log_bool, ctx.guild.id)
-            self.bot.server_settings[ctx.guild.id]["logging"][
-                type_of_log
-            ] = log_bool
+            self.bot.server_settings[ctx.guild.id]["logging"][type_of_log] = log_bool
             await ctx.send_or_reply(
                 f"{self.bot.emote_dict['success']} {type_of_log.replace('_', ' ').capitalize()} will {'now be' if log_bool else 'no longer'} logged in {logchan.mention}"
             )
- 
+
     @decorators.group(
         aliases=["actioncount", "ac"],
         brief="Count the audit log entries of a user.",
@@ -1124,7 +1147,7 @@ class Logging(commands.Cog):
             ctx, user, after, None, "executed", "audit log actions"
         )
         await ctx.send_or_reply(self.bot.emote_dict["search"] + msg)
- 
+
     @auditcount.command(
         aliases=["bc"],
         brief="Count the audit log entries of a user.",
@@ -1179,7 +1202,7 @@ class Logging(commands.Cog):
             ctx, user, after, discord.AuditLogAction.ban, "banned", "users"
         )
         await ctx.send_or_reply(self.bot.emote_dict["ban"] + msg)
- 
+
     @auditcount.command()
     async def botadds(
         self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
@@ -1212,7 +1235,7 @@ class Logging(commands.Cog):
             ctx, user, after, discord.AuditLogAction.bot_add, "added", "bots"
         )
         await ctx.send_or_reply(self.bot.emote_dict["robot"] + msg)
- 
+
     @auditcount.command(
         aliases=["channelcreates"],
         brief="Count the audit log entries of a user.",
@@ -1273,7 +1296,7 @@ class Logging(commands.Cog):
             "channels",
         )
         await ctx.send_or_reply(self.bot.emote_dict["plus"] + msg)
- 
+
     @auditcount.command(
         aliases=["channelchanges"],
         brief="Count the audit log entries of a user.",
@@ -1333,7 +1356,7 @@ class Logging(commands.Cog):
             "channels",
         )
         await ctx.send_or_reply(self.bot.emote_dict["redo"] + msg)
- 
+
     @auditcount.command(
         aliases=["channelremoves"],
         brief="Count the audit log entries of a user.",
@@ -1393,7 +1416,7 @@ class Logging(commands.Cog):
             "channels",
         )
         await ctx.send_or_reply(self.bot.emote_dict["minus"] + msg)
- 
+
     @auditcount.command(
         aliases=["emojicreates", "emoteadds", "emotecreates"],
         brief="Count the audit log entries of a user.",
@@ -1452,7 +1475,7 @@ class Logging(commands.Cog):
             ctx, user, after, discord.AuditLogAction.emoji_create, "created", "emojis"
         )
         await ctx.send_or_reply(self.bot.emote_dict["plus"] + msg)
- 
+
     @auditcount.command(
         aliases=["emojichanges"],
         brief="Count the audit log entries of a user.",
@@ -1508,7 +1531,7 @@ class Logging(commands.Cog):
             ctx, user, after, discord.AuditLogAction.emoji_update, "updated", "emojis"
         )
         await ctx.send_or_reply(self.bot.emote_dict["redo"] + msg)
- 
+
     @auditcount.command(
         aliases=["emojiremoves"],
         brief="Count the audit log entries of a user.",
@@ -1564,7 +1587,7 @@ class Logging(commands.Cog):
             ctx, user, after, discord.AuditLogAction.emoji_delete, "deleted", "emojis"
         )
         await ctx.send_or_reply(self.bot.emote_dict["minus"] + msg)
- 
+
     @auditcount.command(
         aliases=["serverchanges", "guildupdates", "guildchanges"],
         brief="Count the audit log entries of a user.",
@@ -1627,7 +1650,7 @@ class Logging(commands.Cog):
             "times",
         )
         await ctx.send_or_reply(self.bot.emote_dict["redo"] + msg)
- 
+
     @auditcount.command(
         aliases=["integrationcreates"],
         brief="Count the audit log entries of a user.",
@@ -1687,7 +1710,7 @@ class Logging(commands.Cog):
             "integrations",
         )
         await ctx.send_or_reply(self.bot.emote_dict["plus"] + msg)
- 
+
     @auditcount.command(
         aliases=["integrationchanges"],
         brief="Count the audit log entries of a user.",
@@ -1747,7 +1770,7 @@ class Logging(commands.Cog):
             "integrations",
         )
         await ctx.send_or_reply(self.bot.emote_dict["redo"] + msg)
- 
+
     @auditcount.command(
         aliases=["integrationremoves"],
         brief="Count the audit log entries of a user.",
@@ -1807,7 +1830,7 @@ class Logging(commands.Cog):
             "integrations",
         )
         await ctx.send_or_reply(self.bot.emote_dict["minus"] + msg)
- 
+
     @auditcount.command(
         aliases=["invitecreates"],
         brief="Count the audit log entries of a user.",
@@ -1867,7 +1890,7 @@ class Logging(commands.Cog):
             "invite links",
         )
         await ctx.send_or_reply(self.bot.emote_dict["plus"] + msg)
- 
+
     @auditcount.command(
         aliases=["invitechanges"],
         brief="Count the audit log entries of a user.",
@@ -1927,7 +1950,7 @@ class Logging(commands.Cog):
             "invite links",
         )
         await ctx.send_or_reply(self.bot.emote_dict["redo"] + msg)
- 
+
     @auditcount.command(
         aliases=["inviteremoves"],
         brief="Count the audit log entries of a user.",
@@ -1987,7 +2010,7 @@ class Logging(commands.Cog):
             "invite links",
         )
         await ctx.send_or_reply(self.bot.emote_dict["minus"] + msg)
- 
+
     @auditcount.command(
         aliases=["kickcount", "kc"],
         brief="Count the audit log entries of a user.",
@@ -2042,7 +2065,7 @@ class Logging(commands.Cog):
             ctx, user, after, discord.AuditLogAction.kick, "kicked", "users"
         )
         await ctx.send_or_reply(self.bot.emote_dict["kick"] + msg)
- 
+
     @auditcount.command(
         aliases=["vckickvount", "vckc"],
         brief="Count the audit log entries of a user.",
@@ -2102,7 +2125,7 @@ class Logging(commands.Cog):
             "users",
         )
         await ctx.send_or_reply(self.bot.emote_dict["audioremove"] + msg)
- 
+
     @auditcount.command(
         aliases=["vcmoves", "vcmvs"],
         brief="Count the audit log entries of a user.",
@@ -2157,7 +2180,7 @@ class Logging(commands.Cog):
             ctx, user, after, discord.AuditLogAction.member_move, "vcmoved", "users"
         )
         await ctx.send_or_reply(self.bot.emote_dict["forward1"] + msg)
- 
+
     @auditcount.command(
         aliases=["bds", "bd"],
         brief="Count the audit log entries of a user.",
@@ -2217,7 +2240,7 @@ class Logging(commands.Cog):
             "times",
         )
         await ctx.send_or_reply(self.bot.emote_dict["trash"] + msg)
- 
+
     @auditcount.command(
         aliases=["removes"],
         brief="Count the audit log entries of a user.",
@@ -2277,7 +2300,7 @@ class Logging(commands.Cog):
             "messages",
         )
         await ctx.send_or_reply(self.bot.emote_dict["trash"] + msg)
- 
+
     @auditcount.command(
         aliases=["pincount", "pc"],
         brief="Count the audit log entries of a user.",
@@ -2333,7 +2356,7 @@ class Logging(commands.Cog):
             ctx, user, after, discord.AuditLogAction.message_pin, "pinned", "messages"
         )
         await ctx.send_or_reply(self.bot.emote_dict["pin"] + msg)
- 
+
     @auditcount.command(
         aliases=["unpincount", "upc"],
         brief="Count the audit log entries of a user.",
@@ -2394,7 +2417,7 @@ class Logging(commands.Cog):
             "messages",
         )
         await ctx.send_or_reply(self.bot.emote_dict["pin"] + msg)
- 
+
     @auditcount.command(
         aliases=["rolecreates"],
         brief="Count the audit log entries of a user.",
@@ -2450,7 +2473,7 @@ class Logging(commands.Cog):
             ctx, user, after, discord.AuditLogAction.role_create, "created", "roles"
         )
         await ctx.send_or_reply(self.bot.emote_dict["plus"] + msg)
- 
+
     @auditcount.command(
         aliases=["rolechanges"],
         brief="Count the audit log entries of a user.",
@@ -2506,7 +2529,7 @@ class Logging(commands.Cog):
             ctx, user, after, discord.AuditLogAction.role_update, "updated", "roles"
         )
         await ctx.send_or_reply(self.bot.emote_dict["redo"] + msg)
- 
+
     @auditcount.command(
         aliases=["roleremoves"],
         brief="Count the audit log entries of a user.",
@@ -2562,7 +2585,7 @@ class Logging(commands.Cog):
             ctx, user, after, discord.AuditLogAction.role_delete, "deleted", "roles"
         )
         await ctx.send_or_reply(self.bot.emote_dict["minus"] + msg)
- 
+
     @auditcount.command(
         aliases=["unbancount", "ubc"],
         brief="Count the audit log entries of a user.",
@@ -2618,7 +2641,7 @@ class Logging(commands.Cog):
             ctx, user, after, discord.AuditLogAction.unban, "unbanned", "users"
         )
         await ctx.send_or_reply(self.bot.emote_dict["hammer"] + msg)
- 
+
     @auditcount.command(
         aliases=["webhookcreates"],
         brief="Count the audit log entries of a user.",
@@ -2679,7 +2702,7 @@ class Logging(commands.Cog):
             "webhooks",
         )
         await ctx.send_or_reply(self.bot.emote_dict["plus"] + msg)
- 
+
     @auditcount.command(
         aliases=["webhookchanges"],
         brief="Count the audit log entries of a user.",
@@ -2740,7 +2763,7 @@ class Logging(commands.Cog):
             "webhooks",
         )
         await ctx.send_or_reply(self.bot.emote_dict["redo"] + msg)
- 
+
     @auditcount.command(
         aliases=["webhookremoves"],
         brief="Count the audit log entries of a user.",
@@ -2801,7 +2824,7 @@ class Logging(commands.Cog):
             "webhooks",
         )
         await ctx.send_or_reply(self.bot.emote_dict["minus"] + msg)
- 
+
     async def get_action_count(self, ctx, user, after, action, string1, string2):
         """
         Helper function to get audit counts
@@ -2820,4 +2843,3 @@ class Logging(commands.Cog):
         else:
             msg = f" User `{user}` has {string1} {len(entries)} {string2 if len(entries) != 1 else string2[:-1]}."
         return msg
- 

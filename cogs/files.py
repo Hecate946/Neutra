@@ -1003,7 +1003,6 @@ class Files(commands.Cog):
         )
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
-
     @decorators.group(
         aliases=["dump", "actions"],
         case_insensitive=True,
@@ -1012,7 +1011,9 @@ class Files(commands.Cog):
         implemented="2021-05-09 21:48:00.663306",
         updated="2021-05-09 21:48:00.663306",
     )
-    async def audit(self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None):
+    async def audit(
+        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+    ):
         """
         Usage: audit [option] [user] [after]
         Aliases {0}dump, {0}actions, {0}audits, {0}dumps
@@ -1020,7 +1021,7 @@ class Files(commands.Cog):
             Sends a file of all audit entries
             of a user. Specify an optional
             category, user, and date to search
-            entries after that date. 
+            entries after that date.
         Notes:
             Will default to you if no user is passed.
             Run with no subcommands to get all actions.
@@ -1042,12 +1043,18 @@ class Files(commands.Cog):
             user=user,
             after=after,
             action=None,
-            emote=self.bot.emote_dict['success'],
+            emote=self.bot.emote_dict["success"],
             string="Actions",
         )
 
     @audit.command()
-    async def bans(self, ctx, user: typing.Optional[converters.DiscordMember] = None, *, after: time.PastTime = None):
+    async def bans(
+        self,
+        ctx,
+        user: typing.Optional[converters.DiscordMember] = None,
+        *,
+        after: time.PastTime = None,
+    ):
         if not user:
             user = ctx.author
         await self.get_and_send_actions(
@@ -1055,11 +1062,18 @@ class Files(commands.Cog):
             user=user,
             after=after,
             action=discord.AuditLogAction.ban,
-            emote=self.bot.emote_dict['ban'],
-            string="Users banned"
+            emote=self.bot.emote_dict["ban"],
+            string="Users banned",
         )
+
     @audit.command()
-    async def kicks(self, ctx, user: typing.Optional[converters.DiscordMember] = None, *, after: time.PastTime = None):
+    async def kicks(
+        self,
+        ctx,
+        user: typing.Optional[converters.DiscordMember] = None,
+        *,
+        after: time.PastTime = None,
+    ):
         if not user:
             user = ctx.author
         await self.get_and_send_actions(
@@ -1067,11 +1081,18 @@ class Files(commands.Cog):
             user=user,
             after=after,
             action=discord.AuditLogAction.kick,
-            emote=self.bot.emote_dict['kick'],
-            string="Users kicked"
+            emote=self.bot.emote_dict["kick"],
+            string="Users kicked",
         )
+
     @audit.command()
-    async def channelcreates(self, ctx, user: typing.Optional[converters.DiscordMember] = None, *, after: time.PastTime = None):
+    async def channelcreates(
+        self,
+        ctx,
+        user: typing.Optional[converters.DiscordMember] = None,
+        *,
+        after: time.PastTime = None,
+    ):
         if not user:
             user = ctx.author
         await self.get_and_send_actions(
@@ -1079,11 +1100,18 @@ class Files(commands.Cog):
             user=user,
             after=after,
             action=discord.AuditLogAction.channel_create,
-            emote=self.bot.emote_dict['plus'],
-            string="Channels created"
+            emote=self.bot.emote_dict["plus"],
+            string="Channels created",
         )
+
     @audit.command()
-    async def channelupdates(self, ctx, user: typing.Optional[converters.DiscordMember] = None, *, after: time.PastTime = None):
+    async def channelupdates(
+        self,
+        ctx,
+        user: typing.Optional[converters.DiscordMember] = None,
+        *,
+        after: time.PastTime = None,
+    ):
         if not user:
             user = ctx.author
         await self.get_and_send_actions(
@@ -1091,11 +1119,18 @@ class Files(commands.Cog):
             user=user,
             after=after,
             action=discord.AuditLogAction.channel_update,
-            emote=self.bot.emote_dict['redo'],
-            string="Channels updated"
+            emote=self.bot.emote_dict["redo"],
+            string="Channels updated",
         )
+
     @audit.command()
-    async def channeldeletes(self, ctx, user: typing.Optional[converters.DiscordMember] = None, *, after: time.PastTime = None):
+    async def channeldeletes(
+        self,
+        ctx,
+        user: typing.Optional[converters.DiscordMember] = None,
+        *,
+        after: time.PastTime = None,
+    ):
         if not user:
             user = ctx.author
         await self.get_and_send_actions(
@@ -1103,11 +1138,18 @@ class Files(commands.Cog):
             user=user,
             after=after,
             action=discord.AuditLogAction.channel_delete,
-            emote=self.bot.emote_dict['minus'],
-            string="Channels deleted"
+            emote=self.bot.emote_dict["minus"],
+            string="Channels deleted",
         )
+
     @audit.command()
-    async def unbans(self, ctx, user: typing.Optional[converters.DiscordMember] = None, *, after: time.PastTime = None):
+    async def unbans(
+        self,
+        ctx,
+        user: typing.Optional[converters.DiscordMember] = None,
+        *,
+        after: time.PastTime = None,
+    ):
         if not user:
             user = ctx.author
         await self.get_and_send_actions(
@@ -1115,11 +1157,18 @@ class Files(commands.Cog):
             user=user,
             after=after,
             action=discord.AuditLogAction.unban,
-            emote=self.bot.emote_dict['ban'],
-            string="Users unbanned"
+            emote=self.bot.emote_dict["ban"],
+            string="Users unbanned",
         )
+
     @audit.command()
-    async def nicknames(self, ctx, user: typing.Optional[converters.DiscordMember] = None, *, after: time.PastTime = None):
+    async def nicknames(
+        self,
+        ctx,
+        user: typing.Optional[converters.DiscordMember] = None,
+        *,
+        after: time.PastTime = None,
+    ):
         if not user:
             user = ctx.author
         await self.get_and_send_actions(
@@ -1127,11 +1176,18 @@ class Files(commands.Cog):
             user=user,
             after=after,
             action=discord.AuditLogAction.member_update,
-            emote=self.bot.emote_dict['redo'],
-            string="Nicknames updated"
+            emote=self.bot.emote_dict["redo"],
+            string="Nicknames updated",
         )
+
     @audit.command()
-    async def userroles(self, ctx, user: typing.Optional[converters.DiscordMember] = None, *, after: time.PastTime = None):
+    async def userroles(
+        self,
+        ctx,
+        user: typing.Optional[converters.DiscordMember] = None,
+        *,
+        after: time.PastTime = None,
+    ):
         if not user:
             user = ctx.author
         await self.get_and_send_actions(
@@ -1139,11 +1195,18 @@ class Files(commands.Cog):
             user=user,
             after=after,
             action=discord.AuditLogAction.member_role_update,
-            emote=self.bot.emote_dict['redo'],
-            string="User roles updated"
+            emote=self.bot.emote_dict["redo"],
+            string="User roles updated",
         )
+
     @audit.command()
-    async def disconnects(self, ctx, user: typing.Optional[converters.DiscordMember] = None, *, after: time.PastTime = None):
+    async def disconnects(
+        self,
+        ctx,
+        user: typing.Optional[converters.DiscordMember] = None,
+        *,
+        after: time.PastTime = None,
+    ):
         if not user:
             user = ctx.author
         await self.get_and_send_actions(
@@ -1151,11 +1214,18 @@ class Files(commands.Cog):
             user=user,
             after=after,
             action=discord.AuditLogAction.member_update,
-            emote=self.bot.emote_dict['audioremove'],
-            string="Users disconnected"
+            emote=self.bot.emote_dict["audioremove"],
+            string="Users disconnected",
         )
+
     @audit.command()
-    async def botadds(self, ctx, user: typing.Optional[converters.DiscordMember] = None, *, after: time.PastTime = None):
+    async def botadds(
+        self,
+        ctx,
+        user: typing.Optional[converters.DiscordMember] = None,
+        *,
+        after: time.PastTime = None,
+    ):
         if not user:
             user = ctx.author
         await self.get_and_send_actions(
@@ -1163,11 +1233,18 @@ class Files(commands.Cog):
             user=user,
             after=after,
             action=discord.AuditLogAction.bot_add,
-            emote=self.bot.emote_dict['bot'],
-            string="Bots added"
+            emote=self.bot.emote_dict["bot"],
+            string="Bots added",
         )
+
     @audit.command()
-    async def rolecreates(self, ctx, user: typing.Optional[converters.DiscordMember] = None, *, after: time.PastTime = None):
+    async def rolecreates(
+        self,
+        ctx,
+        user: typing.Optional[converters.DiscordMember] = None,
+        *,
+        after: time.PastTime = None,
+    ):
         if not user:
             user = ctx.author
         await self.get_and_send_actions(
@@ -1175,11 +1252,18 @@ class Files(commands.Cog):
             user=user,
             after=after,
             action=discord.AuditLogAction.role_create,
-            emote=self.bot.emote_dict['plus'],
-            string="Roles created"
+            emote=self.bot.emote_dict["plus"],
+            string="Roles created",
         )
+
     @audit.command()
-    async def roleupdates(self, ctx, user: typing.Optional[converters.DiscordMember] = None, *, after: time.PastTime = None):
+    async def roleupdates(
+        self,
+        ctx,
+        user: typing.Optional[converters.DiscordMember] = None,
+        *,
+        after: time.PastTime = None,
+    ):
         if not user:
             user = ctx.author
         await self.get_and_send_actions(
@@ -1187,11 +1271,18 @@ class Files(commands.Cog):
             user=user,
             after=after,
             action=discord.AuditLogAction.role_update,
-            emote=self.bot.emote_dict['plus'],
-            string="Roles updated"
+            emote=self.bot.emote_dict["plus"],
+            string="Roles updated",
         )
+
     @audit.command()
-    async def roledeletes(self, ctx, user: typing.Optional[converters.DiscordMember] = None, *, after: time.PastTime = None):
+    async def roledeletes(
+        self,
+        ctx,
+        user: typing.Optional[converters.DiscordMember] = None,
+        *,
+        after: time.PastTime = None,
+    ):
         if not user:
             user = ctx.author
         await self.get_and_send_actions(
@@ -1199,11 +1290,18 @@ class Files(commands.Cog):
             user=user,
             after=after,
             action=discord.AuditLogAction.role_delete,
-            emote=self.bot.emote_dict['plus'],
-            string="Roles deleted"
+            emote=self.bot.emote_dict["plus"],
+            string="Roles deleted",
         )
+
     @audit.command()
-    async def invitecreates(self, ctx, user: typing.Optional[converters.DiscordMember] = None, *, after: time.PastTime = None):
+    async def invitecreates(
+        self,
+        ctx,
+        user: typing.Optional[converters.DiscordMember] = None,
+        *,
+        after: time.PastTime = None,
+    ):
         if not user:
             user = ctx.author
         await self.get_and_send_actions(
@@ -1211,11 +1309,18 @@ class Files(commands.Cog):
             user=user,
             after=after,
             action=discord.AuditLogAction.invite_create,
-            emote=self.bot.emote_dict['plus'],
-            string="Invites created"
+            emote=self.bot.emote_dict["plus"],
+            string="Invites created",
         )
+
     @audit.command()
-    async def inviteupdates(self, ctx, user: typing.Optional[converters.DiscordMember] = None, *, after: time.PastTime = None):
+    async def inviteupdates(
+        self,
+        ctx,
+        user: typing.Optional[converters.DiscordMember] = None,
+        *,
+        after: time.PastTime = None,
+    ):
         if not user:
             user = ctx.author
         await self.get_and_send_actions(
@@ -1223,11 +1328,18 @@ class Files(commands.Cog):
             user=user,
             after=after,
             action=discord.AuditLogAction.invite_update,
-            emote=self.bot.emote_dict['redo'],
-            string="Invites updated"
+            emote=self.bot.emote_dict["redo"],
+            string="Invites updated",
         )
+
     @audit.command()
-    async def invitedeletes(self, ctx, user: typing.Optional[converters.DiscordMember] = None, *, after: time.PastTime = None):
+    async def invitedeletes(
+        self,
+        ctx,
+        user: typing.Optional[converters.DiscordMember] = None,
+        *,
+        after: time.PastTime = None,
+    ):
         if not user:
             user = ctx.author
         await self.get_and_send_actions(
@@ -1235,11 +1347,18 @@ class Files(commands.Cog):
             user=user,
             after=after,
             action=discord.AuditLogAction.invite_delete,
-            emote=self.bot.emote_dict['minus'],
-            string="Invites deleted"
+            emote=self.bot.emote_dict["minus"],
+            string="Invites deleted",
         )
+
     @audit.command()
-    async def webhookcreates(self, ctx, user: typing.Optional[converters.DiscordMember] = None, *, after: time.PastTime = None):
+    async def webhookcreates(
+        self,
+        ctx,
+        user: typing.Optional[converters.DiscordMember] = None,
+        *,
+        after: time.PastTime = None,
+    ):
         if not user:
             user = ctx.author
         await self.get_and_send_actions(
@@ -1247,11 +1366,18 @@ class Files(commands.Cog):
             user=user,
             after=after,
             action=discord.AuditLogAction.webhook_create,
-            emote=self.bot.emote_dict['plus'],
-            string="Webhooks created"
+            emote=self.bot.emote_dict["plus"],
+            string="Webhooks created",
         )
+
     @audit.command()
-    async def webhookupdates(self, ctx, user: typing.Optional[converters.DiscordMember] = None, *, after: time.PastTime = None):
+    async def webhookupdates(
+        self,
+        ctx,
+        user: typing.Optional[converters.DiscordMember] = None,
+        *,
+        after: time.PastTime = None,
+    ):
         if not user:
             user = ctx.author
         await self.get_and_send_actions(
@@ -1259,11 +1385,18 @@ class Files(commands.Cog):
             user=user,
             after=after,
             action=discord.AuditLogAction.webhook_update,
-            emote=self.bot.emote_dict['redo'],
-            string="Webhooks updated"
+            emote=self.bot.emote_dict["redo"],
+            string="Webhooks updated",
         )
+
     @audit.command()
-    async def webhookdeletes(self, ctx, user: typing.Optional[converters.DiscordMember] = None, *, after: time.PastTime = None):
+    async def webhookdeletes(
+        self,
+        ctx,
+        user: typing.Optional[converters.DiscordMember] = None,
+        *,
+        after: time.PastTime = None,
+    ):
         if not user:
             user = ctx.author
         await self.get_and_send_actions(
@@ -1271,11 +1404,18 @@ class Files(commands.Cog):
             user=user,
             after=after,
             action=discord.AuditLogAction.webhook_delete,
-            emote=self.bot.emote_dict['minus'],
-            string="Webhooks deleted"
+            emote=self.bot.emote_dict["minus"],
+            string="Webhooks deleted",
         )
+
     @audit.command()
-    async def emojicreates(self, ctx, user: typing.Optional[converters.DiscordMember] = None, *, after: time.PastTime = None):
+    async def emojicreates(
+        self,
+        ctx,
+        user: typing.Optional[converters.DiscordMember] = None,
+        *,
+        after: time.PastTime = None,
+    ):
         if not user:
             user = ctx.author
         await self.get_and_send_actions(
@@ -1283,11 +1423,18 @@ class Files(commands.Cog):
             user=user,
             after=after,
             action=discord.AuditLogAction.emoji_create,
-            emote=self.bot.emote_dict['plus'],
-            string="Emojis created"
+            emote=self.bot.emote_dict["plus"],
+            string="Emojis created",
         )
+
     @audit.command()
-    async def emojiupdates(self, ctx, user: typing.Optional[converters.DiscordMember] = None, *, after: time.PastTime = None):
+    async def emojiupdates(
+        self,
+        ctx,
+        user: typing.Optional[converters.DiscordMember] = None,
+        *,
+        after: time.PastTime = None,
+    ):
         if not user:
             user = ctx.author
         await self.get_and_send_actions(
@@ -1295,11 +1442,18 @@ class Files(commands.Cog):
             user=user,
             after=after,
             action=discord.AuditLogAction.emoji_updates,
-            emote=self.bot.emote_dict['redo'],
-            string="Emojis updated"
+            emote=self.bot.emote_dict["redo"],
+            string="Emojis updated",
         )
+
     @audit.command()
-    async def emojideletes(self, ctx, user: typing.Optional[converters.DiscordMember] = None, *, after: time.PastTime = None):
+    async def emojideletes(
+        self,
+        ctx,
+        user: typing.Optional[converters.DiscordMember] = None,
+        *,
+        after: time.PastTime = None,
+    ):
         if not user:
             user = ctx.author
         await self.get_and_send_actions(
@@ -1307,11 +1461,18 @@ class Files(commands.Cog):
             user=user,
             after=after,
             action=discord.AuditLogAction.emoji_updates,
-            emote=self.bot.emote_dict['minus'],
-            string="Emojis deleted"
+            emote=self.bot.emote_dict["minus"],
+            string="Emojis deleted",
         )
+
     @audit.command()
-    async def deletes(self, ctx, user: typing.Optional[converters.DiscordMember] = None, *, after: time.PastTime = None):
+    async def deletes(
+        self,
+        ctx,
+        user: typing.Optional[converters.DiscordMember] = None,
+        *,
+        after: time.PastTime = None,
+    ):
         if not user:
             user = ctx.author
         await self.get_and_send_actions(
@@ -1319,12 +1480,12 @@ class Files(commands.Cog):
             user=user,
             after=after,
             action=discord.AuditLogAction.message_delete,
-            emote=self.bot.emote_dict['minus'],
-            string="Messages deleted"
+            emote=self.bot.emote_dict["minus"],
+            string="Messages deleted",
         )
 
     async def get_and_send_actions(self, ctx, user, after, action, emote, string):
-        name = str(action).split('.')[-1] if action else "Action"
+        name = str(action).split(".")[-1] if action else "Action"
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
         filename = f"{name.capitalize()}s-{timestamp}.sml"
         mess = await ctx.send_or_reply(
@@ -1340,21 +1501,27 @@ class Files(commands.Cog):
             entries = valid
             premsg = f"**{emote} {len(entries)} {string} by `{user} (ID: {user.id})` since {utils.short_time(after.dt)}**"
             if len(valid) == 0:
-                return await mess.edit(content=f"{self.bot.emote_dict['failed']} User `{user}` has no {name} entries since **{utils.short_time(after.dt)}.**")
+                return await mess.edit(
+                    content=f"{self.bot.emote_dict['failed']} User `{user}` has no {name} entries since **{utils.short_time(after.dt)}.**"
+                )
         else:
             entries = entries
             premsg = f"**{emote} {len(entries)} {string} by `{user} (ID: {user.id})`**"
             if len(entries) == 0:
-                return await mess.edit(content=f"{self.bot.emote_dict['failed']} User `{user}` has no {name} entries.")
+                return await mess.edit(
+                    content=f"{self.bot.emote_dict['failed']} User `{user}` has no {name} entries."
+                )
         msg = ""
         name_width = max([len(str(x.target)) for x in entries])
         id_width = max([len(str(x.target.id)) for x in entries])
         time_width = max([len(utils.short_time(x.created_at)) for x in entries])
-        for y, x in enumerate(sorted(entries, key=lambda d: d.created_at, reverse=True), start=1):
+        for y, x in enumerate(
+            sorted(entries, key=lambda d: d.created_at, reverse=True), start=1
+        ):
             msg += f"{str(y).zfill(len(str(len(entries))))}. {utils.short_time(x.created_at).ljust(time_width)} Target: (ID: {str(x.target.id).ljust(id_width)}) {str(x.target).ljust(name_width)} Reason: {x.reason}\n"
 
         await mess.edit(content="Uploading `{}...`".format(filename))
-        data = io.BytesIO(msg.encode('utf-8'))
+        data = io.BytesIO(msg.encode("utf-8"))
         dfile = discord.File(data, filename=filename)
         try:
             await ctx.author.send(content=premsg, file=dfile)
@@ -1367,8 +1534,6 @@ class Files(commands.Cog):
             )
             return
         await mess.edit(
-            content="{} Uploaded `{}`".format(
-                self.bot.emote_dict["success"], filename
-            )
+            content="{} Uploaded `{}`".format(self.bot.emote_dict["success"], filename)
         )
         await mess.add_reaction(self.bot.emote_dict["letter"])

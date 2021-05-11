@@ -1310,11 +1310,7 @@ class Mod(commands.Cog):
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(manage_roles=True)
     async def mute(
-        self,
-        ctx,
-        users: commands.Greedy[converters.DiscordMember],
-        *,
-        flags=None
+        self, ctx, users: commands.Greedy[converters.DiscordMember], *, flags=None
     ):
         """
         Usage: {0}mute <users>... [--duration] [--reason] [--nodm]
@@ -1463,11 +1459,17 @@ class Mod(commands.Cog):
             else:
                 await ctx.success(f"Muted `{', '.join(muted)}`")
 
-
     @commands.command()
     @commands.guild_only()
     @checks.has_perms(ban_members=True)
-    async def tempban(self, ctx, users: commands.Greedy[converters.DiscordMember], duration: time.FutureTime, *, reason: converters.ActionReason = None):
+    async def tempban(
+        self,
+        ctx,
+        users: commands.Greedy[converters.DiscordMember],
+        duration: time.FutureTime,
+        *,
+        reason: converters.ActionReason = None,
+    ):
         """
         Temporarily bans a member for the specified duration.
         The duration can be a a short time form, e.g. 30d or a more human
@@ -1480,7 +1482,7 @@ class Mod(commands.Cog):
             raise commands.BadArgument(f"This feature is unavailable.")
         if not len(users):
             return await ctx.usage(ctx.command.signature)
-    
+
         banned = []
         failed = []
         for user in users:
@@ -1492,12 +1494,12 @@ class Mod(commands.Cog):
                 await ctx.guild.ban(user, reason=reason)
                 timer = await task.create_timer(
                     duration.dt,
-                    'tempban',
+                    "tempban",
                     ctx.guild.id,
                     ctx.author.id,
                     user.id,
                     connection=self.bot.cxn,
-                    created=ctx.message.created_at
+                    created=ctx.message.created_at,
                 )
                 banned.append(str(user))
             except Exception as e:
@@ -1506,7 +1508,9 @@ class Mod(commands.Cog):
             await helpers.error_info(ctx, failed)
         if banned:
             self.bot.dispatch("mod_action", ctx, targets=banned)
-            await ctx.success(f"Banned `{', '.join(banned)}` for {time.human_timedelta(duration.dt, source=timer.created_at)}.")
+            await ctx.success(
+                f"Banned `{', '.join(banned)}` for {time.human_timedelta(duration.dt, source=timer.created_at)}."
+            )
 
     @commands.Cog.listener()
     async def on_tempban_timer_complete(self, timer):
@@ -1524,13 +1528,15 @@ class Mod(commands.Cog):
                 moderator = await self.bot.fetch_user(mod_id)
             except:
                 # request failed somehow
-                moderator = f'Mod ID {mod_id}'
+                moderator = f"Mod ID {mod_id}"
             else:
-                moderator = f'{moderator} (ID: {mod_id})'
+                moderator = f"{moderator} (ID: {mod_id})"
         else:
-            moderator = f'{moderator} (ID: {mod_id})'
+            moderator = f"{moderator} (ID: {mod_id})"
 
-        reason = f'Automatic unban from timer made on {timer.created_at} by {moderator}.'
+        reason = (
+            f"Automatic unban from timer made on {timer.created_at} by {moderator}."
+        )
         await guild.unban(discord.Object(id=member_id), reason=reason)
 
     @decorators.command(
