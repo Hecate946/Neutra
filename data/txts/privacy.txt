@@ -9,6 +9,6 @@ and last online timestamps, will be recorded by {0}
 to be used by server owners, administrators, and moderators.
 If you do not consent to having your user data recorded, consult
 your server managers. Additionally, if you have concerns regarding user
-data collection, voice them by using the {2}request command in DMs with the bot.
+data collection, voice them by joining the support server.
 Note that if your collected user data is purged from the bot's database,
 all logs (if present) remain in control of server moderators.

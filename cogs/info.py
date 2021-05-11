@@ -992,40 +992,40 @@ class Info(commands.Cog):
             f"{self.bot.emote_dict['privacy']} **{self.bot.user}'s Privacy Policy**{policy}"
         )
 
-    @decorators.command(brief="Send a request to the developer.", aliases=["contact"])
-    @commands.dm_only()
-    @commands.cooldown(2, 60, commands.BucketType.user)
-    async def request(self, ctx, *, request: str = None):
-        """
-        Usage: {0}request <request content>
-        Alias: {0}contact
-        Examples: {0}suggest Hello! I request...
-        Output:
-            Confirmation that your request has been sent.
-        Notes:
-            This command must be used in DMs for privacy
-        """
-        if request is None:
-            return await ctx.usage("<request content>")
-        author = ctx.author
-        source = "a direct message"
-        sender = "**{}** ({}) sent you a request from {}:\n\n".format(
-            author, author.id, source
-        )
-        message = sender + request
-        try:
-            await self.bot.hecate.send(message)
-        except discord.errors.InvalidArgument:
-            await ctx.fail(content="I cannot send your message.")
-        except discord.errors.HTTPException:
-            await ctx.fail(content="Your message is too long.")
-        except Exception as e:
-            await ctx.fail(
-                content="I failed to send your message.",
-            )
-            print(e)
-        else:
-            await ctx.success(content="Your request has been submitted.")
+    # @decorators.command(brief="Send a request to the developer.", aliases=["contact"])
+    # @commands.dm_only()
+    # @commands.cooldown(2, 60, commands.BucketType.user)
+    # async def request(self, ctx, *, request: str = None):
+    #     """
+    #     Usage: {0}request <request content>
+    #     Alias: {0}contact
+    #     Examples: {0}suggest Hello! I request...
+    #     Output:
+    #         Confirmation that your request has been sent.
+    #     Notes:
+    #         This command must be used in DMs for privacy
+    #     """
+    #     if request is None:
+    #         return await ctx.usage("<request content>")
+    #     author = ctx.author
+    #     source = "a direct message"
+    #     sender = "**{}** ({}) sent you a request from {}:\n\n".format(
+    #         author, author.id, source
+    #     )
+    #     message = sender + request
+    #     try:
+    #         await self.bot.hecate.send(message)
+    #     except discord.errors.InvalidArgument:
+    #         await ctx.fail(content="I cannot send your message.")
+    #     except discord.errors.HTTPException:
+    #         await ctx.fail(content="Your message is too long.")
+    #     except Exception as e:
+    #         await ctx.fail(
+    #             content="I failed to send your message.",
+    #         )
+    #         print(e)
+    #     else:
+    #         await ctx.success(content="Your request has been submitted.")
 
     @decorators.command(
         aliases=["badmins"],
