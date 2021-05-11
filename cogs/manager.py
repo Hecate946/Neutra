@@ -8,7 +8,6 @@ import typing
 import discord
 import asyncio
 import asyncpg
-import datetime
 import textwrap
 import importlib
 import threading
@@ -16,7 +15,6 @@ import traceback
 import contextlib
 import subprocess
 
-from collections import defaultdict
 from discord.ext import commands, menus
 
 from utilities import utils
@@ -50,7 +48,7 @@ class Manager(commands.Cog):
         implemented="2021-05-11 03:03:20.517480",
         updated="2021-05-11 03:03:20.517480",
     )
-    async def fake(self, ctx, db: bool = False):
+    async def refresh(self, ctx, db: bool = False):
         await ctx.trigger_typing()
         core = importlib.import_module("core", package=".")
         importlib.reload(core)
@@ -58,7 +56,7 @@ class Manager(commands.Cog):
         importlib.reload(starter)
         if db:
             await ctx.invoke(self.update)
-        await ctx.invoke(self.refresh)
+        await ctx.invoke(self.botvars)
         await ctx.invoke(self.reloadallutils)
         await ctx.invoke(self.reloadallsettings)
         await ctx.invoke(self.reloadall)
@@ -89,18 +87,17 @@ class Manager(commands.Cog):
     
 
     @decorators.command(
-        brief="Refresh the bot variables.",
+        brief="Reload the bot variables.",
         implemented="2021-04-03 04:30:16.385794",
         updated="2021-05-11 02:41:27.186046",
         examples="""
-                {0}refresh
+                {0}botvars
                 """
     )
-    async def refresh(self, ctx):
+    async def botvars(self, ctx):
         """
-        Usage: {0}refresh
+        Usage: {0}botvars
         Output: Resets all global bot variables
-        Permission: Bot owner
         Notes:
             Useful to use this command as an
             alternative to restarting the bot when
@@ -110,45 +107,63 @@ class Manager(commands.Cog):
         importlib.reload(consts)
         self.bot.constants = consts
         self.bot.owner_ids = consts.owners
-        await ctx.success("**Refreshed configuration.**")
+        await ctx.success("**Reloaded all botvars.**")
 
     @decorators.command(
-        aliases=['lc'],
+        aliases=['lc', 'loadcog'],
         brief="Load an extension.",
         implemented="2021-03-19 21:57:05.162549",
         updated="2021-05-11 02:51:30.992778",
+        examples="""
+                {0}lc manager
+                {0}load jishaku
+                {0}loadcog info
+                """
     )
-    async def load(self, ctx, name: str):
-        """ Loads an extension. """
+    async def load(self, ctx, file: str):
+        """
+        Usage: {0}load <file>
+        Aliases: {0}loadcog, {0}lc
+        Output:
+            Loads the extension (cog)
+            with the given name.
+        """
         try:
-            self.bot.load_extension(f"cogs.{name}")
+            self.bot.load_extension(f"cogs.{file}")
         except Exception:
             try:
-                self.bot.load_extension(f"{name}")
+                self.bot.load_extension(f"{file}")
             except Exception as e:
                 return await ctx.send_or_reply(str(e).replace("'", "**"))
-        await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['success']} Loaded extension **{name}**",
-        )
+        await ctx.success(f"Loaded extension **{file}**")
 
     @decorators.command(
-        aliases=['uc'],
+        aliases=['uc','unloadcog'],
         brief="Unload an extension.",
         implemented="2021-03-19 21:57:05.162549",
         updated="2021-05-11 02:51:30.992778",
+        examples="""
+                {0}uc manager
+                {0}unload jishaku
+                {0}unloadcog info
+                """
     )
-    async def unload(self, ctx, name: str):
-        """ Unloads an extension. """
+    async def unload(self, ctx, file: str):
+        """
+        Usage: {0}unload <file>
+        Aliases: {0}unloadcog, {0}uc
+        Output:
+            Unloads the extension (cog)
+            with the given name.
+        """
         try:
-            self.bot.unload_extension(f"cogs.{name}")
+            self.bot.unload_extension(f"cogs.{file}")
         except Exception:
             try:
-                self.bot.unload_extension(f"{name}")
+                self.bot.unload_extension(f"{file}")
             except Exception as e:
                 return await ctx.send_or_reply(str(e).replace("'", "**"))
-        await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['success']} Unloaded extension **{name}**",
-        )
+        await ctx.success(f"Unloaded extension **{file}**")
 
     @decorators.command(
         name="reload",
@@ -156,28 +171,46 @@ class Manager(commands.Cog):
         brief="Reload an extension.",
         implemented="2021-03-19 21:57:05.162549",
         updated="2021-05-11 02:51:30.992778",
+        examples="""
+                {0}r manager
+                {0}reload jishaku
+                """
     )
-    async def _reload(self, ctx, name: str):
-        """ Reloads an extension. """
+    async def _reload(self, ctx, file: str):
+        """
+        Usage: {0}reload <file>
+        Alias: {0}r
+        Output:
+            Reloads the extension (cog)
+            with the given name.
+        """
         try:
-            self.bot.reload_extension(f"cogs.{name}")
+            self.bot.reload_extension(f"cogs.{file}")
         except Exception:
             try:
-                self.bot.reload_extension(f"{name}")
+                self.bot.reload_extension(f"{file}")
             except Exception as e:
                 return await ctx.send_or_reply(str(e).replace("'", "**"))
-        await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['success']} Reloaded extension **{name}.py**",
-        )
+        await ctx.success(f"Reloaded extension **{file}.py**")
 
     @decorators.command(
         aliases=["ra"],
         brief="Reload all extensions.",
         implemented="2021-03-19 21:57:05.162549",
         updated="2021-05-11 02:51:30.992778",
+        examples="""
+                {0}ra
+                {0}reloadall
+                """
     )
     async def reloadall(self, ctx):
-        """ Reloads all extensions. """
+        """
+        Usage: {0}reloadall
+        Alias: {0}ra
+        Output:
+            Reloads all extensions
+            in the ./cogs directory.
+        """
         error_collection = []
         for fname in os.listdir("cogs"):
             if fname.endswith(".py"):
@@ -193,10 +226,7 @@ class Manager(commands.Cog):
             output = "\n".join(
                 [f"**{g[0]}** ```diff\n- {g[1]}```" for g in error_collection]
             )
-            return await ctx.send_or_reply(
-                content=f"Attempted to reload all extensions, was able to reload, "
-                f"however the following failed...\n\n{output}",
-            )
+            return await ctx.fail(f"**Failed to reload following extensions.**\n\n{output}")
 
         await ctx.success("**Successfully reloaded all extensions.**")
 
@@ -205,42 +235,56 @@ class Manager(commands.Cog):
         aliases=["reloadutils", "reloadutility", "ru"],
         implemented="2021-03-19 21:57:05.162549",
         updated="2021-05-11 02:51:30.992778",
+        examples="""
+                {0}ru converters
+                {0}reloadutil utils
+                """
     )
-    async def reloadutil(self, ctx, name: str):
+    async def reloadutil(self, ctx, file: str):
         """
-        Usage: {0}reloadutil <name>
+        Usage: {0}reloadutil <file>
+        Aliases:
+            {0}ru
+            {0}reloadutils
+            {0}reloadutility
+        Output:
+            Reloads an extension in
+            the ./utilities directory.
         """
-        name_maker = f"./utilities/{name}.py"
+        name_maker = f"./utilities/{file}.py"
         try:
-            module_name = importlib.import_module(f".{name}", package="utilities")
+            module_name = importlib.import_module(f".{file}", package="utilities")
             importlib.reload(module_name)
         except ModuleNotFoundError:
-            return await ctx.send_or_reply(
-                content=f"Couldn't find module named **{name_maker}**",
-            )
+            return await ctx.fail(f"Couldn't find module named **{name_maker}**")
         except Exception as e:
             error = utils.traceback_maker(e)
-            return await ctx.send_or_reply(
-                content=f"Module **{name_maker}** returned error and was not reloaded...\n{error}",
-            )
-        await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['success']} Reloaded module **{name_maker}**",
-        )
+            return await ctx.fail(f"Module **{name_maker}** returned error and was not reloaded...\n{error}")
+        await ctx.success(f"Reloaded module **{name_maker}**")
 
     @decorators.command(
         brief="Reload a utilities module.",
         aliases=["reloadsettings", "rss"],
         implemented="2021-03-19 21:57:05.162549",
         updated="2021-05-11 02:51:30.992778",
+        examples="""
+                {0}rss constants
+                {0}reloadsetting cache
+                """
     )
-    async def reloadsetting(self, ctx, name: str):
+    async def reloadsetting(self, ctx, file: str):
         """
-        Usage: {0}reloadutil <name>
-        Aliases: {0}reloadsettings {0}rss
+        Usage: {0}reloadutil <file>
+        Aliases:
+            {0}rss
+            {0}reloadsettings
+        Output:
+            Reloads an extension in
+            the ./settings directory.
         """
-        name_maker = f"./settings/{name}.py"
+        name_maker = f"./settings/{file}.py"
         try:
-            module_name = importlib.import_module(f".{name}", package="settings")
+            module_name = importlib.import_module(f".{file}", package="settings")
             importlib.reload(module_name)
         except ModuleNotFoundError:
             return await ctx.send_or_reply(
@@ -248,21 +292,28 @@ class Manager(commands.Cog):
             )
         except Exception as e:
             error = utils.traceback_maker(e)
-            return await ctx.send_or_reply(
-                content=f"Module **{name_maker}** returned error and was not reloaded...\n{error}",
-            )
-        await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['success']} Reloaded module **{name_maker}**",
-        )
+            return await ctx.fail(f"Module **{name_maker}** errored and was not reloaded...\n{error}")
+        await ctx.success(f"Reloaded module **{name_maker}**")
 
     @decorators.command(
         aliases=["rau"],
         brief="Reload all utilities modules.",
         implemented="2021-03-19 21:57:05.162549",
         updated="2021-05-11 02:51:30.992778",
+        examples="""
+                {0}rau
+                {0}reloadallutils
+                """
     )
     async def reloadallutils(self, ctx):
-        """ Reloads a utils module. """
+        """
+        Usage: {0}reloadallutils
+        Aliases:
+            {0}rau
+        Output:
+            Reloads all extensions in
+            the ./utilties directory.
+        """
         error_collection = []
         utilities = [
             x[:-3] for x in sorted(os.listdir("utilities")) if x.endswith(".py")
@@ -280,10 +331,7 @@ class Manager(commands.Cog):
             output = "\n".join(
                 [f"**{g[0]}** ```diff\n- {g[1]}```" for g in error_collection]
             )
-            return await ctx.send_or_reply(
-                content=f"Attempted to reload all utilities, was able to reload, "
-                f"however the following failed...\n\n{output}",
-            )
+            return await ctx.fail(f"**Failed to reload following utilities.**\n\n{output}")
 
         await ctx.success("**Successfully reloaded all utilities.**")
 
@@ -292,9 +340,21 @@ class Manager(commands.Cog):
         brief="Reload all settings modules.",
         implemented="2021-03-19 21:57:05.162549",
         updated="2021-05-11 02:51:30.992778",
+        examples="""
+                {0}rau
+                {0}reloadallutils
+                """
     )
     async def reloadallsettings(self, ctx):
-        """ Reloads all settings modules except database.py"""
+        """
+        Usage: {0}reloadallsettings
+        Aliases:
+            {0}ras
+        Output:
+            Reloads all extensions in
+            the ./settings directory.
+            Excludes database.py.
+        """
         error_collection = []
         utilities = [
             x[:-3] for x in sorted(os.listdir("settings")) if x.endswith(".py") and x != "database.py"
@@ -319,12 +379,16 @@ class Manager(commands.Cog):
 
         await ctx.success("**Successfully reloaded all settings.**")
 
-    @decorators.command(hidden=True, aliases=["restart"], brief="Reboot the bot.")
+    @decorators.command(aliases=["restart"], brief="Cleanly reboot the bot.")
     async def reboot(self, ctx):
         """
-        Usage:       -reboot
-        Alias:       -restart
-        Permissions: Bot Owner
+        Usage: {0}reboot
+        Alias: {0}restart
+        Output:
+            Shuts down all processes,
+            sends a confirmation message,
+            then updates the message when
+            the bot is once again ready.
         """
         msg = await ctx.send_or_reply(
             content=f"{self.bot.emote_dict['loading']} {ctx.invoked_with.capitalize()}ing...",
@@ -363,8 +427,8 @@ class Manager(commands.Cog):
     )
     async def logger(self, ctx):
         """
-        Usage: -logger <option>
-        Alias: -l
+        Usage: {0}logger <option>
+        Alias: {0}l
         Permission: Bot owner
         Output: View any log recorded in ./data/logs
         Options:
@@ -616,8 +680,8 @@ class Manager(commands.Cog):
     @decorators.group(hidden=True, brief="Show info on the database.", aliases=["pg"])
     async def postgres(self, ctx):
         """
-        Usage: -postgres <option>
-        Alias: -pg
+        Usage: {0}postgres <option>
+        Alias: {0}pg
         Output: Gets specific info on the database
         Options:
             Size: Get the size of the total db or a table.
@@ -627,7 +691,7 @@ class Manager(commands.Cog):
             r/relation/relations: Show the database relations
         """
         if ctx.invoked_subcommand is None:
-            return await ctx.usage("<option>")
+            return await ctx.usage(ctx.command.signature)
 
     @postgres.command(brief="Get the size of the total db or a table.")
     async def size(self, ctx, *, table_name: str = None):
@@ -879,28 +943,6 @@ class Manager(commands.Cog):
             except ValueError:
                 return await ctx.send_or_reply(content=f"Invalid Context")
 
-    async def tabulate_query(self, ctx, query, *args):
-        records = await self.bot.cxn.fetch(query, *args)
-
-        if len(records) == 0:
-            return await ctx.send_or_reply(content="No results found.")
-
-        headers = list(records[0].keys())
-        table = formatting.TabularData()
-        table.set_columns(headers)
-        table.add_rows(list(r.values()) for r in records)
-        render = table.render()
-
-        fmt = f"```\n{render}\n```"
-        if len(fmt) > 2000:
-            fp = io.BytesIO(fmt.encode("utf-8"))
-            await ctx.send_or_reply(
-                content="Too many results...",
-                file=discord.File(fp, "results.txt"),
-            )
-        else:
-            await ctx.send_or_reply(content=fmt)
-
     @decorators.command(
         brief="Show bot threadinfo."
     )
@@ -917,221 +959,6 @@ class Manager(commands.Cog):
         except menus.MenuError as e:
             await ctx.send(e)
 
-    @decorators.group(
-        hidden=True,
-        invoke_without_command=True,
-        brief="Show command history.",
-        case_insensitive=True,
-        writer=80088516616269824,
-    )
-    @commands.is_owner()
-    async def command_history(self, ctx):
-        """
-        Usage: -command_history <option> [args]
-        Output:
-            Recorded command history matching
-            the specified arguments.
-        Options:
-            command, server,
-            user, log, cog
-        """
-        query = """SELECT
-                        CASE failed
-                            WHEN TRUE THEN command || ' [!]'
-                            ELSE command
-                        END AS "command",
-                        to_char(timestamp, 'Mon DD HH12:MI:SS AM') AS "invoked",
-                        author_id,
-                        server_id
-                   FROM commands
-                   ORDER BY timestamp DESC
-                   LIMIT 15;
-                """
-        await self.tabulate_query(ctx, query)
-
-    @command_history.command(name="command", aliases=["for"])
-    @commands.is_owner()
-    async def command_history_for(
-        self, ctx, days: typing.Optional[int] = 7, *, command: str
-    ):
-        """Command history for a command."""
-
-        query = """SELECT *, t.success + t.failed AS "total"
-                   FROM (
-                       SELECT server_id,
-                              SUM(CASE WHEN failed THEN 0 ELSE 1 END) AS "success",
-                              SUM(CASE WHEN failed THEN 1 ELSE 0 END) AS "failed"
-                       FROM commands
-                       WHERE command=$1
-                       AND timestamp > (CURRENT_TIMESTAMP - $2::interval)
-                       GROUP BY server_id
-                   ) AS t
-                   ORDER BY "total" DESC
-                   LIMIT 30;
-                """
-
-        await self.tabulate_query(ctx, query, command, datetime.timedelta(days=days))
-
-    @command_history.command(name="guild", aliases=["server"])
-    @commands.is_owner()
-    async def command_history_guild(self, ctx, server_id: int):
-        """Command history for a guild."""
-
-        query = """SELECT
-                        CASE failed
-                            WHEN TRUE THEN command || ' [!]'
-                            ELSE command
-                        END AS "command",
-                        channel_id,
-                        author_id,
-                        timestamp
-                   FROM commands
-                   WHERE server_id=$1
-                   ORDER BY timestamp DESC
-                   LIMIT 15;
-                """
-        await self.tabulate_query(ctx, query, server_id)
-
-    @command_history.command(name="user", aliases=["member"])
-    @commands.is_owner()
-    async def command_history_user(self, ctx, user_id: int):
-        """Command history for a user."""
-
-        query = """SELECT
-                        CASE failed
-                            WHEN TRUE THEN command || ' [!]'
-                            ELSE command
-                        END AS "command",
-                        server_id,
-                        timestamp
-                   FROM commands
-                   WHERE author_id=$1
-                   ORDER BY timestamp DESC
-                   LIMIT 20;
-                """
-        await self.tabulate_query(ctx, query, user_id)
-
-    @command_history.command(name="log")
-    @commands.is_owner()
-    async def command_history_log(self, ctx, days=7):
-        """Command history log for the last N days."""
-
-        query = """SELECT command, COUNT(*)
-                   FROM commands
-                   WHERE timestamp > (CURRENT_TIMESTAMP - $1::interval)
-                   GROUP BY command
-                   ORDER BY 2 DESC
-                """
-
-        all_commands = {c.qualified_name: 0 for c in self.bot.walk_commands()}
-
-        records = await self.bot.cxn.fetch(query, datetime.timedelta(days=days))
-        for name, uses in records:
-            if name in all_commands:
-                all_commands[name] = uses
-
-        as_data = sorted(all_commands.items(), key=lambda t: t[1], reverse=True)
-        table = formatting.TabularData()
-        table.set_columns(["Command", "Uses"])
-        table.add_rows(tup for tup in as_data)
-        render = table.render()
-
-        embed = discord.Embed(title="Summary", color=self.bot.constants.embed)
-        embed.set_footer(
-            text="Since"
-        ).timestamp = datetime.datetime.utcnow() - datetime.timedelta(days=days)
-
-        top_ten = "\n".join(f"{command}: {uses}" for command, uses in records[:10])
-        bottom_ten = "\n".join(f"{command}: {uses}" for command, uses in records[-10:])
-        embed.add_field(name="Top 10", value=top_ten)
-        embed.add_field(name="Bottom 10", value=bottom_ten)
-
-        unused = ", ".join(name for name, uses in as_data if uses == 0)
-        if len(unused) > 1024:
-            unused = "Way too many..."
-
-        embed.add_field(name="Unused", value=unused, inline=False)
-
-        await ctx.send_or_reply(
-            embed=embed,
-            file=discord.File(io.BytesIO(render.encode()), filename="full_results.txt"),
-        )
-
-    @command_history.command(name="cog")
-    @commands.is_owner()
-    async def command_history_cog(
-        self, ctx, days: typing.Optional[int] = 7, *, cog: str = None
-    ):
-        """Command history for a cog or grouped by a cog."""
-
-        interval = datetime.timedelta(days=days)
-        if cog is not None:
-            cog = self.bot.get_cog(cog)
-            if cog is None:
-                return await ctx.send_or_reply(content=f"Unknown cog: {cog}")
-
-            query = """SELECT *, t.success + t.failed AS "total"
-                       FROM (
-                           SELECT command,
-                                  SUM(CASE WHEN failed THEN 0 ELSE 1 END) AS "success",
-                                  SUM(CASE WHEN failed THEN 1 ELSE 0 END) AS "failed"
-                           FROM commands
-                           WHERE command = any($1::text[])
-                           AND timestamp > (CURRENT_TIMESTAMP - $2::interval)
-                           GROUP BY command
-                       ) AS t
-                       ORDER BY "total" DESC
-                       LIMIT 30;
-                    """
-            return await self.tabulate_query(
-                ctx, query, [c.qualified_name for c in cog.walk_commands()], interval
-            )
-
-        # A more manual query with a manual grouper.
-        query = """SELECT *, t.success + t.failed AS "total"
-                   FROM (
-                       SELECT command,
-                              SUM(CASE WHEN failed THEN 0 ELSE 1 END) AS "success",
-                              SUM(CASE WHEN failed THEN 1 ELSE 0 END) AS "failed"
-                       FROM commands
-                       WHERE timestamp > (CURRENT_TIMESTAMP - $1::interval)
-                       GROUP BY command
-                   ) AS t;
-                """
-
-        class Count:
-            __slots__ = ("success", "failed", "total")
-
-            def __init__(self):
-                self.success = 0
-                self.failed = 0
-                self.total = 0
-
-            def add(self, record):
-                self.success += record["success"]
-                self.failed += record["failed"]
-                self.total += record["total"]
-
-        data = defaultdict(Count)
-        records = await self.bot.cxn.fetch(query, interval)
-        for record in records:
-            command = self.bot.get_command(record["command"])
-            if command is None or command.cog is None:
-                data["No Cog"].add(record)
-            else:
-                data[command.cog.qualified_name].add(record)
-
-        table = formatting.TabularData()
-        table.set_columns(["Cog", "Success", "Failed", "Total"])
-        data = sorted(
-            [(cog, e.success, e.failed, e.total) for cog, e in data.items()],
-            key=lambda t: t[-1],
-            reverse=True,
-        )
-
-        table.add_rows(data)
-        render = table.render()
-        await ctx.safe_send(f"```\n{render}\n```")
 
     @decorators.command(hidden=True, brief="Bot health monitoring tools.")
     @commands.is_owner()
@@ -1273,7 +1100,14 @@ class Manager(commands.Cog):
         brief="Clear the console."
     )
     async def cleartrace(self, ctx):
-        """Clear the console."""
+        """
+        Usage: {0}cleartrace
+        Alias: {0}cl
+        Output:
+            Clears the console and
+            prints a clean nicely
+            formatted message.
+        """
         if os.name == 'nt':
             os.system('cls')
         else:
@@ -1295,7 +1129,7 @@ class Manager(commands.Cog):
         print(separator)
         await ctx.success('Console cleared.')
 
-    @decorators.command(aliases=["github"], brief="Update to and from github repo.")
+    @decorators.command(aliases=["github"], brief="Run github commands.")
     async def git(self, ctx, *, subcommand):
         """Updates from git."""
         if subcommand is None:

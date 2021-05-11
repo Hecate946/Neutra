@@ -1,27 +1,25 @@
-import contextlib
-import datetime
-import dis
-import fnmatch
-import functools
 import io
-import math
 import os
-import random
-import textwrap
-import traceback
-import objgraph
-import time
-import copy
+import dis
+import math
 import yarl
+import typing
+import random
 import asyncio
+import datetime
+import objgraph
+import functools
 
 import discord
-from discord import message
+from collections import defaultdict
 from discord.ext import commands, menus
-from PythonGists import PythonGists
 
-from utilities import converters, pagination, checks, helpers, utils
+from utilities import checks
+from utilities import helpers
+from utilities import converters
 from utilities import decorators
+from utilities import formatting
+from utilities import pagination
 
 
 def setup(bot):
@@ -37,7 +35,6 @@ class Botadmin(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.github_token = utils.config()["gtoken"]
         self._req_lock = asyncio.Lock(loop=bot.loop)
 
     # This is a bot admin only cog
@@ -51,7 +48,7 @@ class Botadmin(commands.Cog):
         hdrs = {
             'Accept': 'application/vnd.github.inertia-preview+json',
             'User-Agent': 'Snowbot Gist Creator',
-            'Authorization': f'token {self.github_token}'
+            'Authorization': f'token {self.bot.constants.gtoken}'
         }
 
         req_url = yarl.URL('https://api.github.com') / url
@@ -703,9 +700,9 @@ class Botadmin(commands.Cog):
                 totalecount = totalecount + 1
             msg = msg + (g.name + ": " + str(ecount)) + "\n"
         if len(msg) > 1900:
-            msg = PythonGists.Gist(
-                description="Emoji Count for " + self.bot.user.name,
+            msg = await self.create_gist(
                 content=msg,
+                description="Emoji Count for " + self.bot.user.name,
                 name="emoji.txt",
             )
             large_msg = True
@@ -1047,3 +1044,243 @@ class Botadmin(commands.Cog):
         stdout = io.StringIO()
         await ctx.bot.loop.run_in_executor(None, functools.partial(objgraph.show_growth, file=stdout))
         await ctx.send("```fix\n" + stdout.getvalue() + "```")
+
+
+    async def tabulate_query(self, ctx, query, *args):
+        records = await self.bot.cxn.fetch(query, *args)
+
+        if len(records) == 0:
+            return await ctx.send_or_reply(content="No results found.")
+
+        headers = list(records[0].keys())
+        table = formatting.TabularData()
+        table.set_columns(headers)
+        table.add_rows(list(r.values()) for r in records)
+        render = table.render()
+
+        fmt = f"```\n{render}\n```"
+        if len(fmt) > 2000:
+            fp = io.BytesIO(fmt.encode("utf-8"))
+            await ctx.send_or_reply(
+                content="Too many results...",
+                file=discord.File(fp, "results.txt"),
+            )
+        else:
+            await ctx.send_or_reply(content=fmt)
+
+
+    @decorators.group(
+        hidden=True,
+        invoke_without_command=True,
+        brief="Show command history.",
+        case_insensitive=True,
+        writer=80088516616269824,
+    )
+    @commands.is_owner()
+    async def command_history(self, ctx):
+        """
+        Usage: -command_history <option> [args]
+        Output:
+            Recorded command history matching
+            the specified arguments.
+        Options:
+            command, server,
+            user, log, cog
+        """
+        query = """SELECT
+                        CASE failed
+                            WHEN TRUE THEN command || ' [!]'
+                            ELSE command
+                        END AS "command",
+                        to_char(timestamp, 'Mon DD HH12:MI:SS AM') AS "invoked",
+                        author_id,
+                        server_id
+                   FROM commands
+                   ORDER BY timestamp DESC
+                   LIMIT 15;
+                """
+        await self.tabulate_query(ctx, query)
+
+    @command_history.command(name="command", aliases=["for"])
+    @commands.is_owner()
+    async def command_history_for(
+        self, ctx, days: typing.Optional[int] = 7, *, command: str
+    ):
+        """Command history for a command."""
+
+        query = """SELECT *, t.success + t.failed AS "total"
+                   FROM (
+                       SELECT server_id,
+                              SUM(CASE WHEN failed THEN 0 ELSE 1 END) AS "success",
+                              SUM(CASE WHEN failed THEN 1 ELSE 0 END) AS "failed"
+                       FROM commands
+                       WHERE command=$1
+                       AND timestamp > (CURRENT_TIMESTAMP - $2::interval)
+                       GROUP BY server_id
+                   ) AS t
+                   ORDER BY "total" DESC
+                   LIMIT 30;
+                """
+
+        await self.tabulate_query(ctx, query, command, datetime.timedelta(days=days))
+
+    @command_history.command(name="guild", aliases=["server"])
+    @commands.is_owner()
+    async def command_history_guild(self, ctx, server_id: int):
+        """Command history for a guild."""
+
+        query = """SELECT
+                        CASE failed
+                            WHEN TRUE THEN command || ' [!]'
+                            ELSE command
+                        END AS "command",
+                        channel_id,
+                        author_id,
+                        timestamp
+                   FROM commands
+                   WHERE server_id=$1
+                   ORDER BY timestamp DESC
+                   LIMIT 15;
+                """
+        await self.tabulate_query(ctx, query, server_id)
+
+    @command_history.command(name="user", aliases=["member"])
+    @commands.is_owner()
+    async def command_history_user(self, ctx, user_id: int):
+        """Command history for a user."""
+
+        query = """SELECT
+                        CASE failed
+                            WHEN TRUE THEN command || ' [!]'
+                            ELSE command
+                        END AS "command",
+                        server_id,
+                        timestamp
+                   FROM commands
+                   WHERE author_id=$1
+                   ORDER BY timestamp DESC
+                   LIMIT 20;
+                """
+        await self.tabulate_query(ctx, query, user_id)
+
+    @command_history.command(name="log")
+    @commands.is_owner()
+    async def command_history_log(self, ctx, days=7):
+        """Command history log for the last N days."""
+
+        query = """SELECT command, COUNT(*)
+                   FROM commands
+                   WHERE timestamp > (CURRENT_TIMESTAMP - $1::interval)
+                   GROUP BY command
+                   ORDER BY 2 DESC
+                """
+
+        all_commands = {c.qualified_name: 0 for c in self.bot.walk_commands()}
+
+        records = await self.bot.cxn.fetch(query, datetime.timedelta(days=days))
+        for name, uses in records:
+            if name in all_commands:
+                all_commands[name] = uses
+
+        as_data = sorted(all_commands.items(), key=lambda t: t[1], reverse=True)
+        table = formatting.TabularData()
+        table.set_columns(["Command", "Uses"])
+        table.add_rows(tup for tup in as_data)
+        render = table.render()
+
+        embed = discord.Embed(title="Summary", color=self.bot.constants.embed)
+        embed.set_footer(
+            text="Since"
+        ).timestamp = datetime.datetime.utcnow() - datetime.timedelta(days=days)
+
+        top_ten = "\n".join(f"{command}: {uses}" for command, uses in records[:10])
+        bottom_ten = "\n".join(f"{command}: {uses}" for command, uses in records[-10:])
+        embed.add_field(name="Top 10", value=top_ten)
+        embed.add_field(name="Bottom 10", value=bottom_ten)
+
+        unused = ", ".join(name for name, uses in as_data if uses == 0)
+        if len(unused) > 1024:
+            unused = "Way too many..."
+
+        embed.add_field(name="Unused", value=unused, inline=False)
+
+        await ctx.send_or_reply(
+            embed=embed,
+            file=discord.File(io.BytesIO(render.encode()), filename="full_results.txt"),
+        )
+
+    @command_history.command(name="cog")
+    @commands.is_owner()
+    async def command_history_cog(
+        self, ctx, days: typing.Optional[int] = 7, *, cog: str = None
+    ):
+        """Command history for a cog or grouped by a cog."""
+
+        interval = datetime.timedelta(days=days)
+        if cog is not None:
+            cog = self.bot.get_cog(cog)
+            if cog is None:
+                return await ctx.send_or_reply(content=f"Unknown cog: {cog}")
+
+            query = """SELECT *, t.success + t.failed AS "total"
+                       FROM (
+                           SELECT command,
+                                  SUM(CASE WHEN failed THEN 0 ELSE 1 END) AS "success",
+                                  SUM(CASE WHEN failed THEN 1 ELSE 0 END) AS "failed"
+                           FROM commands
+                           WHERE command = any($1::text[])
+                           AND timestamp > (CURRENT_TIMESTAMP - $2::interval)
+                           GROUP BY command
+                       ) AS t
+                       ORDER BY "total" DESC
+                       LIMIT 30;
+                    """
+            return await self.tabulate_query(
+                ctx, query, [c.qualified_name for c in cog.walk_commands()], interval
+            )
+
+        # A more manual query with a manual grouper.
+        query = """SELECT *, t.success + t.failed AS "total"
+                   FROM (
+                       SELECT command,
+                              SUM(CASE WHEN failed THEN 0 ELSE 1 END) AS "success",
+                              SUM(CASE WHEN failed THEN 1 ELSE 0 END) AS "failed"
+                       FROM commands
+                       WHERE timestamp > (CURRENT_TIMESTAMP - $1::interval)
+                       GROUP BY command
+                   ) AS t;
+                """
+
+        class Count:
+            __slots__ = ("success", "failed", "total")
+
+            def __init__(self):
+                self.success = 0
+                self.failed = 0
+                self.total = 0
+
+            def add(self, record):
+                self.success += record["success"]
+                self.failed += record["failed"]
+                self.total += record["total"]
+
+        data = defaultdict(Count)
+        records = await self.bot.cxn.fetch(query, interval)
+        for record in records:
+            command = self.bot.get_command(record["command"])
+            if command is None or command.cog is None:
+                data["No Cog"].add(record)
+            else:
+                data[command.cog.qualified_name].add(record)
+
+        table = formatting.TabularData()
+        table.set_columns(["Cog", "Success", "Failed", "Total"])
+        data = sorted(
+            [(cog, e.success, e.failed, e.total) for cog, e in data.items()],
+            key=lambda t: t[-1],
+            reverse=True,
+        )
+
+        table.add_rows(data)
+        render = table.render()
+        await ctx.safe_send(f"```\n{render}\n```")

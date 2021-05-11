@@ -9,3 +9,5 @@
 (2021-04-21 19:26:40.744981+00:00) Add usertimes command
 (2021-05-06 16:30:58.580511+00:00) Cleanup files cog, add implementation dates, elaborate help docstrings
 (2021-05-06 16:31:39.001011+00:00) Rename help.py to commands.py, add multiple command info helper commands
+(2021-05-11 05:54:00.829567+00:00) Add audit log searching commands.
+
