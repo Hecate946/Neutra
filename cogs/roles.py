@@ -11,20 +11,6 @@ from utilities import converters
 from utilities import decorators
 
 
-EMBED_MAX_LEN = 2048  # constant for paginating embeds
-STATUSMAP1 = {
-    discord.Status.online: "1",
-    discord.Status.dnd: "2",
-    discord.Status.idle: "3",
-}  # for sorting
-STATUSMAP2 = {
-    discord.Status.online: "<:online:810650040838258711>",
-    discord.Status.dnd: "<:dnd:810650845007708200>",
-    discord.Status.idle: "<:idle:810650560146833429>",
-    discord.Status.offline: "<:offline:810650959859810384>",
-}
-
-
 def setup(bot):
     bot.add_cog(Roles(bot))
 
@@ -36,6 +22,17 @@ class Roles(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.statusmap1 = {
+            discord.Status.online: "1",
+            discord.Status.dnd: "2",
+            discord.Status.idle: "3",
+        }  # for sorting
+        self.statusmap2 = {
+            discord.Status.online: bot.emote_dict['online'],
+            discord.Status.dnd: bot.emote_dict['dnd'],
+            discord.Status.idle: bot.emote_dict['idle'],
+            discord.Status.offline: bot.emote_dict['offline'],
+        }
 
     @decorators.command(
         aliases=["ri"],
@@ -47,7 +44,7 @@ class Roles(commands.Cog):
                 {0}roleinfo @Helper
                 """,
     )
-    async def roleinfo(self, ctx, role: discord.Role):
+    async def roleinfo(self, ctx, role: converters.DiscordRole):
         roleinfo = {}
         roleinfo["users"] = sum(
             1 for member in role.guild.members if role in member.roles
@@ -81,37 +78,27 @@ class Roles(commands.Cog):
     async def addrole(
         self,
         ctx,
-        targets: commands.Greedy[converters.DiscordMember],
-        *roles: discord.Role,
+        users: commands.Greedy[converters.DiscordMember],
+        *roles: converters.DiscordRole,
     ):
         """
-        Usage:      -addrole [user] [user...] [role] [role]...
-        Aliases:    -ar, -adrole, -adrl, -addrl
-        Example:    -ar Hecate#3523 @Snowbot @Verified Member
+        Usage:      {0}addrole [users]... [roles]...
+        Aliases:    {0}ar, {0}adrole, {0}adrl, {0}addrl
+        Example:    {0}ar Hecate#3523 @Snowbot @Verified Member
         Permission: Manage Roles
         Output:     Adds multiple roles to multiple users
         """
-        if ctx.guild.me.permissions_in(ctx.message.channel).manage_roles is False:
-            return await ctx.send_or_reply(
-                content="Sorry, I do not have the manage_roles permission",
-            )
+        if not len(users) or not len(roles):
+            return await ctx.usage(ctx.command.signature)
 
-        if len(targets) == 0:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}ar <user> [user] [user] <role> [role] [role]...`",
-            )
-        if len(roles) == 0:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}ar <user> [user] [user] <role> [role] [role]...`",
-            )
         target_list = []
         target_names = []
-        for target in targets:
+        for target in users:
             role_list = []
             for role in roles:
                 if (
                     role.permissions.administrator
-                    and ctx.author.id not in self.bot.constants.owners
+                    and ctx.author.id not in self.bot.owner_ids
                 ):
                     return await ctx.send_or_reply(
                         content="I cannot manipulate an admin role",
@@ -154,12 +141,12 @@ class Roles(commands.Cog):
         self,
         ctx,
         targets: commands.Greedy[converters.DiscordMember],
-        *roles: discord.Role,
+        *roles: converters.DiscordRole,
     ):
         """
-        Usage:      -removerole [user] [user...] [role] [role]...
-        Aliases:    -rr, -remrole, -rmrole, -rmrl
-        Example:    -rr Hecate#3523 @Snowbot @Verified Member
+        Usage:      {0}removerole [user] [user] [role] [role]...
+        Aliases:    {0}rr, {0}remrole, {0}rmrole, {0}rmrl
+        Example:    {0}rr Hecate#3523 @Snowbot @Verified Member
         Permission: Manage Roles
         Output:     Removes multiple roles from multiple users
         """
@@ -254,7 +241,7 @@ class Roles(commands.Cog):
             await help_command(ctx, invokercommand="massrole")
 
     @massrole.command(brief="Adds all members with a certain role a new role.")
-    async def add(self, ctx, role1: discord.Role = None, role2: discord.Role = None):
+    async def add(self, ctx, role1: converters.DiscordRole = None, role2: converters.DiscordRole = None):
         if role1 is None:
             return await ctx.send_or_reply(
                 content="Usage: `{ctx.prefix}massrole add <role1> <role2> ",
@@ -338,7 +325,7 @@ class Roles(commands.Cog):
         brief="Removes all members with a certain role a new role",
         aliases=["rm", "rem"],
     )
-    async def remove(self, ctx, role1: discord.Role, role2: discord.Role):
+    async def remove(self, ctx, role1: converters.DiscordRole, role2: converters.DiscordRole):
         if role1 is None:
             return await ctx.send_or_reply(
                 content="Usage: `{ctx.prefix}massrole add <role1> <role2> ",
@@ -440,7 +427,7 @@ class Roles(commands.Cog):
         buildstr = ""
         for role, count in rlist:  # this generates and paginates the info
             line = "{:,} {}\n".format(count, role.mention)
-            if len(buildstr) + len(line) > EMBED_MAX_LEN:
+            if len(buildstr) + len(line) > pagination.DESC_LIMIT:
                 pages.append(buildstr)  # split the page here
                 buildstr = line
             else:
@@ -523,7 +510,7 @@ class Roles(commands.Cog):
 
     @decorators.command(brief="Counts the users with a role.")
     @commands.guild_only()
-    async def rolecall(self, ctx, *, role: discord.Role = None):
+    async def rolecall(self, ctx, *, role: converters.DiscordRole = None):
         """
         Usage: -rolecall <role>
         Output:
@@ -552,7 +539,7 @@ class Roles(commands.Cog):
 
     @decorators.command(brief="Show the people who have a role.")
     @commands.guild_only()
-    async def whohas(self, ctx, *, role: discord.Role = None):
+    async def whohas(self, ctx, *, role: converters.DiscordRole = None):
         """
         Usage: -whohas <role>
         Permission: Manage Messages
@@ -569,13 +556,13 @@ class Roles(commands.Cog):
 
         sorted_list = sorted(
             users,
-            key=lambda usr: (STATUSMAP1.get(usr.status, "4"))
+            key=lambda usr: (self.statusmap1.get(usr.status, "4"))
             + (usr.nick.lower() if usr.nick else usr.name.lower()),
         )
 
         page = [
             "{} {}".format(
-                STATUSMAP2.get(member.status, self.bot.emote_dict["offline"]),
+                self.statusmap2.get(member.status, self.bot.emote_dict["offline"]),
                 member.mention,
             )
             for member in sorted_list
@@ -591,7 +578,7 @@ class Roles(commands.Cog):
 
     @decorators.command(aliases=["rp"], brief="Show the permissions for a role.")
     @commands.guild_only()
-    async def roleperms(self, ctx, *, role: discord.Role = None):
+    async def roleperms(self, ctx, *, role: converters.DiscordRole = None):
         """
         Usage:  -roleperms <role>
         Alias:  -rp

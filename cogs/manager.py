@@ -1120,6 +1120,7 @@ class Manager(commands.Cog):
             prints a clean nicely
             formatted message.
         """
+        print("hello")
         if os.name == "nt":
             os.system("cls")
         else:
@@ -1127,7 +1128,7 @@ class Manager(commands.Cog):
                 os.system("clear")
             except Exception:
                 for _ in range(100):
-                    print()
+                    print("\n")
 
         message = "Logged in as %s." % self.bot.user
         uid_message = "User ID: %s." % self.bot.user.id

@@ -3,6 +3,7 @@ import re
 import typing
 
 import discord
+from discord import role
 from discord.ext import commands
 from discord.ext.commands import bot
 
@@ -13,6 +14,7 @@ EMOJI_NAME_REGEX = re.compile(r"[0-9a-zA-Z\_]{2,32}")
 tag_regex = re.compile(r"(.*)#(\d{4})")
 lax_id_regex = re.compile(r"([0-9]{15,21})$")
 mention_regex = re.compile(r"<@!?([0-9]+)>$")
+ROLE_MENTION_REGEX = re.compile(r"<@&([0-9]+)>$")
 
 
 async def prettify(ctx, arg):
@@ -372,32 +374,6 @@ class BannedMember(commands.Converter):
         return entity
 
 
-# class DiscordMember(commands.Converter):
-#     """
-#     Basically the same as discord.Member
-#     Only difference is that this accepts
-#     case insensitive user inputs and
-#     resolves to member instances.
-#     """
-#     async def convert(self, ctx, argument):
-#         if argument.isdigit():
-#             member_id = int(argument)
-#             try:
-#                 ctx.guild.get_member(member_id)
-#             except Exception as e:
-#                 print(e)
-#         member_list = ctx.guild.members
-#         # check for nickname
-#         entity = discord.utils.find(lambda m: str(m.display_name.lower()) == argument.lower(), member_list)
-#         if not entity:
-#             # check for username#discriminator
-#             entity = discord.utils.find(lambda m: str(m).lower() == argument.lower(), member_list)
-#             if not entity:
-#                 #check for just name
-#                 entity = discord.utils.find(lambda m: str(m.name).lower() == argument.lower(), member_list)
-
-#         print(entity)
-
 
 class Arguments(argparse.ArgumentParser):
     def error(self, message):
@@ -563,5 +539,77 @@ class DiscordMember(commands.Converter):
         if not match:
             raise commands.BadArgument(
                 f"User `{await prettify(ctx, argument)}` not found."
+            )
+        return match
+
+class DiscordRole(commands.Converter):
+    """
+    Basically the same as discord.Role
+    Only difference is that this accepts
+    case insensitive user inputs and
+    resolves to role instances.
+    """
+
+    async def get_by_id(self, ctx, user_id):
+        """Exact role lookup."""
+        result = None
+        result = ctx.guild.get_role(user_id)
+        if not result:
+            raise commands.BadArgument(
+                f"Role `{await prettify(ctx, user_id)}` not found."
+            )
+        return result
+
+    async def get_by_name(self, ctx, role_name):
+        """Lookup by name.
+        Returns list of possible matches.
+        Try doing an exact match.
+        If within guild context, fall back to inexact match.
+        If found in current guild, return Member, else User.
+        (Will not do bot-wide inexact match)
+        """
+
+        result = None
+        if ctx.guild:
+            result = discord.utils.find(
+                lambda s: role_name.lower() in str(s.name).lower(), ctx.guild.roles
+            )
+            if not result:
+                raise commands.BadArgument(
+                    f"Role `{await prettify(ctx, role_name)}` not found."
+                )
+            if result:
+                return [result]
+        return []
+
+    async def find_match(self, ctx, argument):
+        """Get a match...
+        If we have a mention, try and get an exact match.
+        If we have a number, try lookup by id.
+        Fallback to lookup by name.
+        Disambiguate in case we have multiple name results.
+        """
+        mention_match = ROLE_MENTION_REGEX.match(argument)
+        if mention_match:
+            return await self.get_by_id(ctx, int(mention_match.group(1)))
+
+        lax_id_match = lax_id_regex.match(argument)
+        if lax_id_match:
+            result = await self.get_by_id(ctx, int(lax_id_match.group(1)))
+            if result:
+                return result
+
+        results = await self.get_by_name(ctx, argument)
+        if results:
+            return results[0]
+
+    async def convert(self, ctx, argument):
+        if not ctx.guild:
+            raise commands.NoPrivateMessage()
+        match = await self.find_match(ctx, argument)
+
+        if not match:
+            raise commands.BadArgument(
+                f"Role `{await prettify(ctx, argument)}` not found."
             )
         return match

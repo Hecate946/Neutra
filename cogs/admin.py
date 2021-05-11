@@ -600,7 +600,7 @@ class Admin(commands.Cog):
     @commands.guild_only()
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(manage_guild=True)
-    async def muterole(self, ctx, role: discord.Role = None):
+    async def muterole(self, ctx, role: converters.DiscordRole = None):
         """
         Usage:      {0}muterole <role>
         Alias:      {0}setmuterole
@@ -1333,7 +1333,7 @@ class Admin(commands.Cog):
         self,
         ctx,
         days: typing.Optional[int] = 30,
-        roles: commands.Greedy[discord.Role] = None,
+        roles: commands.Greedy[converters.DiscordRole] = None,
     ):
         """
         Usage: {0}kickinactive [days] [roles]
@@ -1385,7 +1385,7 @@ class Admin(commands.Cog):
         self,
         ctx,
         days: typing.Optional[int] = 30,
-        roles: commands.Greedy[discord.Role] = None,
+        roles: commands.Greedy[converters.DiscordRole] = None,
     ):
         """
         Usage: {0}checkinactive [days] [roles]

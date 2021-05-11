@@ -684,6 +684,18 @@ class Utility(commands.Cog):
         embed.set_image(url=url)
         await ctx.send_or_reply(embed=embed)
 
+    async def do_savatar(self, ctx, server, url):
+        embed = discord.Embed(
+            title=f"**{server.name}'s icon.**",
+            description=f"Links to `{server.name}'s` icon:  "
+            f"[webp]({(str(url))}) | "
+            f'[png]({(str(url).replace("webp", "png"))}) | '
+            f'[jpeg]({(str(url).replace("webp", "jpg"))})  ',
+            color=self.bot.constants.embed,
+        )
+        embed.set_image(url=url)
+        await ctx.send_or_reply(embed=embed)
+
     @decorators.command(
         aliases=["av", "pfp"],
         brief="Show a user's avatar.",
@@ -705,12 +717,6 @@ class Utility(commands.Cog):
         """
         if user is None:
             user = ctx.author
-        try:
-            await self.bot.fetch_user(user.id)
-        except AttributeError:
-            return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['failed']} User `{user}` does not exist.",
-            )
         await self.do_avatar(ctx, user, url=user.avatar_url)
 
     @decorators.command(
@@ -736,13 +742,33 @@ class Utility(commands.Cog):
         """
         if user is None:
             user = ctx.author
-        try:
-            await self.bot.fetch_user(user.id)
-        except AttributeError:
-            return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['failed']} User `{user}` does not exist.",
-            )
         await self.do_avatar(ctx, user, user.default_avatar_url)
+
+    @decorators.command(
+        aliases=["sav", "savatar"],
+        brief="Show a user's default avatar.",
+        implemented="2021-03-25 17:11:21.634209",
+        updated="2021-05-07 05:21:05.999642",
+        examples="""
+                {0}dav
+                {0}dpfp 810377376269205546
+                {0}davatar Hecate
+                {0}defaultavatar @Hecate
+                """,
+    )
+    async def serveravatar(self, ctx, *, server: converters.DiscordGuild = None):
+        """
+        Usage: {0}serveravatar
+        Aliases: {0}sav, {0}savatar
+        Output:
+            Shows an enlarged embed of a server's icon.
+        Notes:
+            Will default to the current server
+            if no server is passed.
+        """
+        if server is None:
+            server = ctx.guild
+        await self.do_savatar(ctx, server, server.icon_url)
 
     @decorators.command(
         aliases=["nick", "setnick"],

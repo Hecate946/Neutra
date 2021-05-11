@@ -382,7 +382,7 @@ class Automod(commands.Cog):
             return await ctx.usage("<option> [arguments]")
 
     @autorole.command(brief="Auto-assign roles on user join.")
-    async def add(self, ctx, roles: commands.Greedy[discord.Role] = None):
+    async def add(self, ctx, roles: commands.Greedy[converters.DiscordRole] = None):
         """
         Usage: -autorole add <role1> [role2]...
         Output:
@@ -415,7 +415,7 @@ class Automod(commands.Cog):
         )
 
     @autorole.command(aliases=["rem", "rm"], brief="Remove automatic autoroles.")
-    async def remove(self, ctx, roles: commands.Greedy[discord.Role] = None):
+    async def remove(self, ctx, roles: commands.Greedy[converters.DiscordRole] = None):
         """
         Usage: -autorole remove <role1> [role2]...
         Output:
