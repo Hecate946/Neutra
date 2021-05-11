@@ -1,168 +1,98 @@
 # Snowbot Moderation & Stat Tracking Discord Bot
-### [Bot Invite Link](https://discord.com/oauth2/authorize?client_id=813275073459912725&scope=bot+applications.commands&permissions=8589934591)
-### [Support Server](https://discord.gg/947ramn)
+### [Bot Invite Link](https://discord.com/oauth2/authorize?client_id=813275073459912725&scope=bot+applications.commands&permissions=956689654)
+### [Support Server](https://discord.gg/bbZWhcB77Y)
 ### [DiscordBots.gg](https://discord.bots.gg/bots/810377376269205546)
 ## Overview
 Hello! I'm Snowbot, and I specialize in tracking and moderation.
 I was designed to collect all sorts of data on servers, users,
 messages, emojis, online time, and more! I also come with a fast
 and clean moderation system that offers every opportunity for effective
-server management. Apart from moderation and tracking, I feature 218
-commands across 13 categories that provide awesome utilities!
+server management. Apart from moderation and tracking, I feature 243
+commands across 14 categories that provide awesome utilities!
 Some examples include managing user timezones, role management, and logging.
 ## Categories
-##### [Time](#Time-1)
-##### [Logging](#Logging-1)
-##### [Files](#Files-1)
-##### [Roles](#Roles-1)
-##### [Utility](#Utility-1)
-##### [Conversion](#Conversion-1)
 ##### [Admin](#Admin-1)
-##### [Stats](#Stats-1)
 ##### [Automod](#Automod-1)
+##### [Conversion](#Conversion-1)
+##### [Files](#Files-1)
 ##### [Help](#Help-1)
 ##### [Info](#Info-1)
-##### [Tracking](#Tracking-1)
+##### [Logging](#Logging-1)
 ##### [Mod](#Mod-1)
+##### [Roles](#Roles-1)
+##### [Stats](#Stats-1)
+##### [Tasks](#Tasks-1)
+##### [Times](#Times-1)
+##### [Tracking](#Tracking-1)
+##### [Utility](#Utility-1)
 
 
-### Time
-#### Module for time functions. (9 Commands)
+### Admin
+#### Module for server administration. (20 Commands)
 
 ```yaml
-clock: Get the time of any location
+addprefix: Add a custom server prefix.
 
-listtz: List all available timezones.
+checkinactive: Count the inactive users.
 
-removetz: Remove your timezone.
+clearprefix: Clear all custom prefixes.
 
-settz: Set your timezone.
+disable: Disable a command.
 
-stopwatch: Start or stop a stopwatch.
+disableall: Disable all commands.
 
-timezone: See a member's timezone.
+disabledreact: React on disabled commands.
 
-usertime: Show a user's current time.
+enable: Enable a command.
 
-usertimes: Show times for all users.
+enableall: Enable all commands
 
-utcnow: Show the current utc time.
+ignore: Disallow users from using the bot.
+
+isdisabled: Show the status of a command.
+
+kickinactive: Kick all inactive server members
+
+leave: Have the bot leave the server.
+
+listdisabled: List disabled commands.
+
+massascify: Mass nickname users with odd names.
+
+massban: Massban users matching a search.
+
+massdehoist: Dehoist all server users.
+
+muterole: Setup server muting system.
+
+prefixes: Show all server prefixes.
+
+removeprefix: Remove a custom server prefix
+
+unignore: Reallow users to use the bot.
 ```
 
-### Logging
-#### Log all server events. (4 Commands)
+### Automod
+#### Manage the automod system. (9 Commands)
 
 ```yaml
-log: Enable specific logging events.
+antiinvite: Enable or disable auto-deleting invite links
 
-logchannel: Set your server's logging channel.
+autorole: Assign roles to new members.
 
-unlog: Disable specific logging events.
+clearwarns: Clear a user's warnings
 
-unlogchannel: Remove the logging channel.
-```
+filter: Manage the server's word filter.
 
-### Files
-#### Module for downloading files. (14 Commands)
+reassign: Reassign roles on user rejoin.
 
-```yaml
-dumpbans: DMs you a file of server bans.
+revokewarn: Revoke a warning from a user
 
-dumpbots: DMs you a file of server bots.
+serverwarns: Display the server warnlist.
 
-dumpcategories: DMs you a file of voice channels.
+warn: Warn users with an optional reason.
 
-dumpchannels: DMs you a file of text channels.
-
-dumpemotes: DMs you a file of server emojis.
-
-dumphelp: DMs you a file of commands.
-
-dumphumans: DMs you a file of server humans.
-
-dumpmessages: DMs you a file of channel messages.
-
-dumproles: DMs you a file of server roles.
-
-dumpsettings: DMs you a file of server settings.
-
-dumptimezones: DMs you a file of time zones.
-
-dumpusers: DMs you a file of server members.
-
-dumpvoicechannels: DMs you a file of voice channels.
-
-readme: DMs you my readme file.
-```
-
-### Roles
-#### Manage all actions regarding roles. (10 Commands)
-
-```yaml
-addrole: Adds roles to users.
-
-emptyroles: Show roles that have no users.
-
-listroles: Show an embed of all server roles.
-
-massrole: Mass adds or removes a role to users.
-
-removerole: Removes roles from users.
-
-rolecall: Counts the users with a role.
-
-rolecount: Counts the roles on the server.
-
-roleinfo: Get info on a specific role.
-
-roleperms: Show the permissions for a role.
-
-whohas: Show the people who have a role.
-```
-
-### Utility
-#### Module for general utilities. (20 Commands)
-
-```yaml
-ascify: Convert special characters to ascii.
-
-avatar: Show a user's avatar.
-
-calculate: Calculate a math formula.
-
-charinfo: Show information on a character.
-
-color: Show a given color and its values.
-
-colors: Send an image with some hex codes.
-
-defaultavatar: Show a user's default avatar.
-
-dehoist: Dehoist a specified user.
-
-embed: Create an embed interactively.
-
-find: Find any user using a search.
-
-gtoken: Generate a discord token.
-
-nickname: Edit or reset a user's nickname
-
-oauth: Generate a bot invite link.
-
-ptoken: Decode a discord token.
-
-raw: Shows the raw content of a message.
-
-replies: Find the first message of a reply thread.
-
-shorten: Shorten URLs to bitly links.
-
-snipe: Snipe a deleted message.
-
-snowflake: Show info on a discord snowflake.
-
-type: Find the type of a discord object.
+warncount: Count the warnings a user has.
 ```
 
 ### Conversion
@@ -200,45 +130,214 @@ strbin: Convert a string to binary.
 unmorse: Converts morse code to ascii.
 ```
 
-### Admin
-#### Module for server administration. (18 Commands)
+### Files
+#### Module for downloading files. (15 Commands)
 
 ```yaml
-addprefix: Add a custom server prefix.
+audit: Get a file of a user's audit actions.
 
-clearprefix: Clear all custom prefixes.
+dumpbans: DMs you a file of server bans.
 
-disable: Disable a command.
+dumpbots: DMs you a file of server bots.
 
-disableall: Disable all commands.
+dumpcategories: DMs you a file of voice channels.
 
-disabledreact: React on disabled commands.
+dumpchannels: DMs you a file of text channels.
 
-enable: Enable a command.
+dumpemotes: DMs you a file of server emojis.
 
-enableall: Enable all commands
+dumphelp: DMs you a file of commands.
 
-ignore: Disallow users from using the bot.
+dumphumans: DMs you a file of server humans.
 
-isdisabled: Show the status of a command.
+dumpmessages: DMs you a file of channel messages.
 
-leave: Have the bot leave the server.
+dumproles: DMs you a file of server roles.
 
-listdisabled: List disabled commands.
+dumpsettings: DMs you a file of server settings.
 
-massascify: Mass nickname users with odd names.
+dumptimezones: DMs you a file of time zones.
 
-massban: Massban users matching a search.
+dumpusers: DMs you a file of server members.
 
-massdehoist: Dehoist all server users.
+dumpvoicechannels: DMs you a file of voice channels.
 
-muterole: Setup server muting system.
+readme: DMs you my readme file.
+```
 
-prefixes: Show all server prefixes.
+### Help
+#### My extensive help category. (15 Commands)
 
-removeprefix: Remove a custom server prefix
+```yaml
+botperms: Check if the bot can run a command.
 
-unignore: Reallow users to use the bot.
+brief: Get the short description of a command.
+
+canrun: See if a command can be executed.
+
+category: Show the parent category of a command.
+
+commandinfo: Get attribute info on a command.
+
+docstring: Get the help docstring of a command.
+
+examples: Get specific examples for a command.
+
+help: My documentation for all commands.
+
+made: Show when a command was first made.
+
+reqperms: Check if you can run a command.
+
+updated: Show when a command was last updated.
+
+usage: Get a usage example for a command.
+
+where: Show where a command can be run.
+
+writer: Show who wrote a command.
+
+writers: Show all people who wrote for me.
+```
+
+### Info
+#### Module for bot information. (25 Commands)
+
+```yaml
+about: Display information about the bot.
+
+avgping: View the average message latency.
+
+botadmins: Show the bot's admins.
+
+botowners: Show the bot's owners.
+
+bugreport: Send a bugreport to the developer.
+
+changelog: Show my changelog.
+
+cogs: List all my cogs in an embed.
+
+hostinfo: Show the bot's host environment.
+
+invite: Invite me to your server!
+
+lines: Show sourcecode statistics.
+
+neofetch: Run the neofetch command.
+
+overview: Show some info on the bot's purpose.
+
+pieuptime: Show a graph of uptime stats
+
+ping: Test the bot's response latency.
+
+privacy: View the privacy policy.
+
+replytime: Show reply latencies.
+
+request: Send a request to the developer.
+
+sharedservers: Show servers shared with the bot.
+
+socket: Show global bot socket stats.
+
+source: Display the source code.
+
+speed: Bot network speed.
+
+suggest: Send a suggestion to the developer.
+
+support: Join my support server!
+
+uptime: Show the bot's uptime.
+
+users: Show users I'm connected to.
+```
+
+### Logging
+#### Log all server events. (5 Commands)
+
+```yaml
+auditcount: Count the audit log entries of a user.
+
+log: Enable specific logging events.
+
+logchannel: Set your server's logging channel.
+
+unlog: Disable specific logging events.
+
+unlogchannel: Remove the logging channel.
+```
+
+### Mod
+#### Keep your server under control. (20 Commands)
+
+```yaml
+ban: Ban users from the server.
+
+blind: Hide a channel from a user.
+
+block: Restrict users from sending messages.
+
+cleanup: Clean up bot command usage.
+
+hackban: Hackban multiple users.
+
+kick: Kick users from the server.
+
+lock: Lock a channel
+
+mute: Mute users for a duration.
+
+purge: Remove any type of content.
+
+slowmode: Set the slowmode for a channel
+
+softban: Softban users from the server.
+
+tempban: None
+
+unban: Unban a previously banned user.
+
+unblind: Reallow users see a channel.
+
+unblock: Reallow users to send messages.
+
+unlock: Unlock a channel.
+
+unmute: Unmute muted users.
+
+vckick: Kick users from a voice channel.
+
+vcmove: Move a user from a voice channel.
+
+vcpurge: Kick all users from a voice channel.
+```
+
+### Roles
+#### Manage all actions regarding roles. (10 Commands)
+
+```yaml
+addrole: Adds roles to users.
+
+emptyroles: Show roles that have no users.
+
+listroles: Show an embed of all server roles.
+
+massrole: Mass adds or removes a role to users.
+
+removerole: Removes roles from users.
+
+rolecall: Counts the users with a role.
+
+rolecount: Counts the roles on the server.
+
+roleinfo: Get information on a role.
+
+roleperms: Show the permissions for a role.
+
+whohas: Show the people who have a role.
 ```
 
 ### Stats
@@ -278,115 +377,38 @@ topic: Show the topic of a channel.
 userinfo: Show information on a user.
 ```
 
-### Automod
-#### Manage the automod system. (9 Commands)
+### Tasks
+#### Module for handling all timed tasks. (0 Commands)
 
 ```yaml
-antiinvite: Enable or disable auto-deleting invite links
 
-autorole: Assign roles to new members.
-
-clearwarns: Clear a user's warnings
-
-filter: Manage the server's word filter.
-
-reassign: Reassign roles on user rejoin.
-
-revokewarn: Revoke a warning from a user
-
-serverwarns: Display the server warnlist.
-
-warn: Warn users with an optional reason.
-
-warncount: Count the warnings a user has.
 ```
 
-### Help
-#### My extensive help category. (14 Commands)
+### Times
+#### Module for time functions. (9 Commands)
 
 ```yaml
-botperms: Check if the bot can run a command.
+clock: Get the time of any location
 
-brief: Get the short description of a command.
+listtz: List all available timezones.
 
-canrun: See if a command can be executed.
+removetz: Remove your timezone.
 
-category: Show the parent category of a command.
+settz: Set your timezone.
 
-commandinfo: Get attribute info on a command.
+stopwatch: Start or stop a stopwatch.
 
-docstring: Get the help docstring of a command.
+timezone: See a member's timezone.
 
-examples: Get specific examples for a command.
+usertime: Show a user's current time.
 
-help: My documentation for all commands.
+usertimes: Show times for all users.
 
-made: Show when a command was first made.
-
-reqperms: Check if you can run a command.
-
-updated: Show when a command was last updated.
-
-usage: Get a usage example for a command.
-
-where: Show where a command can be run.
-
-writer: Show who wrote a command.
-```
-
-### Info
-#### Module for bot information. (23 Commands)
-
-```yaml
-about: Display information about the bot.
-
-botadmins: Show the bot's admins.
-
-botowners: Show the bot's owners.
-
-bugreport: Send a bugreport to the developer.
-
-changelog: Show my changelog.
-
-cogs: List all my cogs in an embed.
-
-hostinfo: Show the bot's host environment.
-
-invite: Invite me to your server!
-
-lines: Show sourcecode statistics.
-
-neofetch: Run the neofetch command.
-
-overview: Show some info on the bot's purpose.
-
-pieuptime: Show a graph of uptime stats
-
-ping: Test the bot's response latency.
-
-privacy: View the privacy policy.
-
-request: Send a request to the developer.
-
-sharedservers: Show servers shared with the bot.
-
-socket: Show global bot socket stats.
-
-source: Display the source code.
-
-speed: Bot network speed.
-
-suggest: Send a suggestion to the developer.
-
-support: Join my support server!
-
-uptime: Show the bot's uptime.
-
-users: Show users I'm connected to.
+utcnow: Show the current utc time.
 ```
 
 ### Tracking
-#### Module for all user stats (18 Commands)
+#### Module for all user stats (20 Commands)
 
 ```yaml
 activity: Show the most active server users.
@@ -400,6 +422,10 @@ characters: Show character usage.
 commandcount: Count the commands run by a user.
 
 commandstats: Bot commands listed by popularity.
+
+invited: See who invited a user.
+
+invites: Count the invites of a user.
 
 messagecount: Count the messages a user sent.
 
@@ -426,47 +452,51 @@ word: Usage for a specific word.
 words: Most used words from a user.
 ```
 
-### Mod
-#### Keep your server under control. (20 Commands)
+### Utility
+#### Module for general utilities. (22 Commands)
 
 ```yaml
-ban: Ban users from the server.
+ascify: Convert special characters to ascii.
 
-blind: Hide a channel from a user.
+avatar: Show a user's avatar.
 
-block: Restrict users from sending messages.
+calculate: Calculate a math formula.
 
-cleanup: Clean up bot command usage.
+charinfo: Show information on a character.
 
-hackban: Hackban multiple users.
+color: Show a given color and its values.
 
-kick: Kick users from the server.
+colors: Send an image with some hex codes.
 
-lock: Lock a channel
+defaultavatar: Show a user's default avatar.
 
-mute: Mute users for misbehaving.
+dehoist: Dehoist a specified user.
 
-purge: Remove any type of content.
+embed: Create an embed interactively.
 
-slowmode: Set the slowmode for a channel
+emojipost: Sends all server emojis to your dms.
 
-softban: Softban users from the server.
+find: Find any user using a search.
 
-tempban: Temporarily ban users.
+gtoken: Generate a discord token.
 
-unban: Unban a previously banned user.
+nickname: Edit or reset a user's nickname
 
-unblind: Reallow users see a channel.
+oauth: Generate a bot invite link.
 
-unblock: Reallow users to send messages.
+ptoken: Decode a discord token.
 
-unlock: Unlock a channel.
+raw: Shows the raw content of a message.
 
-unmute: Unmute previously muted members.
+reactinfo: Show reaction info in a channel.
 
-vckick: Kick users from a voice channel.
+replies: Find the first message of a reply thread.
 
-vcmove: Move a user from a voice channel.
+shorten: Shorten URLs to bitly links.
 
-vcpurge: Kick all users from a voice channel.
+snipe: Snipe a deleted message.
+
+snowflake: Show info on a discord snowflake.
+
+type: Find the type of a discord object.
 ```
