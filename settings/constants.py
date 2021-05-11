@@ -1,21 +1,22 @@
 from utilities import utils
 
-config = utils.config().copy()
+config = utils.config()
 
-token = config["token"]
-tester = config["tester"]
-postgres = config["postgres"]
-github = config["github"]
-support = config["support"]
+admins = config["admins"]
 avchan = config["avchan"]
+bitly = config["bitly"]
 botlog = config["botlog"]
 embed = config["embed"]
+github = config["github"]
+gtoken = config["gtoken"]
 home = config["home"]
-bitly = config["bitly"]
-timezonedb = config["timezonedb"]
-prefix = config["prefix"]
 owners = config["owners"]
-admins = config["admins"]
+postgres = config["postgres"]
+prefix = config["prefix"]
+support = config["support"]
+tester = config["tester"]
+timezonedb = config["timezonedb"]
+token = config["token"]
 
 emotes = {
     "loading": "<a:loading:819280509007560756>",

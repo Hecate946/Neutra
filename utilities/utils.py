@@ -6,7 +6,7 @@ import re
 import time
 import traceback
 from datetime import datetime, timedelta, timezone
-from io import BytesIO
+import gc
 
 import aiohttp
 import discord
@@ -14,6 +14,8 @@ from discord.ext import menus
 import humanize
 import pytz
 import timeago as timesince
+
+from discord.iterators import HistoryIterator
 
 
 # Some funcs and ideas from corpbot.py and discord_bot.py
@@ -463,93 +465,45 @@ def format_timedelta(td):
     ts = td.total_seconds()
     return "{:02d}:{:06.3f}".format(int(ts // 60), ts % 60)
 
+def hex_value(arg):
+    return int(arg, base=16)
 
-async def get_hostinfo(bot, members):
-    import os
-    import platform
-    import struct
-    import subprocess
-    import sys
+def object_at(addr):
+    for o in gc.get_objects():
+        if id(o) == addr:
+            return o
+    return None
 
-    import psutil
+def cleanup_code(content):
+    """Automatically removes code blocks from the code."""
+    # remove ```py\n```
+    if content.startswith("```") and content.endswith("```"):
+        return "\n".join(content.split("\n")[1:-1])
 
-    process = psutil.Process(os.getpid())
-    with process.oneshot():
-        process_ = process.name
-    swap = psutil.swap_memory()
+    # remove `foo`
+    return content.strip("` \n")
+class CachedHistoryIterator(HistoryIterator):
+    """HistoryIterator, but we hit the cache first."""
 
-    processName = process.name()
-    pid = process.ppid()
-    swapUsage = "{0:.1f}".format(((swap[1] / 1024) / 1024) / 1024)
-    swapTotal = "{0:.1f}".format(((swap[0] / 1024) / 1024) / 1024)
-    swapPerc = swap[3]
-    cpuCores = psutil.cpu_count(logical=False)
-    cpuThread = psutil.cpu_count()
-    cpuUsage = psutil.cpu_percent(interval=1)
-    memStats = psutil.virtual_memory()
-    memPerc = memStats.percent
-    memUsed = memStats.used
-    memTotal = memStats.total
-    memUsedGB = "{0:.1f}".format(((memUsed / 1024) / 1024) / 1024)
-    memTotalGB = "{0:.1f}".format(((memTotal / 1024) / 1024) / 1024)
-    currentOS = platform.platform()
-    system = platform.system()
-    release = platform.release()
-    version = platform.version()
-    processor = platform.processor()
-    botOwner = bot.get_user(bot.constants.owners[0])
-    botOwnerId = bot.constants.owners[0]
-    botName = str(bot.user)
-    botId = bot.user.id
-    currentTime = int(time.time())
-    timeString = time_between(bot.starttime, currentTime)
-    pythonMajor = sys.version_info.major
-    pythonMinor = sys.version_info.minor
-    pythonMicro = sys.version_info.micro
-    pythonRelease = sys.version_info.releaselevel
-    pyBit = struct.calcsize("P") * 8
-    process = subprocess.Popen(
-        ["git", "rev-parse", "--short", "HEAD"], shell=False, stdout=subprocess.PIPE
-    )
-    git_head_hash = process.communicate()[0].strip()
+    def __init__(self, messageable, limit,
+                 before=None, after=None, around=None, oldest_first=None):
+        super().__init__(messageable, limit, before, after, around, oldest_first)
+        self.prefill = self.reverse is False and around is None
 
-    threadString = "thread"
-    if not cpuThread == 1:
-        threadString += "s"
-    msg = ""
-    msg += "OS        : {}\n".format(currentOS)
-    msg += "Owner     : {}\n".format(botOwner)
-    msg += "Owner ID  : {}\n".format(botOwnerId)
-    msg += "Client    : {}\n".format(botName)
-    msg += "Client ID : {}\n".format(botId)
-    msg += "Servers   : {}\n".format(len(bot.guilds))
-    msg += "Members   : {}\n".format(len(members))
-    msg += "Commit    : {}\n".format(git_head_hash.decode("utf-8"))
-    msg += "Uptime    : {}\n".format(timeString)
-    msg += "Process   : {}\n".format(processName)
-    msg += "PID       : {}\n".format(pid)
-    msg += "Hostname  : {}\n".format(platform.node())
-    msg += "Language  : Python {}.{}.{} {} ({} bit)\n".format(
-        pythonMajor, pythonMinor, pythonMicro, pythonRelease, pyBit
-    )
-    msg += "Processor : {}\n".format(processor)
-    msg += "System    : {}\n".format(system)
-    msg += "Release   : {}\n".format(release)
-    msg += "CPU Core  : {} Threads\n\n".format(cpuCores)
-    bars = ""
-    bars += (
-        center("{}% of {} {}".format(cpuUsage, cpuThread, threadString), "CPU") + "\n"
-    )
-    bars += makeBar(int(round(cpuUsage))) + "\n"
-    bars += (
-        center("{} ({}%) of {}GB used".format(memUsedGB, memPerc, memTotalGB), "RAM")
-        + "\n"
-    )
-    bars += makeBar(int(round(memPerc))) + "\n"
-    bars += (
-        center("{} ({}%) of {}GB used".format(swapUsage, swapPerc, swapTotal), "Swap")
-        + "\n"
-    )
-    bars += makeBar(int(round(swapPerc)))
-    # msg += 'Processor Version: {}\n\n'.format(version)
-    return (msg, bars)
+    async def next(self):
+        if self.prefill:
+            await self.prefill_from_cache()
+            self.prefill = False
+        return await super().next()
+
+    async def prefill_from_cache(self):
+        if not hasattr(self, 'channel'):
+            # do the required set up
+            channel = await self.messageable._get_channel()
+            self.channel = channel
+
+        for msg in reversed(self.channel._state._messages):
+            if msg.channel.id == self.channel.id and self.limit > 0 and (not self.before or msg.id < self.before.id):
+                self.limit -= 1
+                self.before = discord.Object(id=msg.id)
+                await self.messages.put(msg)

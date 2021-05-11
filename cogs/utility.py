@@ -1001,7 +1001,9 @@ class Utility(commands.Cog):
             await ctx.send(e)
 
     @find.command(
-        name="duplicates", aliases=["dups"], brief="Find users with identical names."
+        aliases=["dups"],
+        name="duplicates",
+        brief="Find users with identical names.",
     )
     async def find_duplicates(self, ctx):
         """
@@ -1703,6 +1705,28 @@ class Utility(commands.Cog):
                 self.msg_collection.clear()
         else:
             self.msg_collection.clear()
+
+    @decorators.command(
+        brief="Show reaction info in a channel."
+    )
+    async def reactinfo(self, ctx, limit: int = 100):
+        if limit > 100 and ctx.author.id is not self.bot.hecate.id:
+            raise commands.BadArgument("The `limit` argument must be less than 100.")
+        elif limit < 1:
+            raise commands.BadArgument("The `limit` argument must be greater than 0.")
+        await ctx.trigger_typing()
+        resp = ""
+        async for msg in utils.CachedHistoryIterator(ctx, limit=limit):
+            for r in msg.reactions:
+                if r.custom_emoji and getattr(r.emoji, 'guild', None):
+                    resp += '**%s** ' % str(r.emoji.guild)
+                resp += "{}: {} -- `{}`\n".format(r.emoji, r.count, str(r.emoji))
+
+        if not resp:
+            return await ctx.fail(f"No reactions in the past {limit} messages.")
+        else:
+            await ctx.send(resp)
+
 
     @decorators.command(
         aliases=["math", "calc"],

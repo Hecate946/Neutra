@@ -100,22 +100,11 @@ traceback_logger_format = logging.Formatter(
 traceback_logger_handler.setFormatter(traceback_logger_format)
 
 
-def get_prefix(bot, msg):
-    user_id = bot.user.id
-    base = [f"<@!{user_id}> ", f"<@{user_id}> "]
-    if msg.guild is None:
-        base.append(constants.prefix)
-    else:
-        base.extend(bot.prefixes.get(msg.guild.id, [constants.prefix]))
-    # This allows word prefixes to be used with a space between
-    # The bot will respond to bot 'hellohelp' and 'hello help'
-    base_and_spaces = [str(x) + " " for x in base] + base
-    return base_and_spaces
-
-
-def get_pretty_prefixes(bot, msg):
+def get_prefixes(bot, msg):
     """
-    Basically the same but don't return aliases
+    This fetches all custom prefixes
+    and defaults to mentions & the prefix
+    in ./config.json.
     """
     user_id = bot.user.id
     base = [f"<@!{user_id}> ", f"<@{user_id}> "]
@@ -134,8 +123,9 @@ class Snowbot(commands.AutoShardedBot):
         )
         super().__init__(
             allowed_mentions=allowed_mentions,
-            command_prefix=get_prefix,
+            command_prefix=get_prefixes,
             case_insensitive=True,
+            strip_after_prefix=True,
             owner_ids=constants.owners,
             intents=discord.Intents.all(),
         )
@@ -551,7 +541,7 @@ class Snowbot(commands.AutoShardedBot):
         if isinstance(error, commands.MissingRequiredArgument):
             await ctx.usage(ctx.command.signature)
 
-        if isinstance(error, commands.BadBoolArgument):
+        elif isinstance(error, commands.BadBoolArgument):
             argument = str(error).split()[0]
             await ctx.send_or_reply(
                 f"{self.emote_dict['failed']} The argument `{argument}` is not a valid boolean."
@@ -703,7 +693,7 @@ class Snowbot(commands.AutoShardedBot):
         context = await super().get_context(message, cls=cx.BotContext)
         return context
 
-    def get_guild_prefixes(self, guild, *, local_inject=get_pretty_prefixes):
+    def get_guild_prefixes(self, guild, *, local_inject=get_prefixes):
         proxy_msg = discord.Object(id=0)
         proxy_msg.guild = guild
         return local_inject(self, proxy_msg)

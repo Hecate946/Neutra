@@ -1,5 +1,4 @@
 import io
-import json
 import os
 import sys
 import copy
@@ -12,6 +11,7 @@ import asyncpg
 import datetime
 import textwrap
 import importlib
+import threading
 import traceback
 import contextlib
 import subprocess
@@ -19,8 +19,8 @@ import subprocess
 from collections import defaultdict
 from discord.ext import commands, menus
 
-from settings import constants
 from utilities import utils
+from utilities import checks
 from utilities import converters
 from utilities import decorators
 from utilities import formatting
@@ -43,141 +43,62 @@ class Manager(commands.Cog):
 
     # Owner only cog.
     async def cog_check(self, ctx):
-        if not await self.bot.is_owner(ctx.author):
-            return
-        return True
-
-    async def reloader(self, folder_or_file):
-        error_collection = []
-        to_reload = []
-        exclude = set([".testervenv", ".git", "__pycache__", ".vscode"])
-        for path, subdirs, files in os.walk("."):
-            [subdirs.remove(d) for d in list(subdirs) if d in exclude]
-            files = [n for n in files if n.endswith(".py") and n != "__init__.py"]
-            for fname in files:
-                if folder_or_file == fname or folder_or_file == fname.split(".")[0]:
-                    to_reload.append((fname, path.strip("./")))
-                    continue
-        if to_reload:
-            for x in to_reload:
-                print(x)
-                importlib.import_module(x[0], x[1])
-            return
-        if not to_reload:
-            for folder in subdirs:
-                print(folder)
-        return
-        utilities = [x[:-3] for x in sorted(os.listdir(folder)) if x.endswith(".py")]
-        for module in utilities:
-            try:
-                module_name = importlib.import_module(f"{folder}.{module}")
-                importlib.reload(module_name)
-            except Exception as e:
-                error_collection.append(
-                    [module, utils.traceback_maker(e, advance=False)]
-                )
-
-        if error_collection:
-            output = "\n".join(
-                [f"**{g[0]}** ```diff\n- {g[1]}```" for g in error_collection]
-            )
-            reply = f"{self.bot.emote_dict['failed']} Reloading failure...\n\n{output}"
-        else:
-            reply = f"{self.bot.emote_dict['success']} Successfully reloaded ./{folder}/{fname}"
-        return reply
-
-    @decorators.command(brief="Get the batch insert count.")
-    async def batches(self, ctx):
-        """
-        Usage: -batches
-        """
-        await ctx.send_or_reply(
-            f"{self.bot.emote_dict['db']} {self.bot.user} ({self.bot.user.id}) Batch Inserts: {self.bot.batch_inserts}"
-        )
+        return checks.is_owner(ctx)
 
     @decorators.command(
-        name="eval", aliases=["evaluate", "e"], brief="Evaluate python code."
+        brief="A faster alternative to rebooting.",
+        implemented="2021-05-11 03:03:20.517480",
+        updated="2021-05-11 03:03:20.517480",
     )
-    async def _eval(self, ctx, *, body: str):
+    async def fake(self, ctx, db: bool = False):
+        await ctx.trigger_typing()
+        core = importlib.import_module("core", package=".")
+        importlib.reload(core)
+        starter = importlib.import_module("starter", package=".")
+        importlib.reload(starter)
+        if db:
+            await ctx.invoke(self.update)
+        await ctx.invoke(self.refresh)
+        await ctx.invoke(self.reloadallutils)
+        await ctx.invoke(self.reloadallsettings)
+        await ctx.invoke(self.reloadall)
+        await ctx.success("**Completed**")
+
+    @decorators.command(
+        aliases=['batchcount'],
+        brief="Get the batch insert count.",
+        implemented="2021-04-25 06:13:16.030615",
+        updated="2021-05-11 02:02:21.935264",
+        examples="""
+                {0}batches
+                {0}batchcount
+                """
+    )
+    async def batches(self, ctx):
         """
-        Usage: -eval <body>
-        Output: Code evaluation
+        Usage: {0}batches
+        Alias: {0}batchcount
+        Output:
+            Get the number of successful
+            batch inserts the bot has
+            performed since last reboot.
         """
+        await ctx.bold(
+            f"{self.bot.emote_dict['db']} {self.bot.user} ({self.bot.user.id}) Batch Inserts: {self.bot.batch_inserts}"
+        )
+    
 
-        env = {
-            "bot": self.bot,
-            "ctx": ctx,
-            "channel": ctx.channel,
-            "author": ctx.author,
-            "guild": ctx.guild,
-            "message": ctx.message,
-            "_": self._last_result,
-        }
-
-        env.update(globals())
-
-        body = self.cleanup_code(body)
-        stdout = io.StringIO()
-
-        to_compile = f'async def func():\n{textwrap.indent(body, "  ")}'
-
-        try:
-            exec(to_compile, env)
-        except Exception as e:
-            return await ctx.send_or_reply(
-                content=f"```py\n{e.__class__.__name__}: {e}\n```",
-            )
-
-        func = env["func"]
-        try:
-            with contextlib.redirect_stdout(stdout):
-                ret = await func()
-        except Exception as e:
-            value = stdout.getvalue()
-            await ctx.send_or_reply(
-                content=f"```py\n{value}{traceback.format_exc()}\n```",
-            )
-        else:
-            value = stdout.getvalue()
-            try:
-                await ctx.message.add_reaction(self.bot.emote_dict["success"])
-            except:
-                pass
-
-            if ret is None:
-                if value:
-                    try:
-                        p = pagination.MainMenu(pagination.TextPageSource(f"{value}", prefix="```py"))
-                    except Exception as e:
-                        return await ctx.send(e)
-                    try:
-                        await p.start(ctx)
-                    except menus.MenuError as e:
-                        await ctx.send(e)
-            else:
-                try:
-                    p = pagination.MainMenu(pagination.TextPageSource(f"{value}{ret}", prefix="```py"))
-                except Exception as e:
-                    return await ctx.send(e)
-                self._last_result = ret
-                try:
-                    await p.start(ctx)
-                except menus.MenuError as e:
-                    await ctx.send(e)
-
-    def cleanup_code(self, content):
-        """Automatically removes code blocks from the code."""
-        # remove ```py\n```
-        if content.startswith("```") and content.endswith("```"):
-            return "\n".join(content.split("\n")[1:-1])
-
-        # remove `foo`
-        return content.strip("` \n")
-
-    @decorators.command(brief="Refresh the bot variables.")
+    @decorators.command(
+        brief="Refresh the bot variables.",
+        implemented="2021-04-03 04:30:16.385794",
+        updated="2021-05-11 02:41:27.186046",
+        examples="""
+                {0}refresh
+                """
+    )
     async def refresh(self, ctx):
         """
-        Usage: -refresh
+        Usage: {0}refresh
         Output: Resets all global bot variables
         Permission: Bot owner
         Notes:
@@ -185,29 +106,18 @@ class Manager(commands.Cog):
             alternative to restarting the bot when
             changes are made to the config.json file
         """
-        config = utils.config().copy()
-        self.bot.constants.token = config["token"]
-        self.bot.constants.tester = config["tester"]
-        self.bot.constants.home = config["home"]
-        self.bot.constants.postgres = config["postgres"]
-        self.bot.constants.github = config["github"]
-        self.bot.constants.prefix = config["prefix"]
-        self.bot.constants.owners = config["owners"]
-        self.bot.constants.admins = config["admins"]
-        self.bot.constants.embed = config["embed"]
-        self.bot.constants.avchan = config["avchan"]
-        self.bot.constants.botlog = config["botlog"]
-        self.bot.constants.timezonedb = config["timezonedb"]
-        self.bot.constants.bitly = config["bitly"]
-        self.bot.emote_dict = constants.emotes
+        consts = importlib.import_module(f".constants", package="settings")
+        importlib.reload(consts)
+        self.bot.constants = consts
+        self.bot.owner_ids = consts.owners
+        await ctx.success("**Refreshed configuration.**")
 
-        self.bot.owner_ids = self.bot.constants.owners
-
-        await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['success']} **Refreshed Configuration.**",
-        )
-
-    @decorators.command(hidden=True, brief="Load an extension.")
+    @decorators.command(
+        aliases=['lc'],
+        brief="Load an extension.",
+        implemented="2021-03-19 21:57:05.162549",
+        updated="2021-05-11 02:51:30.992778",
+    )
     async def load(self, ctx, name: str):
         """ Loads an extension. """
         try:
@@ -221,7 +131,12 @@ class Manager(commands.Cog):
             content=f"{self.bot.emote_dict['success']} Loaded extension **{name}**",
         )
 
-    @decorators.command(hidden=True, brief="Unload an extension.")
+    @decorators.command(
+        aliases=['uc'],
+        brief="Unload an extension.",
+        implemented="2021-03-19 21:57:05.162549",
+        updated="2021-05-11 02:51:30.992778",
+    )
     async def unload(self, ctx, name: str):
         """ Unloads an extension. """
         try:
@@ -235,7 +150,13 @@ class Manager(commands.Cog):
             content=f"{self.bot.emote_dict['success']} Unloaded extension **{name}**",
         )
 
-    @decorators.command(name="reload", hidden=True, brief="Reload an extension.")
+    @decorators.command(
+        name="reload",
+        aliases=["r"],
+        brief="Reload an extension.",
+        implemented="2021-03-19 21:57:05.162549",
+        updated="2021-05-11 02:51:30.992778",
+    )
     async def _reload(self, ctx, name: str):
         """ Reloads an extension. """
         try:
@@ -249,7 +170,12 @@ class Manager(commands.Cog):
             content=f"{self.bot.emote_dict['success']} Reloaded extension **{name}.py**",
         )
 
-    @decorators.command(hidden=True, brief="Reload all extensions.")
+    @decorators.command(
+        aliases=["ra"],
+        brief="Reload all extensions.",
+        implemented="2021-03-19 21:57:05.162549",
+        updated="2021-05-11 02:51:30.992778",
+    )
     async def reloadall(self, ctx):
         """ Reloads all extensions. """
         error_collection = []
@@ -272,17 +198,18 @@ class Manager(commands.Cog):
                 f"however the following failed...\n\n{output}",
             )
 
-        await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['success']} Successfully reloaded all extensions",
-        )
+        await ctx.success("**Successfully reloaded all extensions.**")
 
     @decorators.command(
-        hidden=True,
         brief="Reload a utilities module.",
-        aliases=["reloadutil", "reloadutility", "ru"],
+        aliases=["reloadutils", "reloadutility", "ru"],
+        implemented="2021-03-19 21:57:05.162549",
+        updated="2021-05-11 02:51:30.992778",
     )
-    async def reloadutils(self, ctx, name: str):
-        """ Reloads a utils module. """
+    async def reloadutil(self, ctx, name: str):
+        """
+        Usage: {0}reloadutil <name>
+        """
         name_maker = f"./utilities/{name}.py"
         try:
             module_name = importlib.import_module(f".{name}", package="utilities")
@@ -301,7 +228,38 @@ class Manager(commands.Cog):
         )
 
     @decorators.command(
-        hidden=True, brief="Reload all utilities modules.", aliases=["rau"]
+        brief="Reload a utilities module.",
+        aliases=["reloadsettings", "rss"],
+        implemented="2021-03-19 21:57:05.162549",
+        updated="2021-05-11 02:51:30.992778",
+    )
+    async def reloadsetting(self, ctx, name: str):
+        """
+        Usage: {0}reloadutil <name>
+        Aliases: {0}reloadsettings {0}rss
+        """
+        name_maker = f"./settings/{name}.py"
+        try:
+            module_name = importlib.import_module(f".{name}", package="settings")
+            importlib.reload(module_name)
+        except ModuleNotFoundError:
+            return await ctx.send_or_reply(
+                content=f"Couldn't find module named **{name_maker}**",
+            )
+        except Exception as e:
+            error = utils.traceback_maker(e)
+            return await ctx.send_or_reply(
+                content=f"Module **{name_maker}** returned error and was not reloaded...\n{error}",
+            )
+        await ctx.send_or_reply(
+            content=f"{self.bot.emote_dict['success']} Reloaded module **{name_maker}**",
+        )
+
+    @decorators.command(
+        aliases=["rau"],
+        brief="Reload all utilities modules.",
+        implemented="2021-03-19 21:57:05.162549",
+        updated="2021-05-11 02:51:30.992778",
     )
     async def reloadallutils(self, ctx):
         """ Reloads a utils module. """
@@ -323,20 +281,23 @@ class Manager(commands.Cog):
                 [f"**{g[0]}** ```diff\n- {g[1]}```" for g in error_collection]
             )
             return await ctx.send_or_reply(
-                content=f"Attempted to reload all utilties, was able to reload, "
+                content=f"Attempted to reload all utilities, was able to reload, "
                 f"however the following failed...\n\n{output}",
             )
 
-        await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['success']} Successfully reloaded all utilities.",
-        )
+        await ctx.success("**Successfully reloaded all utilities.**")
 
-    @decorators.command(hidden=True, brief="Reload all settings modules.")
+    @decorators.command(
+        aliases=["ras"],
+        brief="Reload all settings modules.",
+        implemented="2021-03-19 21:57:05.162549",
+        updated="2021-05-11 02:51:30.992778",
+    )
     async def reloadallsettings(self, ctx):
-        """ Reloads a settings module. """
+        """ Reloads all settings modules except database.py"""
         error_collection = []
         utilities = [
-            x[:-3] for x in sorted(os.listdir("settings")) if x.endswith(".py")
+            x[:-3] for x in sorted(os.listdir("settings")) if x.endswith(".py") and x != "database.py"
         ]
         for module in utilities:
             try:
@@ -356,9 +317,7 @@ class Manager(commands.Cog):
                 f"however the following failed...\n\n{output}",
             )
 
-        await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['success']} Successfully reloaded all utilities.",
-        )
+        await ctx.success("**Successfully reloaded all settings.**")
 
     @decorators.command(hidden=True, aliases=["restart"], brief="Reboot the bot.")
     async def reboot(self, ctx):
@@ -395,7 +354,12 @@ class Manager(commands.Cog):
     ####################
 
     @decorators.group(
-        hidden=True, brief="View logging files.", aliases=["l"], case_insensitive=True
+        aliases=["l"],
+        case_insensitive=True,
+        invoke_without_command=True,
+        brief="View logging files.",
+        implemented="2021-05-08 20:16:22.917120",
+        updated="2021-05-11 02:51:30.992778",
     )
     async def logger(self, ctx):
         """
@@ -430,15 +394,22 @@ class Manager(commands.Cog):
         sh = self.bot.get_command("sh")
         await ctx.invoke(sh, prefix="prolog", command="cat ./data/logs/errors.log")
 
-    @decorators.group(hidden=True, brief="View pm2 files.", case_insensitive=True)
+    @decorators.group(
+        brief="View pm2 files.",
+        case_insensitive=True,
+        invoke_without_command=True,
+        implemented="2021-05-08 20:16:22.917120",
+        updated="2021-05-11 02:51:30.992778",
+    )
     async def pm2(self, ctx):
         """
-        Usage: -pm2 <option>
+        Usage: {0}pm2 <option>
         Output: View any pm2 log file in ./data/pm2
         Options:
-            stdout      Alias: out
-            stderr      Aliases: err, error, errors
-            pid         Aliases: process, processid
+            stdout  Alias: out
+            stderr  Aliases: err, error, errors
+            pid     Aliases: process, processid
+            clear
         """
         if ctx.invoked_subcommand is None:
             return await ctx.usage("<option>")
@@ -504,27 +475,21 @@ class Manager(commands.Cog):
     )
     async def json(self, ctx):
         """
-        Usage: -json <option>
-        Alias: -j
+        Usage: {0}json <option>
+        Alias: {0}j
         Output: View any json file in ./data/json
         Options:
-            commands        Aliases: command, commandstats
-            socket          Aliases: socket, socketstats
             stats           Alias: statistics
             settings        Alias: config
         """
         if ctx.invoked_subcommand is None:
             return await ctx.usage("<option>")
 
-    @json.command(name="commands", aliases=["commandstats", "command"])
-    async def _commands(self, ctx):
-        sh = self.bot.get_command("sh")
-        await ctx.invoke(sh, prefix="json", command="cat ./data/json/commands.json")
 
-    @json.command(name="socket", aliases=["sockets", "socketstats"])
-    async def _sockets(self, ctx):
+    @json.command(aliases=["bl"])
+    async def blacklist(self, ctx):
         sh = self.bot.get_command("sh")
-        await ctx.invoke(sh, prefix="json", command="cat ./data/json/sockets.json")
+        await ctx.invoke(sh, prefix="json", command="cat ./data/json/blacklist.json")
 
     @json.command(name="stats", aliases=["statistics"])
     async def _stats(self, ctx):
@@ -534,41 +499,39 @@ class Manager(commands.Cog):
     @json.command(name="settings", aliases=["config"])
     async def _settings(self, ctx):
         sh = self.bot.get_command("sh")
-        await ctx.invoke(sh, prefix="json", command="cat ./data/json/settings.log")
+        await ctx.invoke(sh, prefix="json", command="cat ./data/json/settings.json")
 
     @decorators.command(
-        hidden=True, brief="Update the database.", aliases=["update_db"]
+        brief="Update the database.", aliases=["updatedb"]
     )
     async def update(self, ctx):
         """
-        Usage: -update
+        Usage: {0}update
         Permission: Bot owner
         Output:
             Performs the mass database insertion
             that normally occurs on bot startup
         """
-        from settings.database import initialize
+        c = await pagination.Confirmation(f"**{self.bot.emote_dict['exclamation']} This action will restart my database. Do you wish to continue?**").prompt(ctx)
+        if c:
+            from settings.database import initialize
 
-        members = self.bot.get_all_members()
-        await initialize(self.bot.guilds, members)
-        await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['success']} Updated Database",
-        )
-
-    def cleanup_code(self, content):
-        """Automatically removes code blocks from the code."""
-        # remove ```py\n```
-        if content.startswith("```") and content.endswith("```"):
-            return "\n".join(content.split("\n")[1:-1])
-
-        # remove `foo`
-        return content.strip("` \n")
+            members = self.bot.get_all_members()
+            await initialize(self.bot, members)
+            await ctx.success("**Updated database**")
+        else:
+            await ctx.bold("Cancelled")
 
     # Thank you R. Danny
-    @decorators.command(hidden=True, brief="Run sql and get results in rst fmt.", writer=80088516616269824)
+    @decorators.command(
+        writer=80088516616269824,
+        brief="Run sql and get results in rst fmt.",
+        implemented="2021-03-11 18:29:30.103412",
+        updated="2021-05-11 03:03:20.517480",
+    )
     async def sql(self, ctx, *, query: str):
         """
-        Usage: -sql <query>
+        Usage: {0}sql <query>
         """
 
         if query is None:
@@ -576,7 +539,7 @@ class Manager(commands.Cog):
                 content=f"Usage: `{ctx.prefix}sql <query>`",
             )
 
-        query = self.cleanup_code(query)
+        query = utils.cleanup_code(query)
 
         is_multistatement = query.count(";") > 1
         if is_multistatement:
@@ -937,6 +900,22 @@ class Manager(commands.Cog):
             )
         else:
             await ctx.send_or_reply(content=fmt)
+
+    @decorators.command(
+        brief="Show bot threadinfo."
+    )
+    async def threadinfo(self, ctx):
+        buf = io.StringIO()
+        for th in threading.enumerate():
+            buf.write(str(th) + "\n")
+            traceback.print_stack(sys._current_frames()[th.ident], file=buf)
+            buf.write("\n")
+
+        p = pagination.MainMenu(pagination.TextPageSource(buf.getvalue(), prefix="```prolog"))
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send(e)
 
     @decorators.group(
         hidden=True,
@@ -1367,7 +1346,93 @@ class Manager(commands.Cog):
         # new_ctx._db = ctx._db
         await self.bot.invoke(new_ctx)
 
+    @decorators.command(
+        name="eval", aliases=["evaluate", "e", "exe", "exec"], brief="Evaluate python code."
+    )
+    async def _eval(self, ctx, *, body: str):
+        """
+        Usage: -eval <body>
+        Aliases:
+            {0}e
+            {0}exe
+            {0}exec
+            {0}evaluate
+        Output: Code evaluation
+        Environment:
+            "self": Manager,
+            "utils": utils,
+            "converters": converters,
+            "bot": self.bot,
+            "ctx": ctx,
+            "channel": ctx.channel,
+            "author": ctx.author,
+            "guild": ctx.guild,
+            "message": ctx.message,
+            "_": self._last_result,
+        """
+        env = {
+            "self": self,
+            "utils": utils,
+            "converters": converters,
+            "bot": self.bot,
+            "ctx": ctx,
+            "channel": ctx.channel,
+            "author": ctx.author,
+            "guild": ctx.guild,
+            "message": ctx.message,
+            "_": self._last_result,
+        }
 
+        env.update(globals())
+
+        body = utils.cleanup_code(body)
+        stdout = io.StringIO()
+
+        to_compile = f'async def func():\n{textwrap.indent(body, "  ")}'
+
+        try:
+            exec(to_compile, env)
+        except Exception as e:
+            return await ctx.send_or_reply(
+                content=f"```py\n{e.__class__.__name__}: {e}\n```",
+            )
+
+        func = env["func"]
+        try:
+            with contextlib.redirect_stdout(stdout):
+                ret = await func()
+        except Exception as e:
+            value = stdout.getvalue()
+            await ctx.send_or_reply(
+                content=f"```py\n{value}{traceback.format_exc()}\n```",
+            )
+        else:
+            value = stdout.getvalue()
+            try:
+                await ctx.message.add_reaction(self.bot.emote_dict["success"])
+            except:
+                pass
+
+            if ret is None:
+                if value:
+                    try:
+                        p = pagination.MainMenu(pagination.TextPageSource(f"{value}", prefix="```py"))
+                    except Exception as e:
+                        return await ctx.send(e)
+                    try:
+                        await p.start(ctx)
+                    except menus.MenuError as e:
+                        await ctx.send(e)
+            else:
+                try:
+                    p = pagination.MainMenu(pagination.TextPageSource(f"{value}{ret}", prefix="```py"))
+                except Exception as e:
+                    return await ctx.send(e)
+                self._last_result = ret
+                try:
+                    await p.start(ctx)
+                except menus.MenuError as e:
+                    await ctx.send(e)
 class PerformanceMocker:
     """A mock object that can also be used in await expressions."""
 

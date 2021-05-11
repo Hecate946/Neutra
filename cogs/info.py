@@ -12,7 +12,9 @@ import inspect
 import pathlib
 import datetime
 import platform
+import statistics
 import subprocess
+import collections
 
 from discord import __version__ as dv
 from discord.ext import commands, menus
@@ -40,6 +42,13 @@ class Info(commands.Cog):
         self.socket_event_total = 0
         self.process = psutil.Process(os.getpid())
         self.socket_since = datetime.datetime.utcnow()
+        self.message_latencies = collections.deque(maxlen=500)
+
+    @commands.Cog.listener()
+    @decorators.wait_until_ready()
+    async def on_message(self, message):
+        now = datetime.datetime.utcnow()
+        self.message_latencies.append((now, now - message.created_at))
 
     @commands.Cog.listener()  # Update our socket counters
     async def on_socket_response(self, msg: dict):
@@ -195,6 +204,63 @@ class Info(commands.Cog):
             await m.start(ctx)
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
+
+    @decorators.command(
+        aliases=['averageping', 'averagelatency','averagelat'],
+        brief="View the average message latency.",
+        implemented="2021-05-10 22:39:37.374649",
+        updated="2021-05-10 22:39:37.374649",
+    )
+    async def avgping(self, ctx):
+        """
+        Usage: {0}avgping
+        Aliases:
+            {0}averageping
+            {0}avglat
+            {0}avglatency
+        Output:
+            Shows the average message latency
+            over the past 500 messages send.
+        """
+        await ctx.send("{:.2f}ms".format(
+            1000 * statistics.mean(
+                lat.total_seconds() for ts, lat in self.message_latencies)))
+
+    @decorators.command(
+        brief="Show reply latencies.",
+        implemented="2021-05-10 23:53:06.937010",
+        updated="2021-05-10 23:53:06.937010",
+    )
+    async def replytime(self, ctx):
+        """
+        Usage: {0}replytime
+        Output:
+            Shows 3 times showing the
+            discrepancy between timestamps.
+        """
+        recv_time = ctx.message.created_at
+        msg_content = "."
+
+        task = asyncio.ensure_future(ctx.bot.wait_for(
+            "message", timeout=15,
+            check=lambda m: (m.author == ctx.bot.user and
+                             m.content == msg_content)))
+        now = datetime.datetime.utcnow()
+        sent_message = await ctx.send(msg_content)
+        await task
+        rtt_time = datetime.datetime.utcnow()
+        content = "```prolog\n"
+        content += "Client Timestamp - Discord  Timestamp: {:.2f}ms\n"
+        content += "Posted Timestamp - Response Timestamp: {:.2f}ms\n"
+        content += "Sent   Timestamp - Received Timestamp: {:.2f}ms\n"
+        content += "```"
+        await sent_message.edit(
+            content=content.format(
+                (now - recv_time).total_seconds() * 1000,
+                (sent_message.created_at - recv_time).total_seconds() * 1000,
+                (rtt_time - now).total_seconds() * 1000
+            )
+        )
 
     @decorators.command(
         aliases=["isratelimited"],
