@@ -1,23 +1,27 @@
 from utilities import utils
 
 config = utils.config()
-
-admins = config["admins"]
-avchan = config["avchan"]
-bitly = config["bitly"]
-botlog = config["botlog"]
-embed = config["embed"]
-github = config["github"]
-gtoken = config["gtoken"]
-home = config["home"]
-owners = config["owners"]
-postgres = config["postgres"]
-prefix = config["prefix"]
-support = config["support"]
-tester = config["tester"]
-timezonedb = config["timezonedb"]
-token = config["token"]
-
+try:
+    admins = config["admins"]
+    avchan = config["avchan"]
+    bitly = config["bitly"]
+    botlog = config["botlog"]
+    embed = config["embed"]
+    github = config["github"]
+    gtoken = config["gtoken"]
+    home = config["home"]
+    owners = config["owners"]
+    postgres = config["postgres"]
+    prefix = config["prefix"]
+    support = config["support"]
+    tester = config["tester"]
+    timezonedb = config["timezonedb"]
+    token = config["token"]
+except KeyError as e:
+    print(f"""
+          Warning! The key {e} is missing from your ./config.json file.
+          Add this key or the bot might not function properly.
+          """)
 emotes = {
     "loading": "<a:loading:819280509007560756>",
     "success": "<:checkmark:816534984676081705>",

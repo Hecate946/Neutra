@@ -1388,7 +1388,7 @@ class Admin(commands.Cog):
         roles: commands.Greedy[converters.DiscordRole] = None,
     ):
         """
-        Usage: {0}checkinactive [days] [roles]
+        Usage: {0}checkinactive [days] [roles]...
         Permission: View Audit Log
         Output:
             Searches for all users who have the

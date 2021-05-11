@@ -19,8 +19,6 @@ def start():
     while len(token) < 15:
         print("That does not look like a valid token.")
         token = input("Once you've copied the token, enter it here: ")
-    config["token"] = token
-    config["tester"] = token
     msg = "Next, assuming you've configured postgresql, you have to enter my connection URI.\n"
     msg += "If you haven't setup postgres, here's a link to their homepage where you should get started.\n"
     msg += "https://www.postgresql.org/\n"
@@ -33,7 +31,6 @@ def start():
     while not match(some_trash_regex, postgres):
         print("That does not look like a valid postgres URI.")
         postgres = input("Enter the postgres connection URI here: ")
-    config["postgres"] = postgres
     msg = "You're almost done. Now its time to enter a color for all my embeds. It should be a hex code.\n"
     msg += "As an example, aqua blue is 29f4ff\n"
     msg += "If you're not sure which color you want, I love this color: 661538"
@@ -48,7 +45,6 @@ def start():
             test = int(embed, 16)
         except:
             embed = "the while loop will run again because it couldnt convert"
-    config["embed"] = int(embed, 16)
     msg = (
         "Alrighty, now you have to enter your discord ID, registering you as an owner."
     )
@@ -63,22 +59,27 @@ def start():
             stuff = [int(owners)]
         except:
             owners = "This wont be a valid discord id, so the while loop runs again"
-    config["owners"] = [int(owners)]
     prefix = input(
         "Great job! All set now. Just enter what prefix you want me to use as default, and you're done: "
     )
     print("Done! Run the bot again to start")
     print("Feel free to harass Hecate#3523 if you have issues.")
-    config["prefix"] = prefix
 
-    config["botlog"] = None
-    config["avchan"] = None
-    config["github"] = "https://github.com/Hecate946/Snowbot"
-    config["support"] = "https://discord.gg/947ramn"
-    config["bitly"] = None
-    config["timezonedb"] = None
     config["admins"] = []
+    config["avchan"] = None
+    config["bitly"] = None
+    config["botlog"] = None
+    config["embed"] = int(embed, 16)
+    config["github"] = "https://github.com/Hecate946/Snowbot"
+    config["gtoken"] = None
     config["home"] = None
+    config["owners"] = [int(owners)]
+    config["postgres"] = postgres
+    config["prefix"] = prefix
+    config["support"] = "https://discord.gg/947ramn"
+    config["tester"] = token
+    config["timezonedb"] = None
+    config["token"] = token
     with open("./config.json", "w", encoding="utf-8") as fp:
         json.dump(config, fp, indent=2)
 
