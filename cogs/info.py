@@ -1132,7 +1132,13 @@ class Info(commands.Cog):
             of my uptime across all time
         """
         # Need to get member obj to check status.
-        me = self.bot.home.get_member(self.bot.user.id)
+        if ctx.guild:
+            me = ctx.guild.me
+        else:  # Get from 'home' server
+            try:
+                me = self.bot.home.get_member(self.bot.user.id)
+            except AttributeError:  # Pretend like its a server only command
+                raise commands.NoPrivateMessage()
         query = """
                 SELECT (
                     runtime,
