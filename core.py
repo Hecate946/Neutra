@@ -150,7 +150,7 @@ class Snowbot(commands.AutoShardedBot):
         self.socket_events = collections.Counter()
 
         self.cog_exceptions = ["CONFIG", "BOTADMIN", "MANAGER", "JISHAKU"]
-        self.useless_cogs = ["TESTING", "BATCH", "SLASH"]
+        self.useless_cogs = ["TESTING", "BATCH", "SLASH", "TASKS"]
 
     def run(self, token):  # Everything starts from here
         self.setup()  # load the cogs
