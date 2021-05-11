@@ -406,8 +406,8 @@ class Info(commands.Cog):
         """
         Usage: -speed
         Aliases:
-            -speedtest, -network, -speed,
-            -wifi, -download, -upload
+            {0}speedtest, {0}network, {0}speed,
+            {0}wifi, {0}download, {0}upload
         Output: Internet speed statistics
         Notes:
             The speedtest takes around 30 seconds
@@ -455,12 +455,12 @@ class Info(commands.Cog):
 
             msg = "**Results:**\n"
             msg += "```yaml\n"
-            msg += " Latency: {} ms\n".format(q.ljust(width, " "))
-            msg += " Network: {} ms\n".format(r.ljust(width, " "))
+            msg += "Latency : {} ms\n".format(q.ljust(width, " "))
+            msg += "Network : {} ms\n".format(r.ljust(width, " "))
             msg += "Response: {} ms\n".format(p.ljust(width, " "))
             msg += "Database: {} ms\n".format(v.ljust(width, " "))
             msg += "Download: {} Mb/s\n".format(s.ljust(width, " "))
-            msg += "  Upload: {} Mb/s\n".format(t.ljust(width, " "))
+            msg += "Upload  : {} Mb/s\n".format(t.ljust(width, " "))
             msg += "```"
         await message.edit(content=msg)
 
@@ -470,11 +470,11 @@ class Info(commands.Cog):
     )
     async def ping(self, ctx):
         """
-        Usage: -ping
-        Aliases: -latency, -response
+        Usage: {0}ping
+        Aliases: {0}latency, {0}response
         Output: Bot latency statistics.
         Notes:
-            Use -speed and the bot will attempt
+            Use {0}speed and the bot will attempt
             to run an internet speedtest. May fail.
         """
         async with ctx.channel.typing():
@@ -501,7 +501,7 @@ class Info(commands.Cog):
 
             msg = "**Results:**\n"
             msg += "```yaml\n"
-            msg += " Latency: {} ms\n".format(q.ljust(width, " "))
+            msg += "Latency : {} ms\n".format(q.ljust(width, " "))
             msg += "Response: {} ms\n".format(p.ljust(width, " "))
             msg += "Database: {} ms\n".format(v.ljust(width, " "))
             msg += "```"
