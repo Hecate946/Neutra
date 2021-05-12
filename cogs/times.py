@@ -483,6 +483,7 @@ class Times(commands.Cog):
         await ctx.send_or_reply(f"{self.bot.emote_dict['clock']} `{datetime.utcnow()}`")
 
     @decorators.command(
+        hidden=True,
         brief="Show the days a user was active.",
         implemented="2021-05-12 07:46:53.635661",
         updated="2021-05-12 07:46:53.635661",
@@ -522,6 +523,6 @@ class Times(commands.Cog):
             results = results if (results < 8) else 7
         if time == "month":
             results = results if (results < 31) else 31
-            print(results)
+            await self.bot.hecate.send(results)
         await ctx.send(f"User `{user}` has been online {results} day{'' if results == 1 else 's'} in the past {time}.")
 
