@@ -676,6 +676,19 @@ class Snowbot(commands.AutoShardedBot):
                         f"Hey {message.author.mention}! if you're looking to invite me to your server, use this link:\n<{self.oauth}>"
                     )
 
+    async def on_message_edit(self, before, after):
+        if self.ready is False:
+            return
+        created_at = (
+            (before.id >> 22) + 1420070400000
+        ) / 1000
+        if (time.time() - created_at) > 7:
+            return
+        if before.content == after.content:
+            return
+        await self.process_commands(after)
+
+
     # async def on_error(self, event, *args, **kwargs):
     #     print(traceback.format_exc())
     #     print(args)
