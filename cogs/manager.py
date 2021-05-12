@@ -116,6 +116,7 @@ class Manager(commands.Cog):
         consts = importlib.import_module(f".constants", package="settings")
         importlib.reload(consts)
         self.bot.constants = consts
+        self.bot.emote_dict = consts.emotes
         self.bot.owner_ids = consts.owners
         await ctx.success("**Reloaded all botvars.**")
 
