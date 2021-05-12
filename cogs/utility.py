@@ -14,6 +14,7 @@ import unicodedata
 
 from collections import Counter, namedtuple
 from datetime import datetime
+from discord.errors import HTTPException
 from discord.ext import commands, menus
 from functools import cmp_to_key
 from PIL import Image
@@ -1706,8 +1707,11 @@ class Utility(commands.Cog):
                 field_value = msg
 
                 embed.add_field(name=field_name, value=field_value, inline=False)
+        try:
+            await ctx.send_or_reply(embed=embed)
+        except discord.HTTPException:
+            raise commands.BadArgument(f"The embed provided was either invalid or too long to send. Please try again.")
 
-        await ctx.send_or_reply(embed=embed)
         await self.do_cleanup(ctx)
 
     async def do_cleanup(self, ctx):

@@ -538,8 +538,12 @@ class Snowbot(commands.AutoShardedBot):
             if ctx.cog._get_overridden_method(ctx.cog.cog_command_error) is not None:
                 return
 
+
         if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.usage(ctx.command.signature)
+            await ctx.usage()
+
+        elif isinstance(error, commands.BadUnionArgument):
+            await ctx.usage()
 
         elif isinstance(error, commands.BadBoolArgument):
             argument = str(error).split()[0]
@@ -548,6 +552,9 @@ class Snowbot(commands.AutoShardedBot):
             )
 
         elif isinstance(error, commands.BadArgument):
+            if 'Converting to "int" failed for parameter' in str(error):
+                arg = str(error).split()[-1].strip('."')
+                error = f"The `{arg}` argument must be an integer."
             await ctx.send_or_reply(
                 content=f"{self.emote_dict['failed']} {error}",
             )

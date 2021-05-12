@@ -1,5 +1,6 @@
 import io
 import time
+import typing
 import discord
 import inspect
 
@@ -7,7 +8,6 @@ from collections import Counter, OrderedDict
 from datetime import datetime
 from discord.ext import commands, menus
 from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
-from discord.ext.commands import converter
 
 from utilities import converters, pagination, checks, utils
 from utilities import decorators
@@ -130,7 +130,7 @@ class Tracking(commands.Cog):
             status is invisible.
         """
         if not len(users):
-            raise commands.MissingRequiredArgument(users)
+            return await ctx.usage()
         mobilestatus = []
         mobilestatus = []
         notmobilestatus = []
@@ -776,7 +776,7 @@ class Tracking(commands.Cog):
     @commands.guild_only()
     @checks.bot_has_perms(add_reactions=True, external_emojis=True)
     @checks.has_perms(view_audit_log=True)
-    async def commandstats(self, ctx, user: converters.DiscordMember = None, limit=100):
+    async def commandstats(self, ctx, user: typing.Optional[converters.DiscordMember], limit: int = 100):
         """
         Usage: {0}commandstats [user] [limit]
         Alias: {0}cs
@@ -798,13 +798,11 @@ class Tracking(commands.Cog):
                     WHERE server_id = $1;
                     """
             command_list = await self.bot.cxn.fetch(query, ctx.guild.id)
-        if not limit.isdigit():
-            raise commands.BadArgument("The `limit` argument must be an integer.")
+        # if not limit.isdigit():
+        #     raise commands.BadArgument("The `limit` argument must be an integer.")
         else:
             if user.bot:
-                return await ctx.send_or_reply(
-                    f"{self.bot.emote_dict['warn']} I do not track bots."
-                )
+                return await ctx.fail(f"I do not track bots.")
             query = """SELECT command FROM commands WHERE server_id = $1 AND author_id = $2"""
             command_list = await self.bot.cxn.fetch(query, ctx.guild.id, user.id)
         formatted_list = []
