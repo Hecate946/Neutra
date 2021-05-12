@@ -521,6 +521,7 @@ class Times(commands.Cog):
         if time == "week":
             results = results if (results < 8) else 7
         if time == "month":
-            results = results if (results < 31) else 7
+            results = results if (results < 31) else 31
+            print(results)
         await ctx.send(f"User `{user}` has been online {results} day{'' if results == 1 else 's'} in the past {time}.")
 
