@@ -149,7 +149,7 @@ class Botadmin(commands.Cog):
 
         url = await self.create_gist(
             content,
-            description=f"Uploaded by {ctx.author} ({ctx.author.id}) at {datetime.utcnow()}",
+            description=f"Uploaded by {ctx.author} ({ctx.author.id}) at {datetime.datetime.utcnow()}",
             filename=fname,
         )
         await ctx.reply(f"<:pepeLaugh:779433733400166420> <{url}>")
