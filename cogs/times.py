@@ -588,11 +588,10 @@ class Times(commands.Cog):
         table.add_rows(enumerated)
         render = table.render()
         completed = f"```sml\n{render}```"
-
         emote = self.bot.emote_dict['graph']
-        pluralize = '' if len(counter) == 1 else 's'
+        pluralize = '' if len(sort) == 1 else 's'
         timefmt = humantime.human_timedelta(the_datetime, accuracy=1)
-        await ctx.bold(f"{emote} {len(counter)} user{pluralize} have logged in since {timefmt} in {ctx.guild.name}.")
+        await ctx.bold(f"{emote} {len(sort)} user{pluralize} have logged in since {timefmt} in {ctx.guild.name}.")
         if len(completed) > 2000:
             fp = io.BytesIO(completed.encode("utf-8"))
             await ctx.send_or_reply(file=discord.File(fp, "results.sml"))
