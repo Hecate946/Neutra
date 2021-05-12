@@ -1,15 +1,13 @@
 import io
 import os
-import re
-import typing
-from discord.enums import try_enum
 import pytz
+import typing
 import discord
 
 from datetime import datetime
 from discord.ext import commands
 
-from utilities import time
+from utilities import humantime
 from utilities import utils
 from utilities import checks
 from utilities import converters
@@ -1012,7 +1010,7 @@ class Files(commands.Cog):
         updated="2021-05-09 21:48:00.663306",
     )
     async def audit(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: audit [option] [user] [after]
@@ -1053,7 +1051,7 @@ class Files(commands.Cog):
         ctx,
         user: typing.Optional[converters.DiscordMember] = None,
         *,
-        after: time.PastTime = None,
+        after: humantime.PastTime = None,
     ):
         if not user:
             user = ctx.author
@@ -1072,7 +1070,7 @@ class Files(commands.Cog):
         ctx,
         user: typing.Optional[converters.DiscordMember] = None,
         *,
-        after: time.PastTime = None,
+        after: humantime.PastTime = None,
     ):
         if not user:
             user = ctx.author
@@ -1091,7 +1089,7 @@ class Files(commands.Cog):
         ctx,
         user: typing.Optional[converters.DiscordMember] = None,
         *,
-        after: time.PastTime = None,
+        after: humantime.PastTime = None,
     ):
         if not user:
             user = ctx.author
@@ -1110,7 +1108,7 @@ class Files(commands.Cog):
         ctx,
         user: typing.Optional[converters.DiscordMember] = None,
         *,
-        after: time.PastTime = None,
+        after: humantime.PastTime = None,
     ):
         if not user:
             user = ctx.author
@@ -1129,7 +1127,7 @@ class Files(commands.Cog):
         ctx,
         user: typing.Optional[converters.DiscordMember] = None,
         *,
-        after: time.PastTime = None,
+        after: humantime.PastTime = None,
     ):
         if not user:
             user = ctx.author
@@ -1148,7 +1146,7 @@ class Files(commands.Cog):
         ctx,
         user: typing.Optional[converters.DiscordMember] = None,
         *,
-        after: time.PastTime = None,
+        after: humantime.PastTime = None,
     ):
         if not user:
             user = ctx.author
@@ -1167,7 +1165,7 @@ class Files(commands.Cog):
         ctx,
         user: typing.Optional[converters.DiscordMember] = None,
         *,
-        after: time.PastTime = None,
+        after: humantime.PastTime = None,
     ):
         if not user:
             user = ctx.author
@@ -1186,7 +1184,7 @@ class Files(commands.Cog):
         ctx,
         user: typing.Optional[converters.DiscordMember] = None,
         *,
-        after: time.PastTime = None,
+        after: humantime.PastTime = None,
     ):
         if not user:
             user = ctx.author
@@ -1205,7 +1203,7 @@ class Files(commands.Cog):
         ctx,
         user: typing.Optional[converters.DiscordMember] = None,
         *,
-        after: time.PastTime = None,
+        after: humantime.PastTime = None,
     ):
         if not user:
             user = ctx.author
@@ -1224,7 +1222,7 @@ class Files(commands.Cog):
         ctx,
         user: typing.Optional[converters.DiscordMember] = None,
         *,
-        after: time.PastTime = None,
+        after: humantime.PastTime = None,
     ):
         if not user:
             user = ctx.author
@@ -1243,7 +1241,7 @@ class Files(commands.Cog):
         ctx,
         user: typing.Optional[converters.DiscordMember] = None,
         *,
-        after: time.PastTime = None,
+        after: humantime.PastTime = None,
     ):
         if not user:
             user = ctx.author
@@ -1262,7 +1260,7 @@ class Files(commands.Cog):
         ctx,
         user: typing.Optional[converters.DiscordMember] = None,
         *,
-        after: time.PastTime = None,
+        after: humantime.PastTime = None,
     ):
         if not user:
             user = ctx.author
@@ -1281,7 +1279,7 @@ class Files(commands.Cog):
         ctx,
         user: typing.Optional[converters.DiscordMember] = None,
         *,
-        after: time.PastTime = None,
+        after: humantime.PastTime = None,
     ):
         if not user:
             user = ctx.author
@@ -1300,7 +1298,7 @@ class Files(commands.Cog):
         ctx,
         user: typing.Optional[converters.DiscordMember] = None,
         *,
-        after: time.PastTime = None,
+        after: humantime.PastTime = None,
     ):
         if not user:
             user = ctx.author
@@ -1319,7 +1317,7 @@ class Files(commands.Cog):
         ctx,
         user: typing.Optional[converters.DiscordMember] = None,
         *,
-        after: time.PastTime = None,
+        after: humantime.PastTime = None,
     ):
         if not user:
             user = ctx.author
@@ -1338,7 +1336,7 @@ class Files(commands.Cog):
         ctx,
         user: typing.Optional[converters.DiscordMember] = None,
         *,
-        after: time.PastTime = None,
+        after: humantime.PastTime = None,
     ):
         if not user:
             user = ctx.author
@@ -1357,7 +1355,7 @@ class Files(commands.Cog):
         ctx,
         user: typing.Optional[converters.DiscordMember] = None,
         *,
-        after: time.PastTime = None,
+        after: humantime.PastTime = None,
     ):
         if not user:
             user = ctx.author
@@ -1376,7 +1374,7 @@ class Files(commands.Cog):
         ctx,
         user: typing.Optional[converters.DiscordMember] = None,
         *,
-        after: time.PastTime = None,
+        after: humantime.PastTime = None,
     ):
         if not user:
             user = ctx.author
@@ -1395,7 +1393,7 @@ class Files(commands.Cog):
         ctx,
         user: typing.Optional[converters.DiscordMember] = None,
         *,
-        after: time.PastTime = None,
+        after: humantime.PastTime = None,
     ):
         if not user:
             user = ctx.author
@@ -1414,7 +1412,7 @@ class Files(commands.Cog):
         ctx,
         user: typing.Optional[converters.DiscordMember] = None,
         *,
-        after: time.PastTime = None,
+        after: humantime.PastTime = None,
     ):
         if not user:
             user = ctx.author
@@ -1433,7 +1431,7 @@ class Files(commands.Cog):
         ctx,
         user: typing.Optional[converters.DiscordMember] = None,
         *,
-        after: time.PastTime = None,
+        after: humantime.PastTime = None,
     ):
         if not user:
             user = ctx.author
@@ -1452,7 +1450,7 @@ class Files(commands.Cog):
         ctx,
         user: typing.Optional[converters.DiscordMember] = None,
         *,
-        after: time.PastTime = None,
+        after: humantime.PastTime = None,
     ):
         if not user:
             user = ctx.author
@@ -1471,7 +1469,7 @@ class Files(commands.Cog):
         ctx,
         user: typing.Optional[converters.DiscordMember] = None,
         *,
-        after: time.PastTime = None,
+        after: humantime.PastTime = None,
     ):
         if not user:
             user = ctx.author

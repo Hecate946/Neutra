@@ -8,7 +8,7 @@ import asyncpg
 import datetime
 from discord.ext import commands
 
-from utilities import time
+from utilities import humantime
 
 
 class Timer:

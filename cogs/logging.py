@@ -4,7 +4,7 @@ import discord
 
 from datetime import datetime
 from discord.ext import commands
-from utilities import time
+from utilities import humantime
 from utilities import utils
 from utilities import checks
 from utilities import converters
@@ -75,15 +75,16 @@ class Logging(commands.Cog):
     #####################
 
     @commands.Cog.listener()
+    @decorators.wait_until_ready()
     async def on_message(self, message):
+        if message.author.bot:
+            return
+        if not message.guild:
+            return
         webhook = await self.get_webhook(guild=message.guild)
         if webhook is None:
             return
         if not self.bot.server_settings[message.guild.id]["logging"]["discord_invites"]:
-            return
-        if self.bot.ready is False or message.author.bot:
-            return
-        if not message.guild:
             return
         dregex = re.compile(
             r"(?:https?://)?discord(?:app)?\.(?:com/invite|gg)/[a-zA-Z0-9]+/?")
@@ -1202,7 +1203,7 @@ class Logging(commands.Cog):
     @checks.bot_has_perms(view_audit_log=True)
     @checks.has_perms(view_audit_log=True)
     async def auditcount(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: {0}auditcount <user> [unit]
@@ -1269,7 +1270,7 @@ class Logging(commands.Cog):
                 """,
     )
     async def bans(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: {0}bans <user> [unit]
@@ -1302,7 +1303,7 @@ class Logging(commands.Cog):
 
     @auditcount.command()
     async def botadds(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: {0}botadds <user> [unit]
@@ -1357,7 +1358,7 @@ class Logging(commands.Cog):
                 """,
     )
     async def channeladds(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: {0}channeladds <user> [unit]
@@ -1418,7 +1419,7 @@ class Logging(commands.Cog):
                 """,
     )
     async def channelupdates(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: {0}channelupdates <user> [unit]
@@ -1478,7 +1479,7 @@ class Logging(commands.Cog):
                 """,
     )
     async def channeldeletes(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: {0}channeldeletes <user> [unit]
@@ -1538,7 +1539,7 @@ class Logging(commands.Cog):
                 """,
     )
     async def emojiadds(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: {0}emojiadds <user> [unit]
@@ -1597,7 +1598,7 @@ class Logging(commands.Cog):
                 """,
     )
     async def emojiupdates(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: {0}emojiupdates <user> [unit]
@@ -1653,7 +1654,7 @@ class Logging(commands.Cog):
                 """,
     )
     async def emojideletes(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: {0}emojideletes <user> [unit]
@@ -1709,7 +1710,7 @@ class Logging(commands.Cog):
                 """,
     )
     async def serverupdates(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: {0}serverupdates <user> [unit]
@@ -1772,7 +1773,7 @@ class Logging(commands.Cog):
                 """,
     )
     async def integrationadds(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: {0}integrationadds <user> [unit]
@@ -1832,7 +1833,7 @@ class Logging(commands.Cog):
                 """,
     )
     async def integrationupdates(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: {0}integrationupdates <user> [unit]
@@ -1892,7 +1893,7 @@ class Logging(commands.Cog):
                 """,
     )
     async def integrationdeletes(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: {0}integrationdeletes <user> [unit]
@@ -1952,7 +1953,7 @@ class Logging(commands.Cog):
                 """,
     )
     async def inviteadds(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: {0}inviteadds <user> [unit]
@@ -2012,7 +2013,7 @@ class Logging(commands.Cog):
                 """,
     )
     async def inviteupdates(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: {0}inviteupdates <user> [unit]
@@ -2072,7 +2073,7 @@ class Logging(commands.Cog):
                 """,
     )
     async def invitedeletes(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: {0}invitedeletes <user> [unit]
@@ -2132,7 +2133,7 @@ class Logging(commands.Cog):
                 """,
     )
     async def kicks(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: {0}kicks <user> [unit]
@@ -2187,7 +2188,7 @@ class Logging(commands.Cog):
                 """,
     )
     async def vckicks(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: {0}vckicks <user> [unit]
@@ -2247,7 +2248,7 @@ class Logging(commands.Cog):
                 """,
     )
     async def moves(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: {0}moves <user> [unit]
@@ -2302,7 +2303,7 @@ class Logging(commands.Cog):
                 """,
     )
     async def bulkdeletes(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: {0}bulkdeletes <user> [unit]
@@ -2362,7 +2363,7 @@ class Logging(commands.Cog):
                 """,
     )
     async def deletes(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: {0}deletes <user> [unit]
@@ -2422,7 +2423,7 @@ class Logging(commands.Cog):
                 """,
     )
     async def pins(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: {0}pins <user> [unit]
@@ -2478,7 +2479,7 @@ class Logging(commands.Cog):
                 """,
     )
     async def unpins(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: {0}pins <user> [unit]
@@ -2539,7 +2540,7 @@ class Logging(commands.Cog):
                 """,
     )
     async def roleadds(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: {0}pins <user> [unit]
@@ -2595,7 +2596,7 @@ class Logging(commands.Cog):
                 """,
     )
     async def roleupdates(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: {0}roleupdates <user> [unit]
@@ -2651,7 +2652,7 @@ class Logging(commands.Cog):
                 """,
     )
     async def roledeletes(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: {0}roledeletes <user> [unit]
@@ -2707,7 +2708,7 @@ class Logging(commands.Cog):
                 """,
     )
     async def unbans(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: {0}unbans <user> [after]
@@ -2763,7 +2764,7 @@ class Logging(commands.Cog):
                 """,
     )
     async def webhookadds(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: {0}webhookadds <user> [after]
@@ -2824,7 +2825,7 @@ class Logging(commands.Cog):
                 """,
     )
     async def webhookupdates(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: {0}webhookupdates <user> [after]
@@ -2885,7 +2886,7 @@ class Logging(commands.Cog):
                 """,
     )
     async def webhookdeletes(
-        self, ctx, user: converters.DiscordMember = None, *, after: time.PastTime = None
+        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
     ):
         """
         Usage: {0}webhookdeletes <user> [after]

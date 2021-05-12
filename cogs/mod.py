@@ -13,7 +13,7 @@ from discord.ext import commands
 
 from settings import database
 
-from utilities import time
+from utilities import humantime
 from utilities import utils
 from utilities import checks
 from utilities import helpers
@@ -1367,7 +1367,7 @@ class Mod(commands.Cog):
 
             if args.duration:
                 dur = " ".join(args.duration)
-                duration = await time.FutureTime(dur).convert(ctx, dur)
+                duration = await humantime.FutureTime(dur).convert(ctx, dur)
                 endtime = duration.dt
             else:
                 endtime = None
@@ -1436,7 +1436,7 @@ class Mod(commands.Cog):
                         f"**Moderator: `{ctx.author} ({ctx.author.id})`**\n"
                     )
                     if endtime:
-                        timefmt = time.human_timedelta(
+                        timefmt = humantime.human_timedelta(
                             duration.dt, source=timer.created_at
                         )
                         embed.description += f"**Duration: `{timefmt}`**\n"
@@ -1453,7 +1453,7 @@ class Mod(commands.Cog):
         if muted:
             self.bot.dispatch("mod_action", ctx, targets=muted)
             if endtime:
-                timefmt = time.human_timedelta(duration.dt, source=timer.created_at)
+                timefmt = humantime.human_timedelta(duration.dt, source=timer.created_at)
                 await ctx.success(f"Muted `{', '.join(muted)}` for **{timefmt}.**")
 
             else:
@@ -1466,7 +1466,7 @@ class Mod(commands.Cog):
         self,
         ctx,
         users: commands.Greedy[converters.DiscordMember],
-        duration: time.FutureTime,
+        duration: humantime.FutureTime,
         *,
         reason: converters.ActionReason = None,
     ):
@@ -1509,7 +1509,7 @@ class Mod(commands.Cog):
         if banned:
             self.bot.dispatch("mod_action", ctx, targets=banned)
             await ctx.success(
-                f"Banned `{', '.join(banned)}` for {time.human_timedelta(duration.dt, source=timer.created_at)}."
+                f"Banned `{', '.join(banned)}` for {humantime.human_timedelta(duration.dt, source=timer.created_at)}."
             )
 
     @commands.Cog.listener()

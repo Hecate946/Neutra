@@ -1,8 +1,12 @@
+import io
 import re
 import json
+from discord.ext.commands.core import check
 import pytz
-import time
+import time as t
 import typing
+import discord
+import collections
 
 from datetime import datetime
 from datetime import timedelta
@@ -12,10 +16,11 @@ from geopy import geocoders
 
 from utilities import utils
 from utilities import checks
+from utilities import humantime
 from utilities import converters
 from utilities import decorators
+from utilities import formatting
 from utilities import pagination
-
 
 def setup(bot):
     bot.add_cog(Times(bot))
@@ -449,12 +454,12 @@ class Times(commands.Cog):
         """
         author = ctx.author
         if author.id not in self.stopwatches:
-            self.stopwatches[author.id] = int(time.perf_counter())
+            self.stopwatches[author.id] = int(t.perf_counter())
             await ctx.send_or_reply(
                 content=f"{self.bot.emote_dict['stopwatch']} Stopwatch started!",
             )
         else:
-            tmp = abs(self.stopwatches[author.id] - int(time.perf_counter()))
+            tmp = abs(self.stopwatches[author.id] - int(t.perf_counter()))
             tmp = str(timedelta(seconds=tmp))
             await ctx.send_or_reply(
                 content=f"{self.bot.emote_dict['stopwatch']} Stopwatch stopped! Time: **{tmp}**",
@@ -486,27 +491,36 @@ class Times(commands.Cog):
         hidden=True,
         brief="Show the days a user was active.",
         implemented="2021-05-12 07:46:53.635661",
-        updated="2021-05-12 07:46:53.635661",
+        updated="2021-05-12 15:25:00.152528",
+        examples="""
+                {0}clocker
+                {0}clocker Hecate
+                {0}clocker @Hecate 3 days ago
+                {0}clocker 708584008065351681 2m
+                {0}clocker Hecate#3523 one month ago
+                """
     )
-    async def clocker(self, ctx, user: typing.Optional[converters.DiscordMember] = None, time="month"):
+    @checks.has_perms(view_audit_log=True)
+    async def clocker(self, ctx, user: typing.Optional[converters.DiscordMember] = None, *, time: humantime.PastTime = None):
         """
         Usage: {0}clocker [user] [time]
         Output:
             Counts the days that
             a user has sent a message
             in the specified time period.
+        Notes:
+            If no time frame is specified,
+            will default to 1 week.
         """
         if user is None:
             user = ctx.author
-        time = time.lower()
-        if time not in ['month', 'week']:
-            raise commands.BadArgument("Time must be either `months` or `weeks`")
         await ctx.trigger_typing()
-        time_dict = {
-            "month": 259200000,
-            "week": 604800
-        }
-        actual_time = time_dict.get(time)
+        if time:
+            actual_time = (datetime.utcnow() - time.dt).total_seconds()
+            the_datetime = time.dt
+        else:
+            actual_time = 604800  # 1 week
+            the_datetime = datetime.utcfromtimestamp(t.time() - actual_time)
         query = """
                 SELECT DISTINCT (
                     SELECT EXTRACT(
@@ -517,12 +531,70 @@ class Times(commands.Cog):
                     AND unix > ((SELECT extract(epoch from now()) - $2))
                 ) FROM messages;
                 """
-        row = await self.bot.cxn.fetch(query, user.id, actual_time)
+        row = await self.bot.cxn.fetch(query, user.id, (actual_time - 86400))
         results = len([x[0] for x in row if x[0] is not None])
-        await self.bot.hecate.send(results)
-        if time == "week":
-            results = results if (results < 8) else 7
-        if time == "month":
-            results = results if (results < 31) else 31
-        await ctx.send(f"User `{user}` has been online {results} day{'' if results == 1 else 's'} in the past {time}.")
+        emote = self.bot.emote_dict['graph']
+        pluralize = '' if results == 1 else 's'
+        timefmt = humantime.human_timedelta(the_datetime, accuracy=1)
+        msg = f"{emote} User `{user}` has logged into discord **{results} day{pluralize} since {timefmt}.**"
+        await ctx.send_or_reply(msg)
 
+    @decorators.command(
+        hidden=True,
+        brief="Show all active users.",
+        implemented="2021-05-12 15:25:00.152528",
+        updated="2021-05-12 15:25:00.152528",
+        examples="""
+                {0}clocking
+                {0}clocking 2m
+                {0}clocking 1 month ago
+                {0}clocking 3 weeks ago
+                """
+    )
+    @checks.bot_has_perms(attach_files=True)
+    @checks.has_perms(manage_guild=True)
+    async def clocking(self, ctx, *, timeframe: humantime.PastTime = None):
+        """
+        Usage: {0}clocking [time]
+        Output:
+            Shows all users who have
+            sent a message in the server
+            in the specified time frame
+        Notes:
+            If no time frame is specified,
+            will default to 1 week.
+        """
+        await ctx.trigger_typing()
+        if timeframe:
+            actual_time = (datetime.utcnow() - timeframe.dt).total_seconds()
+            the_datetime = timeframe.dt
+        else:
+            actual_time = 604800  # 1 week
+            the_datetime = datetime.utcfromtimestamp(t.time() - actual_time)
+        query = """
+                SELECT DISTINCT author_id, (SELECT EXTRACT(DAY FROM (TO_TIMESTAMP(unix))))
+                FROM messages
+                WHERE server_id = $1
+                AND unix > (SELECT extract(epoch from now()) - $2);
+                """
+        rows = await self.bot.cxn.fetch(query, ctx.guild.id, (actual_time - 86400))
+        counter = collections.Counter([row[0] for row in rows])
+        fmt = [(str(ctx.guild.get_member(x[0])), x[1]) for x in counter.items() if ctx.guild.get_member(x[0]) is not None]
+        sort = sorted(fmt, key=lambda x: x[1], reverse=True)
+        enumerated = [(y, x[0], x[1]) for y, x in enumerate(sort, start=1)]
+        headers = ['INDEX', 'NAME', 'DAYS']
+        table = formatting.TabularData()
+        table.set_columns(headers)
+        table.add_rows(enumerated)
+        render = table.render()
+        completed = f"```sml\n{render}```"
+
+        emote = self.bot.emote_dict['graph']
+        pluralize = '' if len(counter) == 1 else 's'
+        timefmt = humantime.human_timedelta(the_datetime, accuracy=1)
+        await ctx.bold(f"{emote} {len(counter)} user{pluralize} have logged in since {timefmt} in {ctx.guild.name}.")
+        if len(completed) > 2000:
+            fp = io.BytesIO(completed.encode("utf-8"))
+            await ctx.send_or_reply(file=discord.File(fp, "results.sml"))
+        else:
+            await ctx.send_or_reply(completed)
