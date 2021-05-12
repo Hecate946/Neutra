@@ -49,9 +49,9 @@ class Manager(commands.Cog):
         updated="2021-05-11 03:03:20.517480",
         examples="""
                 {0}refresh
-                """
+                """,
     )
-    async def refresh(self, ctx, db = False):
+    async def refresh(self, ctx, db=False):
         """
         Usage: {0}refresh [db|-db|--db=False]
         Output:
@@ -65,7 +65,7 @@ class Manager(commands.Cog):
         importlib.reload(core)
         starter = importlib.import_module("starter", package=".")
         importlib.reload(starter)
-        if db in ['db', '-db', '--db']:
+        if db in ["db", "-db", "--db"]:
             await ctx.invoke(self.update)
         await ctx.invoke(self.botvars)
         await ctx.invoke(self.reloadallutils)
@@ -407,7 +407,7 @@ class Manager(commands.Cog):
         examples="""
                 {0}reboot
                 {0}restart
-                """
+                """,
     )
     async def reboot(self, ctx):
         """
@@ -471,9 +471,7 @@ class Manager(commands.Cog):
             return await ctx.usage("<option>")
 
     @logger.command(
-        name="commands",
-        aliases=["cmds"],
-        brief="Show the commands.log file."
+        name="commands", aliases=["cmds"], brief="Show the commands.log file."
     )
     async def _get_cmds(self, ctx):
         """
@@ -488,8 +486,8 @@ class Manager(commands.Cog):
 
     @logger.command(
         name="traceback",
-        aliases=['tracebacks','trace','t', 'tb'],
-        brief="Show the traceback.log file"
+        aliases=["tracebacks", "trace", "t", "tb"],
+        brief="Show the traceback.log file",
     )
     async def _traceback(self, ctx):
         """
@@ -508,7 +506,7 @@ class Manager(commands.Cog):
 
     @logger.command(
         name="info",
-        aliases=['i', 'information'],
+        aliases=["i", "information"],
         brief="Show the info.log file.",
     )
     async def _info(self, ctx):
@@ -526,8 +524,8 @@ class Manager(commands.Cog):
 
     @logger.command(
         name="errors",
-        aliases=['err', 'error', 'stderr', 'e'],
-        brief="Show the errors.log file."
+        aliases=["err", "error", "stderr", "e"],
+        brief="Show the errors.log file.",
     )
     async def _errors(self, ctx):
         """
@@ -546,7 +544,7 @@ class Manager(commands.Cog):
 
     @logger.command(
         name="clear",
-        aliases=['cl','clr'],
+        aliases=["cl", "clr"],
         brief="Delete a logging file.",
     )
     async def _cl(self, ctx, search):
@@ -596,15 +594,12 @@ class Manager(commands.Cog):
             stdout|out|output
             stderr|err|error|errors
             pid|process|processid
-            clear|clr|cl 
+            clear|clr|cl
         """
         if ctx.invoked_subcommand is None:
             return await ctx.usage("<option>")
 
-    @pm2.command(
-        aliases=["out", "output"],
-        brief="View the pm2 stdout file."
-    )
+    @pm2.command(aliases=["out", "output"], brief="View the pm2 stdout file.")
     async def stdout(self, ctx):
         """
         Usage: {0}pm2 stdout
@@ -671,11 +666,7 @@ class Manager(commands.Cog):
         else:
             raise commands.BadArgument(f"No pid file currently exists.")
 
-    @pm2.command(
-        name="clear",
-        aliases=['cl', 'clr'],
-        brief="Delete a pm2 log file."
-    )
+    @pm2.command(name="clear", aliases=["cl", "clr"], brief="Delete a pm2 log file.")
     async def _clr(self, ctx, search):
         """
         Usage: {0}pm2 clear <search>
@@ -723,10 +714,7 @@ class Manager(commands.Cog):
         if ctx.invoked_subcommand is None:
             return await ctx.usage("<option>")
 
-    @json.command(
-        aliases=["bl"],
-        brief="Show blacklisted discord objects."
-    )
+    @json.command(aliases=["bl"], brief="Show blacklisted discord objects.")
     async def blacklist(self, ctx):
         """
         Usage: {0}json blacklist
@@ -846,9 +834,7 @@ class Manager(commands.Cog):
         else:
             await ctx.send_or_reply(content=fmt)
 
-    @decorators.command(
-        brief="Show info on a db table."
-    )
+    @decorators.command(brief="Show info on a db table.")
     async def table(self, ctx, *, table_name: str = None):
         """Runs a query describing the table schema."""
 
@@ -1302,9 +1288,7 @@ class Manager(commands.Cog):
         embed.description = "\n".join(description)
         await ctx.send_or_reply(embed=embed)
 
-    @decorators.command(
-        aliases=["perf", "elapsed"], brief="Time a command response."
-    )
+    @decorators.command(aliases=["perf", "elapsed"], brief="Time a command response.")
     async def elapse(self, ctx, *, command):
         """Checks the timing of a command, attempting to suppress HTTP and DB calls."""
 

@@ -44,7 +44,11 @@ class BotContext(commands.Context):
             name = command.qualified_name
         else:
             name = self.command.qualified_name
-        content = f"Usage: `{self.prefix}{name} " + (usage if usage else self.command.signature) + "`"
+        content = (
+            f"Usage: `{self.prefix}{name} "
+            + (usage if usage else self.command.signature)
+            + "`"
+        )
         return await self.send_or_reply(content, **kwargs)
 
     async def load(self, content=None, **kwargs):

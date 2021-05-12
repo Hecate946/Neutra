@@ -374,7 +374,6 @@ class BannedMember(commands.Converter):
         return entity
 
 
-
 class Arguments(argparse.ArgumentParser):
     def error(self, message):
         raise RuntimeError(message)
@@ -541,6 +540,7 @@ class DiscordMember(commands.Converter):
                 f"User `{await prettify(ctx, argument)}` not found."
             )
         return match
+
 
 class DiscordRole(commands.Converter):
     """

@@ -18,10 +18,12 @@ try:
     timezonedb = config["timezonedb"]
     token = config["token"]
 except KeyError as e:
-    print(f"""
+    print(
+        f"""
           Warning! The key {e} is missing from your ./config.json file.
           Add this key or the bot might not function properly.
-          """)
+          """
+    )
 emotes = {
     "loading": "<a:loading:819280509007560756>",
     "success": "<:checkmark:816534984676081705>",
@@ -70,6 +72,7 @@ emotes = {
     "num8": "<:num8:827219942444236810>",
     "num9": "<:num9:827219942758809610>",
     "stop": "<:stop:827257105420910652>",
+    "stopsign": "<:stopsign:841848010690658335>",
     "clock": "<:clock:839640961755643915>",
     "alarm": "<:alarm:839640804246683648>",
     "stopwatch": "<:stopwatch:827075158967189544>",
@@ -94,4 +97,5 @@ emotes = {
     "pin": "<:pin:840492943226961941>",
     "pass": "<:pass:840817730277867541>",
     "fail": "<:fail:840817815148953600>",
+    "snowflake": "<:snowflake:841848061412376596>",
 }

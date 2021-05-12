@@ -28,10 +28,10 @@ class Roles(commands.Cog):
             discord.Status.idle: "3",
         }  # for sorting
         self.statusmap2 = {
-            discord.Status.online: bot.emote_dict['online'],
-            discord.Status.dnd: bot.emote_dict['dnd'],
-            discord.Status.idle: bot.emote_dict['idle'],
-            discord.Status.offline: bot.emote_dict['offline'],
+            discord.Status.online: bot.emote_dict["online"],
+            discord.Status.dnd: bot.emote_dict["dnd"],
+            discord.Status.idle: bot.emote_dict["idle"],
+            discord.Status.offline: bot.emote_dict["offline"],
         }
 
     @decorators.command(
@@ -241,7 +241,12 @@ class Roles(commands.Cog):
             await help_command(ctx, invokercommand="massrole")
 
     @massrole.command(brief="Adds all members with a certain role a new role.")
-    async def add(self, ctx, role1: converters.DiscordRole = None, role2: converters.DiscordRole = None):
+    async def add(
+        self,
+        ctx,
+        role1: converters.DiscordRole = None,
+        role2: converters.DiscordRole = None,
+    ):
         if role1 is None:
             return await ctx.send_or_reply(
                 content="Usage: `{ctx.prefix}massrole add <role1> <role2> ",
@@ -325,7 +330,9 @@ class Roles(commands.Cog):
         brief="Removes all members with a certain role a new role",
         aliases=["rm", "rem"],
     )
-    async def remove(self, ctx, role1: converters.DiscordRole, role2: converters.DiscordRole):
+    async def remove(
+        self, ctx, role1: converters.DiscordRole, role2: converters.DiscordRole
+    ):
         if role1 is None:
             return await ctx.send_or_reply(
                 content="Usage: `{ctx.prefix}massrole add <role1> <role2> ",

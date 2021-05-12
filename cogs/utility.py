@@ -1156,8 +1156,9 @@ class Utility(commands.Cog):
             (sid >> 22) + 1420070400000
         ) / 1000  # python uses seconds not milliseconds
         cdate = datetime.utcfromtimestamp(timestamp)
-        msg = "Snowflake created {}".format(
-            cdate.strftime("%A, %B %d, %Y at %H:%M:%S UTC")
+        msg = "{} Snowflake created {}".format(
+            self.bot.emote_dict["snowflake"],
+            cdate.strftime("%A, %B %d, %Y at %H:%M:%S UTC"),
         )
         return await ctx.send_or_reply(msg)
 
