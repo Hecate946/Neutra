@@ -41,12 +41,6 @@ CREATE TABLE IF NOT EXISTS useravatars (
     unix REAL
 );
 
--- ALTER TABLE userstatus
---     ALTER COLUMN online TYPE NUMERIC,
---     ALTER COLUMN idle TYPE NUMERIC,
---     ALTER COLUMN dnd TYPE NUMERIC,
---     ALTER COLUMN offline TYPE NUMERIC,
---     ALTER COLUMN last_changed TYPE NUMERIC;
 CREATE TABLE IF NOT EXISTS userstatus (
     user_id BIGINT PRIMARY KEY,
     online NUMERIC DEFAULT 0 NOT NULL,

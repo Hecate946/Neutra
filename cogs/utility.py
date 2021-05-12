@@ -36,6 +36,7 @@ from pyparsing import (
 
 from utilities import utils
 from utilities import checks
+from utilities import cleaner
 from utilities import converters
 from utilities import decorators
 from utilities import pagination
@@ -1180,34 +1181,18 @@ class Utility(commands.Cog):
         Output: Raw message content
         """
         raw_data = await self.bot.http.get_message(message.channel.id, message.id)
-
-        if message.content:
-            content = message.content
-            for e in message.content:
-                emoji_unicode = e.encode("unicode-escape").decode("ASCII")
-                content = content.replace(e, emoji_unicode)
-            return await ctx.send_or_reply(
-                "```\n" + "Raw Content\n===========\n\n" + content + "\n```"
-            )
-
-        transformer = pprint.pformat
-        desc = ""
-        for field_name in ("embeds", "attachments"):
-            data = raw_data[field_name]
-
-            if not data:
-                continue
-
-            total = len(data)
-            for current, item in enumerate(data, start=1):
-                title = f"Raw {field_name} ({current}/{total})"
-                desc += f"{title}\n\n{transformer(item)}\n"
-        p = pagination.MainMenu(pagination.TextPageSource(desc, prefix="```"))
-
+        string = json.dumps(raw_data, indent=2)
+        string = cleaner.clean_all(string)
+        if len(string) < 1990:
+            msg = "```json\n"+str(string)+ "```"
+            await ctx.send(msg)
+            return
+        p = pagination.MainMenu(pagination.TextPageSource(string, prefix="```json"))
         try:
             await p.start(ctx)
         except menus.MenuError as e:
             await ctx.send_or_reply(str(e))
+
 
     @decorators.command(
         aliases=["epost"],

@@ -2,7 +2,7 @@ import re
 import json
 import pytz
 import time
-import discord
+import typing
 
 from datetime import datetime
 from datetime import timedelta
@@ -481,3 +481,46 @@ class Times(commands.Cog):
             python time format.
         """
         await ctx.send_or_reply(f"{self.bot.emote_dict['clock']} `{datetime.utcnow()}`")
+
+    @decorators.command(
+        brief="Show the days a user was active.",
+        implemented="2021-05-12 07:46:53.635661",
+        updated="2021-05-12 07:46:53.635661",
+    )
+    async def clocker(self, ctx, user: typing.Optional[converters.DiscordMember] = None, time="month"):
+        """
+        Usage: {0}clocker [user] [time]
+        Output:
+            Counts the days that
+            a user has sent a message
+            in the specified time period.
+        """
+        if user is None:
+            user = ctx.author
+        time = time.lower()
+        if time not in ['month', 'week']:
+            raise commands.BadArgument("Time must be either `months` or `weeks`")
+        await ctx.trigger_typing()
+        time_dict = {
+            "month": 259200000,
+            "week": 604800
+        }
+        actual_time = time_dict.get(time)
+        query = """
+                SELECT DISTINCT (
+                    SELECT EXTRACT(
+                        DAY FROM (
+                            TO_TIMESTAMP(unix)
+                        )
+                    ) WHERE author_id = $1
+                    AND unix > ((SELECT extract(epoch from now()) - $2))
+                ) FROM messages;
+                """
+        row = await self.bot.cxn.fetch(query, user.id, actual_time)
+        results = len([x[0] for x in row if x[0] is not None])
+        if time == "week":
+            results = results if (results < 8) else 7
+        if time == "month":
+            results = results if (results < 31) else 7
+        await ctx.send(f"User `{user}` has been online {results} day{'' if results == 1 else 's'} in the past {time}.")
+
