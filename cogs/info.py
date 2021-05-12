@@ -153,7 +153,7 @@ class Info(commands.Cog):
         embed.add_field(name="RAM", value=f"{ram_usage:.2f} MB", inline=True)
 
         await msg.edit(
-            content=f"{self.bot.emote_dict['snowflake'] }About **{ctx.bot.user}** | **{round(bot_version, 1)}**",
+            content=f"{self.bot.emote_dict['snowflake']} About **{ctx.bot.user}** | **{round(bot_version, 1)}**",
             embed=embed,
         )
 
