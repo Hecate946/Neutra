@@ -4,7 +4,6 @@ import discord
 
 from datetime import datetime
 from discord.ext import commands
-
 from utilities import time
 from utilities import utils
 from utilities import checks
@@ -44,9 +43,8 @@ class Logging(commands.Cog):
             return
         return True
 
-    async def get_webhook(
-        self, guild
-    ):  # This gets the logging webhook for a guild if they have logging setup
+    async def get_webhook(self, guild):
+        # This gets the logging webhook for a guild if they have logging setup
         try:
             logchannel_id = self.bot.server_settings[guild.id]["logging"]["logchannel"]
             webhook_id = self.bot.server_settings[guild.id]["logging"]["webhook_id"]
@@ -75,6 +73,103 @@ class Logging(commands.Cog):
     #####################
     ## Event Listeners ##
     #####################
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        webhook = await self.get_webhook(guild=message.guild)
+        if webhook is None:
+            return
+        if not self.bot.server_settings[message.guild.id]["logging"]["discord_invites"]:
+            return
+        if self.bot.ready is False or message.author.bot:
+            return
+        if not message.guild:
+            return
+        dregex = re.compile(
+            r"(?:https?://)?discord(?:app)?\.(?:com/invite|gg)/[a-zA-Z0-9]+/?")
+        if not dregex.search(message.content):
+            return
+
+        embed = discord.Embed(description=f"**Author:**  {message.author.mention}, **ID:** `{message.author.id}`\n"
+            f"**Channel:** {message.channel.mention} **ID:** `{message.channel.id}`\n"
+            f"**Server:** `{message.guild.name}` **ID:** `{message.guild.id},`\n\n"
+            f"**__Invite Link:___**```fix\n{message.content}```\n"
+            f"**[Jump to message](https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id})**",
+            color=self.bot.constants.embed,
+            timestamp=datetime.utcnow())
+        embed.set_author(
+            name="Invite Link Posted",
+            icon_url="https://media.discordapp.net/attachments/506838906872922145/603643138854354944/messageupdate.png",
+        )
+        await webhook.execute(embed=embed, username=self.bot.user.name)
+
+    @commands.Cog.listener()
+    async def on_guild_update(self, before, after):
+        webhook = await self.get_webhook(guild=after)
+
+        if webhook is None:
+            return
+        if not self.bot.server_settings[after.id]["logging"]["server_updates"]:
+            return
+
+        audit = [entry async for entry in after.audit_logs(action=discord.AuditLogAction.guild_update)][0]
+        if not before.name == after.name:
+            embed = discord.Embed(description=f"**Author:**  `{audit.user.name}#{audit.user.discriminator}`\n\n"
+                f"**___Previous Name___**: ```fix\n{before.name}```"
+                f"**___Current Name___**: ```fix\n{after.name}```",
+                color=self.bot.constants.embed)
+
+            embed.set_author(
+                name="Server Name Edited",
+                icon_url="https://media.discordapp.net/attachments/506838906872922145/603643138854354944/messageupdate.png",
+            )
+
+            return await webhook.execute(embed=embed, username=self.bot.user.name)
+        embed = discord.Embed(description=f"**Author:**  `{audit.user.name}#{audit.user.discriminator}`\n"
+                              "**New Image below**",
+                              color=self.bot.constants.embed)
+
+        embed.set_author(
+            name="Server Icon Edited",
+            icon_url="https://media.discordapp.net/attachments/506838906872922145/603643138854354944/messageupdate.png",
+        )
+
+        embed.set_image(url=after.icon_url)
+        return await webhook.execute(embed=embed, username=self.bot.user.name)
+
+    @commands.Cog.listener()
+    async def on_guild_emojis_update(self, guild, before, after):
+        webhook = await self.get_webhook(guild=guild)
+        if webhook is None:
+            return
+
+        if not self.bot.server_settings[guild.id]["logging"]["emojis"]:
+            return
+
+        new = True if len(after) > len(before) else False
+        emoji = after[-1] if new else None
+
+        if not new:
+            for emoji in before:
+                if emoji not in after:
+                    old_emoji = emoji
+                    new = False
+
+        embed = discord.Embed(color=self.bot.constants.embed,
+            timestamp=datetime.utcnow(),
+            footer={'text': emoji.id})
+
+        if new:
+            embed.description = f"**Emoji: <:{emoji.name}:{emoji.id}>\nName: `{emoji.name}`**\n",
+        else:
+            embed.description = f"**Name: `{emoji.name}`**\n"
+
+        embed.set_author(
+            name=f"Emoji {'created' if new else 'deleted'}.",
+            icon_url=f"{'https://cdn.discordapp.com/attachments/805638877762420789/841819884622053376/messageadd.png' if new else 'https://cdn.discordapp.com/attachments/506838906872922145/603642595419357190/messagedelete.png'}"
+        )
+
+        await webhook.execute(embed=embed, username=self.bot.user.name)
 
     @commands.Cog.listener()
     async def on_guild_channel_create(self, channel):
@@ -754,17 +849,15 @@ class Logging(commands.Cog):
     @checks.has_perms(manage_guild=True)
     async def logchannel(self, ctx, channel: discord.TextChannel = None):
         """
-        Usage: -logchannel [channel]
-        Aliases: -logserver, -setlogchannel
+        Usage: {0}logchannel [channel]
+        Aliases: {0}logserver, {0}setlogchannel
         Output: Sets up a logging channel for the server
         Notes:
-            Use -log [event] and -unlog [event] to enable/disable
+            Use {0}log [event] and {0}unlog [event] to enable/disable
             specific logging events that are sent to the logchannel
         """
         if channel is None:
-            channel = (
-                ctx.channel
-            )  # no arguments sets current channel to logging channel
+            channel = ctx.channel # no arguments sets current channel to logging channel
 
         webhook_id = self.bot.server_settings[ctx.guild.id]["logging"]["webhook_id"]
         logchannel = self.bot.server_settings[ctx.guild.id]["logging"]["logchannel"]
@@ -776,18 +869,13 @@ class Logging(commands.Cog):
         server_webhook_list = await ctx.guild.webhooks()
 
         for webhook in server_webhook_list:
-            if str(webhook.id) == str(webhook_id):  # if current log channel exists
-                if (
-                    self.bot.get_channel(logchannel) == channel
-                ):  # if log channel is same as current log channel
-                    return await ctx.send_or_reply(
-                        f"{self.bot.emote_dict['failed']} This is already the logging channel."
-                    )
+            if str(webhook.id) == str(webhook_id): # if current log channel exists
+                if self.bot.get_channel(logchannel) == channel: # if log channel is same as current log channel
+                    return await ctx.send_or_reply(f"{self.bot.emote_dict['failed']} This is already the logging channel.")
 
-                await self.unlogchannel(ctx, write=False)  # unlogs current channel
-                return await self.logchannel(
-                    ctx, channel
-                )  # does it again but with no existing log channel
+
+                await self.unlogchannel(ctx, write=False) # unlogs current channel
+                return await self.logchannel(ctx, channel) # does it again but with no existing log channel
 
         return await self.do_logging(ctx, channel)
 
@@ -796,8 +884,8 @@ class Logging(commands.Cog):
     @checks.has_perms(manage_guild=True)
     async def unlogchannel(self, ctx, write=True):
         """
-        Usage: -unlogchannel
-        Alias: -unlogserver
+        Usage: {0}unlogchannel
+        Alias: {0}unlogserver
         Permission: Manage Server
         Output:
             Removes the server's logging channel
@@ -806,7 +894,7 @@ class Logging(commands.Cog):
         found = []
         for webhook in server_webhook_list:
             if str(webhook.id) == str(
-                self.bot.server_settings[ctx.guild.id]["logging"]["webhook_id"]
+                    self.bot.server_settings[ctx.guild.id]["logging"]["webhook_id"]
             ):
                 found.append(webhook.name)
         if found:
@@ -832,10 +920,10 @@ class Logging(commands.Cog):
     )
     @commands.guild_only()
     @checks.has_perms(manage_guild=True)
-    async def log(self, ctx, log_arg=None):
+    async def log(self, ctx, *, log_arg = None):
         """
-        Usage:      -log <option>
-        Example:    -log deletes
+        Usage:      {0}log <option>
+        Example:    {0}log deletes
         Permission: Manage Server
         Output:     Enables a specific logging event
         Options:
@@ -849,53 +937,34 @@ class Logging(commands.Cog):
             channels
             leaves
             joins
+            server
+            invites
+            emojis
         Notes:
             After your server's log channel has been setup,
             all actions are enabled by default.
             Use 'all' as an option to enable all options.
+            Using no arguments gets a list of what is currently logged.
         """
         if log_arg is not None:
-            return await self.log_or_unlog(ctx, log_arg)  # logs the argument passed
+            return await self.log_or_unlog(ctx, log_arg) # logs the argument passed
 
         if self.bot.server_settings[ctx.guild.id]["logging"]["logchannel"] is None:
-            return await ctx.send_or_reply(
-                f"There is no logging channel setup. Use `{ctx.prefix}logchannel <channel name>` to set up a logging channel."
-            )
-        log_types = (
-            "message_deletions",
-            "message_edits",
-            "role_changes",
-            "name_updates",
-            "voice_state_updates",
-            "avatar_changes",
-            "bans",
-            "channel_updates",
-            "leaves",
-            "joins",
-        )
+            return await ctx.send_or_reply(f"There is no logging channel setup. Use `{ctx.prefix}logchannel <channel name>` to set up a logging channel.")
+        log_types = ("message_deletions", "message_edits", "role_changes", "name_updates","voice_state_updates",
+                            "avatar_changes", "bans", "channel_updates", "leaves", "joins", "discord_invites", "server_updates", "emojis")
         embed = discord.Embed(title="Logging Settings", color=self.bot.constants.embed)
-        embed.description = "\n".join(
-            [
-                f"{self.bot.emote_dict['pass'] if log_bool else self.bot.emote_dict['fail']} {log_type.capitalize()}"
-                for log_type, log_bool in {
-                    key: self.bot.server_settings[ctx.guild.id]["logging"][key]
-                    for key in log_types
-                }.items()
-            ]
-        ).replace("_", " ")
-        embed.add_field(
-            name=f"Logging Channel",
-            value=f"{self.bot.get_channel(self.bot.server_settings[ctx.guild.id]['logging']['logchannel']).mention}",
-        )
+        embed.description = '\n'.join([f"{self.bot.emote_dict['pass'] if log_bool else self.bot.emote_dict['fail']} {log_type.capitalize()}" for log_type, log_bool in {key: self.bot.server_settings[ctx.guild.id]["logging"][key] for key in log_types}.items()]).replace("_", " ")
+        embed.add_field(name=f"Logging Channel", value=f"{self.bot.get_channel(self.bot.server_settings[ctx.guild.id]['logging']['logchannel']).mention}")
         await ctx.send(embed=embed)
 
     @decorators.command(brief="Disable specific logging events.")
     @commands.guild_only()
     @checks.has_perms(manage_guild=True)
-    async def unlog(self, ctx, log_arg):
+    async def unlog(self, ctx, *, log_arg):
         """
-        Usage:      -unlog <option>
-        Example:    -unlog deletes
+        Usage:      {0}unlog <option>
+        Example:    {0}unlog deletes
         Permission: Manage Server
         Output:     Disables a specific logging event
         Options:
@@ -909,11 +978,9 @@ class Logging(commands.Cog):
             channels
             leaves
             joins
-
         Notes:
             After your server's log channel has been setup,
             all actions are enabled by default.
-            -----------------------------------------------
             Use 'all' as an option to disable all options.
         """
         await self.log_or_unlog(ctx, log_arg, False)
@@ -990,9 +1057,40 @@ class Logging(commands.Cog):
                 "chan",
                 "channel_edits",
                 "channel_changes",
+                "channel",
+                "channel updates"
             ]
-            leaves = ["leaves", "leave", "left"]
-            joins = ["joins", "join", "joined", "member_join"]
+            leaves = [
+                "leaves",
+                "leave",
+                "left"
+            ]
+            joins = [
+                "joins",
+                "join",
+                "joined",
+                "member_join"
+            ]
+            invites = [
+                "discord_invites",
+                "invites",
+                "invite",
+                "discord invites",
+                "invite link",
+                "invite links"
+            ]
+            server = [
+                "server_updates",
+                "server updates",
+                "server",
+                "servers",
+                "server update"
+            ]
+            emojis = [
+                "emojis",
+                "emotes",
+                "emoji"
+            ]
             all_option = ["all", "*"]
             types_of_logs = [
                 deletes,
@@ -1005,22 +1103,21 @@ class Logging(commands.Cog):
                 channels,
                 leaves,
                 joins,
-                all_option,
+                invites,
+                server,
+                emojis,
+                all_option
             ]
             # finding type of log from argument using aliases
             try:
-                type_of_log = [
-                    log_type[0] for log_type in types_of_logs if log_arg in log_type
-                ][0]
+                type_of_log = [log_type[0] for log_type in types_of_logs if log_arg in log_type][0]
             except IndexError:
                 await ctx.send_or_reply(
                     f"{self.bot.emote_dict['failed']} `{log_arg.capitalize()}` is not a valid logging option. Use `{ctx.prefix}log help` for more info."
                 )
                 return
             if type_of_log == "all":
-                list_of_log_types = [
-                    aliases[0] for aliases in types_of_logs if aliases[0] != "all"
-                ]
+                list_of_log_types = [aliases[0] for aliases in types_of_logs if aliases[0] != "all"]
                 # first check if all logging is already enabled/disabled
                 log_dict = self.bot.server_settings[ctx.guild.id]["logging"]
                 current_list = [log_dict[item] for item in list_of_log_types]
@@ -1059,8 +1156,8 @@ class Logging(commands.Cog):
             logchan = ctx.guild.get_channel(int(logchan))
             # update db
             if (
-                self.bot.server_settings[ctx.guild.id]["logging"][type_of_log]
-                is log_bool
+                    self.bot.server_settings[ctx.guild.id]["logging"][type_of_log]
+                    is log_bool
             ):
                 return await ctx.send_or_reply(
                     f"{self.bot.emote_dict['success']} {type_of_log.replace('_', ' ').capitalize()} {'is' if type_of_log[-1] != 's' else 'are'} already {'enabled' if log_bool else 'disabled'}."
@@ -1074,7 +1171,7 @@ class Logging(commands.Cog):
             await self.bot.cxn.execute(query, log_bool, ctx.guild.id)
             self.bot.server_settings[ctx.guild.id]["logging"][type_of_log] = log_bool
             await ctx.send_or_reply(
-                f"{self.bot.emote_dict['success']} {type_of_log.replace('_', ' ').capitalize()} will {'now be' if log_bool else 'no longer'} logged in {logchan.mention}"
+                f"{self.bot.emote_dict['success']} {type_of_log.replace('_', ' ').capitalize()} will {'now be' if log_bool else 'no longer be'} logged in {logchan.mention}"
             )
 
     @decorators.group(
