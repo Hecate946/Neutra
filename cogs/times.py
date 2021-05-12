@@ -519,10 +519,10 @@ class Times(commands.Cog):
                 """
         row = await self.bot.cxn.fetch(query, user.id, actual_time)
         results = len([x[0] for x in row if x[0] is not None])
+        await self.bot.hecate.send(results)
         if time == "week":
             results = results if (results < 8) else 7
         if time == "month":
             results = results if (results < 31) else 31
-            await self.bot.hecate.send(results)
         await ctx.send(f"User `{user}` has been online {results} day{'' if results == 1 else 's'} in the past {time}.")
 
