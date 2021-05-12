@@ -338,9 +338,12 @@ async def load_settings():
         bans = x[8]
         leaves = x[9]
         joins = x[10]
-        ignored_channels = x[11]
-        logchannel = x[12]
-        webhook_id = x[13]
+        discord_invites = x[11]
+        server_updates = x[12]
+        emojis = x[11]
+        ignored_channels = x[14]
+        logchannel = x[15]
+        webhook_id = x[16]
 
         if ignored_channels is None:
             ignored_channels = []
@@ -357,6 +360,9 @@ async def load_settings():
         settings[server_id]["logging"]["bans"] = bans
         settings[server_id]["logging"]["leaves"] = leaves
         settings[server_id]["logging"]["joins"] = joins
+        settings[server_id]["logging"]["discord_invites"] = discord_invites
+        settings[server_id]["logging"]["server_updates"] = server_updates
+        settings[server_id]["logging"]["emojis"] = emojis
         settings[server_id]["logging"]["ignored_channels"] = ignored_channels
         settings[server_id]["logging"]["logchannel"] = logchannel
         settings[server_id]["logging"]["webhook_id"] = webhook_id
@@ -464,9 +470,12 @@ async def fix_server(server):
         bans = x[8]
         leaves = x[9]
         joins = x[10]
-        ignored_channels = x[11]
-        logchannel = x[12]
-        webhook_id = x[13]
+        discord_invites = x[11]
+        server_updates = x[12]
+        emojis = x[11]
+        ignored_channels = x[14]
+        logchannel = x[15]
+        webhook_id = x[16]
 
         if ignored_channels is None:
             ignored_channels = []
@@ -483,6 +492,9 @@ async def fix_server(server):
         settings[server_id]["logging"]["bans"] = bans
         settings[server_id]["logging"]["leaves"] = leaves
         settings[server_id]["logging"]["joins"] = joins
+        settings[server_id]["logging"]["discord_invites"] = discord_invites
+        settings[server_id]["logging"]["server_updates"] = server_updates
+        settings[server_id]["logging"]["emojis"] = emojis
         settings[server_id]["logging"]["ignored_channels"] = ignored_channels
         settings[server_id]["logging"]["logchannel"] = logchannel
         settings[server_id]["logging"]["webhook_id"] = webhook_id

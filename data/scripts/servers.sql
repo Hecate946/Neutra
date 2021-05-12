@@ -31,6 +31,9 @@ CREATE TABLE IF NOT EXISTS logging (
     bans BOOLEAN DEFAULT True,
     leaves BOOLEAN DEFAULT True,
     joins BOOLEAN DEFAULT True,
+    discord_invites BOOLEAN DEFAULT True,
+    server_updates BOOLEAN DEFAULT True,
+    emojis BOOLEAN DEFAULT True,
     ignored_channels TEXT,
     logchannel BIGINT,
     logging_webhook_id VARCHAR(100)
