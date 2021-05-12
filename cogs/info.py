@@ -648,11 +648,11 @@ class Info(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-    @decorators.command(brief="Display the source code.", aliases=["sourcecode"])
+    @decorators.command(brief="Display the source code.", aliases=["sourcecode","src"])
     async def source(self, ctx, *, command: str = None):
         """
-        Usage: -source [command]
-        Alias: -sourcecode
+        Usage: {0}source [command]
+        Alias: {0}sourcecode, {0}src
         Notes:
             If no command is specified, shows full repository
         """
