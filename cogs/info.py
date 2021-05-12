@@ -1139,6 +1139,7 @@ class Info(commands.Cog):
                 me = self.bot.home.get_member(self.bot.user.id)
             except AttributeError:  # Pretend like its a server only command
                 raise commands.NoPrivateMessage()
+        await ctx.trigger_typing()
         query = """
                 SELECT (
                     runtime,

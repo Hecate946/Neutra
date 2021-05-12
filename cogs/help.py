@@ -312,7 +312,7 @@ class Help(commands.Cog):
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )
 
-            if invokercommand.lower() in ["logging", "logger", "logs"]:
+            if invokercommand.lower() in ["logging", "logs"]:
                 cog = self.bot.get_cog("Logging")
                 return await self.helper_func(
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after

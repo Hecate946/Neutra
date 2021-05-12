@@ -44,17 +44,28 @@ class Manager(commands.Cog):
         return checks.is_owner(ctx)
 
     @decorators.command(
-        brief="A faster alternative to rebooting.",
+        brief="A faster way of rebooting.",
         implemented="2021-05-11 03:03:20.517480",
         updated="2021-05-11 03:03:20.517480",
+        examples="""
+                {0}refresh
+                """
     )
-    async def refresh(self, ctx, db: bool = False):
+    async def refresh(self, ctx, db = False):
+        """
+        Usage: {0}refresh [db|-db|--db=False]
+        Output:
+            Runs all reloading commands.
+        Notes:
+            Pass the --db flag to
+            restart the database.
+        """
         await ctx.trigger_typing()
         core = importlib.import_module("core", package=".")
         importlib.reload(core)
         starter = importlib.import_module("starter", package=".")
         importlib.reload(starter)
-        if db:
+        if db in ['db', '-db', '--db']:
             await ctx.invoke(self.update)
         await ctx.invoke(self.botvars)
         await ctx.invoke(self.reloadallutils)
@@ -301,7 +312,7 @@ class Manager(commands.Cog):
         await ctx.success(f"Reloaded module **{name_maker}**")
 
     @decorators.command(
-        aliases=["rau"],
+        aliases=["reloadallutils"],
         brief="Reload all utilities modules.",
         implemented="2021-03-19 21:57:05.162549",
         updated="2021-05-11 02:51:30.992778",
@@ -310,7 +321,7 @@ class Manager(commands.Cog):
                 {0}reloadallutils
                 """,
     )
-    async def reloadallutils(self, ctx):
+    async def rau(self, ctx):
         """
         Usage: {0}reloadallutils
         Aliases:
@@ -343,7 +354,7 @@ class Manager(commands.Cog):
         await ctx.success("**Successfully reloaded all utilities.**")
 
     @decorators.command(
-        aliases=["ras"],
+        aliases=["reloadallsettings"],
         brief="Reload all settings modules.",
         implemented="2021-03-19 21:57:05.162549",
         updated="2021-05-11 02:51:30.992778",
@@ -352,11 +363,11 @@ class Manager(commands.Cog):
                 {0}reloadallutils
                 """,
     )
-    async def reloadallsettings(self, ctx):
+    async def ras(self, ctx):
         """
-        Usage: {0}reloadallsettings
+        Usage: {0}ras
         Aliases:
-            {0}ras
+            {0}reloadallsettings
         Output:
             Reloads all extensions in
             the ./settings directory.
@@ -388,7 +399,16 @@ class Manager(commands.Cog):
 
         await ctx.success("**Successfully reloaded all settings.**")
 
-    @decorators.command(aliases=["restart"], brief="Cleanly reboot the bot.")
+    @decorators.command(
+        aliases=["restart"],
+        brief="Cleanly reboot the bot.",
+        implemented="2021-03-17 16:04:32.005532",
+        updated="2021-05-11 23:52:58.544197",
+        examples="""
+                {0}reboot
+                {0}restart
+                """
+    )
     async def reboot(self, ctx):
         """
         Usage: {0}reboot
@@ -441,31 +461,125 @@ class Manager(commands.Cog):
         Permission: Bot owner
         Output: View any log recorded in ./data/logs
         Options:
-            commands, errors
-            info, traceback
+            commands|command|cmds|cmd
+            errors|stderr|error|err|e
+            information|info|i
+            tracebacks|traceback|trace|tb|t
+            clear|clr|cl
         """
-        if ctx.invoked_subcommand is None:
+        if not ctx.invoked_subcommand:
             return await ctx.usage("<option>")
 
-    @logger.command(name="commands", aliases=["cmds"])
+    @logger.command(
+        name="commands",
+        aliases=["cmds"],
+        brief="Show the commands.log file."
+    )
     async def _get_cmds(self, ctx):
+        """
+        Usage: {0}logger commands
+        Aliases: {0}logger cmds
+        Output:
+            Starts a pagination session
+            showing the commands.log file
+        """
         sh = self.bot.get_command("sh")
         await ctx.invoke(sh, prefix="prolog", command="cat ./data/logs/commands.log")
 
-    @logger.command(name="traceback")
+    @logger.command(
+        name="traceback",
+        aliases=['tracebacks','trace','t', 'tb'],
+        brief="Show the traceback.log file"
+    )
     async def _traceback(self, ctx):
+        """
+        Usage: {0}logger traceback
+        Aliases:
+            {0}logger t
+            {0}logger tb
+            {0}logger trace
+            {0}logger tracebacks
+        Output:
+            Starts a pagination session
+            showing the traceback.log file
+        """
         sh = self.bot.get_command("sh")
         await ctx.invoke(sh, prefix="prolog", command="cat ./data/logs/traceback.log")
 
-    @logger.command(name="info")
+    @logger.command(
+        name="info",
+        aliases=['i', 'information'],
+        brief="Show the info.log file.",
+    )
     async def _info(self, ctx):
+        """
+        Usage: {0}logger info
+        Aliases:
+            {0}logger i
+            {0}logger information
+        Output:
+            Starts a pagination session
+            showing the info.log file
+        """
         sh = self.bot.get_command("sh")
         await ctx.invoke(sh, prefix="prolog", command="cat ./data/logs/info.log")
 
-    @logger.command(name="errors")
+    @logger.command(
+        name="errors",
+        aliases=['err', 'error', 'stderr', 'e'],
+        brief="Show the errors.log file."
+    )
     async def _errors(self, ctx):
+        """
+        Usage: {0}logger errors
+        Aliases:
+            {0}logger e
+            {0}logger err
+            {0}logger error
+            {0}logger stderr
+        Output:
+            Starts a pagination session
+            showing the errors.log file
+        """
         sh = self.bot.get_command("sh")
         await ctx.invoke(sh, prefix="prolog", command="cat ./data/logs/errors.log")
+
+    @logger.command(
+        name="clear",
+        aliases=['cl','clr'],
+        brief="Delete a logging file.",
+    )
+    async def _cl(self, ctx, search):
+        """
+        Usage: {0}logger clear <search>
+        Aliases: {0}cl, {0}clr
+        Output: Deletes a logging file.
+        Searches:
+            commands|command|cmds|cmd
+            errors|stderr|error|err
+            information|info|i
+            tracebacks|traceback|trace|t
+        """
+        if search in ["cmd", "cmds", "command", "commands"]:
+            search = "commands"
+            msg = "command"
+        elif search in ["err", "stderr", "error", "errors"]:
+            search = "errors"
+            msg = "error"
+        elif search in ["info", "i", "information"]:
+            search = "info"
+            msg = "info"
+        elif search in ["t", "trace", "traceback", "tracebacks"]:
+            search = "traceback"
+            msg = "traceback"
+        else:
+            raise commands.BadArgument(f"Invalid file search.")
+        logdir = os.listdir("./data/logs/")
+        for filename in logdir:
+            if filename.startswith(search):
+                os.remove("./data/logs/" + filename)
+                break
+        await ctx.success(f"Cleared the {msg} log file.")
 
     @decorators.group(
         brief="View pm2 files.",
@@ -479,16 +593,28 @@ class Manager(commands.Cog):
         Usage: {0}pm2 <option>
         Output: View any pm2 log file in ./data/pm2
         Options:
-            stdout  Alias: out
-            stderr  Aliases: err, error, errors
-            pid     Aliases: process, processid
-            clear
+            stdout|out|output
+            stderr|err|error|errors
+            pid|process|processid
+            clear|clr|cl 
         """
         if ctx.invoked_subcommand is None:
             return await ctx.usage("<option>")
 
-    @pm2.command(aliases=["out", "output"])
+    @pm2.command(
+        aliases=["out", "output"],
+        brief="View the pm2 stdout file."
+    )
     async def stdout(self, ctx):
+        """
+        Usage: {0}pm2 stdout
+        Aliases:
+            {0}pm2 out
+            {0}pm2 output
+        Output:
+            Starts a pagination session
+            showing the pm2 stdout file.
+        """
         sh = self.bot.get_command("sh")
         pm2dir = os.listdir("./data/pm2/")
         for filename in pm2dir:
@@ -498,8 +624,21 @@ class Manager(commands.Cog):
         else:
             raise commands.BadArgument(f"No stdout file currently exists.")
 
-    @pm2.command(aliases=["err", "error", "errors"])
+    @pm2.command(
+        aliases=["err", "error", "errors"],
+        brief="View the pm2 stderr file",
+    )
     async def stderr(self, ctx):
+        """
+        Usage: {0}pm2 stderr
+        Aliases:
+            {0}pm2 err
+            {0}pm2 error
+            {0}pm2 errors
+        Output:
+            Starts a pagination session
+            showing the pm2 stderr file.
+        """
         sh = self.bot.get_command("sh")
         pm2dir = os.listdir("./data/pm2/")
         for filename in pm2dir:
@@ -509,8 +648,20 @@ class Manager(commands.Cog):
         else:
             raise commands.BadArgument(f"No stderr file currently exists.")
 
-    @pm2.command(aliases=["process", "processid"])
+    @pm2.command(
+        aliases=["process", "processid"],
+        brief="View the pm2 process ID.",
+    )
     async def pid(self, ctx):
+        """
+        Usage: {0}pm2 pid
+        Aliases:
+            {0}pm2 process
+            {0}pm2 processid
+        Output:
+            Shows the process ID
+            of the pm2 process.
+        """
         sh = self.bot.get_command("sh")
         pm2dir = os.listdir("./data/pm2/")
         for filename in pm2dir:
@@ -520,8 +671,21 @@ class Manager(commands.Cog):
         else:
             raise commands.BadArgument(f"No pid file currently exists.")
 
-    @pm2.command(name="clear")
-    async def _clear(self, ctx, search):
+    @pm2.command(
+        name="clear",
+        aliases=['cl', 'clr'],
+        brief="Delete a pm2 log file."
+    )
+    async def _clr(self, ctx, search):
+        """
+        Usage: {0}pm2 clear <search>
+        Aliases: {0}cl, {0}clr
+        Output: Deletes a pm2 file.
+        Searches:
+            out|output|stdout
+            errors|stderr|error|err
+            pid|process|processid
+        """
         if search in ["out", "output", "stdout"]:
             search = "out"
             msg = "stdout"
@@ -552,28 +716,61 @@ class Manager(commands.Cog):
         Alias: {0}j
         Output: View any json file in ./data/json
         Options:
-            stats           Alias: statistics
-            settings        Alias: config
+            blacklist|bl
+            stats|statistics
+            settings|config
         """
         if ctx.invoked_subcommand is None:
             return await ctx.usage("<option>")
 
-    @json.command(aliases=["bl"])
+    @json.command(
+        aliases=["bl"],
+        brief="Show blacklisted discord objects."
+    )
     async def blacklist(self, ctx):
+        """
+        Usage: {0}json blacklist
+        Alias: {0}json bl
+        Output:
+            Stars a pagination session
+            showing all blacklisted objects.
+        """
         sh = self.bot.get_command("sh")
         await ctx.invoke(sh, prefix="json", command="cat ./data/json/blacklist.json")
 
-    @json.command(name="stats", aliases=["statistics"])
+    @json.command(
+        name="stats",
+        aliases=["statistics"],
+        brief="Basic stats on the last bot run.",
+    )
     async def _stats(self, ctx):
+        """
+        Usage: {0}json stats
+        Alias: {0}json statistics
+        Output:
+            Stars a pagination session
+            showing stats from the last
+            run the bot made.
+        """
         sh = self.bot.get_command("sh")
         await ctx.invoke(sh, prefix="json", command="cat ./data/json/stats.json")
 
     @json.command(name="settings", aliases=["config"])
     async def _settings(self, ctx):
+        """
+        Usage: {0}json settings
+        Alias: {0}json config
+        Output:
+            Stars a pagination session
+            showing all server settings.
+        """
         sh = self.bot.get_command("sh")
         await ctx.invoke(sh, prefix="json", command="cat ./data/json/settings.json")
 
-    @decorators.command(brief="Update the database.", aliases=["updatedb"])
+    @decorators.command(
+        aliases=["updatedb"],
+        brief="Update the database.",
+    )
     async def update(self, ctx):
         """
         Usage: {0}update
@@ -604,6 +801,9 @@ class Manager(commands.Cog):
     async def sql(self, ctx, *, query: str):
         """
         Usage: {0}sql <query>
+        Output:
+            Shows results in rst format.
+            Sends traceback if query failed.
         """
 
         if query is None:
@@ -647,29 +847,53 @@ class Manager(commands.Cog):
             await ctx.send_or_reply(content=fmt)
 
     @decorators.command(
-        hidden=True, brief="Show info on a sql table.", aliases=["tables", "database"]
+        brief="Show info on a db table."
     )
     async def table(self, ctx, *, table_name: str = None):
         """Runs a query describing the table schema."""
 
-        if ctx.invoked_with in ["tables", "database"]:
-            query = """SELECT table_schema, table_name FROM INFORMATION_SCHEMA.TABLES
-                       WHERE table_schema = 'public'
-                       ORDER BY table_schema, table_name;
-                    """
-            results = await self.bot.cxn.fetch(query)
-        else:
-            query = """SELECT column_name, data_type, column_default, is_nullable
-                    FROM INFORMATION_SCHEMA.COLUMNS
-                    WHERE table_name = $1
-                    """
-            results = await self.bot.cxn.fetch(query, table_name)
+        query = """
+                SELECT column_name, data_type, column_default, is_nullable
+                FROM INFORMATION_SCHEMA.COLUMNS
+                WHERE table_name = $1
+                """
+        results = await self.bot.cxn.fetch(query, table_name)
         try:
             headers = list(results[0].keys())
         except IndexError:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}table <table name>`",
+            return await ctx.usage()
+        table = formatting.TabularData()
+        table.set_columns(headers)
+        table.add_rows(list(r.values()) for r in results)
+        render = table.render()
+
+        fmt = f"```\n{render}\n```"
+        if len(fmt) > 2000:
+            fp = io.BytesIO(fmt.encode("utf-8"))
+            await ctx.send_or_reply(
+                content="Too many results...",
+                file=discord.File(fp, "results.txt"),
             )
+        else:
+            await ctx.send_or_reply(content=fmt)
+
+    @decorators.command(
+        aliases=["tables"],
+        brief="Show the database schema.",
+    )
+    async def database(self, ctx):
+        """Runs a query describing the table schema."""
+        await ctx.trigger_typing()
+        query = """
+                SELECT table_schema, table_name FROM INFORMATION_SCHEMA.TABLES
+                WHERE table_schema = 'public'
+                ORDER BY table_schema, table_name;
+                """
+        results = await self.bot.cxn.fetch(query)
+        try:
+            headers = list(results[0].keys())
+        except IndexError:
+            return await ctx.usage()
         table = formatting.TabularData()
         table.set_columns(headers)
         table.add_rows(list(r.values()) for r in results)
@@ -693,10 +917,10 @@ class Manager(commands.Cog):
         Output: Gets specific info on the database
         Options:
             Size: Get the size of the total db or a table.
-            lb/largest: Show the largest tables
+            lb|largest: Show the largest tables
             types: Show general info on postgres datatypes
-            i/info: Show all data on database tables
-            r/relation/relations: Show the database relations
+            i|info: Show all data on database tables
+            r|relation|relations: Show the database relations
         """
         if ctx.invoked_subcommand is None:
             return await ctx.usage(ctx.command.signature)
@@ -917,7 +1141,7 @@ class Manager(commands.Cog):
     @decorators.command(
         hidden=True,
         aliases=["shell", "bash"],
-        brief="Run a shell command.",
+        brief="Run shell commands.",
         writer=80088516616269824,
     )
     async def sh(self, ctx, prefix=None, *, command):
@@ -946,7 +1170,11 @@ class Manager(commands.Cog):
         writer=80088516616269824,
     )
     async def do(self, ctx, times: int, *, command):
-        """Repeats a command a specified number of times."""
+        """
+        Usage: {0}do <times> <command>
+        Output:
+            Repeats a command a specified number of times.
+        """
         msg = copy.copy(ctx.message)
         msg.content = ctx.prefix + command
 
@@ -961,6 +1189,11 @@ class Manager(commands.Cog):
 
     @decorators.command(brief="Show bot threadinfo.")
     async def threadinfo(self, ctx):
+        """
+        Usage: {0}threadinfo
+        Output:
+            Shows some info on bot threads.
+        """
         buf = io.StringIO()
         for th in threading.enumerate():
             buf.write(str(th) + "\n")
@@ -975,10 +1208,13 @@ class Manager(commands.Cog):
         except menus.MenuError as e:
             await ctx.send(e)
 
-    @decorators.command(hidden=True, brief="Bot health monitoring tools.")
-    @commands.is_owner()
+    @decorators.command(brief="Show bot health.")
     async def bothealth(self, ctx):
-        """Various bot health monitoring tools."""
+        """
+        Usage: {0}bothealth
+        Output:
+            Various bot health monitoring tools.
+        """
 
         # This uses a lot of private methods because there is no
         # clean way of doing this otherwise.
@@ -1067,7 +1303,7 @@ class Manager(commands.Cog):
         await ctx.send_or_reply(embed=embed)
 
     @decorators.command(
-        hidden=True, aliases=["perf", "elapsed"], brief="Time a command response."
+        aliases=["perf", "elapsed"], brief="Time a command response."
     )
     async def elapse(self, ctx, *, command):
         """Checks the timing of a command, attempting to suppress HTTP and DB calls."""
@@ -1144,7 +1380,19 @@ class Manager(commands.Cog):
 
     @decorators.command(aliases=["github"], brief="Run github commands.")
     async def git(self, ctx, *, subcommand):
-        """Updates from git."""
+        """
+        Usage: {0}git <command>
+        Alias: {0}github
+        Output:
+            Runs a git command.
+        Notes:
+            Use the shorthand {0}git give
+            to run 3 commands concurrently.
+            namely,
+                git add .
+                git commit -m "update"
+                git push
+        """
         if subcommand is None:
             return await ctx.send_help(str(ctx.command))
 
@@ -1183,7 +1431,12 @@ class Manager(commands.Cog):
         *,
         command: str,
     ):
-        """Run a command as another user optionally in another channel."""
+        """
+        Usage: {0}sudo [channel] [user] <command>
+        Outpue:
+            Run a command as another user
+            optionally in another channel.
+        """
         msg = copy.copy(ctx.message)
         channel = channel or ctx.channel
         msg.channel = channel
@@ -1200,7 +1453,7 @@ class Manager(commands.Cog):
     )
     async def _eval(self, ctx, *, body: str):
         """
-        Usage: -eval <body>
+        Usage: {0}eval <body>
         Aliases:
             {0}e
             {0}exe
@@ -1211,6 +1464,7 @@ class Manager(commands.Cog):
             "self": Manager,
             "utils": utils,
             "converters": converters,
+            "discord": discord,
             "bot": self.bot,
             "ctx": ctx,
             "channel": ctx.channel,
@@ -1223,6 +1477,7 @@ class Manager(commands.Cog):
             "self": self,
             "utils": utils,
             "converters": converters,
+            "discord": discord,
             "bot": self.bot,
             "ctx": ctx,
             "channel": ctx.channel,
