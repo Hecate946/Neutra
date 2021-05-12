@@ -7,214 +7,24 @@ Hello! I'm Snowbot, and I specialize in tracking and moderation.
 I was designed to collect all sorts of data on servers, users,
 messages, emojis, online time, and more! I also come with a fast
 and clean moderation system that offers every opportunity for effective
-server management. Apart from moderation and tracking, I feature 242
-commands across 14 categories that provide awesome utilities!
+server management. Apart from moderation and tracking, I feature 247
+commands across 13 categories that provide awesome utilities!
 Some examples include managing user timezones, role management, and logging.
 ## Categories
-##### [Logging](#Logging-1)
-##### [Files](#Files-1)
-##### [Tasks](#Tasks-1)
-##### [Roles](#Roles-1)
-##### [Utility](#Utility-1)
-##### [Conversion](#Conversion-1)
-##### [Times](#Times-1)
 ##### [Admin](#Admin-1)
-##### [Stats](#Stats-1)
 ##### [Automod](#Automod-1)
+##### [Conversion](#Conversion-1)
+##### [Files](#Files-1)
 ##### [Help](#Help-1)
 ##### [Info](#Info-1)
-##### [Tracking](#Tracking-1)
+##### [Logging](#Logging-1)
 ##### [Mod](#Mod-1)
+##### [Roles](#Roles-1)
+##### [Stats](#Stats-1)
+##### [Times](#Times-1)
+##### [Tracking](#Tracking-1)
+##### [Utility](#Utility-1)
 
-
-### Logging
-#### Log all server events. (5 Commands)
-
-```yaml
-auditcount: Count the audit log entries of a user.
-
-log: Enable specific logging events.
-
-logchannel: Set your server's logging channel.
-
-unlog: Disable specific logging events.
-
-unlogchannel: Remove the logging channel.
-```
-
-### Files
-#### Module for downloading files. (15 Commands)
-
-```yaml
-audit: Get a file of a user's audit actions.
-
-dumpbans: DMs you a file of server bans.
-
-dumpbots: DMs you a file of server bots.
-
-dumpcategories: DMs you a file of voice channels.
-
-dumpchannels: DMs you a file of text channels.
-
-dumpemotes: DMs you a file of server emojis.
-
-dumphelp: DMs you a file of commands.
-
-dumphumans: DMs you a file of server humans.
-
-dumpmessages: DMs you a file of channel messages.
-
-dumproles: DMs you a file of server roles.
-
-dumpsettings: DMs you a file of server settings.
-
-dumptimezones: DMs you a file of time zones.
-
-dumpusers: DMs you a file of server members.
-
-dumpvoicechannels: DMs you a file of voice channels.
-
-readme: DMs you my readme file.
-```
-
-### Tasks
-#### Module for handling all timed tasks. (0 Commands)
-
-```yaml
-
-```
-
-### Roles
-#### Manage all actions regarding roles. (10 Commands)
-
-```yaml
-addrole: Adds roles to users.
-
-emptyroles: Show roles that have no users.
-
-listroles: Show an embed of all server roles.
-
-massrole: Mass adds or removes a role to users.
-
-removerole: Removes roles from users.
-
-rolecall: Counts the users with a role.
-
-rolecount: Counts the roles on the server.
-
-roleinfo: Get information on a role.
-
-roleperms: Show the permissions for a role.
-
-whohas: Show the people who have a role.
-```
-
-### Utility
-#### Module for general utilities. (22 Commands)
-
-```yaml
-ascify: Convert special characters to ascii.
-
-avatar: Show a user's avatar.
-
-calculate: Calculate a math formula.
-
-charinfo: Show information on a character.
-
-color: Show a given color and its values.
-
-colors: Send an image with some hex codes.
-
-defaultavatar: Show a user's default avatar.
-
-dehoist: Dehoist a specified user.
-
-embed: Create an embed interactively.
-
-emojipost: Sends all server emojis to your dms.
-
-find: Find any user using a search.
-
-gtoken: Generate a discord token.
-
-nickname: Edit or reset a user's nickname
-
-oauth: Generate a bot invite link.
-
-ptoken: Decode a discord token.
-
-raw: Shows the raw content of a message.
-
-reactinfo: Show reaction info in a channel.
-
-replies: Find the first message of a reply thread.
-
-shorten: Shorten URLs to bitly links.
-
-snipe: Snipe a deleted message.
-
-snowflake: Show info on a discord snowflake.
-
-type: Find the type of a discord object.
-```
-
-### Conversion
-#### Module for unit conversions. (15 Commands)
-
-```yaml
-binint: Convert binary to an integer.
-
-binstr: Convert binary to a string
-
-cm: Convert centimeters to feet and inches.
-
-dechex: Convert decimal into hex.
-
-decode: Decode from b32, b64, b85, rot13, hex.
-
-encode: Encode to: b32, b64, b85, rot13, hex.
-
-ft: Convert feet.inches to centimeters
-
-hexdec: Convert hex to decimal.
-
-intbin: Convert an integer to binary.
-
-kg: Convert kilograms to pounds.
-
-lb: Convert pounds to kilograms
-
-morse: Converts ascii to morse code.
-
-morsetable: Show the morse lookup table
-
-strbin: Convert a string to binary.
-
-unmorse: Converts morse code to ascii.
-```
-
-### Times
-#### Module for time functions. (9 Commands)
-
-```yaml
-clock: Get the time of any location
-
-listtz: List all available timezones.
-
-removetz: Remove your timezone.
-
-settz: Set your timezone.
-
-stopwatch: Start or stop a stopwatch.
-
-timezone: See a member's timezone.
-
-usertime: Show a user's current time.
-
-usertimes: Show times for all users.
-
-utcnow: Show the current utc time.
-```
 
 ### Admin
 #### Module for server administration. (20 Commands)
@@ -261,43 +71,6 @@ removeprefix: Remove a custom server prefix
 unignore: Reallow users to use the bot.
 ```
 
-### Stats
-#### Module for server stats (16 Commands)
-
-```yaml
-admins: Show the server admins.
-
-channelinfo: Get info about a channel.
-
-emoji: Get usage stats on an emoji.
-
-emojistats: Emoji usage tracking.
-
-firstjoins: Show the first users to join.
-
-joined: Check when a user joined the server.
-
-joinedatpos: Show who joined at a position.
-
-joinpos: Show the join position of a user.
-
-lastjoins: Show the latest users to join.
-
-listbots: Shows all the server's bots.
-
-listchannels: Show the server's channels.
-
-mods: Show the server mods.
-
-permissions: Show a user's permissions.
-
-serverinfo: Show server information.
-
-topic: Show the topic of a channel.
-
-userinfo: Show information on a user.
-```
-
 ### Automod
 #### Manage the automod system. (9 Commands)
 
@@ -319,6 +92,76 @@ serverwarns: Display the server warnlist.
 warn: Warn users with an optional reason.
 
 warncount: Count the warnings a user has.
+```
+
+### Conversion
+#### Module for unit conversions. (15 Commands)
+
+```yaml
+binint: Convert binary to an integer.
+
+binstr: Convert binary to a string
+
+cm: Convert centimeters to feet and inches.
+
+dechex: Convert decimal into hex.
+
+decode: Decode from b32, b64, b85, rot13, hex.
+
+encode: Encode to: b32, b64, b85, rot13, hex.
+
+ft: Convert feet.inches to centimeters
+
+hexdec: Convert hex to decimal.
+
+intbin: Convert an integer to binary.
+
+kg: Convert kilograms to pounds.
+
+lb: Convert pounds to kilograms
+
+morse: Converts ascii to morse code.
+
+morsetable: Show the morse lookup table
+
+strbin: Convert a string to binary.
+
+unmorse: Converts morse code to ascii.
+```
+
+### Files
+#### Module for downloading files. (15 Commands)
+
+```yaml
+audit: Get a file of a user's audit actions.
+
+dumpbans: DMs you a file of server bans.
+
+dumpbots: DMs you a file of server bots.
+
+dumpcategories: DMs you a file of voice channels.
+
+dumpchannels: DMs you a file of text channels.
+
+dumpemotes: DMs you a file of server emojis.
+
+dumphelp: DMs you a file of commands.
+
+dumphumans: DMs you a file of server humans.
+
+dumpmessages: DMs you a file of channel messages.
+
+dumproles: DMs you a file of server roles.
+
+dumpsettings: DMs you a file of server settings.
+
+dumptimezones: DMs you a file of time zones.
+
+dumpusers: DMs you a file of server members.
+
+dumpvoicechannels: DMs you a file of voice channels.
+
+readme: DMs you my readme file.
 ```
 
 ### Help
@@ -409,49 +252,19 @@ uptime: Show the bot's uptime.
 users: Show users I'm connected to.
 ```
 
-### Tracking
-#### Module for all user stats (20 Commands)
+### Logging
+#### Log all server events. (5 Commands)
 
 ```yaml
-activity: Show the most active server users.
+auditcount: Count the audit log entries of a user.
 
-avatars: Show a user's past avatars.
+log: Enable specific logging events.
 
-botusage: Show the top bot users.
+logchannel: Set your server's logging channel.
 
-characters: Show character usage.
+unlog: Disable specific logging events.
 
-commandcount: Count the commands run by a user.
-
-commandstats: Bot commands listed by popularity.
-
-invited: See who invited a user.
-
-invites: Count the invites of a user.
-
-messagecount: Count the messages a user sent.
-
-messagestats: Show the top message senders.
-
-nicknames: Show a user's past nicknames.
-
-platform: Show a user's discord platform.
-
-seen: Check when a user was last seen.
-
-spammers: Show all recorded spammers.
-
-status: Show a user's discord status.
-
-statusinfo: Status info and online time stats.
-
-user: Show information on a user.
-
-usernames: Show a user's past usernames.
-
-word: Usage for a specific word.
-
-words: Most used words from a user.
+unlogchannel: Remove the logging channel.
 ```
 
 ### Mod
@@ -497,4 +310,185 @@ vckick: Kick users from a voice channel.
 vcmove: Move a user from a voice channel.
 
 vcpurge: Kick all users from a voice channel.
+```
+
+### Roles
+#### Manage all actions regarding roles. (10 Commands)
+
+```yaml
+addrole: Adds roles to users.
+
+emptyroles: Show roles that have no users.
+
+listroles: Show an embed of all server roles.
+
+massrole: Mass adds or removes a role to users.
+
+removerole: Removes roles from users.
+
+rolecall: Counts the users with a role.
+
+rolecount: Counts the roles on the server.
+
+roleinfo: Get information on a role.
+
+roleperms: Show the permissions for a role.
+
+whohas: Show the people who have a role.
+```
+
+### Stats
+#### Module for server stats (16 Commands)
+
+```yaml
+admins: Show the server admins.
+
+channelinfo: Get info about a channel.
+
+emoji: Get usage stats on an emoji.
+
+emojistats: Emoji usage tracking.
+
+firstjoins: Show the first users to join.
+
+joined: Check when a user joined the server.
+
+joinedatpos: Show who joined at a position.
+
+joinpos: Show the join position of a user.
+
+lastjoins: Show the latest users to join.
+
+listbots: Shows all the server's bots.
+
+listchannels: Show the server's channels.
+
+mods: Show the server mods.
+
+permissions: Show a user's permissions.
+
+serverinfo: Show server information.
+
+topic: Show the topic of a channel.
+
+userinfo: Show information on a user.
+```
+
+### Times
+#### Module for time functions. (9 Commands)
+
+```yaml
+clock: Get the time of any location
+
+listtz: List all available timezones.
+
+removetz: Remove your timezone.
+
+settz: Set your timezone.
+
+stopwatch: Start or stop a stopwatch.
+
+timezone: See a member's timezone.
+
+usertime: Show a user's current time.
+
+usertimes: Show times for all users.
+
+utcnow: Show the current utc time.
+```
+
+### Tracking
+#### Module for all user stats (20 Commands)
+
+```yaml
+activity: Show the most active server users.
+
+avatars: Show a user's past avatars.
+
+botusage: Show the top bot users.
+
+characters: Show character usage.
+
+commandcount: Count the commands run by a user.
+
+commandstats: Bot commands listed by popularity.
+
+invited: See who invited a user.
+
+invites: Count the invites of a user.
+
+messagecount: Count the messages a user sent.
+
+messagestats: Show the top message senders.
+
+nicknames: Show a user's past nicknames.
+
+platform: Show a user's discord platform.
+
+seen: Check when a user was last seen.
+
+spammers: Show all recorded spammers.
+
+status: Show a user's discord status.
+
+statusinfo: Status info and online time stats.
+
+user: Show information on a user.
+
+usernames: Show a user's past usernames.
+
+word: Usage for a specific word.
+
+words: Most used words from a user.
+```
+
+### Utility
+#### Module for general utilities. (23 Commands)
+
+```yaml
+ascify: Convert special characters to ascii.
+
+avatar: Show a user's avatar.
+
+calculate: Calculate a math formula.
+
+charinfo: Show information on a character.
+
+color: Show a given color and its values.
+
+colors: Send an image with some hex codes.
+
+defaultavatar: Show a user's default avatar.
+
+dehoist: Dehoist a specified user.
+
+embed: Create an embed interactively.
+
+emojipost: Sends all server emojis to your dms.
+
+find: Find any user using a search.
+
+gtoken: Generate a discord token.
+
+nickname: Edit or reset a user's nickname
+
+oauth: Generate a bot invite link.
+
+ptoken: Decode a discord token.
+
+raw: Shows the raw content of a message.
+
+reactinfo: Show reaction info in a channel.
+
+replies: Find the first message of a reply thread.
+
+serveravatar: Show a user's default avatar.
+
+shorten: Shorten URLs to bitly links.
+
+snipe: Snipe a deleted message.
+
+snowflake: Show info on a discord snowflake.
+
+type: Find the type of a discord object.
 ```
