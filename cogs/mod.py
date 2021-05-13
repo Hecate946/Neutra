@@ -51,22 +51,17 @@ class Mod(commands.Cog):
     async def vcmove(
         self,
         ctx,
-        targets: commands.Greedy[converters.DiscordMember] = None, *,
-        channel: discord.VoiceChannel = None,
+        targets: commands.Greedy[converters.DiscordMember], *,
+        channel: discord.VoiceChannel,
     ):
         """
-        Usage: {0}vcmove <target> <target>... <channel>
+        Usage: {0}vcmove <targets>... <channel>
         Output: Moves members into a new voice channel
         Permission: Move Members
         """
-        if not targets:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}vc move <to channel> <target> [target]...`",
-            )
-        if not channel:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}vc move <to channel> <target> [target]...`",
-            )
+        if not len(targets) or not channel:
+            return await ctx.usage()
+
         vcmoved = []
         for target in targets:
             try:
