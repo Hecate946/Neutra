@@ -51,7 +51,7 @@ class Mod(commands.Cog):
     async def vcmove(
         self,
         ctx,
-        targets: commands.Greedy[converters.DiscordMember] = None,
+        targets: commands.Greedy[converters.DiscordMember] = None, *,
         channel: discord.VoiceChannel = None,
     ):
         """
@@ -86,9 +86,9 @@ class Mod(commands.Cog):
     @commands.guild_only()
     @checks.has_perms(move_members=True)
     @checks.bot_has_perms(move_members=True)
-    async def vcpurge(self, ctx, channel: discord.VoiceChannel = None):
+    async def vcpurge(self, ctx, *, channel: discord.VoiceChannel = None):
         """
-        Usage: -vcpurge <voice channel>
+        Usage: {0}vcpurge <voice channel>
         Output: Kicks all members from the channel
         Permission: Move Members
         """
@@ -121,7 +121,7 @@ class Mod(commands.Cog):
     @checks.bot_has_perms(move_members=True)
     async def vckick(self, ctx, targets: commands.Greedy[converters.DiscordMember]):
         """
-        Usage: -vckick <target> <target>..
+        Usage: {0}vckick <targets>...
         Output: Kicks passed members from their channel
         Permission: Move Members
         """
@@ -183,8 +183,8 @@ class Mod(commands.Cog):
     @checks.has_perms(kick_members=True)
     async def block(self, ctx, targets: commands.Greedy[converters.DiscordMember]):
         """
-        Usage: -block <target> [target]...
-        Example: -block Hecate 708584008065351681 @Elizabeth
+        Usage: {0}block <target> [target]...
+        Example: {0}block Hecate 708584008065351681 @Elizabeth
         Permission: Kick Members
         Output: Stops users from messaging in the channel.
         """
@@ -201,8 +201,8 @@ class Mod(commands.Cog):
         self, ctx, targets: commands.Greedy[converters.DiscordMember] = None
     ):
         """
-        Usage:      -unblock <target> [target]...
-        Example:    -unblock Hecate 708584008065351681 @Elizabeth
+        Usage:      {0}unblock <target> [target]...
+        Example:    {0}unblock Hecate 708584008065351681 @Elizabeth
         Permission: Kick Members
         Output:     Reallows blocked users to send messages.
         """
@@ -219,8 +219,8 @@ class Mod(commands.Cog):
         self, ctx, targets: commands.Greedy[converters.DiscordMember] = None
     ):
         """
-        Usage:      -blind <target> [target]...
-        Example:    -blind Hecate 708584008065351681 @Elizabeth
+        Usage:      {0}blind <target> [target]...
+        Example:    {0}blind Hecate 708584008065351681 @Elizabeth
         Permission: Kick Members
         Output:     Prevents users from seeing the channel.
         """
@@ -237,15 +237,13 @@ class Mod(commands.Cog):
         self, ctx, targets: commands.Greedy[converters.DiscordMember] = None
     ):
         """
-        Usage:      -unblind <target> [target]...
-        Example:    -unblind Hecate 708584008065351681 @Elizabeth
+        Usage:      {0}unblind <targets>...
+        Example:    {0}unblind Hecate 708584008065351681 @Elizabeth
         Permission: Kick Members
         Output:     Reallows blinded users to see the channel.
         """
         if not targets:  # checks if there is user
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}unblind <target> [target] [target]...`",
-            )
+            return await ctx.usage()
         await self.restrictor(ctx, targets, "off", "unblind")
 
     ##################
@@ -264,15 +262,13 @@ class Mod(commands.Cog):
         reason: typing.Optional[str] = "No reason",
     ):
         """
-        Usage:      -kick <target> [target]... [reason]
-        Example:    -kick @Jacob Sarah for advertising
+        Usage:      {0}kick <target> [target]... [reason]
+        Example:    {0}kick @Jacob Sarah for advertising
         Permission: Kick Members
         Output:     Kicks passed members from the server.
         """
         if not len(users):
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}kick <target> [target]... [reason]`",
-            )
+            await ctx.usage()
 
         kicked = []
         failed = []
@@ -315,15 +311,13 @@ class Mod(commands.Cog):
         reason: typing.Optional[str] = "No reason.",
     ):
         """
-        Usage: -ban <target> [target]... [delete message days = 1] [reason]
-        Example: -ban @Jacob Sarah 4 for advertising
+        Usage: {0}ban <targets>... [delete message days = 1] [reason = "No reason"]
+        Example: {0}ban @Jacob Sarah 4 for advertising
         Permission: Ban Members
         Output: Ban passed members from the server.
         """
         if not len(targets):
-            return await ctx.usage(
-                "<target1> [target2].. [delete message days = 1] [reason]"
-            )
+            return await ctx.usage()
 
         if delete_message_days > 7:
             delete_message_days = 7
@@ -1366,7 +1360,7 @@ class Mod(commands.Cog):
         if banned:
             self.bot.dispatch("mod_action", ctx, targets=banned)
             await ctx.success(
-                f"Banned `{', '.join(banned)}` for {humantime.human_timedelta(duration.dt, source=timer.created_at)}."
+                f"Tempbanned `{', '.join(banned)}` for {humantime.human_timedelta(duration.dt, source=timer.created_at)}."
             )
 
     @commands.Cog.listener()
