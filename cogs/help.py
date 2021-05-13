@@ -294,7 +294,7 @@ class Help(commands.Cog):
                 "commands",
                 "cmds",
             ]:
-                cog = self.bot.get_cog("Commands")
+                cog = self.bot.get_cog("Help")
                 return await self.helper_func(
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )

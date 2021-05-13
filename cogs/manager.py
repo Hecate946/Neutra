@@ -835,6 +835,7 @@ class Manager(commands.Cog):
         else:
             await ctx.send_or_reply(content=fmt)
 
+
     @decorators.command(brief="Show info on a db table.")
     async def table(self, ctx, *, table_name: str = None):
         """Runs a query describing the table schema."""
