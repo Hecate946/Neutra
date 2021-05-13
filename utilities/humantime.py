@@ -174,6 +174,10 @@ class UserFriendlyTime(commands.Converter):
         self.default = default
 
     async def check_constraints(self, ctx, now, remaining):
+        if not hasattr(self, "dt"):
+            self.arg = remaining
+            self.dt = None
+            return self
         if self.dt < now:
             raise commands.BadArgument("This time is in the past.")
 
@@ -213,6 +217,7 @@ class UserFriendlyTime(commands.Converter):
 
             # apparently nlp does not like "from now"
             # it likes "from x" in other cases though so let me handle the 'now' case
+            argument = argument.replace(",","") # In case someone actually says 3,600 seconds
             if argument.endswith("from now"):
                 argument = argument[:-8].strip()
 
@@ -221,12 +226,12 @@ class UserFriendlyTime(commands.Converter):
                 if argument[0:6] in ("me to ", "me in ", "me at "):
                     argument = argument[6:]
 
+            if " for " in argument:
+                argument = argument.replace(" for ", " ")
+
             elements = calendar.nlp(argument, sourceTime=now)
             if elements is None or len(elements) == 0:
-                print("no elems")
-                raise commands.BadArgument(
-                    'Invalid time provided, try e.g. "tomorrow" or "3 days".'
-                )
+                return await result.check_constraints(ctx, now, argument)
 
             # handle the following cases:
             # "date time" foo
@@ -237,16 +242,12 @@ class UserFriendlyTime(commands.Converter):
             dt, status, begin, end, dt_string = elements[0]
 
             if not status.hasDateOrTime:
-                print("has no date of time")
                 raise commands.BadArgument(
-                    'Invalid time provided, try e.g. "tomorrow" or "3 days".'
+                   'Invalid time provided, try e.g. "tomorrow" or "3 days".'
                 )
-
             if begin not in (0, 1) and end != len(argument):
                 raise commands.BadArgument(
-                    "Time is either in an inappropriate location, which "
-                    "must be either at the end or beginning of your input, "
-                    "or I just flat out did not understand what you meant. Sorry."
+                    f"I did not understand your input. Please use the `{ctx.prefix}examples` command for assistance."
                 )
 
             if not status.hasTime:
@@ -267,15 +268,15 @@ class UserFriendlyTime(commands.Converter):
             if begin in (0, 1):
                 if begin == 1:
                     # check if it's quoted:
-                    if argument[0] != '"':
-                        raise commands.BadArgument(
-                            "Expected quote before time input..."
-                        )
+                    # if argument[0] != '"':
+                    #     raise commands.BadArgument(
+                    #         "Expected quote before time input..."
+                    #     )
 
-                    if not (end < len(argument) and argument[end] == '"'):
-                        raise commands.BadArgument(
-                            "If the time is quoted, you must unquote it."
-                        )
+                    # if not (end < len(argument) and argument[end] == '"'):
+                    #     raise commands.BadArgument(
+                    #         "If the time is quoted, you must unquote it."
+                    #     )
 
                     remaining = argument[end + 1 :].lstrip(" ,.!")
                 else:

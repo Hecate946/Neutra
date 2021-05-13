@@ -1289,199 +1289,43 @@ class Mod(commands.Cog):
                 content=f"{self.bot.emote_dict['failed']} I have insufficient permission to unlock channels."
             )
 
-    ###################
-    ## Mute Commands ##
-    ###################
-
-    @decorators.command(
-        aliases=["tempmute"],
-        brief="Mute users for a duration.",
-        implemented="2021-04-02 00:16:54.164723",
-        updated="2021-05-09 15:44:25.714321",
+    @commands.command(
+        aliases=['tban'],
+        brief="Temporarily ban users.",
+        implemented="2021-04-27 03:59:16.293041",
+        updated="2021-05-13 00:04:42.463263",
         examples="""
-                {0}mute @Hecate
-                {0}mute Hecate#3523 @John --nodm
-                {0}mute 708584008065351681 John --reason for advertising
-                {0}mute John --duration 3 hours
-                {0}mute Hecate --duration 2 minutes --reason for spamming --nodm
-                """,
-    )
-    @commands.guild_only()
-    @checks.bot_has_perms(manage_roles=True)
-    @checks.has_perms(manage_roles=True)
-    async def mute(
-        self, ctx, users: commands.Greedy[converters.DiscordMember], *, flags=None
-    ):
-        """
-        Usage: {0}mute <users>... [--duration] [--reason] [--nodm]
-        Alias: {0}tempmute
-        Output:
-            Mutes multiple users.
-            This command takes 4 arguments
-            users, duration, reason, nodm.
-        Explanation:
-            Duration must be a valid time
-            passed after a --duration flag.
-            Reason can be any string passed
-            after the --reason flag.
-            Pass the --nodm flag to prevent
-            the bot from DMing the users
-            that they've been muted.
-        Flags:
-            --duration: [Aliases: -d, --time, -t]
-            --reason: [Aliases: -r]
-            --nodm:
-        Notes:
-            Run the command: {0}examples mute
-            for specific usage examples.
-        """
-        task = self.bot.get_cog("Tasks")
-        if not task:
-            raise commands.BadArgument(f"This feature is unavailable.")
-        if not len(users):
-            return await ctx.usage(ctx.command.signature)
-
-        await ctx.trigger_typing()
-        query = """
-                SELECT (muterole)
-                FROM servers
-                WHERE server_id = $1;
+                {0}tempban @Hecate 2 days for advertising
+                {0}tban 708584008065351681 Hecate 2 hours for spamming
                 """
-        muterole = await self.bot.cxn.fetchval(query, ctx.guild.id)
-        muterole = ctx.guild.get_role(muterole)
-        if not muterole:
-            raise commands.BadArgument(
-                f"Run the `{ctx.prefix}muterole <role>` command to set up a mute role."
-            )
-
-        if flags:
-            parser = converters.Arguments(add_help=False, allow_abbrev=False)
-            parser.add_argument("--duration", "-d", "--time", "-t", nargs="+")
-            parser.add_argument("--reason", "-r", nargs="+")
-            parser.add_argument("--nodm", "-nodm", action="store_true")
-
-            try:
-                args = parser.parse_args(shlex.split(flags))
-            except Exception as e:
-                return await ctx.fail(str(e).capitalize())
-
-            if args.duration:
-                dur = " ".join(args.duration)
-                duration = await humantime.FutureTime(dur).convert(ctx, dur)
-                endtime = duration.dt
-            else:
-                endtime = None
-            if args.reason:
-                rawreason = " ".join(args.reason)
-                reason = await converters.ActionReason().convert(ctx, rawreason)
-            else:
-                rawreason = "No reason"
-                reason = await converters.ActionReason().convert(ctx, rawreason)
-            if args.nodm:
-                nodm = True
-            else:
-                nodm = False
-
-        else:
-            nodm = False
-            endtime = None
-            rawreason = "No reason"
-            reason = await converters.ActionReason().convert(ctx, rawreason)
-
-        failed = []
-        muted = []
-        for user in users:
-            if user.bot:
-                failed.append((str(user), "I cannot mute bots."))
-                continue
-            res = await checks.check_priv(ctx, user)
-            if res:
-                failed.append((str(user), res))
-                continue
-            query = """
-                    select (id)
-                    from tasks
-                    where extra->'kwargs'->>'user_id' = $1;
-                    """
-            s = await self.bot.cxn.fetchval(query, str(user.id))
-            if s:
-                failed.append((str(user), "User is already muted."))
-                continue
-            try:
-                if endtime:
-                    expiration = duration.dt
-                else:
-                    expiration = None
-                timer = await task.create_timer(
-                    expiration,
-                    "mute",
-                    ctx.guild.id,
-                    ctx.author.id,
-                    user.id,
-                    nodm=nodm,
-                    user_id=user.id,
-                    roles=[x.id for x in user.roles],
-                    connection=self.bot.cxn,
-                    created=ctx.message.created_at,
-                )
-                await user.edit(roles=[muterole], reason=reason)
-                muted.append(str(user))
-                if not nodm:
-                    embed = discord.Embed(color=self.bot.constants.embed)
-                    embed.title = f"{self.bot.emote_dict['audioremove']} Mute Notice"
-                    embed.description = (
-                        f"**Server: `{ctx.guild.name} ({ctx.guild.id})`**\n"
-                    )
-                    embed.description += (
-                        f"**Moderator: `{ctx.author} ({ctx.author.id})`**\n"
-                    )
-                    if endtime:
-                        timefmt = humantime.human_timedelta(
-                            duration.dt, source=timer.created_at
-                        )
-                        embed.description += f"**Duration: `{timefmt}`**\n"
-                    embed.description += f"**Reason: `{rawreason}`**"
-                    try:
-                        await user.send(embed=embed)
-                    except Exception:  # We tried
-                        pass
-            except Exception as e:
-                failed.append((str(user), e))
-
-        if failed:
-            await helpers.error_info(ctx, failed)
-        if muted:
-            self.bot.dispatch("mod_action", ctx, targets=muted)
-            if endtime:
-                timefmt = humantime.human_timedelta(duration.dt, source=timer.created_at)
-                await ctx.success(f"Muted `{', '.join(muted)}` for **{timefmt}.**")
-
-            else:
-                await ctx.success(f"Muted `{', '.join(muted)}`")
-
-    @commands.command()
+    )
     @commands.guild_only()
     @checks.has_perms(ban_members=True)
     async def tempban(
         self,
         ctx,
         users: commands.Greedy[converters.DiscordMember],
-        duration: humantime.FutureTime,
-        *,
-        reason: converters.ActionReason = None,
+        *, 
+        duration: humantime.UserFriendlyTime(commands.clean_content, default='\u2026') = None
     ):
         """
-        Temporarily bans a member for the specified duration.
-        The duration can be a a short time form, e.g. 30d or a more human
-        duration such as "until thursday at 3PM" or a more concrete time
-        such as "2024-12-31". Note that if the time string is multiple words,
-        it MUST be surrounded in quotes.
+        Usage: {0}tempban <users> [duration] [reason]
+        Alias: {0}tban
+        Output:
+            Temporarily bans a member for the specified duration.
+            The duration can be a a short time form, e.g. 30d or a more human
+            duration like "until thursday at 3PM".
         """
         task = self.bot.get_cog("Tasks")
         if not task:
             raise commands.BadArgument(f"This feature is unavailable.")
         if not len(users):
-            return await ctx.usage(ctx.command.signature)
+            return await ctx.usage()
+        if not duration:
+            raise commands.BadArgument(f"You must specify a duration.")
+
+        reason = duration.arg if duration and duration.arg != "…" else None
+        endtime = duration.dt
 
         banned = []
         failed = []
@@ -1491,9 +1335,22 @@ class Mod(commands.Cog):
                 failed.append((str(user), res))
                 continue
             try:
+                if reason:
+                    embed = discord.Embed(color=self.bot.constants.embed)
+                    timefmt = humantime.human_timedelta(endtime, source=ctx.message.created_at)
+                    embed.title = f"{self.bot.emote_dict['ban']} Tempban Notice"
+                    embed.description = f"**Server: `{ctx.guild.name} ({ctx.guild.id})`**\n"
+                    embed.description += f"**Moderator: `{ctx.author} ({ctx.author.id})`**\n"
+                    embed.description += f"**Duration: `{timefmt}`**\n"
+                    embed.description += f"**Reason: `{reason}`**"
+                    try:
+                        await user.send(embed=embed)
+                    except (AttributeError, discord.HTTPException):
+                        pass
+
                 await ctx.guild.ban(user, reason=reason)
                 timer = await task.create_timer(
-                    duration.dt,
+                    endtime,
                     "tempban",
                     ctx.guild.id,
                     ctx.author.id,
@@ -1538,6 +1395,144 @@ class Mod(commands.Cog):
             f"Automatic unban from timer made on {timer.created_at} by {moderator}."
         )
         await guild.unban(discord.Object(id=member_id), reason=reason)
+
+
+    ###################
+    ## Mute Commands ##
+    ###################
+
+    @decorators.command(
+        aliases=["tempmute"],
+        brief="Mute users for a duration.",
+        implemented="2021-04-02 00:16:54.164723",
+        updated="2021-05-09 15:44:25.714321",
+        examples="""
+                {0}mute @Hecate
+                {0}mute Hecate#3523 @John 2 minutes
+                {0}mute 708584008065351681 John 3 days for advertising
+                {0}mute John --duration 3 hours
+                {0}mute Hecate for spamming
+                {0}mute Hecate John for 2 days
+                """,
+    )
+    @commands.guild_only()
+    @checks.bot_has_perms(manage_roles=True)
+    @checks.has_perms(manage_roles=True)
+    async def mute(
+        self, ctx, users: commands.Greedy[converters.DiscordMember], *, duration: humantime.UserFriendlyTime(commands.clean_content, default='\u2026')=None
+    ):
+        """
+        Usage: {0}mute <users>... [duration] [reason]
+        Alias: {0}tempmute
+        Output:
+            Mutes multiple users.
+            This command will attempt
+            to remove all the roles from
+            the passed users, and reaasign
+            them on unmute. If no duration
+            is specified, mute will be indefinite.
+        Notes:
+            Duration and reason are optional.
+            Running the command with a reason
+            will dm the user while running the
+            command without a reason will not dm.
+            Run the command: {0}examples mute
+            for specific usage examples.
+        """
+        task = self.bot.get_cog("Tasks")
+        if not task:
+            raise commands.BadArgument(f"This feature is currently unavailable.")
+        if not len(users):
+            return await ctx.usage()
+
+        await ctx.trigger_typing()
+        query = """
+                SELECT (muterole)
+                FROM servers
+                WHERE server_id = $1;
+                """
+        muterole = await self.bot.cxn.fetchval(query, ctx.guild.id)
+        muterole = ctx.guild.get_role(muterole)
+        if not muterole:
+            raise commands.BadArgument(
+                f"Run the `{ctx.prefix}muterole <role>` command to set up a mute role."
+            )
+
+        reason = duration.arg if duration and duration.arg != "…" else None
+        endtime = duration.dt if duration else None
+        if reason:
+            dm = True
+        else:
+            dm = False
+
+        failed = []
+        muted = []
+        for user in users:
+            if user.bot:  # This is because bots sometimes have a role that cannot be removed
+                failed.append((str(user), "I cannot mute bots."))
+                continue  # I mean we could.. but why would someone want to mute a bot.
+            if muterole in user.roles:
+                failed.append((str(user), "User is already muted."))
+                continue
+            res = await checks.check_priv(ctx, user)
+            if res:
+                failed.append((str(user), res))
+                continue
+            query = """
+                    select (id)
+                    from tasks
+                    where extra->'kwargs'->>'user_id' = $1;
+                    """
+            s = await self.bot.cxn.fetchval(query, str(user.id))
+            if s:
+                failed.append((str(user), "User is already muted."))
+                continue
+            try:
+                timer = await task.create_timer(
+                    endtime,
+                    "mute",
+                    ctx.guild.id,
+                    ctx.author.id,
+                    user.id,
+                    dm=dm,
+                    user_id=user.id,
+                    roles=[x.id for x in user.roles],
+                    connection=self.bot.cxn,
+                    created=ctx.message.created_at,
+                )
+                await user.edit(roles=[muterole], reason=reason)
+                muted.append(str(user))
+                if reason:
+                    embed = discord.Embed(color=self.bot.constants.embed)
+                    embed.title = f"{self.bot.emote_dict['audioremove']} Mute Notice"
+                    embed.description = (
+                        f"**Server: `{ctx.guild.name} ({ctx.guild.id})`**\n"
+                    )
+                    embed.description += (
+                        f"**Moderator: `{ctx.author} ({ctx.author.id})`**\n"
+                    )
+                    if endtime:
+                        timefmt = humantime.human_timedelta(
+                            endtime, source=timer.created_at
+                        )
+                        embed.description += f"**Duration: `{timefmt}`**\n"
+                    embed.description += f"**Reason: `{reason}`**"
+                try:
+                    await user.send(embed=embed)
+                except Exception:  # We tried
+                    pass
+            except Exception as e:
+                failed.append((str(user), e))
+
+        if failed:
+            await helpers.error_info(ctx, failed)
+        if muted:
+            self.bot.dispatch("mod_action", ctx, targets=muted)
+            if endtime:
+                timefmt = humantime.human_timedelta(endtime, source=timer.created_at)
+                await ctx.success(f"Muted `{', '.join(muted)}` for **{timefmt}.**")
+            else:
+                await ctx.success(f"Muted `{', '.join(muted)}`")
 
     @decorators.command(
         brief="Unmute muted users.",
@@ -1587,7 +1582,7 @@ class Mod(commands.Cog):
             await ctx.trigger_typing()
             task_id = s[0]
             args_and_kwargs = json.loads(s[1])
-            nodm = args_and_kwargs["kwargs"]["nodm"]
+            dm = args_and_kwargs["kwargs"]["dm"]
             roles = args_and_kwargs["kwargs"]["roles"]
             try:
                 await user.edit(
@@ -1603,7 +1598,7 @@ class Mod(commands.Cog):
             except Exception as e:
                 failed.append((str(user), e))
                 continue
-            if not nodm:
+            if dm:
                 embed = discord.Embed(color=self.bot.constants.embed)
                 embed.title = f"{self.bot.emote_dict['audioadd']} Unmute Notice"
                 embed.description = f"**Server: `{ctx.guild.name} ({ctx.guild.id})`**\n"
@@ -1646,12 +1641,12 @@ class Mod(commands.Cog):
         if not member:
             return  # They left...
         roles = timer.kwargs["roles"]
-        nodm = timer.kwargs["nodm"]
+        dm = timer.kwargs["dm"]
         try:
             await member.edit(roles=[guild.get_role(x) for x in roles], reason=reason)
         except Exception:  # They probably removed roles lmao.
             return
-        if not nodm:
+        if dm:
             embed = discord.Embed(color=self.bot.constants.embed)
             embed.title = f"{self.bot.emote_dict['audioadd']} Unmute Notice"
             embed.description = f"**Server: `{guild.name} ({guild.id})`**\n"

@@ -2,10 +2,11 @@
 # https://github.com/Rapptz/RoboDanny/blob/rewrite/cogs/reminder.py
 
 import json
-import discord
 import asyncio
 import asyncpg
+import discord
 import datetime
+
 from discord.ext import commands
 
 from utilities import humantime
@@ -45,7 +46,7 @@ class Timer:
 
     @property
     def human_delta(self):
-        return time.human_timedelta(self.created_at)
+        return humantime.human_timedelta(self.created_at)
 
     def __repr__(self):
         return f"<Timer created={self.created_at} expires={self.expires} event={self.event}>"
@@ -79,10 +80,22 @@ class Tasks(commands.Cog):
 
     async def get_active_timer(self, *, connection=None, days=7):
         query = "SELECT * FROM tasks WHERE expires < (CURRENT_DATE + $1::interval) ORDER BY expires LIMIT 1;"
-        con = connection or self.bot.pool
+        con = connection or self.bot.cxn
 
         record = await con.fetchrow(query, datetime.timedelta(days=days))
-        return Timer(record=record) if record else None
+        if record:
+            if type(record["extra"]) is dict:
+                extra = record["extra"]
+            else:
+                extra = json.loads(record["extra"])
+            record_dict = {
+                'id': record['id'],
+                'extra': extra,
+                'event': record["event"],
+                'created': record["created"],
+                'expires': record["expires"]
+            }
+        return Timer(record=record_dict) if record else None
 
     async def wait_for_active_timers(self, *, connection=None, days=7):
         timer = await self.get_active_timer(connection=connection, days=days)
@@ -98,7 +111,7 @@ class Tasks(commands.Cog):
     async def call_timer(self, timer):
         # delete the timer
         query = "DELETE FROM tasks WHERE id=$1;"
-        await self.bot.pool.execute(query, timer.id)
+        await self.bot.cxn.execute(query, timer.id)
 
         # dispatch the event
         event_name = f"{timer.event}_timer_complete"
@@ -112,7 +125,6 @@ class Tasks(commands.Cog):
                 # see: http://bugs.python.org/issue20493
                 timer = self._current_timer = await self.wait_for_active_timers(days=40)
                 now = datetime.datetime.utcnow()
-
                 if timer.expires >= now:
                     to_sleep = (timer.expires - now).total_seconds()
                     await asyncio.sleep(to_sleep)
@@ -123,6 +135,8 @@ class Tasks(commands.Cog):
         except (OSError, discord.ConnectionClosed, asyncpg.PostgresConnectionError):
             self._task.cancel()
             self._task = self.bot.loop.create_task(self.dispatch_timers())
+        except Exception as e:
+            raise e
 
     async def short_timer_optimisation(self, seconds, timer):
         await asyncio.sleep(seconds)
@@ -197,10 +211,9 @@ class Tasks(commands.Cog):
             if delta <= (86400 * 40):  # 40 days
                 self._have_data.set()
 
-        # check if this timer is earlier than our currently run timer
-        if self._current_timer and when < self._current_timer.expires:
-            # cancel the task and re-run it
-            self._task.cancel()
-            self._task = self.bot.loop.create_task(self.dispatch_timers())
-
+            # check if this timer is earlier than our currently run timer
+            if self._current_timer and when < self._current_timer.expires:
+                # cancel the task and re-run it
+                self._task.cancel()
+                self._task = self.bot.loop.create_task(self.dispatch_timers())
         return timer

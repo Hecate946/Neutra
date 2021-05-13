@@ -3,9 +3,8 @@ import re
 import typing
 
 import discord
-from discord import role
 from discord.ext import commands
-from discord.ext.commands import bot
+from utilities import checks
 
 EMOJI_REGEX = re.compile(r"<a?:.+?:([0-9]{15,21})>")
 EMOJI_NAME_REGEX = re.compile(r"[0-9a-zA-Z\_]{2,32}")
@@ -331,27 +330,77 @@ class BotServer(commands.Converter):
 
 
 # Similar to Botserver but does not return a list of findings
+# class DiscordGuild(commands.Converter):
+#     async def convert(self, ctx, argument):
+#         if argument.isdigit():
+#             server_id = int(argument, base=10)
+#             server = ctx.bot.get_guild(server_id)
+#             if not server:
+#                 raise commands.BadArgument(
+#                     f"Server `{await prettify(ctx, argument)}` not found."
+#                 )
+#             return server
+#         else:
+#             server = discord.utils.find(
+#                 lambda s: argument.lower() in str(s.name).lower(), ctx.bot.guilds
+#             )
+#             if not server:
+#                 raise commands.BadArgument(
+#                     f"Server `{await prettify(ctx, argument)}` not found."
+#                 )
+#             return server
+
 class DiscordGuild(commands.Converter):
-    async def convert(self, ctx, argument):
-        if argument.isdigit():
-            server_id = int(argument, base=10)
-            server = ctx.bot.get_guild(server_id)
-            if not server:
-                raise commands.BadArgument(
-                    f"Server `{await prettify(ctx, argument)}` not found."
-                )
-            return server
+    """Match guild_id, or guild name exact, only if author is in the guild."""
+
+    def get_by_name(self, ctx, guild_name):
+        """Lookup by name.
+        Returns list of possible matches.
+        Try doing an exact match.
+        Fall back to inexact match.
+        Will only return matches if ctx.author is in the guild.
+        """
+        if checks.is_admin(ctx.author):
+            result = discord.utils.find(lambda g: g.name == guild_name, ctx.bot.guilds)
+            if result:
+                return [result]
+
+            guild_name = guild_name.lower()
+
+            return [g for g in ctx.bot.guilds if g.name.lower() == guild_name]
         else:
-            server = discord.utils.find(
-                lambda s: argument.lower() in str(s.name).lower(), ctx.bot.guilds
-            )
-            if not server:
-                raise commands.BadArgument(
-                    f"Server `{await prettify(ctx, argument)}` not found."
-                )
-            return server
+            result = discord.utils.find(lambda g: g.name == guild_name and g.get_member(ctx.author.id), ctx.bot.guilds)
+            if result:
+                return [result]
 
+            guild_name = guild_name.lower()
 
+            return [g for g in ctx.bot.guilds if g.name.lower() == guild_name and g.get_member(ctx.author.id)]
+
+    async def find_match(self, ctx, argument):
+        """Get a match...
+        If we have a number, try lookup by id.
+        Fallback to lookup by name.
+        Only allow matches where ctx.author shares a guild.
+        Disambiguate in case we have multiple name results.
+        """
+        lax_id_match = lax_id_regex.match(argument)
+        if lax_id_match:
+            result = ctx.bot.get_guild(int(lax_id_match.group(1)))
+
+            if result and result.get_member(ctx.author.id):
+                return result
+
+        results = self.get_by_name(ctx, argument)
+        if results:
+            return results[0]
+
+    async def convert(self, ctx, argument):
+        match = await self.find_match(ctx, argument)
+
+        if not match:
+            raise commands.BadArgument(f"Server `{await prettify(ctx, argument)}` not found.")
+        return match
 # converter from R.Danny
 class BannedMember(commands.Converter):
     async def convert(self, ctx, argument):
