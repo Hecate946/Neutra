@@ -386,7 +386,7 @@ class Mod(commands.Cog):
                     delete_message_days=delete_message_days,
                 )
                 await ctx.guild.unban(
-                    target, reason=converters.ActionReason().convert(ctx, reason)
+                    target, reason= await converters.ActionReason().convert(ctx, reason)
                 )
                 banned.append(str(target))
             except Exception as e:

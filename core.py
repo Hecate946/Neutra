@@ -273,6 +273,8 @@ class Snowbot(commands.AutoShardedBot):
             except Exception:
                 pass
             return
+        if not self.ready:
+            return await ctx.send_or_reply(f"{self.emote_dict['warn']} I am currently rebooting. Please wait a moment.")
         if not message.guild:
             # These are DM commands
             await self.invoke(ctx)
@@ -672,8 +674,6 @@ class Snowbot(commands.AutoShardedBot):
         pass
 
     async def on_message(self, message):
-        if self.ready is False:
-            return
         await self.process_commands(message)
         if isinstance(message.channel, discord.DMChannel):
             if message.author.id != self.user.id:
