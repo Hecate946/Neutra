@@ -457,12 +457,8 @@ class Batch(commands.Cog):
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
+    @decorators.event_check(lambda s, m: m.guild and not m.author.bot)
     async def on_message_delete(self, message):
-        if not message.guild:
-            return
-        if message.author.bot:
-            return
-
         async with self.batch_lock:
             self.snipe_batch.append(message.id)
 
@@ -538,13 +534,12 @@ class Batch(commands.Cog):
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
+    @decorators.event_check(lambda s, b, a: not a.bot)
     async def on_user_update(self, before, after):
         """
         Here's where we get notified of avatar,
         username, and discriminator changes.
         """
-        if after.bot:
-            return  # Don't care about bots  # Update last seen time
         if await self.avatar_changed(before, after):
             async with self.batch_lock:
                 self.tracker_batch[before.id] = (time.time(), "updating their avatar")
@@ -571,12 +566,8 @@ class Batch(commands.Cog):
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
+    @decorators.event_check(lambda s, m: not m.author.bot and m.guild)
     async def on_message(self, message):
-
-        if message.author.bot:
-            return
-        if not message.guild:
-            return
         async with self.batch_lock:
             self.message_batch.append(
                 {
@@ -616,10 +607,8 @@ class Batch(commands.Cog):
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
+    @decorators.event_check(lambda s, c, u, w: not u.bot)
     async def on_typing(self, channel, user, when):
-
-        if user.bot:
-            return
         async with self.batch_lock:
             self.tracker_batch[user.id] = (time.time(), "typing")
 
@@ -652,19 +641,15 @@ class Batch(commands.Cog):
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
+    @decorators.event_check(lambda s, m, b, a: not m.bot)
     async def on_voice_state_update(self, member, before, after):
-
-        if member.bot:
-            return
         async with self.batch_lock:
             self.tracker_batch[member.id] = (time.time(), "changing their voice state")
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
+    @decorators.event_check(lambda s, i: not i.inviter.bot)
     async def on_invite_create(self, invite):
-
-        if invite.inviter.bot:
-            return
         async with self.batch_lock:
             self.tracker_batch[invite.inviter.id] = (time.time(), "creating an invite")
         if not invite.guild.me.guild_permissions.manage_guild:
@@ -680,10 +665,8 @@ class Batch(commands.Cog):
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
+    @decorators.event_check(lambda s, m: not m.bot)
     async def on_member_join(self, member):
-
-        if member.bot:
-            return
         async with self.batch_lock:
             self.tracker_batch[member.id] = (time.time(), "joining a server")
 
@@ -719,15 +702,24 @@ class Batch(commands.Cog):
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
+    @decorators.event_check(lambda s, m: not m.bot)
     async def on_member_remove(self, member):
-
-        if member.bot:
-            return
         async with self.batch_lock:
             self.tracker_batch[member.id] = (time.time(), "leaving a server")
         if not member.guild.me.guild_permissions.manage_guild:
             return
         self.bot.invites[member.guild.id] = await member.guild.invites()
+
+
+    @commands.Cog.listener()
+    @decorators.wait_until_ready()
+    async def on_reaction_add(self, reaction, user):
+        self.bot.dispatch("picklist_reaction", reaction, user)
+
+    @commands.Cog.listener()
+    @decorators.wait_until_ready()
+    async def on_reaction_remove(self, reaction, user):
+        self.bot.dispatch("picklist_reaction", reaction, user)
 
     async def last_observed(self, member: converters.DiscordUser):
         """Lookup last_observed data."""
@@ -837,13 +829,3 @@ class Batch(commands.Cog):
             "avatars": avatars or None,
         }
         return observed_data
-
-    @commands.Cog.listener()
-    @decorators.wait_until_ready()
-    async def on_reaction_add(self, reaction, user):
-        self.bot.dispatch("picklist_reaction", reaction, user)
-
-    @commands.Cog.listener()
-    @decorators.wait_until_ready()
-    async def on_reaction_remove(self, reaction, user):
-        self.bot.dispatch("picklist_reaction", reaction, user)

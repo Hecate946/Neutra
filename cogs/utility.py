@@ -1193,7 +1193,6 @@ class Utility(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(str(e))
 
-
     @decorators.command(
         aliases=["epost"],
         brief="Sends all server emojis to your dms.",

@@ -8,11 +8,10 @@ import discord
 from datetime import datetime
 from datetime import timedelta
 from discord.ext import commands
-from discord.ext.commands.core import check
 from unidecode import unidecode
 
-from utilities import checks
 from utilities import utils
+from utilities import checks
 from utilities import helpers
 from utilities import converters
 from utilities import decorators

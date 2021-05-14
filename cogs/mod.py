@@ -8,7 +8,6 @@ import discord
 
 from better_profanity import profanity
 from collections import Counter
-from datetime import datetime, timedelta
 from discord.ext import commands
 
 from settings import database
@@ -1021,9 +1020,8 @@ class Mod(commands.Cog):
     #########################
 
     @commands.Cog.listener()
+    @decorators.wait_until_ready()
     async def on_message_edit(self, before, after):
-        if self.bot.ready is False:
-            return
         if not before.guild:
             return
         if before.author.bot:
@@ -1101,7 +1099,7 @@ class Mod(commands.Cog):
     @checks.has_perms(manage_channels=True)
     async def slowmode(self, ctx, channel=None, time: float = None):
         """
-        Usage: -slowmode [channel] [seconds]
+        Usage: {0}slowmode [channel] [seconds]
         Permission: Manage Channels
         Output:
             Sets the channel's slowmode to your input value.

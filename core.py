@@ -562,14 +562,10 @@ class Snowbot(commands.AutoShardedBot):
             )
 
         elif isinstance(error, commands.BadUnionArgument):
-            await ctx.send_or_reply(
-                content=f"{self.emote_dict['failed']} {error}",
-            )
+            await ctx.fail(error)
 
         elif isinstance(error, commands.BotMissingPermissions):
-            await ctx.send_or_reply(
-                content=f"{self.emote_dict['failed']} {error}",
-            )
+            await ctx.fail(error)
 
         elif isinstance(error, commands.NoPrivateMessage):
             await ctx.author.send(
@@ -587,7 +583,7 @@ class Snowbot(commands.AutoShardedBot):
         elif isinstance(error, commands.DisabledCommand):
             await ctx.message.add_reaction(self.emote_dict["failed"])
             await ctx.fail(
-                f"{self.emote_dict['failed']} This command is currently unavailable."
+                f"This command is currently unavailable."
             )
 
         elif isinstance(error, commands.CheckFailure):
@@ -599,8 +595,8 @@ class Snowbot(commands.AutoShardedBot):
         elif isinstance(error, commands.CommandInvokeError):
             err = utils.traceback_maker(error.original, advance=True)
             if "or fewer" in str(error):  # Message was too long to send
-                return await ctx.send_or_reply(
-                    f"{self.emote_dict['failed']} Result was greater than the character limit."
+                return await ctx.fail(
+                    f" Result was greater than the character limit."
                 )
             # Then we don't really know what this error is. Log it.
             print(
