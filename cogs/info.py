@@ -3,7 +3,6 @@ import os
 import sys
 import time
 import codecs
-from discord.ext.commands.core import check
 import psutil
 import struct
 import asyncio
@@ -388,8 +387,8 @@ class Info(commands.Cog):
     @decorators.command(brief="Show the bot's uptime.", aliases=["runtime"])
     async def uptime(self, ctx):
         """
-        Usage: -uptime
-        Alias: -runtime
+        Usage: {0}uptime
+        Alias: {0}runtime
         Output: Time since last boot.
         """
         uptime = utils.time_between(self.bot.starttime, int(time.time()))
@@ -404,7 +403,7 @@ class Info(commands.Cog):
     @commands.cooldown(1, 60, commands.BucketType.guild)
     async def speed(self, ctx):
         """
-        Usage: -speed
+        Usage: {0}speed
         Aliases:
             {0}speedtest, {0}network, {0}speed,
             {0}wifi, {0}download, {0}upload
@@ -510,7 +509,7 @@ class Info(commands.Cog):
     @decorators.command(brief="Show the bot's host environment.")
     async def hostinfo(self, ctx):
         """
-        Usage: -hostinfo
+        Usage: {0}hostinfo
         Output: Detailed information on the bot's host environment
         """
         message = await ctx.channel.send(
@@ -541,7 +540,7 @@ class Info(commands.Cog):
         version = platform.version()
         processor = platform.processor()
         botOwner = self.bot.get_user(self.bot.constants.owners[0])
-        botName = ctx.guild.me
+        botName = self.bot.user
         currentTime = int(time.time())
         timeString = utils.time_between(self.bot.starttime, currentTime)
         pythonMajor = sys.version_info.major
