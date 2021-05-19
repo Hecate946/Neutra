@@ -29,26 +29,15 @@ class Config(commands.Cog):
     async def cog_check(self, ctx):
         return checks.is_owner(ctx)
 
-    ##############################
-    ## Aiohttp Helper Functions ##
-    ##############################
 
-    async def query(self, url, method="get", res_method="text", *args, **kwargs):
-        async with getattr(self.bot.session, method.lower())(
-            url, *args, **kwargs
-        ) as res:
-            return await getattr(res, res_method)()
-
-    async def get(self, url, *args, **kwargs):
-        return await self.query(url, "get", *args, **kwargs)
-
-    async def post(self, url, *args, **kwargs):
-        return await self.query(url, "post", *args, **kwargs)
-
-    @decorators.command(hidden=True, brief="Change a config.json value.")
+    @decorators.command(
+        brief="Change a config.json value.",
+        implemented="2021-03-22 06:59:02.430491",
+        updated="2021-05-19 06:10:56.241058",
+    )
     async def config(self, ctx, key=None, value=None):
         """
-        Usage: -config <Key to change> <New Value>
+        Usage: {0}config <Key to change> <New Value>
         Output:
             Edits the specified config.json file key
             to the passed value.
@@ -67,28 +56,25 @@ class Config(commands.Cog):
             utils.modify_config(key=key, value=bool(value))
         else:
             utils.modify_config(key=key, value=str(value))
-        await ctx.send_or_reply(
-            f"{self.bot.emote_dict['success']} Edited key `{key}` to `{value}`"
-        )
+        await ctx.success(f"Edited key `{key}` to `{value}`")
 
     @decorators.group(case_insensitive=True, brief="Change the bot's specifications.")
     async def change(self, ctx):
         """
-        Usage: -change <options> <new>
+        Usage: {0}change <options> <new>
         Examples:
-            -change name Milky Way
-            -change avatar <url>
+            {0}change name Milky Way
+            {0}change avatar <url>
         Permission: Bot Owner
         Output: Edits the specified bot attribute.
         Options:
             avatar, nickname, username
         """
         if ctx.invoked_subcommand is None:
-            return await ctx.usage("<method> <new value>")
+            return await ctx.usage()
 
     @change.command(
         name="username",
-        hidden=True,
         aliases=["name", "user"],
         brief="Change the bot's username.",
     )
@@ -102,7 +88,7 @@ class Config(commands.Cog):
             await ctx.send_or_reply(err)
 
     @commands.guild_only()
-    @change.command(name="nickname", hidden=True, brief="Change nickname.")
+    @change.command(name="nickname", brief="Change nickname.")
     async def change_nickname(self, ctx, *, name: str = None):
         try:
             await ctx.guild.me.edit(nick=name)
@@ -117,7 +103,7 @@ class Config(commands.Cog):
         except Exception as err:
             await ctx.send_or_reply(err)
 
-    @change.command(name="avatar", hidden=True, brief="Change the bot's avatar.")
+    @change.command(name="avatar", brief="Change the bot's avatar.")
     async def change_avatar(self, ctx, url: str = None):
         if url is None and len(ctx.message.attachments) == 0:
             return await ctx.send_or_reply(
@@ -129,7 +115,7 @@ class Config(commands.Cog):
             url = url.strip("<>") if url else None
 
         try:
-            bio = await self.get(url, res_method="read")
+            bio = await self.bot.get(url, res_method="read")
             await self.bot.user.edit(avatar=bio)
             em = discord.Embed(
                 description="**Successfully changed the avatar. Currently using:**",
@@ -240,12 +226,12 @@ class Config(commands.Cog):
         case_insensitive=True,
         aliases=["to-do"],
         invoke_without_command=True,
-        brief="Show, add, or remove from the bot's todo list.",
+        brief="Manage the bot's todo list.",
     )
     async def todo(self, ctx):
         """
-        Usage: -todo <method>
-        Alias: -to-do
+        Usage: {0}todo <method>
+        Alias: {0}to-do
         Methods:
             no subcommand: shows the todo list
             add: Adds an entry to the todo list
@@ -337,14 +323,14 @@ class Config(commands.Cog):
     )
     async def write(self, ctx):
         """
-        Usage: -write <method>
-        Aliases: -set, -add
+        Usage: {0}write <method>
+        Aliases: {0}set, {0}add
         Methods:
             overview: Edit the bot's overview
             changelog: Post an entry to the changelog
         """
         if ctx.invoked_subcommand is None:
-            return await ctx.usage("<method>")
+            return await ctx.usage()
 
     @write.command()
     async def overview(self, ctx, *, overview: str = None):
@@ -384,7 +370,7 @@ class Config(commands.Cog):
                 content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
             )
 
-    @decorators.command(brief="Blacklist users or servers.")
+    @decorators.command(brief="Blacklist a discord object.")
     async def blacklist(
         self,
         ctx,
@@ -395,7 +381,7 @@ class Config(commands.Cog):
         reason: typing.Optional[str] = None,
     ):
         """
-        Usage: -blacklist <object> [reason]
+        Usage: {0}blacklist <object> [reason]
         """
         if _objects is None:
             p = pagination.MainMenu(
@@ -426,30 +412,23 @@ class Config(commands.Cog):
                 content=f"{self.bot.emote_dict['success']} `{', '.join(already_blacklisted)}` {ternary} already blacklisted",
             )
 
-    @decorators.command(brief="Remove users or servers from the blacklist.")
+    @decorators.command(brief="Unblacklist discord objects.")
     async def unblacklist(
-        self, ctx, _object: typing.Union[discord.User, converters.DiscordGuild] = None
-    ):
+        self, ctx, _object: typing.Union[discord.User, converters.DiscordGuild]):
         """
-        Usage: -unblacklist <object>
+        Usage: {0}unblacklist <object>
         """
-        if _object is None:
-            return await ctx.usage("<object>")
         try:
             self.bot.blacklist.pop(str(_object.id))
         except KeyError:
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['success']} `{str(_object)}` was not blacklisted.",
-            )
+            await ctx.success(f"`{str(_object)}` was not blacklisted.")
             return
-        await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['success']} Removed `{str(_object)}` from the blacklist.",
-        )
+        await ctx.success(f"Removed `{str(_object)}` from the blacklist.")
 
     @decorators.command(brief="Toggle disabling a command.")
     async def toggle(self, ctx, *, command):
         """
-        Usage: -toggle <command>
+        Usage: {0}toggle <command>
         Output: Globally disables or enables a command
         """
         EXCEPTIONS = ["toggle"]
@@ -469,7 +448,7 @@ class Config(commands.Cog):
             f"{self.bot.emote_dict['success']} {ternary} {command.qualified_name}."
         )
 
-    @decorators.command(hidden=True, brief="Have the bot leave a server.")
+    @decorators.command(brief="Have the bot leave a server.")
     async def leaveserver(self, ctx, *, target_server: converters.DiscordGuild = None):
         """Leaves a server - can take a name or id (owner only)."""
         if target_server is None:
@@ -496,7 +475,7 @@ class Config(commands.Cog):
             content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
         )
 
-    @decorators.command(hidden=True, brief="Add a new bot owner.")
+    @decorators.command(brief="Add a new bot owner.")
     async def addowner(self, ctx, member: converters.DiscordUser = None):
         """
         Usage: -addowner <user>
@@ -544,7 +523,7 @@ class Config(commands.Cog):
         )
 
     @decorators.command(
-        hidden=True, aliases=["removeowner", "rmowner"], brief="Remove a bot owner."
+        aliases=["removeowner", "rmowner"], brief="Remove a bot owner."
     )
     async def remowner(self, ctx, member: converters.DiscordUser = None):
         """
@@ -593,7 +572,7 @@ class Config(commands.Cog):
             content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
         )
 
-    @decorators.command(hidden=True, brief="Add a new bot admin.")
+    @decorators.command(brief="Add a new bot admin.")
     async def addadmin(self, ctx, member: converters.DiscordUser = None):
         """
         Usage: -addadmin <user>
@@ -642,7 +621,7 @@ class Config(commands.Cog):
         )
 
     @decorators.command(
-        hidden=True, aliases=["removeadmin", "rmadmin"], brief="Remove a bot admin."
+        aliases=["removeadmin", "rmadmin"], brief="Remove a bot admin."
     )
     async def remadmin(self, ctx, member: converters.DiscordUser = None):
         """

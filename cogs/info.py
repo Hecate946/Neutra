@@ -246,7 +246,7 @@ class Info(commands.Cog):
         msg_content = "."
 
         task = asyncio.ensure_future(
-            ctx.bot.wait_for(
+            self.bot.wait_for(
                 "message",
                 timeout=15,
                 check=lambda m: (m.author == ctx.bot.user and m.content == msg_content),
