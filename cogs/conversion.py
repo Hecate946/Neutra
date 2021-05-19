@@ -115,8 +115,8 @@ class Conversion(commands.Cog):
     @decorators.command(brief="Convert centimeters to feet and inches.")
     async def cm(self, ctx):
         """
-        Usage: -cm
-        Alias: -centimeters
+        Usage: {0}cm
+        Alias: {0}centimeters
         Output:
             Turns cm (height) to ft + inch
             (metric to imperial) by approximation

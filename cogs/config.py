@@ -1,14 +1,17 @@
 import os
-import typing
-from datetime import datetime
-
-import aiohttp
 import time
+import typing
+import aiohttp
 import discord
+
+from datetime import datetime
 from discord.ext import commands, menus
 
-from utilities import converters, pagination, checks, utils
+from utilities import utils
+from utilities import checks
+from utilities import converters
 from utilities import decorators
+from utilities import pagination
 
 
 def setup(bot):
@@ -63,7 +66,7 @@ class Config(commands.Cog):
         """
         Usage: {0}change <options> <new>
         Examples:
-            {0}change name Milky Way
+            {0}change name Tester
             {0}change avatar <url>
         Permission: Bot Owner
         Output: Edits the specified bot attribute.
@@ -87,8 +90,8 @@ class Config(commands.Cog):
         except discord.HTTPException as err:
             await ctx.send_or_reply(err)
 
-    @commands.guild_only()
     @change.command(name="nickname", brief="Change nickname.")
+    @commands.guild_only()
     async def change_nickname(self, ctx, *, name: str = None):
         try:
             await ctx.guild.me.edit(nick=name)
@@ -141,9 +144,9 @@ class Config(commands.Cog):
         if ctx.author.id not in self.bot.constants.owners:
             return None
         if presence == "":
-            msg = "<:checkmark:816534984676081705> presence has been reset."
+            msg = "presence has been reset."
         else:
-            msg = f"{self.bot.emote_dict['success']} presence now set to `{presence}`"
+            msg = f"presence now set to `{presence}`"
         query = """
                 UPDATE config
                 SET presence = $1
@@ -151,7 +154,7 @@ class Config(commands.Cog):
                 """
         await self.bot.cxn.execute(query, presence, self.bot.user.id)
         await self.bot.set_status()
-        await ctx.send_or_reply(msg)
+        await ctx.success(msg)
 
     @change.command(brief="Set the bot's status type.")
     async def status(self, ctx, status: str = None):
@@ -167,9 +170,7 @@ class Config(commands.Cog):
         elif status.lower() in ["offline", "gray", "invisible", "invis"]:
             status = "offline"
         else:
-            return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['failed']} `{status}` is not a valid status.",
-            )
+            raise commands.BadArgument(f"`{status}` is not a valid status.")
 
         query = """
                 UPDATE config
@@ -191,9 +192,7 @@ class Config(commands.Cog):
         statustime = time.time() - self.bot.statustime
         await self.bot.cxn.execute(query, self.bot.user.id, statustime)
         self.bot.statustime = time.time()
-        await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['success']} status now set as `{status}`",
-        )
+        await ctx.success(f"status now set as `{status}`")
 
     @change.command(brief="Set the bot's activity type.", aliases=["action"])
     async def activity(self, ctx, activity: str = None):
@@ -207,9 +206,7 @@ class Config(commands.Cog):
         elif activity.lower() in ["comp", "competing", "compete"]:
             activity = "competing"
         else:
-            return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['failed']} `{activity}` is not a valid status.",
-            )
+            raise commands.BadArgument(f"`{activity}` is not a valid status.")
 
         query = """
                 UPDATE config
@@ -218,9 +215,7 @@ class Config(commands.Cog):
                 """
         await self.bot.cxn.execute(query, activity, self.bot.user.id)
         await self.bot.set_status()
-        await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['success']} status now set as `{activity}`",
-        )
+        await ctx.success(f"Status now set as `{activity}`")
 
     @decorators.group(
         case_insensitive=True,
@@ -444,41 +439,28 @@ class Config(commands.Cog):
 
         command.enabled = not command.enabled
         ternary = "Enabled" if command.enabled else "Disabled"
-        await ctx.send_or_reply(
-            f"{self.bot.emote_dict['success']} {ternary} {command.qualified_name}."
-        )
+        await ctx.success(f"{ternary} {command.qualified_name}.")
 
     @decorators.command(brief="Have the bot leave a server.")
     async def leaveserver(self, ctx, *, target_server: converters.DiscordGuild = None):
         """Leaves a server - can take a name or id (owner only)."""
-        if target_server is None:
-            if ctx.guild:
-                target_server = ctx.guild
-            else:
-                return await ctx.send_or_reply(
-                    content=f"Usage: `{ctx.prefix}leaveserver <server>`",
-                )
-        c = await pagination.Confirmation(
-            f"{self.bot.emote_dict['exclamation']} **This action will result in me leaving `{target_server.name}.` Do you wish to continue?**"
-        ).prompt(ctx)
+
+        c = await ctx.confirm(f"This action will result in me leaving the server: `{target_server.name}`")
 
         if c:
             await target_server.leave()
             try:
-                await ctx.send_or_reply(
-                    f"{self.bot.emote_dict['success']} Successfully left server **{target_server.name}**"
-                )
+                await ctx.success(f"**Successfully left the server:** `{target_server.name}`")
             except Exception:
                 return
             return
-        await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
-        )
+        
 
     @decorators.command(brief="Add a new bot owner.")
-    async def addowner(self, ctx, member: converters.DiscordUser = None):
+    async def addowner(self, ctx, member: converters.DiscordUser):
         """
-        Usage: -addowner <user>
+        Usage: {0}addowner <user>
+        Permission: Hecate#3523
         Output:
             Adds the passed user's ID to the owners key
             in the config.json file
@@ -486,18 +468,12 @@ class Config(commands.Cog):
             USE WITH CAUTION! This will allow the user
             to access all commands including those with
             root privileges. To reflect changes instantly, use the
-            -refresh command
+            {0}botvars command
         """
         if ctx.author.id is not self.bot.hecate.id:
             return
-        if member is None:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}addowner <new owner>`",
-            )
         if member.bot:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}addowner <new owner>`",
-            )
+            raise commands.BadArgument(f"I cannot be owned by a bot.")
 
         data = utils.load_json("config.json")
         current_owners = data["owners"]
@@ -507,46 +483,31 @@ class Config(commands.Cog):
                 content=f"{self.bot.emote_dict['warn']} **`{member}` is already an owner.**",
             )
 
-        c = await pagination.Confirmation(
-            f"{self.bot.emote_dict['exclamation']} **This action will add `{member}` as an owner. Do you wish to continue?**"
-        ).prompt(ctx)
-
+        c = await ctx.confirm(f"This action will add `{member}` as an owner.")
         if c:
             current_owners.append(member.id)
             utils.modify_config("owners", current_owners)
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['success']} **`{member}` is now officially one of my owners.**",
-            )
+            await ctx.success(f"**`{member}` is now officially one of my owners.**")
             return
-        await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
-        )
 
     @decorators.command(
-        aliases=["removeowner", "rmowner"], brief="Remove a bot owner."
+        aliases=["removeowner", "rmowner"],
+        brief="Remove a user from my owner list.",
     )
-    async def remowner(self, ctx, member: converters.DiscordUser = None):
+    async def remowner(self, ctx, member: converters.DiscordUser):
         """
-        Usage: -remowner <user>
-        Aliases; -removeowner, -rmowner
+        Usage: {0}remowner <user>
+        Aliases: {0}removeowner, -rmowner
         Permission: Hecate#3523
         Output:
             Removes a user from the owners key in
             my config.json file
         Notes:
             To reflect changes instantly, use the
-            -refresh command
+            {0}botvars command
         """
         if ctx.author.id is not self.bot.hecate.id:
             return
-        if member is None:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}remowner <owner>`",
-            )
-        if member.bot:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}remowner <owner>`",
-            )
 
         data = utils.load_json("config.json")
         current_owners = data["owners"]
@@ -556,26 +517,19 @@ class Config(commands.Cog):
                 content=f"{self.bot.emote_dict['warn']} **`{member}` is not an owner.**",
             )
 
-        c = await pagination.Confirmation(
-            f"{self.bot.emote_dict['exclamation']} **This action will remove `{member}` from the owner list. Do you wish to continue?**"
-        ).prompt(ctx)
+        c = await ctx.confirm(f"This action will remove `{member}` from the owner list.")
 
         if c:
             index = current_owners.index(member.id)
             current_owners.pop(index)
             utils.modify_config("owners", current_owners)
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['success']} **Successfully removed `{member}` from my owner list.**",
-            )
+            await ctx.success(f"**Successfully removed `{member}` from my owner list.**")
             return
-        await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
-        )
 
     @decorators.command(brief="Add a new bot admin.")
-    async def addadmin(self, ctx, member: converters.DiscordUser = None):
+    async def addadmin(self, ctx, member: converters.DiscordUser):
         """
-        Usage: -addadmin <user>
+        Usage: {0}addadmin <user>
         Permission: Hecate#3523
         Output:
             Adds the passed user's ID to the admins key
@@ -584,18 +538,13 @@ class Config(commands.Cog):
             USE WITH CAUTION! This will allow the user
             to access global bot information. This includes
             s complete server list, member list, etc.
-            To reflect changes instantly, use -refresh.
+            To reflect changes instantly, use {0}botvars.
         """
         if ctx.author.id is not self.bot.hecate.id:
             return
-        if member is None:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}addadmin <new admin>`",
-            )
+
         if member.bot:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}addadmin <new admin>`",
-            )
+            raise commands.BadArgument(f"I cannot be owned by a bot.")
 
         data = utils.load_json("config.json")
         current_admins = data["admins"]
@@ -605,46 +554,31 @@ class Config(commands.Cog):
                 content=f"{self.bot.emote_dict['warn']} **`{member}` is already an admin.**",
             )
 
-        c = await pagination.Confirmation(
-            f"{self.bot.emote_dict['exclamation']} **This action will add `{member}` as an admin. Do you wish to continue?**"
-        ).prompt(ctx)
+        c = await ctx.confirm(f"This action will add `{member}` as an admin.")
 
         if c:
             current_admins.append(member.id)
             utils.modify_config("admins", current_admins)
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['success']} **`{member}` is now officially one of my admins.**",
-            )
+            await ctx.success(f"**`{member}` is now officially one of my admins.**")
             return
-        await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
-        )
 
     @decorators.command(
         aliases=["removeadmin", "rmadmin"], brief="Remove a bot admin."
     )
-    async def remadmin(self, ctx, member: converters.DiscordUser = None):
+    async def remadmin(self, ctx, member: converters.DiscordUser):
         """
-        Usage: -remadmin <user>
-        Aliases: -removeadmin, -rmadmin
+        Usage: {0}remadmin <user>
+        Aliases: {0}removeadmin, {0}rmadmin
         Permission: Hecate#3523
         Output:
             Removes a user from the admins key in
             my config.json file
         Notes:
             To reflect changes instantly, use the
-            -refresh command
+            {0}botvars command
         """
         if ctx.author.id is not self.bot.hecate.id:
             return
-        if member is None:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}remadmin <admin>`",
-            )
-        if member.bot:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}remadmin <admin>`",
-            )
 
         data = utils.load_json("config.json")
         current_admins = data["admins"]
@@ -654,26 +588,19 @@ class Config(commands.Cog):
                 content=f"{self.bot.emote_dict['warn']} **`{member}` is not an admin.**",
             )
 
-        c = await pagination.Confirmation(
-            f"{self.bot.emote_dict['exclamation']} **This action will remove `{member}` from the admin list. Do you wish to continue?**"
-        ).prompt(ctx)
+        c = await ctx.confirm(f"This action will remove `{member}` from the admin list.")
 
         if c:
             index = current_admins.index(member.id)
             current_admins.pop(index)
             utils.modify_config("admins", current_admins)
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['success']} **Successfully removed `{member}` from my admin list.**",
-            )
+            await ctx.success(f"**Successfully removed `{member}` from my admin list.**")
             return
-        await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
-        )
 
     @decorators.command(brief="Toggle locking the bot to owners.")
     async def ownerlock(self, ctx):
         """
-        Usage: -ownerlock
+        Usage: {0}ownerlock
         """
         query = """
                 UPDATE config
@@ -683,23 +610,14 @@ class Config(commands.Cog):
         if self.is_ownerlocked is True:
             self.is_ownerlocked = False
             await self.bot.cxn.execute(query, False, self.bot.user.id)
-            return await ctx.send_or_reply(
-                f"{self.bot.emote_dict['success']} **Ownerlock Disabled.**"
-            )
+            return await ctx.success(f"**Ownerlock Disabled.**")
         else:
-            c = await pagination.Confirmation(
-                f"**{self.bot.emote_dict['exclamation']} This action will prevent usage from all except my owners. Do you wish to continue?**"
-            ).prompt(ctx)
+            c = await ctx.confirm(f"This action will prevent usage from all except my owners.")
             if c:
                 self.is_ownerlocked = True
                 await self.bot.cxn.execute(query, True, self.bot.user.id)
-                await ctx.send_or_reply(
-                    content=f"{self.bot.emote_dict['success']} **Ownerlock Enabled.**",
-                )
-            else:
-                await ctx.send_or_reply(
-                    content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
-                )
+                await ctx.success(f"**Ownerlock Enabled.**")
+                return
 
     async def message(self, message):
         # Check the message and see if we should allow it

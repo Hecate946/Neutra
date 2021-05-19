@@ -98,16 +98,21 @@ class Botadmin(commands.Cog):
         js = await self.github_request("POST", "gists", data=data, headers=headers)
         return js["html_url"]
 
-    @decorators.command(hidden=True)
-    async def picker(self, ctx):
-        p = await pagination.Confirmation(
-            "This will purge all data. Do you wish to continue?"
-        ).prompt(ctx)
-        if p:
-            await ctx.send_or_reply("<:pepeLaugh:779433733400166420>")
 
-    @decorators.command(brief="Send a file showing incomplete commands.")
+    @decorators.command(
+        aliases=["helpless"],
+        brief="Send a file showing incomplete commands.",
+        implemented="2021-04-14 00:54:20.465452",
+        updated="2021-05-19 16:00:16.754845",
+    )
     async def debug(self, ctx):
+        """
+        Usage: {0}debug
+        Alias: {0}helpless
+        Output:
+            Shows all commands that lack
+            descriptions or help.
+        """
         await ctx.trigger_typing()
         cogs = []
         for cog in self.bot.cogs:
@@ -137,8 +142,20 @@ class Botadmin(commands.Cog):
             file=discord.File(data, filename="helpless-commands.md")
         )
 
-    @decorators.command()
+    @decorators.command(
+        brief="Post a gist on github",
+        implemented="2021-05-10 18:58:23.417218",
+        updated="2021-05-19 15:53:27.603043"
+    )
     async def gist(self, ctx, fname="output.txt", *, content=None):
+        """
+        Usage: {0}gist [filename=output.txt] [content]
+        Output:
+            Creates a gist using your posted content
+        Notes:
+            Will post a gist of the first message attachment
+            with it's file extension if no content is passed.
+        """
         if len(ctx.message.attachments):
             f = await ctx.message.attachments[0].read()
             content = f.decode("utf-8")
@@ -158,7 +175,6 @@ class Botadmin(commands.Cog):
         name="message",
         aliases=["pm", "dm"],
         brief="DM any user the bot knows.",
-        hidden=True,
     )
     @commands.is_owner()
     async def _message(self, ctx, user_id: int, *, message: str):
@@ -177,7 +193,7 @@ class Botadmin(commands.Cog):
         try:
             await user.send(message)
             await ctx.send_or_reply(
-                content=f"✉️ Sent a DM to **{user_id}**",
+                content=f"{self.bot.emote_dict['letter']} Sent a DM to **{user_id}**",
             )
         except discord.Forbidden:
             await ctx.send_or_reply(
@@ -187,7 +203,7 @@ class Botadmin(commands.Cog):
     @decorators.command(brief="Create a server invite.")
     async def inv(self, ctx, server: converters.BotServer = None):
         """
-        Usage: -inv <server>
+        Usage: {0}inv <server>
         Output: Invite for that server (if bot could create it)
         """
         if server is None:
@@ -384,9 +400,9 @@ class Botadmin(commands.Cog):
     @decorators.command(brief="Show latest joined servers.", aliases=["lastservers"])
     async def recentservers(self, ctx):
         """
-        Usage: -recentservers
-        Alias: -lastservers
-        Output: Lists the most recent servers I've joined
+        Usage: {0}recentservers
+        Alias: {0}lastservers
+        Output: Lists the most recent servers joined
         """
         our_list = []
         for guild in self.bot.guilds:
@@ -543,7 +559,7 @@ class Botadmin(commands.Cog):
         return parent == child or child.startswith(parent + ".")
 
     @decorators.command(
-        hidden=True, brief="Show info on an extension.", aliases=["ext"]
+        brief="Show info on an extension.", aliases=["ext"]
     )
     async def extension(self, ctx, *, extension=None):
         """
@@ -602,7 +618,7 @@ class Botadmin(commands.Cog):
         await ctx.send_or_reply(content="I couldn't find that extension.")
 
     @decorators.command(
-        hidden=True, brief="List all extensions and cogs.", aliases=["exts"]
+        brief="List all extensions and cogs.", aliases=["exts"]
     )
     async def extensions(self, ctx):
         """
@@ -733,7 +749,7 @@ class Botadmin(commands.Cog):
 
     @decorators.command(
         rest_is_raw=True,
-        hidden=True,
+        
         aliases=["say"],
         brief="Echo a message.",
         permissions=["bot_admin"],
@@ -755,7 +771,7 @@ class Botadmin(commands.Cog):
     @decorators.command(
         name="del",
         rest_is_raw=True,
-        hidden=True,
+        
         brief="Delete a message.",
         implemented="2021-05-05 05:12:24.354214",
         updated="2021-05-05 05:12:24.354214",
@@ -1014,6 +1030,7 @@ class Botadmin(commands.Cog):
                 return
         else:
             guild = options
+            message = None
         members = guild.members
         member_list = []
         for entity in members:
@@ -1043,11 +1060,18 @@ class Botadmin(commands.Cog):
             await ctx.send_or_reply(e)
 
     @decorators.command(
+        aliases=["objg"],
         brief="Debug memory leaks.",
         implemented="2021-05-11 01:47:43.865390",
         updated="2021-05-11 01:47:43.865390",
     )
     async def objgrowth(self, ctx):
+        """
+        Usage: {0}objgrowth
+        Alias: {0}objg
+        Output:
+            Shows detailed object memory usage
+        """
         stdout = io.StringIO()
         await ctx.bot.loop.run_in_executor(
             None, functools.partial(objgraph.show_growth, file=stdout)
@@ -1077,7 +1101,6 @@ class Botadmin(commands.Cog):
             await ctx.send_or_reply(content=fmt)
 
     @decorators.group(
-        hidden=True,
         invoke_without_command=True,
         brief="Show command history.",
         case_insensitive=True,
@@ -1086,7 +1109,7 @@ class Botadmin(commands.Cog):
     @commands.is_owner()
     async def command_history(self, ctx):
         """
-        Usage: -command_history <option> [args]
+        Usage: {0}command_history <option> [args]
         Output:
             Recorded command history matching
             the specified arguments.

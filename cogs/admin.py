@@ -1125,6 +1125,9 @@ class Admin(commands.Cog):
         hidden=True,
     )
     async def prefix(self, ctx):
+        """
+        Alias for {0}prefixes
+        """
         await ctx.invoke(self.prefixes)
 
     @prefix.command(name="add", ignore_extra=False, hidden=True)
@@ -1158,7 +1161,7 @@ class Admin(commands.Cog):
     )
     async def prefixes(self, ctx):
         """
-        Usage: -prefix
+        Usage: {0}prefix
         Aliases:
             {0}prefix, {0}prefix show, {0}prefix display,
             {0}showprefixes, {0}showprefix, {0}whatprefix

@@ -360,7 +360,7 @@ class DiscordGuild(commands.Converter):
         Fall back to inexact match.
         Will only return matches if ctx.author is in the guild.
         """
-        if checks.is_admin(ctx.author):
+        if checks.is_admin(ctx):
             result = discord.utils.find(lambda g: g.name == guild_name, ctx.bot.guilds)
             if result:
                 return [result]
@@ -388,8 +388,12 @@ class DiscordGuild(commands.Converter):
         if lax_id_match:
             result = ctx.bot.get_guild(int(lax_id_match.group(1)))
 
-            if result and result.get_member(ctx.author.id):
-                return result
+            if checks.is_admin(ctx):
+                if result:
+                    return result
+            else:
+                if result and result.get_member(ctx.author.id):
+                    return result
 
         results = self.get_by_name(ctx, argument)
         if results:
