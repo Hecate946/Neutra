@@ -68,8 +68,8 @@ class Manager(commands.Cog):
         if db in ["db", "-db", "--db"]:
             await ctx.invoke(self.update)
         await ctx.invoke(self.botvars)
-        await ctx.invoke(self.reloadallutils)
-        await ctx.invoke(self.reloadallsettings)
+        await ctx.invoke(self.rau)
+        await ctx.invoke(self.ras)
         await ctx.invoke(self.reloadall)
         await ctx.success("**Completed**")
 
