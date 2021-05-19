@@ -55,7 +55,7 @@ class BotContext(commands.Context):
         content = f"{self.bot.emote_dict['loading']} **{content}**"
         return await self.send_or_reply(content, **kwargs)
 
-    async def confirm(self, content=None, **kwargs):
+    async def confirm(self, content="", **kwargs):
         content = f"**{self.bot.emote_dict['exclamation']} {content}. Do you wish to continue?**"
         c = await pagination.Confirmation(msg=content).prompt(ctx=self)
         if c:

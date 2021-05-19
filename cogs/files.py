@@ -949,6 +949,9 @@ class Files(commands.Cog):
         premsg += (
             "### [DiscordBots.gg](https://discord.bots.gg/bots/810377376269205546)\n"
         )
+        premsg += (
+            "### [Top.gg](https://top.gg/bot/810377376269205546)\n"
+        )
         premsg += "## Overview\n"
         premsg += overview
         premsg += "\n## Categories\n"
