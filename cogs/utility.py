@@ -1200,8 +1200,7 @@ class Utility(commands.Cog):
         updated="2021-05-10 20:14:33.223405",
     )
     @checks.has_perms(manage_emojis=True)
-    async def emojipost(self, ctx, nodm: bool = None):
-        commands.BadBoolArgument
+    async def emojipost(self, ctx, nodm: str = ""):
         """
         Usage: {0}emojipost [nodm]
         Alias: {0}epost
@@ -1211,6 +1210,10 @@ class Utility(commands.Cog):
             Specify the nodm bool argument
             to avoid the bot from DMing you.
         """
+        dm = True
+        if nodm in ["-nodm", "--nodm", "nodm"]:
+            dm = False
+
         emojis = sorted(
             [e for e in ctx.guild.emojis if len(e.roles) == 0 and e.available],
             key=lambda e: e.name.lower(),
@@ -1221,10 +1224,13 @@ class Utility(commands.Cog):
             paginator.add_line(f"{emoji} ➔ `{emoji}`")
 
         for page in paginator.pages:
-            if nodm:
-                await ctx.send(page)
+            if dm:
+                try:
+                    await ctx.author.send(page)
+                except Exception:
+                    await ctx.send(page)
             else:
-                await ctx.author.send(page)
+                await ctx.send(page)
 
     @decorators.command(brief="Snipe a deleted message.", aliases=["retrieve"])
     @commands.guild_only()

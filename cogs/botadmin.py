@@ -792,10 +792,23 @@ class Botadmin(commands.Cog):
             ctx.author.fail(e)
         await ctx.react(self.bot.emote_dict["success"])
 
-    @decorators.command()
+    @decorators.command(
+        brief="Show shared servers with the bot."
+    )
     @checks.is_bot_admin()
     @checks.bot_has_perms(add_reactions=True, external_emojis=True)
     async def sss(self, ctx, user: converters.DiscordUser = None):
+        """
+        Usage: {0}sss [user]
+        Output:
+            Servers that the user shares
+            with the bot.
+        Notes:
+            This supplies a more verbose
+            output than the public ss command.
+            Will default to you if no user is
+            specified.
+        """
         if user is None:
             user = ctx.author
 

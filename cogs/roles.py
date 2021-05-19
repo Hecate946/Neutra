@@ -45,6 +45,13 @@ class Roles(commands.Cog):
                 """,
     )
     async def roleinfo(self, ctx, role: converters.DiscordRole):
+        """
+        Usage: {0}roleinfo <role>
+        Alias: {0}ri
+        Output:
+            Shows details on the role's color,
+            creation date, users, and creator.
+        """
         roleinfo = {}
         roleinfo["users"] = sum(
             1 for member in role.guild.members if role in member.roles
