@@ -89,11 +89,11 @@ class Tasks(commands.Cog):
             else:
                 extra = json.loads(record["extra"])
             record_dict = {
-                'id': record['id'],
-                'extra': extra,
-                'event': record["event"],
-                'created': record["created"],
-                'expires': record["expires"]
+                "id": record["id"],
+                "extra": extra,
+                "event": record["event"],
+                "created": record["created"],
+                "expires": record["expires"],
             }
         return Timer(record=record_dict) if record else None
 

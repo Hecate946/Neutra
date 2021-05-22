@@ -561,22 +561,23 @@ class Tracking(commands.Cog):
                 ORDER BY changed_at DESC NULLS LAST;
                 """
         results = await self.bot.cxn.fetch(query, ctx.guild.id, user.id)
-        entries=[]
+        entries = []
         for nickname, timestamp in results:
             if timestamp:
                 time_fmt = utils.timeago(datetime.utcnow() - timestamp)
             else:
                 time_fmt = "Not tracked"
-            entries.append(
-                {
-                    "name": nickname,
-                    "value": time_fmt
-                }
-            )
-        p = pagination.MainMenu(pagination.FieldPageSource(entries=[
+            entries.append({"name": nickname, "value": time_fmt})
+        p = pagination.MainMenu(
+            pagination.FieldPageSource(
+                entries=[
                     ("{}. {}".format(y, x["name"]), f"**Updated**: {x['value']}")
                     for y, x in enumerate(entries, start=1)
-                ], per_page=10, title=f"Nicknames for {user.display_name}"))
+                ],
+                per_page=10,
+                title=f"Nicknames for {user.display_name}",
+            )
+        )
 
         try:
             await p.start(ctx)
@@ -633,16 +634,17 @@ class Tracking(commands.Cog):
                 time_fmt = utils.timeago(datetime.utcnow() - timestamp)
             else:
                 time_fmt = "Not tracked"
-            entries.append(
-                {
-                    "name": name,
-                    "value": time_fmt
-                }
-            )
-        p = pagination.MainMenu(pagination.FieldPageSource(entries=[
+            entries.append({"name": name, "value": time_fmt})
+        p = pagination.MainMenu(
+            pagination.FieldPageSource(
+                entries=[
                     ("{}. {}".format(y, x["name"]), f"**Updated**: {x['value']}")
                     for y, x in enumerate(entries, start=1)
-                ], per_page=10, title=f"Usernames for {user}"))
+                ],
+                per_page=10,
+                title=f"Usernames for {user}",
+            )
+        )
 
         try:
             await p.start(ctx)
@@ -650,7 +652,7 @@ class Tracking(commands.Cog):
             await ctx.send_or_reply(e)
 
     @decorators.command(
-        aliases=["avs"],
+        aliases=["avs", "avatarhistory", "avhistory"],
         brief="Show a user's past avatars.",
         implemented="2021-03-27 01:14:06.076262",
         updated="2021-05-06 23:50:27.540481",
@@ -675,7 +677,7 @@ class Tracking(commands.Cog):
     async def avatars(self, ctx, user: converters.DiscordMember = None):
         """
         Usage: {0}avatars [user]
-        Alias: {0}avs
+        Alias: {0}avs, {0}avhistory {0}avatarhistory
         Output:
             Shows an embed containing up to
             the 16 last avatars of a user.
@@ -695,10 +697,8 @@ class Tracking(commands.Cog):
             )
         msg = await ctx.load(f"Collecting {user}'s Avatars...")
         res = await tracking.user_data(ctx, user)
-        if res["avatars"]:
-            # Tack on their current avatar
-            res["avatars"] += [str(user.avatar_url_as(format="png", size=256))]
-        else:
+        if not res["avatars"]:
+            # Tack on thier current avatar
             res["avatars"] = [str(user.avatar_url_as(format="png", size=256))]
 
         em = discord.Embed(color=self.bot.constants.embed)
@@ -814,7 +814,9 @@ class Tracking(commands.Cog):
     @commands.guild_only()
     @checks.bot_has_perms(add_reactions=True, external_emojis=True)
     @checks.has_perms(view_audit_log=True)
-    async def commandstats(self, ctx, user: typing.Optional[converters.DiscordMember], limit: int = 100):
+    async def commandstats(
+        self, ctx, user: typing.Optional[converters.DiscordMember], limit: int = 100
+    ):
         """
         Usage: {0}commandstats [user] [limit]
         Alias: {0}cs

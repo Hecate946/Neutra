@@ -949,9 +949,7 @@ class Files(commands.Cog):
         premsg += (
             "### [DiscordBots.gg](https://discord.bots.gg/bots/810377376269205546)\n"
         )
-        premsg += (
-            "### [Top.gg](https://top.gg/bot/810377376269205546)\n"
-        )
+        premsg += "### [Top.gg](https://top.gg/bot/810377376269205546)\n"
         premsg += "## Overview\n"
         premsg += overview
         premsg += "\n## Categories\n"
@@ -1013,7 +1011,11 @@ class Files(commands.Cog):
         updated="2021-05-09 21:48:00.663306",
     )
     async def audit(
-        self, ctx, user: converters.DiscordMember = None, *, after: humantime.PastTime = None
+        self,
+        ctx,
+        user: converters.DiscordMember = None,
+        *,
+        after: humantime.PastTime = None,
     ):
         """
         Usage: audit [option] [user] [after]

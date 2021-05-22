@@ -786,9 +786,13 @@ class Automod(commands.Cog):
                     for role_id in roles
                     if guild.get_role(int(role_id))
                 ]
-                to_reassign = role_objects + member.roles  # In case they already had roles added
+                to_reassign = (
+                    role_objects + member.roles
+                )  # In case they already had roles added
                 try:
-                    await member.edit(roles=to_reassign, reason="Roles reassigned on rejoin.")
+                    await member.edit(
+                        roles=to_reassign, reason="Roles reassigned on rejoin."
+                    )
                 except Exception:  # Try to add them on one by one.
                     for role in role_objects:
                         if role not in member.roles:
@@ -804,9 +808,13 @@ class Automod(commands.Cog):
                 for role_id in autoroles
                 if guild.get_role(int(role_id))
             ]
-            to_assign = role_objects + member.roles  # In case they already had roles added
+            to_assign = (
+                role_objects + member.roles
+            )  # In case they already had roles added
             try:
-                await member.edit(roles=to_assign, reason="Roles auto-assigned on join.")
+                await member.edit(
+                    roles=to_assign, reason="Roles auto-assigned on join."
+                )
             except Exception:  # Try to add them on one by one.
                 for role in role_objects:
                     if role not in member.roles:
@@ -828,7 +836,9 @@ class Automod(commands.Cog):
             if removeinvitelinks:  # Do we care?
                 try:
                     await message.delete()
-                    await message.channel.send("No invite links allowed", delete_after=7)
+                    await message.channel.send(
+                        "No invite links allowed", delete_after=7
+                    )
                 except Exception:  # We tried...
                     pass
         bad_words = self.bot.server_settings[message.guild.id]["profanities"]
@@ -836,7 +846,10 @@ class Automod(commands.Cog):
             vulgar = False
             profanity.load_censor_words(bad_words)
             for word in bad_words:
-                if profanity.contains_profanity(message.content) or word in message.content:
+                if (
+                    profanity.contains_profanity(message.content)
+                    or word in message.content
+                ):
                     try:
                         await message.delete()
                         vulgar = True  # Lets try to DM them
@@ -863,7 +876,7 @@ class Automod(commands.Cog):
                     await after.channel.send("No invite links allowed", delete_after=7)
                 except Exception:
                     pass
-        
+
         bad_words = self.bot.server_settings[after.guild.id]["profanities"]
         if bad_words:
             vulgar = False

@@ -350,6 +350,7 @@ class BotServer(commands.Converter):
 #                 )
 #             return server
 
+
 class DiscordGuild(commands.Converter):
     """Match guild_id, or guild name exact, only if author is in the guild."""
 
@@ -369,13 +370,20 @@ class DiscordGuild(commands.Converter):
 
             return [g for g in ctx.bot.guilds if g.name.lower() == guild_name]
         else:
-            result = discord.utils.find(lambda g: g.name == guild_name and g.get_member(ctx.author.id), ctx.bot.guilds)
+            result = discord.utils.find(
+                lambda g: g.name == guild_name and g.get_member(ctx.author.id),
+                ctx.bot.guilds,
+            )
             if result:
                 return [result]
 
             guild_name = guild_name.lower()
 
-            return [g for g in ctx.bot.guilds if g.name.lower() == guild_name and g.get_member(ctx.author.id)]
+            return [
+                g
+                for g in ctx.bot.guilds
+                if g.name.lower() == guild_name and g.get_member(ctx.author.id)
+            ]
 
     async def find_match(self, ctx, argument):
         """Get a match...
@@ -403,8 +411,12 @@ class DiscordGuild(commands.Converter):
         match = await self.find_match(ctx, argument)
 
         if not match:
-            raise commands.BadArgument(f"Server `{await prettify(ctx, argument)}` not found.")
+            raise commands.BadArgument(
+                f"Server `{await prettify(ctx, argument)}` not found."
+            )
         return match
+
+
 # converter from R.Danny
 class BannedMember(commands.Converter):
     async def convert(self, ctx, argument):

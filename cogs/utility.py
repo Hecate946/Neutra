@@ -1184,7 +1184,7 @@ class Utility(commands.Cog):
         string = json.dumps(raw_data, indent=2)
         string = cleaner.clean_all(string)
         if len(string) < 1990:
-            msg = "```json\n"+str(string)+ "```"
+            msg = "```json\n" + str(string) + "```"
             await ctx.send(msg)
             return
         p = pagination.MainMenu(pagination.TextPageSource(string, prefix="```json"))
@@ -1700,7 +1700,9 @@ class Utility(commands.Cog):
         try:
             await ctx.send_or_reply(embed=embed)
         except discord.HTTPException:
-            raise commands.BadArgument(f"The embed provided was either invalid or too long to send. Please try again.")
+            raise commands.BadArgument(
+                f"The embed provided was either invalid or too long to send. Please try again."
+            )
 
         await self.do_cleanup(ctx)
 
@@ -1729,7 +1731,6 @@ class Utility(commands.Cog):
                 self.msg_collection.clear()
         else:
             self.msg_collection.clear()
-
 
     @decorators.command(
         aliases=["math", "calc"],

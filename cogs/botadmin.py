@@ -98,7 +98,6 @@ class Botadmin(commands.Cog):
         js = await self.github_request("POST", "gists", data=data, headers=headers)
         return js["html_url"]
 
-
     @decorators.command(
         aliases=["helpless"],
         brief="Send a file showing incomplete commands.",
@@ -145,7 +144,7 @@ class Botadmin(commands.Cog):
     @decorators.command(
         brief="Post a gist on github",
         implemented="2021-05-10 18:58:23.417218",
-        updated="2021-05-19 15:53:27.603043"
+        updated="2021-05-19 15:53:27.603043",
     )
     async def gist(self, ctx, fname="output.txt", *, content=None):
         """
@@ -558,9 +557,7 @@ class Botadmin(commands.Cog):
     def _is_submodule(self, parent, child):
         return parent == child or child.startswith(parent + ".")
 
-    @decorators.command(
-        brief="Show info on an extension.", aliases=["ext"]
-    )
+    @decorators.command(brief="Show info on an extension.", aliases=["ext"])
     async def extension(self, ctx, *, extension=None):
         """
         Usage: -extension <extension>
@@ -617,9 +614,7 @@ class Botadmin(commands.Cog):
             return
         await ctx.send_or_reply(content="I couldn't find that extension.")
 
-    @decorators.command(
-        brief="List all extensions and cogs.", aliases=["exts"]
-    )
+    @decorators.command(brief="List all extensions and cogs.", aliases=["exts"])
     async def extensions(self, ctx):
         """
         Usage: -extensions
@@ -749,7 +744,6 @@ class Botadmin(commands.Cog):
 
     @decorators.command(
         rest_is_raw=True,
-        
         aliases=["say"],
         brief="Echo a message.",
         permissions=["bot_admin"],
@@ -771,7 +765,6 @@ class Botadmin(commands.Cog):
     @decorators.command(
         name="del",
         rest_is_raw=True,
-        
         brief="Delete a message.",
         implemented="2021-05-05 05:12:24.354214",
         updated="2021-05-05 05:12:24.354214",
@@ -792,9 +785,7 @@ class Botadmin(commands.Cog):
             ctx.author.fail(e)
         await ctx.react(self.bot.emote_dict["success"])
 
-    @decorators.command(
-        brief="Show shared servers with the bot."
-    )
+    @decorators.command(brief="Show shared servers with the bot.")
     @checks.is_bot_admin()
     @checks.bot_has_perms(add_reactions=True, external_emojis=True)
     async def sss(self, ctx, user: converters.DiscordUser = None):

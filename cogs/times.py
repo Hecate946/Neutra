@@ -22,6 +22,7 @@ from utilities import decorators
 from utilities import formatting
 from utilities import pagination
 
+
 def setup(bot):
     bot.add_cog(Times(bot))
 
@@ -498,10 +499,16 @@ class Times(commands.Cog):
                 {0}clocker @Hecate 3 days ago
                 {0}clocker 708584008065351681 2m
                 {0}clocker Hecate#3523 one month ago
-                """
+                """,
     )
     @checks.has_perms(view_audit_log=True)
-    async def clocker(self, ctx, user: typing.Optional[converters.DiscordMember] = None, *, time: humantime.PastTime = None):
+    async def clocker(
+        self,
+        ctx,
+        user: typing.Optional[converters.DiscordMember] = None,
+        *,
+        time: humantime.PastTime = None,
+    ):
         """
         Usage: {0}clocker [user] [time]
         Output:
@@ -533,8 +540,8 @@ class Times(commands.Cog):
                 """
         row = await self.bot.cxn.fetch(query, user.id, (actual_time - 86400))
         results = len([x[0] for x in row if x[0] is not None])
-        emote = self.bot.emote_dict['graph']
-        pluralize = '' if results == 1 else 's'
+        emote = self.bot.emote_dict["graph"]
+        pluralize = "" if results == 1 else "s"
         timefmt = humantime.human_timedelta(the_datetime, accuracy=1)
         msg = f"{emote} User `{user}` has logged into discord **{results} day{pluralize} since {timefmt}.**"
         await ctx.send_or_reply(msg)
@@ -549,7 +556,7 @@ class Times(commands.Cog):
                 {0}clocking 2m
                 {0}clocking 1 month ago
                 {0}clocking 3 weeks ago
-                """
+                """,
     )
     @checks.bot_has_perms(attach_files=True)
     @checks.has_perms(manage_guild=True)
@@ -579,19 +586,25 @@ class Times(commands.Cog):
                 """
         rows = await self.bot.cxn.fetch(query, ctx.guild.id, (actual_time - 86400))
         counter = collections.Counter([row[0] for row in rows])
-        fmt = [(str(ctx.guild.get_member(x[0])), x[1]) for x in counter.items() if ctx.guild.get_member(x[0]) is not None]
+        fmt = [
+            (str(ctx.guild.get_member(x[0])), x[1])
+            for x in counter.items()
+            if ctx.guild.get_member(x[0]) is not None
+        ]
         sort = sorted(fmt, key=lambda x: x[1], reverse=True)
         enumerated = [(y, x[0], x[1]) for y, x in enumerate(sort, start=1)]
-        headers = ['INDEX', 'NAME', 'DAYS']
+        headers = ["INDEX", "NAME", "DAYS"]
         table = formatting.TabularData()
         table.set_columns(headers)
         table.add_rows(enumerated)
         render = table.render()
         completed = f"```sml\n{render}```"
-        emote = self.bot.emote_dict['graph']
-        pluralize = '' if len(sort) == 1 else 's'
+        emote = self.bot.emote_dict["graph"]
+        pluralize = "" if len(sort) == 1 else "s"
         timefmt = humantime.human_timedelta(the_datetime, accuracy=1)
-        await ctx.bold(f"{emote} {len(sort)} user{pluralize} have logged in since {timefmt} in {ctx.guild.name}.")
+        await ctx.bold(
+            f"{emote} {len(sort)} user{pluralize} have logged in since {timefmt} in {ctx.guild.name}."
+        )
         if len(completed) > 2000:
             fp = io.BytesIO(completed.encode("utf-8"))
             await ctx.send_or_reply(file=discord.File(fp, "results.sml"))

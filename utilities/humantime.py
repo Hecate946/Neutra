@@ -217,7 +217,9 @@ class UserFriendlyTime(commands.Converter):
 
             # apparently nlp does not like "from now"
             # it likes "from x" in other cases though so let me handle the 'now' case
-            argument = argument.replace(",","") # In case someone actually says 3,600 seconds
+            argument = argument.replace(
+                ",", ""
+            )  # In case someone actually says 3,600 seconds
             if argument.endswith("from now"):
                 argument = argument[:-8].strip()
 
@@ -243,7 +245,7 @@ class UserFriendlyTime(commands.Converter):
 
             if not status.hasDateOrTime:
                 raise commands.BadArgument(
-                   "Invalid time provided, try `tomorrow` or `2 days`."
+                    "Invalid time provided, try `tomorrow` or `2 days`."
                 )
             if begin not in (0, 1) and end != len(argument):
                 raise commands.BadArgument(

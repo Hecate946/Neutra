@@ -112,6 +112,4 @@ class BotGroup(commands.Group):
         self.examples = kwargs.pop("examples", None)
         self.implemented = kwargs.pop("implemented", None)
         self.updated = kwargs.pop("updated", None)
-        self.writer = kwargs.pop(
-            "writer", 708584008065351681
-        )
+        self.writer = kwargs.pop("writer", 708584008065351681)

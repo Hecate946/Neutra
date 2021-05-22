@@ -647,7 +647,7 @@ class Info(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-    @decorators.command(brief="Display the source code.", aliases=["sourcecode","src"])
+    @decorators.command(brief="Display the source code.", aliases=["sourcecode", "src"])
     async def source(self, ctx, *, command: str = None):
         """
         Usage: {0}source [command]
@@ -658,7 +658,7 @@ class Info(commands.Cog):
         source_url = "https://github.com/Hecate946/Snowbot"
         branch = "main"
         if command is None:
-            return await ctx.send_or_reply("<"+source_url+">")
+            return await ctx.send_or_reply("<" + source_url + ">")
 
         else:
             obj = self.bot.get_command(command.replace(".", " "))

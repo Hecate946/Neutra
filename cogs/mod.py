@@ -49,7 +49,8 @@ class Mod(commands.Cog):
     async def vcmove(
         self,
         ctx,
-        targets: commands.Greedy[converters.DiscordMember], *,
+        targets: commands.Greedy[converters.DiscordMember],
+        *,
         channel: discord.VoiceChannel,
     ):
         """
@@ -384,7 +385,7 @@ class Mod(commands.Cog):
                     delete_message_days=delete_message_days,
                 )
                 await ctx.guild.unban(
-                    target, reason= await converters.ActionReason().convert(ctx, reason)
+                    target, reason=await converters.ActionReason().convert(ctx, reason)
                 )
                 banned.append(str(target))
             except Exception as e:
@@ -1014,7 +1015,6 @@ class Mod(commands.Cog):
 
         await ctx.send_or_reply(embed=em, delete_after=10)
 
-
     @decorators.command(brief="Set the slowmode for a channel")
     @commands.guild_only()
     @checks.bot_has_perms(manage_channels=True)
@@ -1199,14 +1199,14 @@ class Mod(commands.Cog):
             )
 
     @commands.command(
-        aliases=['tban'],
+        aliases=["tban"],
         brief="Temporarily ban users.",
         implemented="2021-04-27 03:59:16.293041",
         updated="2021-05-13 00:04:42.463263",
         examples="""
                 {0}tempban @Hecate 2 days for advertising
                 {0}tban 708584008065351681 Hecate 2 hours for spamming
-                """
+                """,
     )
     @commands.guild_only()
     @checks.has_perms(ban_members=True)
@@ -1214,8 +1214,10 @@ class Mod(commands.Cog):
         self,
         ctx,
         users: commands.Greedy[converters.DiscordMember],
-        *, 
-        duration: humantime.UserFriendlyTime(commands.clean_content, default='\u2026') = None
+        *,
+        duration: humantime.UserFriendlyTime(
+            commands.clean_content, default="\u2026"
+        ) = None,
     ):
         """
         Usage: {0}tempban <users> [duration] [reason]
@@ -1246,10 +1248,16 @@ class Mod(commands.Cog):
             try:
                 if reason:
                     embed = discord.Embed(color=self.bot.constants.embed)
-                    timefmt = humantime.human_timedelta(endtime, source=ctx.message.created_at)
+                    timefmt = humantime.human_timedelta(
+                        endtime, source=ctx.message.created_at
+                    )
                     embed.title = f"{self.bot.emote_dict['ban']} Tempban Notice"
-                    embed.description = f"**Server: `{ctx.guild.name} ({ctx.guild.id})`**\n"
-                    embed.description += f"**Moderator: `{ctx.author} ({ctx.author.id})`**\n"
+                    embed.description = (
+                        f"**Server: `{ctx.guild.name} ({ctx.guild.id})`**\n"
+                    )
+                    embed.description += (
+                        f"**Moderator: `{ctx.author} ({ctx.author.id})`**\n"
+                    )
                     embed.description += f"**Duration: `{timefmt}`**\n"
                     embed.description += f"**Reason: `{reason}`**"
                     try:
@@ -1305,7 +1313,6 @@ class Mod(commands.Cog):
         )
         await guild.unban(discord.Object(id=member_id), reason=reason)
 
-
     ###################
     ## Mute Commands ##
     ###################
@@ -1328,7 +1335,13 @@ class Mod(commands.Cog):
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(manage_roles=True)
     async def mute(
-        self, ctx, users: commands.Greedy[converters.DiscordMember], *, duration: humantime.UserFriendlyTime(commands.clean_content, default='\u2026')=None
+        self,
+        ctx,
+        users: commands.Greedy[converters.DiscordMember],
+        *,
+        duration: humantime.UserFriendlyTime(
+            commands.clean_content, default="\u2026"
+        ) = None,
     ):
         """
         Usage: {0}mute <users>... [duration] [reason]
@@ -1377,7 +1390,9 @@ class Mod(commands.Cog):
         failed = []
         muted = []
         for user in users:
-            if user.bot:  # This is because bots sometimes have a role that cannot be removed
+            if (
+                user.bot
+            ):  # This is because bots sometimes have a role that cannot be removed
                 failed.append((str(user), "I cannot mute bots."))
                 continue  # I mean we could.. but why would someone want to mute a bot.
             if muterole in user.roles:

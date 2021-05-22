@@ -274,7 +274,9 @@ class Snowbot(commands.AutoShardedBot):
                 pass
             return
         if not self.ready:
-            return await ctx.send_or_reply(f"{self.emote_dict['warn']} I am currently rebooting. Please wait a moment.")
+            return await ctx.send_or_reply(
+                f"{self.emote_dict['warn']} I am currently rebooting. Please wait a moment."
+            )
         if not message.guild:
             # These are DM commands
             await self.invoke(ctx)
@@ -540,7 +542,6 @@ class Snowbot(commands.AutoShardedBot):
             if ctx.cog._get_overridden_method(ctx.cog.cog_command_error) is not None:
                 return
 
-
         if isinstance(error, commands.MissingRequiredArgument):
             await ctx.usage()
 
@@ -582,9 +583,7 @@ class Snowbot(commands.AutoShardedBot):
 
         elif isinstance(error, commands.DisabledCommand):
             await ctx.message.add_reaction(self.emote_dict["failed"])
-            await ctx.fail(
-                f"This command is currently unavailable."
-            )
+            await ctx.fail(f"This command is currently unavailable.")
 
         elif isinstance(error, commands.CheckFailure):
             # Previous checks didn't catch this one.
@@ -595,9 +594,7 @@ class Snowbot(commands.AutoShardedBot):
         elif isinstance(error, commands.CommandInvokeError):
             err = utils.traceback_maker(error.original, advance=True)
             if "or fewer" in str(error):  # Message was too long to send
-                return await ctx.fail(
-                    f" Result was greater than the character limit."
-                )
+                return await ctx.fail(f" Result was greater than the character limit.")
             # Then we don't really know what this error is. Log it.
             print(
                 color(
@@ -682,15 +679,12 @@ class Snowbot(commands.AutoShardedBot):
     async def on_message_edit(self, before, after):
         if self.ready is False:
             return
-        created_at = (
-            (before.id >> 22) + 1420070400000
-        ) / 1000
+        created_at = ((before.id >> 22) + 1420070400000) / 1000
         if (time.time() - created_at) > 7:
             return
         if before.content == after.content:
             return
         await self.process_commands(after)
-
 
     # async def on_error(self, event, *args, **kwargs):
     #     print(traceback.format_exc())

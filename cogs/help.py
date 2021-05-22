@@ -1023,7 +1023,11 @@ class Help(commands.Cog):
                 else:
                     emote = self.bot.emote_dict["failed"]
             pretty_perms = [
-                x.title().replace("_", " ").replace("Tts", "TTS").replace("Guild", "Server") for x in perms
+                x.title()
+                .replace("_", " ")
+                .replace("Tts", "TTS")
+                .replace("Guild", "Server")
+                for x in perms
             ]
             finalized = ", ".join(pretty_perms)
             return await ctx.send_or_reply(

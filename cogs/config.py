@@ -32,7 +32,6 @@ class Config(commands.Cog):
     async def cog_check(self, ctx):
         return checks.is_owner(ctx)
 
-
     @decorators.command(
         brief="Change a config.json value.",
         implemented="2021-03-22 06:59:02.430491",
@@ -409,7 +408,8 @@ class Config(commands.Cog):
 
     @decorators.command(brief="Unblacklist discord objects.")
     async def unblacklist(
-        self, ctx, _object: typing.Union[discord.User, converters.DiscordGuild]):
+        self, ctx, _object: typing.Union[discord.User, converters.DiscordGuild]
+    ):
         """
         Usage: {0}unblacklist <object>
         """
@@ -445,16 +445,19 @@ class Config(commands.Cog):
     async def leaveserver(self, ctx, *, target_server: converters.DiscordGuild = None):
         """Leaves a server - can take a name or id (owner only)."""
 
-        c = await ctx.confirm(f"This action will result in me leaving the server: `{target_server.name}`")
+        c = await ctx.confirm(
+            f"This action will result in me leaving the server: `{target_server.name}`"
+        )
 
         if c:
             await target_server.leave()
             try:
-                await ctx.success(f"**Successfully left the server:** `{target_server.name}`")
+                await ctx.success(
+                    f"**Successfully left the server:** `{target_server.name}`"
+                )
             except Exception:
                 return
             return
-        
 
     @decorators.command(brief="Add a new bot owner.")
     async def addowner(self, ctx, member: converters.DiscordUser):
@@ -517,13 +520,17 @@ class Config(commands.Cog):
                 content=f"{self.bot.emote_dict['warn']} **`{member}` is not an owner.**",
             )
 
-        c = await ctx.confirm(f"This action will remove `{member}` from the owner list.")
+        c = await ctx.confirm(
+            f"This action will remove `{member}` from the owner list."
+        )
 
         if c:
             index = current_owners.index(member.id)
             current_owners.pop(index)
             utils.modify_config("owners", current_owners)
-            await ctx.success(f"**Successfully removed `{member}` from my owner list.**")
+            await ctx.success(
+                f"**Successfully removed `{member}` from my owner list.**"
+            )
             return
 
     @decorators.command(brief="Add a new bot admin.")
@@ -562,9 +569,7 @@ class Config(commands.Cog):
             await ctx.success(f"**`{member}` is now officially one of my admins.**")
             return
 
-    @decorators.command(
-        aliases=["removeadmin", "rmadmin"], brief="Remove a bot admin."
-    )
+    @decorators.command(aliases=["removeadmin", "rmadmin"], brief="Remove a bot admin.")
     async def remadmin(self, ctx, member: converters.DiscordUser):
         """
         Usage: {0}remadmin <user>
@@ -588,13 +593,17 @@ class Config(commands.Cog):
                 content=f"{self.bot.emote_dict['warn']} **`{member}` is not an admin.**",
             )
 
-        c = await ctx.confirm(f"This action will remove `{member}` from the admin list.")
+        c = await ctx.confirm(
+            f"This action will remove `{member}` from the admin list."
+        )
 
         if c:
             index = current_admins.index(member.id)
             current_admins.pop(index)
             utils.modify_config("admins", current_admins)
-            await ctx.success(f"**Successfully removed `{member}` from my admin list.**")
+            await ctx.success(
+                f"**Successfully removed `{member}` from my admin list.**"
+            )
             return
 
     @decorators.command(brief="Toggle locking the bot to owners.")
@@ -612,7 +621,9 @@ class Config(commands.Cog):
             await self.bot.cxn.execute(query, False, self.bot.user.id)
             return await ctx.success(f"**Ownerlock Disabled.**")
         else:
-            c = await ctx.confirm(f"This action will prevent usage from all except my owners.")
+            c = await ctx.confirm(
+                f"This action will prevent usage from all except my owners."
+            )
             if c:
                 self.is_ownerlocked = True
                 await self.bot.cxn.execute(query, True, self.bot.user.id)

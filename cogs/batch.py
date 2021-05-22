@@ -79,9 +79,15 @@ class Batch(commands.Cog):
                 # Here the combined files likely went over the 8mb file limit
                 # Lets divide them up into 2 parts and send them separately.
                 await self.bot.bot_channel.send(e)
-                upload_batch_1 = await self.avatar_webhook.send(files=files[:5], wait=True)
-                upload_batch_2 = await self.avatar_webhook.send(files=files[5:], wait=True)
-                new_upload_batch = upload_batch_1.attachments + upload_batch_2.attachments
+                upload_batch_1 = await self.avatar_webhook.send(
+                    files=files[:5], wait=True
+                )
+                upload_batch_2 = await self.avatar_webhook.send(
+                    files=files[5:], wait=True
+                )
+                new_upload_batch = (
+                    upload_batch_1.attachments + upload_batch_2.attachments
+                )
                 for x in new_upload_batch:
                     self.avatar_batch.append(
                         {
@@ -90,7 +96,9 @@ class Batch(commands.Cog):
                             "unix": time.time(),
                         }
                     )
-                await self.bot.bot_channel.send(f"**Payload size error successfully dealt with.**")
+                await self.bot.bot_channel.send(
+                    f"**Payload size error successfully dealt with.**"
+                )
             except Exception as e:
                 await self.bot.bot_channel.send(e)
 
@@ -207,13 +215,13 @@ class Batch(commands.Cog):
                     SET total = emojistats.total + excluded.total;
                     """
             async with self.batch_lock:
-                data = json.dumps([{
-                    'server_id': server_id,
-                    'emoji_id': emoji_id,
-                    'added': count}
-                    for server_id, data in self.emoji_batch.items()
-                    for emoji_id, count in data.items()
-                ])
+                data = json.dumps(
+                    [
+                        {"server_id": server_id, "emoji_id": emoji_id, "added": count}
+                        for server_id, data in self.emoji_batch.items()
+                        for emoji_id, count in data.items()
+                    ]
+                )
                 await self.bot.cxn.execute(query, data)
 
                 self.emoji_batch.clear()
@@ -529,12 +537,14 @@ class Batch(commands.Cog):
 
         if await self.nickname_changed(before, after):
             async with self.batch_lock:
-                self.nicknames_batch.append({
-                    "user_id": after.id,
-                    "server_id": after.guild.id,
-                    "nickname": after.display_name,
-                    "changed_at": str(datetime.datetime.utcnow())
-                })
+                self.nicknames_batch.append(
+                    {
+                        "user_id": after.id,
+                        "server_id": after.guild.id,
+                        "nickname": after.display_name,
+                        "changed_at": str(datetime.datetime.utcnow()),
+                    }
+                )
 
         # if await self.roles_changed(before, after):
         #     async with self.batch_lock:
@@ -573,11 +583,13 @@ class Batch(commands.Cog):
 
         if await self.username_changed(before, after):
             async with self.batch_lock:
-                self.usernames_batch.append({
-                    "user_id": after.id,
-                    "name": str(after),
-                    "changed_at": str(datetime.datetime.utcnow())
-                })
+                self.usernames_batch.append(
+                    {
+                        "user_id": after.id,
+                        "name": str(after),
+                        "changed_at": str(datetime.datetime.utcnow()),
+                    }
+                )
                 self.tracker_batch[before.id] = (time.time(), "updating their username")
 
     @commands.Cog.listener()
@@ -722,18 +734,17 @@ class Batch(commands.Cog):
     async def on_member_remove(self, member):
         async with self.batch_lock:
             self.tracker_batch[member.id] = (time.time(), "leaving a server")
-            roles = ",".join(
-                [str(x.id) for x in member.roles if x.name != "@everyone"]
+            roles = ",".join([str(x.id) for x in member.roles if x.name != "@everyone"])
+            self.roles_batch.append(
+                {
+                    "user_id": member.id,
+                    "server_id": member.guild.id,
+                    "roles": roles,
+                }
             )
-            self.roles_batch.append({
-                "user_id": member.id,
-                "server_id": member.guild.id,
-                "roles": roles,
-            })
         if not member.guild.me.guild_permissions.manage_guild:
             return
         self.bot.invites[member.guild.id] = await member.guild.invites()
-
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -842,9 +853,9 @@ class Batch(commands.Cog):
                 for x in avatars
             ]
         if nicknames:
-            nicknames = ', '.join([record['nickname'] for record in nicknames])
+            nicknames = ", ".join([record["nickname"] for record in nicknames])
         if usernames:
-            usernames = ', '.join([record['name'] for record in usernames])
+            usernames = ", ".join([record["name"] for record in usernames])
 
         observed_data = {
             "usernames": usernames or None,
