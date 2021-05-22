@@ -698,20 +698,22 @@ class Batch(commands.Cog):
         async with self.batch_lock:
             self.tracker_batch[member.id] = (time.time(), "joining a server")
 
-        await asyncio.sleep(2)
+        await asyncio.sleep(2)  # API rest.
 
         async with self.batch_lock:
-            self.member_batch[member.id].append(
-                {
+            self.usernames_batch.append({
                     "user_id": member.id,
-                    "username": str(member),
-                    "nickname": member.display_name,
-                    "server_id": member.guild.id,
-                    "roles": ",".join(
-                        [str(x.id) for x in member.roles if x.name != "@everyone"]
-                    ),
-                }
-            )
+                    "name": str(member),
+                    "changed_at": None,
+                })
+            self.nicknames_batch.append(
+                    {
+                        "user_id": member.id,
+                        "server_id": member.guild.id,
+                        "nickname": member.display_name,
+                        "changed_at": str(datetime.datetime.utcnow()),
+                    }
+                )
         if not member.guild.me.guild_permissions.manage_guild:
             return
         old_invites = self.bot.invites[member.guild.id]
