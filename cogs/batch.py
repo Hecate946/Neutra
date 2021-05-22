@@ -43,7 +43,6 @@ class Batch(commands.Cog):
         self.usernames_batch = list()
         self.invite_batch = list()
         self.negative_invite_batch = list()
-        self.member_batch = defaultdict(list)
         self.emoji_batch = defaultdict(Counter)
         self.status_batch = defaultdict(list)
         self.spammer_batch = dict()
@@ -169,40 +168,6 @@ class Batch(commands.Cog):
                 await self.bot.cxn.executemany(query, ((x,) for x in self.snipe_batch))
             self.snipe_batch.clear()
 
-        # mass inserts nicknames, usernames, and roles
-        if self.member_batch:
-            query = """
-                    WITH username_insert AS (
-                        INSERT INTO usernames(user_id, name)
-                        VALUES ($1, $2, (NOW() AT TIME ZONE 'UTC'))
-                    )
-                    ON CONFLICT (user_id, name)
-                    DO UPDATE SET changed_at = (NOW() AT TIME ZONE 'UTC'),
-                    nickname_insert AS (
-                        INSERT INTO usernicks(user_id, server_id, nickname)
-                        VALUES ($1, $3, $4, (NOW() AT TIME ZONE 'UTC'))
-                    )
-                    ON CONFLICT (user_id, server_id, nickname)
-                    DO UPDATE SET changed_at = (NOW() AT TIME ZONE 'UTC')
-                    INSERT INTO userroles(user_id, server_id, roles)
-                    VALUES ($1, $3, $5)
-                    ON CONFLICT (user_id, server_id) DO NOTHING;
-                    """
-            async with self.batch_lock:
-                await self.bot.cxn.executemany(
-                    query,
-                    (
-                        (
-                            data[1][0]["user_id"],
-                            data[1][0]["username"],
-                            data[1][0]["server_id"],
-                            data[1][0]["nickname"],
-                            data[1][0]["roles"],
-                        )
-                        for data in self.member_batch.items()
-                    ),
-                )
-                self.member_batch.clear()
 
         # Emoji usage tracking
         if self.emoji_batch:
