@@ -60,7 +60,7 @@ async def scriptexec():
 
 
 async def update_server(server, member_list):
-    # Main database updater on bot startup
+    # Update a server when the bot joins.
     st = time.time()
     await postgres.execute(
         """
@@ -88,9 +88,14 @@ async def update_server(server, member_list):
     )
 
     st = time.time()
+    query = """
+            INSERT INTO usernames
+            VALUES ($1, $2, (NOW() AT TIME ZONE 'UTC'))
+            ON CONFLICT (user_id, name)
+            DO NOTHING;
+            """
     await postgres.executemany(
-        """INSERT INTO usernames VALUES ($1, $2) 
-    ON CONFLICT (user_id) DO NOTHING""",
+        query,
         ((member.id, str(member)) for member in member_list),
     )
     print(
@@ -101,9 +106,9 @@ async def update_server(server, member_list):
 
     st = time.time()
     query = """
-            INSERT INTO nicknames
-            VALUES ($1, $2, $3)
-            ON CONFLICT (user_id, server_id)
+            INSERT INTO usernicks
+            VALUES ($1, $2, $3, (NOW() AT TIME ZONE 'UTC'))
+            ON CONFLICT (user_id, server_id, nickname)
             DO NOTHING;
             """
     await postgres.executemany(
@@ -161,13 +166,6 @@ async def update_db(guilds, member_list):
         )
     )
 
-    # await postgres.executemany(
-    #     """
-    # INSERT INTO prefixes(server_id, prefix) VALUES ($1, $2)
-    # ON CONFLICT DO NOTHING""",
-    #     ((server.id, f"<@!{constants.client}>") for server in guilds),
-    # )
-
     st = time.time()
     await postgres.executemany(
         """INSERT INTO logging (server_id, logchannel) VALUES ($1, $2)
@@ -179,15 +177,12 @@ async def update_db(guilds, member_list):
             fore="#46648F", text=f"Logging  insertion : {str(time.time() - st)[:10]} s"
         )
     )
-    # await postgres.executemany("""INSERT INTO useravatars VALUES ($1, $2)
-    # ON CONFLICT (user_id) DO NOTHING""",
-    # ((member.id, str(member.avatar)) for member in member_list))
 
     st = time.time()
     query = """
             INSERT INTO usernames
-            VALUES ($1, $2)
-            ON CONFLICT (user_id)
+            VALUES ($1, $2, (NOW() AT TIME ZONE 'UTC'))
+            ON CONFLICT (user_id, name)
             DO NOTHING;
             """
     await postgres.executemany(
@@ -202,9 +197,9 @@ async def update_db(guilds, member_list):
 
     st = time.time()
     query = """
-            INSERT INTO nicknames
-            VALUES ($1, $2, $3)
-            ON CONFLICT (user_id, server_id)
+            INSERT INTO usernicks
+            VALUES ($1, $2, $3, (NOW() AT TIME ZONE 'UTC'))
+            ON CONFLICT (user_id, server_id, nickname)
             DO NOTHING;
             """
     await postgres.executemany(

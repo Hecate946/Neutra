@@ -56,7 +56,7 @@ class BotContext(commands.Context):
         return await self.send_or_reply(content, **kwargs)
 
     async def confirm(self, content="", **kwargs):
-        content = f"**{self.bot.emote_dict['exclamation']} {content} Do you wish to continue?**"
+        content = f"**{content} Do you wish to continue?**"
         c = await pagination.Confirmation(msg=content).prompt(ctx=self)
         if c:
             return True
@@ -98,78 +98,20 @@ class BotContext(commands.Context):
 class BotCommand(commands.Command):
     def __init__(self, func, **kwargs):
         super().__init__(func, **kwargs)
-        self.permissions = kwargs.pop("permissions", [])
-        self.botperms = kwargs.pop("botperms", [])
         self.examples = kwargs.pop("examples", None)
         self.implemented = kwargs.pop("implemented", None)
         self.updated = kwargs.pop("updated", None)
         self.writer = kwargs.pop(
             "writer", 708584008065351681
         )  # Maybe someday more will contribute... :((
-
-        if self.permissions:
-            valid_perms = [x[0] for x in discord.Permissions.all()] + [
-                "bot_admin",
-                "bot_owner",
-            ]
-            if not isinstance(self.permissions, (list, tuple)):
-                raise TypeError(
-                    "Permissions of a command must be a list or a tuple of strings."
-                )
-            for x in self.permissions:
-                if x not in valid_perms:
-                    raise ValueError(
-                        f"Command permissions must in the following list:\n{', '.join(sorted(valid_perms))}"
-                    )
-
-        if self.botperms:
-            valid_perms = [x[0] for x in discord.Permissions.all()]
-            if not isinstance(self.botperms, (list, tuple)):
-                raise TypeError(
-                    "Permissions of a command must be a list or a tuple of strings."
-                )
-            for x in self.botperms:
-                if x not in valid_perms:
-                    raise ValueError(
-                        f"Command permissions must in the following list:\n{', '.join(sorted(valid_perms))}"
-                    )
 
 
 class BotGroup(commands.Group):
     def __init__(self, func, **kwargs):
         super().__init__(func, **kwargs)
-        self.permissions = kwargs.pop("permissions", [])
-        self.botperms = kwargs.pop("botperms", [])
         self.examples = kwargs.pop("examples", None)
         self.implemented = kwargs.pop("implemented", None)
         self.updated = kwargs.pop("updated", None)
         self.writer = kwargs.pop(
             "writer", 708584008065351681
-        )  # Maybe someday more will contribute... :((
-
-        if self.permissions:
-            valid_perms = [x[0] for x in discord.Permissions.all()] + [
-                "bot_admin",
-                "bot_owner",
-            ]
-            if not isinstance(self.permissions, (list, tuple)):
-                raise TypeError(
-                    "Permissions of a command must be a list or a tuple of strings."
-                )
-            for x in self.permissions:
-                if x not in valid_perms:
-                    raise ValueError(
-                        f"Command permissions must in the following list:\n{', '.join(sorted(valid_perms))}"
-                    )
-
-        if self.botperms:
-            valid_perms = [x[0] for x in discord.Permissions.all()]
-            if not isinstance(self.botperms, (list, tuple)):
-                raise TypeError(
-                    "Permissions of a command must be a list or a tuple of strings."
-                )
-            for x in self.botperms:
-                if x not in valid_perms:
-                    raise ValueError(
-                        f"Command permissions must in the following list:\n{', '.join(sorted(valid_perms))}"
-                    )
+        )

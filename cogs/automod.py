@@ -1,6 +1,7 @@
 import re
 import discord
 
+from better_profanity import profanity
 from discord.ext import commands, menus
 
 from utilities import checks
@@ -401,7 +402,7 @@ class Automod(commands.Cog):
             return await ctx.usage("<roles>")
         for role in roles:
             self.bot.server_settings[ctx.guild.id]["autoroles"].append(role.id)
-        query = f"""
+        query = """
                 UPDATE servers
                 SET autoroles = $1
                 WHERE server_id = $2;
@@ -436,7 +437,7 @@ class Automod(commands.Cog):
         for role in roles:
             index = autoroles.index(str(role.id))
             autoroles.pop(index)
-        query = f"""
+        query = """
                 UPDATE servers
                 SET autoroles = $1
                 WHERE server_id = $2;
@@ -452,7 +453,7 @@ class Automod(commands.Cog):
     @autorole.command(brief="Clear all current autoroles.")
     async def clear(self, ctx):
         """
-        Usage: -autorole clear
+        Usage: {0}autorole clear
         Output:
             Will no longer assign
             any previous autoroles
@@ -515,65 +516,14 @@ class Automod(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        if self.bot.ready is False:
-            return
-        if not message.guild:
-            return
-        if not self.dregex.search(message.content):
-            return
-
-        removeinvitelinks = self.bot.server_settings[message.guild.id]["antiinvite"]
-
-        if removeinvitelinks is not True:
-            return
-
-        member = message.guild.get_member(message.author.id)
-        if message.author.id in self.bot.constants.owners:
-            return  # We are immune!
-        if member.guild_permissions.manage_messages:
-            return  # We are immune!
-
-        try:
-            await message.delete()
-            await message.channel.send("No invite links allowed", delete_after=7)
-        except Exception:
-            return  # await message.channel.send(e)
-
-    @commands.Cog.listener()
-    async def on_message_edit(self, before, after):
-        if self.bot.ready is False:
-            return
-        if not before.guild:
-            return
-        if not self.dregex.search(after.content):
-            return
-
-        removeinvitelinks = self.bot.server_settings[after.guild.id]["antiinvite"]
-
-        if removeinvitelinks is not True:
-            return
-
-        member = after.author
-        if member.id in self.bot.constants.owners:
-            return  # We are immune!
-        if member.guild_permissions.manage_messages:
-            return  # We are immune!
-        try:
-            await after.delete()
-            await after.channel.send("No invite links allowed", delete_after=7)
-        except Exception:
-            return
-
     @decorators.command(brief="Reassign roles on user rejoin.", aliases=["stickyroles"])
     @commands.guild_only()
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(manage_guild=True, manage_roles=True)
     async def reassign(self, ctx, *, yes_no=None):
         """
-        Usage:      -reassign <yes|enable|true|on||no|disable|false|off>
-        Aliases:    -stickyroles
+        Usage:      {0}reassign <yes|enable|true|on||no|disable|false|off>
+        Aliases:    {0}stickyroles
         Permission: Manage Server
         Output:     Reassigns roles when past members rejoin the server.
         Notes:
@@ -617,55 +567,6 @@ class Automod(commands.Cog):
             )
             self.bot.server_settings[ctx.guild.id]["reassign"] = reassign
         await ctx.send_or_reply(msg)
-
-    @commands.Cog.listener()
-    async def on_member_join(self, member):
-        if self.bot.ready is False:
-            return
-        required_perms = member.guild.me.guild_permissions.manage_roles
-        if not required_perms:
-            return
-
-        reassign = self.bot.server_settings[member.guild.id]["reassign"]
-        if reassign is not True:
-            pass
-        else:
-            query = (
-                """SELECT roles FROM userroles WHERE user_id = $1 and server_id = $2"""
-            )
-            old_roles = (
-                await self.bot.cxn.fetchval(query, member.id, member.guild.id) or None
-            )
-            if old_roles is None:
-                pass
-            roles = str(old_roles).split(",")
-            for role_id in roles:
-                try:
-                    role = member.guild.get_role(int(role_id))
-                except ValueError:
-                    continue
-                if role not in member.roles:
-                    try:
-                        await member.add_roles(role)
-                    except Exception as e:
-                        print(e)
-
-        query = """SELECT autoroles FROM servers WHERE server_id = $1"""
-        autoroles = await self.bot.cxn.fetchrow(query, member.guild.id) or None
-        if autoroles is None or autoroles[0] is None:
-            return
-        else:
-            roles = str(autoroles[0]).split(",")
-            for role_id in roles:
-                try:
-                    role = member.guild.get_role(int(role_id))
-                except ValueError:
-                    continue
-                if role not in member.roles:
-                    try:
-                        await member.add_roles(role)
-                    except Exception as e:
-                        print(e)
 
     @decorators.group(
         invoke_without_command=True,
@@ -856,3 +757,125 @@ class Automod(commands.Cog):
         await ctx.send_or_reply(
             content=f"{self.bot.emote_dict['success']} Removed all filtered words.",
         )
+
+    #####################
+    ## Event Listeners ##
+    #####################
+
+    @commands.Cog.listener()
+    @decorators.wait_until_ready()
+    @decorators.event_check(lambda s, m: not m.bot)
+    async def on_member_join(self, member):
+        required_perms = member.guild.me.guild_permissions.manage_roles
+        if not required_perms:
+            return
+
+        guild = member.guild
+        reassign = self.bot.server_settings[member.guild.id]["reassign"]
+        if reassign:
+            query = """SELECT roles
+                    FROM userroles
+                    WHERE user_id = $1
+                    and server_id = $2;
+                    """
+            old_roles = await self.bot.cxn.fetchval(query, member.id, guild.id)
+            if old_roles:
+                roles = str(old_roles).split(",")
+                role_objects = [
+                    guild.get_role(int(role_id))
+                    for role_id in roles
+                    if guild.get_role(int(role_id))
+                ]
+                to_reassign = role_objects + member.roles  # In case they already had roles added
+                try:
+                    await member.edit(roles=to_reassign, reason="Roles reassigned on rejoin.")
+                except Exception:  # Try to add them on one by one.
+                    for role in role_objects:
+                        if role not in member.roles:
+                            try:
+                                await member.add_roles(role)
+                            except Exception:
+                                continue
+
+        autoroles = self.bot.server_settings[member.guild.id]["autoroles"]
+        if autoroles:
+            role_objects = [
+                guild.get_role(int(role_id))
+                for role_id in autoroles
+                if guild.get_role(int(role_id))
+            ]
+            to_assign = role_objects + member.roles  # In case they already had roles added
+            try:
+                await member.edit(roles=to_assign, reason="Roles auto-assigned on join.")
+            except Exception:  # Try to add them on one by one.
+                for role in role_objects:
+                    if role not in member.roles:
+                        try:
+                            await member.add_roles(role)
+                        except Exception:
+                            continue
+
+    @commands.Cog.listener()
+    @decorators.wait_until_ready()
+    @decorators.event_check(lambda s, m: m.guild and not m.author.bot)
+    async def on_message(self, message):  # Check for invite links and bad words
+        if message.author.id in self.bot.constants.owners:
+            return  # We are immune!
+        if message.author.guild_permissions.manage_messages:
+            return  # We are immune!
+        if self.dregex.search(message.content):  # Check for invite linkes
+            removeinvitelinks = self.bot.server_settings[message.guild.id]["antiinvite"]
+            if removeinvitelinks:  # Do we care?
+                try:
+                    await message.delete()
+                    await message.channel.send("No invite links allowed", delete_after=7)
+                except Exception:  # We tried...
+                    pass
+        bad_words = self.bot.server_settings[message.guild.id]["profanities"]
+        if bad_words:
+            vulgar = False
+            profanity.load_censor_words(bad_words)
+            for word in bad_words:
+                if profanity.contains_profanity(message.content) or word in message.content:
+                    try:
+                        await message.delete()
+                        vulgar = True  # Lets try to DM them
+                    except Exception:  # We tried...
+                        pass
+            if vulgar:
+                await message.author.send(
+                    f"Your message `{message.content}` was removed in **{message.guild.name}** for containing a filtered word."
+                )
+
+    @commands.Cog.listener()
+    @decorators.wait_until_ready()
+    @decorators.event_check(lambda s, b, a: a.guild and not a.author.bot)
+    async def on_message_edit(self, before, after):
+        if after.author.id in self.bot.constants.owners:
+            return  # We are immune!
+        if after.author.guild_permissions.manage_messages:
+            return  # We are immune!
+        if self.dregex.search(after.content):
+            removeinvitelinks = self.bot.server_settings[after.guild.id]["antiinvite"]
+            if removeinvitelinks:
+                try:
+                    await after.delete()
+                    await after.channel.send("No invite links allowed", delete_after=7)
+                except Exception:
+                    pass
+        
+        bad_words = self.bot.server_settings[after.guild.id]["profanities"]
+        if bad_words:
+            vulgar = False
+            profanity.load_censor_words(bad_words)
+            for word in bad_words:
+                if profanity.contains_profanity(after.content) or word in after.content:
+                    try:
+                        await after.delete()
+                        vulgar = True  # Lets try to DM them
+                    except Exception:  # We tried...
+                        pass
+            if vulgar:
+                await after.author.send(
+                    f"Your message `{after.content}` was removed in **{after.guild.name}** for containing a filtered word."
+                )

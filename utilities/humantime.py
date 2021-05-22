@@ -226,8 +226,8 @@ class UserFriendlyTime(commands.Converter):
                 if argument[0:6] in ("me to ", "me in ", "me at "):
                     argument = argument[6:]
 
-            if " for " in argument:
-                argument = argument.replace(" for ", " ")
+            if argument.strip().startswith("for "):
+                argument = argument[:4]
 
             elements = calendar.nlp(argument, sourceTime=now)
             if elements is None or len(elements) == 0:
@@ -243,7 +243,7 @@ class UserFriendlyTime(commands.Converter):
 
             if not status.hasDateOrTime:
                 raise commands.BadArgument(
-                   'Invalid time provided, try e.g. "tomorrow" or "3 days".'
+                   "Invalid time provided, try `tomorrow` or `2 days`."
                 )
             if begin not in (0, 1) and end != len(argument):
                 raise commands.BadArgument(

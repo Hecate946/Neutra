@@ -672,15 +672,12 @@ class Admin(commands.Cog):
             command, all emoji stats, messages, last seen data
             roles, nicknames, and usernames will be deleted.
         """
-        c = await pagination.Confirmation(
+        c = await ctx.confirm(
             f"{self.bot.emote_dict['delete']} **This action will remove me from this server and clear all my collected data. Do you wish to continue?**"
-        ).prompt(ctx)
+        )
         if c:
             await ctx.guild.leave()
             return
-        await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
-        )
 
     @decorators.command(brief="Dehoist all server users.")
     @checks.bot_has_perms(manage_nicknames=True)

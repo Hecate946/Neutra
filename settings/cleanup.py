@@ -50,7 +50,7 @@ async def destroy_server(guild_id, guild_name):
 
     await conn.execute(
         """
-    DELETE FROM nicknames WHERE server_id = $1
+    DELETE FROM usernicks WHERE server_id = $1
     """,
         guild_id,
     )

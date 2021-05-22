@@ -38,16 +38,15 @@ class Batch(commands.Cog):
         self.message_batch = list()
         self.tracker_batch = dict()
         self.snipe_batch = list()
+        self.roles_batch = list()
+        self.nicknames_batch = list()
+        self.usernames_batch = list()
         self.invite_batch = list()
         self.negative_invite_batch = list()
         self.member_batch = defaultdict(list)
         self.emoji_batch = defaultdict(Counter)
-        self.usernames_batch = defaultdict(list)
-        self.nicknames_batch = defaultdict(list)
-        self.roles_batch = defaultdict(list)
         self.status_batch = defaultdict(list)
         self.spammer_batch = dict()
-        self.to_upload = list()
         self.batch_lock = asyncio.Lock(loop=bot.loop)
         self.spam_control = commands.CooldownMapping.from_cooldown(
             10, 12, commands.BucketType.user
@@ -55,12 +54,12 @@ class Batch(commands.Cog):
         self._auto_spam_count = Counter()
         self.bulk_inserter.start()
         self.dispatch_avatars.start()
-
         self.queue = asyncio.Queue(loop=bot.loop)
 
     def cog_unload(self):
         self.background_task.stop()
         self.bulk_inserter.stop()
+        self.dispatch_avatars.stop()
 
     @tasks.loop(seconds=0.0)
     async def dispatch_avatars(self):
@@ -76,6 +75,22 @@ class Batch(commands.Cog):
                             "unix": time.time(),
                         }
                     )
+            except discord.HTTPException as e:
+                # Here the combined files likely went over the 8mb file limit
+                # Lets divide them up into 2 parts and send them separately.
+                await self.bot.bot_channel.send(e)
+                upload_batch_1 = await self.avatar_webhook.send(files=files[:5], wait=True)
+                upload_batch_2 = await self.avatar_webhook.send(files=files[5:], wait=True)
+                new_upload_batch = upload_batch_1.attachments + upload_batch_2.attachments
+                for x in new_upload_batch:
+                    self.avatar_batch.append(
+                        {
+                            "user_id": int(x.filename.split(".")[0]),
+                            "avatar_id": x.id,
+                            "unix": time.time(),
+                        }
+                    )
+                await self.bot.bot_channel.send(f"**Payload size error successfully dealt with.**")
             except Exception as e:
                 await self.bot.bot_channel.send(e)
 
@@ -121,7 +136,7 @@ class Batch(commands.Cog):
                     """
             async with self.batch_lock:
                 data = json.dumps(self.command_batch)
-                await self.bot.cxn.execute(query, str(data))
+                await self.bot.cxn.execute(query, data)
 
                 # Command logger to ./data/logs/commands.log
                 destination = None
@@ -150,17 +165,17 @@ class Batch(commands.Cog):
         if self.member_batch:
             query = """
                     WITH username_insert AS (
-                        INSERT INTO usernames(user_id, usernames)
-                        VALUES ($1, $2)
-                        ON CONFLICT (user_id)
-                        DO NOTHING RETURNING user_id
-                    ),
-                    nickname_insert AS (
-                        INSERT INTO nicknames(user_id, server_id, nicknames)
-                        VALUES ($1, $3, $4)
-                        ON CONFLICT (user_id, server_id)
-                        DO NOTHING RETURNING user_id
+                        INSERT INTO usernames(user_id, name)
+                        VALUES ($1, $2, (NOW() AT TIME ZONE 'UTC'))
                     )
+                    ON CONFLICT (user_id, name)
+                    DO UPDATE SET changed_at = (NOW() AT TIME ZONE 'UTC'),
+                    nickname_insert AS (
+                        INSERT INTO usernicks(user_id, server_id, nickname)
+                        VALUES ($1, $3, $4, (NOW() AT TIME ZONE 'UTC'))
+                    )
+                    ON CONFLICT (user_id, server_id, nickname)
+                    DO UPDATE SET changed_at = (NOW() AT TIME ZONE 'UTC')
                     INSERT INTO userroles(user_id, server_id, roles)
                     VALUES ($1, $3, $5)
                     ON CONFLICT (user_id, server_id) DO NOTHING;
@@ -179,32 +194,29 @@ class Batch(commands.Cog):
                         for data in self.member_batch.items()
                     ),
                 )
-            self.member_batch.clear()
+                self.member_batch.clear()
 
         # Emoji usage tracking
         if self.emoji_batch:
             query = """
-                    INSERT INTO emojistats (
-                        serveremoji,
-                        server_id,
-                        emoji_id,
-                        total
-                    )
-                    VALUES ($1, $2, $3, $4)
-                    ON CONFLICT (serveremoji)
-                    DO UPDATE SET total = emojistats.total + excluded.total;
+                    INSERT INTO emojistats (server_id, emoji_id, total)
+                    SELECT x.server_id, x.emoji_id, x.added
+                    FROM jsonb_to_recordset($1::jsonb)
+                    AS x(server_id BIGINT, emoji_id BIGINT, added INT)
+                    ON CONFLICT (server_id, emoji_id) DO UPDATE
+                    SET total = emojistats.total + excluded.total;
                     """
             async with self.batch_lock:
-                for data in self.emoji_batch.items():
-                    server_id = data[0]
-                    for key in data[1]:
-                        emoji_id = key
-                    count = data[1][emoji_id]
-                    await self.bot.cxn.execute(
-                        query, f"{server_id}:{emoji_id}", server_id, emoji_id, count
-                    )
-                self.bot.emojis_seen += len(self.emoji_batch.items())
-            self.emoji_batch.clear()
+                data = json.dumps([{
+                    'server_id': server_id,
+                    'emoji_id': emoji_id,
+                    'added': count}
+                    for server_id, data in self.emoji_batch.items()
+                    for emoji_id, count in data.items()
+                ])
+                await self.bot.cxn.execute(query, data)
+
+                self.emoji_batch.clear()
 
         # Insert every single message into db
         if self.message_batch:
@@ -269,7 +281,6 @@ class Batch(commands.Cog):
             self.tracker_batch.clear()
 
         if self.avatar_batch:
-            # query = f"""UPDATE useravatars SET avatars = CONCAT_WS(',', avatars, cast($1 as text)) WHERE user_id = $2"""
             query = """
                     INSERT INTO useravatars (
                         user_id, avatar_id, unix
@@ -288,55 +299,57 @@ class Batch(commands.Cog):
 
         if self.usernames_batch:
             query = """
-                    UPDATE usernames
-                    SET usernames = CONCAT_WS(
-                        ',', usernames, cast($1 as text)
+                    INSERT INTO usernames (
+                        user_id, name, changed_at
                     )
-                    WHERE user_id = $2;
+                    SELECT x.user_id, x.name, x.changed_at
+                    FROM jsonb_to_recordset($1::jsonb)
+                    AS x(
+                        user_id BIGINT, name TEXT, changed_at TIMESTAMP
+                    )
+                    ON CONFLICT (user_id, name)
+                    DO UPDATE SET changed_at = EXCLUDED.changed_at
                     """
             async with self.batch_lock:
-                for data in self.usernames_batch.items():
-                    user_id = data[1]["user_id"]
-                    username = data[1]["username"]
-
-                    await self.bot.cxn.execute(query, str(username), user_id)
-                self.bot.namechanges += len(self.usernames_batch.items())
+                data = json.dumps(self.usernames_batch)
+                await self.bot.cxn.execute(query, data)
                 self.usernames_batch.clear()
 
         if self.nicknames_batch:
-            query = f"""
-                    UPDATE nicknames
-                    SET nicknames = CONCAT_WS(
-                        ',', nicknames, cast($1 as text)
+
+            query = """
+                    INSERT INTO usernicks (
+                        user_id, server_id, nickname, changed_at
                     )
-                    WHERE user_id = $2
-                    AND server_id = $3;
+                    SELECT x.user_id, x.server_id, x.nickname, x.changed_at
+                    FROM jsonb_to_recordset($1::jsonb)
+                    AS x(
+                        user_id BIGINT, server_id BIGINT,
+                        nickname TEXT, changed_at TIMESTAMP
+                    ) ON CONFLICT (user_id, server_id, nickname)
+                    DO UPDATE SET changed_at = EXCLUDED.changed_at;
                     """
             async with self.batch_lock:
-                for data in self.nicknames_batch.items():
-                    user_id = data[1]["user_id"]
-                    server_id = data[1]["server_id"]
-                    nickname = data[1]["nickname"]
-
-                    await self.bot.cxn.execute(query, str(nickname), user_id, server_id)
-                self.bot.nickchanges += len(self.nicknames_batch.items())
+                data = json.dumps(self.nicknames_batch)
+                await self.bot.cxn.execute(query, data)
                 self.nicknames_batch.clear()
 
         if self.roles_batch:
             query = """
-                    UPDATE userroles
-                    SET roles = $1
-                    WHERE user_id = $2
-                    AND server_id = $3;
+                    INSERT INTO userroles (
+                        user_id, server_id, roles
+                    )
+                    SELECT x.user_id, x.server_id, x.roles
+                    FROM jsonb_to_recordset($1::jsonb)
+                    AS x(
+                        user_id BIGINT, server_id BIGINT, roles TEXT
+                    )
+                    ON CONFLICT (user_id, server_id)
+                    DO UPDATE SET roles = EXCLUDED.roles
                     """
             async with self.batch_lock:
-                for data in self.roles_batch.items():
-                    user_id = data[1]["user_id"]
-                    server_id = data[1]["server_id"]
-                    roles = data[1]["roles"]
-
-                    await self.bot.cxn.execute(query, str(roles), user_id, server_id)
-                self.bot.rolechanges += len(self.roles_batch.items())
+                data = json.dumps(self.roles_batch)
+                await self.bot.cxn.execute(query, data)
                 self.roles_batch.clear()
 
         if self.invite_batch:
@@ -515,22 +528,23 @@ class Batch(commands.Cog):
 
         if await self.nickname_changed(before, after):
             async with self.batch_lock:
-                self.nicknames_batch[after.id] = {
+                self.nicknames_batch.append({
                     "user_id": after.id,
                     "server_id": after.guild.id,
                     "nickname": after.display_name,
-                }
+                    "changed_at": str(datetime.datetime.utcnow())
+                })
 
-        if await self.roles_changed(before, after):
-            async with self.batch_lock:
-                roles = ",".join(
-                    [str(x.id) for x in after.roles if x.name != "@everyone"]
-                )
-                self.roles_batch[after.id] = {
-                    "user_id": after.id,
-                    "server_id": after.guild.id,
-                    "roles": roles,
-                }
+        # if await self.roles_changed(before, after):
+        #     async with self.batch_lock:
+        #         roles = ",".join(
+        #             [str(x.id) for x in after.roles if x.name != "@everyone"]
+        #         )
+        #         self.roles_batch[after.id] = {
+        #             "user_id": after.id,
+        #             "server_id": after.guild.id,
+        #             "roles": roles,
+        #         }
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -558,10 +572,11 @@ class Batch(commands.Cog):
 
         if await self.username_changed(before, after):
             async with self.batch_lock:
-                self.usernames_batch[after.id] = {
+                self.usernames_batch.append({
                     "user_id": after.id,
-                    "username": str(after),
-                }
+                    "name": str(after),
+                    "changed_at": str(datetime.datetime.utcnow())
+                })
                 self.tracker_batch[before.id] = (time.time(), "updating their username")
 
     @commands.Cog.listener()
@@ -706,6 +721,14 @@ class Batch(commands.Cog):
     async def on_member_remove(self, member):
         async with self.batch_lock:
             self.tracker_batch[member.id] = (time.time(), "leaving a server")
+            roles = ",".join(
+                [str(x.id) for x in member.roles if x.name != "@everyone"]
+            )
+            self.roles_batch.append({
+                "user_id": member.id,
+                "server_id": member.guild.id,
+                "roles": roles,
+            })
         if not member.guild.me.guild_permissions.manage_guild:
             return
         self.bot.invites[member.guild.id] = await member.guild.invites()
@@ -784,44 +807,43 @@ class Batch(commands.Cog):
 
     async def user_data(self, ctx, member: converters.DiscordUser):
         """Lookup name & avatar data."""
-
-        usernames = (
-            await self.bot.cxn.fetchval(
-                "SELECT usernames from usernames WHERE user_id = $1 LIMIT 1", member.id
-            )
-            or None
-        )
+        query = """
+                SELECT name
+                FROM usernames
+                WHERE user_id = $1
+                ORDER BY changed_at DESC NULLS LAST;
+                """
+        usernames = await self.bot.cxn.fetch(query, member.id)
 
         query = """
-                SELECT (avatar_id)
+                SELECT avatar_id
                 FROM useravatars
                 WHERE user_id = $1
-                ORDER BY unix DESC;
+                ORDER BY unix DESC NULLS LAST;
                 """
         avatars = await self.bot.cxn.fetch(query, member.id)
-        if hasattr(member, "guild"):
-            nicknames = (
-                await self.bot.cxn.fetchval(
-                    "SELECT nicknames FROM nicknames WHERE user_id = $1 AND server_id = $2 LIMIT 1",
-                    member.id,
-                    ctx.guild.id,
-                )
-                or None
-            )
 
+        if hasattr(member, "guild"):
+            query = """
+                    SELECT nickname
+                    FROM usernicks
+                    WHERE user_id = $1
+                    AND server_id = $2
+                    ORDER BY changed_at DESC NULLS LAST;
+                    """
+            nicknames = await self.bot.cxn.fetch(query, member.id, ctx.guild.id)
         else:
             nicknames = None
 
-        if usernames:
-            usernames = str(usernames).replace(",", ", ")
         if avatars:
             avatars = [
                 f"https://cdn.discordapp.com/attachments/{self.bot.constants.avchan}/{x[0]}/{member.id}.png"
                 for x in avatars
             ]
-        if hasattr(member, "guild"):
-            if nicknames:
-                nicknames = str(nicknames).replace(",", ", ")
+        if nicknames:
+            nicknames = ', '.join([record['nickname'] for record in nicknames])
+        if usernames:
+            usernames = ', '.join([record['name'] for record in usernames])
 
         observed_data = {
             "usernames": usernames or None,

@@ -6,7 +6,6 @@ import asyncio
 import asyncpg
 import discord
 
-from better_profanity import profanity
 from collections import Counter
 from discord.ext import commands
 
@@ -1015,83 +1014,6 @@ class Mod(commands.Cog):
 
         await ctx.send_or_reply(embed=em, delete_after=10)
 
-    #########################
-    ## Profanity Listeners ##
-    #########################
-
-    @commands.Cog.listener()
-    @decorators.wait_until_ready()
-    async def on_message_edit(self, before, after):
-        if not before.guild:
-            return
-        if before.author.bot:
-            return
-        immune = before.author.guild_permissions.manage_messages
-        if immune:
-            return
-        msg = str(after.content)
-
-        try:
-            filtered_words = self.bot.server_settings[after.guild.id]["profanities"]
-        except KeyError:
-            await database.fix_server(after.guild.id)
-            try:
-                filtered_words = self.bot.server_settings[after.guild.id]["profanities"]
-            except Exception:
-                return
-
-        if filtered_words == []:
-            return
-
-        profanity.load_censor_words(filtered_words)
-
-        for filtered_word in filtered_words:
-            if profanity.contains_profanity(msg) or filtered_word in msg:
-                try:
-                    await after.delete()
-                    return await after.author.send(
-                        f"Your message `{after.content}` was removed for containing the filtered word `{filtered_word}`"
-                    )
-                except Exception:
-                    return
-
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        if self.bot.ready is False:
-            return
-        if not message.guild:
-            return
-        if message.author.bot:
-            return
-        immune = message.author.guild_permissions.manage_messages
-        if immune:
-            return
-        msg = str(message.content)
-        try:
-            filtered_words = self.bot.server_settings[message.guild.id]["profanities"]
-        except KeyError:
-            await database.fix_server(message.guild.id)
-            try:
-                filtered_words = self.bot.server_settings[message.guild.id][
-                    "profanities"
-                ]
-            except Exception:
-                return
-
-        if filtered_words == []:
-            return
-
-        profanity.load_censor_words(filtered_words)
-
-        for filtered_word in filtered_words:
-            if profanity.contains_profanity(msg) or filtered_word in msg:
-                try:
-                    await message.delete()
-                    return await message.author.send(
-                        f"Your message `{message.content}` was removed for containing a filtered word."
-                    )
-                except Exception:
-                    return
 
     @decorators.command(brief="Set the slowmode for a channel")
     @commands.guild_only()
@@ -1357,9 +1279,9 @@ class Mod(commands.Cog):
             )
 
     @commands.Cog.listener()
+    @decorators.wait_until_ready()
     async def on_tempban_timer_complete(self, timer):
         guild_id, mod_id, member_id = timer.args
-        await self.bot.wait_until_ready()
 
         guild = self.bot.get_guild(guild_id)
         if guild is None:

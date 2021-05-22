@@ -1,9 +1,10 @@
 CREATE TABLE IF NOT EXISTS emojistats (
-    serveremoji VARCHAR(50) PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     server_id BIGINT,
     emoji_id BIGINT,
     total BIGINT DEFAULT 0 NOT NULL
 );
+CREATE UNIQUE INDEX IF NOT EXISTS emojistats_idx ON emojistats(server_id, emoji_id);
 
 CREATE TABLE IF NOT EXISTS messages (
     index BIGSERIAL PRIMARY KEY,

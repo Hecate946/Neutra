@@ -528,7 +528,7 @@ class Times(commands.Cog):
                             TO_TIMESTAMP(unix)
                         )
                     ) WHERE author_id = $1
-                    AND unix > ((SELECT extract(epoch from now()) - $2))
+                    AND unix > ((SELECT EXTRACT(EPOCH FROM NOW()) - $2))
                 ) FROM messages;
                 """
         row = await self.bot.cxn.fetch(query, user.id, (actual_time - 86400))

@@ -35,7 +35,7 @@ if not os.path.exists("./data/json"):
     os.mkdir("./data/json")
 
 # Set up our command logger
-command_logger = logging.getLogger("HYPERNOVA")
+command_logger = logging.getLogger("Snowbot")
 command_logger.setLevel(logging.DEBUG)
 command_logger_handler = RotatingFileHandler(
     filename="./data/logs/commands.log",

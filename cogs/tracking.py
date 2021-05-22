@@ -512,7 +512,7 @@ class Tracking(commands.Cog):
             await ctx.send_or_reply(e)
 
     @decorators.command(
-        aliases=["nicks"],
+        aliases=["nicks", "usernicks"],
         brief="Show a user's past nicknames.",
         implemented="2021-03-12 00:00:21.562534",
         updated="2021-05-06 23:43:13.297667",
@@ -527,6 +527,11 @@ class Tracking(commands.Cog):
                 {0}nicknames @Hecate
                 {0}nicknames Hecate#3523
                 {0}nicknames 708584008065351681
+                {0}usernicks
+                {0}usernicks Hecate
+                {0}usernicks @Hecate
+                {0}usernicks Hecate#3523
+                {0}usernicks 708584008065351681
                 """,
     )
     @commands.guild_only()
@@ -535,7 +540,7 @@ class Tracking(commands.Cog):
     async def nicknames(self, ctx, user: converters.DiscordMember = None):
         """
         Usage: {0}nicknames [user]
-        Alias: {0}nicks
+        Alias: {0}nicks, {0}usernicks
         Permission: View Audit Log
         Output:
             Shows an embed of all the passed user's
@@ -547,15 +552,31 @@ class Tracking(commands.Cog):
             user = ctx.author
         if user.bot:
             return await ctx.fail("I do not track bots.")
-        query = (
-            """SELECT nicknames FROM nicknames WHERE server_id = $1 AND user_id = $2"""
-        )
-        name_list = await self.bot.cxn.fetchrow(query, ctx.guild.id, user.id)
-        name_list = name_list[0].split(",")
-        name_list = list(OrderedDict.fromkeys(name_list))
-
-        p = pagination.SimplePages(entries=[f"`{n}`" for n in name_list])
-        p.embed.title = f"Nicknames for {user}"
+        await ctx.trigger_typing()
+        query = """
+                SELECT nickname, changed_at
+                FROM usernicks
+                WHERE server_id = $1
+                AND user_id = $2
+                ORDER BY changed_at DESC NULLS LAST;
+                """
+        results = await self.bot.cxn.fetch(query, ctx.guild.id, user.id)
+        entries=[]
+        for nickname, timestamp in results:
+            if timestamp:
+                time_fmt = utils.timeago(datetime.utcnow() - timestamp)
+            else:
+                time_fmt = "Not tracked"
+            entries.append(
+                {
+                    "name": nickname,
+                    "value": time_fmt
+                }
+            )
+        p = pagination.MainMenu(pagination.FieldPageSource(entries=[
+                    ("{}. {}".format(y, x["name"]), f"**Updated**: {x['value']}")
+                    for y, x in enumerate(entries, start=1)
+                ], per_page=10, title=f"Nicknames for {user.display_name}"))
 
         try:
             await p.start(ctx)
@@ -583,7 +604,7 @@ class Tracking(commands.Cog):
     @commands.guild_only()
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.has_perms(view_audit_log=True)
-    async def usernames(self, ctx, user: converters.DiscordMember = None):
+    async def usernames(self, ctx, user: converters.DiscordUser = None):
         """
         Usage: {0}usernames [user]
         Alias: {0}names
@@ -598,14 +619,30 @@ class Tracking(commands.Cog):
             user = ctx.author
         if user.bot:
             return await ctx.fail("I do not track bots.")
-
-        query = """SELECT usernames FROM usernames WHERE user_id = $1"""
-        name_list = await self.bot.cxn.fetchrow(query, user.id)
-        name_list = name_list[0].split(",")
-        name_list = list(OrderedDict.fromkeys(name_list))
-
-        p = pagination.SimplePages(entries=[f"`{n}`" for n in name_list])
-        p.embed.title = f"Usernames for {user}"
+        await ctx.trigger_typing()
+        query = """
+                SELECT name, changed_at
+                FROM usernames
+                WHERE user_id = $1
+                ORDER BY changed_at DESC NULLS LAST;
+                """
+        results = await self.bot.cxn.fetch(query, user.id)
+        entries = []
+        for name, timestamp in results:
+            if timestamp:
+                time_fmt = utils.timeago(datetime.utcnow() - timestamp)
+            else:
+                time_fmt = "Not tracked"
+            entries.append(
+                {
+                    "name": name,
+                    "value": time_fmt
+                }
+            )
+        p = pagination.MainMenu(pagination.FieldPageSource(entries=[
+                    ("{}. {}".format(y, x["name"]), f"**Updated**: {x['value']}")
+                    for y, x in enumerate(entries, start=1)
+                ], per_page=10, title=f"Usernames for {user}"))
 
         try:
             await p.start(ctx)
