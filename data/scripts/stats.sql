@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS emojistats (
-    id BIGSERIAL PRIMARY KEY,
+    index BIGSERIAL PRIMARY KEY,
     server_id BIGINT,
     emoji_id BIGINT,
     total BIGINT DEFAULT 0 NOT NULL

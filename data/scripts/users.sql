@@ -6,11 +6,6 @@ CREATE TABLE IF NOT EXISTS usernicks (
     UNIQUE(user_id, server_id, nickname)
 );
 
-CREATE TABLE IF NOT EXISTS users (
-    user_id BIGINT PRIMARY KEY,
-    usernames TEXT
-);
-
 CREATE TABLE IF NOT EXISTS usernames (
     user_id BIGINT,
     name TEXT,
