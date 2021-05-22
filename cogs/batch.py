@@ -404,11 +404,12 @@ class Batch(commands.Cog):
         if boolean:
             wh_id, wh_token = webhook_data
             try:
-                webhook = discord.Webhook.partial(
-                    id=wh_id,
-                    token=wh_token,
-                    adapter=discord.AsyncWebhookAdapter(self.bot.session),
-                )
+                # webhook = discord.Webhook.partial(
+                #     id=wh_id,
+                #     token=wh_token,
+                #     adapter=discord.AsyncWebhookAdapter(self.bot.session),
+                # )
+                webhook = await self.bot.fetch_webhook(wh_id)
                 self.avatar_webhook = webhook
             except Exception:
                 webhook = await self.do_webhook()
@@ -837,7 +838,7 @@ class Batch(commands.Cog):
 
         if avatars:
             avatars = [
-                f"https://cdn.discordapp.com/attachments/{self.bot.constants.avchan}/{x[0]}/{member.id}.png"
+                f"https://cdn.discordapp.com/attachments/{self.avatar_webhook.channel.id}/{x[0]}/{member.id}.png"
                 for x in avatars
             ]
         if nicknames:

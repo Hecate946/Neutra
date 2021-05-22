@@ -695,8 +695,10 @@ class Tracking(commands.Cog):
             )
         msg = await ctx.load(f"Collecting {user}'s Avatars...")
         res = await tracking.user_data(ctx, user)
-        if not res["avatars"]:
+        if res["avatars"]:
             # Tack on their current avatar
+            res["avatars"] += [str(user.avatar_url_as(format="png", size=256))]
+        else:
             res["avatars"] = [str(user.avatar_url_as(format="png", size=256))]
 
         em = discord.Embed(color=self.bot.constants.embed)
@@ -704,7 +706,6 @@ class Tracking(commands.Cog):
         iteration = 0
         parent = Image.open("./data/assets/mask.png")
         for av in res["avatars"]:
-            print(av)
             if iteration < 4:
                 val = 0
                 x = iteration
