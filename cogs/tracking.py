@@ -1350,17 +1350,16 @@ class Tracking(commands.Cog):
                     SELECT * FROM userstatus
                     WHERE user_id = $1;
                     """
-
             data = await self.bot.cxn.fetch(query, user.id)
             if not data:
                 return await self.do_generic(ctx, user)
             for row in data:
-                online_time = row[1]
-                idle_time = row[2]
-                dnd_time = row[3]
-                offline_time = row[4]
-                last_change = row[5]
-                startdate = row[6]
+                online_time  = float(row["online"])
+                idle_time    = float(row["idle"])
+                dnd_time     = float(row["dnd"])
+                offline_time = float(row["offline"])
+                last_change  = float(row["last_changed"])
+                startdate    = row["startdate"]
 
             em = discord.Embed(color=self.bot.constants.embed)
             img = Image.new("RGBA", (2400, 1024), (0, 0, 0, 0))

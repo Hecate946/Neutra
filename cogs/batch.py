@@ -32,28 +32,30 @@ class Batch(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.avatar_webhook = None
+        # Data holders
         self.avatar_batch = list()
         self.command_batch = list()
-        self.message_batch = list()
-        self.tracker_batch = dict()
-        self.snipe_batch = list()
-        self.roles_batch = list()
-        self.nicknames_batch = list()
-        self.usernames_batch = list()
-        self.invite_batch = list()
-        self.negative_invite_batch = list()
         self.emoji_batch = defaultdict(Counter)
+        self.invite_batch = list()
+        self.message_batch = list()
+        self.negative_invite_batch = list()
+        self.nicknames_batch = list()
+        self.roles_batch = list()
+        self.snipe_batch = list()
+        self.spammer_batch = list()
         self.status_batch = defaultdict(list)
-        self.spammer_batch = dict()
+        self.tracker_batch = dict()
+        self.usernames_batch = list()
+
+        self.avatar_webhook = None
         self.batch_lock = asyncio.Lock(loop=bot.loop)
-        self.spam_control = commands.CooldownMapping.from_cooldown(
-            10, 12, commands.BucketType.user
-        )
         self._auto_spam_count = Counter()
         self.bulk_inserter.start()
         self.dispatch_avatars.start()
         self.queue = asyncio.Queue(loop=bot.loop)
+        self.spam_control = commands.CooldownMapping.from_cooldown(
+            10, 12, commands.BucketType.user
+        )
 
     def cog_unload(self):
         self.background_task.stop()
@@ -101,11 +103,11 @@ class Batch(commands.Cog):
             except Exception as e:
                 await self.bot.bot_channel.send(e)
 
+
     @tasks.loop(seconds=2.0)
     async def bulk_inserter(self):
         self.bot.batch_inserts += 1
-        # Insert all status changes
-        if self.status_batch:
+        if self.status_batch:  # Insert all status changes
             async with self.batch_lock:
                 for data in self.status_batch.items():
                     user_id = data[1]["user_id"]
@@ -117,14 +119,11 @@ class Batch(commands.Cog):
                             DO UPDATE SET {0} = userstatus.{0} + ($2 - userstatus.last_changed),
                             last_changed = $2
                             WHERE userstatus.user_id = $1;
-                            """.format(
-                        bstatus
-                    )
-
+                            """.format(bstatus)
                     await self.bot.cxn.execute(query, user_id, time.time())
                 self.status_batch.clear()
-        # Insert all the commands executed.
-        if self.command_batch:
+
+        if self.command_batch:  # Insert all the commands executed.
             query = """
                     INSERT INTO commands (
                         server_id, channel_id,
@@ -157,16 +156,15 @@ class Batch(commands.Cog):
                     )
                 self.command_batch.clear()
 
-        # Snipe command setup
-        if self.snipe_batch:
+        if self.snipe_batch:  # Snipe command setup
             query = """
                     UPDATE messages
                     SET deleted = True
                     WHERE message_id = $1;
-                    """
+                    """  # Updates already stored messages.
             async with self.batch_lock:
                 await self.bot.cxn.executemany(query, ((x,) for x in self.snipe_batch))
-            self.snipe_batch.clear()
+                self.snipe_batch.clear()
 
 
         # Emoji usage tracking
@@ -188,11 +186,9 @@ class Batch(commands.Cog):
                     ]
                 )
                 await self.bot.cxn.execute(query, data)
-
                 self.emoji_batch.clear()
 
-        # Insert every single message into db
-        if self.message_batch:
+        if self.message_batch: # Insert every message into db
             query = """
                     INSERT INTO messages (
                         unix, timestamp, content,
@@ -212,23 +208,25 @@ class Batch(commands.Cog):
             async with self.batch_lock:
                 data = json.dumps(self.message_batch)
                 await self.bot.cxn.execute(query, data)
-                self.bot.messages += len(self.message_batch)
-            self.message_batch.clear()
+                self.message_batch.clear()
 
-        # Track users who spam messages
-        if self.spammer_batch:
+        if self.spammer_batch:  # Track users who spam messages
             query = """
-                    INSERT INTO spammers
-                    VALUES ($1, $2, 1)
+                    INSERT INTO spammers (user_id, server_id)
+                    SELECT x.user_id, x.server_id
+                    FROM jsonb_to_recordset($1::jsonb)
+                    as x(user_id BIGINT, server_id BIGINT)
                     ON CONFLICT (user_id, server_id)
                     DO UPDATE SET spamcount = spammers.spamcount + 1;
                     """
             async with self.batch_lock:
-                for entry in self.spammer_batch.items():
-                    user_id = entry[0]
-                    server_id = entry[1]
-                    await self.bot.cxn.execute(query, user_id, server_id)
-            self.spammer_batch.clear()
+                data = json.dumps(self.spammer_batch)
+                await self.bot.cxn.execute(query, data)
+                # for entry in self.spammer_batch.items():
+                #     user_id = entry[0]
+                #     server_id = entry[1]
+                #     await self.bot.cxn.execute(query, user_id, server_id)
+                self.spammer_batch.clear()
 
         # Track user last seen times
         if self.tracker_batch:
@@ -251,35 +249,26 @@ class Batch(commands.Cog):
                         for entry in self.tracker_batch.items()
                     ),
                 )
-            self.tracker_batch.clear()
+                self.tracker_batch.clear()
 
         if self.avatar_batch:
             query = """
-                    INSERT INTO useravatars (
-                        user_id, avatar_id, unix
-                    )
+                    INSERT INTO useravatars (user_id, avatar_id, unix)
                     SELECT x.user_id, x.avatar_id, x.unix
                     FROM jsonb_to_recordset($1::jsonb)
-                    AS x(
-                        user_id BIGINT, avatar_id BIGINT, unix REAL
-                    )
+                    AS x(user_id BIGINT, avatar_id BIGINT, unix REAL)
                     """
             async with self.batch_lock:
                 data = json.dumps(self.avatar_batch)
                 await self.bot.cxn.execute(query, data)
-                self.bot.avchanges += len(self.avatar_batch)
-            self.avatar_batch.clear()
+                self.avatar_batch.clear()
 
         if self.usernames_batch:
             query = """
-                    INSERT INTO usernames (
-                        user_id, name, changed_at
-                    )
+                    INSERT INTO usernames (user_id, name, changed_at)
                     SELECT x.user_id, x.name, x.changed_at
                     FROM jsonb_to_recordset($1::jsonb)
-                    AS x(
-                        user_id BIGINT, name TEXT, changed_at TIMESTAMP
-                    )
+                    AS x(user_id BIGINT, name TEXT, changed_at TIMESTAMP)
                     ON CONFLICT (user_id, name)
                     DO UPDATE SET changed_at = EXCLUDED.changed_at
                     """
@@ -291,15 +280,11 @@ class Batch(commands.Cog):
         if self.nicknames_batch:
 
             query = """
-                    INSERT INTO usernicks (
-                        user_id, server_id, nickname, changed_at
-                    )
+                    INSERT INTO usernicks (user_id, server_id, nickname, changed_at)
                     SELECT x.user_id, x.server_id, x.nickname, x.changed_at
                     FROM jsonb_to_recordset($1::jsonb)
-                    AS x(
-                        user_id BIGINT, server_id BIGINT,
-                        nickname TEXT, changed_at TIMESTAMP
-                    ) ON CONFLICT (user_id, server_id, nickname)
+                    AS x(user_id BIGINT, server_id BIGINT, nickname TEXT, changed_at TIMESTAMP)
+                    ON CONFLICT (user_id, server_id, nickname)
                     DO UPDATE SET changed_at = EXCLUDED.changed_at;
                     """
             async with self.batch_lock:
@@ -309,14 +294,10 @@ class Batch(commands.Cog):
 
         if self.roles_batch:
             query = """
-                    INSERT INTO userroles (
-                        user_id, server_id, roles
-                    )
+                    INSERT INTO userroles (user_id, server_id, roles)
                     SELECT x.user_id, x.server_id, x.roles
                     FROM jsonb_to_recordset($1::jsonb)
-                    AS x(
-                        user_id BIGINT, server_id BIGINT, roles TEXT
-                    )
+                    AS x(user_id BIGINT, server_id BIGINT, roles TEXT)
                     ON CONFLICT (user_id, server_id)
                     DO UPDATE SET roles = EXCLUDED.roles
                     """
@@ -445,9 +426,9 @@ class Batch(commands.Cog):
     @commands.Cog.listener()
     @decorators.wait_until_ready()
     @decorators.event_check(lambda s, m: m.guild and not m.author.bot)
-    async def on_message_delete(self, message):
+    async def on_raw_message_delete(self, payload):
         async with self.batch_lock:
-            self.snipe_batch.append(message.id)
+            self.snipe_batch.append(payload.message_id)
 
     # Helper functions to detect changes
     @staticmethod
@@ -592,7 +573,10 @@ class Batch(commands.Cog):
                 fmt = f"{datetime.datetime.utcnow()}: {self.bot.user.name} || {author} in #{message.channel.name} [{message.channel.id}] ({message.guild.name}) [{message.guild.id}]"
                 await ctx.bot_channel(f"**Spammer Recorded**```prolog\n{fmt}```")
                 async with self.batch_lock:
-                    self.spammer_batch[author.id] = message.guild.id
+                    self.spammer_batch.append({
+                        "user_id": author.id,
+                        "server_id": message.guild.id
+                    })
                 del self._auto_spam_count[author.id]
             return
         else:
