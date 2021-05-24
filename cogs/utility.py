@@ -1272,7 +1272,7 @@ class Utility(commands.Cog):
         embed = discord.Embed(
             description=f"**Author:**  {author.mention}, **ID:** `{author.id}`\n"
             f"**Channel:** {ctx.channel.mention} **ID:** `{ctx.channel.id}`\n"
-            f"**Server:** `{ctx.guild.name}` **ID:** `{ctx.guild.id},`\n\n"
+            f"**Server:** `{ctx.guild.name}` **ID:** `{ctx.guild.id}`\n"
             f"**Sent at:** `{timestamp}`\n\n"
             f"{content}",
             color=self.bot.constants.embed,
