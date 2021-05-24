@@ -774,7 +774,7 @@ class Manager(commands.Cog):
         if c:
             from settings.database import initialize
 
-            members = self.bot.get_all_members()
+            members = [x for x in self.bot.get_all_members()]
             await initialize(self.bot, members)
             await ctx.success("**Updated database**")
         else:

@@ -128,6 +128,21 @@ async def update_server(server, member_list):
         )
     )
 
+    st = time.time()
+    query = """
+            INSERT INTO userstatus (user_id)
+            VALUES ($1) ON CONFLICT DO NOTHING;
+            """
+    await postgres.executemany(
+        query,
+        ((member.id,) for member in member_list),
+    )
+    print(
+        color(
+            fore="#46648F", text=f"Status   insertion : {str(time.time() - st)[:10]} s"
+        )
+    )
+
 
 async def update_db(guilds, member_list):
     # Main database updater. This is mostly just for updating new servers and members that the bot joined when offline.
@@ -194,6 +209,21 @@ async def update_db(guilds, member_list):
     print(
         color(
             fore="#46648F", text=f"Nickname insertion : {str(time.time() - st)[:10]} s"
+        )
+    )
+
+    st = time.time()
+    query = """
+            INSERT INTO userstatus (user_id)
+            VALUES ($1) ON CONFLICT DO NOTHING;
+            """
+    await postgres.executemany(
+        query,
+        ((member.id,) for member in member_list),
+    )
+    print(
+        color(
+            fore="#46648F", text=f"Status   insertion : {str(time.time() - st)[:10]} s"
         )
     )
     print(color(fore="#46648F", text=SEPARATOR))

@@ -46,10 +46,9 @@ CREATE TABLE IF NOT EXISTS useravatars (
 
 CREATE TABLE IF NOT EXISTS userstatus (
     user_id BIGINT PRIMARY KEY,
-    online NUMERIC DEFAULT 0 NOT NULL,
-    idle NUMERIC DEFAULT 0 NOT NULL,
-    dnd NUMERIC DEFAULT 0 NOT NULL,
-    offline NUMERIC DEFAULT 0 NOT NULL,
-    last_changed NUMERIC,
-    startdate timestamp without time zone default (now() at time zone 'utc')
+    online DOUBLE PRECISION DEFAULT 0 NOT NULL,
+    idle DOUBLE PRECISION DEFAULT 0 NOT NULL,
+    dnd DOUBLE PRECISION DEFAULT 0 NOT NULL,
+    last_changed DOUBLE PRECISION DEFAULT EXTRACT(EPOCH FROM NOW()),
+    starttime DOUBLE PRECISION DEFAULT EXTRACT(EPOCH FROM NOW())
 );
