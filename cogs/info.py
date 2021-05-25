@@ -760,53 +760,53 @@ class Info(commands.Cog):
             Shows users and bots I'm connected to and
             percentages of unique and online members.
         """
-            msg = await ctx.load(f"Collecting User Stats...")
-            users = [x for x in self.bot.get_all_members() if not x.bot]
-            users_online = [x for x in users if x.status != discord.Status.offline]
-            unique_users = set([x.id for x in users])
-            bots = [x for x in self.bot.get_all_members() if x.bot]
-            bots_online = [x for x in bots if x.status != discord.Status.offline]
-            unique_bots = set([x.id for x in bots])
-            e = discord.Embed(title="User Stats", color=self.bot.constants.embed)
-            e.add_field(
-                name="Humans",
-                value="{:,}/{:,} online ({:,g}%) - {:,} unique ({:,g}%)".format(
-                    len(users_online),
-                    len(users),
-                    round((len(users_online) / len(users)) * 100, 2),
-                    len(unique_users),
-                    round((len(unique_users) / len(users)) * 100, 2),
+        msg = await ctx.load(f"Collecting User Stats...")
+        users = [x for x in self.bot.get_all_members() if not x.bot]
+        users_online = [x for x in users if x.status != discord.Status.offline]
+        unique_users = set([x.id for x in users])
+        bots = [x for x in self.bot.get_all_members() if x.bot]
+        bots_online = [x for x in bots if x.status != discord.Status.offline]
+        unique_bots = set([x.id for x in bots])
+        e = discord.Embed(title="User Stats", color=self.bot.constants.embed)
+        e.add_field(
+            name="Humans",
+            value="{:,}/{:,} online ({:,g}%) - {:,} unique ({:,g}%)".format(
+                len(users_online),
+                len(users),
+                round((len(users_online) / len(users)) * 100, 2),
+                len(unique_users),
+                round((len(unique_users) / len(users)) * 100, 2),
+            ),
+            inline=False,
+        )
+        e.add_field(
+            name="Bots",
+            value="{:,}/{:,} online ({:,g}%) - {:,} unique ({:,g}%)".format(
+                len(bots_online),
+                len(bots),
+                round((len(bots_online) / len(bots)) * 100, 2),
+                len(unique_bots),
+                round(len(unique_bots) / len(bots) * 100, 2),
+            ),
+            inline=False,
+        )
+        e.add_field(
+            name="Total",
+            value="{:,}/{:,} online ({:,g}%)".format(
+                len(users_online) + len(bots_online),
+                len(users) + len(bots),
+                round(
+                    (
+                        (len(users_online) + len(bots_online))
+                        / (len(users) + len(bots))
+                    )
+                    * 100,
+                    2,
                 ),
-                inline=False,
-            )
-            e.add_field(
-                name="Bots",
-                value="{:,}/{:,} online ({:,g}%) - {:,} unique ({:,g}%)".format(
-                    len(bots_online),
-                    len(bots),
-                    round((len(bots_online) / len(bots)) * 100, 2),
-                    len(unique_bots),
-                    round(len(unique_bots) / len(bots) * 100, 2),
-                ),
-                inline=False,
-            )
-            e.add_field(
-                name="Total",
-                value="{:,}/{:,} online ({:,g}%)".format(
-                    len(users_online) + len(bots_online),
-                    len(users) + len(bots),
-                    round(
-                        (
-                            (len(users_online) + len(bots_online))
-                            / (len(users) + len(bots))
-                        )
-                        * 100,
-                        2,
-                    ),
-                ),
-                inline=False,
-            )
-            await msg.edit(content=None, embed=e)
+            ),
+            inline=False,
+        )
+        await msg.edit(content=None, embed=e)
 
     @decorators.command(
         aliases=["shared"],
