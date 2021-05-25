@@ -35,6 +35,7 @@ class Batch(commands.Cog):
         # Data holders
         self.avatar_batch = list()
         self.command_batch = list()
+        self.edited_batch = list()
         self.emoji_batch = defaultdict(Counter)
         self.invite_batch = list()
         self.message_batch = list()
@@ -230,6 +231,16 @@ class Batch(commands.Cog):
             async with self.batch_lock:
                 await self.bot.cxn.executemany(query, ((x,) for x in self.snipe_batch))
                 self.snipe_batch.clear()
+
+        if self.edited_batch:  # Edit snipe command setup
+            query = """
+                    UPDATE messages
+                    SET edited = True
+                    WHERE message_id = $1;
+                    """  # Updates already stored messages.
+            async with self.batch_lock:
+                await self.bot.cxn.executemany(query, ((x,) for x in self.edited_batch))
+                self.edited_batch.clear()
 
         # Emoji usage tracking
         if self.emoji_batch:
@@ -598,6 +609,7 @@ class Batch(commands.Cog):
     @commands.Cog.listener()
     @decorators.wait_until_ready()
     async def on_raw_message_edit(self, payload):
+        self.edited_batch.append(payload.message_id)
         channel_obj = self.bot.get_channel(payload.channel_id)
         try:
             message = await channel_obj.fetch_message(payload.message_id)
@@ -607,9 +619,8 @@ class Batch(commands.Cog):
             return
         if message.author.bot:
             return
-        author_id = message.author.id
         async with self.batch_lock:
-            self.tracker_batch[author_id] = (time.time(), "editing a message")
+            self.tracker_batch[message.author.id] = (time.time(), "editing a message")
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
