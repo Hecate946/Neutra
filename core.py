@@ -318,16 +318,6 @@ class Snowbot(commands.AutoShardedBot):
         SEPARATOR = "=" * 33
         print(color(fore="#46648F", text=SEPARATOR))
         st = time.time()
-        member_list = []
-        for member in self.get_all_members():
-            member_list.append(member)
-        print(
-            color(
-                fore="#46648F",
-                text=f"Member   iteration : {str(time.time() - st)[:10]} s",
-            )
-        )
-        st = time.time()
         member_list = [x for x in self.get_all_members()]
         print(
             color(
