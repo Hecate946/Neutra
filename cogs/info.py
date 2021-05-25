@@ -1130,7 +1130,7 @@ class Info(commands.Cog):
         )
         draw.text(
             (1200, 810),
-            f"Previous run: {botstats['last_run']/3600:.2f}",
+            f"Previous run: {botstats['last_run']/3600:.2f} Hours",
             fill=(255, 255, 255),
             font=font,
         )
