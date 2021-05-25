@@ -322,8 +322,6 @@ class Batch(commands.Cog):
                     SELECT x.user_id, x.name, x.changed_at
                     FROM JSONB_TO_RECORDSET($1::JSONB)
                     AS x(user_id BIGINT, name TEXT, changed_at TIMESTAMP)
-                    ON CONFLICT (user_id, name)
-                    DO UPDATE SET changed_at = EXCLUDED.changed_at
                     """
             async with self.batch_lock:
                 data = json.dumps(self.usernames_batch)
@@ -336,8 +334,6 @@ class Batch(commands.Cog):
                     SELECT x.user_id, x.server_id, x.nickname, x.changed_at
                     FROM JSONB_TO_RECORDSET($1::JSONB)
                     AS x(user_id BIGINT, server_id BIGINT, nickname TEXT, changed_at TIMESTAMP)
-                    ON CONFLICT (user_id, server_id, nickname)
-                    DO UPDATE SET changed_at = EXCLUDED.changed_at;
                     """
             async with self.batch_lock:
                 data = json.dumps(self.nicknames_batch)

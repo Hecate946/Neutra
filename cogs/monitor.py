@@ -7,7 +7,7 @@ from discord.ext import commands
 
 from utilities import utils
 
-class Moniter(commands.Cog):
+class Monitor(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -37,6 +37,6 @@ async def on_error(self, event, *args, **kwargs):
         pass
 
 def setup(bot):
-    cog = Moniter(bot)
+    cog = Monitor(bot)
     bot.add_cog(cog)
     commands.AutoShardedBot.on_error = on_error

@@ -91,8 +91,6 @@ async def update_server(server, member_list):
     query = """
             INSERT INTO usernames
             VALUES ($1, $2, (NOW() AT TIME ZONE 'UTC'))
-            ON CONFLICT (user_id, name)
-            DO NOTHING;
             """
     await postgres.executemany(
         query,
@@ -108,8 +106,6 @@ async def update_server(server, member_list):
     query = """
             INSERT INTO usernicks
             VALUES ($1, $2, $3, (NOW() AT TIME ZONE 'UTC'))
-            ON CONFLICT (user_id, server_id, nickname)
-            DO NOTHING;
             """
     await postgres.executemany(
         query,
@@ -168,47 +164,6 @@ async def update_db(guilds, member_list):
     print(
         color(
             fore="#46648F", text=f"Logging  insertion : {str(time.time() - st)[:10]} s"
-        )
-    )
-
-    st = time.time()
-    query = """
-            INSERT INTO usernames
-            VALUES ($1, $2, (NOW() AT TIME ZONE 'UTC'))
-            ON CONFLICT (user_id, name)
-            DO NOTHING;
-            """
-    await postgres.executemany(
-        query,
-        ((member.id, str(member)) for member in member_list),
-    )
-    print(
-        color(
-            fore="#46648F", text=f"Username insertion : {str(time.time() - st)[:10]} s"
-        )
-    )
-
-    st = time.time()
-    query = """
-            INSERT INTO usernicks
-            VALUES ($1, $2, $3, (NOW() AT TIME ZONE 'UTC'))
-            ON CONFLICT (user_id, server_id, nickname)
-            DO NOTHING;
-            """
-    await postgres.executemany(
-        query,
-        (
-            (
-                member.id,
-                member.guild.id,
-                member.display_name,
-            )
-            for member in member_list
-        ),
-    )
-    print(
-        color(
-            fore="#46648F", text=f"Nickname insertion : {str(time.time() - st)[:10]} s"
         )
     )
 

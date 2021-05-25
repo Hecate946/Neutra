@@ -2,15 +2,13 @@ CREATE TABLE IF NOT EXISTS usernicks (
     user_id BIGINT,
     server_id BIGINT,
     nickname TEXT,
-    changed_at TIMESTAMP,
-    UNIQUE(user_id, server_id, nickname)
+    changed_at TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS usernames (
     user_id BIGINT,
     name TEXT,
-    changed_at TIMESTAMP,
-    UNIQUE(user_id, name)
+    changed_at TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS userroles (
