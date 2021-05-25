@@ -562,7 +562,7 @@ class Mod(commands.Cog):
             try:
                 search = int(args[1])
             except (IndexError, ValueError):
-                return await ctx.usage()
+                return await ctx.usage("<option> [search=100]")
             await self._remove_all(ctx, search=search)
 
     async def do_removal(
