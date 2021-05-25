@@ -531,8 +531,8 @@ class Mod(commands.Cog):
     @checks.has_perms(manage_messages=True)
     async def purge(self, ctx):
         """
-        Usage: -purge <option> <amount>
-        Aliases: -prune, -delete, -remove
+        Usage: {0}purge <option> <amount>
+        Aliases: {0}prune, {0}delete, {0}remove
         Permission: Manage Messages
         Options:
             all, bots, contains, embeds,
@@ -543,27 +543,27 @@ class Mod(commands.Cog):
             Deletes messages that match
             a specific search criteria
         Examples:
-            -prune user Hecate
-            -prune bots
-            -prune invites 1000
+            {0}prune user Hecate
+            {0}prune bots
+            {0}prune invites 1000
         Notes:
             Specify the amount kwarg
             to search that number of
             messages. For example,
-            -prune user Hecate 1000
+            {0}prune user Hecate 1000
             will search for all messages
             in the past 1000 sent in the
             channel, and delete all that
             were sent by Hecate.
             Default amount is 100.
         """
-        args = str(ctx.message.content).split(" ")
+        args = str(ctx.message.content).split()
         if ctx.invoked_subcommand is None:
             try:
-                args[1]
-            except IndexError:
-                return await ctx.usage("<option> [amount]")
-            await self._remove_all(ctx, search=int(args[1]))
+                search = int(args[1])
+            except (IndexError, ValueError):
+                return await ctx.usage()
+            await self._remove_all(ctx, search=search)
 
     async def do_removal(
         self, ctx, limit, predicate, *, before=None, after=None, message=True
