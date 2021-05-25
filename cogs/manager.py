@@ -1392,7 +1392,7 @@ class Manager(commands.Cog):
         if subcommand == "give":
             subcommand = "add . && git commit -m 'update' && git push"
 
-        message = await ctx.load(f"Updating...**")
+        message = await ctx.load(f"Updating...")
         stdout, stderr = await self.run_process("git " + subcommand)
 
         if stderr:

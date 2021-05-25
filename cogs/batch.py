@@ -366,7 +366,6 @@ class Batch(commands.Cog):
                 await self.bot.cxn.execute(query, data)
                 self.invite_batch.clear()
 
-
     @bulk_inserter.before_loop
     async def get_webhook(self):
         """
@@ -679,11 +678,13 @@ class Batch(commands.Cog):
         new_invites = await member.guild.invites()
         for invite in old_invites:
             if invite.uses < self.get_invite(new_invites, invite.code).uses:
-                self.invite_batch.append({
-                    "invitee": member.id,
-                    "inviter": invite.inviter.id,
-                    "server_id": member.guild.id
-                })
+                self.invite_batch.append(
+                    {
+                        "invitee": member.id,
+                        "inviter": invite.inviter.id,
+                        "server_id": member.guild.id,
+                    }
+                )
         self.bot.invites[member.guild.id] = new_invites
 
     def get_invite(self, invite_list, code):

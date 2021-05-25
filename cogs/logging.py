@@ -646,9 +646,7 @@ class Logging(commands.Cog):
                                 embed.set_author(name=f"User Stopped Streaming")
                                 embed.set_footer(text=f"User ID: {member.id}")
 
-                                await webhook.execute(
-                                    embed=embed
-                                )
+                                await webhook.execute(embed=embed)
                                 self.current_streamers.remove(member.id)
                             break
 

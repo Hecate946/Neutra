@@ -186,7 +186,9 @@ class Utility(commands.Cog):
                 """,
     )
     @checks.bot_has_perms(embed_links=True)
-    async def gtoken(self, ctx, user: typing.Union[discord.Member, discord.User] = None):
+    async def gtoken(
+        self, ctx, user: typing.Union[discord.Member, discord.User] = None
+    ):
         """
         Usage: {0}gtoken <user>
         Aliases: {0}gt, {0}generatetoken
@@ -568,7 +570,9 @@ class Utility(commands.Cog):
                     await helpers.error_info(ctx, [(str(user), e)])
                     return
             else:
-                await ctx.success(f"The dehoisted version of `{user}` is `{name.strip()}`")
+                await ctx.success(
+                    f"The dehoisted version of `{user}` is `{name.strip()}`"
+                )
         else:
             await ctx.fail(f"User `{user}` is not hoisting.")
 
@@ -607,7 +611,9 @@ class Utility(commands.Cog):
                 if ctx.guild and ctx.author.guild_permissions.manage_nicknames:
                     try:
                         await member.edit(nick=ascified)
-                        return await ctx.success(f"Ascified **{current_name}** to **{ascified}**")
+                        return await ctx.success(
+                            f"Ascified **{current_name}** to **{ascified}**"
+                        )
                     except Exception:
                         ascified = unidecode(string_or_member)
                 else:
@@ -641,7 +647,7 @@ class Utility(commands.Cog):
         def to_string(c):
             digit = f"{ord(c):x}"
             name = unicodedata.name(c, "Name not found.")
-            return f'`\\U{digit:>08}`: {name} - {c} \N{EM DASH} <http://www.fileformat.info/info/unicode/char/{digit}>'
+            return f"`\\U{digit:>08}`: {name} - {c} \N{EM DASH} <http://www.fileformat.info/info/unicode/char/{digit}>"
 
         msg = "\n".join(map(to_string, characters))
         await ctx.success(msg)
@@ -706,7 +712,9 @@ class Utility(commands.Cog):
         """
         if user is None:
             user = ctx.author
-        await self.do_avatar(ctx, user.display_name, user.default_avatar_url, default=True)
+        await self.do_avatar(
+            ctx, user.display_name, user.default_avatar_url, default=True
+        )
 
     @decorators.command(
         aliases=["sav", "savatar"],
@@ -1851,11 +1859,17 @@ class NumericStringParser(object):
         point = pyparsing.Literal(".")
         e = pyparsing.CaselessLiteral("E")
         fnumber = pyparsing.Combine(
-        pyparsing.Word("+-" + pyparsing.nums, pyparsing.nums)
-            + pyparsing.Optional(point + pyparsing.Optional(pyparsing.Word(pyparsing.nums)))
-            + pyparsing.Optional(e + pyparsing.Word("+-" + pyparsing.nums, pyparsing.nums))
+            pyparsing.Word("+-" + pyparsing.nums, pyparsing.nums)
+            + pyparsing.Optional(
+                point + pyparsing.Optional(pyparsing.Word(pyparsing.nums))
+            )
+            + pyparsing.Optional(
+                e + pyparsing.Word("+-" + pyparsing.nums, pyparsing.nums)
+            )
         )
-        ident = pyparsing.Word(pyparsing.alphas, pyparsing.alphas + pyparsing.nums + "_$")
+        ident = pyparsing.Word(
+            pyparsing.alphas, pyparsing.alphas + pyparsing.nums + "_$"
+        )
         plus = pyparsing.Literal("+")
         minus = pyparsing.Literal("-")
         mult = pyparsing.Literal("x")
@@ -1874,15 +1888,22 @@ class NumericStringParser(object):
                     self.pushFirst
                 )
             )
-            | pyparsing.Optional(pyparsing.oneOf("- +")) + pyparsing.Group(lpar + expr + rpar)
+            | pyparsing.Optional(pyparsing.oneOf("- +"))
+            + pyparsing.Group(lpar + expr + rpar)
         ).setParseAction(self.pushUMinus)
         # by defining exponentiation as "atom [ ^ factor ]..." instead of
         # "atom [ ^ atom ]...", we get right-to-left exponents, instead of left-to-right
         # that is, 2^3^2 = 2^(3^2), not (2^3)^2.
         factor = pyparsing.Forward()
-        factor << atom + pyparsing.ZeroOrMore((expop + factor).setParseAction(self.pushFirst))
-        term = factor + pyparsing.ZeroOrMore((multop + factor).setParseAction(self.pushFirst))
-        expr << term + pyparsing.ZeroOrMore((addop + term).setParseAction(self.pushFirst))
+        factor << atom + pyparsing.ZeroOrMore(
+            (expop + factor).setParseAction(self.pushFirst)
+        )
+        term = factor + pyparsing.ZeroOrMore(
+            (multop + factor).setParseAction(self.pushFirst)
+        )
+        expr << term + pyparsing.ZeroOrMore(
+            (addop + term).setParseAction(self.pushFirst)
+        )
         # addop_term = ( addop + term ).setParseAction( self.pushFirst )
         # general_term = term + ZeroOrMore( addop_term ) | OneOrMore( addop_term)
         # expr <<  general_term

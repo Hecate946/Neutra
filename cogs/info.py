@@ -97,26 +97,18 @@ class Info(commands.Cog):
         voice = len(voice_channels)
 
         ram_usage = self.process.memory_full_info().rss / 1024 ** 2
-        proc = psutil.Process()
-        with proc.oneshot():
-            mem_total = psutil.virtual_memory().total / (1024 ** 2)
-            mem_of_total = proc.memory_percent()
 
         embed = discord.Embed(colour=self.bot.constants.embed)
         embed.set_thumbnail(url=self.bot.user.avatar_url)
         embed.add_field(
-            name="Last boot",
-            value=str(
-                utils.timeago(datetime.utcnow() - self.bot.uptime)
-            ).capitalize(),
-            inline=True,
+            name="Last Boot",
+            value=str(utils.timeago(datetime.utcnow() - self.bot.uptime)).capitalize(),
         )
         embed.add_field(
             name=f"Developer{'' if len(self.bot.constants.owners) == 1 else 's'}",
             value=",\n ".join(
                 [str(self.bot.get_user(x)) for x in self.bot.constants.owners]
             ),
-            inline=True,
         )
         embed.add_field(
             name="Python Version", value=f"{platform.python_version()}", inline=True
@@ -126,28 +118,24 @@ class Info(commands.Cog):
         embed.add_field(
             name="Command Count",
             value=len([x.name for x in self.bot.commands if not x.hidden]),
-            inline=True,
         )
         embed.add_field(
             name="Server Count", value=f"{len(ctx.bot.guilds):,}", inline=True
         )
         embed.add_field(
             name="Channel Count",
-            value=f"""{self.bot.emote_dict['textchannel']} {text:,}        {self.bot.emote_dict['voicechannel']} {voice:,}""",
-            inline=True,
+            value=f"""{self.bot.emote_dict['textchannel']} {text:,}\t\t{self.bot.emote_dict['voicechannel']} {voice:,}""",
         )
         embed.add_field(name="Member Count", value=f"{total_members:,}", inline=True)
         embed.add_field(
             name="Commands Run",
             value=f"{await self.total_global_commands():,}",
-            inline=True,
         )
         embed.add_field(
             name="Messages Seen",
             value=f"{await self.total_global_messages():,}",
-            inline=True,
         )
-        embed.add_field(name="RAM", value=f"{ram_usage:.2f} MB", inline=True)
+        embed.add_field(name="RAM Usage", value=f"{ram_usage:.2f} MB")
 
         await msg.edit(
             content=f"{self.bot.emote_dict['snowflake']} About **{ctx.bot.user}** | **{round(bot_version, 1)}**",
@@ -220,7 +208,8 @@ class Info(commands.Cog):
             over the past 500 messages send.
         """
         await ctx.send(
-            "{:.2f}ms".format(
+            f"{self.bot.emote_dict['stopwatch']} " + 
+            "`{:.2f}ms`".format(
                 1000
                 * statistics.mean(
                     lat.total_seconds() for ts, lat in self.message_latencies
@@ -397,7 +386,7 @@ class Info(commands.Cog):
     @decorators.command(
         brief="Bot network speed.",
         aliases=["speedtest", "network", "wifi", "download", "upload"],
-        hidden=True
+        hidden=True,
     )
     @checks.is_bot_admin()
     async def speed(self, ctx):
@@ -796,10 +785,7 @@ class Info(commands.Cog):
                 len(users_online) + len(bots_online),
                 len(users) + len(bots),
                 round(
-                    (
-                        (len(users_online) + len(bots_online))
-                        / (len(users) + len(bots))
-                    )
+                    ((len(users_online) + len(bots_online)) / (len(users) + len(bots)))
                     * 100,
                     2,
                 ),
@@ -868,7 +854,7 @@ class Info(commands.Cog):
             for output in result
         ]
 
-    @decorators.command(aliases=['nf'], brief="Run the neofetch command.")
+    @decorators.command(aliases=["nf"], brief="Run the neofetch command.")
     @commands.cooldown(1, 10, commands.BucketType.user)
     async def neofetch(self, ctx):
         """
@@ -1107,8 +1093,8 @@ class Info(commands.Cog):
             color = (109, 255, 72)  # Green
         elif 0.7 < raw_percent < 0.9:  # 70%-90% uptime meh.
             color = (226, 232, 19)  # Yellow
-        else: # Poor uptime
-            color = (232, 44, 19) # Red
+        else:  # Poor uptime
+            color = (232, 44, 19)  # Red
         percent = f"{raw_percent:.2%}"
         em = discord.Embed(color=self.bot.constants.embed)
         img = Image.new("RGBA", (2500, 1024), (0, 0, 0, 0))
@@ -1119,13 +1105,13 @@ class Info(commands.Cog):
         draw.arc(shape, start=0, end=360 * raw_percent, fill=(10, 24, 34), width=200)
         self.center_text(img, 1100, 1000, font, percent, color)
         font = ImageFont.truetype("./data/assets/Helvetica-Bold.ttf", 85)
-        draw.text(
-            (1200, 0), "Uptime Tracking Since:", fill=(255, 255, 255), font=font
-        )
+        draw.text((1200, 0), "Uptime Tracking Since:", fill=(255, 255, 255), font=font)
         font = ImageFont.truetype("./data/assets/Helvetica.ttf", 68)
         draw.text(
             (1200, 100),
-            utils.timeago(datetime.utcnow() - datetime.utcfromtimestamp(botstats["starttime"])),
+            utils.timeago(
+                datetime.utcnow() - datetime.utcfromtimestamp(botstats["starttime"])
+            ),
             fill=(255, 255, 255),
             font=font,
         )
@@ -1137,12 +1123,23 @@ class Info(commands.Cog):
         draw.text((1200, 600), "Runtime Information:", fill=(255, 255, 255), font=font)
         font = ImageFont.truetype("./data/assets/Helvetica.ttf", 68)
         draw.text(
-            (1200, 710), f"Current run: {current_uptime/3600:.2f} Hours", fill=(255, 255, 255), font=font
+            (1200, 710),
+            f"Current run: {current_uptime/3600:.2f} Hours",
+            fill=(255, 255, 255),
+            font=font,
         )
         draw.text(
-            (1200, 810), f"Previous run: {botstats['last_run']/3600:.2f}", fill=(255, 255, 255), font=font
+            (1200, 810),
+            f"Previous run: {botstats['last_run']/3600:.2f}",
+            fill=(255, 255, 255),
+            font=font,
         )
-        draw.text((1200, 910), f"Last reboot: {utils.timeago(datetime.utcnow() - self.bot.uptime)}", fill=(255, 255, 255), font=font)
+        draw.text(
+            (1200, 910),
+            f"Last reboot: {utils.timeago(datetime.utcnow() - self.bot.uptime)}",
+            fill=(255, 255, 255),
+            font=font,
+        )
 
         buffer = io.BytesIO()
         img.save(buffer, "png")  # 'save' function for PIL

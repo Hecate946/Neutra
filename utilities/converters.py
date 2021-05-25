@@ -85,8 +85,9 @@ class SearchEmojiConverter(commands.Converter):
             )
 
         raise commands.BadArgument(
-            'Emoji `{}` not found'.format(await prettify(ctx, argument))
+            "Emoji `{}` not found".format(await prettify(ctx, argument))
         )
+
 
 class GuildEmojiConverter(commands.Converter):
     """Search for matching emoji."""
@@ -103,6 +104,7 @@ class GuildEmojiConverter(commands.Converter):
         Returns list of possible matches.
         Does a bot-wide case-insensitive match.
         """
+
         def pred(emoji):
             return emoji.name.lower() == emoji_name.lower()
 
@@ -147,7 +149,7 @@ class GuildEmojiConverter(commands.Converter):
             )
 
         raise commands.BadArgument(
-            'Emoji `{}` not found'.format(await prettify(ctx, argument))
+            "Emoji `{}` not found".format(await prettify(ctx, argument))
         )
 
 
@@ -560,6 +562,7 @@ class ActionReason(commands.Converter):
             )
         return ret
 
+
 class Flag(commands.Converter):
     async def convert(self, ctx, argument):
         nodm_options = ["--nodm", "--nopm", "-nodm", "-nopm", " nodm", " nopm"]
@@ -570,8 +573,9 @@ class Flag(commands.Converter):
             dm_bool = True
         else:
             from utilities import formatting
+
             headers = ["SEND DM", "DO NOT DM"]
-            rows = tuple(zip(dm_options, nodm_options)) 
+            rows = tuple(zip(dm_options, nodm_options))
             table = formatting.TabularData()
             table.set_columns(headers)
             table.add_rows(rows)

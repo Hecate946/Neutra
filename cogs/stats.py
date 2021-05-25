@@ -569,12 +569,18 @@ class Stats(commands.Cog):
                 """
 
         emoji_usage = await self.bot.cxn.fetch(query)
-        matches = {record["author_id"]: len(re.compile(f"<a?:.+?:{emoji.id}>").findall(record["content"])) for record in emoji_usage}
+        matches = {
+            record["author_id"]: len(
+                re.compile(f"<a?:.+?:{emoji.id}>").findall(record["content"])
+            )
+            for record in emoji_usage
+        }
 
         p = pagination.SimplePages(
             entries=[
                 "`{}`: Uses: {}".format(ctx.guild.get_member(user), count)
-                for user, count in matches.items() if ctx.guild.get_member(user)
+                for user, count in matches.items()
+                if ctx.guild.get_member(user)
             ],
             per_page=15,
         )
