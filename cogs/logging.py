@@ -10,6 +10,9 @@ from utilities import checks
 from utilities import converters
 from utilities import decorators
 
+CREATED_MESSAGE = "https://cdn.discordapp.com/attachments/846597178918436885/846841649542725632/messagecreate.png"
+UPDATED_MESSAGE = "https://cdn.discordapp.com/attachments/846597178918436885/846841668639653939/messageupdate.png"
+DELETED_MESSAGE = "https://cdn.discordapp.com/attachments/846597178918436885/846841722994163722/messagedelete.png"
 
 def setup(bot):
     bot.add_cog(Logging(bot))
@@ -103,7 +106,7 @@ class Logging(commands.Cog):
         )
         embed.set_author(
             name="Invite Link Posted",
-            icon_url="https://media.discordapp.net/attachments/506838906872922145/603643138854354944/messageupdate.png",
+            icon_url=UPDATED_MESSAGE,
         )
         await webhook.execute(embed=embed)
 
@@ -132,7 +135,7 @@ class Logging(commands.Cog):
 
             embed.set_author(
                 name="Server Name Edited",
-                icon_url="https://media.discordapp.net/attachments/506838906872922145/603643138854354944/messageupdate.png",
+                icon_url=UPDATED_MESSAGE,
             )
 
             return await webhook.execute(embed=embed)
@@ -144,7 +147,7 @@ class Logging(commands.Cog):
 
         embed.set_author(
             name="Server Icon Edited",
-            icon_url="https://media.discordapp.net/attachments/506838906872922145/603643138854354944/messageupdate.png",
+            icon_url=UPDATED_MESSAGE,
         )
 
         embed.set_image(url=after.icon_url)
@@ -651,16 +654,9 @@ class Logging(commands.Cog):
                             break
 
     @commands.Cog.listener()
+    @decorators.wait_until_ready()
+    @decorators.event_check(lambda s, b, a: a.guild and not a.author.bot)
     async def on_message_edit(self, before, after):
-        if not self.bot.ready:
-            return
-
-        if not after.guild:
-            return
-
-        if after.author.bot:
-            return
-
         if before.content == after.content:
             return  # giphy, tenor, and imgur links trigger this but they shouldn't be logged
 
@@ -668,7 +664,7 @@ class Logging(commands.Cog):
             return
 
         webhook = await self.get_webhook(guild=after.guild)
-        if webhook is None:
+        if not webhook:
             return
 
         if before.content == "":
@@ -701,7 +697,7 @@ class Logging(commands.Cog):
         )
         embed.set_author(
             name="Message Edited",
-            icon_url="https://media.discordapp.net/attachments/506838906872922145/603643138854354944/messageupdate.png",
+            icon_url=UPDATED_MESSAGE,
         )
         embed.set_footer(text=f"Message ID: {after.id}")
         await webhook.execute(embed=embed)
@@ -751,7 +747,7 @@ class Logging(commands.Cog):
         )
         embed.set_author(
             name="Message Deleted",
-            icon_url="https://media.discordapp.net/attachments/506838906872922145/603642595419357190/messagedelete.png",
+            icon_url=DELETED_MESSAGE,
         )
         embed.set_footer(text=f"Message ID: {message.id}")
         await webhook.execute(embed=embed)
@@ -785,7 +781,7 @@ class Logging(commands.Cog):
         )
         embed.set_author(
             name="Bulk Message Delete",
-            icon_url="https://media.discordapp.net/attachments/506838906872922145/603642595419357190/messagedelete.png",
+            icon_url=DELETED_MESSAGE,
         )
 
         await webhook.execute(embed=embed)
@@ -3099,3 +3095,134 @@ class Logging(commands.Cog):
         else:
             msg = f" User `{user}` has {string1} {len(entries)} {string2 if len(entries) != 1 else string2[:-1]}."
         return msg
+
+
+    @decorators.command(brief="Snipe a deleted message.", aliases=["retrieve"])
+    @commands.guild_only()
+    @checks.bot_has_perms(embed_links=True)
+    @checks.has_perms(manage_messages=True)
+    async def snipe(self, ctx, *, member: converters.DiscordMember = None):
+        """
+        Usage: {0}snipe [user]
+        Alias: {0}retrieve
+        Output: Fetches a deleted message
+        Notes:
+            Will fetch a messages sent by a specific user if specified
+        """
+        if member is None:
+            query = """
+                    SELECT author_id, message_id, content, timestamp
+                    FROM messages
+                    WHERE channel_id = $1
+                    AND deleted = True
+                    ORDER BY unix DESC;
+                    """
+            result = await self.bot.cxn.fetchrow(query, ctx.channel.id)
+        else:
+            query = """
+                    SELECT author_id, message_id, content, timestamp
+                    FROM messages
+                    WHERE channel_id = $1
+                    AND author_id = $2
+                    AND deleted = True
+                    ORDER BY unix DESC;
+                    """
+            result = await self.bot.cxn.fetchrow(query, ctx.channel.id, member.id)
+
+        if not result:
+            return await ctx.fail(f"There is nothing to snipe.")
+
+        author = result["author_id"]
+        message_id = result["message_id"]
+        content = result["content"]
+        timestamp = result["timestamp"]
+
+        author = self.bot.get_user(author)
+        if not author:
+            author = await self.bot.fetch_user(author)
+
+        if str(content).startswith("```"):
+            content = f"**__Message Content__**\n {str(content)}"
+        else:
+            content = f"**__Message Content__**\n ```fix\n{str(content)}```"
+
+        embed = discord.Embed(
+            description=f"**Author:**  {author.mention}, **ID:** `{author.id}`\n"
+            f"**Channel:** {ctx.channel.mention} **ID:** `{ctx.channel.id}`\n"
+            f"**Server:** `{ctx.guild.name}` **ID:** `{ctx.guild.id}`\n"
+            f"**Sent at:** `{timestamp}`\n\n"
+            f"{content}",
+            color=self.bot.constants.embed,
+            timestamp=datetime.utcnow(),
+        )
+        embed.set_author(
+            name="Deleted Message Retrieved",
+            icon_url=DELETED_MESSAGE,
+        )
+        embed.set_footer(text=f"Message ID: {message_id}")
+        await ctx.send_or_reply(embed=embed)
+
+    @decorators.command(brief="Snipe an edited message.", aliases=["snipeedit","retrieveedit","editretrieve"])
+    @commands.guild_only()
+    @checks.bot_has_perms(embed_links=True)
+    @checks.has_perms(manage_messages=True)
+    async def editsnipe(self, ctx, *, member: converters.DiscordMember = None):
+        """
+        Usage: {0}editsnipe [user]
+        Alias: {0}editretrieve, {0}snipeedit, {0}retriveedit
+        Output: Fetches an edited message
+        Notes:
+            Will fetch a messages sent by a specific user if specified
+        """
+        if member is None:
+            query = """
+                    SELECT author_id, message_id, content, timestamp
+                    FROM messages
+                    WHERE channel_id = $1
+                    AND edited = True
+                    ORDER BY unix DESC;
+                    """
+            result = await self.bot.cxn.fetchrow(query, ctx.channel.id)
+        else:
+            query = """
+                    SELECT author_id, message_id, content, timestamp
+                    FROM messages
+                    WHERE channel_id = $1
+                    AND author_id = $2
+                    AND edited = True
+                    ORDER BY unix DESC;
+                    """
+            result = await self.bot.cxn.fetchrow(query, ctx.channel.id, member.id)
+
+        if not result:
+            return await ctx.fail(f"There are no edits to snipe.")
+
+        author = result["author_id"]
+        message_id = result["message_id"]
+        content = result["content"]
+        timestamp = result["timestamp"]
+
+        author = self.bot.get_user(author)
+        if not author:
+            author = await self.bot.fetch_user(author)
+
+        if str(content).startswith("```"):
+            content = f"**__Previous Message Content__**\n {str(content)}"
+        else:
+            content = f"**__Previous Message Content__**\n ```fix\n{str(content)}```"
+
+        embed = discord.Embed(
+            description=f"**Author:**  {author.mention}, **ID:** `{author.id}`\n"
+            f"**Channel:** {ctx.channel.mention} **ID:** `{ctx.channel.id}`\n"
+            f"**Server:** `{ctx.guild.name}` **ID:** `{ctx.guild.id}`\n"
+            f"**Sent at:** `{timestamp}`\n\n"
+            f"{content}",
+            color=self.bot.constants.embed,
+            timestamp=datetime.utcnow(),
+        )
+        embed.set_author(
+            name="Edited Message Retrieved",
+            icon_url=UPDATED_MESSAGE,
+        )
+        embed.set_footer(text=f"Message ID: {message_id}")
+        await ctx.send_or_reply(embed=embed)

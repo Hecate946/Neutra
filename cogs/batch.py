@@ -57,12 +57,14 @@ class Batch(commands.Cog):
 
         self.bulk_inserter.start()
         self.dispatch_avatars.start()
+        self.message_inserter.start()
         self.status_inserter.start()
 
     def cog_unload(self):
         self.background_task.stop()
         self.bulk_inserter.stop()
         self.dispatch_avatars.stop()
+        self.message_inserter.stop()
         self.status_inserter.stop()
 
     @tasks.loop(seconds=0.0)
@@ -106,7 +108,7 @@ class Batch(commands.Cog):
             except Exception as e:
                 await self.bot.bot_channel.send(e)
 
-    @tasks.loop(seconds=0.2)
+    @tasks.loop(seconds=0.5)
     async def status_inserter(self):
         if self.status_batch:  # Insert all status changes
             async with self.batch_lock:
@@ -186,6 +188,47 @@ class Batch(commands.Cog):
                     await self.bot.cxn.execute(query, data)
                     self.status_batch["offline"].clear()
 
+    @tasks.loop(seconds=0.2)
+    async def message_inserter(self):
+        """
+        Main bulk message inserter
+        """
+        if self.message_batch:  # Insert every message into the db
+            query = """
+                    INSERT INTO messages (unix, timestamp, content,
+                    message_id, author_id, channel_id, server_id)
+                    SELECT x.unix, x.timestamp, x.content,
+                    x.message_id, x.author_id, x.channel_id, x.server_id
+                    FROM JSONB_TO_RECORDSET($1::JSONB)
+                    AS x(unix REAL, timestamp TIMESTAMP, content TEXT,
+                    message_id BIGINT, author_id BIGINT,
+                    channel_id BIGINT, server_id BIGINT)
+                    """
+            async with self.batch_lock:
+                data = json.dumps(self.message_batch)
+                await self.bot.cxn.execute(query, data)
+                self.message_batch.clear()
+
+        if self.snipe_batch:  # Snipe command setup
+            query = """
+                    UPDATE messages
+                    SET deleted = True
+                    WHERE message_id = $1;
+                    """  # Updates already stored messages.
+            async with self.batch_lock:
+                await self.bot.cxn.executemany(query, ((x,) for x in self.snipe_batch))
+                self.snipe_batch.clear()
+
+        if self.edited_batch:  # Edit snipe command setup
+            query = """
+                    UPDATE messages
+                    SET edited = True
+                    WHERE message_id = $1;
+                    """  # Updates already stored messages.
+            async with self.batch_lock:
+                await self.bot.cxn.executemany(query, ((x,) for x in self.edited_batch))
+                self.edited_batch.clear()
+
     @tasks.loop(seconds=2.0)
     async def bulk_inserter(self):
         self.bot.batch_inserts += 1
@@ -222,26 +265,6 @@ class Batch(commands.Cog):
                     )
                 self.command_batch.clear()
 
-        if self.snipe_batch:  # Snipe command setup
-            query = """
-                    UPDATE messages
-                    SET deleted = True
-                    WHERE message_id = $1;
-                    """  # Updates already stored messages.
-            async with self.batch_lock:
-                await self.bot.cxn.executemany(query, ((x,) for x in self.snipe_batch))
-                self.snipe_batch.clear()
-
-        if self.edited_batch:  # Edit snipe command setup
-            query = """
-                    UPDATE messages
-                    SET edited = True
-                    WHERE message_id = $1;
-                    """  # Updates already stored messages.
-            async with self.batch_lock:
-                await self.bot.cxn.executemany(query, ((x,) for x in self.edited_batch))
-                self.edited_batch.clear()
-
         # Emoji usage tracking
         if self.emoji_batch:
             query = """
@@ -262,22 +285,6 @@ class Batch(commands.Cog):
                 )
                 await self.bot.cxn.execute(query, data)
                 self.emoji_batch.clear()
-
-        if self.message_batch:  # Insert every message into the db
-            query = """
-                    INSERT INTO messages (unix, timestamp, content,
-                    message_id, author_id, channel_id, server_id)
-                    SELECT x.unix, x.timestamp, x.content,
-                    x.message_id, x.author_id, x.channel_id, x.server_id
-                    FROM JSONB_TO_RECORDSET($1::JSONB)
-                    AS x(unix REAL, timestamp TIMESTAMP, content TEXT,
-                    message_id BIGINT, author_id BIGINT,
-                    channel_id BIGINT, server_id BIGINT)
-                    """
-            async with self.batch_lock:
-                data = json.dumps(self.message_batch)
-                await self.bot.cxn.execute(query, data)
-                self.message_batch.clear()
 
         if self.spammer_batch:  # Track users who spam messages
             query = """

@@ -1197,69 +1197,6 @@ class Utility(commands.Cog):
             else:
                 await ctx.send(page)
 
-    @decorators.command(brief="Snipe a deleted message.", aliases=["retrieve"])
-    @commands.guild_only()
-    @checks.bot_has_perms(embed_links=True)
-    @checks.has_perms(manage_messages=True)
-    async def snipe(self, ctx, *, member: converters.DiscordMember = None):
-        """
-        Usage: {0}snipe [user]
-        Alias: {0}retrieve
-        Output: Fetches a deleted message
-        Notes:
-            Will fetch a messages sent by a specific user if specified
-        """
-        if member is None:
-            query = """
-                    SELECT (author_id, message_id, content, timestamp)
-                    FROM messages
-                    WHERE channel_id = $1
-                    AND deleted = True
-                    ORDER BY unix DESC;
-                    """
-            result = await self.bot.cxn.fetchrow(query, ctx.channel.id)
-        else:
-            query = """
-                    SELECT (author_id, message_id, content, timestamp)
-                    FROM messages
-                    WHERE channel_id = $1
-                    AND author_id = $2
-                    AND deleted = True
-                    ORDER BY unix DESC;
-                    """
-            result = await self.bot.cxn.fetchrow(query, ctx.channel.id, member.id)
-
-        if not result:
-            return await ctx.fail(f"There is nothing to snipe.")
-
-        author = result[0]
-        message_id = result[1]
-        content = result[2]
-        timestamp = result[3]
-
-        author = self.bot.get_user(author)
-
-        if str(content).startswith("```"):
-            content = f"**__Message Content__**\n {str(content)}"
-        else:
-            content = f"**__Message Content__**\n ```fix\n{str(content)}```"
-
-        embed = discord.Embed(
-            description=f"**Author:**  {author.mention}, **ID:** `{author.id}`\n"
-            f"**Channel:** {ctx.channel.mention} **ID:** `{ctx.channel.id}`\n"
-            f"**Server:** `{ctx.guild.name}` **ID:** `{ctx.guild.id}`\n"
-            f"**Sent at:** `{timestamp}`\n\n"
-            f"{content}",
-            color=self.bot.constants.embed,
-            timestamp=datetime.utcnow(),
-        )
-        embed.set_author(
-            name="Deleted Message Retrieved",
-            icon_url="https://media.discordapp.net/attachments/506838906872922145/603642595419357190/messagedelete.png",
-        )
-        embed.set_footer(text=f"Message ID: {message_id}")
-        await ctx.send_or_reply(embed=embed)
-
     @decorators.command(
         aliases=["bitly"],
         brief="Shorten URLs to bitly links.",
