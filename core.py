@@ -186,25 +186,16 @@ class Snowbot(commands.AutoShardedBot):
 
     async def close(self):  # Shutdown the bot cleanly
         try:
-            me = self.home.get_member(self.user.id)
             runtime = time.time() - self.starttime
-            statustime = time.time() - self.statustime
             query = """
-                    INSERT INTO botstats
-                    VALUES ($1, $2)
-                    ON CONFLICT (bot_id)
-                    DO UPDATE SET runtime = botstats.runtime + $2,
-                    {0} = botstats.{0} + $3
-                    """.format(
-                me.status
-            )
-            await self.cxn.execute(
-                query, self.user.id, runtime, statustime
-            )  # Runtime stats and status info for %uptime cmd.
+                    UPDATE config SET last_run = $1,
+                    runtime = runtime + $1
+                    WHERE client_id = $2;
+                    """
+            await self.cxn.execute(query, runtime, self.user.id)
         except AttributeError:
-            # Probably because the process
-            # was killed before the bot attrs were set
-            # Let's silence errors.
+            # Probably because the process was killed before
+            # the bot attrs were set. Let's silence errors.
             pass
 
         await super().close()
@@ -336,6 +327,14 @@ class Snowbot(commands.AutoShardedBot):
                 text=f"Member   iteration : {str(time.time() - st)[:10]} s",
             )
         )
+        st = time.time()
+        member_list = [x for x in self.get_all_members()]
+        print(
+            color(
+                fore="#46648F",
+                text=f"Member   iteration : {str(time.time() - st)[:10]} s",
+            )
+        )
         try:
             await database.initialize(self, member_list)
         except Exception as e:
@@ -343,16 +342,6 @@ class Snowbot(commands.AutoShardedBot):
 
         # The rest of the botvars that couldn't be set earlier
         await self.load_globals()
-
-        # Beautiful console logging on startup
-        # hostinfo = await utils.get_hostinfo(self, member_list)
-        # bars = hostinfo[1]
-        # hostinfo = hostinfo[0].replace(" final", "").split("\n")[1:][:-2]
-        # separator = "=" * max([len(x) for x in hostinfo])
-        # print(color(fore="#E4C1DD", text=separator))
-        # print(color(fore="#E4C1DD", text="\n".join(hostinfo)))
-        # print(color(fore="#E4C1DD", text=separator))
-        # print(color(fore="#8FBBC7", text=bars))
 
     async def load_globals(self):
         """

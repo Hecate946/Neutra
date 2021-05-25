@@ -79,9 +79,7 @@ class Info(commands.Cog):
         Aliases: {0}info, {0}bot, {0}botstats, {0}botinfo
         Output: Version info and bot stats
         """
-        msg = await ctx.send_or_reply(
-            content=f"**{self.bot.emote_dict['loading']} Collecting Bot Info...**"
-        )
+        msg = await ctx.load("Collecting Bot Info...")
         version_query = """
                         SELECT version
                         FROM config
@@ -399,8 +397,9 @@ class Info(commands.Cog):
     @decorators.command(
         brief="Bot network speed.",
         aliases=["speedtest", "network", "wifi", "download", "upload"],
+        hidden=True
     )
-    @commands.cooldown(1, 60, commands.BucketType.guild)
+    @checks.is_bot_admin()
     async def speed(self, ctx):
         """
         Usage: {0}speed
@@ -507,6 +506,7 @@ class Info(commands.Cog):
         await message.edit(content=msg)
 
     @decorators.command(brief="Show the bot's host environment.")
+    @commands.cooldown(1, 10, commands.BucketType.user)
     async def hostinfo(self, ctx):
         """
         Usage: {0}hostinfo
@@ -630,8 +630,8 @@ class Info(commands.Cog):
     @decorators.command(brief="Show my changelog.", aliases=["updates"])
     async def changelog(self, ctx):
         """
-        Usage: -changelog
-        Alias: -updates
+        Usage: {0}changelog
+        Alias: {0}updates
         Output: My changelog
         """
         with open("./data/txts/changelog.txt", "r", encoding="utf-8") as fp:
@@ -692,14 +692,13 @@ class Info(commands.Cog):
     @decorators.command(
         aliases=["listcogs"],
         brief="List all my cogs in an embed.",
-        botperms=["embed_links"],
         implemented="2021-05-05 19:01:15.387930",
         updated="2021-05-05 19:01:15.387930",
     )
     @checks.bot_has_perms(embed_links=True)
     async def cogs(self, ctx):
         """
-        Usage: -cogs
+        Usage: {0}cogs
         Output: An embed of all my current cogs
         """
         cog_list = []
@@ -749,7 +748,6 @@ class Info(commands.Cog):
     @decorators.command(
         aliases=["userstats", "usercount"],
         brief="Show users I'm connected to.",
-        botperms=["embed_links"],
         implemented="2021-03-23 04:20:58.938991",
         updated="2021-05-06 01:30:32.347076",
     )
@@ -762,10 +760,7 @@ class Info(commands.Cog):
             Shows users and bots I'm connected to and
             percentages of unique and online members.
         """
-        async with ctx.channel.typing():
-            msg = await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['loading']} **Collecting User Stats...**",
-            )
+            msg = await ctx.load(f"Collecting User Stats...")
             users = [x for x in self.bot.get_all_members() if not x.bot]
             users_online = [x for x in users if x.status != discord.Status.offline]
             unique_users = set([x.id for x in users])
@@ -873,10 +868,12 @@ class Info(commands.Cog):
             for output in result
         ]
 
-    @decorators.command(brief="Run the neofetch command.")
+    @decorators.command(aliases=['nf'], brief="Run the neofetch command.")
+    @commands.cooldown(1, 10, commands.BucketType.user)
     async def neofetch(self, ctx):
         """
-        Usage: -neofetch
+        Usage: {0}neofetch
+        Alias: {0}nf
         Output: Some stats on the bot's server
         """
         async with ctx.typing():
@@ -999,45 +996,9 @@ class Info(commands.Cog):
             f"{self.bot.emote_dict['privacy']} **{self.bot.user}'s Privacy Policy**{policy}"
         )
 
-    # @decorators.command(brief="Send a request to the developer.", aliases=["contact"])
-    # @commands.dm_only()
-    # @commands.cooldown(2, 60, commands.BucketType.user)
-    # async def request(self, ctx, *, request: str = None):
-    #     """
-    #     Usage: {0}request <request content>
-    #     Alias: {0}contact
-    #     Examples: {0}suggest Hello! I request...
-    #     Output:
-    #         Confirmation that your request has been sent.
-    #     Notes:
-    #         This command must be used in DMs for privacy
-    #     """
-    #     if request is None:
-    #         return await ctx.usage("<request content>")
-    #     author = ctx.author
-    #     source = "a direct message"
-    #     sender = "**{}** ({}) sent you a request from {}:\n\n".format(
-    #         author, author.id, source
-    #     )
-    #     message = sender + request
-    #     try:
-    #         await self.bot.hecate.send(message)
-    #     except discord.errors.InvalidArgument:
-    #         await ctx.fail(content="I cannot send your message.")
-    #     except discord.errors.HTTPException:
-    #         await ctx.fail(content="Your message is too long.")
-    #     except Exception as e:
-    #         await ctx.fail(
-    #             content="I failed to send your message.",
-    #         )
-    #         print(e)
-    #     else:
-    #         await ctx.success(content="Your request has been submitted.")
-
     @decorators.command(
         aliases=["badmins"],
         brief="Show the bot's admins.",
-        botperms=["embed_links", "external_emojis", "add_reactions"],
         implemented="2021-04-02 21:37:49.068681",
         updated="2021-05-05 19:08:47.761913",
     )
@@ -1076,7 +1037,6 @@ class Info(commands.Cog):
     @decorators.command(
         aliases=["owners"],
         brief="Show the bot's owners.",
-        botperms=["embed_links", "external_emojis", "add_reactions"],
         implemented="2021-04-12 06:23:15.545363",
         updated="2021-05-05 19:08:47.761913",
     )
@@ -1112,82 +1072,60 @@ class Info(commands.Cog):
             await ctx.send_or_reply(e)
 
     @decorators.command(
-        aliases=[r"%uptime", "percentuptime"],
+        aliases=[r"%uptime", "percentuptime", "pieuptime", "pu"],
         brief="Show a graph of uptime stats",
-        botperms=["attach_files", "embed_links"],
         implemented="2021-04-28 00:34:35.847886",
-        updated="2021-05-05 19:23:39.306805",
+        updated="2021-05-25 19:14:05.652822",
     )
     @checks.bot_has_perms(
         attach_files=True,
         embed_links=True,
     )
-    async def pieuptime(self, ctx):
+    async def uptimeinfo(self, ctx):
         """
-        Usage: {0}pieuptime
-        Aliases: {0}%uptime, {0}percentuptime
+        Usage: {0}uptimeinfo
+        Aliases: {0}%uptime, {0}percentuptime, {0}pieuptime, {0}pu
         Output:
             Shows a pie-chart graph
             of my uptime across all time
         """
-        # Need to get member obj to check status.
-        if ctx.guild:
-            me = ctx.guild.me
-        else:  # Get from 'home' server
-            try:
-                me = self.bot.home.get_member(self.bot.user.id)
-            except AttributeError:  # Pretend like its a server only command
-                raise commands.NoPrivateMessage()
         await ctx.trigger_typing()
         query = """
-                SELECT (
-                    runtime,
-                    online,
-                    idle,
-                    dnd,
-                    offline,
-                    startdate
-                ) FROM botstats;
+                SELECT runtime, starttime, last_run
+                FROM config WHERE client_id = $1;
                 """
-        botstats = await self.bot.cxn.fetchval(query)
-        statustime = time.time() - self.bot.statustime
-        
-        runtime = botstats[0]
-        online = botstats[1] + statustime if str(me.status) == "offline" else botstats[1]
-        idle = botstats[2] + statustime if str(me.status) == "idle" else botstats[2]
-        dnd = botstats[3] + statustime if str(me.status) == "dnd" else botstats[3]
-        startdate = botstats[5]
-        total = (datetime.utcnow() - startdate).total_seconds()
-        offline = total - (online + idle + dnd)
-        uptime = online + idle + dnd
+        botstats = await self.bot.cxn.fetchrow(query, self.bot.user.id)
+        unix_timestamp = time.time()
+        current_uptime = unix_timestamp - self.bot.statustime
+        uptime = current_uptime + botstats["runtime"]
+        total = unix_timestamp - botstats["starttime"]
+
         raw_percent = uptime / total
         if raw_percent > 1:
             raw_percent = 1
-        if raw_percent > 0.9:
-            color = (109, 255, 72)
-        elif 0.7 < raw_percent < 0.9:
-            color = (226, 232, 19)
-        else:
-            color = (232, 44, 19)
+        if raw_percent > 0.9:  # 90% uptime. Decent
+            color = (109, 255, 72)  # Green
+        elif 0.7 < raw_percent < 0.9:  # 70%-90% uptime meh.
+            color = (226, 232, 19)  # Yellow
+        else: # Poor uptime
+            color = (232, 44, 19) # Red
         percent = f"{raw_percent:.2%}"
         em = discord.Embed(color=self.bot.constants.embed)
         img = Image.new("RGBA", (2500, 1024), (0, 0, 0, 0))
         draw = ImageDraw.Draw(img)
         font = ImageFont.truetype("./data/assets/Helvetica.ttf", 100)
-        w, h = 1050, 1000
-        shape = [(50, 0), (w, h)]
+        shape = [(50, 0), (1050, 1000)]
         draw.arc(shape, start=360 * raw_percent, end=0, fill=(125, 135, 140), width=200)
         draw.arc(shape, start=0, end=360 * raw_percent, fill=(10, 24, 34), width=200)
-        # draw.text((445, 460), percent, fill=color, font=font)
         self.center_text(img, 1100, 1000, font, percent, color)
         font = ImageFont.truetype("./data/assets/Helvetica-Bold.ttf", 85)
         draw.text(
-            (1200, 0), "Uptime Tracking Startdate:", fill=(255, 255, 255), font=font
+            (1200, 0), "Uptime Tracking Since:", fill=(255, 255, 255), font=font
         )
         font = ImageFont.truetype("./data/assets/Helvetica.ttf", 68)
         draw.text(
             (1200, 100),
-            utils.format_time(startdate).split(".")[0] + "]",
+            utils.timeago(datetime.utcnow() - datetime.utcfromtimestamp(botstats["starttime"])),
             fill=(255, 255, 255),
             font=font,
         )
@@ -1196,25 +1134,15 @@ class Info(commands.Cog):
         font = ImageFont.truetype("./data/assets/Helvetica.ttf", 68)
         draw.text((1200, 400), f"{uptime/3600:.2f}", fill=(255, 255, 255), font=font)
         font = ImageFont.truetype("./data/assets/Helvetica-Bold.ttf", 85)
-        draw.text((1200, 600), "Status Information:", fill=(255, 255, 255), font=font)
+        draw.text((1200, 600), "Runtime Information:", fill=(255, 255, 255), font=font)
         font = ImageFont.truetype("./data/assets/Helvetica.ttf", 68)
-        draw.rectangle((1200, 800, 1275, 875), fill=(46, 204, 113), outline=(0, 0, 0))
         draw.text(
-            (1300, 810), f"Online: {online/total:.2%}", fill=(255, 255, 255), font=font
+            (1200, 710), f"Current run: {current_uptime/3600:.2f} Hours", fill=(255, 255, 255), font=font
         )
-        draw.rectangle((1800, 800, 1875, 875), fill=(241, 196, 15), outline=(0, 0, 0))
         draw.text(
-            (1900, 810), f"Idle: {idle/total:.2%}", fill=(255, 255, 255), font=font
+            (1200, 810), f"Previous run: {botstats['last_run']/3600:.2f}", fill=(255, 255, 255), font=font
         )
-        draw.rectangle((1200, 900, 1275, 975), fill=(231, 76, 60), outline=(0, 0, 0))
-        draw.text((1300, 910), f"DND: {dnd/total:.2%}", fill=(255, 255, 255), font=font)
-        draw.rectangle((1800, 900, 1875, 975), fill=(97, 109, 126), outline=(0, 0, 0))
-        draw.text(
-            (1900, 910),
-            f"Offline: {offline/total:.2%}",
-            fill=(255, 255, 255),
-            font=font,
-        )
+        draw.text((1200, 910), f"Last reboot: {utils.timeago(datetime.utcnow() - self.bot.uptime)}", fill=(255, 255, 255), font=font)
 
         buffer = io.BytesIO()
         img.save(buffer, "png")  # 'save' function for PIL

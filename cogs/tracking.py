@@ -1348,10 +1348,12 @@ class Tracking(commands.Cog):
         Notes:
             Will default to yourself if no user is passed.
         """
-        await ctx.trigger_typing()
         if not user:
             user = ctx.author
+        if user.bot:
+            raise commands.BadArgument("I do not track bots.")
 
+        await ctx.trigger_typing()
         query = """
                 SELECT * FROM userstatus
                 WHERE user_id = $1;

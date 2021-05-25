@@ -15,7 +15,8 @@ CREATE TABLE IF NOT EXISTS messages (
     author_id BIGINT,
     channel_id BIGINT,
     server_id BIGINT,
-    deleted BOOLEAN DEFAULT False
+    deleted BOOLEAN DEFAULT False,
+    edited BOOLEAN DEFAULT False
 );
 
 CREATE TABLE IF NOT EXISTS commands (
@@ -27,14 +28,4 @@ CREATE TABLE IF NOT EXISTS commands (
     prefix TEXT,
     command TEXT,
     failed BOOLEAN
-);
-
-CREATE TABLE IF NOT EXISTS botstats (
-    bot_id BIGINT PRIMARY KEY,
-    runtime DOUBLE PRECISION DEFAULT 0 NOT NULL,
-    online DOUBLE PRECISION DEFAULT 0 NOT NULL,
-    idle DOUBLE PRECISION DEFAULT 0 NOT NULL,
-    dnd DOUBLE PRECISION DEFAULT 0 NOT NULL,
-    offline DOUBLE PRECISION DEFAULT 0 NOT NULL,
-    startdate DOUBLE PRECISION DEFAULT (EXTRACT(EPOCH FROM NOW()))
 );

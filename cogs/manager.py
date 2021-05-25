@@ -1392,11 +1392,8 @@ class Manager(commands.Cog):
         if subcommand == "give":
             subcommand = "add . && git commit -m 'update' && git push"
 
-        message = await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['loading']} **Updating...**",
-        )
-        async with ctx.typing():
-            stdout, stderr = await self.run_process("git " + subcommand)
+        message = await ctx.load(f"Updating...**")
+        stdout, stderr = await self.run_process("git " + subcommand)
 
         if stderr:
             text = f"stdout:\n{stdout}\nstderr:\n{stderr}"
