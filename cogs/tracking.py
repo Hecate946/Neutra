@@ -554,31 +554,13 @@ class Tracking(commands.Cog):
             return await ctx.fail("I do not track bots.")
         await ctx.trigger_typing()
         query = """
-                SELECT nickname, changed_at
-                FROM usernicks
-                WHERE server_id = $1
-                AND user_id = $2
-                ORDER BY changed_at DESC NULLS LAST;
+                SELECT ARRAY_REMOVE(ARRAY_AGG(nickname), NULL) as name_list
+                FROM usernicks WHERE user_id = $1 AND server_id = $2 GROUP BY user_id;
                 """
-        results = await self.bot.cxn.fetch(query, ctx.guild.id, user.id)
-        entries = []
-        for nickname, timestamp in results:
-            if timestamp:
-                time_fmt = utils.timeago(datetime.utcnow() - timestamp)
-            else:
-                time_fmt = "Not tracked"
-            entries.append({"name": nickname, "value": time_fmt})
-        p = pagination.MainMenu(
-            pagination.FieldPageSource(
-                entries=[
-                    ("{}. {}".format(y, x["name"]), f"**Updated**: {x['value']}")
-                    for y, x in enumerate(entries, start=1)
-                ],
-                per_page=10,
-                title=f"Nicknames for {user.display_name}",
-            )
-        )
-
+        results = await self.bot.cxn.fetchval(query, user.id, ctx.guild.id)
+        results.append(user.display_name)
+        p = pagination.SimplePages([f"**{x}**" for x in results], per_page=15)
+        p.embed.title = f"{user}'s Recorded Nicknames"
         try:
             await p.start(ctx)
         except menus.MenuError as e:
@@ -622,30 +604,13 @@ class Tracking(commands.Cog):
             return await ctx.fail("I do not track bots.")
         await ctx.trigger_typing()
         query = """
-                SELECT name, changed_at
-                FROM usernames
-                WHERE user_id = $1
-                ORDER BY changed_at DESC NULLS LAST;
+                SELECT ARRAY_REMOVE(ARRAY_AGG(name), NULL) as name_list
+                FROM usernames WHERE user_id = $1 GROUP BY user_id;
                 """
         results = await self.bot.cxn.fetch(query, user.id)
-        entries = []
-        for name, timestamp in results:
-            if timestamp:
-                time_fmt = utils.timeago(datetime.utcnow() - timestamp)
-            else:
-                time_fmt = "Not tracked"
-            entries.append({"name": name, "value": time_fmt})
-        p = pagination.MainMenu(
-            pagination.FieldPageSource(
-                entries=[
-                    ("{}. {}".format(y, x["name"]), f"**Updated**: {x['value']}")
-                    for y, x in enumerate(entries, start=1)
-                ],
-                per_page=10,
-                title=f"Usernames for {user}",
-            )
-        )
-
+        results.append(str(user))
+        p = pagination.SimplePages([f"**{x}**" for x in results], per_page=15)
+        p.embed.title = f"{user.display_name}'s Recorded Usernames"
         try:
             await p.start(ctx)
         except menus.MenuError as e:

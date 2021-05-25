@@ -336,10 +336,10 @@ class Batch(commands.Cog):
 
         if self.usernames_batch:  # Save usernames
             query = """
-                    INSERT INTO usernames (user_id, name, changed_at)
-                    SELECT x.user_id, x.name, x.changed_at
+                    INSERT INTO usernames (user_id, name)
+                    SELECT x.user_id, x.name
                     FROM JSONB_TO_RECORDSET($1::JSONB)
-                    AS x(user_id BIGINT, name TEXT, changed_at TIMESTAMP)
+                    AS x(user_id BIGINT, name TEXT)
                     """
             async with self.batch_lock:
                 data = json.dumps(self.usernames_batch)
@@ -560,9 +560,8 @@ class Batch(commands.Cog):
             async with self.batch_lock:
                 self.usernames_batch.append(
                     {
-                        "user_id": after.id,
-                        "name": str(after),
-                        "changed_at": str(datetime.utcnow()),
+                        "user_id": before.id,
+                        "name": str(before),
                     }
                 )
                 self.tracker_batch[before.id] = (time.time(), "updating their username")
@@ -679,7 +678,6 @@ class Batch(commands.Cog):
                 {
                     "user_id": member.id,
                     "name": str(member),
-                    "changed_at": None,
                 }
             )
             self.nicknames_batch.append(
