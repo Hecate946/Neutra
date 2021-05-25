@@ -1,9 +1,9 @@
-import asyncio
-import logging
 import os
 import time
-
+import asyncio
 import asyncpg
+import logging
+
 from colr import color
 
 from settings import constants

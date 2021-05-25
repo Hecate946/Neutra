@@ -5,38 +5,25 @@ import json
 import math
 import base64
 import codecs
-import pprint
 import random
+import typing
 import asyncio
 import discord
 import operator
+import pyparsing
 import unicodedata
 
 from collections import Counter, namedtuple
 from datetime import datetime
-from discord.errors import HTTPException
 from discord.ext import commands, menus
 from functools import cmp_to_key
 from PIL import Image
-from typing import Union
 from unidecode import unidecode
-from pyparsing import (
-    CaselessLiteral,
-    Combine,
-    Forward,
-    Group,
-    Literal,
-    Optional,
-    Word,
-    ZeroOrMore,
-    alphas,
-    nums,
-    oneOf,
-)
 
 from utilities import utils
 from utilities import checks
 from utilities import cleaner
+from utilities import helpers
 from utilities import converters
 from utilities import decorators
 from utilities import pagination
@@ -199,7 +186,7 @@ class Utility(commands.Cog):
                 """,
     )
     @checks.bot_has_perms(embed_links=True)
-    async def gtoken(self, ctx, user: Union[discord.Member, discord.User] = None):
+    async def gtoken(self, ctx, user: typing.Union[discord.Member, discord.User] = None):
         """
         Usage: {0}gtoken <user>
         Aliases: {0}gt, {0}generatetoken
@@ -297,8 +284,8 @@ class Utility(commands.Cog):
     )
     async def type_(self, ctx, obj_id: discord.Object):
         """
-        Usage: -type <discord object>
-        Aliases: -findtype, -objtype
+        Usage: {0}type <discord object>
+        Aliases: {0}findtype, {0}objtype
         Output:
             Attemps to find the type of the object presented.
         """
@@ -515,22 +502,10 @@ class Utility(commands.Cog):
             em.set_image(url="attachment://color.png")
             await ctx.send_or_reply(embed=em, file=dfile)
 
-    @decorators.command(brief="Send an image with some hex codes.")
-    async def colors(self, ctx):
-        """
-        Usage: {0}colors
-        Output:
-            An image showing a few
-            hex colors and codes
-        """
-        await ctx.send_or_reply(
-            file=discord.File("./data/assets/colors.png", filename="colors.png")
-        )
-
     @decorators.command(
         brief="Dehoist a specified user.",
         implemented="2021-05-06 02:22:00.614849",
-        updated="2021-05-07 05:42:25.333804",
+        updated="2021-05-24 16:13:50.890038",
         examples="""
                 {0}dehoist Hecate
                 {0}dehoist @Hecate
@@ -538,8 +513,7 @@ class Utility(commands.Cog):
                 {0}dehoist 708584008065351681
                 """,
     )
-    @checks.bot_has_perms(manage_nicknames=True)
-    @checks.has_perms(manage_nicknames=True)
+    @commands.guild_only()
     async def dehoist(self, ctx, user: converters.DiscordMember):
         """
         Usage: {0}dehoist <user>
@@ -550,7 +524,10 @@ class Utility(commands.Cog):
             list by using special characters
         Notes:
             To dehoist all users with a single command,
-            use {0}massdehoist instead.
+            use {0}massdehoist. If the bot or the command
+            author lack permissions to edit a nickname,
+            the bot will output a dehoisted version of
+            the target user's name.
         """
         characters = [
             "!",
@@ -575,30 +552,30 @@ class Utility(commands.Cog):
                 name = name[1:]
             if name.strip() == "":
                 name = "Dehoisted"
-            try:
-                await user.edit(
-                    nick=name,
-                    reason=utils.responsible(
-                        ctx.author, "Nickname edited by dehoist command."
-                    ),
-                )
-                return await ctx.send_or_reply(
-                    content=f"{self.bot.emote_dict['success']} Successfully dehoisted `{user}`",
-                )
-            except Exception:
-                await ctx.send_or_reply(
-                    content=f"{self.bot.emote_dict['failed']} Failed to dehoist `{user}`",
-                )
-
+            bot_perms = ctx.guild.me.guild_permissions.manage_nicknames
+            user_perms = ctx.author.guild_permissions.manage_nicknames
+            if user_perms and bot_perms:
+                try:
+                    await user.edit(
+                        nick=name,
+                        reason=utils.responsible(
+                            ctx.author, "Nickname edited by dehoist command."
+                        ),
+                    )
+                    await ctx.success(f"Dehoisted user `{user}` to `{name.strip()}`")
+                    return
+                except Exception as e:
+                    await helpers.error_info(ctx, [(str(user), e)])
+                    return
+            else:
+                await ctx.success(f"The dehoisted version of `{user}` is `{name.strip()}`")
         else:
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['failed']} User `{user}` is not hoisting.",
-            )
+            await ctx.fail(f"User `{user}` is not hoisting.")
 
     @decorators.command(
         brief="Convert special characters to ascii.",
         implemented="2021-04-21 05:14:23.747367",
-        updated="2021-05-07 05:34:35.645870",
+        updated="2021-05-24 16:13:50.890038",
         examples="""
                 {0}ascify H̷̗́̊ẻ̵̩̚ċ̷͎̖̚a̴̛͎͊t̸̳̭̂͌ȇ̴̲̯
                 {0}ascify 708584008065351681
@@ -623,26 +600,23 @@ class Utility(commands.Cog):
             it will return the same result.
         """
         try:
-            member = await commands.MemberConverter().convert(ctx, string_or_member)
+            member = await converters.DiscordMember().convert(ctx, string_or_member)
             if member:
                 current_name = copy.copy(member.display_name)
                 ascified = unidecode(member.display_name)
-                try:
-                    if ctx.guild:
-                        if ctx.author.guild_permissions.manage_nicknames:
-                            await member.edit(nick=ascified)
-                            return await ctx.send_or_reply(
-                                content=f"{self.bot.emote_dict['success']} Ascified **{current_name}** to **{ascified}**",
-                            )
-                except Exception:
-                    pass
+                if ctx.guild and ctx.author.guild_permissions.manage_nicknames:
+                    try:
+                        await member.edit(nick=ascified)
+                        return await ctx.success(f"Ascified **{current_name}** to **{ascified}**")
+                    except Exception:
+                        ascified = unidecode(string_or_member)
+                else:
+                    ascified = unidecode(string_or_member)
             else:
                 ascified = unidecode(string_or_member)
-        except commands.MemberNotFound:
+        except commands.BadArgument:
             ascified = unidecode(string_or_member)
-        await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['success']} Result: **{ascified}**",
-        )
+        await ctx.success(f"Result: **{ascified}**")
 
     @decorators.command(  # R. Danny https://github.com/Rapptz/RoboDanny/
         aliases=["unicode"],
@@ -667,29 +641,16 @@ class Utility(commands.Cog):
         def to_string(c):
             digit = f"{ord(c):x}"
             name = unicodedata.name(c, "Name not found.")
-            return f'{self.bot.emote_dict["success"]} `\\U{digit:>08}`: {name} - {c} \N{EM DASH} <http://www.fileformat.info/info/unicode/char/{digit}>'
+            return f'`\\U{digit:>08}`: {name} - {c} \N{EM DASH} <http://www.fileformat.info/info/unicode/char/{digit}>'
 
         msg = "\n".join(map(to_string, characters))
-        if len(msg) > 2000:
-            return await ctx.send_or_reply("Output too long to display.")
-        await ctx.send_or_reply(msg)
+        await ctx.success(msg)
 
-    async def do_avatar(self, ctx, user, url):
+    # Helper function to format and send the given image url.
+    async def do_avatar(self, ctx, name, url, default=False, server=False):
         embed = discord.Embed(
-            title=f"**{user.display_name}'s avatar.**",
-            description=f"Links to `{user}'s` avatar:  "
-            f"[webp]({(str(url))}) | "
-            f'[png]({(str(url).replace("webp", "png"))}) | '
-            f'[jpeg]({(str(url).replace("webp", "jpg"))})  ',
-            color=self.bot.constants.embed,
-        )
-        embed.set_image(url=url)
-        await ctx.send_or_reply(embed=embed)
-
-    async def do_savatar(self, ctx, server, url):
-        embed = discord.Embed(
-            title=f"**{server.name}'s icon.**",
-            description=f"Links to `{server.name}'s` icon:  "
+            title=f"**{name}'s {'default' if default else ''} {'icon' if server else 'avatar'}.**",
+            description=f"Links to `{name}'s` avatar:  "
             f"[webp]({(str(url))}) | "
             f'[png]({(str(url).replace("webp", "png"))}) | '
             f'[jpeg]({(str(url).replace("webp", "jpg"))})  ',
@@ -699,27 +660,28 @@ class Utility(commands.Cog):
         await ctx.send_or_reply(embed=embed)
 
     @decorators.command(
-        aliases=["av", "pfp"],
+        aliases=["av", "pfp", "icon"],
         brief="Show a user's avatar.",
         implemented="",
         updated="",
         examples="""
                 {0}avatar
                 {0}av @Hecate
+                {0}icon Hecate#3523
                 {0}pfp 708584008065351681
                 """,
     )
     async def avatar(self, ctx, *, user: converters.DiscordUser = None):
         """
         Usage: {0}avatar [user]
-        Aliases: {0}av, {0}pfp
+        Aliases: {0}av, {0}pfp, {0}icon
         Examples: {0}avatar 810377376269205546, {0}avatar Snowbot
         Output: Shows an enlarged embed of a user's avatar.
         Notes: Will default to you if no user is passed.
         """
         if user is None:
             user = ctx.author
-        await self.do_avatar(ctx, user, url=user.avatar_url)
+        await self.do_avatar(ctx, user.display_name, url=user.avatar_url)
 
     @decorators.command(
         aliases=["dav", "dpfp", "davatar"],
@@ -744,7 +706,7 @@ class Utility(commands.Cog):
         """
         if user is None:
             user = ctx.author
-        await self.do_avatar(ctx, user, user.default_avatar_url)
+        await self.do_avatar(ctx, user.display_name, user.default_avatar_url, default=True)
 
     @decorators.command(
         aliases=["sav", "savatar"],
@@ -770,13 +732,13 @@ class Utility(commands.Cog):
         """
         if server is None:
             server = ctx.guild
-        await self.do_savatar(ctx, server, server.icon_url)
+        await self.do_avatar(ctx, server, server.icon_url, server=True)
 
     @decorators.command(
         aliases=["nick", "setnick"],
         brief="Edit or reset a user's nickname",
         implemented="2021-03-14 04:33:34.557509",
-        updated="2021-05-07 05:17:42.736370",
+        updated="2021-05-24 16:13:50.890038",
         examples="""
             {0}nick Snowbot
             {0}setnick @Tester Tester2
@@ -784,6 +746,7 @@ class Utility(commands.Cog):
             """,
     )
     @commands.guild_only()
+    @checks.bot_has_perms(manage_nicknames=True)
     @checks.has_perms(manage_nicknames=True)
     async def nickname(
         self, ctx, user: converters.DiscordMember, *, nickname: str = None
@@ -808,16 +771,14 @@ class Utility(commands.Cog):
                     ctx.author, "Nickname edited by command execution"
                 ),
             )
-            message = f"{self.bot.emote_dict['success']} Nicknamed `{user}: {nickname}`"
+            message = f"Nicknamed `{user}: {nickname}`"
             if nickname is None:
-                message = (
-                    f"{self.bot.emote_dict['success']} Reset nickname for `{user}`"
-                )
-            await ctx.send_or_reply(message)
+                message = f"Reset nickname for `{user}`"
+            await ctx.success(message)
         except discord.Forbidden:
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['failed']} I do not have permission to edit `{user}'s` nickname.",
-            )
+            await ctx.fail(f"I do not have permission to edit `{user}'s` nickname.")
+        except Exception as e:
+            await helpers.error_info(ctx, [(str(user), e)])
 
     # command idea from Alex Flipnote's discord_bot.py bot
     # https://github.com/AlexFlipnote/discord_bot.py
@@ -1200,7 +1161,7 @@ class Utility(commands.Cog):
         updated="2021-05-10 20:14:33.223405",
     )
     @checks.has_perms(manage_emojis=True)
-    async def emojipost(self, ctx, nodm: str = ""):
+    async def emojipost(self, ctx, dm: converters.Flag = None):
         """
         Usage: {0}emojipost [nodm]
         Alias: {0}epost
@@ -1210,10 +1171,6 @@ class Utility(commands.Cog):
             Specify the nodm bool argument
             to avoid the bot from DMing you.
         """
-        dm = True
-        if nodm in ["-nodm", "--nodm", "nodm"]:
-            dm = False
-
         emojis = sorted(
             [e for e in ctx.guild.emojis if len(e.roles) == 0 and e.available],
             key=lambda e: e.name.lower(),
@@ -1234,28 +1191,38 @@ class Utility(commands.Cog):
 
     @decorators.command(brief="Snipe a deleted message.", aliases=["retrieve"])
     @commands.guild_only()
+    @checks.bot_has_perms(embed_links=True)
     @checks.has_perms(manage_messages=True)
     async def snipe(self, ctx, *, member: converters.DiscordMember = None):
         """
-        Usage: -snipe [user]
-        Alias: -retrieve
+        Usage: {0}snipe [user]
+        Alias: {0}retrieve
         Output: Fetches a deleted message
         Notes:
             Will fetch a messages sent by a specific user if specified
         """
         if member is None:
-            query = """SELECT author_id, message_id, content, timestamp FROM messages WHERE channel_id = $1 AND deleted = True ORDER BY unix DESC;"""
-            result = await self.bot.cxn.fetchrow(query, ctx.channel.id) or None
+            query = """
+                    SELECT (author_id, message_id, content, timestamp)
+                    FROM messages
+                    WHERE channel_id = $1
+                    AND deleted = True
+                    ORDER BY unix DESC;
+                    """
+            result = await self.bot.cxn.fetchrow(query, ctx.channel.id)
         else:
-            query = """SELECT author_id, message_id, content, timestamp FROM messages WHERE channel_id = $1 AND author_id = $2 AND deleted = True ORDER BY unix DESC;"""
-            result = (
-                await self.bot.cxn.fetchrow(query, ctx.channel.id, member.id) or None
-            )
+            query = """
+                    SELECT (author_id, message_id, content, timestamp)
+                    FROM messages
+                    WHERE channel_id = $1
+                    AND author_id = $2
+                    AND deleted = True
+                    ORDER BY unix DESC;
+                    """
+            result = await self.bot.cxn.fetchrow(query, ctx.channel.id, member.id)
 
-        if result is None:
-            return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['warn']} There is nothing to snipe.",
-            )
+        if not result:
+            return await ctx.fail(f"There is nothing to snipe.")
 
         author = result[0]
         message_id = result[1]
@@ -1881,41 +1848,41 @@ class NumericStringParser(object):
             round
             sgn
         """
-        point = Literal(".")
-        e = CaselessLiteral("E")
-        fnumber = Combine(
-            Word("+-" + nums, nums)
-            + Optional(point + Optional(Word(nums)))
-            + Optional(e + Word("+-" + nums, nums))
+        point = pyparsing.Literal(".")
+        e = pyparsing.CaselessLiteral("E")
+        fnumber = pyparsing.Combine(
+        pyparsing.Word("+-" + pyparsing.nums, pyparsing.nums)
+            + pyparsing.Optional(point + pyparsing.Optional(pyparsing.Word(pyparsing.nums)))
+            + pyparsing.Optional(e + pyparsing.Word("+-" + pyparsing.nums, pyparsing.nums))
         )
-        ident = Word(alphas, alphas + nums + "_$")
-        plus = Literal("+")
-        minus = Literal("-")
-        mult = Literal("x")
-        div = Literal("/")
-        lpar = Literal("(").suppress()
-        rpar = Literal(")").suppress()
+        ident = pyparsing.Word(pyparsing.alphas, pyparsing.alphas + pyparsing.nums + "_$")
+        plus = pyparsing.Literal("+")
+        minus = pyparsing.Literal("-")
+        mult = pyparsing.Literal("x")
+        div = pyparsing.Literal("/")
+        lpar = pyparsing.Literal("(").suppress()
+        rpar = pyparsing.Literal(")").suppress()
         addop = plus | minus
         multop = mult | div
-        expop = Literal("^")
-        pi = CaselessLiteral("PI")
-        expr = Forward()
+        expop = pyparsing.Literal("^")
+        pi = pyparsing.CaselessLiteral("PI")
+        expr = pyparsing.Forward()
         atom = (
             (
-                Optional(oneOf("- +"))
+                pyparsing.Optional(pyparsing.oneOf("- +"))
                 + (pi | e | fnumber | ident + lpar + expr + rpar).setParseAction(
                     self.pushFirst
                 )
             )
-            | Optional(oneOf("- +")) + Group(lpar + expr + rpar)
+            | pyparsing.Optional(pyparsing.oneOf("- +")) + pyparsing.Group(lpar + expr + rpar)
         ).setParseAction(self.pushUMinus)
         # by defining exponentiation as "atom [ ^ factor ]..." instead of
         # "atom [ ^ atom ]...", we get right-to-left exponents, instead of left-to-right
         # that is, 2^3^2 = 2^(3^2), not (2^3)^2.
-        factor = Forward()
-        factor << atom + ZeroOrMore((expop + factor).setParseAction(self.pushFirst))
-        term = factor + ZeroOrMore((multop + factor).setParseAction(self.pushFirst))
-        expr << term + ZeroOrMore((addop + term).setParseAction(self.pushFirst))
+        factor = pyparsing.Forward()
+        factor << atom + pyparsing.ZeroOrMore((expop + factor).setParseAction(self.pushFirst))
+        term = factor + pyparsing.ZeroOrMore((multop + factor).setParseAction(self.pushFirst))
+        expr << term + pyparsing.ZeroOrMore((addop + term).setParseAction(self.pushFirst))
         # addop_term = ( addop + term ).setParseAction( self.pushFirst )
         # general_term = term + ZeroOrMore( addop_term ) | OneOrMore( addop_term)
         # expr <<  general_term

@@ -158,34 +158,12 @@ class Snowbot(commands.AutoShardedBot):
             super().run(token, reconnect=True)  # Run the bot
         finally:  # Write up our json files with the stats from the session.
             try:
-                self.status_loop.stop()  # Stop the loop
-
+                self.status_loop.stop()  # Stop the loop gracefully
                 print(color(text="\nKilled", fore="FF0000"))
-
                 with open("./data/json/blacklist.json", "w", encoding="utf-8") as fp:
                     json.dump(
                         self.blacklist, fp, indent=2
                     )  # New blacklisted users from the session
-                with open("./data/json/stats.json", "w", encoding="utf-8") as fp:
-                    stats = {
-                        "client name": self.user.name,
-                        "client id": self.user.id,
-                        "client age": utils.time_between(
-                            self.user.created_at.timestamp(), time.time()
-                        ),
-                        "client owner": f"{self.owner_ids[0]}, {self.get_user(self.owner_ids[0])}",
-                        "last run": utils.timeago(datetime.utcnow() - self.uptime),
-                        "commands run": len(self.command_stats),
-                        "messages seen": self.messages,
-                        "server count": len(self.guilds),
-                        "channel count": len([x for x in self.get_all_channels()]),
-                        "member count": len([x for x in self.get_all_members()]),
-                        "batch inserts": self.batch_inserts,
-                        "username changes": self.namechanges,
-                        "nickname changes": self.nickchanges,
-                        "avatar changes": self.avchanges,
-                    }
-                    json.dump(stats, fp, indent=2)
             except AttributeError:
                 pass  # Killed the bot before it established attributes so ignore errors
 

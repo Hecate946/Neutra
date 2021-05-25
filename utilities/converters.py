@@ -4,6 +4,7 @@ import typing
 
 import discord
 from discord.ext import commands
+from discord.ext.commands.core import dm_only
 from utilities import checks
 
 EMOJI_REGEX = re.compile(r"<a?:.+?:([0-9]{15,21})>")
@@ -69,12 +70,12 @@ class SearchEmojiConverter(commands.Converter):
 
         try:
             return await commands.converter.EmojiConverter().convert(ctx, argument)
-        except commands.BadArgument:
+        except commands.EmojiNotFound:
             pass
 
         try:
             return await commands.PartialEmojiConverter().convert(ctx, argument)
-        except commands.BadArgument:
+        except commands.PartialEmojiConversionFailure:
             pass
 
         lax_id_match = lax_id_regex.match(argument)
@@ -84,7 +85,69 @@ class SearchEmojiConverter(commands.Converter):
             )
 
         raise commands.BadArgument(
-            'Emoji "{}" not found'.format(await prettify(ctx, argument))
+            'Emoji `{}` not found'.format(await prettify(ctx, argument))
+        )
+
+class GuildEmojiConverter(commands.Converter):
+    """Search for matching emoji."""
+
+    async def get_by_id(self, ctx, emoji_id):
+        """Exact emoji_id lookup."""
+        result = None
+        if ctx.guild:
+            result = discord.utils.get(ctx.guild.emojis, id=emoji_id)
+        return result
+
+    async def get_by_name(self, ctx, emoji_name):
+        """Lookup by name.
+        Returns list of possible matches.
+        Does a bot-wide case-insensitive match.
+        """
+        def pred(emoji):
+            return emoji.name.lower() == emoji_name.lower()
+
+        return [e for e in ctx.guild.emojis if pred(e)]
+
+    async def find_match(self, ctx, argument):
+        """Get a match...
+        If we have a number, try lookup by id.
+        Fallback to lookup by name.
+        Disambiguate in case we have multiple name results.
+        """
+        lax_id_match = lax_id_regex.match(argument)
+        if lax_id_match:
+            result = await self.get_by_id(ctx, int(lax_id_match.group(1)))
+            if result:
+                return result
+
+        results = await self.get_by_name(ctx, argument)
+        if results:
+            return results[0]
+
+    async def convert(self, ctx, argument):
+        match = await self.find_match(ctx, argument)
+
+        if match:
+            return match
+
+        try:
+            return await commands.converter.EmojiConverter().convert(ctx, argument)
+        except commands.EmojiNotFound:
+            pass
+
+        try:
+            return await commands.PartialEmojiConverter().convert(ctx, argument)
+        except commands.PartialEmojiConversionFailure:
+            pass
+
+        lax_id_match = lax_id_regex.match(argument)
+        if lax_id_match:
+            return discord.PartialEmoji(
+                name="unknown", id=int(lax_id_match.group(1)), animated=False
+            )
+
+        raise commands.BadArgument(
+            'Emoji `{}` not found'.format(await prettify(ctx, argument))
         )
 
 
@@ -496,6 +559,26 @@ class ActionReason(commands.Converter):
                 f"Reason is too long ({len(argument)}/{reason_max})"
             )
         return ret
+
+class Flag(commands.Converter):
+    async def convert(self, ctx, argument):
+        nodm_options = ["--nodm", "--nopm", "-nodm", "-nopm", " nodm", " nopm"]
+        dm_options = ["--dm", "--pm", "-dm", "-pm", " dm", " pm"]
+        if argument in ["--nodm", "--nopm", "-nodm", "-nopm", "nodm", "nopm"]:
+            dm_bool = False
+        elif argument in ["--dm", "--pm", "-dm", "-pm", "dm", "pm"]:
+            dm_bool = True
+        else:
+            from utilities import formatting
+            headers = ["SEND DM", "DO NOT DM"]
+            rows = tuple(zip(dm_options, nodm_options)) 
+            table = formatting.TabularData()
+            table.set_columns(headers)
+            table.add_rows(rows)
+            render = table.render()
+            completed = f"```sml\nVALID FLAGS:\n{render}```"
+            raise commands.BadArgument(f"**Invalid flag.**{completed}")
+        return dm_bool
 
 
 class Arguments(argparse.ArgumentParser):

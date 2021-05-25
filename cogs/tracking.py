@@ -1220,7 +1220,7 @@ class Tracking(commands.Cog):
         if unit not in time_dict:
             unit = "month"
         time_seconds = time_dict.get(unit, 2592000)
-        now = int(datetime.utcnow().timestamp())
+        now = int(time.time())
         diff = now - time_seconds
         query = """
                 SELECT COUNT(*) as c, author_id
@@ -1289,9 +1289,15 @@ class Tracking(commands.Cog):
         if unit not in time_dict:
             unit = "day"
         time_seconds = time_dict.get(unit, 2592000)
-        now = int(datetime.utcnow().timestamp())
+        now = int(time.time())
         diff = now - time_seconds
-        query = """SELECT SUM(LENGTH(content)) as c, author_id, COUNT(*) FROM messages WHERE server_id = $1 AND unix > $2 GROUP BY author_id ORDER BY c DESC LIMIT 25"""
+        query = """
+                SELECT SUM(LENGTH(content)) as c, author_id, COUNT(*)
+                FROM messages
+                WHERE server_id = $1
+                AND unix > $2
+                GROUP BY author_id
+                ORDER BY c DESC LIMIT 25"""
         stuff = await self.bot.cxn.fetch(query, ctx.guild.id, diff)
         e = discord.Embed(
             title="Character Leaderboard",
@@ -1626,5 +1632,5 @@ class Tracking(commands.Cog):
         buffer.seek(0)
         dfile = discord.File(fp=buffer, filename="uptime.png")
         em.title = f"{user}'s Status Statistics"
-        em.set_image(url="attachment://uptime.png")
+        em.set_image(url="attachment://statusinfo.png")
         await ctx.send_or_reply(embed=em, file=dfile)

@@ -9,12 +9,12 @@ import asyncio
 import discord
 import inspect
 import pathlib
-import datetime
 import platform
 import statistics
 import subprocess
 import collections
 
+from datetime import datetime
 from discord import __version__ as dv
 from discord.ext import commands, menus
 from PIL import Image, ImageDraw, ImageFont
@@ -40,13 +40,13 @@ class Info(commands.Cog):
         self.bot = bot
         self.socket_event_total = 0
         self.process = psutil.Process(os.getpid())
-        self.socket_since = datetime.datetime.utcnow()
+        self.socket_since = datetime.utcnow()
         self.message_latencies = collections.deque(maxlen=500)
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
     async def on_message(self, message):
-        now = datetime.datetime.utcnow()
+        now = datetime.utcnow()
         self.message_latencies.append((now, now - message.created_at))
 
     @commands.Cog.listener()  # Update our socket counters
@@ -109,7 +109,7 @@ class Info(commands.Cog):
         embed.add_field(
             name="Last boot",
             value=str(
-                utils.timeago(datetime.datetime.utcnow() - self.bot.uptime)
+                utils.timeago(datetime.utcnow() - self.bot.uptime)
             ).capitalize(),
             inline=True,
         )
@@ -175,7 +175,7 @@ class Info(commands.Cog):
             Fetch information on the socket
             events received from Discord.
         """
-        running_s = (datetime.datetime.utcnow() - self.socket_since).total_seconds()
+        running_s = (datetime.utcnow() - self.socket_since).total_seconds()
 
         per_s = self.socket_event_total / running_s
 
@@ -252,10 +252,10 @@ class Info(commands.Cog):
                 check=lambda m: (m.author == ctx.bot.user and m.content == msg_content),
             )
         )
-        now = datetime.datetime.utcnow()
+        now = datetime.utcnow()
         sent_message = await ctx.send(msg_content)
         await task
-        rtt_time = datetime.datetime.utcnow()
+        rtt_time = datetime.utcnow()
         content = "```prolog\n"
         content += "Client Timestamp - Discord  Timestamp: {:.2f}ms\n"
         content += "Posted Timestamp - Response Timestamp: {:.2f}ms\n"
@@ -1151,14 +1151,13 @@ class Info(commands.Cog):
                 """
         botstats = await self.bot.cxn.fetchval(query)
         statustime = time.time() - self.bot.statustime
+        
         runtime = botstats[0]
-        online = (
-            botstats[1] + statustime if str(me.status) == "offline" else botstats[1]
-        )
+        online = botstats[1] + statustime if str(me.status) == "offline" else botstats[1]
         idle = botstats[2] + statustime if str(me.status) == "idle" else botstats[2]
         dnd = botstats[3] + statustime if str(me.status) == "dnd" else botstats[3]
         startdate = botstats[5]
-        total = (datetime.datetime.utcnow() - startdate).total_seconds()
+        total = (datetime.utcnow() - startdate).total_seconds()
         offline = total - (online + idle + dnd)
         uptime = online + idle + dnd
         raw_percent = uptime / total

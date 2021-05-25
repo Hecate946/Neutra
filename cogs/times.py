@@ -582,7 +582,7 @@ class Times(commands.Cog):
                 SELECT DISTINCT author_id, (SELECT EXTRACT(DAY FROM (TO_TIMESTAMP(unix))))
                 FROM messages
                 WHERE server_id = $1
-                AND unix > (SELECT extract(epoch from now()) - $2);
+                AND unix > (SELECT EXTRACT(EPOCH FROM NOW()) - $2);
                 """
         rows = await self.bot.cxn.fetch(query, ctx.guild.id, (actual_time - 86400))
         counter = collections.Counter([row[0] for row in rows])

@@ -1,7 +1,7 @@
 import re
 import discord
 
-from collections import Counter
+from collections import Counter, defaultdict
 from discord.ext import commands, menus
 
 from utilities import utils
@@ -552,53 +552,38 @@ class Stats(commands.Cog):
     )
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.has_perms(view_audit_log=True)
-    async def emoji(self, ctx, emoji: converters.SearchEmojiConverter):
+    async def emoji(self, ctx, emoji: converters.GuildEmojiConverter):
         """
         Usage: {0}emoji <custom emoji>
         Aliases:
             {0}emote, {0}emojiusage, {0}emoteusage
         Output: Usage stats on the passed emoji
         """
-        async with ctx.channel.typing():
-            emoji_id = emoji.id
+        msg = await ctx.load("Collecting Emoji Statistics")
+        await ctx.trigger_typing()
+        query = f"""
+                SELECT author_id, string_agg(content, '') as content
+                FROM messages
+                WHERE content ~ '<a?:.+?:{emoji.id}>'
+                GROUP BY author_id;
+                """
 
-            msg = await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['loading']} **Collecting Emoji Statistics...**",
-            )
-            query = f"""
-                    SELECT (author_id, content)
-                    FROM messages
-                    WHERE content ~ '<a?:.+?:{emoji_id}>';
-                    """
+        emoji_usage = await self.bot.cxn.fetch(query)
+        matches = {record["author_id"]: len(re.compile(f"<a?:.+?:{emoji.id}>").findall(record["content"])) for record in emoji_usage}
 
-            stuff = await self.bot.cxn.fetch(query)
-
-            emoji_users = []
-            for x in stuff:
-                emoji_users.append(x[0][0])
-
-            fat_msg = ""
-            for x in stuff:
-                fat_msg += x[0][1]
-
-            emoji_users = Counter(emoji_users).most_common()
-
-            matches = re.compile(f"<a?:.+?:{emoji_id}>").findall(fat_msg)
-            total_uses = len(matches)
-
-            p = pagination.SimplePages(
-                entries=[
-                    "`{}`: Uses: {}".format(self.bot.get_user(u[0]), u[1])
-                    for u in emoji_users
-                ],
-                per_page=15,
-            )
-            p.embed.title = f"Emoji usage stats for {emoji} (Total: {total_uses})"
-            await msg.delete()
-            try:
-                await p.start(ctx)
-            except menus.MenuError as e:
-                await ctx.send_or_reply(e)
+        p = pagination.SimplePages(
+            entries=[
+                "`{}`: Uses: {}".format(ctx.guild.get_member(user), count)
+                for user, count in matches.items() if ctx.guild.get_member(user)
+            ],
+            per_page=15,
+        )
+        p.embed.title = f"Emoji usage stats for {emoji} (Total: {len(matches)})"
+        await msg.delete()
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send_or_reply(e)
 
     @decorators.command(
         aliases=["joinedat", "jointime"],

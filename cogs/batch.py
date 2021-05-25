@@ -1,15 +1,14 @@
 import io
-import json
-import os
 import re
+import json
 import time
 import asyncio
 import discord
 import logging
-import datetime
 import traceback
 
 from collections import Counter, defaultdict
+from datetime import datetime, timezone
 from discord.ext import commands, tasks
 
 from utilities import utils
@@ -253,7 +252,7 @@ class Batch(commands.Cog):
                 await self.bot.cxn.execute(query, data)
                 self.emoji_batch.clear()
 
-        if self.message_batch:  # Insert every message into db
+        if self.message_batch:  # Insert every message into the db
             query = """
                     INSERT INTO messages (unix, timestamp, content,
                     message_id, author_id, channel_id, server_id)
@@ -283,8 +282,7 @@ class Batch(commands.Cog):
                 await self.bot.cxn.execute(query, data)
                 self.spammer_batch.clear()
 
-        # Track user last seen times
-        if self.tracker_batch:
+        if self.tracker_batch:  # Track user last seen times
             query = """
                     INSERT INTO tracker (
                         user_id,
@@ -306,7 +304,7 @@ class Batch(commands.Cog):
                 )
                 self.tracker_batch.clear()
 
-        if self.avatar_batch:
+        if self.avatar_batch:  # Save user avatars
             query = """
                     INSERT INTO useravatars (user_id, avatar_id, unix)
                     SELECT x.user_id, x.avatar_id, x.unix
@@ -318,7 +316,7 @@ class Batch(commands.Cog):
                 await self.bot.cxn.execute(query, data)
                 self.avatar_batch.clear()
 
-        if self.usernames_batch:
+        if self.usernames_batch:  # Save usernames
             query = """
                     INSERT INTO usernames (user_id, name, changed_at)
                     SELECT x.user_id, x.name, x.changed_at
@@ -332,7 +330,7 @@ class Batch(commands.Cog):
                 await self.bot.cxn.execute(query, data)
                 self.usernames_batch.clear()
 
-        if self.nicknames_batch:
+        if self.nicknames_batch:  # Save user nicknames
             query = """
                     INSERT INTO usernicks (user_id, server_id, nickname, changed_at)
                     SELECT x.user_id, x.server_id, x.nickname, x.changed_at
@@ -346,7 +344,7 @@ class Batch(commands.Cog):
                 await self.bot.cxn.execute(query, data)
                 self.nicknames_batch.clear()
 
-        if self.roles_batch:
+        if self.roles_batch:  # Insert roles to reassign later.
             query = """
                     INSERT INTO userroles (user_id, server_id, roles)
                     SELECT x.user_id, x.server_id, x.roles
@@ -360,9 +358,9 @@ class Batch(commands.Cog):
                 await self.bot.cxn.execute(query, data)
                 self.roles_batch.clear()
 
-        if self.invite_batch:
+        if self.invite_batch:  # Insert invite data for basic tracking
             query = """
-                    INSERT INTO invites (invitee, inviter server_id)
+                    INSERT INTO invites (invitee, inviter, server_id)
                     SELECT x.invitee, x.inviter, x.server_id
                     FROM JSONB_TO_RECORDSET($1::JSONB)
                     AS x(invitee BIGINT, inviter BIGINT, server_id BIGINT)
@@ -376,13 +374,9 @@ class Batch(commands.Cog):
     @bulk_inserter.before_loop
     async def get_webhook(self):
         """
-        This loads our existing
-        avatar saving webhook
-        from the db or creates
-        it if it doesn't exist.
-        Cancels avatar saving
-        if no avchan is found
-        in ./config.json
+        This loads our existing avatar saving webhook
+        from the db or creates it if it doesn't exist.
+        Stops avatar saving if no avatar channel exists.
         """
         query = """
                 SELECT (
@@ -521,7 +515,7 @@ class Batch(commands.Cog):
                         "user_id": after.id,
                         "server_id": after.guild.id,
                         "nickname": after.display_name,
-                        "changed_at": str(datetime.datetime.utcnow()),
+                        "changed_at": str(datetime.utcnow()),
                     }
                 )
 
@@ -555,7 +549,7 @@ class Batch(commands.Cog):
                     {
                         "user_id": after.id,
                         "name": str(after),
-                        "changed_at": str(datetime.datetime.utcnow()),
+                        "changed_at": str(datetime.utcnow()),
                     }
                 )
                 self.tracker_batch[before.id] = (time.time(), "updating their username")
@@ -567,7 +561,7 @@ class Batch(commands.Cog):
         async with self.batch_lock:
             self.message_batch.append(
                 {
-                    "unix": message.created_at.timestamp(),
+                    "unix": message.created_at.replace(tzinfo=timezone.utc).timestamp(),
                     "timestamp": str(message.created_at.utcnow()),
                     "content": message.clean_content,
                     "message_id": message.id,
@@ -585,7 +579,7 @@ class Batch(commands.Cog):
 
         author = message.author
         bucket = self.spam_control.get_bucket(message)
-        current = message.created_at.replace(tzinfo=datetime.timezone.utc).timestamp()
+        current = message.created_at.replace(tzinfo=timezone.utc).timestamp()
         retry_after = bucket.update_rate_limit(current)
         if retry_after:
             self._auto_spam_count[author.id] += 1
@@ -609,7 +603,6 @@ class Batch(commands.Cog):
     @commands.Cog.listener()
     @decorators.wait_until_ready()
     async def on_raw_message_edit(self, payload):
-
         channel_obj = self.bot.get_channel(payload.channel_id)
         try:
             message = await channel_obj.fetch_message(payload.message_id)
@@ -681,7 +674,7 @@ class Batch(commands.Cog):
                     "user_id": member.id,
                     "server_id": member.guild.id,
                     "nickname": member.display_name,
-                    "changed_at": str(datetime.datetime.utcnow()),
+                    "changed_at": str(datetime.utcnow()),
                 }
             )
         if not member.guild.me.guild_permissions.manage_guild:
