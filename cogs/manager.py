@@ -797,10 +797,10 @@ class Manager(commands.Cog):
             server = ctx.guild
         c = await ctx.confirm("This action will purge all this server's data.")
         if c:
-            await ctx.load("Recursively discarding all server data...")
+            msg = await ctx.load("Recursively discarding all server data...")
             from settings.cleanup import destroy_server
             await destroy_server(server.id)
-            await ctx.bold(f"{self.bot.emote_dict['delete']} Successfully discarded all server data.")
+            await msg.edit(content=f"**{self.bot.emote_dict['delete']} Successfully discarded all server data.**")
 
     # Thank you R. Danny
     @decorators.command(
