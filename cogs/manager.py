@@ -793,7 +793,7 @@ class Manager(commands.Cog):
             Runs a cleanup function that
             removes all data on the server.
         """
-        if server_id is None:
+        if server is None:
             server = ctx.guild
         c = await ctx.confirm("This action will purge all this server's data.")
         if c:
