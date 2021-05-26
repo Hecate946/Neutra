@@ -631,7 +631,7 @@ class Tracking(commands.Cog):
             raise commands.DisabledCommand()
 
         msg = await ctx.load(f"Collecting {user}'s Avatars...")
-        avatars = await batch.get_avs(ctx, user)
+        avatars = await batch.get_avs(user)
         if not avatars:
             # Tack on their current avatar
             avatars.append([str(user.avatar_url_as(format="png", size=256))])
