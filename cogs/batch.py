@@ -78,7 +78,6 @@ class Batch(commands.Cog):
                         {
                             "user_id": int(x.filename.split(".")[0]),
                             "avatar_id": x.id,
-                            "unix": time.time(),
                         }
                     )
             except discord.HTTPException as e:
@@ -99,7 +98,6 @@ class Batch(commands.Cog):
                         {
                             "user_id": int(x.filename.split(".")[0]),
                             "avatar_id": x.id,
-                            "unix": time.time(),
                         }
                     )
                 await self.bot.bot_channel.send(
@@ -333,10 +331,10 @@ class Batch(commands.Cog):
 
         if self.avatar_batch:  # Save user avatars
             query = """
-                    INSERT INTO useravatars (user_id, avatar_id, unix)
-                    SELECT x.user_id, x.avatar_id, x.unix
+                    INSERT INTO useravatars (user_id, avatar_id)
+                    SELECT x.user_id, x.avatar_id
                     FROM JSONB_TO_RECORDSET($1::JSONB)
-                    AS x(user_id BIGINT, avatar_id BIGINT, unix REAL)
+                    AS x(user_id BIGINT, avatar_id BIGINT)
                     """
             async with self.batch_lock:
                 data = json.dumps(self.avatar_batch)

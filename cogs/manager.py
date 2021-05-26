@@ -801,8 +801,6 @@ class Manager(commands.Cog):
             from settings.cleanup import destroy_server
             await destroy_server(server.id)
             await ctx.bold(f"{self.bot.emote_dict['delete']} Successfully discarded all server data.")
-        else:
-            await ctx.bold("Cancelled")
 
     # Thank you R. Danny
     @decorators.command(
