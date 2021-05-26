@@ -626,22 +626,21 @@ class Tracking(commands.Cog):
         if user.bot:
             return await ctx.fail("I do not track bots.")
 
-        tracking = self.bot.get_cog("Batch")
-        if not tracking:
-            return await ctx.fail(
-                f"This command is currently unavailable. Please try again later."
-            )
+        batch = self.bot.get_cog("Batch")
+        if not batch:
+            raise commands.DisabledCommand()
+
         msg = await ctx.load(f"Collecting {user}'s Avatars...")
-        res = await tracking.get_avs(ctx, user)
-        if not res["avatars"]:
+        avatars = await batch.get_avs(ctx, user)
+        if not avatars:
             # Tack on their current avatar
-            res["avatars"] = [str(user.avatar_url_as(format="png", size=256))]
+            avatars.append([str(user.avatar_url_as(format="png", size=256))])
 
         em = discord.Embed(color=self.bot.constants.embed)
         em.title = f"Recorded Avatars for {user}"
         iteration = 0
         parent = Image.open("./data/assets/mask.png")
-        for av in res["avatars"]:
+        for av in avatars:
             if iteration < 4:
                 val = 0
                 x = iteration
