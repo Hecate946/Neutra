@@ -9,6 +9,9 @@ from utilities import utils
 
 
 class Monitor(commands.Cog):
+    """
+    Log bot errors and monitor health
+    """
     def __init__(self, bot):
         self.bot = bot
 
@@ -27,21 +30,24 @@ class Monitor(commands.Cog):
 
 
 async def on_error(self, event, *args, **kwargs):
-    title = f"**{self.emote_dict['failed']} Event Error `{datetime.utcnow()}`**"
-    description = f"```prolog\n{event.upper()}:\n{traceback.format_exc()}\n```"
+    title = f"**{self.emote_dict['failed']} Error `{datetime.utcnow()}`**"
+    traceback.print_exc()
+    description = f"```prolog\n{event.upper()}:\n{kwargs.get('tb') or traceback.format_exc()}\n```"
     args_str = []
-    for index, arg in enumerate(args):
-        args_str.append(f"[{index}]: {arg!r}")
+    dfile = None
+    if args:
+        for index, arg in enumerate(args):
+            args_str.append(f"[{index}]: {arg!r}")
 
-    fp = io.BytesIO("\n".join(args_str).encode("utf-8"))
-    dfile = discord.File(fp, "arguments.unrendered")
-    hook = self.get_cog("Moniter").webhook
+        fp = io.BytesIO("\n".join(args_str).encode("utf-8"))
+        dfile = discord.File(fp, "arguments.unrendered")
+    hook = self.get_cog("Monitor").webhook
     av = "https://cdn.discordapp.com/attachments/846597178918436885/846597481231679508/error.png"
     try:
         await hook.send(
             title + description,
             file=dfile,
-            username=f"{self.user.name} Moniter",
+            username=f"{self.user.name} Monitor",
             avatar_url=av,
         )
     except Exception:

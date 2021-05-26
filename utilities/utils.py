@@ -36,8 +36,9 @@ def config(filename: str = "config"):
 
 def traceback_maker(err, advance: bool = True):
     """ A way to debug your code anywhere """
+    header = "Traceback (most recent call last):"
     _traceback = "".join(traceback.format_tb(err.__traceback__))
-    error = ("\n{1}{0}: {2}\n").format(type(err).__name__, _traceback, err)
+    error = ("{3}\n{1}{0}: {2}\n").format(type(err).__name__, _traceback, err, header)
     return error if advance else f"{type(err).__name__}: {err}"
 
 
@@ -440,7 +441,7 @@ UNKNOWN_CUTOFF_TZ = UNKNOWN_CUTOFF.replace(tzinfo=timezone.utc)
 def format_time(time):
     if time is None or time < UNKNOWN_CUTOFF:
         return "Unknown"
-    return "{} - [{}+00:00 UTC]".format(
+    return "{} - [{} UTC]".format(
         humanize.naturaltime(time + (datetime.now() - datetime.utcnow())), time
     )
 

@@ -1,13 +1,29 @@
-CREATE TABLE IF NOT EXISTS usernicks (
+CREATE TABLE IF NOT EXISTS useravatars (
+    id BIGSERIAL PRIMARY KEY,
     user_id BIGINT,
-    server_id BIGINT,
-    nickname TEXT
+    avatar_id BIGINT,
+    insertion TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
 );
+CREATE INDEX IF NOT EXISTS useravatars_idx ON useravatars(user_id, avatar_id);
 
 CREATE TABLE IF NOT EXISTS usernames (
+    id BIGSERIAL PRIMARY KEY,
     user_id BIGINT,
-    name TEXT
+    username TEXT,
+    insertion TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
 );
+CREATE INDEX IF NOT EXISTS usernames_idx ON usernames(user_id, username);
+
+
+CREATE TABLE IF NOT EXISTS usernicks (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT,
+    server_id BIGINT,
+    nickname TEXT,
+    insertion TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
+);
+CREATE INDEX IF NOT EXISTS usernicks_idx ON usernicks(user_id, nickname);
+
 
 CREATE TABLE IF NOT EXISTS userroles (
     user_id BIGINT,
@@ -32,12 +48,6 @@ CREATE TABLE IF NOT EXISTS spammers (
     server_id BIGINT,
     spamcount BIGINT,
     UNIQUE(user_id, server_id)
-);
-
-CREATE TABLE IF NOT EXISTS useravatars (
-    user_id BIGINT,
-    avatar_id BIGINT,
-    unix REAL
 );
 
 CREATE TABLE IF NOT EXISTS userstatus (

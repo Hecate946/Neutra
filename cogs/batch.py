@@ -736,7 +736,7 @@ class Batch(commands.Cog):
     async def on_reaction_remove(self, reaction, user):
         self.bot.dispatch("picklist_reaction", reaction, user)
 
-    async def last_observed(self, member: converters.DiscordUser):
+    async def last_observed(self, member):
         """Lookup last_observed data."""
         query = """
                 SELECT DISTINCT ON (unix) unix, action
@@ -752,7 +752,7 @@ class Batch(commands.Cog):
                 WHERE author_id = $1;
                 """
         last_spoke = await self.bot.cxn.fetchval(query, member.id) or None
-
+        server_last_spoke = None
         if hasattr(member, "guild"):
             query = """
                     SELECT MAX(unix)
@@ -760,16 +760,8 @@ class Batch(commands.Cog):
                     WHERE author_id = $1
                     AND server_id = $2;
                     """
-            server_last_spoke = (
-                await self.bot.cxn.fetchval(
-                    query,
-                    member.id,
-                    member.guild.id,
-                )
-                or None
-            )
-        else:
-            server_last_spoke = None
+            server_last_spoke = await self.bot.cxn.fetchval(query, member.id, member.guild.id)
+
 
         if last_seen:
             action = last_seen[1]
@@ -797,49 +789,63 @@ class Batch(commands.Cog):
         }
         return observed_data
 
-    async def user_data(self, ctx, member: converters.DiscordUser):
-        """Lookup name & avatar data."""
+    async def get_avs(self, user):
+        """
+        Lookup all saved user avatars
+        """
+        avatars = []
         query = """
-                SELECT name
-                FROM usernames
-                WHERE user_id = $1
-                ORDER BY changed_at DESC NULLS LAST;
+                SELECT ARRAY(
+                    SELECT avatar_id
+                    FROM useravatars
+                    WHERE user_id = $1
+                    ORDER BY insertion DESC
+                ) as avatar_list;
                 """
-        usernames = await self.bot.cxn.fetch(query, member.id)
+        results = await self.bot.cxn.fetchval(query, user.id)
+        avatars.extend(results)
+        if avatars:
+            avatars = [
+                f"https://cdn.discordapp.com/attachments/{self.avatar_webhook.channel.id}/{x}/{user.id}.png"
+                for x in avatars
+            ]
+        return avatars
 
+    async def get_names(self, user):
+        """
+        Lookup all saved usernames
+        """
+        usernames = [str(user)]  # Tack on their current username
         query = """
-                SELECT avatar_id
-                FROM useravatars
-                WHERE user_id = $1
-                ORDER BY unix DESC NULLS LAST;
+                SELECT ARRAY(
+                    SELECT username
+                    FROM usernames
+                    WHERE user_id = $1
+                    ORDER BY insertion DESC
+                ) as name_list;
                 """
-        avatars = await self.bot.cxn.fetch(query, member.id)
-
-        if hasattr(member, "guild"):
-            query = """
+        results = await self.bot.cxn.fetchval(query, user.id)
+        if results:
+            usernames.extend(results)
+        return usernames
+    
+    async def get_nicks(self, user):
+        """
+        Lookup all saved nicknames
+        """
+        if not hasattr(user, "guild"):
+            return []  # Not a 'member' object
+        nicknames = [user.display_name]  # Tack on their current nickname
+        query = """
+                SELECT ARRAY(
                     SELECT nickname
                     FROM usernicks
                     WHERE user_id = $1
                     AND server_id = $2
-                    ORDER BY changed_at DESC NULLS LAST;
-                    """
-            nicknames = await self.bot.cxn.fetch(query, member.id, ctx.guild.id)
-        else:
-            nicknames = None
-
-        if avatars:
-            avatars = [
-                f"https://cdn.discordapp.com/attachments/{self.avatar_webhook.channel.id}/{x[0]}/{member.id}.png"
-                for x in avatars
-            ]
-        if nicknames:
-            nicknames = ", ".join([record["nickname"] for record in nicknames])
-        if usernames:
-            usernames = ", ".join([record["name"] for record in usernames])
-
-        observed_data = {
-            "usernames": usernames or None,
-            "nicknames": nicknames or None,
-            "avatars": avatars or None,
-        }
-        return observed_data
+                    ORDER BY insertion DESC
+                ) as nick_list;
+                """
+        results = await self.bot.cxn.fetchval(query, user.id, user.guild.id)
+        if results:
+            nicknames.extend(results)
+        return nicknames
