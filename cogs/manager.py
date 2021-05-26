@@ -780,6 +780,30 @@ class Manager(commands.Cog):
         else:
             await ctx.bold("Cancelled")
 
+    @decorators.command(
+        aliases=["drop"],
+        brief="Discard the data on a server.",
+    )
+    async def discard(self, ctx, server: converters.DiscordGuild = None):
+        """
+        Usage: {0}discard
+        Alias: {0}drop
+        Permission: Bot owner
+        Output:
+            Runs a cleanup function that
+            removes all data on the server.
+        """
+        if server_id is None:
+            server = ctx.guild
+        c = await ctx.confirm("This action will purge all this server's data.")
+        if c:
+            await ctx.load("Recursively discarding all server data...")
+            from settings.cleanup import destroy_server
+            await destroy_server(server.id)
+            await ctx.bold(f"{self.bot.emote_dict['delete']} Successfully discarded all server data.")
+        else:
+            await ctx.bold("Cancelled")
+
     # Thank you R. Danny
     @decorators.command(
         writer=80088516616269824,

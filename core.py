@@ -150,7 +150,8 @@ class Snowbot(commands.AutoShardedBot):
         self.socket_events = collections.Counter()
 
         self.cog_exceptions = ["CONFIG", "BOTADMIN", "MANAGER", "JISHAKU"]
-        self.useless_cogs = ["TESTING", "BATCH", "SLASH", "TASKS"]
+        self.useless_cogs = ["TESTING", "BATCH", "SLASH", "TASKS", "MONITOR"]
+        self.do_not_load = ["CONVERSION"]
 
     def run(self, token):  # Everything starts from here
         self.setup()  # load the cogs
@@ -415,7 +416,7 @@ class Snowbot(commands.AutoShardedBot):
                 WHERE client_id = $1;
                 """
         status_values = await self.cxn.fetchval(query, self.user.id)
-        if status_values is None:
+        if not status_values:
             activity = "playing"
             presence = ""
             status = "online"
@@ -446,19 +447,20 @@ class Snowbot(commands.AutoShardedBot):
 
     async def finalize_startup(self):
         # Delete all records of servers that kicked the bot
-        await cleanup.cleanup_servers(self.guilds)
-        self.ready = True
+        await cleanup.basic_cleanup(self.guilds)
 
         # loads all the cogs in ./cogs and prints them on sys.stdout
         try:
             for cog in COGS:
-                self.load_extension(f"cogs.{cog}")
+                if cog.upper() not in self.do_not_load:
+                    self.load_extension(f"cogs.{cog}")
         except Exception as e:
-            print(utils.traceback_maker(e))
-            # print(color(fore="#88ABB4", text=f"Loaded: {str(cog).upper()}"))
+            self.dispatch("error", "extension_error", tb=utils.traceback_maker(e))
 
         print(f"{self.user} ({self.user.id})")
 
+        self.ready = True # Finally
+        
         # See if we were rebooted by a command and send confirmation if we were.
         query = """
                 SELECT (
@@ -476,13 +478,8 @@ class Snowbot(commands.AutoShardedBot):
             try:
                 channel = await self.fetch_channel(reboot_channel_id)
                 msg = channel.get_partial_message(reboot_message_id)
-                await msg.edit(
-                    content=self.emote_dict["success"]
-                    + " "
-                    + "{0}ed Successfully.".format(reboot_invoker)
-                )
-            except Exception as e:
-                await self.hecate.send(e)
+                await msg.edit(content=f"{self.emote_dict['success']} {reboot_invoker}ed Successfully.")
+            except Exception:
                 pass
 
     async def on_command_error(self, ctx, error):

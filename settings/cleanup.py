@@ -7,96 +7,104 @@ log = logging.getLogger("INFO_LOGGER")
 
 conn = database.postgres
 
+async def basic_cleanup(guilds):
+    query = "SELECT server_id FROM servers"
+    await find_discrepancy(query, guilds)
 
-async def cleanup_servers(guilds):
-    server_list = []
-    for server in guilds:
-        server_list.append(server.id)
+async def find_discrepancy(query, guilds):
+    server_list = [x.id for x in guilds]
+    records = await conn.fetch(query)
+    for record in records:
+        server_id = record["server_id"]
+        if server_id not in server_list:
+            await destroy_server(server_id)
 
-    query = """SELECT (server_id, server_name) FROM servers;"""
-    servers = await conn.fetch(query)
-    for x in servers:
-        if x[0][0] not in server_list:
-            await destroy_server(x[0][0], x[0][1])
+async def purge_discrepancies(guilds):
+    print("Running purge_discrepancies(guilds)")
+    query = "SELECT server_id FROM servers"
+    await find_discrepancy(query, guilds)
+    print(f"{query.split()[-1]}_query")
 
-    query = """SELECT (server_id) FROM logging;"""
-    servers = await conn.fetch(query)
-    for x in servers:
-        if x[0] not in server_list:
-            await destroy_server(x[0], "Unknown")
+    query = "SELECT server_id FROM prefixes"
+    await find_discrepancy(query, guilds)
+    print(f"{query.split()[-1]}_query")
 
+    query = "SELECT server_id FROM logging"
+    await find_discrepancy(query, guilds)
+    print(f"{query.split()[-1]}_query")
 
-async def destroy_server(guild_id, guild_name):
-    await conn.execute(
-        """
-    DELETE FROM servers WHERE server_id = $1
-    """,
-        guild_id,
-    )
+    query = "SELECT server_id FROM ignored"
+    await find_discrepancy(query, guilds)
 
-    await conn.execute(
-        """
-    DELETE FROM prefixes WHERE server_id = $1
-    """,
-        guild_id,
-    )
+    query = "SELECT server_id FROM lockedchannels"
+    await find_discrepancy(query, guilds)
+    print(f"{query.split()[-1]}_query")
 
-    await conn.execute(
-        """
-    DELETE FROM userroles WHERE server_id = $1
-    """,
-        guild_id,
-    )
+    query = "SELECT server_id FROM warn"
+    await find_discrepancy(query, guilds)
+    print(f"{query.split()[-1]}_query")
 
-    await conn.execute(
-        """
-    DELETE FROM usernicks WHERE server_id = $1
-    """,
-        guild_id,
-    )
+    query = "SELECT server_id FROM invites"
+    await find_discrepancy(query, guilds)
+    print(f"{query.split()[-1]}_query")
 
-    await conn.execute(
-        """
-    DELETE FROM mutes WHERE server_id = $1
-    """,
-        guild_id,
-    )
+    query = "SELECT server_id FROM emojistats"
+    await find_discrepancy(query, guilds)
+    print(f"{query.split()[-1]}_query")
 
-    await conn.execute(
-        """
-    DELETE FROM logging WHERE server_id = $1
-    """,
-        guild_id,
-    )
+    query = "SELECT server_id FROM messages"
+    await find_discrepancy(query, guilds)
+    print(f"{query.split()[-1]}_query")
 
-    await conn.execute(
-        """
-    DELETE FROM lockedchannels WHERE server_id = $1
-    """,
-        guild_id,
-    )
+    query = "SELECT server_id FROM usernicks"
+    await find_discrepancy(query, guilds)
+    print(f"{query.split()[-1]}_query")
 
-    await conn.execute(
-        """
-    DELETE FROM warn WHERE server_id = $1
-    """,
-        guild_id,
-    )
+    query = "SELECT server_id FROM userroles"
+    await find_discrepancy(query, guilds)
+    print(f"{query.split()[-1]}_query")
 
-    await conn.execute(
-        """
-    DELETE FROM messages WHERE server_id = $1
-    """,
-        guild_id,
-    )
+    query = "SELECT server_id FROM spammers"
+    await find_discrepancy(query, guilds)
+    print(f"{query.split()[-1]}_query")
 
-    await conn.execute(
-        """
-    DELETE FROM ignored WHERE server_id = $1
-    """,
-        guild_id,
-    )
+async def destroy_server(guild_id):
+    """Delete all records of a server from the db"""
 
-    log.info(
-        "Successfully destroyed server [{0}] Name: ({1})".format(guild_id, guild_name)
-    )
+    query = "DELETE FROM servers WHERE server_id = $1"
+    await conn.execute(query, guild_id)
+    
+    query = "DELETE FROM prefixes WHERE server_id = $1"
+    await conn.execute(query, guild_id)
+    
+    query = "DELETE FROM logging WHERE server_id = $1"
+    await conn.execute(query, guild_id)
+    
+    query = "DELETE FROM ignored WHERE server_id = $1"
+    await conn.execute(query, guild_id)
+    
+    query = "DELETE FROM lockedchannels WHERE server_id = $1"
+    await conn.execute(query, guild_id)
+    
+    query = "DELETE FROM warn WHERE server_id = $1"
+    await conn.execute(query, guild_id)
+    
+    query = "DELETE FROM invites WHERE server_id = $1"
+    await conn.execute(query, guild_id)
+
+    query = "DELETE FROM emojistats WHERE server_id = $1"
+    await conn.execute(query, guild_id)
+
+    query = "DELETE FROM messages WHERE server_id = $1"
+    await conn.execute(query, guild_id)
+
+    query = "DELETE FROM usernicks WHERE server_id = $1"
+    await conn.execute(query, guild_id)
+
+    query = "DELETE FROM userroles WHERE server_id = $1"
+    await conn.execute(query, guild_id)
+
+    query = "DELETE FROM spammers WHERE server_id = $1"
+    await conn.execute(query, guild_id)
+
+    log.info("Destroyed server [{guild_id}]")
