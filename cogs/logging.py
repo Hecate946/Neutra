@@ -14,6 +14,7 @@ CREATED_MESSAGE = "https://cdn.discordapp.com/attachments/846597178918436885/846
 UPDATED_MESSAGE = "https://cdn.discordapp.com/attachments/846597178918436885/846841668639653939/messageupdate.png"
 DELETED_MESSAGE = "https://cdn.discordapp.com/attachments/846597178918436885/846841722994163722/messagedelete.png"
 
+
 def setup(bot):
     bot.add_cog(Logging(bot))
 
@@ -3096,7 +3097,6 @@ class Logging(commands.Cog):
             msg = f" User `{user}` has {string1} {len(entries)} {string2 if len(entries) != 1 else string2[:-1]}."
         return msg
 
-
     @decorators.command(brief="Snipe a deleted message.", aliases=["retrieve"])
     @commands.guild_only()
     @checks.bot_has_perms(embed_links=True)
@@ -3162,7 +3162,10 @@ class Logging(commands.Cog):
         embed.set_footer(text=f"Message ID: {message_id}")
         await ctx.send_or_reply(embed=embed)
 
-    @decorators.command(brief="Snipe an edited message.", aliases=["snipeedit","retrieveedit","editretrieve"])
+    @decorators.command(
+        brief="Snipe an edited message.",
+        aliases=["snipeedit", "retrieveedit", "editretrieve"],
+    )
     @commands.guild_only()
     @checks.bot_has_perms(embed_links=True)
     @checks.has_perms(manage_messages=True)

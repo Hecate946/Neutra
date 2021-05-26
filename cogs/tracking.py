@@ -237,7 +237,7 @@ class Tracking(commands.Cog):
         """
         if user is None:
             user = ctx.author
-        
+
         batch = self.bot.get_cog("Batch")
         if not batch:
             raise commands.DisabledCommand()
@@ -525,7 +525,7 @@ class Tracking(commands.Cog):
             user = ctx.author
         if user.bot:
             return await ctx.fail("I do not track bots.")
-        batch = self.bot.get_cog('Batch')
+        batch = self.bot.get_cog("Batch")
         if not batch:
             raise commands.DisabledCommand()
         await ctx.trigger_typing()
@@ -574,7 +574,7 @@ class Tracking(commands.Cog):
             user = ctx.author
         if user.bot:
             return await ctx.fail("I do not track bots.")
-        batch = self.bot.get_cog('Batch')
+        batch = self.bot.get_cog("Batch")
         if not batch:
             raise commands.DisabledCommand()
         await ctx.trigger_typing()

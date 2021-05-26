@@ -188,49 +188,55 @@ class Batch(commands.Cog):
                     await self.bot.cxn.execute(query, data)
                     self.status_batch["offline"].clear()
 
+    @status_inserter.error
+    async def loop_error(self, exc):
+        self.bot.dispatch("error", "loop_error", tb=utils.traceback_maker(exc))
+
     @tasks.loop(seconds=0.2)
     async def message_inserter(self):
         """
         Main bulk message inserter
         """
-        try:
-            if self.message_batch:  # Insert every message into the db
-                query = """
-                        INSERT INTO messages (unix, timestamp, content,
-                        message_id, author_id, channel_id, server_id)
-                        SELECT x.unix, x.timestamp, x.content,
-                        x.message_id, x.author_id, x.channel_id, x.server_id
-                        FROM JSONB_TO_RECORDSET($1::JSONB)
-                        AS x(unix REAL, timestamp TIMESTAMP, content TEXT,
-                        message_id BIGINT, author_id BIGINT,
-                        channel_id BIGINT, server_id BIGINT)
-                        """
-                async with self.batch_lock:
-                    data = json.dumps(self.message_batch)
-                    await self.bot.cxn.execute(query, data)
-                    self.message_batch.clear()
 
-            if self.snipe_batch:  # Snipe command setup
-                query = """
-                        UPDATE messages
-                        SET deleted = True
-                        WHERE message_id = $1;
-                        """  # Updates already stored messages.
-                async with self.batch_lock:
-                    await self.bot.cxn.executemany(query, ((x,) for x in self.snipe_batch))
-                    self.snipe_batch.clear()
+        if self.message_batch:  # Insert every message into the db
+            query = """
+                    INSERT INTO messages (unix, timestamp, content,
+                    message_id, author_id, channel_id, server_id)
+                    SELECT x.unix, x.timestamp, x.content,
+                    x.message_id, x.author_id, x.channel_id, x.server_id
+                    FROM JSONB_TO_RECORDSET($1::JSONB)
+                    AS x(unix REAL, timestamp TIMESTAMP, content TEXT,
+                    message_id BIGINT, author_id BIGINT,
+                    channel_id BIGINT, server_id BIGINT)
+                    """
+            async with self.batch_lock:
+                data = json.dumps(self.message_batch)
+                await self.bot.cxn.execute(query, data)
+                self.message_batch.clear()
 
-            if self.edited_batch:  # Edit snipe command setup
-                query = """
-                        UPDATE messages
-                        SET edited = True
-                        WHERE message_id = $1;
-                        """  # Updates already stored messages.
-                async with self.batch_lock:
-                    await self.bot.cxn.executemany(query, ((x,) for x in self.edited_batch))
-                    self.edited_batch.clear()
-        except Exception as e:
-            await self.bot.dispatch("error", "Loop Error", tb=utils.traceback_maker(e))
+        if self.snipe_batch:  # Snipe command setup
+            query = """
+                    UPDATE messages
+                    SET deleted = True
+                    WHERE message_id = $1;
+                    """  # Updates already stored messages.
+            async with self.batch_lock:
+                await self.bot.cxn.executemany(query, ((x,) for x in self.snipe_batch))
+                self.snipe_batch.clear()
+
+        if self.edited_batch:  # Edit snipe command setup
+            query = """
+                    UPDATE messages
+                    SET edited = True
+                    WHERE message_id = $1;
+                    """  # Updates already stored messages.
+            async with self.batch_lock:
+                await self.bot.cxn.executemany(query, ((x,) for x in self.edited_batch))
+                self.edited_batch.clear()
+
+    @message_inserter.error
+    async def loop_error(self, exc):
+        self.bot.dispatch("error", "loop_error", tb=utils.traceback_maker(exc))
 
     @tasks.loop(seconds=2.0)
     async def bulk_inserter(self):
@@ -243,8 +249,8 @@ class Batch(commands.Cog):
                         prefix, command, failed
                     )
                     SELECT x.server, x.channel,
-                           x.author, x.timestamp,
-                           x.prefix, x.command, x.failed
+                        x.author, x.timestamp,
+                        x.prefix, x.command, x.failed
                     FROM JSONB_TO_RECORDSET($1::JSONB)
                     AS x(
                         server BIGINT, channel BIGINT,
@@ -386,6 +392,10 @@ class Batch(commands.Cog):
                 data = json.dumps(self.invite_batch)
                 await self.bot.cxn.execute(query, data)
                 self.invite_batch.clear()
+
+    @bulk_inserter.error
+    async def loop_error(self, exc):
+        self.bot.dispatch("error", "loop_error", tb=utils.traceback_maker(exc))
 
     @bulk_inserter.before_loop
     async def get_webhook(self):
@@ -763,8 +773,9 @@ class Batch(commands.Cog):
                     WHERE author_id = $1
                     AND server_id = $2;
                     """
-            server_last_spoke = await self.bot.cxn.fetchval(query, member.id, member.guild.id)
-
+            server_last_spoke = await self.bot.cxn.fetchval(
+                query, member.id, member.guild.id
+            )
 
         if last_seen:
             action = last_seen[1]
@@ -831,7 +842,7 @@ class Batch(commands.Cog):
         if results:
             usernames.extend(results)
         return usernames
-    
+
     async def get_nicks(self, user):
         """
         Lookup all saved nicknames

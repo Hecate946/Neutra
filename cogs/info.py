@@ -208,8 +208,8 @@ class Info(commands.Cog):
             over the past 500 messages send.
         """
         await ctx.send(
-            f"{self.bot.emote_dict['stopwatch']} " + 
-            "`{:.2f}ms`".format(
+            f"{self.bot.emote_dict['stopwatch']} "
+            + "`{:.2f}ms`".format(
                 1000
                 * statistics.mean(
                     lat.total_seconds() for ts, lat in self.message_latencies

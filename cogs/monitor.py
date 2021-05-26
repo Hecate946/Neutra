@@ -12,6 +12,7 @@ class Monitor(commands.Cog):
     """
     Log bot errors and monitor health
     """
+
     def __init__(self, bot):
         self.bot = bot
 
@@ -31,7 +32,6 @@ class Monitor(commands.Cog):
 
 async def on_error(self, event, *args, **kwargs):
     title = f"**{self.emote_dict['failed']} Error `{datetime.utcnow()}`**"
-    traceback.print_exc()
     description = f"```prolog\n{event.upper()}:\n{kwargs.get('tb') or traceback.format_exc()}\n```"
     args_str = []
     dfile = None
