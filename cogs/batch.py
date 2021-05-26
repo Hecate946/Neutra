@@ -193,41 +193,44 @@ class Batch(commands.Cog):
         """
         Main bulk message inserter
         """
-        if self.message_batch:  # Insert every message into the db
-            query = """
-                    INSERT INTO messages (unix, timestamp, content,
-                    message_id, author_id, channel_id, server_id)
-                    SELECT x.unix, x.timestamp, x.content,
-                    x.message_id, x.author_id, x.channel_id, x.server_id
-                    FROM JSONB_TO_RECORDSET($1::JSONB)
-                    AS x(unix REAL, timestamp TIMESTAMP, content TEXT,
-                    message_id BIGINT, author_id BIGINT,
-                    channel_id BIGINT, server_id BIGINT)
-                    """
-            async with self.batch_lock:
-                data = json.dumps(self.message_batch)
-                await self.bot.cxn.execute(query, data)
-                self.message_batch.clear()
+        try:
+            if self.message_batch:  # Insert every message into the db
+                query = """
+                        INSERT INTO messages (unix, timestamp, content,
+                        message_id, author_id, channel_id, server_id)
+                        SELECT x.unix, x.timestamp, x.content,
+                        x.message_id, x.author_id, x.channel_id, x.server_id
+                        FROM JSONB_TO_RECORDSET($1::JSONB)
+                        AS x(unix REAL, timestamp TIMESTAMP, content TEXT,
+                        message_id BIGINT, author_id BIGINT,
+                        channel_id BIGINT, server_id BIGINT)
+                        """
+                async with self.batch_lock:
+                    data = json.dumps(self.message_batch)
+                    await self.bot.cxn.execute(query, data)
+                    self.message_batch.clear()
 
-        if self.snipe_batch:  # Snipe command setup
-            query = """
-                    UPDATE messages
-                    SET deleted = True
-                    WHERE message_id = $1;
-                    """  # Updates already stored messages.
-            async with self.batch_lock:
-                await self.bot.cxn.executemany(query, ((x,) for x in self.snipe_batch))
-                self.snipe_batch.clear()
+            if self.snipe_batch:  # Snipe command setup
+                query = """
+                        UPDATE messages
+                        SET deleted = True
+                        WHERE message_id = $1;
+                        """  # Updates already stored messages.
+                async with self.batch_lock:
+                    await self.bot.cxn.executemany(query, ((x,) for x in self.snipe_batch))
+                    self.snipe_batch.clear()
 
-        if self.edited_batch:  # Edit snipe command setup
-            query = """
-                    UPDATE messages
-                    SET edited = True
-                    WHERE message_id = $1;
-                    """  # Updates already stored messages.
-            async with self.batch_lock:
-                await self.bot.cxn.executemany(query, ((x,) for x in self.edited_batch))
-                self.edited_batch.clear()
+            if self.edited_batch:  # Edit snipe command setup
+                query = """
+                        UPDATE messages
+                        SET edited = True
+                        WHERE message_id = $1;
+                        """  # Updates already stored messages.
+                async with self.batch_lock:
+                    await self.bot.cxn.executemany(query, ((x,) for x in self.edited_batch))
+                    self.edited_batch.clear()
+        except Exception as e:
+            await self.bot.dispatch("error", "Loop Error", tb=utils.traceback_maker(e))
 
     @tasks.loop(seconds=2.0)
     async def bulk_inserter(self):
@@ -336,7 +339,7 @@ class Batch(commands.Cog):
 
         if self.usernames_batch:  # Save usernames
             query = """
-                    INSERT INTO usernames (user_id, name)
+                    INSERT INTO usernames (user_id, username)
                     SELECT x.user_id, x.name
                     FROM JSONB_TO_RECORDSET($1::JSONB)
                     AS x(user_id BIGINT, name TEXT)
@@ -348,10 +351,10 @@ class Batch(commands.Cog):
 
         if self.nicknames_batch:  # Save user nicknames
             query = """
-                    INSERT INTO usernicks (user_id, server_id, nickname, changed_at)
-                    SELECT x.user_id, x.server_id, x.nickname, x.changed_at
+                    INSERT INTO usernicks (user_id, server_id, nickname)
+                    SELECT x.user_id, x.server_id, x.nickname
                     FROM JSONB_TO_RECORDSET($1::JSONB)
-                    AS x(user_id BIGINT, server_id BIGINT, nickname TEXT, changed_at TIMESTAMP)
+                    AS x(user_id BIGINT, server_id BIGINT, nickname TEXT)
                     """
             async with self.batch_lock:
                 data = json.dumps(self.nicknames_batch)
