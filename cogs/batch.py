@@ -1,3 +1,4 @@
+import datetime
 import io
 import re
 import json
@@ -83,7 +84,6 @@ class Batch(commands.Cog):
             except discord.HTTPException as e:
                 # Here the combined files likely went over the 8mb file limit
                 # Lets divide them up into 2 parts and send them separately.
-                await self.bot.logging_webhook.send(e)
                 upload_batch_1 = await self.bot.avatar_webhook.send(
                     files=files[:5], wait=True
                 )
@@ -100,11 +100,17 @@ class Batch(commands.Cog):
                             "avatar_id": x.id,
                         }
                     )
-                await self.bot.logging_webhook.send(
-                    f"**Payload size error successfully dealt with.**"
-                )
+                try:
+                    await self.bot.logging_webhook.send(
+                        f"{self.emote_dict['success']} **Information** `{datetime.utcnow()}`\n"
+                        f"```prolog\nQueue: Payload data limit resolved.```",
+                        username=f"{self.user.name} Logger",
+                        avatar_url=self.bot.constants.avatars["green"],
+                    )
+                except Exception:
+                    pass
             except Exception as e:
-                await self.bot.logging_webhook.send(e)
+                self.bot.dispatch("error", "queue_error", tb=utils.traceback_maker(e))
 
     @tasks.loop(seconds=0.5)
     async def status_inserter(self):
@@ -594,7 +600,7 @@ class Batch(commands.Cog):
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
-    @decorators.event_check(lambda s, i: not i.inviter.bot)
+    @decorators.event_check(lambda s, i: i.inviter and not i.inviter.bot)
     async def on_invite_create(self, invite):
         async with self.batch_lock:
             self.tracker_batch[invite.inviter.id] = (time.time(), "creating an invite")

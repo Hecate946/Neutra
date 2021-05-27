@@ -20,7 +20,6 @@ from settings import cleanup, database, constants
 from utilities import utils, override
 
 MAX_LOGGING_BYTES = 32 * 1024 * 1024  # 32 MiB
-RED_AVATAR = "https://cdn.discordapp.com/attachments/846597178918436885/846597481231679508/error.png"
 
 # Set up our data folders
 if not os.path.exists("./data/txts"):
@@ -154,6 +153,10 @@ class Snowbot(commands.AutoShardedBot):
         self.icon_webhook = None
         self.logging_webhook = None
         self.testing_webhook = None
+
+    @property
+    def hecate(self):
+        return self.get_user(self.owner_ids[0])
 
     def run(self, token):  # Everything starts from here
         self.setup()  # load the cogs
@@ -458,6 +461,15 @@ class Snowbot(commands.AutoShardedBot):
             self.dispatch("error", "extension_error", tb=utils.traceback_maker(e))
 
         print(f"{self.user} ({self.user.id})")
+        try:
+            await self.logging_webhook.send(
+                f"{self.emote_dict['success']} **Information** `{datetime.utcnow()}`\n"
+                f"```prolog\nReady: {self.user} [{self.user.id}]```",
+                username=f"{self.user.name} Logger",
+                avatar_url=self.constants.avatars["green"],
+            )
+        except Exception:
+            pass
 
         self.ready = True
 
@@ -483,179 +495,6 @@ class Snowbot(commands.AutoShardedBot):
                 )
             except Exception:
                 pass
-
-    async def on_error(self, event, *args, **kwargs):
-        title = f"**{self.emote_dict['failed']} Error `{datetime.utcnow()}`**"
-        description = f"```prolog\n{event.upper()}:\n{kwargs.get('tb') or traceback.format_exc()}\n```"
-        args_str = []
-        dfile = None
-        if args:
-            for index, arg in enumerate(args):
-                args_str.append(f"[{index}]: {arg!r}")
-
-            fp = io.BytesIO("\n".join(args_str).encode("utf-8"))
-            dfile = discord.File(fp, "arguments.unrendered")
-
-        try:
-            await self.error_webhook.send(
-                title + description,
-                file=dfile,
-                username=f"{self.user.name} Monitor",
-                avatar_url=RED_AVATAR,
-            )
-        except Exception:
-            pass
-
-    async def on_command_error(self, ctx, error):
-        """
-        Here's where we handle all command errors
-        so we can give the user feedback
-        """
-        # This prevents any commands with local handlers being handled here in on_command_error.
-        if hasattr(ctx.command, "on_error"):
-            return
-
-        # This prevents any cogs with an overwritten cog_command_error being handled here.
-        if ctx.cog:
-            if ctx.cog._get_overridden_method(ctx.cog.cog_command_error) is not None:
-                return
-
-        if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.usage()
-
-        elif isinstance(error, commands.BadUnionArgument):
-            await ctx.usage()
-
-        elif isinstance(error, commands.BadBoolArgument):
-            argument = str(error).split()[0]
-            await ctx.send_or_reply(
-                f"{self.emote_dict['failed']} The argument `{argument}` is not a valid boolean."
-            )
-
-        elif isinstance(error, commands.BadArgument):
-            if 'Converting to "int" failed for parameter' in str(error):
-                arg = str(error).split()[-1].strip('."')
-                error = f"The `{arg}` argument must be an integer."
-            await ctx.send_or_reply(
-                content=f"{self.emote_dict['failed']} {error}",
-            )
-
-        elif isinstance(error, commands.BadUnionArgument):
-            await ctx.fail(error)
-
-        elif isinstance(error, commands.BotMissingPermissions):
-            await ctx.fail(error)
-
-        elif isinstance(error, commands.NoPrivateMessage):
-            await ctx.author.send(
-                f"{self.emote_dict['failed']} This command cannot be used in private messages."
-            )
-
-        elif isinstance(error, commands.PrivateMessageOnly):
-            await ctx.fail("This command can only be used in private messages.")
-
-        elif isinstance(error, commands.CommandOnCooldown):
-            await ctx.fail(
-                f"This command is on cooldown... retry in {error.retry_after:.2f} seconds."
-            )
-
-        elif isinstance(error, commands.DisabledCommand):
-            await ctx.message.add_reaction(self.emote_dict["failed"])
-            await ctx.fail(f"This command is currently unavailable.")
-
-        elif isinstance(error, commands.CheckFailure):
-            # Previous checks didn't catch this one.
-            # Readable error so just send it to where the error occurred.
-            pass
-            # await ctx.send_or_reply(content=f"{self.emote_dict['failed']} {error}")
-
-        elif isinstance(error, commands.CommandInvokeError):
-            err = utils.traceback_maker(error.original, advance=True)
-            if "or fewer" in str(error):  # Message was too long to send
-                return await ctx.fail(f" Result was greater than the character limit.")
-            # Then we don't really know what this error is. Log it.
-            print(
-                color(
-                    fore="FF0000",
-                    text=f"\nCommand {ctx.command.qualified_name} raised the error: {error.original.__class__.__name__}: {error.original}",
-                ),
-                file=sys.stderr,
-            )
-            if ctx.guild is None:
-                destination = "Private Message"
-            else:
-                destination = (
-                    "#{0.channel} [{0.channel.id}] ({0.guild}) [{0.guild.id}]".format(
-                        ctx
-                    )
-                )
-            error_logger.warning(
-                "{0.author} in {1}:\n\tCONTENT: {0.message.content}\n\tERROR : {2.original.__class__.__name__}:{2.original}".format(
-                    ctx, destination, error
-                )
-            )
-            traceback_logger.warning(err)
-            print(err)
-
-        else:
-            # Ok so here we don't really know what the error is, so lets print the basic error.
-            # We can always check ./pm2 logs for the full error later if necessary
-            err = utils.traceback_maker(error, advance=True)
-            print(color(fore="FF0000", text="Error"))
-            print(error)
-            if ctx.guild is None:
-                destination = "Private Message"
-            else:
-                destination = (
-                    "#{0.channel} [{0.channel.id}] ({0.guild}) [{0.guild.id}]".format(
-                        ctx
-                    )
-                )
-            error_logger.warning(
-                "{0.author} in {1}:\n\tCONTENT: {0.message.content}\n\tERROR : {2}\n".format(
-                    ctx, destination, error
-                )
-            )
-            traceback_logger.warning(str(err) + "\n")
-
-    async def on_guild_join(self, guild):
-        if self.ready is False:
-            return
-
-        await database.update_server(guild, guild.members)
-        await database.fix_server(guild.id)
-
-    async def on_guild_remove(self, guild):
-        if self.ready is False:
-            return
-        # This happens when the bot gets kicked from a server.
-        # No need to waste any space storing their info anymore.
-        await cleanup.cleanup_servers(self.guilds)
-
-    async def on_ready(self):
-        # from discord_slash import utils
-        # await utils.manage_commands.remove_all_commands_in(bot.user.id, bot.token, 740734113086177433)
-        pass
-
-    async def on_message(self, message):
-        await self.process_commands(message)
-        if isinstance(message.channel, discord.DMChannel):
-            if message.author.id != self.user.id:
-                # Sometimes users DM the bot their server invite... Lets send them ours
-                if self.dregex.match(message.content):
-                    await message.channel.send(
-                        f"Hey {message.author.mention}! if you're looking to invite me to your server, use this link:\n<{self.oauth}>"
-                    )
-
-    async def on_message_edit(self, before, after):
-        if self.ready is False:
-            return
-        created_at = ((before.id >> 22) + 1420070400000) / 1000
-        if (time.time() - created_at) > 7:
-            return
-        if before.content == after.content:
-            return
-        await self.process_commands(after)
 
     async def get_context(self, message, *, cls=None):
         """Override get_context to use a custom Context"""
@@ -725,9 +564,212 @@ class Snowbot(commands.AutoShardedBot):
             return None
         return members[0]
 
-    @property
-    def hecate(self):
-        return self.get_user(self.owner_ids[0])
+    async def on_ready(self):
+        # from discord_slash import utils
+        # await utils.manage_commands.remove_all_commands_in(bot.user.id, bot.token, 740734113086177433)
+        pass
+
+    async def on_error(self, event, *args, **kwargs):
+        """
+        All event errors and dispatched errors
+        will be logged via the error webhook.
+        """
+        title = f"**{self.emote_dict['failed']} Error `{datetime.utcnow()}`**"
+        description = f"```prolog\n{event.upper()}:\n{kwargs.get('tb') or traceback.format_exc()}\n```"
+        dfile = None
+        arguments = None
+        args_str = []
+        if args:
+            for index, arg in enumerate(args):
+                args_str.append(f"[{index}]: {arg!r}")
+            result = "\n".join(args_str)
+            if len(result) > 1994:
+                fp = io.BytesIO("\n".join(args_str).encode("utf-8"))
+                dfile = discord.File(fp, "arguments.txt")
+            else:
+                arguments = f"```py\n{result}```"
+
+        try:
+            await self.error_webhook.send(
+                title + description,
+                file=dfile,
+                username=f"{self.user.name} Monitor",
+                avatar_url=self.constants.avatars["red"],
+            )
+            if arguments:
+                await self.error_webhook.send(
+                    arguments,
+                    username=f"{self.user.name} Monitor",
+                    avatar_url=self.constants.avatars["red"],
+                )
+        except Exception:
+            pass
+
+    async def on_command_error(self, ctx, error):
+        """
+        Here's where we handle all command errors
+        so we can give the user feedback
+        """
+        # This prevents any commands with local handlers being handled here in on_command_error.
+        if hasattr(ctx.command, "on_error"):
+            return
+
+        # This prevents any cogs with an overwritten cog_command_error being handled here.
+        if ctx.cog:
+            if ctx.cog._get_overridden_method(ctx.cog.cog_command_error) is not None:
+                return
+
+        if isinstance(error, commands.MissingRequiredArgument):
+            await ctx.usage()
+
+        elif isinstance(error, commands.BadUnionArgument):
+            await ctx.usage()
+
+        elif isinstance(error, commands.BadBoolArgument):
+            argument = str(error).split()[0]
+            await ctx.send_or_reply(
+                f"{self.emote_dict['failed']} The argument `{argument}` is not a valid boolean."
+            )
+
+        elif isinstance(error, commands.BadArgument):
+            if 'Converting to "int" failed for parameter' in str(error):
+                arg = str(error).split()[-1].strip('."')
+                error = f"The `{arg}` argument must be an integer."
+            await ctx.fail(error)
+
+        elif isinstance(error, commands.BadUnionArgument):
+            await ctx.fail(error)
+
+        elif isinstance(error, commands.BotMissingPermissions):
+            await ctx.fail(error)
+
+        elif isinstance(error, commands.NoPrivateMessage):
+            await ctx.author.send(
+                f"{self.emote_dict['failed']} This command cannot be used in private messages."
+            )
+
+        elif isinstance(error, commands.PrivateMessageOnly):
+            await ctx.fail("This command can only be used in private messages.")
+
+        elif isinstance(error, commands.CommandOnCooldown):
+            await ctx.fail(
+                f"This command is on cooldown... retry in {error.retry_after:.2f} seconds."
+            )
+
+        elif isinstance(error, commands.DisabledCommand):
+            await ctx.message.add_reaction(self.emote_dict["failed"])
+            await ctx.fail("This command is currently unavailable.")
+
+        elif isinstance(error, commands.CheckFailure):
+            # Previous checks didn't catch this one.
+            # Readable error so just send it to where the error occurred.
+            # await ctx.send_or_reply(content=f"{self.emote_dict['failed']} {error}")
+            self.dispatch("error", "command_error", tb="CHECK_FAILURE: " + error)
+            pass
+
+        elif isinstance(error, commands.CommandInvokeError):
+            err = utils.traceback_maker(error.original, advance=True)
+            self.dispatch("error", "command_error", vars(ctx), tb=err)
+            if "or fewer" in str(error):  # Message was too long to send
+                return await ctx.fail(f"Result was greater than the character limit.")
+            # Then we don't really know what this error is. Log it.
+            print(
+                color(
+                    fore="FF0000",
+                    text=f"\nCommand {ctx.command.qualified_name} raised the error: {error.original.__class__.__name__}: {error.original}",
+                ),
+                file=sys.stderr,
+            )
+            if ctx.guild is None:
+                destination = "Private Message"
+            else:
+                destination = (
+                    "#{0.channel} [{0.channel.id}] ({0.guild}) [{0.guild.id}]".format(
+                        ctx
+                    )
+                )
+            error_logger.warning(
+                "{0.author} in {1}:\n\tCONTENT: {0.message.content}\n\tERROR : {2.original.__class__.__name__}:{2.original}".format(
+                    ctx, destination, error
+                )
+            )
+            traceback_logger.warning(err)
+            print(err)
+
+        else:
+            # Ok so here we don't really know what the error is, so lets print the basic error.
+            # We can always check ./pm2 logs for the full error later if necessary
+            err = utils.traceback_maker(error, advance=True)
+            self.dispatch("error", "command_error", vars(ctx), tb=err)
+            print(color(fore="FF0000", text="Error"))
+            print(error)
+            if ctx.guild is None:
+                destination = "Private Message"
+            else:
+                destination = (
+                    "#{0.channel} [{0.channel.id}] ({0.guild}) [{0.guild.id}]".format(
+                        ctx
+                    )
+                )
+            error_logger.warning(
+                "{0.author} in {1}:\n\tCONTENT: {0.message.content}\n\tERROR : {2}\n".format(
+                    ctx, destination, error
+                )
+            )
+            traceback_logger.warning(str(err) + "\n")
+
+    async def on_guild_join(self, guild):
+        if self.ready is False:
+            return
+
+        await database.update_server(guild, guild.members)
+        await database.fix_server(guild.id)
+        try:
+            await self.logging_webhook.send(
+                f"{self.emote_dict['success']} **Information** `{datetime.utcnow()}`\n"
+                f"```prolog\nServer join: {guild.name} [{guild.id}]```",
+                username=f"{self.user.name} Logger",
+                avatar_url=self.constants.avatars["green"],
+            )
+        except Exception:
+            pass
+
+    async def on_guild_remove(self, guild):
+        if self.ready is False:
+            return
+        # This happens when the bot gets kicked from a server.
+        # No need to waste any space storing their info anymore.
+        await cleanup.destroy_server(guild.id)
+        try:
+            await self.logging_webhook.send(
+                f"{self.emote_dict['success']} **Information** `{datetime.utcnow()}`\n"
+                f"```prolog\nServer remove: {guild.name} [{guild.id}]```",
+                username=f"{self.user.name} Logger",
+                avatar_url=self.constants.avatars["green"],
+            )
+        except Exception:
+            pass
+
+    async def on_message(self, message):
+        await self.process_commands(message)
+        if not isinstance(message.channel, discord.DMChannel):
+            return
+        if message.author.id == self.user.id:
+            return
+        # Sometimes users DM the bot their server invite... Lets send them ours
+        if self.dregex.match(message.content):
+            await message.reply(
+                f"If you're looking to invite me to your server, use this link:\n<{self.oauth}>"
+            )
+
+    async def on_message_edit(self, before, after):
+        if not self.ready:
+            return
+        if before.content == after.content:
+            return
+        if (after.edited_at - after.created_at).total_seconds() > 10:
+            return  # We do not allow edit command invokations after 10s.
+        await self.process_commands(after)
 
 
 bot = Snowbot()

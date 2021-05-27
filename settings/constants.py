@@ -20,6 +20,15 @@ except KeyError as e:
           Add this key or the bot might not function properly.
           """
     )
+avatars = {
+    "red": "https://cdn.discordapp.com/attachments/846597178918436885/847339918216658984/red.png",
+    "orange": "https://cdn.discordapp.com/attachments/846597178918436885/847342151238811648/orange.png",
+    "yellow": "https://cdn.discordapp.com/attachments/846597178918436885/847341423945711637/yellow.png",
+    "green": "https://cdn.discordapp.com/attachments/846597178918436885/847528287739314176/green.png",
+    "blue": "https://cdn.discordapp.com/attachments/846597178918436885/847339750042239007/blue.png",
+    "purple": "https://cdn.discordapp.com/attachments/846597178918436885/847340695823450117/purple.png",
+    "black": "https://cdn.discordapp.com/attachments/846597178918436885/847339605555675176/black.png",
+}
 emotes = {
     "loading": "<a:loading:819280509007560756>",
     "success": "<:checkmark:816534984676081705>",
