@@ -483,7 +483,7 @@ class Stats(commands.Cog):
                     entries=["{}: Uses: {}".format(e[0], e[1]) for e in emoji_list],
                     per_page=15,
                 )
-                p.embed.title = f"Emoji usage in **{ctx.guild.name}**"
+                p.embed.title = f"Server Emoji Usage"
                 await msg.delete()
                 try:
                     await p.start(ctx)
@@ -511,7 +511,7 @@ class Stats(commands.Cog):
                 total_uses = len(matches)
                 for x in matches:
                     emoji = self.bot.get_emoji(int(x.split(":")[2].strip(">")))
-                    if emoji is None:
+                    if not emoji:
                         continue
                     emoji_list.append(emoji)
 
@@ -522,7 +522,7 @@ class Stats(commands.Cog):
                     per_page=15,
                 )
                 p.embed.title = (
-                    f"{user.display_name}'s Emoji Usage\n`(Total: {total_uses:,})`"
+                    f"{user.display_name}'s Emoji Usage (Total: {total_uses:,})"
                 )
                 await msg.delete()
                 try:
@@ -579,12 +579,13 @@ class Stats(commands.Cog):
         p = pagination.SimplePages(
             entries=[
                 "`{}`: Uses: {}".format(ctx.guild.get_member(user), count)
-                for user, count in matches.items()
+                for user, count in sorted(matches.items(), key=lambda x: x[1], reverse=True)
                 if ctx.guild.get_member(user)
             ],
             per_page=15,
         )
-        p.embed.title = f"Emoji usage stats for {emoji} (Total: {len(matches)})"
+
+        p.embed.title = f"{emoji} (Total Uses: {sum(matches.values()):,})"
         await msg.delete()
         try:
             await p.start(ctx)
