@@ -488,7 +488,7 @@ class Batch(commands.Cog):
         if await self.avatar_changed(before, after):
             async with self.batch_lock:
                 self.tracker_batch[before.id] = (time.time(), "updating their avatar")
-            if self.avatar_webhook:  # Check if we have the webhook set up.
+            if self.bot.avatar_webhook:  # Check if we have the webhook set up.
                 try:
                     avatar_url = str(after.avatar_url_as(format="png", size=1024))
                     resp = await self.bot.get((avatar_url), res_method="read")
@@ -752,7 +752,7 @@ class Batch(commands.Cog):
         avatars.extend(results)
         if avatars:
             avatars = [
-                f"https://cdn.discordapp.com/attachments/{self.avatar_webhook.channel.id}/{x}/{user.id}.png"
+                f"https://cdn.discordapp.com/attachments/{self.bot.avatar_webhook.channel.id}/{x}/{user.id}.png"
                 for x in avatars
             ]
         return avatars
