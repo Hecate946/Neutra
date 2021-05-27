@@ -7,9 +7,11 @@ log = logging.getLogger("INFO_LOGGER")
 
 conn = database.postgres
 
+
 async def basic_cleanup(guilds):
     query = "SELECT server_id FROM servers"
     await find_discrepancy(query, guilds)
+
 
 async def find_discrepancy(query, guilds):
     server_list = [x.id for x in guilds]
@@ -18,6 +20,7 @@ async def find_discrepancy(query, guilds):
         server_id = record["server_id"]
         if server_id not in server_list:
             await destroy_server(server_id)
+
 
 async def purge_discrepancies(guilds):
     print("Running purge_discrepancies(guilds)")
@@ -68,27 +71,28 @@ async def purge_discrepancies(guilds):
     await find_discrepancy(query, guilds)
     print(f"{query.split()[-1]}_query")
 
+
 async def destroy_server(guild_id):
     """Delete all records of a server from the db"""
 
     query = "DELETE FROM servers WHERE server_id = $1"
     await conn.execute(query, guild_id)
-    
+
     query = "DELETE FROM prefixes WHERE server_id = $1"
     await conn.execute(query, guild_id)
-    
+
     query = "DELETE FROM logging WHERE server_id = $1"
     await conn.execute(query, guild_id)
-    
+
     query = "DELETE FROM ignored WHERE server_id = $1"
     await conn.execute(query, guild_id)
-    
+
     query = "DELETE FROM lockedchannels WHERE server_id = $1"
     await conn.execute(query, guild_id)
-    
+
     query = "DELETE FROM warn WHERE server_id = $1"
     await conn.execute(query, guild_id)
-    
+
     query = "DELETE FROM invites WHERE server_id = $1"
     await conn.execute(query, guild_id)
 

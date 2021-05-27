@@ -3,13 +3,9 @@ from utilities import utils
 config = utils.config()
 try:
     admins = config["admins"]
-    avchan = config["avchan"]
     bitly = config["bitly"]
-    botlog = config["botlog"]
     embed = config["embed"]
-    github = config["github"]
     gtoken = config["gtoken"]
-    home = config["home"]
     owners = config["owners"]
     postgres = config["postgres"]
     prefix = config["prefix"]

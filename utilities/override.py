@@ -20,9 +20,6 @@ class BotContext(commands.Context):
             **kwargs,
         )
 
-    async def bot_channel(self, content=None, **kwargs):
-        return await self.bot.bot_channel.send(content, **kwargs)
-
     async def send_or_reply(self, content=None, **kwargs):
         ref = self.message.reference
         if ref and isinstance(ref.resolved, discord.Message):
@@ -89,7 +86,7 @@ class BotContext(commands.Context):
     #     )
     #     filename = "./" + "/".join(location.split("/")[-4:])
     #     loglev(msg=content)
-    #     return await self.bot_channel(
+    #     return await self.logging_webhook(
     #         self.bot.emote_dict["log"]
     #         + f" **Logged to `{filename}`**```prolog\n{log_format}{content}```"
     #     )

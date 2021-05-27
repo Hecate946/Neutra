@@ -1,6 +1,7 @@
+import io
+import traceback
 import aiohttp
 import discord
-import asyncio
 import collections
 import json
 import logging
@@ -8,7 +9,6 @@ import os
 import re
 import sys
 import time
-import traceback
 
 from colr import color
 from datetime import datetime
@@ -17,12 +17,10 @@ from discord_slash.client import SlashCommand
 from logging.handlers import RotatingFileHandler
 
 from settings import cleanup, database, constants
-from utilities import utils, override as cx
+from utilities import utils, override
 
 MAX_LOGGING_BYTES = 32 * 1024 * 1024  # 32 MiB
-COGS = [x[:-3] for x in sorted(os.listdir("././cogs")) if x.endswith(".py")]
-
-cxn = database.postgres
+RED_AVATAR = "https://cdn.discordapp.com/attachments/846597178918436885/846597481231679508/error.png"
 
 # Set up our data folders
 if not os.path.exists("./data/txts"):
@@ -129,29 +127,33 @@ class Snowbot(commands.AutoShardedBot):
             owner_ids=constants.owners,
             intents=discord.Intents.all(),
         )
-        self.avchanges = int()
-        self.batch_inserts = int()
+        self.batch_inserts = int()  # Counter for number of inserts.
         self.command_stats = collections.Counter()
         self.constants = constants
-        self.cxn = cxn
+        self.cxn = database.postgres
+        self.exts = [
+            x[:-3] for x in sorted(os.listdir("././cogs")) if x.endswith(".py")
+        ]
         self.dregex = re.compile(
             r"(?:https?://)?discord(?:app)?\.(?:com/invite|gg)/[a-zA-Z0-9]+/?"
         )  # discord invite regex
         self.emote_dict = constants.emotes
-        self.emojis_seen = int()
-        self.messages = int()
-        self.namechanges = int()
-        self.nickchanges = int()
         self.prefixes = database.prefixes
         self.ready = False
-        self.rolechanges = int()
         self.session = aiohttp.ClientSession(loop=self.loop)
         self.slash = SlashCommand(self, sync_commands=True)
         self.socket_events = collections.Counter()
 
         self.cog_exceptions = ["CONFIG", "BOTADMIN", "MANAGER", "JISHAKU"]
-        self.useless_cogs = ["TESTING", "BATCH", "SLASH", "TASKS", "MONITOR"]
-        self.do_not_load = ["CONVERSION"]
+        self.hidden_cogs = ["TESTING", "BATCH", "SLASH", "TASKS"]
+        self.do_not_load = ["CONVERSION", "TESTING"]
+
+        # Webhooks for monitering and data saving.
+        self.avatar_webhook = None
+        self.error_webhook = None
+        self.icon_webhook = None
+        self.logging_webhook = None
+        self.testing_webhook = None
 
     def run(self, token):  # Everything starts from here
         self.setup()  # load the cogs
@@ -221,13 +223,12 @@ class Snowbot(commands.AutoShardedBot):
             x.name
             for x in self.commands
             if not x.hidden
-            and x.cog.qualified_name.upper
-            not in self.useless_cogs + self.cog_exceptions
+            and x.cog.qualified_name.upper not in self.hidden_cogs + self.cog_exceptions
         ]
         category_list = [
             x.qualified_name.capitalize()
             for x in [self.get_cog(cog) for cog in self.cogs]
-            if x.qualified_name.upper() not in self.useless_cogs + self.cog_exceptions
+            if x.qualified_name.upper() not in self.hidden_cogs + self.cog_exceptions
         ]
         return (self.hecate, command_list, category_list)
 
@@ -331,8 +332,21 @@ class Snowbot(commands.AutoShardedBot):
         except Exception as e:
             print(utils.traceback_maker(e))
 
+        try: # Set up our webhooks
+            await self.setup_webhooks()
+        except Exception as e:
+            print(f"Unable to setup webhooks: {e}")
+            pass
+
         # The rest of the botvars that couldn't be set earlier
         await self.load_globals()
+
+    async def setup_webhooks(self):
+        self.avatar_webhook = await self.fetch_webhook(utils.config()["avatars"][1])
+        self.error_webhook = await self.fetch_webhook(utils.config()["errors"][1])
+        self.icon_webhook = await self.fetch_webhook(utils.config()["icons"][1])
+        self.logging_webhook = await self.fetch_webhook(utils.config()["logging"][1])
+        self.testing_webhook = await self.fetch_webhook(utils.config()["testing"][1])
 
     async def load_globals(self):
         """
@@ -381,23 +395,6 @@ class Snowbot(commands.AutoShardedBot):
             for guild in self.guilds:
                 if guild.me.guild_permissions.manage_guild:
                     self.invites[guild.id] = await guild.invites()
-
-        # We need to have a "home" server. So lets create one if not exists.
-        if not self.constants.home:
-            try:
-                home = await self.create_guild(f"{self.user.name}'s Home Server.")
-            except discord.errors.HTTPException:
-                raise RuntimeError(
-                    "I am currently in too many servers to run properly."
-                )
-            avchan = await home.create_text_channel("avchan")
-            botlog = await home.create_text_channel("botlog")
-            utils.modify_config("home", int(home.id))
-            utils.modify_config("avchan", int(avchan.id))
-            utils.modify_config("botlog", int(botlog.id))
-            self.constants.home = home.id
-            self.constants.avchan = avchan.id
-            self.constants.botlog = botlog.id
 
         await self.finalize_startup()
 
@@ -449,9 +446,12 @@ class Snowbot(commands.AutoShardedBot):
         # Delete all records of servers that kicked the bot
         await cleanup.basic_cleanup(self.guilds)
 
-        # loads all the cogs in ./cogs and prints them on sys.stdout
+        # Establish our webhooks
+        await self.setup_webhooks()
+
+        # load all initial extensions
         try:
-            for cog in COGS:
+            for cog in self.exts:
                 if cog.upper() not in self.do_not_load:
                     self.load_extension(f"cogs.{cog}")
         except Exception as e:
@@ -459,8 +459,8 @@ class Snowbot(commands.AutoShardedBot):
 
         print(f"{self.user} ({self.user.id})")
 
-        self.ready = True # Finally
-        
+        self.ready = True
+
         # See if we were rebooted by a command and send confirmation if we were.
         query = """
                 SELECT (
@@ -478,9 +478,33 @@ class Snowbot(commands.AutoShardedBot):
             try:
                 channel = await self.fetch_channel(reboot_channel_id)
                 msg = channel.get_partial_message(reboot_message_id)
-                await msg.edit(content=f"{self.emote_dict['success']} {reboot_invoker}ed Successfully.")
+                await msg.edit(
+                    content=f"{self.emote_dict['success']} {reboot_invoker}ed Successfully."
+                )
             except Exception:
                 pass
+
+    async def on_error(self, event, *args, **kwargs):
+        title = f"**{self.emote_dict['failed']} Error `{datetime.utcnow()}`**"
+        description = f"```prolog\n{event.upper()}:\n{kwargs.get('tb') or traceback.format_exc()}\n```"
+        args_str = []
+        dfile = None
+        if args:
+            for index, arg in enumerate(args):
+                args_str.append(f"[{index}]: {arg!r}")
+
+            fp = io.BytesIO("\n".join(args_str).encode("utf-8"))
+            dfile = discord.File(fp, "arguments.unrendered")
+
+        try:
+            await self.error_webhook.send(
+                title + description,
+                file=dfile,
+                username=f"{self.user.name} Monitor",
+                avatar_url=RED_AVATAR,
+            )
+        except Exception:
+            pass
 
     async def on_command_error(self, ctx, error):
         """
@@ -593,13 +617,7 @@ class Snowbot(commands.AutoShardedBot):
                 )
             )
             traceback_logger.warning(str(err) + "\n")
-            # destination = f"\n\tLocation: {str(ctx.author)} in #{ctx.channel} [{ctx.channel.id}] ({ctx.guild}) [{ctx.guild.id}]:\n"
-            # message = f"\tContent: {ctx.message.clean_content}\n"
-            # tb = traceback.format_exc().split("\n")
-            # location = "./" + "/".join(tb[3].split("/")[-4:])
-            # error = f'\tFile: "{location + tb[4]}:\n\tException: {sys.exc_info()[0].__name__}: {sys.exc_info()[1]}\n'
-            # content = destination + message + error + "\n"
-            # await ctx.log("e", content)
+
 
     async def on_guild_join(self, guild):
         if self.ready is False:
@@ -640,21 +658,9 @@ class Snowbot(commands.AutoShardedBot):
             return
         await self.process_commands(after)
 
-    # async def on_error(self, event, *args, **kwargs):
-    #     print(traceback.format_exc())
-    #     print(args)
-    #     ctx = await self.get_context(args[0])
-    #     destination = f"\n\tLocation: {str(ctx.author)} in #{ctx.channel} [{ctx.channel.id}] ({ctx.guild}) [{ctx.guild.id}]:\n"
-    #     message = f"\tContent: {args[0].clean_content}\n"
-    #     tb = traceback.format_exc().split("\n")
-    #     location = "./" + "/".join(tb[3].split("/")[-4:])
-    #     error = f'\tFile: "{location + tb[4]}:\n\tException: {sys.exc_info()[0].__name__}: {sys.exc_info()[1]}\n'
-    #     content = destination + message + error + "\n"
-    #     await ctx.log("e", content)
-
     async def get_context(self, message, *, cls=None):
         """Override get_context to use a custom Context"""
-        context = await super().get_context(message, cls=cx.BotContext)
+        context = await super().get_context(message, cls=override.BotContext)
         return context
 
     def get_guild_prefixes(self, guild, *, local_inject=get_prefixes):
@@ -723,15 +729,5 @@ class Snowbot(commands.AutoShardedBot):
     @property
     def hecate(self):
         return self.get_user(self.owner_ids[0])
-
-    @property
-    def home(self):
-        home = self.get_guild(self.constants.home)
-        return home
-
-    @property
-    def bot_channel(self):
-        return self.get_channel(self.constants.botlog)
-
 
 bot = Snowbot()

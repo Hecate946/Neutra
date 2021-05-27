@@ -45,13 +45,12 @@ class Config(commands.Cog):
             to the passed value.
         Notes:
             To reflect the changes of the file change
-            immediately, use the -refresh command
+            immediately, use the {0}botvars command
             instead of rebooting the entire client.
         """
         if key is None or value is None:
-            return await ctx.send_or_reply(
-                content=f"Enter a value to edit and its new value.",
-            )
+            await ctx.send_or_reply(f"Enter a value to edit and its new value.")
+            return
         if value.isdigit():
             utils.modify_config(key=key, value=int(value))
         elif type(value) is bool:
@@ -140,12 +139,10 @@ class Config(commands.Cog):
 
     @change.command(brief="Change the bot's presence", aliases=["pres"])
     async def presence(self, ctx, *, presence: str = ""):
-        if ctx.author.id not in self.bot.constants.owners:
-            return None
         if presence == "":
-            msg = "presence has been reset."
+            msg = "Presence has been reset."
         else:
-            msg = f"presence now set to `{presence}`"
+            msg = f"Presence now set to `{presence}`"
         query = """
                 UPDATE config
                 SET presence = $1
@@ -156,61 +153,22 @@ class Config(commands.Cog):
         await ctx.success(msg)
 
     @change.command(brief="Set the bot's status type.")
-    async def status(self, ctx, status: str = None):
-        if ctx.author.id not in self.bot.constants.owners:
-            return
-
-        if status.lower() in ["online", "green"]:
-            status = "online"
-        elif status.lower() in ["idle", "moon", "sleep", "yellow"]:
-            status = "idle"
-        elif status.lower() in ["dnd", "do-not-disturb", "do_not_disturb", "red"]:
-            status = "dnd"
-        elif status.lower() in ["offline", "gray", "invisible", "invis"]:
-            status = "offline"
-        else:
-            raise commands.BadArgument(f"`{status}` is not a valid status.")
-
+    async def status(self, ctx, status: converters.BotStatus):
         query = """
                 UPDATE config
                 SET status = $1
-                WHERE client_id = $2;
+                WHERE client_id = $2
                 """
         await self.bot.cxn.execute(query, status, self.bot.user.id)
         await self.bot.set_status()
-        me = self.bot.home.get_member(self.bot.user.id)
-        query = """
-                INSERT INTO botstats
-                VALUES ($1)
-                ON CONFLICT (bot_id)
-                DO UPDATE SET {0} = botstats.{0} + $2
-                """.format(
-            me.status
-        )
-
-        statustime = time.time() - self.bot.statustime
-        await self.bot.cxn.execute(query, self.bot.user.id, statustime)
-        self.bot.statustime = time.time()
-        await ctx.success(f"status now set as `{status}`")
+        await ctx.success(f"Status now set as `{status}`")
 
     @change.command(brief="Set the bot's activity type.", aliases=["action"])
-    async def activity(self, ctx, activity: str = None):
-
-        if activity.lower() in ["play", "playing", "game", "games"]:
-            activity = "playing"
-        elif activity.lower() in ["listen", "listening", "hearing", "hear"]:
-            activity = "listening"
-        elif activity.lower() in ["watch", "watching", "looking", "look"]:
-            activity = "watching"
-        elif activity.lower() in ["comp", "competing", "compete"]:
-            activity = "competing"
-        else:
-            raise commands.BadArgument(f"`{activity}` is not a valid status.")
-
+    async def activity(self, ctx, activity: converters.BotActivity):
         query = """
                 UPDATE config
                 SET activity = $1
-                WHERE client_id = $2;
+                WHERE client_id = $2
                 """
         await self.bot.cxn.execute(query, activity, self.bot.user.id)
         await self.bot.set_status()
@@ -440,6 +398,8 @@ class Config(commands.Cog):
         command.enabled = not command.enabled
         ternary = "Enabled" if command.enabled else "Disabled"
         await ctx.success(f"{ternary} {command.qualified_name}.")
+
+    
 
     @decorators.command(brief="Have the bot leave a server.")
     async def leaveserver(self, ctx, *, target_server: converters.DiscordGuild = None):

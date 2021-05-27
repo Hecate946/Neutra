@@ -8,18 +8,6 @@ command = functools.partial(commands.command, cls=override.BotCommand)
 group = functools.partial(commands.group, cls=override.BotGroup)
 
 
-def is_home():
-    """
-    Server specific
-    """
-
-    async def predicate(ctx):
-        if ctx.guild and ctx.guild.id == ctx.bot.home.id:
-            return True
-
-    return commands.check(predicate)
-
-
 def event_check(func):
     """
     Event decorator check.

@@ -1,11 +1,12 @@
-import argparse
 import re
 import typing
+import argparse
 
 import discord
 from discord.ext import commands
-from discord.ext.commands.core import dm_only
+
 from utilities import checks
+from utilities import formatting
 
 EMOJI_REGEX = re.compile(r"<a?:.+?:([0-9]{15,21})>")
 EMOJI_NAME_REGEX = re.compile(r"[0-9a-zA-Z\_]{2,32}")
@@ -360,61 +361,6 @@ class DiscordUser(commands.Converter):
         return match
 
 
-class BotServer(commands.Converter):
-    async def convert(self, ctx, argument):
-        if argument.isdigit():
-            server_id = int(argument, base=10)
-            try:
-                server = ctx.bot.get_guild(server_id)
-                if server is None:
-                    raise commands.BadArgument(
-                        f"Server `{await prettify(ctx, argument)}` not found."
-                    )
-                else:
-                    return server
-            except discord.HTTPException:
-                raise commands.BadArgument(
-                    f"Server `{await prettify(ctx, argument)}` not found."
-                )
-            except discord.Forbidden:
-                raise commands.BadArgument(
-                    f"Server `{await prettify(ctx, argument)}` not found."
-                )
-            except discord.NotFound:
-                raise commands.BadArgument(
-                    f"Server `{await prettify(ctx, argument)}` not found"
-                )
-            except Exception as e:
-                await ctx.send_or_reply(e)
-        options = [s for s in ctx.bot.guilds if argument.lower() in s.name.lower()]
-        if options == []:
-            raise commands.BadArgument(
-                f"Server `{await prettify(ctx, argument)}` not found."
-            )
-        return options
-
-
-# Similar to Botserver but does not return a list of findings
-# class DiscordGuild(commands.Converter):
-#     async def convert(self, ctx, argument):
-#         if argument.isdigit():
-#             server_id = int(argument, base=10)
-#             server = ctx.bot.get_guild(server_id)
-#             if not server:
-#                 raise commands.BadArgument(
-#                     f"Server `{await prettify(ctx, argument)}` not found."
-#                 )
-#             return server
-#         else:
-#             server = discord.utils.find(
-#                 lambda s: argument.lower() in str(s.name).lower(), ctx.bot.guilds
-#             )
-#             if not server:
-#                 raise commands.BadArgument(
-#                     f"Server `{await prettify(ctx, argument)}` not found."
-#                 )
-#             return server
-
 
 class DiscordGuild(commands.Converter):
     """Match guild_id, or guild name exact, only if author is in the guild."""
@@ -504,10 +450,6 @@ class BannedMember(commands.Converter):
         return entity
 
 
-class Arguments(argparse.ArgumentParser):
-    def error(self, message):
-        raise RuntimeError(message)
-
 
 class GlobalChannel(commands.Converter):
     async def convert(self, ctx, argument):
@@ -551,53 +493,6 @@ class UserIDConverter(commands.Converter):
         return user
 
 
-class ActionReason(commands.Converter):
-    async def convert(self, ctx, argument):
-        ret = f"{ctx.author} (ID: {ctx.author.id}) in #{ctx.channel.name}: {argument}"
-
-        if len(ret) > 512:
-            reason_max = 512 - len(ret) + len(argument)
-            raise commands.BadArgument(
-                f"Reason is too long ({len(argument)}/{reason_max})"
-            )
-        return ret
-
-
-class Flag(commands.Converter):
-    async def convert(self, ctx, argument):
-        nodm_options = ["--nodm", "--nopm", "-nodm", "-nopm", " nodm", " nopm"]
-        dm_options = ["--dm", "--pm", "-dm", "-pm", " dm", " pm"]
-        if argument in ["--nodm", "--nopm", "-nodm", "-nopm", "nodm", "nopm"]:
-            dm_bool = False
-        elif argument in ["--dm", "--pm", "-dm", "-pm", "dm", "pm"]:
-            dm_bool = True
-        else:
-            from utilities import formatting
-
-            headers = ["SEND DM", "DO NOT DM"]
-            rows = tuple(zip(dm_options, nodm_options))
-            table = formatting.TabularData()
-            table.set_columns(headers)
-            table.add_rows(rows)
-            render = table.render()
-            completed = f"```sml\nVALID FLAGS:\n{render}```"
-            raise commands.BadArgument(f"**Invalid flag.**{completed}")
-        return dm_bool
-
-
-class Arguments(argparse.ArgumentParser):
-    def error(self, message):
-        raise RuntimeError(message)
-
-
-class Prefix(commands.Converter):
-    async def convert(self, ctx, argument):
-        user_id = ctx.bot.user.id
-        if argument.startswith((f"<@{user_id}>", f"<@!{user_id}>")):
-            raise commands.BadArgument("That prefix cannot be modified.")
-        elif len(argument) > 20:
-            raise commands.BadArgument("Max prefix length is 20 characters.")
-        return argument
 
 
 class DiscordMember(commands.Converter):
@@ -765,3 +660,128 @@ class DiscordRole(commands.Converter):
                 f"Role `{await prettify(ctx, argument)}` not found."
             )
         return match
+
+class BotServer(commands.Converter):
+    async def convert(self, ctx, argument):
+        if argument.isdigit():
+            server_id = int(argument, base=10)
+            try:
+                server = ctx.bot.get_guild(server_id)
+                if server is None:
+                    raise commands.BadArgument(
+                        f"Server `{await prettify(ctx, argument)}` not found."
+                    )
+                else:
+                    return server
+            except discord.HTTPException:
+                raise commands.BadArgument(
+                    f"Server `{await prettify(ctx, argument)}` not found."
+                )
+            except discord.Forbidden:
+                raise commands.BadArgument(
+                    f"Server `{await prettify(ctx, argument)}` not found."
+                )
+            except discord.NotFound:
+                raise commands.BadArgument(
+                    f"Server `{await prettify(ctx, argument)}` not found"
+                )
+            except Exception as e:
+                await ctx.send_or_reply(e)
+        options = [s for s in ctx.bot.guilds if argument.lower() in s.name.lower()]
+        if options == []:
+            raise commands.BadArgument(
+                f"Server `{await prettify(ctx, argument)}` not found."
+            )
+        return options
+class ActionReason(commands.Converter):
+    async def convert(self, ctx, argument):
+        ret = f"{ctx.author} (ID: {ctx.author.id}) in #{ctx.channel.name}: {argument}"
+
+        if len(ret) > 512:
+            reason_max = 512 - len(ret) + len(argument)
+            raise commands.BadArgument(
+                f"Reason is too long ({len(argument)}/{reason_max})"
+            )
+        return ret
+
+class BotStatus(commands.Converter):
+    async def convert(self, ctx, argument):
+        online_options = ["online", "ready", "green"]
+        idle_options = ["idle", "sleep", "yellow"]
+        dnd_options = ["dnd", "do_not_disturb", "red"]
+        offline_options = ["offline", "invisible", "gray"]
+        if argument.lower() in online_options:
+            status = "online"
+        elif argument.lower() in idle_options:
+            status = "idle"
+        elif argument.lower() in dnd_options:
+            status = "dnd"
+        elif argument.lower() in offline_options:
+            status = "offline"
+        else:
+            headers = ["ONLINE", "IDLE", "DND", "OFFLINE"]
+            rows = tuple(zip(online_options, idle_options, dnd_options, offline_options))
+            table = formatting.TabularData()
+            table.set_columns(headers)
+            table.add_rows(rows)
+            render = table.render()
+            completed = f"```sml\nVALID STATUS OPTIONS:\n{render}```"
+            raise commands.BadArgument(f"**Invalid Status.**{completed}")
+        return status
+
+class BotActivity(commands.Converter):
+    async def convert(self, ctx, argument):
+        playing_options = ["play", "playing", "game", "p"]
+        listening_options = ["listen", "listening", "hearing", "l"]
+        watching_options = ["watch", "watching", "looking", "w"]
+        competing_options = ["comp", "competing", "compete", "c"]
+        if argument.lower() in playing_options:
+            activity = "playing"
+        elif argument.lower() in listening_options:
+            activity = "listening"
+        elif argument.lower() in watching_options:
+            activity = "watching"
+        elif argument.lower() in competing_options:
+            activity = "competing"
+        else:
+            headers = ["PLAYING", "LISTENING", "WATCHING", "COMPETING"]
+            rows = tuple(zip(playing_options, listening_options, watching_options, competing_options))
+            table = formatting.TabularData()
+            table.set_columns(headers)
+            table.add_rows(rows)
+            render = table.render()
+            completed = f"```sml\nVALID ACTIVITY OPTIONS:\n{render}```"
+            raise commands.BadArgument(f"**Invalid Activity.**{completed}")
+        return activity
+
+class Flag(commands.Converter):
+    async def convert(self, ctx, argument):
+        nodm_options = ["--nodm", "--nopm", "-nodm", "-nopm", " nodm", " nopm"]
+        dm_options = ["--dm", "--pm", "-dm", "-pm", " dm", " pm"]
+        if argument in ["--nodm", "--nopm", "-nodm", "-nopm", "nodm", "nopm"]:
+            dm_bool = False
+        elif argument in ["--dm", "--pm", "-dm", "-pm", "dm", "pm"]:
+            dm_bool = True
+        else:
+            headers = ["SEND DM", "DO NOT DM"]
+            rows = tuple(zip(dm_options, nodm_options))
+            table = formatting.TabularData()
+            table.set_columns(headers)
+            table.add_rows(rows)
+            render = table.render()
+            completed = f"```sml\nVALID FLAGS:\n{render}```"
+            raise commands.BadArgument(f"**Invalid flag.**{completed}")
+        return dm_bool
+
+class Arguments(argparse.ArgumentParser):
+    def error(self, message):
+        raise RuntimeError(message)
+
+class Prefix(commands.Converter):
+    async def convert(self, ctx, argument):
+        user_id = ctx.bot.user.id
+        if argument.startswith((f"<@{user_id}>", f"<@!{user_id}>")):
+            raise commands.BadArgument("That prefix cannot be modified.")
+        elif len(argument) > 20:
+            raise commands.BadArgument("Max prefix length is 20 characters.")
+        return argument

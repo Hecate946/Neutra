@@ -8,11 +8,10 @@ import logging
 import traceback
 
 from collections import Counter, defaultdict
-from datetime import datetime, timezone
+from datetime import timezone
 from discord.ext import commands, tasks
 
 from utilities import utils
-from utilities import converters
 from utilities import decorators
 
 command_logger = logging.getLogger("Snowbot")
@@ -33,21 +32,20 @@ class Batch(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         # Data holders
-        self.avatar_batch = list()
-        self.command_batch = list()
-        self.edited_batch = list()
+        self.avatar_batch = []
+        self.command_batch = []
+        self.edited_batch = []
         self.emoji_batch = defaultdict(Counter)
-        self.invite_batch = list()
-        self.message_batch = list()
-        self.nicknames_batch = list()
-        self.roles_batch = list()
-        self.snipe_batch = list()
-        self.spammer_batch = list()
+        self.invite_batch = []
+        self.message_batch = []
+        self.nicknames_batch = []
+        self.roles_batch = defaultdict(dict)
+        self.snipe_batch = []
+        self.spammer_batch = []
         self.status_batch = defaultdict(dict)
-        self.tracker_batch = dict()
-        self.usernames_batch = list()
+        self.tracker_batch = {}
+        self.usernames_batch = []
 
-        self.avatar_webhook = None
         self.batch_lock = asyncio.Lock(loop=bot.loop)
         self._auto_spam_count = Counter()
         self.queue = asyncio.Queue(loop=bot.loop)
@@ -72,7 +70,7 @@ class Batch(commands.Cog):
         while True:
             files = [await self.queue.get() for _ in range(10)]
             try:
-                upload_batch = await self.avatar_webhook.send(files=files, wait=True)
+                upload_batch = await self.bot.avatar_webhook.send(files=files, wait=True)
                 for x in upload_batch.attachments:
                     self.avatar_batch.append(
                         {
@@ -83,11 +81,11 @@ class Batch(commands.Cog):
             except discord.HTTPException as e:
                 # Here the combined files likely went over the 8mb file limit
                 # Lets divide them up into 2 parts and send them separately.
-                await self.bot.bot_channel.send(e)
-                upload_batch_1 = await self.avatar_webhook.send(
+                await self.bot.logging_webhook.send(e)
+                upload_batch_1 = await self.bot.avatar_webhook.send(
                     files=files[:5], wait=True
                 )
-                upload_batch_2 = await self.avatar_webhook.send(
+                upload_batch_2 = await self.bot.avatar_webhook.send(
                     files=files[5:], wait=True
                 )
                 new_upload_batch = (
@@ -100,11 +98,11 @@ class Batch(commands.Cog):
                             "avatar_id": x.id,
                         }
                     )
-                await self.bot.bot_channel.send(
+                await self.bot.logging_webhook.send(
                     f"**Payload size error successfully dealt with.**"
                 )
             except Exception as e:
-                await self.bot.bot_channel.send(e)
+                await self.bot.logging_webhook.send(e)
 
     @tasks.loop(seconds=0.5)
     async def status_inserter(self):
@@ -241,20 +239,14 @@ class Batch(commands.Cog):
         self.bot.batch_inserts += 1
         if self.command_batch:  # Insert all the commands executed.
             query = """
-                    INSERT INTO commands (
-                        server_id, channel_id,
-                        author_id, timestamp,
-                        prefix, command, failed
-                    )
-                    SELECT x.server, x.channel,
-                        x.author, x.timestamp,
-                        x.prefix, x.command, x.failed
+                    INSERT INTO commands (server_id, channel_id,
+                    author_id, timestamp, prefix, command, failed)
+                    SELECT x.server, x.channel, x.author,
+                    x.timestamp, x.prefix, x.command, x.failed
                     FROM JSONB_TO_RECORDSET($1::JSONB)
-                    AS x(
-                        server BIGINT, channel BIGINT,
-                        author BIGINT, timestamp TIMESTAMP,
-                        prefix TEXT, command TEXT, failed BOOLEAN
-                    )
+                    AS x(server BIGINT, channel BIGINT,
+                    author BIGINT, timestamp TIMESTAMP,
+                    prefix TEXT, command TEXT, failed BOOLEAN);
                     """
             async with self.batch_lock:
                 data = json.dumps(self.command_batch)
@@ -280,7 +272,7 @@ class Batch(commands.Cog):
                     FROM JSONB_TO_RECORDSET($1::JSONB)
                     AS x(server_id BIGINT, emoji_id BIGINT, added INT)
                     ON CONFLICT (server_id, emoji_id) DO UPDATE
-                    SET total = emojistats.total + excluded.total;
+                    SET total = emojistats.total + EXCLUDED.total;
                     """
             async with self.batch_lock:
                 data = json.dumps(
@@ -309,11 +301,7 @@ class Batch(commands.Cog):
 
         if self.tracker_batch:  # Track user last seen times
             query = """
-                    INSERT INTO tracker (
-                        user_id,
-                        unix,
-                        action
-                    )
+                    INSERT INTO tracker (user_id, unix, action)
                     VALUES ($1, $2, $3)
                     ON CONFLICT (user_id)
                     DO UPDATE SET unix = $2, action = $3
@@ -375,7 +363,13 @@ class Batch(commands.Cog):
                     DO UPDATE SET roles = EXCLUDED.roles
                     """
             async with self.batch_lock:
-                data = json.dumps(self.roles_batch)
+                data = json.dumps(
+                    [
+                        {"server_id": server_id, "user_id": user_id, "roles": roles}
+                        for server_id, data in self.roles_batch.items()
+                        for user_id, roles in data.items()
+                    ]
+                )
                 await self.bot.cxn.execute(query, data)
                 self.roles_batch.clear()
 
@@ -395,66 +389,6 @@ class Batch(commands.Cog):
     async def loop_error(self, exc):
         self.bot.dispatch("error", "loop_error", tb=utils.traceback_maker(exc))
 
-    @bulk_inserter.before_loop
-    async def get_webhook(self):
-        """
-        This loads our existing avatar saving webhook
-        from the db or creates it if it doesn't exist.
-        Stops avatar saving if no avatar channel exists.
-        """
-        query = """
-                SELECT (
-                    avatar_saver_webhook_id,
-                    avatar_saver_webhook_token
-                ) FROM config
-                WHERE client_id = $1;
-                """
-        webhook_data = await self.bot.cxn.fetchval(query, self.bot.user.id)
-        if not webhook_data:
-            boolean = False
-        if any([x is None for x in webhook_data]):
-            boolean = False
-        else:
-            boolean = True
-        if boolean:
-            wh_id, wh_token = webhook_data
-            try:
-                webhook = await self.bot.fetch_webhook(wh_id)
-                self.avatar_webhook = webhook
-            except Exception:
-                webhook = await self.do_webhook()
-                self.avatar_webhook = webhook
-        else:
-            webhook = await self.do_webhook()
-            self.avatar_webhook = webhook
-
-    async def do_webhook(self):
-        if not self.bot.constants.avchan:
-            return
-        avchan = self.bot.get_channel(self.bot.constants.avchan)
-        if not avchan or not avchan.guild:
-            print(f"Invalid avatar saver channel.")
-            return
-        bytes_avatar = await self.bot.get(
-            str(self.bot.user.avatar_url), res_method="read"
-        )
-        try:
-            webhook = await avchan.create_webhook(
-                name=self.bot.user.name + " Avatar Saver",
-                avatar=bytes_avatar,
-                reason="Webhook created to store avatars.",
-            )
-        except Exception as e:
-            print(e)
-            return
-        query = """
-                UPDATE config SET
-                avatar_saver_webhook_id = $1,
-                avatar_saver_webhook_token = $2
-                WHERE client_id = $3;
-                """
-        await self.bot.cxn.execute(query, webhook.id, webhook.token, self.bot.user.id)
-        return webhook
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -539,7 +473,6 @@ class Batch(commands.Cog):
                         "user_id": after.id,
                         "server_id": after.guild.id,
                         "nickname": after.display_name,
-                        "changed_at": str(datetime.utcnow()),
                     }
                 )
 
@@ -562,8 +495,8 @@ class Batch(commands.Cog):
                     dfile = discord.File(data, filename=f"{after.id}.png")
                     self.queue.put_nowait(dfile)
                 except Exception as e:
-                    await self.bot.bot_channel.send(f"Error in avatar_batcher: {e}")
-                    await self.bot.bot_channel.send(
+                    await self.bot.logging_webhook.send(f"Error in avatar_batcher: {e}")
+                    await self.bot.logging_webhook.send(
                         "```prolog\n" + str(traceback.format_exc()) + "```"
                     )
 
@@ -579,7 +512,7 @@ class Batch(commands.Cog):
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
-    @decorators.event_check(lambda s, m: not m.author.bot and m.guild)
+    @decorators.event_check(lambda s, m: m.guild and not m.author.bot)
     async def on_message(self, message):
         async with self.batch_lock:
             self.message_batch.append(
@@ -696,7 +629,6 @@ class Batch(commands.Cog):
                     "user_id": member.id,
                     "server_id": member.guild.id,
                     "nickname": member.display_name,
-                    "changed_at": str(datetime.utcnow()),
                 }
             )
         if not member.guild.me.guild_permissions.manage_guild:
@@ -704,6 +636,12 @@ class Batch(commands.Cog):
         old_invites = self.bot.invites[member.guild.id]
         new_invites = await member.guild.invites()
         for invite in old_invites:
+            if not invite:
+                self.bot.logging_webhook.send(f"**Invite is NoneType**")
+                continue
+            if not self.get_invite(new_invites, invite.code):
+                self.bot.logging_webhook.send(f"**Invite code was not matched**")
+                continue
             if invite.uses < self.get_invite(new_invites, invite.code).uses:
                 self.invite_batch.append(
                     {
@@ -726,13 +664,8 @@ class Batch(commands.Cog):
         async with self.batch_lock:
             self.tracker_batch[member.id] = (time.time(), "leaving a server")
             roles = ",".join([str(x.id) for x in member.roles if x.name != "@everyone"])
-            self.roles_batch.append(
-                {
-                    "user_id": member.id,
-                    "server_id": member.guild.id,
-                    "roles": roles,
-                }
-            )
+            self.roles_batch[member.guild.id].update({member.id: roles})
+
         if not member.guild.me.guild_permissions.manage_guild:
             return
         self.bot.invites[member.guild.id] = await member.guild.invites()

@@ -73,7 +73,7 @@ class Files(commands.Cog):
 
         # Get and format the help
         for cog in sorted(self.bot.cogs):
-            if cog.upper() in self.bot.cog_exceptions + self.bot.useless_cogs:
+            if cog.upper() in self.bot.cog_exceptions + self.bot.hidden_cogs:
                 continue
             cog_commands = sorted(
                 self.bot.get_cog(cog).get_commands(), key=lambda x: x.name
@@ -931,9 +931,7 @@ class Files(commands.Cog):
             to include all the current command descriptions
             for each registered category.
         """
-        mess = await ctx.send_or_reply(
-            content="Saving readme to **{}**...".format(self.bot.constants.github),
-        )
+        mess = await ctx.send_or_reply("Saving readme to **README.md**...")
 
         owner, cmds, cogs = self.bot.public_stats()
         overview = (
@@ -959,7 +957,7 @@ class Files(commands.Cog):
         for cog in cog_list:
             if (
                 cog.qualified_name.upper()
-                in self.bot.cog_exceptions + self.bot.useless_cogs
+                in self.bot.cog_exceptions + self.bot.hidden_cogs
             ):
                 continue
             premsg += f"##### [{cog.qualified_name}](#{cog.qualified_name}-1)\n"

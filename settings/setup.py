@@ -72,7 +72,6 @@ def start():
     config["embed"] = int(embed, 16)
     config["github"] = "https://github.com/Hecate946/Snowbot"
     config["gtoken"] = None
-    config["home"] = None
     config["owners"] = [int(owners)]
     config["postgres"] = postgres
     config["prefix"] = prefix

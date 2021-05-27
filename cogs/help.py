@@ -192,7 +192,7 @@ class Help(commands.Cog):
                 if c.qualified_name.upper() in self.bot.cog_exceptions:
                     continue
                 if (
-                    c.qualified_name.upper() in self.bot.useless_cogs
+                    c.qualified_name.upper() in self.bot.hidden_cogs
                     or len(command_list) == 0
                 ):
                     continue

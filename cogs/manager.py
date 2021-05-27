@@ -799,8 +799,11 @@ class Manager(commands.Cog):
         if c:
             msg = await ctx.load("Recursively discarding all server data...")
             from settings.cleanup import destroy_server
+
             await destroy_server(server.id)
-            await msg.edit(content=f"**{self.bot.emote_dict['delete']} Successfully discarded all server data.**")
+            await msg.edit(
+                content=f"**{self.bot.emote_dict['delete']} Successfully discarded all server data.**"
+            )
 
     # Thank you R. Danny
     @decorators.command(

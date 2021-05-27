@@ -16,4 +16,5 @@
 /data/txts/todo.txt
 # Work in progress
 /a
-/cogs/testing.py
+testing*
+
