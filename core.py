@@ -616,7 +616,7 @@ class Snowbot(commands.AutoShardedBot):
 
         # This prevents any cogs with an overwritten cog_command_error being handled here.
         if ctx.cog:
-            if ctx.cog._get_overridden_method(ctx.cog.cog_command_error) is not None:
+            if ctx.cog._get_overridden_method(ctx.cog.cog_command_error):
                 return
 
         if isinstance(error, commands.MissingRequiredArgument):
@@ -627,21 +627,19 @@ class Snowbot(commands.AutoShardedBot):
 
         elif isinstance(error, commands.BadBoolArgument):
             argument = str(error).split()[0]
-            await ctx.send_or_reply(
-                f"{self.emote_dict['failed']} The argument `{argument}` is not a valid boolean."
-            )
+            await ctx.fail(f"The argument `{argument}` is not a valid boolean.")
 
         elif isinstance(error, commands.BadArgument):
             if 'Converting to "int" failed for parameter' in str(error):
                 arg = str(error).split()[-1].strip('."')
                 error = f"The `{arg}` argument must be an integer."
-            await ctx.fail(error)
+            await ctx.fail(str(error))
 
         elif isinstance(error, commands.BadUnionArgument):
-            await ctx.fail(error)
+            await ctx.fail(str(error))
 
         elif isinstance(error, commands.BotMissingPermissions):
-            await ctx.fail(error)
+            await ctx.fail(str(error))
 
         elif isinstance(error, commands.NoPrivateMessage):
             await ctx.author.send(
@@ -736,7 +734,7 @@ class Snowbot(commands.AutoShardedBot):
 
     async def on_guild_remove(self, guild):
         if self.ready is False:
-            return
+            return  # Wait until ready
         # This happens when the bot gets kicked from a server.
         # No need to waste any space storing their info anymore.
         await cleanup.destroy_server(guild.id)
@@ -753,22 +751,19 @@ class Snowbot(commands.AutoShardedBot):
     async def on_message(self, message):
         await self.process_commands(message)
         if not isinstance(message.channel, discord.DMChannel):
-            return
+            return  # Only check for invite links in DMs
         if message.author.id == self.user.id:
-            return
-        # Sometimes users DM the bot their server invite... Lets send them ours
-        if self.dregex.match(message.content):
-            await message.reply(
-                f"If you're looking to invite me to your server, use this link:\n<{self.oauth}>"
-            )
+            return  # Don't reply to ourselves
+        if self.dregex.match(message.content):  # When a user DMs the bot an invite...
+            await message.reply(f"Use this link to invite me:\n<{self.oauth}>")
 
     async def on_message_edit(self, before, after):
         if not self.ready:
-            return
+            return  # Wait until bot is ready
         if before.content == after.content:
-            return
+            return  # Only process new content not embeds & links.
         if not after.edited_at or not after.created_at:
-            return
+            return  # Need these timestamps to check time since msg.
         if (after.edited_at - after.created_at).total_seconds() > 10:
             return  # We do not allow edit command invokations after 10s.
         await self.process_commands(after)
