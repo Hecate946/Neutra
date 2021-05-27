@@ -332,7 +332,7 @@ class Snowbot(commands.AutoShardedBot):
         except Exception as e:
             print(utils.traceback_maker(e))
 
-        try: # Set up our webhooks
+        try:  # Set up our webhooks
             await self.setup_webhooks()
         except Exception as e:
             print(f"Unable to setup webhooks: {e}")
@@ -618,7 +618,6 @@ class Snowbot(commands.AutoShardedBot):
             )
             traceback_logger.warning(str(err) + "\n")
 
-
     async def on_guild_join(self, guild):
         if self.ready is False:
             return
@@ -729,5 +728,6 @@ class Snowbot(commands.AutoShardedBot):
     @property
     def hecate(self):
         return self.get_user(self.owner_ids[0])
+
 
 bot = Snowbot()

@@ -399,8 +399,6 @@ class Config(commands.Cog):
         ternary = "Enabled" if command.enabled else "Disabled"
         await ctx.success(f"{ternary} {command.qualified_name}.")
 
-    
-
     @decorators.command(brief="Have the bot leave a server.")
     async def leaveserver(self, ctx, *, target_server: converters.DiscordGuild = None):
         """Leaves a server - can take a name or id (owner only)."""

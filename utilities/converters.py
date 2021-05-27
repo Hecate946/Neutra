@@ -361,7 +361,6 @@ class DiscordUser(commands.Converter):
         return match
 
 
-
 class DiscordGuild(commands.Converter):
     """Match guild_id, or guild name exact, only if author is in the guild."""
 
@@ -450,7 +449,6 @@ class BannedMember(commands.Converter):
         return entity
 
 
-
 class GlobalChannel(commands.Converter):
     async def convert(self, ctx, argument):
         try:
@@ -491,8 +489,6 @@ class UserIDConverter(commands.Converter):
             except discord.NotFound:
                 raise commands.BadArgument("Invalid user.")
         return user
-
-
 
 
 class DiscordMember(commands.Converter):
@@ -661,6 +657,7 @@ class DiscordRole(commands.Converter):
             )
         return match
 
+
 class BotServer(commands.Converter):
     async def convert(self, ctx, argument):
         if argument.isdigit():
@@ -693,6 +690,8 @@ class BotServer(commands.Converter):
                 f"Server `{await prettify(ctx, argument)}` not found."
             )
         return options
+
+
 class ActionReason(commands.Converter):
     async def convert(self, ctx, argument):
         ret = f"{ctx.author} (ID: {ctx.author.id}) in #{ctx.channel.name}: {argument}"
@@ -703,6 +702,7 @@ class ActionReason(commands.Converter):
                 f"Reason is too long ({len(argument)}/{reason_max})"
             )
         return ret
+
 
 class BotStatus(commands.Converter):
     async def convert(self, ctx, argument):
@@ -720,7 +720,9 @@ class BotStatus(commands.Converter):
             status = "offline"
         else:
             headers = ["ONLINE", "IDLE", "DND", "OFFLINE"]
-            rows = tuple(zip(online_options, idle_options, dnd_options, offline_options))
+            rows = tuple(
+                zip(online_options, idle_options, dnd_options, offline_options)
+            )
             table = formatting.TabularData()
             table.set_columns(headers)
             table.add_rows(rows)
@@ -728,6 +730,7 @@ class BotStatus(commands.Converter):
             completed = f"```sml\nVALID STATUS OPTIONS:\n{render}```"
             raise commands.BadArgument(f"**Invalid Status.**{completed}")
         return status
+
 
 class BotActivity(commands.Converter):
     async def convert(self, ctx, argument):
@@ -745,7 +748,14 @@ class BotActivity(commands.Converter):
             activity = "competing"
         else:
             headers = ["PLAYING", "LISTENING", "WATCHING", "COMPETING"]
-            rows = tuple(zip(playing_options, listening_options, watching_options, competing_options))
+            rows = tuple(
+                zip(
+                    playing_options,
+                    listening_options,
+                    watching_options,
+                    competing_options,
+                )
+            )
             table = formatting.TabularData()
             table.set_columns(headers)
             table.add_rows(rows)
@@ -753,6 +763,7 @@ class BotActivity(commands.Converter):
             completed = f"```sml\nVALID ACTIVITY OPTIONS:\n{render}```"
             raise commands.BadArgument(f"**Invalid Activity.**{completed}")
         return activity
+
 
 class Flag(commands.Converter):
     async def convert(self, ctx, argument):
@@ -773,9 +784,11 @@ class Flag(commands.Converter):
             raise commands.BadArgument(f"**Invalid flag.**{completed}")
         return dm_bool
 
+
 class Arguments(argparse.ArgumentParser):
     def error(self, message):
         raise RuntimeError(message)
+
 
 class Prefix(commands.Converter):
     async def convert(self, ctx, argument):

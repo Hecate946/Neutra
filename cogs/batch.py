@@ -70,7 +70,9 @@ class Batch(commands.Cog):
         while True:
             files = [await self.queue.get() for _ in range(10)]
             try:
-                upload_batch = await self.bot.avatar_webhook.send(files=files, wait=True)
+                upload_batch = await self.bot.avatar_webhook.send(
+                    files=files, wait=True
+                )
                 for x in upload_batch.attachments:
                     self.avatar_batch.append(
                         {
@@ -388,7 +390,6 @@ class Batch(commands.Cog):
     @bulk_inserter.error
     async def loop_error(self, exc):
         self.bot.dispatch("error", "loop_error", tb=utils.traceback_maker(exc))
-
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
