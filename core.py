@@ -767,6 +767,8 @@ class Snowbot(commands.AutoShardedBot):
             return
         if before.content == after.content:
             return
+        if not after.edited_at or not after.created_at:
+            return
         if (after.edited_at - after.created_at).total_seconds() > 10:
             return  # We do not allow edit command invokations after 10s.
         await self.process_commands(after)
