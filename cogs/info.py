@@ -207,7 +207,7 @@ class Info(commands.Cog):
             Shows the average message latency
             over the past 500 messages send.
         """
-        await ctx.send(
+        await ctx.send_or_reply(
             f"{self.bot.emote_dict['stopwatch']} "
             + "`{:.2f}ms`".format(
                 1000
@@ -240,7 +240,7 @@ class Info(commands.Cog):
             )
         )
         now = datetime.utcnow()
-        sent_message = await ctx.send(msg_content)
+        sent_message = await ctx.send_or_reply(msg_content)
         await task
         rtt_time = datetime.utcnow()
         content = "```prolog\n"

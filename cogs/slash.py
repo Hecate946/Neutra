@@ -22,11 +22,11 @@ class Slash(commands.Cog):
         except ValueError:
             pass
         if len(current_prefixes) == 0:
-            return await ctx.send(
+            return await ctx.send_or_reply(
                 content=f"My current prefix is {self.bot.constants.prefix}",
                 hidden=True,
             )
-        await ctx.send(
+        await ctx.send_or_reply(
             f"My current prefix{' is' if len(current_prefixes) == 1 else 'es are '} `{', '.join(current_prefixes)}`",
             hidden=True,
         )

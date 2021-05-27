@@ -15,10 +15,10 @@ from utilities import pagination
 
 
 def setup(bot):
-    bot.add_cog(Config(bot))
+    bot.add_cog(Botconfig(bot))
 
 
-class Config(commands.Cog):
+class Botconfig(commands.Cog):
     """
     Owner only configuration cog.
     """
@@ -37,7 +37,7 @@ class Config(commands.Cog):
         implemented="2021-03-22 06:59:02.430491",
         updated="2021-05-19 06:10:56.241058",
     )
-    async def config(self, ctx, key=None, value=None):
+    async def config(self, ctx, key, value):
         """
         Usage: {0}config <Key to change> <New Value>
         Output:
@@ -48,13 +48,13 @@ class Config(commands.Cog):
             immediately, use the {0}botvars command
             instead of rebooting the entire client.
         """
-        if key is None or value is None:
-            await ctx.send_or_reply(f"Enter a value to edit and its new value.")
-            return
         if value.isdigit():
             utils.modify_config(key=key, value=int(value))
-        elif type(value) is bool:
-            utils.modify_config(key=key, value=bool(value))
+        elif str(value).lower() == 'true':
+            val = True
+        elif str(value).lower() == 'false':
+            val =False
+            utils.modify_config(key=key, value=val)
         else:
             utils.modify_config(key=key, value=str(value))
         await ctx.success(f"Edited key `{key}` to `{value}`")
@@ -70,6 +70,7 @@ class Config(commands.Cog):
         Output: Edits the specified bot attribute.
         Options:
             avatar, nickname, username
+            status, activity, presence
         """
         if ctx.invoked_subcommand is None:
             return await ctx.usage()

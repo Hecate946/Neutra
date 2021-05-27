@@ -72,9 +72,9 @@ class Tasks(commands.Cog):
 
     async def cog_command_error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
-            await ctx.send(error)
+            await ctx.send_or_reply(error)
         if isinstance(error, commands.TooManyArguments):
-            await ctx.send(
+            await ctx.send_or_reply(
                 f"You called the {ctx.command.name} command with too many arguments."
             )
 

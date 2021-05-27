@@ -1001,7 +1001,7 @@ class Logging(commands.Cog):
             name=f"Logging Channel",
             value=f"{self.bot.get_channel(self.bot.server_settings[ctx.guild.id]['logging']['logchannel']).mention}",
         )
-        await ctx.send(embed=embed)
+        await ctx.send_or_reply(embed=embed)
 
     @decorators.command(brief="Disable specific logging events.")
     @commands.guild_only()

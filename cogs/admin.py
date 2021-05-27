@@ -930,7 +930,7 @@ class Admin(commands.Cog):
         try:
             args = parser.parse_args(shlex.split(args))
         except Exception as e:
-            return await ctx.send(str(e).capitalize())
+            return await ctx.send_or_reply(str(e).capitalize())
 
         members = []
 
@@ -952,7 +952,7 @@ class Admin(commands.Cog):
                 try:
                     _match = re.compile(args.match)
                 except re.error as e:
-                    return await ctx.send(f"Invalid regex passed to `--match`: {e}")
+                    return await ctx.send_or_reply(f"Invalid regex passed to `--match`: {e}")
                 else:
                     predicates.append(lambda m, x=_match: x.match(m.content))
             if args.embeds:
@@ -984,7 +984,7 @@ class Admin(commands.Cog):
             try:
                 _regex = re.compile(args.regex)
             except re.error as e:
-                return await ctx.send(f"Invalid regex passed to `--regex`: {e}")
+                return await ctx.send_or_reply(f"Invalid regex passed to `--regex`: {e}")
             else:
                 predicates.append(lambda m, x=_regex: x.match(m.name))
 
@@ -1054,7 +1054,7 @@ class Admin(commands.Cog):
         members = {m for m in members if all(p(m) for p in predicates)}
         # members.add([x for x in await p(m)])
         if len(members) == 0:
-            return await ctx.send("No members found matching criteria.")
+            return await ctx.send_or_reply("No members found matching criteria.")
 
         if args.show:
             members = sorted(members, key=lambda m: m.joined_at or now)
@@ -1066,10 +1066,10 @@ class Admin(commands.Cog):
             file = discord.File(
                 io.BytesIO(content.encode("utf-8")), filename="members.txt"
             )
-            return await ctx.send(file=file)
+            return await ctx.send_or_reply(file=file)
 
         if args.reason is None:
-            return await ctx.send("--reason flag is required.")
+            return await ctx.send_or_reply("--reason flag is required.")
         else:
             reason = " ".join(args.reason)
             raw_reason = reason
@@ -1079,7 +1079,7 @@ class Admin(commands.Cog):
             f"This action will ban {len(members)} user{'' if len(members) == 1 else 's'}"
         )
         if not confirm:
-            return await ctx.send("**Cancelled.**")
+            return await ctx.send_or_reply("**Cancelled.**")
 
         banned = []
         failed = []
@@ -1210,7 +1210,7 @@ class Admin(commands.Cog):
         try:
             await self.bot.set_guild_prefixes(ctx.guild, current_prefixes)
         except Exception as e:
-            await ctx.send(f"{e}")
+            await ctx.send_or_reply(f"{e}")
         else:
             await ctx.success(f"Successfully added prefix: `{prefix}`")
 
@@ -1260,7 +1260,7 @@ class Admin(commands.Cog):
                     f"Successfully cleared all prefixes. I will now only respond to <@!{self.bot.user.id}>"
                 )
             else:
-                await ctx.send(f"**Cancelled.**")
+                await ctx.send_or_reply(f"**Cancelled.**")
             return
 
         try:
@@ -1271,7 +1271,7 @@ class Admin(commands.Cog):
         try:
             await self.bot.set_guild_prefixes(ctx.guild, current_prefixes)
         except Exception as e:
-            await ctx.send(f"{e}")
+            await ctx.send_or_reply(f"{e}")
         else:
             await ctx.success(f"Successfully removed prefix: `{prefix}`")
 
@@ -1308,7 +1308,7 @@ class Admin(commands.Cog):
                 f"Successfully cleared all prefixes. I will now only respond to `@{ctx.guild.me.display_name}`"
             )
         else:
-            await ctx.send(f"**Cancelled.**")
+            await ctx.send_or_reply(f"**Cancelled.**")
 
     @decorators.command(
         aliases=["pruneinactive"],
@@ -1371,7 +1371,7 @@ class Admin(commands.Cog):
                 days=days, compute_prune_count=True, roles=roles, reason=reason
             )
         else:
-            await ctx.send(f"**{self.bot.emote_dict['exclamation']} Cancelled.**")
+            await ctx.send_or_reply(f"**{self.bot.emote_dict['exclamation']} Cancelled.**")
 
     @decorators.command(
         brief="Count the inactive users.",

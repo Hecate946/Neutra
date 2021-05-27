@@ -1218,7 +1218,7 @@ class Manager(commands.Cog):
         try:
             await p.start(ctx)
         except menus.MenuError as e:
-            await ctx.send(e)
+            await ctx.send_or_reply(e)
 
     @decorators.command(brief="Show bot health.")
     async def bothealth(self, ctx):
@@ -1531,23 +1531,23 @@ class Manager(commands.Cog):
                             pagination.TextPageSource(f"{value}", prefix="```py")
                         )
                     except Exception as e:
-                        return await ctx.send(e)
+                        return await ctx.send_or_reply(e)
                     try:
                         await p.start(ctx)
                     except menus.MenuError as e:
-                        await ctx.send(e)
+                        await ctx.send_or_reply(e)
             else:
                 try:
                     p = pagination.MainMenu(
                         pagination.TextPageSource(f"{value}{ret}", prefix="```py")
                     )
                 except Exception as e:
-                    return await ctx.send(e)
+                    return await ctx.send_or_reply(e)
                 self._last_result = ret
                 try:
                     await p.start(ctx)
                 except menus.MenuError as e:
-                    await ctx.send(e)
+                    await ctx.send_or_reply(e)
 
 
 class PerformanceMocker:

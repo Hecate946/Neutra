@@ -1080,7 +1080,7 @@ class Botadmin(commands.Cog):
         await ctx.bot.loop.run_in_executor(
             None, functools.partial(objgraph.show_growth, file=stdout)
         )
-        await ctx.send("```fix\n" + stdout.getvalue() + "```")
+        await ctx.send_or_reply("```fix\n" + stdout.getvalue() + "```")
 
     async def tabulate_query(self, ctx, query, *args):
         records = await self.bot.cxn.fetch(query, *args)

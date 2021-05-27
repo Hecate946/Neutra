@@ -13,6 +13,7 @@ import time
 from colr import color
 from datetime import datetime
 from discord.ext import commands, tasks
+from discord_buttons.client import DiscordButton
 from discord_slash.client import SlashCommand
 from logging.handlers import RotatingFileHandler
 
@@ -141,9 +142,10 @@ class Snowbot(commands.AutoShardedBot):
         self.ready = False
         self.session = aiohttp.ClientSession(loop=self.loop)
         self.slash = SlashCommand(self, sync_commands=True)
+        self.ddb = DiscordButton(self)
         self.socket_events = collections.Counter()
 
-        self.cog_exceptions = ["CONFIG", "BOTADMIN", "MANAGER", "JISHAKU"]
+        self.cog_exceptions = ["BOTCONFIG", "BOTADMIN", "MANAGER", "JISHAKU"]
         self.hidden_cogs = ["TESTING", "BATCH", "SLASH", "TASKS"]
         self.do_not_load = ["CONVERSION", "TESTING"]
 

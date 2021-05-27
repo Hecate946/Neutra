@@ -854,7 +854,7 @@ class Utility(commands.Cog):
         try:
             await p.start(ctx)
         except menus.MenuError as e:
-            await ctx.send(e)
+            await ctx.send_or_reply(e)
 
     @find.command(
         name="username", aliases=["name", "user"], brief="Search for users by username."
@@ -888,7 +888,7 @@ class Utility(commands.Cog):
         try:
             await p.start(ctx)
         except menus.MenuError as e:
-            await ctx.send(e)
+            await ctx.send_or_reply(e)
 
     @find.command(
         name="nicknames",
@@ -926,7 +926,7 @@ class Utility(commands.Cog):
         try:
             await p.start(ctx)
         except menus.MenuError as e:
-            await ctx.send(e)
+            await ctx.send_or_reply(e)
 
     @find.command(name="id", aliases=["snowflake"], brief="Search for users by id.")
     async def find_id(self, ctx, *, search: int):
@@ -957,7 +957,7 @@ class Utility(commands.Cog):
         try:
             await p.start(ctx)
         except menus.MenuError as e:
-            await ctx.send(e)
+            await ctx.send_or_reply(e)
 
     @find.command(
         name="hash",
@@ -995,7 +995,7 @@ class Utility(commands.Cog):
         try:
             await p.start(ctx)
         except menus.MenuError as e:
-            await ctx.send(e)
+            await ctx.send_or_reply(e)
 
     @find.command(
         aliases=["dups"],
@@ -1039,7 +1039,7 @@ class Utility(commands.Cog):
         try:
             await p.start(ctx)
         except menus.MenuError as e:
-            await ctx.send(e)
+            await ctx.send_or_reply(e)
 
     def _is_hard_to_mention(self, name):
         """Determine if a name is hard to mention."""
@@ -1097,7 +1097,7 @@ class Utility(commands.Cog):
         try:
             await p.start(ctx)
         except menus.MenuError as e:
-            await ctx.send(e)
+            await ctx.send_or_reply(e)
 
     @decorators.command(
         aliases=["id"],
@@ -1154,7 +1154,7 @@ class Utility(commands.Cog):
         string = cleaner.clean_all(string)
         if len(string) < 1990:
             msg = "```json\n" + str(string) + "```"
-            await ctx.send(msg)
+            await ctx.send_or_reply(msg)
             return
         p = pagination.MainMenu(pagination.TextPageSource(string, prefix="```json"))
         try:
@@ -1193,9 +1193,9 @@ class Utility(commands.Cog):
                 try:
                     await ctx.author.send(page)
                 except Exception:
-                    await ctx.send(page)
+                    await ctx.send_or_reply(page)
             else:
-                await ctx.send(page)
+                await ctx.send_or_reply(page)
 
     @decorators.command(
         aliases=["bitly"],
