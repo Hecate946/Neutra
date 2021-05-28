@@ -1,3 +1,4 @@
+import collections
 import io
 import re
 import copy
@@ -10,6 +11,7 @@ import typing
 import asyncio
 import discord
 import operator
+import itertools
 import pyparsing
 import unicodedata
 
@@ -26,6 +28,7 @@ from utilities import cleaner
 from utilities import helpers
 from utilities import converters
 from utilities import decorators
+from utilities import formatting
 from utilities import pagination
 
 
@@ -83,6 +86,59 @@ class Utility(commands.Cog):
         if timestamp.year < 2015:
             timestamp = datetime.utcfromtimestamp(decoded + token_epoch)
         return timestamp
+
+    @decorators.command(
+        aliases=['reactions'],
+        brief="Get react info on a message.",
+        implemented="2021-05-28 20:09:52.796946",
+        updated="2021-05-28 20:09:52.796946",
+        examples="""
+                {0}reactinfo 847929402116669482
+                {0}reactions 847929402116669482
+                """
+    )
+    async def reactinfo(self, ctx, message: discord.Message):
+        """
+        Usage: {0}reactinfo [message id]
+        Alias: {0}reactions
+        Output:
+            Shows all the users who reacted
+            to the given message in an rst
+            tabular format.
+        Notes:
+            Will send a file object if the
+            table length is greater than
+            discord's character limit.
+        """
+        if not len(message.reactions):
+            raise commands.BadArgument(f"Message `{message.id}` has no reactions.")
+        table = formatting.TabularData()
+        headers = []
+        formats = {}
+        total = []
+        for reaction in message.reactions:
+            users = [str(user) for user in await reaction.users().flatten() if user is not None]
+            headers.append(f"{str(reaction.emoji)} [{len(users)}]")
+            formats[str(reaction.emoji)] = [str(user) for user in await reaction.users().flatten() if user is not None]
+            total.extend(users)
+
+        count = len(collections.Counter(total))
+        rows = list(itertools.zip_longest(*formats.values(), fillvalue=''))
+        pluralize = "" if count == 1 else "s"
+        table.set_columns(headers)
+        table.add_rows(rows)
+        render = table.render()
+        completed = f"```sml\n{render}```"
+        emote = self.bot.emote_dict["graph"]
+        await ctx.bold(
+            f"{emote} {count} user{pluralize} reacted to the message `{message.id}`."
+        )
+        if len(completed) > 2000:
+            fp = io.BytesIO(completed.encode("utf-8"))
+            await ctx.send_or_reply(file=discord.File(fp, "reactinfo.sml"))
+        else:
+            await ctx.send_or_reply(completed)
+
 
     @decorators.command(
         aliases=["genoauth", "oauth2", "genbotoauth"],
