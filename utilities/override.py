@@ -1,5 +1,5 @@
 import discord
-
+from uuid import uuid4
 from discord.ext import commands
 
 from utilities import pagination

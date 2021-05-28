@@ -7,7 +7,6 @@ import traceback
 
 from datetime import datetime
 from discord.ext import commands, menus
-from discord_buttons import Button, ButtonStyle
 
 from utilities import utils
 from utilities import checks
@@ -38,12 +37,12 @@ class Help(commands.Cog):
         if pm is True:  # We're DMing the user
             if not ctx.guild:  # They invoked from a DM
                 msg = await ctx.send_or_reply(
-                    embed=embed, buttons=[Button(style=ButtonStyle.URL, label="Need more help?", url=self.bot.constants.support)],
+                    embed=embed, delete_after=delete_after
                 )
                 return
             try:
                 msg = await ctx.send_or_reply(
-                    embed=embed, buttons=[Button(style=ButtonStyle.URL, label="Need more help?", url=self.bot.constants.support)],
+                    embed=embed, delete_after=delete_after
                 )
                 try:
                     await ctx.message.add_reaction(self.bot.emote_dict["letter"])
@@ -51,11 +50,11 @@ class Help(commands.Cog):
                     pass
             except Exception:  # Couldn't send the message to the user. Send it to the channel.
                 msg = await ctx.send_or_reply(
-                    embed=embed, buttons=[Button(style=ButtonStyle.URL, label="Need more help?", url=self.bot.constants.support)],
+                    embed=embed, delete_after=delete_after
                 )
         else:  # Not trying to DM the user, send to the channel.
             msg = await ctx.send_or_reply(
-                embed=embed, buttons=[Button(style=ButtonStyle.URL, label="Need more help?", url=self.bot.constants.support)],
+                embed=embed, delete_after=delete_after
             )
 
         def reaction_check(m):

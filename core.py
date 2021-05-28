@@ -13,7 +13,6 @@ import time
 from colr import color
 from datetime import datetime
 from discord.ext import commands, tasks
-from discord_buttons.client import DiscordButton
 from discord_slash.client import SlashCommand
 from logging.handlers import RotatingFileHandler
 
@@ -142,7 +141,6 @@ class Snowbot(commands.AutoShardedBot):
         self.ready = False
         self.session = aiohttp.ClientSession(loop=self.loop)
         self.slash = SlashCommand(self, sync_commands=True)
-        self.ddb = DiscordButton(self)
         self.socket_events = collections.Counter()
 
         self.cog_exceptions = ["BOTCONFIG", "BOTADMIN", "MANAGER", "JISHAKU"]
@@ -757,7 +755,7 @@ class Snowbot(commands.AutoShardedBot):
         if message.author.id == self.user.id:
             return  # Don't reply to ourselves
         if self.dregex.match(message.content):  # When a user DMs the bot an invite...
-            await message.reply(f"Use this link to invite me:\n<{self.oauth}>")
+            await message.reply(f"Use this link to invite me to your server.<{self.oauth}>")
 
     async def on_message_edit(self, before, after):
         if not self.ready:
