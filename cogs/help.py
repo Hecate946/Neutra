@@ -8,6 +8,9 @@ import traceback
 from datetime import datetime
 from discord.ext import commands, menus
 
+from dislash.slash_commands import SlashClient
+from dislash.interactions import ActionRow, ButtonStyle, Button
+
 from utilities import utils
 from utilities import checks
 from utilities import converters
@@ -17,6 +20,7 @@ from utilities import pagination
 
 def setup(bot):
     bot.remove_command("help")
+    SlashClient(bot)
     bot.add_cog(Help(bot))
 
 
@@ -28,6 +32,11 @@ class Help(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.command_exceptions = []  # pass command names to hide from help command
+        self.button_row = ActionRow(Button(
+                style=ButtonStyle.link,
+                label="Need more help?",
+                url=self.bot.constants.support
+            ))
 
     ############################
     ## Get Commands From Cogs ##
@@ -37,12 +46,12 @@ class Help(commands.Cog):
         if pm is True:  # We're DMing the user
             if not ctx.guild:  # They invoked from a DM
                 msg = await ctx.send_or_reply(
-                    embed=embed, delete_after=delete_after
+                    embed=embed, delete_after=delete_after, components=[self.button_row]
                 )
                 return
             try:
                 msg = await ctx.send_or_reply(
-                    embed=embed, delete_after=delete_after
+                    embed=embed, delete_after=delete_after, components=[self.button_row]
                 )
                 try:
                     await ctx.message.add_reaction(self.bot.emote_dict["letter"])
@@ -50,11 +59,11 @@ class Help(commands.Cog):
                     pass
             except Exception:  # Couldn't send the message to the user. Send it to the channel.
                 msg = await ctx.send_or_reply(
-                    embed=embed, delete_after=delete_after
+                    embed=embed, delete_after=delete_after, components=[self.button_row]
                 )
         else:  # Not trying to DM the user, send to the channel.
             msg = await ctx.send_or_reply(
-                embed=embed, delete_after=delete_after
+                embed=embed, delete_after=delete_after, components=[self.button_row]
             )
 
         def reaction_check(m):
