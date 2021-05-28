@@ -112,6 +112,7 @@ class Utility(commands.Cog):
         """
         if not len(message.reactions):
             raise commands.BadArgument(f"Message `{message.id}` has no reactions.")
+        await ctx.trigger_typing()
         table = formatting.TabularData()
         headers = []
         formats = {}
