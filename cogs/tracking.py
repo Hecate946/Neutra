@@ -656,7 +656,7 @@ class Tracking(commands.Cog):
             else:
                 break
 
-            res = await self.bot.get(av, res_method="read")
+            res = await self.bot.get(str(av), res_method="read")
             av_bytes = io.BytesIO(res)
             av_bytes.seek(0)
             try:

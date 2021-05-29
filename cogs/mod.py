@@ -9,8 +9,6 @@ import discord
 from collections import Counter
 from discord.ext import commands
 
-from settings import database
-
 from utilities import humantime
 from utilities import utils
 from utilities import checks
@@ -434,9 +432,9 @@ class Mod(commands.Cog):
 
             if args.delete:
                 delete = args.delete
-                if delete > 7:
+                if delete >= 7:
                     delete = 7
-                if delete < 0:
+                if delete <= 0:
                     delete = 0
             else:
                 delete = 1

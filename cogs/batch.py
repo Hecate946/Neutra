@@ -56,6 +56,7 @@ class Batch(commands.Cog):
 
         self.bulk_inserter.start()
         self.dispatch_avatars.start()
+        self.invite_tracker.start()
         self.message_inserter.start()
         self.status_inserter.start()
 
@@ -65,7 +66,16 @@ class Batch(commands.Cog):
         self.dispatch_avatars.stop()
         self.message_inserter.stop()
         self.status_inserter.stop()
+        self.invite_tracker.stop()
 
+    @tasks.loop(minutes=1.0)
+    async def invite_tracker(self):
+        self.bot.invites = {
+            guild.id: await guild.invites()
+            for guild in self.bot.guilds
+            if guild.me.guild_permissions.manage_guild
+        }
+        
     @tasks.loop(seconds=0.0)
     async def dispatch_avatars(self):
         while True:

@@ -8,7 +8,6 @@ import traceback
 from datetime import datetime
 from discord.ext import commands, menus
 
-from dislash.slash_commands import SlashClient
 from dislash.interactions import ActionRow, ButtonStyle, Button
 
 from utilities import utils
@@ -20,7 +19,6 @@ from utilities import pagination
 
 def setup(bot):
     bot.remove_command("help")
-    SlashClient(bot)
     bot.add_cog(Help(bot))
 
 

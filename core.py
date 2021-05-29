@@ -16,6 +16,9 @@ from discord.ext import commands, tasks
 from discord_slash.client import SlashCommand
 from logging.handlers import RotatingFileHandler
 
+from dislash.slash_commands import SlashClient
+from dislash.interactions import ActionRow, ButtonStyle, Button
+
 from settings import cleanup, database, constants
 from utilities import utils, override
 
@@ -138,6 +141,7 @@ class Snowbot(commands.AutoShardedBot):
         )  # discord invite regex
         self.emote_dict = constants.emotes
         self.prefixes = database.prefixes
+        self.command_config = database.command_config
         self.ready = False
         self.session = aiohttp.ClientSession(loop=self.loop)
         self.slash = SlashCommand(self, sync_commands=True)
@@ -394,10 +398,11 @@ class Snowbot(commands.AutoShardedBot):
             self.server_settings = database.settings
 
         if not hasattr(self, "invites"):
-            self.invites = {}
-            for guild in self.guilds:
-                if guild.me.guild_permissions.manage_guild:
-                    self.invites[guild.id] = await guild.invites()
+            self.invites = {
+                guild.id: await guild.invites()
+                for guild in self.guilds
+                if guild.me.guild_permissions.manage_guild
+            }
 
         await self.finalize_startup()
 
@@ -662,7 +667,6 @@ class Snowbot(commands.AutoShardedBot):
             # Previous checks didn't catch this one.
             # Readable error so just send it to where the error occurred.
             # await ctx.send_or_reply(content=f"{self.emote_dict['failed']} {error}")
-            self.dispatch("error", "command_error", tb="CHECK_FAILURE: " + error)
             pass
 
         elif isinstance(error, commands.CommandInvokeError):
@@ -722,6 +726,8 @@ class Snowbot(commands.AutoShardedBot):
 
         await database.update_server(guild, guild.members)
         await database.fix_server(guild.id)
+        if guild.me.guild_permissions.manage_guild:
+            self.invites[guild.id] = await guild.invites()
         try:
             await self.logging_webhook.send(
                 f"{self.emote_dict['success']} **Information** `{datetime.utcnow()}`\n"
@@ -755,7 +761,12 @@ class Snowbot(commands.AutoShardedBot):
         if message.author.id == self.user.id:
             return  # Don't reply to ourselves
         if self.dregex.match(message.content):  # When a user DMs the bot an invite...
-            await message.reply(f"Use this link to invite me to your server.<{self.oauth}>")
+            button_row = ActionRow(Button(
+                style=ButtonStyle.link,
+                label="Click me!",
+                url=self.bot.oauth
+            ))
+            await message.reply(f"Click the button below to invite me to your server.", components=[button_row])
 
     async def on_message_edit(self, before, after):
         if not self.ready:
@@ -770,3 +781,4 @@ class Snowbot(commands.AutoShardedBot):
 
 
 bot = Snowbot()
+SlashClient(bot)
