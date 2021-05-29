@@ -1,6 +1,6 @@
 # Snowbot Moderation & Stat Tracking Discord Bot
 ### [Bot Invite Link](https://discord.com/oauth2/authorize?client_id=813275073459912725&scope=bot+applications.commands&permissions=956689654)
-### [Support Server](https://discord.gg/5n696us4Tf)
+### [Support Server](https://discord.gg/H2qTG4yxqb)
 ### [DiscordBots.gg](https://discord.bots.gg/bots/810377376269205546)
 ### [Top.gg](https://top.gg/bot/810377376269205546)
 ## Overview
@@ -8,13 +8,13 @@ Hello! I'm Snowbot, and I specialize in tracking and moderation.
 I was designed to collect all sorts of data on servers, users,
 messages, emojis, online time, and more! I also come with a fast
 and clean moderation system that offers every opportunity for effective
-server management. Apart from moderation and tracking, I feature 258
+server management. Apart from moderation and tracking, I feature 247
 commands across 13 categories that provide awesome utilities!
 Some examples include managing user timezones, role management, and logging.
 ## Categories
 ##### [Admin](#Admin-1)
 ##### [Automod](#Automod-1)
-##### [Conversion](#Conversion-1)
+##### [Config](#Config-1)
 ##### [Files](#Files-1)
 ##### [Help](#Help-1)
 ##### [Info](#Info-1)
@@ -95,39 +95,11 @@ warn: Warn users with an optional reason.
 warncount: Count the warnings a user has.
 ```
 
-### Conversion
-#### Module for unit conversions. (15 Commands)
+### Config
+#### Configure server bot usage (1 Commands)
 
 ```yaml
-binint: Convert binary to an integer.
-
-binstr: Convert binary to a string
-
-cm: Convert centimeters to feet and inches.
-
-dechex: Convert decimal into hex.
-
-decode: Decode from b32, b64, b85, rot13, hex.
-
-encode: Encode to: b32, b64, b85, rot13, hex.
-
-ft: Convert feet.inches to centimeters
-
-hexdec: Convert hex to decimal.
-
-intbin: Convert an integer to binary.
-
-kg: Convert kilograms to pounds.
-
-lb: Convert pounds to kilograms
-
-morse: Converts ascii to morse code.
-
-morsetable: Show the morse lookup table
-
-strbin: Convert a string to binary.
-
-unmorse: Converts morse code to ascii.
+channel: None
 ```
 
 ### Files
@@ -201,7 +173,7 @@ writers: Show all people who wrote for me.
 ```
 
 ### Info
-#### Module for bot information. (24 Commands)
+#### Module for bot information. (23 Commands)
 
 ```yaml
 about: Display information about the bot.
@@ -228,8 +200,6 @@ neofetch: Run the neofetch command.
 
 overview: Show some info on the bot's purpose.
 
-pieuptime: Show a graph of uptime stats
-
 ping: Test the bot's response latency.
 
 privacy: View the privacy policy.
@@ -242,26 +212,30 @@ socket: Show global bot socket stats.
 
 source: Display the source code.
 
-speed: Bot network speed.
-
 suggest: Send a suggestion to the developer.
 
 support: Join my support server!
 
 uptime: Show the bot's uptime.
 
+uptimeinfo: Show a graph of uptime stats
+
 users: Show users I'm connected to.
 ```
 
 ### Logging
-#### Log all server events. (5 Commands)
+#### Log all server events. (7 Commands)
 
 ```yaml
 auditcount: Count the audit log entries of a user.
 
+editsnipe: Snipe an edited message.
+
 log: Enable specific logging events.
 
 logchannel: Set your server's logging channel.
+
+snipe: Snipe a deleted message.
 
 unlog: Disable specific logging events.
 
@@ -457,8 +431,6 @@ charinfo: Show information on a character.
 
 color: Show a given color and its values.
 
-colors: Send an image with some hex codes.
-
 defaultavatar: Show a user's default avatar.
 
 dehoist: Dehoist a specified user.
@@ -479,15 +451,17 @@ ptoken: Decode a discord token.
 
 raw: Shows the raw content of a message.
 
+reactinfo: Get react info on a message.
+
 replies: Find the first message of a reply thread.
 
 serveravatar: Show the server's icon.
 
 shorten: Shorten URLs to bitly links.
 
-snipe: Snipe a deleted message.
-
 snowflake: Show info on a discord snowflake.
 
 type: Find the type of a discord object.
+
+voiceusers: Show all the users in a vc.
 ```
