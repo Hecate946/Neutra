@@ -22,6 +22,8 @@ from functools import cmp_to_key
 from PIL import Image
 from unidecode import unidecode
 
+from dislash.interactions import ActionRow, ButtonStyle, Button
+
 from utilities import utils
 from utilities import checks
 from utilities import cleaner
@@ -168,8 +170,13 @@ class Utility(commands.Cog):
         Notes:
             Defaults to me if no bot is specified.
         """
+        button_row = ActionRow(Button(
+                style=ButtonStyle.link,
+                label="Click me!",
+                url=self.bot.oauth
+            ))
         if not bot:
-            await ctx.reply(f"<{self.bot.oauth}>")
+            await ctx.reply("Click the button below to invite me to your server.", components=[button_row])
             return
         if permissions:
             permissions = discord.Permissions(permissions)
