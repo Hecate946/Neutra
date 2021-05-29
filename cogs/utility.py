@@ -142,6 +142,51 @@ class Utility(commands.Cog):
         else:
             await ctx.send_or_reply(completed)
 
+    @decorators.command(
+        aliases=['vcusers'],
+        brief="Show all the users in a vc.",
+        implemented="2021-05-28 20:09:52.796946",
+        updated="2021-05-28 20:09:52.796946",
+        examples="""
+                {0}voiceusers 847929402116669482
+                {0}vcusers #music
+                """
+    )
+    async def voiceusers(self, ctx, channel: discord.VoiceChannel):
+        """
+        Usage: {0}reactinfo [message id]
+        Alias: {0}reactions
+        Output:
+            Shows all the users in a voice
+            channel in tabular format.
+        Notes:
+            Will send a file object if the
+            table length is greater than
+            discord's character limit.
+        """
+        if not len(channel.members):
+            raise commands.BadArgument(f"Voice channel {channel.mention} has no users.")
+        await ctx.trigger_typing()
+        table = formatting.TabularData()
+        headers = ["INDEX", "USERS"]
+        users = [(idx, user) for idx, user in enumerate(sorted(channel.members), start=1) if user is not None]
+
+        count = len(users)
+        pluralize = "" if count == 1 else "s"
+        table.set_columns(headers)
+        table.add_rows(users)
+        render = table.render()
+        completed = f"```sml\n{render}```"
+        emote = self.bot.emote_dict["graph"]
+        await ctx.bold(
+            f"{emote} voice channel {channel.mention} currently has {count} user{pluralize}."
+        )
+        if len(completed) > 2000:
+            fp = io.BytesIO(completed.encode("utf-8"))
+            await ctx.send_or_reply(file=discord.File(fp, "vcusers.sml"))
+        else:
+            await ctx.send_or_reply(completed)
+
 
     @decorators.command(
         aliases=["genoauth", "oauth2", "genbotoauth"],
@@ -220,7 +265,7 @@ class Utility(commands.Cog):
         if not str_id or not str_id.isdigit():
             return await ctx.send_or_reply("Invalid user")
         user_id = int(str_id)
-        member = self.bot.get_user(user_id)
+        member = await self.bot.fetch_user(user_id)
         if not member:
             return await ctx.send_or_reply("Invalid user")
         timestamp = self.parse_date(token_part[1]) or "Invalid date"
