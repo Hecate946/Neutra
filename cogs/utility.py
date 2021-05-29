@@ -179,7 +179,7 @@ class Utility(commands.Cog):
         completed = f"```sml\n{render}```"
         emote = self.bot.emote_dict["graph"]
         await ctx.bold(
-            f"{emote} voice channel {channel.mention} currently has {count} user{pluralize}."
+            f"{emote} Voice channel {channel.mention} currently has {count} user{pluralize}."
         )
         if len(completed) > 2000:
             fp = io.BytesIO(completed.encode("utf-8"))
