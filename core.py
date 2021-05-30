@@ -141,7 +141,7 @@ class Snowbot(commands.AutoShardedBot):
         )  # discord invite regex
         self.emote_dict = constants.emotes
         self.prefixes = database.prefixes
-        self.command_config = database.command_config
+        #self.command_config = database.command_config
         self.ready = False
         self.session = aiohttp.ClientSession(loop=self.loop)
         self.slash = SlashCommand(self, sync_commands=True)
