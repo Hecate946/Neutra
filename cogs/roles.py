@@ -58,19 +58,14 @@ class Roles(commands.Cog):
         )
         roleinfo["created"] = f"Created on {role.created_at.__format__('%m/%d/%Y')}"
         roleinfo["color"] = str(role.color).upper()
-        async for entry in ctx.guild.audit_logs(
-            action=discord.AuditLogAction.role_create
-        ):
-            if entry.target.id == role.id:
-                roleinfo["creator"] = str(entry.user)
-                break
+
         embed = discord.Embed(color=self.bot.constants.embed)
         embed.set_author(name=role.name, icon_url=ctx.guild.icon_url)
         embed.set_footer(text=f"Role ID: {role.id} | {roleinfo['created']}")
         embed.set_thumbnail(url=ctx.guild.icon_url)
         embed.add_field(name="Mention", value=role.mention)
         embed.add_field(name="Users", value=roleinfo["users"])
-        embed.add_field(name="Creator", value=roleinfo["creator"])
+        embed.add_field(name="Hoisted", value=role.hoist)
         embed.add_field(name="Color", value=roleinfo["color"])
         embed.add_field(name="Position", value=role.position)
         embed.add_field(name="Mentionable", value=role.mentionable)

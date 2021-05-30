@@ -639,7 +639,7 @@ class Tracking(commands.Cog):
         em = discord.Embed(color=self.bot.constants.embed)
         em.title = f"Recorded Avatars for {user}"
         iteration = 0
-        parent = Image.open("./data/assets/mask.png")
+        parent = Image.new("RGBA", (1024, 1024), (0, 0, 0, 0))
         for av in avatars:
             if iteration < 4:
                 val = 0

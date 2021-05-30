@@ -615,7 +615,7 @@ class DiscordRole(commands.Converter):
         result = None
         if ctx.guild:
             result = discord.utils.find(
-                lambda s: role_name.lower() in str(s.name).lower(), ctx.guild.roles
+                lambda s: role_name.lower() == str(s.name).lower(), ctx.guild.roles
             )
             if not result:
                 raise commands.BadArgument(
