@@ -1076,10 +1076,10 @@ class Admin(commands.Cog):
             reason = await converters.ActionReason().convert(ctx, reason)
 
         confirm = await ctx.confirm(
-            f"This action will ban {len(members)} user{'' if len(members) == 1 else 's'}"
+            f"This action will ban {len(members)} user{'' if len(members) == 1 else 's'}."
         )
         if not confirm:
-            return await ctx.send_or_reply("**Cancelled.**")
+            return
 
         banned = []
         failed = []
