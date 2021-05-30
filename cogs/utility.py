@@ -154,8 +154,8 @@ class Utility(commands.Cog):
     )
     async def voiceusers(self, ctx, channel: discord.VoiceChannel):
         """
-        Usage: {0}reactinfo [message id]
-        Alias: {0}reactions
+        Usage: {0}voiceusers [voice channel]
+        Alias: {0}vcusers
         Output:
             Shows all the users in a voice
             channel in tabular format.
