@@ -38,7 +38,7 @@ class Home(commands.Cog):
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
-    @decorators.event_check(lambda m: m.guild.id == HOME)
+    @decorators.event_check(lambda s, m: m.guild.id == HOME)
     async def on_member_join(self, member):
         await self.welcome(member)
 
