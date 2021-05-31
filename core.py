@@ -141,7 +141,7 @@ class Snowbot(commands.AutoShardedBot):
         )  # discord invite regex
         self.emote_dict = constants.emotes
         self.prefixes = database.prefixes
-        #self.command_config = database.command_config
+        # self.command_config = database.command_config
         self.ready = False
         self.session = aiohttp.ClientSession(loop=self.loop)
         self.slash = SlashCommand(self, sync_commands=True)
@@ -454,9 +454,6 @@ class Snowbot(commands.AutoShardedBot):
         # Delete all records of servers that kicked the bot
         await cleanup.basic_cleanup(self.guilds)
 
-        # Establish our webhooks
-        await self.setup_webhooks()
-
         # load all initial extensions
         try:
             for cog in self.exts:
@@ -761,12 +758,13 @@ class Snowbot(commands.AutoShardedBot):
         if message.author.id == self.user.id:
             return  # Don't reply to ourselves
         if self.dregex.match(message.content):  # When a user DMs the bot an invite...
-            button_row = ActionRow(Button(
-                style=ButtonStyle.link,
-                label="Click me!",
-                url=self.bot.oauth
-            ))
-            await message.reply(f"Click the button below to invite me to your server.", components=[button_row])
+            button_row = ActionRow(
+                Button(style=ButtonStyle.link, label="Click me!", url=self.bot.oauth)
+            )
+            await message.reply(
+                f"Click the button below to invite me to your server.",
+                components=[button_row],
+            )
 
     async def on_message_edit(self, before, after):
         if not self.ready:
