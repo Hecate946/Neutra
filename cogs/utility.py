@@ -90,14 +90,14 @@ class Utility(commands.Cog):
         return timestamp
 
     @decorators.command(
-        aliases=['reactions'],
+        aliases=["reactions"],
         brief="Get react info on a message.",
         implemented="2021-05-28 20:09:52.796946",
         updated="2021-05-28 20:09:52.796946",
         examples="""
                 {0}reactinfo 847929402116669482
                 {0}reactions 847929402116669482
-                """
+                """,
     )
     async def reactinfo(self, ctx, message: discord.Message):
         """
@@ -120,13 +120,21 @@ class Utility(commands.Cog):
         formats = {}
         total = []
         for reaction in message.reactions:
-            users = [str(user) for user in await reaction.users().flatten() if user is not None]
+            users = [
+                str(user)
+                for user in await reaction.users().flatten()
+                if user is not None
+            ]
             headers.append(f"{str(reaction.emoji)} [{len(users)}]")
-            formats[str(reaction.emoji)] = [str(user) for user in await reaction.users().flatten() if user is not None]
+            formats[str(reaction.emoji)] = [
+                str(user)
+                for user in await reaction.users().flatten()
+                if user is not None
+            ]
             total.extend(users)
 
         count = len(collections.Counter(total))
-        rows = list(itertools.zip_longest(*formats.values(), fillvalue=''))
+        rows = list(itertools.zip_longest(*formats.values(), fillvalue=""))
         pluralize = "" if count == 1 else "s"
         table.set_columns(headers)
         table.add_rows(rows)
@@ -143,14 +151,14 @@ class Utility(commands.Cog):
             await ctx.send_or_reply(completed)
 
     @decorators.command(
-        aliases=['vcusers'],
+        aliases=["vcusers"],
         brief="Show all the users in a vc.",
         implemented="2021-05-28 20:09:52.796946",
         updated="2021-05-28 20:09:52.796946",
         examples="""
                 {0}voiceusers 847929402116669482
                 {0}vcusers #music
-                """
+                """,
     )
     async def voiceusers(self, ctx, channel: discord.VoiceChannel):
         """
@@ -169,7 +177,13 @@ class Utility(commands.Cog):
         await ctx.trigger_typing()
         table = formatting.TabularData()
         headers = ["INDEX", "USERS"]
-        users = [(idx, user) for idx, user in enumerate(sorted(channel.members), start=1) if user is not None]
+        users = [
+            (idx, user)
+            for idx, user in enumerate(
+                sorted(channel.members, key=lambda m: str(m)), start=1
+            )
+            if user is not None
+        ]
 
         count = len(users)
         pluralize = "" if count == 1 else "s"
@@ -186,7 +200,6 @@ class Utility(commands.Cog):
             await ctx.send_or_reply(file=discord.File(fp, "vcusers.sml"))
         else:
             await ctx.send_or_reply(completed)
-
 
     @decorators.command(
         aliases=["genoauth", "oauth2", "genbotoauth"],
@@ -215,13 +228,14 @@ class Utility(commands.Cog):
         Notes:
             Defaults to me if no bot is specified.
         """
-        button_row = ActionRow(Button(
-                style=ButtonStyle.link,
-                label="Click me!",
-                url=self.bot.oauth
-            ))
+        button_row = ActionRow(
+            Button(style=ButtonStyle.link, label="Click me!", url=self.bot.oauth)
+        )
         if not bot:
-            await ctx.reply("Click the button below to invite me to your server.", components=[button_row])
+            await ctx.reply(
+                "Click the button below to invite me to your server.",
+                components=[button_row],
+            )
             return
         if permissions:
             permissions = discord.Permissions(permissions)
