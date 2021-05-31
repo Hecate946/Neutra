@@ -579,7 +579,9 @@ class Stats(commands.Cog):
         p = pagination.SimplePages(
             entries=[
                 "`{}`: Uses: {}".format(ctx.guild.get_member(user), count)
-                for user, count in sorted(matches.items(), key=lambda x: x[1], reverse=True)
+                for user, count in sorted(
+                    matches.items(), key=lambda x: x[1], reverse=True
+                )
                 if ctx.guild.get_member(user)
             ],
             per_page=15,

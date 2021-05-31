@@ -952,7 +952,9 @@ class Admin(commands.Cog):
                 try:
                     _match = re.compile(args.match)
                 except re.error as e:
-                    return await ctx.send_or_reply(f"Invalid regex passed to `--match`: {e}")
+                    return await ctx.send_or_reply(
+                        f"Invalid regex passed to `--match`: {e}"
+                    )
                 else:
                     predicates.append(lambda m, x=_match: x.match(m.content))
             if args.embeds:
@@ -984,7 +986,9 @@ class Admin(commands.Cog):
             try:
                 _regex = re.compile(args.regex)
             except re.error as e:
-                return await ctx.send_or_reply(f"Invalid regex passed to `--regex`: {e}")
+                return await ctx.send_or_reply(
+                    f"Invalid regex passed to `--regex`: {e}"
+                )
             else:
                 predicates.append(lambda m, x=_regex: x.match(m.name))
 
@@ -1371,7 +1375,9 @@ class Admin(commands.Cog):
                 days=days, compute_prune_count=True, roles=roles, reason=reason
             )
         else:
-            await ctx.send_or_reply(f"**{self.bot.emote_dict['exclamation']} Cancelled.**")
+            await ctx.send_or_reply(
+                f"**{self.bot.emote_dict['exclamation']} Cancelled.**"
+            )
 
     @decorators.command(
         brief="Count the inactive users.",

@@ -75,7 +75,7 @@ class Batch(commands.Cog):
             for guild in self.bot.guilds
             if guild.me.guild_permissions.manage_guild
         }
-        
+
     @tasks.loop(seconds=0.0)
     async def dispatch_avatars(self):
         while True:

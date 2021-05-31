@@ -66,6 +66,16 @@ class Info(commands.Cog):
         value = await self.bot.cxn.fetchval(query)
         return value
 
+    async def get_version(self):
+        query = """
+                SELECT version
+                FROM config
+                WHERE client_id = $1;
+                """
+        v = await self.bot.cxn.fetchval(query, self.bot.user.id)
+        version = ".".join(str(round(v, 1)).replace(".",""))
+        return version
+
     @decorators.command(
         aliases=["info", "bot", "botstats", "botinfo"],
         brief="Display information about the bot.",
@@ -80,12 +90,6 @@ class Info(commands.Cog):
         Output: Version info and bot stats
         """
         msg = await ctx.load("Collecting Bot Info...")
-        version_query = """
-                        SELECT version
-                        FROM config
-                        WHERE client_id = $1;
-                        """
-        bot_version = await self.bot.cxn.fetchval(version_query, self.bot.user.id)
         total_members = sum(1 for x in self.bot.get_all_members())
         voice_channels = []
         text_channels = []
@@ -138,7 +142,7 @@ class Info(commands.Cog):
         embed.add_field(name="RAM Usage", value=f"{ram_usage:.2f} MB")
 
         await msg.edit(
-            content=f"{self.bot.emote_dict['snowflake']} About **{ctx.bot.user}** | **{round(bot_version, 1)}**",
+            content=f"{self.bot.emote_dict['snowflake']} About **{ctx.bot.user}** | **{await self.get_version()}**",
             embed=embed,
         )
 

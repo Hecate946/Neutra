@@ -30,11 +30,13 @@ class Help(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.command_exceptions = []  # pass command names to hide from help command
-        self.button_row = ActionRow(Button(
+        self.button_row = ActionRow(
+            Button(
                 style=ButtonStyle.link,
                 label="Need more help?",
-                url=self.bot.constants.support
-            ))
+                url=self.bot.constants.support,
+            )
+        )
 
     ############################
     ## Get Commands From Cogs ##
@@ -507,7 +509,7 @@ class Help(commands.Cog):
                                             ctx,
                                             invokercommand,
                                             command,
-                                            ' '.join(args[1:]),
+                                            " ".join(args[1:]),
                                             pm,
                                             delete_after,
                                         )
