@@ -548,9 +548,10 @@ class Roles(commands.Cog):
 
     @decorators.command(brief="Show the people who have a role.")
     @commands.guild_only()
+    @checks.bot_has_perms(add_reactions=True, embed_links=True)
     async def whohas(self, ctx, *, role: converters.DiscordRole = None):
         """
-        Usage: -whohas <role>
+        Usage: {0}whohas <role>
         Permission: Manage Messages
         Output:
             Lists the people who have the specified role with their status.
@@ -587,19 +588,14 @@ class Roles(commands.Cog):
 
     @decorators.command(aliases=["rp"], brief="Show the permissions for a role.")
     @commands.guild_only()
-    async def roleperms(self, ctx, *, role: converters.DiscordRole = None):
+    async def roleperms(self, ctx, *, role: converters.DiscordRole):
         """
-        Usage:  -roleperms <role>
-        Alias:  -rp
+        Usage:  {0}roleperms <role>
+        Alias:  {0}rp
         Output:
             Embed with all the permissions
             granted to the passed role
         """
-        if role is None:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}roleperms <role>`",
-            )
-
         permissions = ""
         permissionsne = ""
         try:
@@ -628,7 +624,7 @@ class Roles(commands.Cog):
     @commands.guild_only()
     async def rolecount(self, ctx):
         """
-        Usage: -rolecount
+        Usage: {0}rolecount
         Output: Counts all server roles
         """
         await ctx.send_or_reply(
@@ -717,6 +713,9 @@ class Roles(commands.Cog):
                 {0}multirole add bots @Bots
                 """
     )
+    @commands.guild_only()
+    @checks.bot_has_perms(manage_guild=True)
+    @checks.has_perms(manage_guild=True)
     async def _role(self, ctx):
         """
         Usage: {0}role <add/remove> <option> <arguments>
