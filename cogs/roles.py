@@ -686,10 +686,10 @@ class Roles(commands.Cog):
         ) = None,
     ):
         """
-        Usage: {0}tempban <users> [duration] [reason]
-        Alias: {0}tban
+        Usage: {0}temprole <user> <duration>
+        Alias: {0}trole
         Output:
-            Temporarily bans a member for the specified duration.
+            Adds a role to a user for the specified duration.
             The duration can be a a short time form, e.g. 30d or a more human
             duration like "until thursday at 3PM".
         """
