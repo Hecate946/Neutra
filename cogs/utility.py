@@ -268,7 +268,7 @@ class Utility(commands.Cog):
         """
         token_part = token.split(".")
         if len(token_part) != 3:
-            return await ctx.send_or_reply("Invalid token")
+            raise commands.BadArgument("Invalid token")
 
         def decode_user(user):
             user_bytes = user.encode()
@@ -277,23 +277,23 @@ class Utility(commands.Cog):
 
         str_id = decode_user(token_part[0])
         if not str_id or not str_id.isdigit():
-            return await ctx.send_or_reply("Invalid user")
+            raise commands.BadArgument("Invalid token")
         user_id = int(str_id)
-        member = await self.bot.fetch_user(user_id)
-        if not member:
-            return await ctx.send_or_reply("Invalid user")
+        user = await self.bot.fetch_user(user_id)
+        if not user:
+            raise commands.BadArgument("Invalid token")
         timestamp = self.parse_date(token_part[1]) or "Invalid date"
 
         embed = discord.Embed(
-            title=f"{member.display_name}'s token",
-            description=f"**User:** `{member}`\n"
-            f"**ID:** `{member.id}`\n"
-            f"**Bot:** `{member.bot}`\n"
-            f"**Created:** `{member.created_at}`\n"
+            title=f"{user.display_name}'s token",
+            description=f"**User:** `{user}`\n"
+            f"**ID:** `{user.id}`\n"
+            f"**Bot:** `{user.bot}`\n"
+            f"**Created:** `{user.created_at}`\n"
             f"**Token Created:** `{timestamp}`",
         )
         embed.color = self.bot.constants.embed
-        embed.set_thumbnail(url=member.avatar_url)
+        embed.set_thumbnail(url=user.avatar_url)
         await ctx.send_or_reply(embed=embed)
 
     @decorators.command(
@@ -310,7 +310,7 @@ class Utility(commands.Cog):
     )
     @checks.bot_has_perms(embed_links=True)
     async def gtoken(
-        self, ctx, user: typing.Union[discord.Member, discord.User] = None
+        self, ctx, user: converters.DiscordUser = None
     ):
         """
         Usage: {0}gtoken <user>
