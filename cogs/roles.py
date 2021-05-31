@@ -217,202 +217,202 @@ class Roles(commands.Cog):
             f'the role{"" if len(role_list) == 1 else "s"} `{", ".join(role_names)}`'
         )
 
-    @decorators.group(
-        brief="Mass adds or removes a role to users.", aliases=["multirole"]
-    )
-    @commands.guild_only()
-    @checks.bot_has_perms(manage_roles=True)
-    @checks.has_perms(manage_roles=True)
-    async def massrole(self, ctx):
-        """
-        Usage:      -massrole <method> <role1> <role2>
-        Alias:      -multirole
-        Example:    -massrole add @everyone Verified
-        Permission: Manage Roles
-        Output:     Adds or removes a role to all users with a given role
-        Methods:
-            add
-            remove (Aliases: rem, rm)
+    # @decorators.group(
+    #     brief="Mass adds or removes a role to users.", aliases=["multirole"]
+    # )
+    # @commands.guild_only()
+    # @checks.bot_has_perms(manage_roles=True)
+    # @checks.has_perms(manage_roles=True)
+    # async def massrole(self, ctx):
+    #     """
+    #     Usage:      {0}massrole <method> <role1> <role2>
+    #     Alias:      {0}multirole
+    #     Example:    {0}massrole add @everyone Verified
+    #     Permission: Manage Roles
+    #     Output:     Adds or removes a role to all users with a given role
+    #     Methods:
+    #         add
+    #         remove (Aliases: rem, rm)
 
-        Notes:
-            Command may take a few minutes to complete its execution.
-            Please be patient.
-        """
-        if ctx.invoked_subcommand is None:
-            help_command = self.bot.get_command("help")
-            await help_command(ctx, invokercommand="massrole")
+    #     Notes:
+    #         Command may take a few minutes to complete its execution.
+    #         Please be patient.
+    #     """
+    #     if ctx.invoked_subcommand is None:
+    #         help_command = self.bot.get_command("help")
+    #         await help_command(ctx, invokercommand="massrole")
 
-    @massrole.command(brief="Adds all members with a certain role a new role.")
-    async def add(
-        self,
-        ctx,
-        role1: converters.DiscordRole = None,
-        role2: converters.DiscordRole = None,
-    ):
-        if role1 is None:
-            return await ctx.send_or_reply(
-                content="Usage: `{ctx.prefix}massrole add <role1> <role2> ",
-            )
-        if role2 is None:
-            return await ctx.send_or_reply(
-                content="Usage: `{ctx.prefix}massrole add <role1> <role2> ",
-            )
-        if (
-            ctx.author.top_role.position < role1.position
-            and ctx.author.id not in self.bot.constants.owners
-        ):
-            return await ctx.send_or_reply(
-                "You have insufficient permission to execute this command"
-            )
-        if (
-            role2.permissions.administrator
-            and ctx.author.id not in self.bot.constants.owners
-        ):
-            return await ctx.send_or_reply(
-                content="I cannot manipulate an admin role",
-            )
-        if (
-            role2.position > ctx.author.top_role.position
-            and ctx.author.id not in self.bot.constants.owners
-            and ctx.author.id != ctx.guild.owner.id
-        ):
-            return await ctx.send_or_reply(
-                content="That role is higher than your highest role",
-            )
-        if (
-            role2.position == ctx.author.top_role.position
-            and ctx.author.id not in self.bot.constants.owners
-            and ctx.author.id != ctx.guild.owner.id
-        ):
-            return await ctx.send_or_reply(
-                content="That role is your highest role",
-            )
-        if (
-            role1.position > ctx.author.top_role.position
-            and ctx.author.id not in self.bot.constants.owners
-            and ctx.author.id != ctx.guild.owner.id
-        ):
-            return await ctx.send_or_reply(
-                content="That role is higher than your highest role",
-            )
-        if (
-            role1.position == ctx.author.top_role.position
-            and ctx.author.id not in self.bot.constants.owners
-            and ctx.author.id != ctx.guild.owner.id
-        ):
-            return await ctx.send_or_reply(
-                content="That role is your highest role",
-            )
-        number_of_members = []
-        for member in ctx.guild.members:
-            if role1 in member.roles and not role2 in member.roles:
-                number_of_members.append(member)
+    # @massrole.command(brief="Adds all members with a certain role a new role.")
+    # async def add(
+    #     self,
+    #     ctx,
+    #     role1: converters.DiscordRole = None,
+    #     role2: converters.DiscordRole = None,
+    # ):
+    #     if role1 is None:
+    #         return await ctx.send_or_reply(
+    #             content="Usage: `{ctx.prefix}massrole add <role1> <role2> ",
+    #         )
+    #     if role2 is None:
+    #         return await ctx.send_or_reply(
+    #             content="Usage: `{ctx.prefix}massrole add <role1> <role2> ",
+    #         )
+    #     if (
+    #         ctx.author.top_role.position < role1.position
+    #         and ctx.author.id not in self.bot.constants.owners
+    #     ):
+    #         return await ctx.send_or_reply(
+    #             "You have insufficient permission to execute this command"
+    #         )
+    #     if (
+    #         role2.permissions.administrator
+    #         and ctx.author.id not in self.bot.constants.owners
+    #     ):
+    #         return await ctx.send_or_reply(
+    #             content="I cannot manipulate an admin role",
+    #         )
+    #     if (
+    #         role2.position > ctx.author.top_role.position
+    #         and ctx.author.id not in self.bot.constants.owners
+    #         and ctx.author.id != ctx.guild.owner.id
+    #     ):
+    #         return await ctx.send_or_reply(
+    #             content="That role is higher than your highest role",
+    #         )
+    #     if (
+    #         role2.position == ctx.author.top_role.position
+    #         and ctx.author.id not in self.bot.constants.owners
+    #         and ctx.author.id != ctx.guild.owner.id
+    #     ):
+    #         return await ctx.send_or_reply(
+    #             content="That role is your highest role",
+    #         )
+    #     if (
+    #         role1.position > ctx.author.top_role.position
+    #         and ctx.author.id not in self.bot.constants.owners
+    #         and ctx.author.id != ctx.guild.owner.id
+    #     ):
+    #         return await ctx.send_or_reply(
+    #             content="That role is higher than your highest role",
+    #         )
+    #     if (
+    #         role1.position == ctx.author.top_role.position
+    #         and ctx.author.id not in self.bot.constants.owners
+    #         and ctx.author.id != ctx.guild.owner.id
+    #     ):
+    #         return await ctx.send_or_reply(
+    #             content="That role is your highest role",
+    #         )
+    #     number_of_members = []
+    #     for member in ctx.guild.members:
+    #         if role1 in member.roles and not role2 in member.roles:
+    #             number_of_members.append(member)
 
-        members_to_add_roles = len(number_of_members)
-        if members_to_add_roles < 1:
-            return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['warn']} No members to add roles to",
-            )
-        msg = await ctx.send_or_reply(
-            f"{self.bot.emote_dict['warn']} Adding role `{role2.name}` to `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}. This process may take several minutes."
-        )
-        for member in role1.members:
-            try:
-                await member.add_roles(role2)
-            except discord.Forbidden:
-                return await ctx.send_or_reply(
-                    content="I do not have permission to do that",
-                )
-        # we made it
-        await msg.edit(
-            content=f"{self.bot.emote_dict['success']} Added role `{role2.name}` to `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}"
-        )
+    #     members_to_add_roles = len(number_of_members)
+    #     if members_to_add_roles < 1:
+    #         return await ctx.send_or_reply(
+    #             content=f"{self.bot.emote_dict['warn']} No members to add roles to",
+    #         )
+    #     msg = await ctx.send_or_reply(
+    #         f"{self.bot.emote_dict['warn']} Adding role `{role2.name}` to `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}. This process may take several minutes."
+    #     )
+    #     for member in role1.members:
+    #         try:
+    #             await member.add_roles(role2)
+    #         except discord.Forbidden:
+    #             return await ctx.send_or_reply(
+    #                 content="I do not have permission to do that",
+    #             )
+    #     # we made it
+    #     await msg.edit(
+    #         content=f"{self.bot.emote_dict['success']} Added role `{role2.name}` to `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}"
+    #     )
 
-    @massrole.command(
-        brief="Removes all members with a certain role a new role",
-        aliases=["rm", "rem"],
-    )
-    async def remove(
-        self, ctx, role1: converters.DiscordRole, role2: converters.DiscordRole
-    ):
-        if role1 is None:
-            return await ctx.send_or_reply(
-                content="Usage: `{ctx.prefix}massrole add <role1> <role2> ",
-            )
-        if role2 is None:
-            return await ctx.send_or_reply(
-                content="Usage: `{ctx.prefix}massrole add <role1> <role2> ",
-            )
-        if (
-            ctx.author.top_role.position < role1.position
-            and ctx.author.id not in self.bot.constants.owners
-        ):
-            return await ctx.send_or_reply(
-                "You have insufficient permission to execute this command"
-            )
-        if (
-            role2.permissions.administrator
-            and ctx.author.id not in self.bot.constants.owners
-        ):
-            return await ctx.send_or_reply(
-                content="I cannot manipulate an admin role",
-            )
-        if (
-            role2.position > ctx.author.top_role.position
-            and ctx.author.id not in self.bot.constants.owners
-            and ctx.author.id != ctx.guild.owner.id
-        ):
-            return await ctx.send_or_reply(
-                content="That role is higher than your highest role",
-            )
-        if (
-            role2.position == ctx.author.top_role.position
-            and ctx.author.id not in self.bot.constants.owners
-            and ctx.author.id != ctx.guild.owner.id
-        ):
-            return await ctx.send_or_reply(
-                content="That role is your highest role",
-            )
-        if (
-            role1.position > ctx.author.top_role.position
-            and ctx.author.id not in self.bot.constants.owners
-            and ctx.author.id != ctx.guild.owner.id
-        ):
-            return await ctx.send_or_reply(
-                content="That role is higher than your highest role",
-            )
-        if (
-            role1.position == ctx.author.top_role.position
-            and ctx.author.id not in self.bot.constants.owners
-            and ctx.author.id != ctx.guild.owner.id
-        ):
-            return await ctx.send_or_reply(
-                content="That role is your highest role",
-            )
-        number_of_members = []
-        for member in ctx.guild.members:
-            if role1 in member.roles and role2 in member.roles:
-                number_of_members.append(member)
+    # @massrole.command(
+    #     brief="Removes all members with a certain role a new role",
+    #     aliases=["rm", "rem"],
+    # )
+    # async def remove(
+    #     self, ctx, role1: converters.DiscordRole, role2: converters.DiscordRole
+    # ):
+    #     if role1 is None:
+    #         return await ctx.send_or_reply(
+    #             content="Usage: `{ctx.prefix}massrole add <role1> <role2> ",
+    #         )
+    #     if role2 is None:
+    #         return await ctx.send_or_reply(
+    #             content="Usage: `{ctx.prefix}massrole add <role1> <role2> ",
+    #         )
+    #     if (
+    #         ctx.author.top_role.position < role1.position
+    #         and ctx.author.id not in self.bot.constants.owners
+    #     ):
+    #         return await ctx.send_or_reply(
+    #             "You have insufficient permission to execute this command"
+    #         )
+    #     if (
+    #         role2.permissions.administrator
+    #         and ctx.author.id not in self.bot.constants.owners
+    #     ):
+    #         return await ctx.send_or_reply(
+    #             content="I cannot manipulate an admin role",
+    #         )
+    #     if (
+    #         role2.position > ctx.author.top_role.position
+    #         and ctx.author.id not in self.bot.constants.owners
+    #         and ctx.author.id != ctx.guild.owner.id
+    #     ):
+    #         return await ctx.send_or_reply(
+    #             content="That role is higher than your highest role",
+    #         )
+    #     if (
+    #         role2.position == ctx.author.top_role.position
+    #         and ctx.author.id not in self.bot.constants.owners
+    #         and ctx.author.id != ctx.guild.owner.id
+    #     ):
+    #         return await ctx.send_or_reply(
+    #             content="That role is your highest role",
+    #         )
+    #     if (
+    #         role1.position > ctx.author.top_role.position
+    #         and ctx.author.id not in self.bot.constants.owners
+    #         and ctx.author.id != ctx.guild.owner.id
+    #     ):
+    #         return await ctx.send_or_reply(
+    #             content="That role is higher than your highest role",
+    #         )
+    #     if (
+    #         role1.position == ctx.author.top_role.position
+    #         and ctx.author.id not in self.bot.constants.owners
+    #         and ctx.author.id != ctx.guild.owner.id
+    #     ):
+    #         return await ctx.send_or_reply(
+    #             content="That role is your highest role",
+    #         )
+    #     number_of_members = []
+    #     for member in ctx.guild.members:
+    #         if role1 in member.roles and role2 in member.roles:
+    #             number_of_members.append(member)
 
-        members_to_add_roles = len(number_of_members)
-        if members_to_add_roles < 1:
-            return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['warn']} No members to remove roles from",
-            )
-        msg = await ctx.send_or_reply(
-            f"{self.bot.emote_dict['warn']} Removing role `{role2.name}` from `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}. This process may take several minutes."
-        )
-        for member in role1.members:
-            try:
-                await member.remove_roles(role2)
-            except discord.Forbidden:
-                return await ctx.send_or_reply(
-                    content="I do not have permission to do that",
-                )
-        # we made it
-        await msg.edit(
-            content=f"{self.bot.emote_dict['success']} Removed role `{role2.name}` from `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}"
-        )
+    #     members_to_add_roles = len(number_of_members)
+    #     if members_to_add_roles < 1:
+    #         return await ctx.send_or_reply(
+    #             content=f"{self.bot.emote_dict['warn']} No members to remove roles from",
+    #         )
+    #     msg = await ctx.send_or_reply(
+    #         f"{self.bot.emote_dict['warn']} Removing role `{role2.name}` from `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}. This process may take several minutes."
+    #     )
+    #     for member in role1.members:
+    #         try:
+    #             await member.remove_roles(role2)
+    #         except discord.Forbidden:
+    #             return await ctx.send_or_reply(
+    #                 content="I do not have permission to do that",
+    #             )
+    #     # we made it
+    #     await msg.edit(
+    #         content=f"{self.bot.emote_dict['success']} Removed role `{role2.name}` from `{members_to_add_roles}` member{'' if members_to_add_roles == 1 else 's'}"
+    #     )
 
     def role_accumulate(self, check_roles, members):
         ## iterate over the members to accumulate a count of each role
@@ -661,6 +661,308 @@ class Roles(commands.Cog):
             )
 
         await self.rolelist_paginate(ctx, sorted_list, title="Empty Roles")
+
+
+    async def do_massrole(self, ctx, add_or_remove, targets, role, obj_type):
+        if add_or_remove.lower() == "add":
+            add = True
+        else:
+            add = False
+        res = await checks.role_priv(ctx, role)
+        if res:
+            return await ctx.fail(res)
+
+        success = []
+        failed = []
+        
+        warning = "This process may take several minutes. Please be patient."
+        msg = await ctx.load(f"{'Add' if add else 'Remov'}ing role `{role.name}` {'to' if add else 'from'} {len(targets)} {obj_type}{'' if len(targets) ==1 else 's'}. {warning}")
+
+        for target in targets:
+            try:
+                reason=f"Role {'add' if add else 'remov'}ed by command."
+                if add:
+                    await target.add_roles(role, reason=reason)
+                else:
+                    await target.remove_roles(role, reason=reason)
+                success.append(str(target))
+            except Exception as e:
+                failed.append((str(target), e))
+
+        if success:
+            await msg.edit(content=f"{self.bot.emote_dict['success']} {'Add' if add else 'Remov'}ed role `{role.name}` {'to' if add else 'from'} {len(success)} {obj_type}{'' if len(success) == 1 else 's'}.")
+            self.bot.dispatch("mod_action", ctx, targets=success)
+        if failed:
+            if not success:
+                await msg.delete()
+            await helpers.error_info(ctx, failed)
+
+    @decorators.group(
+        aliases=["massrole", "multirole"],
+        brief="Manage mass adding/removing roles.",
+        implemented="2021-05-16 15:06:06.479013",
+        updated="2021-05-31 05:13:52.253369",
+        invoke_without_command=True,
+        case_insensitive=True,
+        examples="""
+                {0}role add all @Helper
+                {0}massrole remove @Helper Mod
+                {0}multirole add bots @Bots
+                """
+    )
+    async def role(self, ctx):
+        """
+        Usage: {0}role <add/remove> <option> <arguments>
+        Aliases: {0}massrole, {0}multirole
+        Permission: Manage Roles
+        Output:
+            Mass adds or removes a role to and from
+            all users matching your specifications
+        Add options:
+            all|everyone:  Add everyone a role
+            humans|people:  Add humans a role
+            bots|robots:  Add bots a role
+            in:  Add people with a role a new role
+        Remove options:
+            all|everyone:  Remove everyone a role
+            humans|people:  Remove humans a role
+            bots|robots:  Remove bots a role
+            in:  Remove people with a role a new role
+        Examples:
+            {0}role add all @Helper
+            {0}massrole remove @Helper Mod
+            {0}multirole add bots @Bots
+        """
+        if ctx.invoked_subcommand is None:
+            await ctx.usage()
+    
+    @role.group(
+        aliases=['apply'],
+        brief="Add roles users with a role.",
+        implemented="2021-05-16 15:06:06.479013",
+        updated="2021-05-31 05:13:52.253369",
+    )
+    async def add(self, ctx):
+        """
+        Usage: {0}role <add/remove> <option> <arguments>
+        Aliases: {0}massrole, {0}multirole
+        Permission: Manage Roles
+        Output:
+            Mass adds a role to all users
+            matching your specifications.
+        Options:
+            all|everyone:  Add everyone a role
+            humans|people:  Add humans a role
+            bots|robots:  Add bots a role
+            in:  Add people with a role a new role
+        Examples:
+            {0}role add all @Helper
+            {0}massrole add in @Helper Mod
+            {0}multirole add bots @Bots
+        """
+        if ctx.invoked_subcommand is None:
+            await ctx.usage()
+
+    @add.command(
+        name="in",
+        brief="Add roles to users with a role",
+        implemented="2021-05-16 15:06:06.479013",
+        updated="2021-05-31 05:13:52.253369",
+    )
+    async def _in(self, ctx, role1: converters.DiscordRole, *, role2: converters.DiscordRole):
+        """
+        Usage: {0}role add in <role1> <role2>
+        Permission: Manage Roles
+        Output:
+            Adds role2 to all users who
+            currently have role1.
+        Notes:
+            If the role is multiple words,
+            it must be surrounded in quotes.
+            e.g. "Bot Role" or 'Bot Role'
+        """
+        res = await checks.role_priv(ctx, role1)
+        if res:
+            return await ctx.fail(res)
+
+        res = await checks.role_priv(ctx, role2)
+        if res:
+            return await ctx.fail(res)
+        
+        role1_members = [member for member in ctx.guild.members if role1 in member.roles]
+        targets = [member for member in role1_members if role2 not in member.roles]
+
+        await self.do_massrole(ctx, "add", targets, role2, "user")
+
+    @add.command(
+        aliases=['people'],
+        brief="Add roles to all human users.",
+        implemented="2021-05-16 15:06:06.479013",
+        updated="2021-05-31 05:13:52.253369",
+    )
+    async def humans(self, ctx, *, role: converters.DiscordRole):
+        """
+        Usage: {0}role add humans <role>
+        Alias: {0}role add people <role>
+        Permission: Manage Roles
+        Output:
+            Adds a role to all humans
+            in the server. Excludes bots.
+        """
+        humans = [member for member in ctx.guild.members if not member.bot]
+        targets = [human for human in humans if role not in human.roles]
+
+        await self.do_massrole(ctx, "add", targets, role, "human")
+
+    @add.command(
+        aliases=['robots'],
+        brief="Add roles to all bot users.",
+        implemented="2021-05-16 15:06:06.479013",
+        updated="2021-05-31 05:13:52.253369",
+    )
+    async def bots(self, ctx, *, role: converters.DiscordRole):
+        """
+        Usage: {0}role add humans <role>
+        Alias: {0}role add people <role>
+        Permission: Manage Roles
+        Output:
+            Adds a role to all humans
+            in the server. Excludes bots.
+        """
+        bots = [member for member in ctx.guild.members if member.bot]
+        targets = [bot for bot in bots if role not in bot.roles]
+
+        await self.do_massrole(ctx, "add", targets, role, "bot")
+
+    @add.command(
+        name="all",
+        aliases=['everyone', 'users', 'members'],
+        brief="Add roles to all bot users.",
+        implemented="2021-05-16 15:06:06.479013",
+        updated="2021-05-31 05:13:52.253369",
+    )
+    async def _all(self, ctx, *, role: converters.DiscordRole):
+        """
+        Usage: {0}role add all <role>
+        Alias: {0}role add everyone <role>
+        Permission: Manage Roles
+        Output:
+            Adds a role to all users
+            in the server. Includes bots.
+        """
+        targets = [member for member in ctx.guild.members if role not in member.roles]
+        await self.do_massrole(ctx, "add", targets, role, "user")
+
+    @role.group(
+        aliases=['rm', 'rem'],
+        brief="Add roles users with a role.",
+        implemented="2021-05-16 15:06:06.479013",
+        updated="2021-05-31 05:13:52.253369",
+        invoke_without_command=True,
+        case_insensitive=True
+    )
+    async def remove(self, ctx):
+        """
+        Usage: {0}role <add/remove> <option> <arguments>
+        Aliases: {0}massrole, {0}multirole
+        Permission: Manage Roles
+        Output:
+            Mass adds a role to all users
+            matching your specifications.
+        Options:
+            all|everyone:  Add everyone a role
+            humans|people:  Add humans a role
+            bots|robots:  Add bots a role
+            in:  Add people with a role a new role
+        Examples:
+            {0}role add all @Helper
+            {0}massrole add in @Helper Mod
+            {0}multirole add bots @Bots
+        """
+        if ctx.invoked_subcommand is None:
+            await ctx.usage()
+
+    async def _in(self, ctx, role1: converters.DiscordRole, *, role2: converters.DiscordRole):
+        """
+        Usage: {0}role remove in <role1> <role2>
+        Permission: Manage Roles
+        Output:
+            Removes role2 from all users who
+            currently have role1.
+        Notes:
+            If role1 is multiple words,
+            it must be surrounded in quotes.
+            e.g. "Bot Role" or 'Bot Role'
+        """
+        res = await checks.role_priv(ctx, role1)
+        if res:
+            return await ctx.fail(res)
+
+        res = await checks.role_priv(ctx, role2)
+        if res:
+            return await ctx.fail(res)
+        
+        role1_members = [member for member in ctx.guild.members if role1 in member.roles]
+        targets = [member for member in role1_members if role2 in member.roles]
+
+        await self.do_massrole(ctx, "remove", targets, role2, "user")
+
+    @remove.command(
+        name="all",
+        aliases=['everyone'],
+        brief="Remove a role from everyone",
+        implemented="2021-05-16 15:06:06.479013",
+        updated="2021-05-31 05:13:52.253369",
+    )
+    async def _all(self, ctx, *, role: converters.DiscordRole):
+        """
+        Usage: {0}role remove all <role>
+        Alias: {0}role remove everyone <role>
+        Permission: Manage Roles
+        Output:
+            Removes a role from users
+            in the server. Includes bots.
+        """
+        targets = [member for member in ctx.guild.members if role in member.roles]
+        await self.do_massrole(ctx, "remove", targets, role, "user")
+
+    @remove.command(
+        aliases=['robots'],
+        brief="Remove roles from all bot users.",
+        implemented="2021-05-16 15:06:06.479013",
+        updated="2021-05-31 05:13:52.253369",
+    )
+    async def bots(self, ctx, *, role: converters.DiscordRole):
+        """
+        Usage: {0}role remove bots <role>
+        Alias: {0}role remove robots <role>
+        Permission: Manage Roles
+        Output:
+            Removes a role from all bots
+            in the server. Excludes humans.
+        """
+        bots = [member for member in ctx.guild.members if member.bot]
+        targets = [bot for bot in bots if role in bot.roles]
+        await self.do_massrole(ctx, "remove", targets, role, "bot")
+
+    @remove.command(
+        aliases=['people'],
+        brief="Remove roles from all bot users.",
+        implemented="2021-05-16 15:06:06.479013",
+        updated="2021-05-31 05:13:52.253369",
+    )
+    async def humans(self, ctx, *, role: converters.DiscordRole):
+        """
+        Usage: {0}role remove humans <role>
+        Alias: {0}role remove people <role>
+        Permission: Manage Roles
+        Output:
+            Removes a role from all humans
+            in the server. Excludes bots.
+        """    
+        humans = [member for member in ctx.guild.members if not member.bot]
+        targets = [human for human in humans if role in human.roles]
+        await self.do_massrole(ctx, "remove", targets, role, "human")
 
     @decorators.command(
         aliases=["trole"],
