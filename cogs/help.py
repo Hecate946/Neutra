@@ -507,7 +507,7 @@ class Help(commands.Cog):
                                             ctx,
                                             invokercommand,
                                             command,
-                                            args[1],
+                                            ' '.join(args[1:]),
                                             pm,
                                             delete_after,
                                         )
@@ -537,8 +537,10 @@ class Help(commands.Cog):
         self, ctx, invokercommand, command, subcommand, pm, delete_after
     ):
         if subcommand:
+            if len(subcommand.split()) > 1:
+                subcommand = subcommand.split()[-1]
             found = False
-            for x in command.commands:
+            for x in command.walk_commands():
                 if (
                     x.name.lower() == subcommand.lower()
                     or subcommand.lower() in x.aliases

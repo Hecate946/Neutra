@@ -663,7 +663,7 @@ class Roles(commands.Cog):
         await self.rolelist_paginate(ctx, sorted_list, title="Empty Roles")
 
 
-    async def do_massrole(self, ctx, add_or_remove, targets, role, obj_type):
+    async def do_massrole(self, ctx, add_or_remove, targets, role, obj):
         if add_or_remove.lower() == "add":
             add = True
         else:
@@ -676,11 +676,17 @@ class Roles(commands.Cog):
         failed = []
         
         warning = "This process may take several minutes. Please be patient."
-        msg = await ctx.load(f"{'Add' if add else 'Remov'}ing role `{role.name}` {'to' if add else 'from'} {len(targets)} {obj_type}{'' if len(targets) ==1 else 's'}. {warning}")
+        ternary = 'Add' if add else 'Remov'
+        to_from = 'to' if add else 'from'
+        plural = lambda l: '' if len(l) == 1 else 's'
+        em = self.bot.emote_dict['loading']
+        msg = await ctx.send_or_reply(
+            f"{em} {ternary}ing role `{role.name}` {to_from} {len(targets)} {obj}{plural(targets)}. {warning}"
+        )
 
         for target in targets:
             try:
-                reason=f"Role {'add' if add else 'remov'}ed by command."
+                reason=f"Role {ternary.lower()}ed by command."
                 if add:
                     await target.add_roles(role, reason=reason)
                 else:
@@ -690,7 +696,8 @@ class Roles(commands.Cog):
                 failed.append((str(target), e))
 
         if success:
-            await msg.edit(content=f"{self.bot.emote_dict['success']} {'Add' if add else 'Remov'}ed role `{role.name}` {'to' if add else 'from'} {len(success)} {obj_type}{'' if len(success) == 1 else 's'}.")
+            em = self.bot.emote_dict['success']
+            await msg.edit(content=f"{em} {ternary}ed role `{role.name}` {to_from} {len(success)} {obj}{plural(success)}.")
             self.bot.dispatch("mod_action", ctx, targets=success)
         if failed:
             if not success:
@@ -698,11 +705,11 @@ class Roles(commands.Cog):
             await helpers.error_info(ctx, failed)
 
     @decorators.group(
+        name="role",
         aliases=["massrole", "multirole"],
         brief="Manage mass adding/removing roles.",
         implemented="2021-05-16 15:06:06.479013",
         updated="2021-05-31 05:13:52.253369",
-        invoke_without_command=True,
         case_insensitive=True,
         examples="""
                 {0}role add all @Helper
@@ -710,7 +717,7 @@ class Roles(commands.Cog):
                 {0}multirole add bots @Bots
                 """
     )
-    async def role(self, ctx):
+    async def _role(self, ctx):
         """
         Usage: {0}role <add/remove> <option> <arguments>
         Aliases: {0}massrole, {0}multirole
@@ -734,15 +741,16 @@ class Roles(commands.Cog):
             {0}multirole add bots @Bots
         """
         if ctx.invoked_subcommand is None:
-            await ctx.usage()
+            await ctx.usage("<add/remove> <all/humans/bots/in> <role>")
     
-    @role.group(
+    @_role.group(
+        name="add",
         aliases=['apply'],
         brief="Add roles users with a role.",
         implemented="2021-05-16 15:06:06.479013",
         updated="2021-05-31 05:13:52.253369",
     )
-    async def add(self, ctx):
+    async def _add(self, ctx):
         """
         Usage: {0}role <add/remove> <option> <arguments>
         Aliases: {0}massrole, {0}multirole
@@ -761,9 +769,9 @@ class Roles(commands.Cog):
             {0}multirole add bots @Bots
         """
         if ctx.invoked_subcommand is None:
-            await ctx.usage()
+            await ctx.usage("<all/humans/bots/in> <role>")
 
-    @add.command(
+    @_add.command(
         name="in",
         brief="Add roles to users with a role",
         implemented="2021-05-16 15:06:06.479013",
@@ -794,13 +802,14 @@ class Roles(commands.Cog):
 
         await self.do_massrole(ctx, "add", targets, role2, "user")
 
-    @add.command(
+    @_add.command(
+        name="humans",
         aliases=['people'],
         brief="Add roles to all human users.",
         implemented="2021-05-16 15:06:06.479013",
         updated="2021-05-31 05:13:52.253369",
     )
-    async def humans(self, ctx, *, role: converters.DiscordRole):
+    async def _humans(self, ctx, *, role: converters.DiscordRole):
         """
         Usage: {0}role add humans <role>
         Alias: {0}role add people <role>
@@ -814,13 +823,14 @@ class Roles(commands.Cog):
 
         await self.do_massrole(ctx, "add", targets, role, "human")
 
-    @add.command(
+    @_add.command(
+        name="bots",
         aliases=['robots'],
         brief="Add roles to all bot users.",
         implemented="2021-05-16 15:06:06.479013",
         updated="2021-05-31 05:13:52.253369",
     )
-    async def bots(self, ctx, *, role: converters.DiscordRole):
+    async def _bots(self, ctx, *, role: converters.DiscordRole):
         """
         Usage: {0}role add humans <role>
         Alias: {0}role add people <role>
@@ -834,7 +844,7 @@ class Roles(commands.Cog):
 
         await self.do_massrole(ctx, "add", targets, role, "bot")
 
-    @add.command(
+    @_add.command(
         name="all",
         aliases=['everyone', 'users', 'members'],
         brief="Add roles to all bot users.",
@@ -853,7 +863,8 @@ class Roles(commands.Cog):
         targets = [member for member in ctx.guild.members if role not in member.roles]
         await self.do_massrole(ctx, "add", targets, role, "user")
 
-    @role.group(
+    @_role.group(
+        name="remove",
         aliases=['rm', 'rem'],
         brief="Add roles users with a role.",
         implemented="2021-05-16 15:06:06.479013",
@@ -861,7 +872,7 @@ class Roles(commands.Cog):
         invoke_without_command=True,
         case_insensitive=True
     )
-    async def remove(self, ctx):
+    async def _remove(self, ctx):
         """
         Usage: {0}role <add/remove> <option> <arguments>
         Aliases: {0}massrole, {0}multirole
@@ -880,9 +891,9 @@ class Roles(commands.Cog):
             {0}multirole add bots @Bots
         """
         if ctx.invoked_subcommand is None:
-            await ctx.usage()
+            await ctx.usage("<all/humans/bots/in> <role>")
 
-    async def _in(self, ctx, role1: converters.DiscordRole, *, role2: converters.DiscordRole):
+    async def in_(self, ctx, role1: converters.DiscordRole, *, role2: converters.DiscordRole):
         """
         Usage: {0}role remove in <role1> <role2>
         Permission: Manage Roles
@@ -907,14 +918,14 @@ class Roles(commands.Cog):
 
         await self.do_massrole(ctx, "remove", targets, role2, "user")
 
-    @remove.command(
+    @_remove.command(
         name="all",
         aliases=['everyone'],
         brief="Remove a role from everyone",
         implemented="2021-05-16 15:06:06.479013",
         updated="2021-05-31 05:13:52.253369",
     )
-    async def _all(self, ctx, *, role: converters.DiscordRole):
+    async def all_(self, ctx, *, role: converters.DiscordRole):
         """
         Usage: {0}role remove all <role>
         Alias: {0}role remove everyone <role>
@@ -926,13 +937,14 @@ class Roles(commands.Cog):
         targets = [member for member in ctx.guild.members if role in member.roles]
         await self.do_massrole(ctx, "remove", targets, role, "user")
 
-    @remove.command(
+    @_remove.command(
+        name="bots",
         aliases=['robots'],
         brief="Remove roles from all bot users.",
         implemented="2021-05-16 15:06:06.479013",
         updated="2021-05-31 05:13:52.253369",
     )
-    async def bots(self, ctx, *, role: converters.DiscordRole):
+    async def bots_(self, ctx, *, role: converters.DiscordRole):
         """
         Usage: {0}role remove bots <role>
         Alias: {0}role remove robots <role>
@@ -945,13 +957,14 @@ class Roles(commands.Cog):
         targets = [bot for bot in bots if role in bot.roles]
         await self.do_massrole(ctx, "remove", targets, role, "bot")
 
-    @remove.command(
+    @_remove.command(
+        name="humans",
         aliases=['people'],
         brief="Remove roles from all bot users.",
         implemented="2021-05-16 15:06:06.479013",
         updated="2021-05-31 05:13:52.253369",
     )
-    async def humans(self, ctx, *, role: converters.DiscordRole):
+    async def humans_(self, ctx, *, role: converters.DiscordRole):
         """
         Usage: {0}role remove humans <role>
         Alias: {0}role remove people <role>
