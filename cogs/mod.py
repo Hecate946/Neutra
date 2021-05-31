@@ -9,10 +9,10 @@ import discord
 from collections import Counter
 from discord.ext import commands
 
-from utilities import humantime
 from utilities import utils
 from utilities import checks
 from utilities import helpers
+from utilities import humantime
 from utilities import converters
 from utilities import decorators
 
@@ -1196,7 +1196,7 @@ class Mod(commands.Cog):
                 content=f"{self.bot.emote_dict['failed']} I have insufficient permission to unlock channels."
             )
 
-    @commands.command(
+    @decorators.command(
         aliases=["tban"],
         brief="Temporarily ban users.",
         implemented="2021-04-27 03:59:16.293041",
@@ -1207,6 +1207,7 @@ class Mod(commands.Cog):
                 """,
     )
     @commands.guild_only()
+    @checks.bot_has_perms(ban_members=True)
     @checks.has_perms(ban_members=True)
     async def tempban(
         self,

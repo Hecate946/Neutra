@@ -1,11 +1,11 @@
-import io
 import discord
 import colorsys
 
 from discord.ext import commands, menus
-from PIL import Image, ImageDraw
 
 from utilities import checks
+from utilities import helpers
+from utilities import humantime
 from utilities import pagination
 from utilities import converters
 from utilities import decorators
@@ -639,7 +639,7 @@ class Roles(commands.Cog):
     @commands.guild_only()
     async def emptyroles(self, ctx):
         """
-        Usage: -emptyroles
+        Usage: {0}emptyroles
         Output: Shows all roles with zero users
         """
 
@@ -661,3 +661,93 @@ class Roles(commands.Cog):
             )
 
         await self.rolelist_paginate(ctx, sorted_list, title="Empty Roles")
+
+    @decorators.command(
+        aliases=["trole"],
+        brief="Temporarily add roles to users.",
+        implemented="2021-05-31 04:09:38.799221",
+        updated="2021-05-31 04:09:38.799221",
+        examples="""
+                {0}temprole @Hecate 2 days for advertising
+                {0}trole 708584008065351681 Hecate 2 hours for spamming
+                """,
+    )
+    @commands.guild_only()
+    @checks.bot_has_perms(manage_roles=True)
+    @checks.has_perms(manage_roles=True)
+    async def temprole(
+        self,
+        ctx,
+        user: converters.DiscordMember,
+        role: converters.DiscordRole,
+        *,
+        duration: humantime.UserFriendlyTime(
+            commands.clean_content, default="\u2026"
+        ) = None,
+    ):
+        """
+        Usage: {0}tempban <users> [duration] [reason]
+        Alias: {0}tban
+        Output:
+            Temporarily bans a member for the specified duration.
+            The duration can be a a short time form, e.g. 30d or a more human
+            duration like "until thursday at 3PM".
+        """
+        task = self.bot.get_cog("Tasks")
+        if not task:
+            raise commands.BadArgument("This feature is unavailable.")
+
+        if not duration:
+            raise commands.BadArgument("You must specify a duration.")
+
+        endtime = duration.dt
+
+        res = await checks.role_priv(ctx, role)
+        if res:  # We failed the role hierarchy test
+            return await ctx.fail(res)
+
+        if role in user.roles:
+            return await ctx.fail(f"User `{user}` already has role `{role.name}`")
+
+        try:
+            await user.add_roles(role)
+        except Exception as e:
+            await helpers.error_info(ctx, [(str(user), e)])
+            return
+        timer = await task.create_timer(
+            endtime,
+            "temprole",
+            ctx.guild.id,
+            user.id,
+            role.id,
+            connection=self.bot.cxn,
+            created=ctx.message.created_at,
+        )
+
+        self.bot.dispatch("mod_action", ctx, targets=[str(user)])
+        try:
+            time_fmt = humantime.human_timedelta(duration.dt, source=timer.created_at)
+        except Exception:
+            time_fmt = "unknown duration"
+        await ctx.success(f"Temproled `{user}` the role `{role.name}` for {time_fmt}.")
+
+    @commands.Cog.listener()
+    @decorators.wait_until_ready()
+    async def on_temprole_timer_complete(self, timer):
+        guild_id, member_id, role_id = timer.args
+
+        guild = self.bot.get_guild(guild_id)
+        if not guild:  # We were kicked or it was deleted.
+            return
+        member = guild.get_member(member_id)
+        if not member:  # They left the server
+            return
+        role = guild.get_role(role_id)
+        if not role:  # Role deleted.
+            return
+
+        reason = f"Temprole removal from timer made on {timer.created_at}."
+        try:
+            await member.remove_roles(role, reason)
+        except Exception:  # We tried
+            pass

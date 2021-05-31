@@ -6,9 +6,7 @@ from utilities import pagination, utils
 
 
 async def error_info(ctx, failed):
-    mess = await ctx.send_or_reply(
-        content=f"{ctx.bot.emote_dict['failed']} Failed to {ctx.command.name} `{', '.join([x[0] for x in failed])}`",
-    )
+    mess = await ctx.fail(f"Failed to {ctx.command.name} `{', '.join([x[0] for x in failed])}`")
     try:
         await mess.add_reaction(ctx.bot.emote_dict["error"])
     except Exception:

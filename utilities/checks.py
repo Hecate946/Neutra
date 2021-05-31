@@ -143,6 +143,30 @@ async def check_priv(ctx, member):
         print(e)
         pass
 
+async def role_priv(ctx, role):
+    """
+    Handle permission hierarchy for commands
+    Return the reason for failure.
+    """
+    try:
+        # Bot lacks permissions
+        if ctx.guild.me.top_role.position == role.position:
+            return f"Role `{role.name}` is highest role."
+        if ctx.guild.me.top_role.position < role.position:
+            return f"Role `{role.name}` is above my highest role."
+
+        # Check if user bypasses
+        if ctx.author.id == ctx.guild.owner.id:
+            return
+
+        # Now permission check
+        if ctx.author.top_role.position == role.position:
+            return f"Role `{role.name}` is your highest role."
+        if ctx.author.top_role.position < role.position:
+            return f"Role `{role.name}` is above highest role."
+    except Exception:
+        pass
+
 
 async def checker(ctx, value):
     if type(value) is list:
