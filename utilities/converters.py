@@ -764,6 +764,43 @@ class BotActivity(commands.Converter):
             raise commands.BadArgument(f"**Invalid Activity.**{completed}")
         return activity
 
+class MassRoleConverter(commands.Converter):
+    """
+    Converter for massrole command
+    """
+    async def convert(self, ctx, argument):
+        role_options = ["must be a valid role.", "e.g. @Helper"]
+        all_options = ["all", "everyone"]
+        human_options = ["humans", "people"]
+        bots_options = ["bots", "robots"]
+        try:
+            role = await DiscordRole().convert(ctx, argument)
+            return role
+        except Exception:
+            if argument.lower() in all_options:
+                option = "all"
+            elif argument.lower() in human_options:
+                option = "humans"
+            elif argument.lower() in bots_options:
+                option = "bots"
+            else:
+                headers = ["ROLE", "ALL", "HUMANS", "BOTS"]
+                rows = tuple(
+                    zip(
+                        role_options,
+                        all_options,
+                        human_options,
+                        bots_options,
+                    )
+                )
+                table = formatting.TabularData()
+                table.set_columns(headers)
+                table.add_rows(rows)
+                render = table.render()
+                completed = f"```sml\nVALID {str(ctx.command).upper()} OPTIONS:\n{render}```"
+                raise commands.BadArgument(f"**Invalid Option.**{completed}")
+            return option
+
 
 class Flag(commands.Converter):
     async def convert(self, ctx, argument):

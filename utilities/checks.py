@@ -143,6 +143,7 @@ async def check_priv(ctx, member):
         print(e)
         pass
 
+
 async def role_priv(ctx, role):
     """
     Handle permission hierarchy for commands

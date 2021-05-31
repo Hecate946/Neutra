@@ -5,8 +5,10 @@ from discord.ext import menus
 from utilities import pagination, utils
 
 
-async def error_info(ctx, failed):
-    mess = await ctx.fail(f"Failed to {ctx.command.name} `{', '.join([x[0] for x in failed])}`")
+async def error_info(ctx, failed, option="User"):
+    mess = await ctx.fail(
+        f"Failed to {ctx.command.name} `{', '.join([x[0] for x in failed])}`"
+    )
     try:
         await mess.add_reaction(ctx.bot.emote_dict["error"])
     except Exception:
@@ -27,7 +29,7 @@ async def error_info(ctx, failed):
         await ctx.send_or_reply(
             f"{ctx.bot.emote_dict['announce']} **Failure explanation:**"
         )
-        text = "\n".join([f"User: {x[0]} Reason: {x[1]}" for x in failed])
+        text = "\n".join([f"{option}: {x[0]} Reason: {x[1]}" for x in failed])
         p = pagination.MainMenu(
             pagination.TextPageSource(text=text, prefix="```prolog")
         )

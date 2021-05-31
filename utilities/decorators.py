@@ -40,6 +40,7 @@ def wait_until_ready(bot=None):
 
 def is_home(home):
     """Support server only commands"""
+
     async def predicate(ctx):
         if ctx.guild and ctx.guild.id == home:
             return True
