@@ -719,14 +719,14 @@ class Roles(commands.Cog):
             Mass adds or removes a role to and from
             all users matching your specifications
         Add options:
-            all|everyone:  Add everyone a role
-            humans|people:  Add humans a role
-            bots|robots:  Add bots a role
+            all/everyone:  Add everyone a role
+            humans/people:  Add humans a role
+            bots/robots:  Add bots a role
             in:  Add people with a role a new role
         Remove options:
-            all|everyone:  Remove everyone a role
-            humans|people:  Remove humans a role
-            bots|robots:  Remove bots a role
+            all/everyone:  Remove everyone a role
+            humans/people:  Remove humans a role
+            bots/robots:  Remove bots a role
             in:  Remove people with a role a new role
         Examples:
             {0}role add all @Helper
@@ -751,9 +751,9 @@ class Roles(commands.Cog):
             Mass adds a role to all users
             matching your specifications.
         Options:
-            all|everyone:  Add everyone a role
-            humans|people:  Add humans a role
-            bots|robots:  Add bots a role
+            all/everyone:  Add everyone a role
+            humans/people:  Add humans a role
+            bots/robots:  Add bots a role
             in:  Add people with a role a new role
         Examples:
             {0}role add all @Helper
@@ -870,9 +870,9 @@ class Roles(commands.Cog):
             Mass adds a role to all users
             matching your specifications.
         Options:
-            all|everyone:  Add everyone a role
-            humans|people:  Add humans a role
-            bots|robots:  Add bots a role
+            all/everyone:  Add everyone a role
+            humans/people:  Add humans a role
+            bots/robots:  Add bots a role
             in:  Add people with a role a new role
         Examples:
             {0}role add all @Helper

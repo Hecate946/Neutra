@@ -368,7 +368,7 @@ class Help(commands.Cog):
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )
 
-            if invokercommand.lower() in ["roles", "role", "serverroles"]:
+            if invokercommand.lower() in ["roles", "serverroles"]:
                 cog = self.bot.get_cog("Roles")
                 return await self.helper_func(
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
