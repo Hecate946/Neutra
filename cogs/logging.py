@@ -31,6 +31,10 @@ class Logging(commands.Cog):
         )
         self.current_streamers = list()
 
+    # Helper function to truncate oversized strings.
+    def truncate(self, string, max_chars):
+        return (string[:max_chars - 3] + "...") if len(string) > max_chars else string
+
     #############################
     ## Logging Check Functions ##
     #############################
@@ -99,7 +103,7 @@ class Logging(commands.Cog):
         embed = discord.Embed(
             description=f"**Author:**  {message.author.mention}, **ID:** `{message.author.id}`\n"
             f"**Channel:** {message.channel.mention} **ID:** `{message.channel.id}`\n"
-            f"**Server:** `{message.guild.name}` **ID:** `{message.guild.id},`\n\n"
+            f"**Server:** `{message.guild.name}` **ID:** `{message.guild.id}`\n\n"
             f"**__Invite Link:___**```fix\n{message.content}```\n"
             f"**[Jump to message](https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id})**",
             color=self.bot.constants.embed,
@@ -205,7 +209,7 @@ class Logging(commands.Cog):
 
         embed = discord.Embed(
             description=f"**Channel:** `{channel.name}` **ID:** `{channel.id}`\n"
-            f"**Server:** `{channel.guild.name}` **ID:** `{channel.guild.id},`\n\n",
+            f"**Server:** `{channel.guild.name}` **ID:** `{channel.guild.id}`\n\n",
             color=self.bot.constants.embed,
             timestamp=datetime.utcnow(),
         )
@@ -230,7 +234,7 @@ class Logging(commands.Cog):
 
         embed = discord.Embed(
             description=f"**Channel:** `{channel.name}` **ID:** `{channel.id}`\n"
-            f"**Server:** `{channel.guild.name}` **ID:** `{channel.guild.id},`\n\n",
+            f"**Server:** `{channel.guild.name}` **ID:** `{channel.guild.id}`\n\n",
             color=self.bot.constants.embed,
             timestamp=datetime.utcnow(),
         )
@@ -669,33 +673,30 @@ class Logging(commands.Cog):
             return
 
         if before.content == "":
-            before_content = f"**__Old Message Content__**\n ```fix\nNo Content```\n"
+            bcontent = "```fix\nNo Content```" + "**\n**"
         elif before.content.startswith("```"):
-            before_content = f"**__Old Message Content__**\n {before.clean_content}\n"
+            bcontent = self.truncate(before.clean_content, 1000) + "**\n**"
         else:
-            before_content = (
-                f"**__Old Message Content__**\n ```fix\n{before.clean_content}```\n"
-            )
+            bcontent = f"```fix\n{self.truncate(before.clean_content, 1000)}```" + "**\n**"
 
         if after.content == "":
-            after_content = f"**__New Message Content__**\n ```fix\nNo Content```\n"
+            acontent = "```fix\nNo Content```"
         elif after.content.startswith("```"):
-            after_content = f"**__New Message Content__**\n {after.clean_content}\n"
+            acontent = self.truncate(after.clean_content, 1000)
         else:
-            after_content = (
-                f"**__New Message Content__**\n ```fix\n{after.clean_content}```\n"
-            )
+            acontent = f"```fix\n{self.truncate(after.clean_content, 1000)}```"
 
+        jump_url = f"**[Jump to message](https://discord.com/channels/{after.guild.id}/{after.channel.id}/{after.id})**"
         embed = discord.Embed(
             description=f"**Author:**  {after.author.mention}, **ID:** `{after.author.id}`\n"
             f"**Channel:** {after.channel.mention} **ID:** `{after.channel.id}`\n"
-            f"**Server:** `{after.guild.name}` **ID:** `{after.guild.id},`\n\n"
-            f"{before_content}"
-            f"{after_content}"
-            f"**[Jump to message](https://discord.com/channels/{after.guild.id}/{after.channel.id}/{after.id})**",
+            f"**Server:** `{after.guild.name}` **ID:** `{after.guild.id}`\n **\n**",
             color=self.bot.constants.embed,
             timestamp=datetime.utcnow(),
         )
+        embed.add_field(name="__**Old Message Content**__", value=bcontent, inline=False)
+        embed.add_field(name="__**New Message Content**__", value=acontent, inline=False)
+        embed.add_field(name="** **", value=jump_url)
         embed.set_author(
             name="Message Edited",
             icon_url=UPDATED_MESSAGE,
@@ -704,21 +705,14 @@ class Logging(commands.Cog):
         await webhook.execute(embed=embed)
 
     @commands.Cog.listener()
+    @decorators.wait_until_ready()
+    @decorators.event_check(lambda s, m: m.guild and not m.author.bot)
     async def on_message_delete(self, message):
-        if not self.bot.ready:
-            return
-
-        if not message.guild:
-            return
-
-        if message.author.bot:
-            return
-
         if not await self.check(snowflake=message.guild.id, event="message_deletions"):
             return
 
         webhook = await self.get_webhook(guild=message.guild)
-        if webhook is None:
+        if not webhook:
             return
 
         if message.content == "":
@@ -740,7 +734,7 @@ class Logging(commands.Cog):
         embed = discord.Embed(
             description=f"**Author:**  {message.author.mention}, **ID:** `{message.author.id}`\n"
             f"**Channel:** {message.channel.mention} **ID:** `{message.channel.id}`\n"
-            f"**Server:** `{message.guild.name}` **ID:** `{message.guild.id},`\n\n"
+            f"**Server:** `{message.guild.name}` **ID:** `{message.guild.id}`\n\n"
             f"{content}"
             f"{attachments}",
             color=self.bot.constants.embed,
@@ -776,7 +770,7 @@ class Logging(commands.Cog):
 
         embed = discord.Embed(
             description=f"**Channel:** {message.channel.mention} **ID:** `{message.channel.id}`\n"
-            f"**Server:** `{message.guild.name}` **ID:** `{message.guild.id},`\n\n",
+            f"**Server:** `{message.guild.name}` **ID:** `{message.guild.id}`\n\n",
             color=self.bot.constants.embed,
             timestamp=datetime.utcnow(),
         )

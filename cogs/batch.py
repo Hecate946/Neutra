@@ -648,7 +648,10 @@ class Batch(commands.Cog):
                     "nickname": member.display_name,
                 }
             )
-        if not member.guild.me.guild_permissions.manage_guild:
+        try:
+            if not member.guild.me.guild_permissions.manage_guild:
+                return
+        except AttributeError:  # Sometimes if we're getting kicked as they join...
             return
         old_invites = self.bot.invites[member.guild.id]
         new_invites = await member.guild.invites()

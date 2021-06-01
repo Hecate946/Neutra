@@ -89,7 +89,10 @@ class Help(commands.Cog):
             try:
                 await msg.clear_reactions()
             except Exception:  # No perms to clear rxns, delete manually.
-                await msg.remove_reaction(self.bot.emote_dict["trash"], self.bot.user)
+                try:
+                    await msg.remove_reaction(self.bot.emote_dict["trash"], self.bot.user)
+                except discord.NotFound:  # Message already deleted
+                    return
 
     async def helper_func(self, ctx, cog, name, pm, delete_after):
         the_cog = sorted(cog.get_commands(), key=lambda x: x.name)
