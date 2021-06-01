@@ -368,7 +368,6 @@ class Snowbot(commands.AutoShardedBot):
         perms.external_emojis = True
         perms.kick_members = True
         perms.manage_channels = True
-        perms.manage_guild = True
         perms.manage_messages = True
         perms.manage_nicknames = True
         perms.manage_roles = True
