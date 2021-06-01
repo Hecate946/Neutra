@@ -19,6 +19,8 @@ from discord import __version__ as dv
 from discord.ext import commands, menus
 from PIL import Image, ImageDraw, ImageFont
 
+from dislash.interactions import ActionRow, ButtonStyle, Button
+
 from utilities import utils
 from utilities import checks
 from utilities import speedtest
@@ -716,13 +718,39 @@ class Info(commands.Cog):
     )
     async def invite(self, ctx):
         """
-        Usage: -invite
+        Usage: {0}invite
         Aliases:
-            -bi, botinvite
+            {0}bi, {0}botinvite
         Output:
-            An invite link to invite me to your server
+            A selection of invite links
+            to invite me to your server
         """
-        await self.bot.get_command("oauth").__call__(ctx)
+        button_row = ActionRow(
+            Button(
+                style=ButtonStyle.link,
+                label="Recommended",
+                url=self.bot.oauth
+            ),
+            Button(
+                style=ButtonStyle.link,
+                label="Administrator",
+                url=discord.utils.oauth_url(
+                    self.bot.user.id,
+                    permissions=discord.Permissions(8)
+                )
+            ),
+            Button(
+                style=ButtonStyle.link,
+                label="Default",
+                url=discord.utils.oauth_url(
+                    self.bot.user.id,
+                )
+            )
+        )
+        await ctx.reply(
+            "Select an invite link from the options below to invite me to your server.",
+            components=[button_row],
+        )
 
     @decorators.command(
         aliases=["sup", "assistance", "assist"],
