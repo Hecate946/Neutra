@@ -757,13 +757,9 @@ class Snowbot(commands.AutoShardedBot):
         if message.author.id == self.user.id:
             return  # Don't reply to ourselves
         if self.dregex.match(message.content):  # When a user DMs the bot an invite...
-            button_row = ActionRow(
-                Button(style=ButtonStyle.link, label="Click me!", url=self.bot.oauth)
-            )
-            await message.reply(
-                f"Click the button below to invite me to your server.",
-                components=[button_row],
-            )
+            ctx = await self.get_context(message, cls=commands.Context)
+            invite = self.get_command("invite")
+            await ctx.invoke(invite)
 
     async def on_message_edit(self, before, after):
         if not self.ready:

@@ -557,7 +557,7 @@ class Files(commands.Cog):
     @commands.guild_only()
     @checks.has_perms(manage_messages=True)
     async def dumpmessages(
-        self, ctx, messages: int = 25, *, chan: discord.TextChannel = None
+        self, ctx, messages: int = 100, *, chan: discord.TextChannel = None
     ):
         """
         Usage: {0}dumpmessages [message amount] [channel]
@@ -565,13 +565,16 @@ class Files(commands.Cog):
         Permission: Manage Messages
         Output:
             Logs a passed number of messages from a specified channel
-            - 25 by default.
+            - 100 by default.
         Notes:
             If you have your DMs blocked, the bot
             will send the file to the channel
             where the the command was invoked.
         """
-
+        if messages > 2000:
+            raise commands.BadArgument("Maximum message amount is 2000")
+        if messages < 1:
+            raise commands.BadArgument("Minimum message amount is 1")
         timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
         log_file = "Logs-{}.txt".format(timestamp)
 
@@ -579,7 +582,8 @@ class Files(commands.Cog):
             chan = ctx
 
         mess = await ctx.send_or_reply(
-            content="Saving logs to **{}**...".format(log_file),
+            "{} Saving logs to **{}**..."
+            .format(self.bot.emote_dict['loading'], log_file),
         )
 
         counter = 0
@@ -609,13 +613,13 @@ class Files(commands.Cog):
 
         await mess.edit(content="Uploading `{}`...".format(log_file))
         try:
-            await ctx.author.send(file=discord.File(data, filename=log_file))
+            await ctx.author.send(f"**{self.bot.emote_dict['graph']} {messages} latest messages in {ctx.channel.mention}**", file=discord.File(data, filename=log_file))
         except Exception:
             await ctx.send_or_reply(
                 file=discord.File(data, filename=log_file),
             )
             await mess.edit(
-                content="{} Uploaded `{}`.".format(
+                content="{} Uploaded `{}`".format(
                     self.bot.emote_dict["success"], log_file
                 )
             )
