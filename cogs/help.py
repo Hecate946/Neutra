@@ -1,10 +1,9 @@
 import asyncio
 import inspect
-from os import write
-from typing import Counter
 import discord
 import traceback
 
+from collections import Counter
 from datetime import datetime
 from discord.ext import commands, menus
 
@@ -14,6 +13,7 @@ from utilities import utils
 from utilities import checks
 from utilities import converters
 from utilities import decorators
+from utilities import formatting
 from utilities import pagination
 
 
@@ -944,6 +944,61 @@ class Help(commands.Cog):
                 f"The command `{command}` can be run in servers and in direct messages."
             )
         await ctx.success(msg)
+
+    @decorators.command(
+        aliases=["cmdsearch"],
+        brief="Search for a command by name.",
+        implemented="2021-06-02 07:01:30.704411",
+        updated="2021-06-02 07:01:30.704411",
+        examples="""
+                commandsearch cmd
+                cmdsearch emoj
+                """
+    )
+    async def commandsearch(self, ctx, search: str):
+        """
+        Usage: {0}commandsearch <search>
+        Alias: {0}cmdsearch
+        Output:
+            Searches for the most similar
+            commands based off a search query.
+            Outputs the results in tabular format.
+        """
+        option_list = utils.disambiguate(search, [c for x in self.bot.commands for c in x.aliases], None, 10)
+        title_str = f"{self.bot.emote_dict['search']} **Similar command search results from `{search}`**"
+        rows = [(idx, search['result'], f"{search['ratio']:.2%}") for idx, search in enumerate(option_list, start=1)]
+        table = formatting.TabularData()
+        table.set_columns(["INDEX", "COMMAND", "SIMILARITY"])
+        table.add_rows(rows)
+        render = table.render()
+        to_send = f"{title_str}\n```sml\n{render}```"
+        await ctx.send_or_reply(to_send)
+
+    @decorators.command(
+        aliases=["alias"],
+        brief="Show the aliases for a command",
+        implemented="2021-06-02 07:01:30.704411",
+        updated="2021-06-02 07:01:30.704411",
+        examples="""
+                {0}aliases help
+                {0}alias emojistats
+                """
+    )
+    async def aliases(self, ctx, command: converters.DiscordCommand):
+        """
+        Usage: {0}aliases <command>
+        Alias: {0}alias
+        Output:
+            Shows all the aliases
+            for a given command
+        """
+        title_str = f"{self.bot.emote_dict['success']} **Aliases for `{command.name}`**"
+        table = formatting.TabularData()
+        table.set_columns(["ALIASES"])
+        table.add_rows([[x] for x in sorted(command.aliases, key=len)])
+        render = table.render()
+        to_send = f"{title_str}\n```sml\n{render}```"
+        await ctx.send_or_reply(to_send)
 
     @decorators.command(
         aliases=["bothasperms", "bothaspermissions", "botpermissions"],
