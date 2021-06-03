@@ -9,8 +9,12 @@ from datetime import datetime
 from discord.ext import commands, menus
 from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
 
-from utilities import converters, pagination, checks, utils
+from utilities import utils
+from utilities import checks
+from utilities import cleaner
+from utilities import converters
 from utilities import decorators
+from utilities import pagination
 
 
 def setup(bot):
@@ -318,7 +322,7 @@ class Tracking(commands.Cog):
         await message.edit(content=title_str)
         t = pagination.MainMenu(
             pagination.TextPageSource(
-                msg.replace("`", "\U0000ff40"), prefix="```yaml\n", suffix="```"
+                cleaner.clean_all(msg), prefix="```yaml\n", suffix="```"
             )
         )
         try:

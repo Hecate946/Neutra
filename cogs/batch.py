@@ -42,17 +42,12 @@ class Batch(commands.Cog):
         self.nicknames_batch = []
         self.roles_batch = defaultdict(dict)
         self.snipe_batch = []
-        self.spammer_batch = []
         self.status_batch = defaultdict(dict)
         self.tracker_batch = {}
         self.usernames_batch = []
 
         self.batch_lock = asyncio.Lock(loop=bot.loop)
-        self._auto_spam_count = Counter()
         self.queue = asyncio.Queue(loop=bot.loop)
-        self.spam_control = commands.CooldownMapping.from_cooldown(
-            10, 12, commands.BucketType.user
-        )
 
         self.bulk_inserter.start()
         self.dispatch_avatars.start()
@@ -303,20 +298,6 @@ class Batch(commands.Cog):
                 await self.bot.cxn.execute(query, data)
                 self.emoji_batch.clear()
 
-        if self.spammer_batch:  # Track users who spam messages
-            query = """
-                    INSERT INTO spammers (user_id, server_id)
-                    SELECT x.user_id, x.server_id
-                    FROM JSONB_TO_RECORDSET($1::JSONB)
-                    as x(user_id BIGINT, server_id BIGINT)
-                    ON CONFLICT (user_id, server_id)
-                    DO UPDATE SET spamcount = spammers.spamcount + 1;
-                    """
-            async with self.batch_lock:
-                data = json.dumps(self.spammer_batch)
-                await self.bot.cxn.execute(query, data)
-                self.spammer_batch.clear()
-
         if self.tracker_batch:  # Track user last seen times
             query = """
                     INSERT INTO tracker (user_id, unix, action)
@@ -550,21 +531,6 @@ class Batch(commands.Cog):
             async with self.batch_lock:
                 self.emoji_batch[message.guild.id].update(map(int, matches))
 
-        author = message.author
-        bucket = self.spam_control.get_bucket(message)
-        current = message.created_at.replace(tzinfo=timezone.utc).timestamp()
-        retry_after = bucket.update_rate_limit(current)
-        if retry_after:
-            self._auto_spam_count[author.id] += 1
-            if self._auto_spam_count[author.id] >= 5:
-                async with self.batch_lock:  # Log them as spammers
-                    self.spammer_batch.append(
-                        {"user_id": author.id, "server_id": message.guild.id}
-                    )
-                del self._auto_spam_count[author.id]
-            return
-        else:
-            self._auto_spam_count.pop(author.id, None)
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()

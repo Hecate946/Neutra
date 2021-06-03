@@ -1,7 +1,6 @@
 import io
 import re
 import json
-from discord.ext.commands.core import check
 import pytz
 import time as t
 import typing

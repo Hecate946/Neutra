@@ -1,5 +1,5 @@
 # Snowbot Moderation & Stat Tracking Discord Bot
-### [Bot Invite Link](https://discord.com/oauth2/authorize?client_id=813275073459912725&scope=bot+applications.commands&permissions=956689654)
+### [Bot Invite Link](https://discord.com/oauth2/authorize?client_id=813275073459912725&scope=bot+applications.commands&permissions=956689622)
 ### [Support Server](https://discord.gg/H2qTG4yxqb)
 ### [DiscordBots.gg](https://discord.bots.gg/bots/810377376269205546)
 ### [Top.gg](https://top.gg/bot/810377376269205546)
@@ -8,15 +8,15 @@ Hello! I'm Snowbot, and I specialize in tracking and moderation.
 I was designed to collect all sorts of data on servers, users,
 messages, emojis, online time, and more! I also come with a fast
 and clean moderation system that offers every opportunity for effective
-server management. Apart from moderation and tracking, I feature 247
+server management. Apart from moderation and tracking, I feature 248
 commands across 13 categories that provide awesome utilities!
 Some examples include managing user timezones, role management, and logging.
 ## Categories
 ##### [Admin](#Admin-1)
 ##### [Automod](#Automod-1)
-##### [Config](#Config-1)
 ##### [Files](#Files-1)
 ##### [Help](#Help-1)
+##### [Home](#Home-1)
 ##### [Info](#Info-1)
 ##### [Logging](#Logging-1)
 ##### [Mod](#Mod-1)
@@ -95,13 +95,6 @@ warn: Warn users with an optional reason.
 warncount: Count the warnings a user has.
 ```
 
-### Config
-#### Configure server bot usage (1 Commands)
-
-```yaml
-channel: None
-```
-
 ### Files
 #### Module for downloading files. (15 Commands)
 
@@ -138,9 +131,11 @@ readme: DMs you my readme file.
 ```
 
 ### Help
-#### My extensive help category. (15 Commands)
+#### My extensive help category. (17 Commands)
 
 ```yaml
+aliases: Show the aliases for a command
+
 botperms: Check if the bot can run a command.
 
 brief: Get the short description of a command.
@@ -150,6 +145,8 @@ canrun: See if a command can be executed.
 category: Show the parent category of a command.
 
 commandinfo: Get attribute info on a command.
+
+commandsearch: Search for a command by name.
 
 docstring: Get the help docstring of a command.
 
@@ -170,6 +167,13 @@ where: Show where a command can be run.
 writer: Show who wrote a command.
 
 writers: Show all people who wrote for me.
+```
+
+### Home
+#### Server specific cog. (0 Commands)
+
+```yaml
+
 ```
 
 ### Info
@@ -288,18 +292,18 @@ vcpurge: Kick all users from a voice channel.
 ```
 
 ### Roles
-#### Manage all actions regarding roles. (10 Commands)
+#### Manage all actions regarding roles. (11 Commands)
 
 ```yaml
-addrole: Adds roles to users.
+addrole: Add multiple roles to multiple users.
 
 emptyroles: Show roles that have no users.
 
 listroles: Show an embed of all server roles.
 
-massrole: Mass adds or removes a role to users.
+removerole: Remove multiple roles from multiple users.
 
-removerole: Removes roles from users.
+role: Manage mass adding/removing roles.
 
 rolecall: Counts the users with a role.
 
@@ -308,6 +312,8 @@ rolecount: Counts the roles on the server.
 roleinfo: Get information on a role.
 
 roleperms: Show the permissions for a role.
+
+temprole: Temporarily add roles to users.
 
 whohas: Show the people who have a role.
 ```

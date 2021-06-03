@@ -54,7 +54,7 @@ class Roles(commands.Cog):
             Shows details on the role's color,
             creation date, users, and creator.
         """
-        users = sum(1 for m in role.guild.members if role in m.roles)
+        users = users = sum(1 for m in role.guild.members if m._roles.has(role.id))
         created = f"Created on {role.created_at.__format__('%m/%d/%Y')}"
 
         embed = discord.Embed(color=self.bot.constants.embed)
@@ -120,6 +120,7 @@ class Roles(commands.Cog):
                 f'Added user{"" if len(target_list) == 1 else "s"} `{", ".join(target_list)}` '
                 f'the role{"" if len(role_list) == 1 else "s"} `{", ".join(role_list)}`'
             )
+            self.bot.dispatch("mod_action", ctx, targets=target_list)
         if failed:
             await helpers.error_info(ctx, failed)
 
@@ -174,6 +175,7 @@ class Roles(commands.Cog):
                 f'Removed user{"" if len(target_list) == 1 else "s"} `{", ".join(target_list)}` '
                 f'the role{"" if len(role_list) == 1 else "s"} `{", ".join(role_list)}`'
             )
+            self.bot.dispatch("mod_action", ctx, targets=target_list)
         if failed:
             await helpers.error_info(ctx, failed)
 

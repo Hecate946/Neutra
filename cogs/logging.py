@@ -26,9 +26,6 @@ class Logging(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.uregex = re.compile(
-            r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
-        )
         self.current_streamers = list()
 
     # Helper function to truncate oversized strings.
@@ -94,17 +91,16 @@ class Logging(commands.Cog):
             return
         if not self.bot.server_settings[message.guild.id]["logging"]["discord_invites"]:
             return
-        dregex = re.compile(
-            r"(?:https?://)?discord(?:app)?\.(?:com/invite|gg)/[a-zA-Z0-9]+/?"
-        )
-        if not dregex.search(message.content):
+
+        regex_match = self.bot.dregex.search(message.content)
+        if not regex_match:
             return
 
         embed = discord.Embed(
             description=f"**Author:**  {message.author.mention}, **ID:** `{message.author.id}`\n"
             f"**Channel:** {message.channel.mention} **ID:** `{message.channel.id}`\n"
             f"**Server:** `{message.guild.name}` **ID:** `{message.guild.id}`\n\n"
-            f"**__Invite Link:___**```fix\n{message.content}```\n"
+            f"**__Invite Link:___**```fix\n{regex_match.group(0)}```\n"
             f"**[Jump to message](https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id})**",
             color=self.bot.constants.embed,
             timestamp=datetime.utcnow(),
@@ -113,7 +109,7 @@ class Logging(commands.Cog):
             name="Invite Link Posted",
             icon_url=UPDATED_MESSAGE,
         )
-        await webhook.execute(embed=embed)
+        await webhook.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_guild_update(self, before, after):
@@ -143,7 +139,7 @@ class Logging(commands.Cog):
                 icon_url=UPDATED_MESSAGE,
             )
 
-            return await webhook.execute(embed=embed)
+            return await webhook.send(embed=embed)
         embed = discord.Embed(
             description=f"**Author:**  `{audit.user.name}#{audit.user.discriminator}`\n"
             "**New Image below**",
@@ -156,7 +152,7 @@ class Logging(commands.Cog):
         )
 
         embed.set_image(url=after.icon_url)
-        return await webhook.execute(embed=embed)
+        return await webhook.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_guild_emojis_update(self, guild, before, after):
@@ -191,20 +187,19 @@ class Logging(commands.Cog):
 
         embed.set_author(
             name=f"Emoji {'created' if new else 'deleted'}.",
-            icon_url=f"{'https://cdn.discordapp.com/attachments/805638877762420789/841819884622053376/messageadd.png' if new else 'https://cdn.discordapp.com/attachments/506838906872922145/603642595419357190/messagedelete.png'}",
+            icon_url=f"{CREATED_MESSAGE if new else DELETED_MESSAGE}",
         )
 
-        await webhook.execute(embed=embed)
+        await webhook.send(embed=embed)
 
     @commands.Cog.listener()
+    @decorators.wait_until_ready()
     async def on_guild_channel_create(self, channel):
-        if not self.bot.ready:
-            return
         if not await self.check(snowflake=channel.guild.id, event="channel_updates"):
             return
 
         webhook = await self.get_webhook(guild=channel.guild)
-        if webhook is None:
+        if not webhook:
             return
 
         embed = discord.Embed(
@@ -218,13 +213,11 @@ class Logging(commands.Cog):
             icon_url="https://cdn.discordapp.com/emojis/810659118045331517.png?v=1",
         )
         embed.set_footer(text=f"Channel ID: {channel.id}")
-        await webhook.execute(embed=embed)
+        await webhook.send(embed=embed)
 
     @commands.Cog.listener()
+    @decorators.wait_until_ready()
     async def on_guild_channel_delete(self, channel):
-        if not self.bot.ready:
-            return
-
         if not await self.check(snowflake=channel.guild.id, event="channel_updates"):
             return
 
@@ -243,13 +236,11 @@ class Logging(commands.Cog):
             icon_url="https://cdn.discordapp.com/emojis/810659118045331517.png?v=1",
         )
         embed.set_footer(text=f"Channel ID: {channel.id}")
-        await webhook.execute(embed=embed)
+        await webhook.send(embed=embed)
 
     @commands.Cog.listener()
+    @decorators.wait_until_ready()
     async def on_guild_channel_update(self, before, after):
-        if not self.bot.ready:
-            return
-
         if not await self.check(snowflake=after.guild.id, event="channel_updates"):
             return
 
@@ -267,7 +258,7 @@ class Logging(commands.Cog):
             )
             embed.set_author(name=f"Channel Update")
             embed.set_footer(text=f"Channel ID: {after.id}")
-            await webhook.execute(embed=embed)
+            await webhook.send(embed=embed)
 
         elif before.category != after.category:
             embed = discord.Embed(
@@ -279,7 +270,7 @@ class Logging(commands.Cog):
             )
             embed.set_author(name=f"Channel Update")
             embed.set_footer(text=f"Channel ID: {after.id}")
-            await webhook.execute(embed=embed)
+            await webhook.send(embed=embed)
 
         if isinstance(before, discord.TextChannel):
             if before.topic != after.topic:
@@ -292,7 +283,7 @@ class Logging(commands.Cog):
                 )
                 embed.set_author(name=f"Channel Update")
                 embed.set_footer(text=f"Channel ID: {after.id}")
-                await webhook.execute(embed=embed)
+                await webhook.send(embed=embed)
 
         # elif before.position != after.position:
         #     embed = discord.Embed(
@@ -304,7 +295,7 @@ class Logging(commands.Cog):
         #     )
         #     embed.set_author(name=f"Channel Update")
         #     embed.set_footer(text=f"Channel ID: {after.id}")
-        #     await webhook.execute(embed=embed)
+        #     await webhook.send(embed=embed)
 
         if isinstance(before, discord.TextChannel):
             if before.slowmode_delay != after.slowmode_delay:
@@ -317,7 +308,7 @@ class Logging(commands.Cog):
                 )
                 embed.set_author(name=f"Channel Update")
                 embed.set_footer(text=f"Channel ID: {after.id}")
-                await webhook.execute(embed=embed)
+                await webhook.send(embed=embed)
 
         if isinstance(before, discord.VoiceChannel):
             if before.user_limit != after.user_limit:
@@ -330,7 +321,7 @@ class Logging(commands.Cog):
                 )
                 embed.set_author(name=f"Channel Update")
                 embed.set_footer(text=f"Channel ID: {after.id}")
-                await webhook.execute(embed=embed)
+                await webhook.send(embed=embed)
 
         elif before.changed_roles != after.changed_roles:
             old_overwrites = (
@@ -366,7 +357,7 @@ class Logging(commands.Cog):
             )
             embed.set_author(name=f"Channel Update")
             embed.set_footer(text=f"Channel ID: {after.id}")
-            await webhook.execute(embed=embed)
+            await webhook.send(embed=embed)
 
     # Create our custom event listener for all moderation actions
     @commands.Cog.listener()
@@ -392,13 +383,11 @@ class Logging(commands.Cog):
             icon_url="https://cdn.discordapp.com/attachments/811396494304608309/830158456647581767/hammer-512.png",
         )
         embed.set_footer(text=f"Message ID: {ctx.message.id}")
-        await webhook.execute(embed=embed)
+        await webhook.send(embed=embed)
 
     @commands.Cog.listener()
+    @decorators.wait_until_ready()
     async def on_member_join(self, member):
-        if not self.bot.ready:
-            return
-
         if not await self.check(snowflake=member.guild.id, event="joins"):
             return
 
@@ -413,13 +402,11 @@ class Logging(commands.Cog):
         )
         embed.set_author(name=f"User Joined")
         embed.set_footer(text=f"User ID: {member.id}")
-        await webhook.execute(embed=embed)
+        await webhook.send(embed=embed)
 
     @commands.Cog.listener()
+    @decorators.wait_until_ready()
     async def on_member_remove(self, member):
-        if not self.bot.ready:
-            return
-
         if not await self.check(snowflake=member.guild.id, event="leaves"):
             return
 
@@ -434,16 +421,12 @@ class Logging(commands.Cog):
         )
         embed.set_author(name=f"User Left")
         embed.set_footer(text=f"User ID: {member.id}")
-        await webhook.execute(embed=embed)
+        await webhook.send(embed=embed)
 
     @commands.Cog.listener()
+    @decorators.wait_until_ready()
+    @decorators.event_check(lambda s, b, a: not a.bot)
     async def on_member_update(self, before, after):
-        if not self.bot.ready:
-            return
-
-        if after.bot:
-            return
-
         webhook = await self.get_webhook(guild=after.guild)
         if webhook is None:
             return
@@ -463,7 +446,7 @@ class Logging(commands.Cog):
             embed.set_author(name=f"Nickname Change")
             embed.set_footer(text=f"User ID: {after.id}")
 
-            await webhook.execute(embed=embed)
+            await webhook.send(embed=embed)
 
         elif before.roles != after.roles:
             if "@everyone" not in [x.name for x in before.roles]:
@@ -483,16 +466,12 @@ class Logging(commands.Cog):
             embed.set_author(name=f"Role Updates")
             embed.set_footer(text=f"User ID: {after.id}")
 
-            await webhook.execute(embed=embed)
+            await webhook.send(embed=embed)
 
     @commands.Cog.listener()
+    @decorators.wait_until_ready()
+    @decorators.event_check(lambda s, b, a: not a.bot)
     async def on_user_update(self, before, after):
-        if not self.bot.ready:
-            return
-
-        if after.bot:
-            return
-
         users_guilds = []
         for guild in self.bot.guilds:
             mem_obj = guild.get_member(after.id)
@@ -517,7 +496,7 @@ class Logging(commands.Cog):
                     embed.set_author(name=f"Username Change")
                     embed.set_footer(text=f"User ID: {after.id}")
 
-                    await webhook.execute(embed=embed)
+                    await webhook.send(embed=embed)
 
             elif before.discriminator != after.discriminator:
                 if await self.check(snowflake=guild.id, event="name_updates"):
@@ -532,7 +511,7 @@ class Logging(commands.Cog):
                     embed.set_author(name=f"Discriminator Change")
                     embed.set_footer(text=f"User ID: {after.id}")
 
-                    await webhook.execute(embed=embed)
+                    await webhook.send(embed=embed)
 
             elif before.avatar_url != after.avatar_url:
                 if await self.check(snowflake=guild.id, event="avatar_changes"):
@@ -548,16 +527,12 @@ class Logging(commands.Cog):
                     embed.set_image(url=after.avatar_url)
                     embed.set_author(name=f"Avatar Change")
                     embed.set_footer(text=f"User ID: {after.id}")
-                    await webhook.execute(embed=embed)
+                    await webhook.send(embed=embed)
 
     @commands.Cog.listener()
+    @decorators.wait_until_ready()
+    @decorators.event_check(lambda s, m, b, a: not m.bot)
     async def on_voice_state_update(self, member, before, after):
-        if not self.bot.ready:
-            return
-
-        if member.bot:
-            return
-
         if not await self.check(snowflake=member.guild.id, event="voice_state_updates"):
             return
 
@@ -575,7 +550,7 @@ class Logging(commands.Cog):
             embed.set_author(name=f"User Joined Voice Channel")
             embed.set_footer(text=f"User ID: {member.id}")
 
-            await webhook.execute(embed=embed)
+            await webhook.send(embed=embed)
 
         if before.channel and not after.channel:
 
@@ -587,7 +562,7 @@ class Logging(commands.Cog):
             embed.set_author(name=f"User Left Voice Channel")
             embed.set_footer(text=f"User ID: {member.id}")
 
-            await webhook.execute(embed=embed)
+            await webhook.send(embed=embed)
 
         if before.channel and after.channel:
             if before.channel.id != after.channel.id:
@@ -601,7 +576,7 @@ class Logging(commands.Cog):
                 embed.set_author(name=f"User Switched Voice Channels")
                 embed.set_footer(text=f"User ID: {member.id}")
 
-                await webhook.execute(embed=embed)
+                await webhook.send(embed=embed)
             else:
                 if member.voice.self_stream:
                     embed = discord.Embed(
@@ -613,7 +588,7 @@ class Logging(commands.Cog):
                     embed.set_author(name=f"User Started Streaming")
                     embed.set_footer(text=f"User ID: {member.id}")
 
-                    await webhook.execute(embed=embed)
+                    await webhook.send(embed=embed)
 
                     self.current_streamers.append(member.id)
 
@@ -627,7 +602,7 @@ class Logging(commands.Cog):
                     embed.set_author(name=f"User Muted")
                     embed.set_footer(text=f"User ID: {member.id}")
 
-                    await webhook.execute(embed=embed)
+                    await webhook.send(embed=embed)
 
                 elif member.voice.self_deaf:
                     embed = discord.Embed(
@@ -639,7 +614,7 @@ class Logging(commands.Cog):
                     embed.set_author(name=f"User Deafened")
                     embed.set_footer(text=f"User ID: {member.id}")
 
-                    await webhook.execute(embed=embed)
+                    await webhook.send(embed=embed)
 
                 else:
                     for streamer in self.current_streamers:
@@ -654,7 +629,7 @@ class Logging(commands.Cog):
                                 embed.set_author(name=f"User Stopped Streaming")
                                 embed.set_footer(text=f"User ID: {member.id}")
 
-                                await webhook.execute(embed=embed)
+                                await webhook.send(embed=embed)
                                 self.current_streamers.remove(member.id)
                             break
 
@@ -702,7 +677,7 @@ class Logging(commands.Cog):
             icon_url=UPDATED_MESSAGE,
         )
         embed.set_footer(text=f"Message ID: {after.id}")
-        await webhook.execute(embed=embed)
+        await webhook.send(embed=embed)
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -745,28 +720,23 @@ class Logging(commands.Cog):
             icon_url=DELETED_MESSAGE,
         )
         embed.set_footer(text=f"Message ID: {message.id}")
-        await webhook.execute(embed=embed)
+        await webhook.send(embed=embed)
 
     @commands.Cog.listener()
+    @decorators.wait_until_ready()
+    @decorators.event_check(lambda s, m: m[0].guild is not None)
     async def on_bulk_message_delete(self, messages):
-        if not self.bot.ready:
-            return
-
-        if not messages[0].guild:
-            return
-        if not await self.check(
-            snowflake=messages[0].guild.id, event="message_deletions"
-        ):
+        if not await self.check(messages[0].guild.id, event="message_deletions"):
             return
 
         webhook = await self.get_webhook(guild=messages[0].guild)
-        if webhook is None:
+        if not webhook:
             return
 
         allmessages = ""
-
+        spaces = ' ' * 10
         for message in messages:
-            allmessages += f"Content: {message.content}          Author: {message.author}          ID: {message.id}\n\n"
+            allmessages += f"Content: {message.content}{spaces}Author: {message.author}{spaces}ID: {message.id}\n\n"
 
         embed = discord.Embed(
             description=f"**Channel:** {message.channel.mention} **ID:** `{message.channel.id}`\n"
@@ -779,7 +749,7 @@ class Logging(commands.Cog):
             icon_url=DELETED_MESSAGE,
         )
 
-        await webhook.execute(embed=embed)
+        await webhook.send(embed=embed)
 
         counter = 0
         msg = ""
@@ -806,7 +776,7 @@ class Logging(commands.Cog):
 
         data = io.BytesIO(msg[:-2].encode("utf-8"))
 
-        await webhook.execute(
+        await webhook.send(
             file=discord.File(
                 data,
                 filename=f"'Bulk-Deleted-Messages-{datetime.now().__format__('%m-%d-%Y')}.txt",
@@ -841,7 +811,7 @@ class Logging(commands.Cog):
         await ctx.send_or_reply(
             f"{self.bot.emote_dict['success']} Set channel {channel.mention} as this server's logging channel."
         )
-        await webhook.execute(
+        await webhook.send(
             content="Hello! I'm going to be logging your server's events in this channel from now on. "
             f"Use `{ctx.prefix}log <option>` to set the specific events you want documented here. "
             "By default, all events will be logged."
@@ -852,6 +822,7 @@ class Logging(commands.Cog):
         aliases=["logserver", "setlogchannel"],
     )
     @commands.guild_only()
+    @checks.bot_has_perms(manage_webhooks=True)
     @checks.has_perms(manage_guild=True)
     async def logchannel(self, ctx, channel: discord.TextChannel = None):
         """
@@ -894,6 +865,7 @@ class Logging(commands.Cog):
 
     @decorators.command(brief="Remove the logging channel.", aliases=["unlogserver"])
     @commands.guild_only()
+    @checks.bot_has_perms(manage_webhooks=True)
     @checks.has_perms(manage_guild=True)
     async def unlogchannel(self, ctx, write=True):
         """
@@ -932,6 +904,7 @@ class Logging(commands.Cog):
         writer=782479134436753428,
     )
     @commands.guild_only()
+    @checks.bot_has_perms(embed_links=True)
     @checks.has_perms(manage_guild=True)
     async def log(self, ctx, *, log_arg=None):
         """
@@ -999,6 +972,7 @@ class Logging(commands.Cog):
 
     @decorators.command(brief="Disable specific logging events.")
     @commands.guild_only()
+    @checks.bot_has_perms(embed_links=True)
     @checks.has_perms(manage_guild=True)
     async def unlog(self, ctx, *, log_arg):
         """

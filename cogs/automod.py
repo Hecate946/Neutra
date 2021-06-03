@@ -22,9 +22,6 @@ class Automod(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.emote_dict = bot.emote_dict
-        self.dregex = re.compile(
-            r"(?:https?://)?discord(?:app)?\.(?:com/invite|gg)/[a-zA-Z0-9]+/?"
-        )
 
     ###################
     ## Warn Commands ##
@@ -831,7 +828,7 @@ class Automod(commands.Cog):
             return  # We are immune!
         if message.author.guild_permissions.manage_messages:
             return  # We are immune!
-        if self.dregex.search(message.content):  # Check for invite linkes
+        if self.bot.dregex.search(message.content):  # Check for invite linkes
             removeinvitelinks = self.bot.server_settings[message.guild.id]["antiinvite"]
             if removeinvitelinks:  # Do we care?
                 try:
@@ -868,7 +865,7 @@ class Automod(commands.Cog):
             return  # We are immune!
         if after.author.guild_permissions.manage_messages:
             return  # We are immune!
-        if self.dregex.search(after.content):
+        if self.bot.dregex.search(after.content):
             removeinvitelinks = self.bot.server_settings[after.guild.id]["antiinvite"]
             if removeinvitelinks:
                 try:

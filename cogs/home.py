@@ -53,7 +53,11 @@ class Home(commands.Cog):
         )
         avatar = pillow.Image.open(io.BytesIO(bytes_avatar))
 
-        composite = pillow.Image.composite(avatar, mask, mask)
+        try:
+            composite = pillow.Image.composite(avatar, mask, mask)
+        except ValueError:  # Sometimes the avatar isn't resized properly
+            avatar.resize((128, 128))
+            composite = pillow.Image.composite(avatar, mask, mask)
         blue.paste(im=composite, box=(0, 0), mask=composite)
         banner.paste(im=blue, box=(30, 30), mask=blue.split()[3])
 

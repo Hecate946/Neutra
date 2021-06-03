@@ -1,7 +1,7 @@
 import re
 import discord
 
-from collections import Counter, defaultdict
+from collections import Counter
 from discord.ext import commands, menus
 
 from utilities import utils

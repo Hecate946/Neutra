@@ -10,6 +10,7 @@ from discord.ext import menus
 from discord.ext.commands import Paginator as CommandPaginator
 
 from settings import constants
+from utilities import cleaner
 
 # Embed limits
 TITLE_LIMIT = 256
@@ -168,6 +169,7 @@ class FieldPageSource(menus.ListPageSource):
 class TextPageSource(menus.ListPageSource):
     def __init__(self, text, *, prefix="```", suffix="```", max_size=2000):
         pages = CommandPaginator(prefix=prefix, suffix=suffix, max_size=max_size - 200)
+        text = cleaner.clean_all(text)
         for line in text.split("\n"):
             pages.add_line(line)
 

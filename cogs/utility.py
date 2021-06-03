@@ -36,7 +36,7 @@ def setup(bot):
     bot.add_cog(Utility(bot))
 
 
-# Couple of commands taken and edited from Stella#2000's bot
+# Token commands taken and edited from Stella#2000's bot
 # https://github.com/InterStella0/stella_bot
 
 
@@ -1605,6 +1605,59 @@ class Utility(commands.Cog):
         if msg is None:
             return
         embed.description = msg
+
+
+        m = await ctx.send_or_reply(
+            "Enter your embed's image URL (must be a valid http(s) URL):"
+        )
+        self.msg_collection.append(m.id)
+        msg = await self.do_msg_check(ctx, embed)
+        if msg is None:
+            return
+        if not isinstance(msg, discord.embeds._EmptyEmbed):
+            if not self.uregex.fullmatch(msg):
+                check = False
+                while check is False:
+                    m = await ctx.fail(
+                        "Invalid URL schema.\nEnter your embed's image URL (must be a valid http/https url):"
+                    )
+                    self.msg_collection.append(m.id)
+                    msg = await self.do_msg_check(ctx, embed)
+                    if msg is None or isinstance(msg, discord.embeds._EmptyEmbed):
+                        break
+                    if self.uregex.fullmatch(msg):
+                        check = True
+            if msg is None:
+                return
+            image_icon = msg
+
+            embed.set_image(url=image_icon)
+
+        m = await ctx.send_or_reply(
+            "Enter your embed's thumbnail URL (must be a valid http(s) URL):"
+        )
+        self.msg_collection.append(m.id)
+        msg = await self.do_msg_check(ctx, embed)
+        if msg is None:
+            return
+        if not isinstance(msg, discord.embeds._EmptyEmbed):
+            if not self.uregex.fullmatch(msg):
+                check = False
+                while check is False:
+                    m = await ctx.fail(
+                        "Invalid URL schema.\nEnter your embed's thumbnail URL (must be a valid http/https url):"
+                    )
+                    self.msg_collection.append(m.id)
+                    msg = await self.do_msg_check(ctx, embed)
+                    if msg is None or isinstance(msg, discord.embeds._EmptyEmbed):
+                        break
+                    if self.uregex.fullmatch(msg):
+                        check = True
+            if msg is None:
+                return
+            image_icon = msg
+
+            embed.set_thumbnail(url=image_icon)
 
         m = await ctx.send_or_reply("Enter your embed's footer:")
         self.msg_collection.append(m.id)
