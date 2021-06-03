@@ -393,6 +393,7 @@ class Info(commands.Cog):
         brief="Bot network speed.",
         aliases=["speedtest", "network", "wifi", "download", "upload"],
         hidden=True,
+        enabled=False,
     )
     @checks.is_bot_admin()
     async def speed(self, ctx):
