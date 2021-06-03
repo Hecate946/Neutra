@@ -23,7 +23,6 @@ from dislash.interactions import ActionRow, ButtonStyle, Button
 
 from utilities import utils
 from utilities import checks
-from utilities import speedtest
 from utilities import converters
 from utilities import decorators
 from utilities import pagination
