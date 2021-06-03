@@ -300,38 +300,38 @@ class Stats(commands.Cog):
         )
         em.add_field(
             name="Total Members",
-            value=f"{self.bot.emote_dict['members']} {server.member_count}",
+            value=f"{self.bot.emote_dict['members']} {server.member_count:,}",
             inline=True,
         )
         em.add_field(
             name="Online Members",
-            value=f"{self.bot.emote_dict['online']} {online}",
+            value=f"{self.bot.emote_dict['online']} {online:,}",
             inline=True,
         )
         em.add_field(
             name="Role Count",
-            value=f"{self.bot.emote_dict['role']} {str(role_count)}",
+            value=f"{self.bot.emote_dict['role']} {role_count:,}",
             inline=True,
         )
         em.add_field(name="Region", value=region, inline=True)
         em.add_field(
             name="Emoji Count",
-            value=f"{self.bot.emote_dict['emoji']} {len(server.emojis)}",
+            value=f"{self.bot.emote_dict['emoji']} {len(server.emojis):,}",
             inline=True,
         )
         em.add_field(
             name="Categories",
-            value=f"{self.bot.emote_dict['categories']} {len(server.categories)}",
+            value=f"{self.bot.emote_dict['categories']} {len(server.categories):,}",
             inline=True,
         )
         em.add_field(
             name="Text Channels",
-            value=f"{self.bot.emote_dict['textchannel']} {total_text_channels}",
+            value=f"{self.bot.emote_dict['textchannel']} {total_text_channels:,}",
             inline=True,
         )
         em.add_field(
             name="Voice Channels",
-            value=f"{self.bot.emote_dict['voicechannel']} {total_voice_channels}",
+            value=f"{self.bot.emote_dict['voicechannel']} {total_voice_channels:,}",
             inline=True,
         )
         await ctx.send_or_reply(embed=em)
