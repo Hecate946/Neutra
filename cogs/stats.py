@@ -74,9 +74,6 @@ class Stats(commands.Cog):
         else:
             if user.is_avatar_animated():
                 badges.append(self.bot.emote_dict["nitro"])
-        if isinstance(user, discord.Member) and user.premium_since is not None:
-            badges.append(self.bot.emote_dict["nitro"])
-            badges.append(self.bot.emote_dict["boost"])
         if not badges:
             return await ctx.fail(f"User `{user}` has no badges.")
         await ctx.success(f"`{user}'s` badges: {' '.join(badges)}")
