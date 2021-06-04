@@ -85,10 +85,12 @@ class Home(commands.Cog):
         embed.set_footer(text=f"Server Population: {member.guild.member_count} ")
         await self.welcomer.send(f"{member.mention}", file=dfile, embed=embed)
 
+    
     @decorators.command(
         hidden=True,
         brief="Test the welcome"
     )
+    @decorators.is_home(HOME)
     async def pil(self, ctx, user: converters.DiscordMember = None):
         if user is None:
             user = ctx.author
