@@ -17,7 +17,6 @@ from discord_slash.client import SlashCommand
 from logging.handlers import RotatingFileHandler
 
 from dislash.slash_commands import SlashClient
-from dislash.interactions import ActionRow, ButtonStyle, Button
 
 from settings import cleanup, database, constants
 from utilities import utils, override
@@ -148,7 +147,7 @@ class Snowbot(commands.AutoShardedBot):
         self.socket_events = collections.Counter()
 
         self.cog_exceptions = ["BOTCONFIG", "BOTADMIN", "MANAGER", "JISHAKU"]
-        self.hidden_cogs = ["TESTING", "BATCH", "SLASH", "TASKS"]
+        self.hidden_cogs = ["TESTING", "BATCH", "SLASH", "TASKS", "HOME"]
         self.do_not_load = ["CONVERSION", "TESTING"]
 
         # Webhooks for monitering and data saving.
