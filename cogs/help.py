@@ -136,7 +136,7 @@ class Help(commands.Cog):
             color=self.bot.constants.embed,
         )
         embed.set_footer(
-            text=f'Use "{ctx.prefix}help command" for information on a command.\n'
+            text=f'Use "{await converters.prettify(ctx, ctx.prefix)}help command" for information on a command.\n'
         )
 
         msg = ""
@@ -200,7 +200,7 @@ class Help(commands.Cog):
             )
 
             embed.set_footer(
-                text=f'Use "{ctx.prefix}help category" for information on a category.'
+                text=f'Use "{await converters.prettify(ctx, ctx.prefix)}help category" for information on a category.'
             )
 
             valid_cogs = []
@@ -527,7 +527,7 @@ class Help(commands.Cog):
                         color=self.bot.constants.embed,
                     )
                     help_embed.set_footer(
-                        text=f'Use "{ctx.prefix}help category" for information on a category.'
+                        text=f'Use "{await converters.prettify(ctx, ctx.prefix)}help category" for information on a category.'
                     )
                     help_embed.add_field(
                         name=f"**Command Name:** `{valid_commands.title()}`\n**Description:** `{valid_brief}`\n",
@@ -569,7 +569,7 @@ class Help(commands.Cog):
                         color=self.bot.constants.embed,
                     )
                     help_embed.set_footer(
-                        text=f'Use "{ctx.prefix}help category" for information on a category.'
+                        text=f'Use "{await converters.prettify(ctx, ctx.prefix)}help category" for information on a category.'
                     )
                     help_embed.add_field(
                         name=f"**Command Group:** `{command.name.title()}`\n**Subcommand:** `{x.name.title()}`\n**Description:** `{brief}`",
@@ -598,7 +598,7 @@ class Help(commands.Cog):
             color=self.bot.constants.embed,
         )
         help_embed.set_footer(
-            text=f'Use "{ctx.prefix}help {command.name} option" for information on a option.'
+            text=f'Use "{await converters.prettify(ctx, ctx.prefix)}help {command.name} option" for information on a option.'
         )
         help_embed.add_field(
             name=f"**Command Group:** `{command.name.title()}`\n**Description:** `{brief}`\n",
