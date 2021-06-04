@@ -2,6 +2,7 @@ import re
 import discord
 
 from collections import Counter
+from discord.abc import User
 from discord.ext import commands, menus
 
 from utilities import utils
@@ -22,6 +23,28 @@ class Stats(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+
+    async def get_user_cmds(self, member):
+        """Helper function to get member command count"""
+        query = """
+                SELECT COUNT(*)
+                FROM commands
+                WHERE author_id = $1
+                AND server_id = $2;
+                """
+        cmd_count = await self.bot.cxn.fetchval(query, member.id, member.guild.id)
+        return cmd_count or 0
+
+    async def get_user_msgs(self, member):
+        """Helper function to get member message count"""
+        query = """
+                SELECT COUNT(*)
+                FROM messages
+                WHERE author_id = $1
+                AND server_id = $2;
+                """
+        msg_count = await self.bot.cxn.fetchval(query, member.id, member.guild.id)
+        return msg_count or 0
 
     @decorators.command(
         aliases=["flags"],
@@ -172,7 +195,7 @@ class Stats(commands.Cog):
                 """,
     )
     @checks.bot_has_perms(embed_links=True)
-    async def userinfo(self, ctx, member: converters.DiscordMember = None):
+    async def userinfo(self, ctx, user: converters.DiscordMember = None):
         """
         Usage: {0}userinfo <member>
         Aliases: {0}profile, {0}ui, {0}whois
@@ -187,8 +210,8 @@ class Stats(commands.Cog):
             currently available on a discord user.
         """
 
-        if member is None:
-            member = ctx.author
+        if user is None:
+            user = ctx.author
 
         joinedList = []
         for mem in ctx.guild.members:
@@ -200,7 +223,7 @@ class Stats(commands.Cog):
             key=lambda x: x["Joined"].timestamp() if x["Joined"] is not None else -1,
         )
 
-        check_item = {"ID": member.id, "Joined": member.joined_at}
+        check_item = {"ID": user.id, "Joined": user.joined_at}
 
         position = joinedList.index(check_item) + 1
 
@@ -212,21 +235,8 @@ class Stats(commands.Cog):
                 WHERE author_id = $1
                 AND server_id = $2;
                 """
-        command_count = (
-            await self.bot.cxn.fetchrow(query, member.id, ctx.guild.id) or None
-        )
-        if command_count is None:
-            command_count = 0
-
-        query = """
-                SELECT COUNT(*)
-                FROM messages
-                WHERE author_id = $1
-                AND server_id = $2;
-                """
-        messages = await self.bot.cxn.fetchrow(query, member.id, ctx.guild.id) or None
-        if messages is None:
-            messages = 0
+        command_count = await self.get_user_cmds(user)
+        message_count = await self.get_user_msgs(user)
 
         status_dict = {
             "online": f"{self.bot.emote_dict['online']} Online",
@@ -234,36 +244,36 @@ class Stats(commands.Cog):
             "dnd": f"{self.bot.emote_dict['dnd']} Do Not Disturb",
             "idle": f"{self.bot.emote_dict['idle']} Idle",
         }
-        if member.id in self.bot.owner_ids:
+        if user.id in self.bot.owner_ids:
             emoji = self.bot.emote_dict["dev"]
-        elif member.id == ctx.guild.owner.id:
+        elif user.id == ctx.guild.owner.id:
             emoji = self.bot.emote_dict["owner"]
-        elif member.bot:
+        elif user.bot:
             emoji = self.bot.emote_dict["bot"]
         else:
             emoji = self.bot.emote_dict["user"]
 
         embed = discord.Embed(color=self.bot.constants.embed)
-        embed.set_author(name=f"{member}", icon_url=member.avatar_url)
-        embed.set_thumbnail(url=member.avatar_url)
+        embed.set_author(name=f"{user}", icon_url=user.avatar_url)
+        embed.set_thumbnail(url=user.avatar_url)
         embed.set_footer(
-            text=f"User ID: {member.id} | Created on {member.created_at.__format__('%m/%d/%Y')}"
+            text=f"User ID: {user.id} | Created on {user.created_at.__format__('%m/%d/%Y')}"
         )
         embed.add_field(
             name="Nickname",
-            value=f"{emoji} {member.display_name}",
+            value=f"{emoji} {user.display_name}",
         )
         embed.add_field(
-            name="Messages", value=f"{self.bot.emote_dict['messages']}  {messages[0]}"
+            name="Messages", value=f"{self.bot.emote_dict['messages']}  {message_count:,}"
         )
         embed.add_field(
             name="Commands",
-            value=f"{self.bot.emote_dict['commands']}  {command_count[0]}",
+            value=f"{self.bot.emote_dict['commands']}  {command_count:,}",
         )
-        embed.add_field(name="Status", value=f"{status_dict[str(member.status)]}")
+        embed.add_field(name="Status", value=f"{status_dict[str(user.status)]}")
         embed.add_field(
             name="Highest Role",
-            value=f"{self.bot.emote_dict['role']} {'@everyone' if member.top_role.name == '@everyone' else member.top_role.mention}",
+            value=f"{self.bot.emote_dict['role']} {'@everyone' if user.top_role.name == '@everyone' else user.top_role.mention}",
         )
         embed.add_field(
             name="Join Position", value=f"{self.bot.emote_dict['invite']} #{msg}"
