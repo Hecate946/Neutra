@@ -30,7 +30,7 @@ class Logging(commands.Cog):
 
     # Helper function to truncate oversized strings.
     def truncate(self, string, max_chars):
-        return (string[:max_chars - 3] + "...") if len(string) > max_chars else string
+        return (string[: max_chars - 3] + "...") if len(string) > max_chars else string
 
     #############################
     ## Logging Check Functions ##
@@ -652,7 +652,9 @@ class Logging(commands.Cog):
         elif before.content.startswith("```"):
             bcontent = self.truncate(before.clean_content, 1000) + "**\n**"
         else:
-            bcontent = f"```fix\n{self.truncate(before.clean_content, 1000)}```" + "**\n**"
+            bcontent = (
+                f"```fix\n{self.truncate(before.clean_content, 1000)}```" + "**\n**"
+            )
 
         if after.content == "":
             acontent = "```fix\nNo Content```"
@@ -669,8 +671,12 @@ class Logging(commands.Cog):
             color=self.bot.constants.embed,
             timestamp=datetime.utcnow(),
         )
-        embed.add_field(name="__**Old Message Content**__", value=bcontent, inline=False)
-        embed.add_field(name="__**New Message Content**__", value=acontent, inline=False)
+        embed.add_field(
+            name="__**Old Message Content**__", value=bcontent, inline=False
+        )
+        embed.add_field(
+            name="__**New Message Content**__", value=acontent, inline=False
+        )
         embed.add_field(name="** **", value=jump_url)
         embed.set_author(
             name="Message Edited",
@@ -734,7 +740,7 @@ class Logging(commands.Cog):
             return
 
         allmessages = ""
-        spaces = ' ' * 10
+        spaces = " " * 10
         for message in messages:
             allmessages += f"Content: {message.content}{spaces}Author: {message.author}{spaces}ID: {message.id}\n\n"
 

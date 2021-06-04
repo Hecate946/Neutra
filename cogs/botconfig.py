@@ -50,10 +50,10 @@ class Botconfig(commands.Cog):
         """
         if value.isdigit():
             utils.modify_config(key=key, value=int(value))
-        elif str(value).lower() == 'true':
+        elif str(value).lower() == "true":
             val = True
-        elif str(value).lower() == 'false':
-            val =False
+        elif str(value).lower() == "false":
+            val = False
             utils.modify_config(key=key, value=val)
         else:
             utils.modify_config(key=key, value=str(value))

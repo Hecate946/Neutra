@@ -1076,55 +1076,6 @@ class Tracking(commands.Cog):
         )
 
     @decorators.command(
-        brief="Show all recorded spammers.",
-        implemented="2021-04-25 01:32:06.151615",
-        updated="2021-05-07 04:15:46.972946",
-        examples="""
-                {0}spammers
-                """,
-    )
-    @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
-    @checks.has_perms(manage_messages=True)
-    async def spammers(self, ctx):
-        """
-        Usage: {0}spammers
-        Permission: Manage Messages
-        Output:
-            Shows a pagination session with users
-            who were recorded spamming in the server.
-        """
-        query = """
-                SELECT (user_id, spamcount)
-                FROM spammers
-                WHERE server_id = $1
-                ORDER BY spamcount DESC;
-                """
-        result = await self.bot.cxn.fetch(query, ctx.guild.id)
-        page_list = []
-        for x in result:
-            name = ctx.guild.get_member(x[0][0])
-            if not name:
-                continue
-            page_list.append(
-                {"name": name, "value": f"Times recorded spamming: {x[0][1]}"}
-            )
-
-        p = pagination.MainMenu(
-            pagination.FieldPageSource(
-                entries=[
-                    ("{}. {}".format(y + 1, x["name"]), x["value"])
-                    for y, x in enumerate(page_list)
-                ],
-                per_page=10,
-                title=f"Spammers in **{ctx.guild.name}** ({len(page_list):,} total)",
-            )
-        )
-        try:
-            await p.start(ctx)
-        except menus.MenuError as e:
-            await ctx.send_or_reply(e)
-
-    @decorators.command(
         brief="Show the most active server users.",
         invoke_without_command=True,
         case_insensitive=True,

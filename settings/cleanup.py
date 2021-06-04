@@ -67,10 +67,6 @@ async def purge_discrepancies(guilds):
     await find_discrepancy(query, guilds)
     print(f"{query.split()[-1]}_query")
 
-    query = "SELECT server_id FROM spammers"
-    await find_discrepancy(query, guilds)
-    print(f"{query.split()[-1]}_query")
-
 
 async def destroy_server(guild_id):
     """Delete all records of a server from the db"""
@@ -106,9 +102,6 @@ async def destroy_server(guild_id):
     await conn.execute(query, guild_id)
 
     query = "DELETE FROM userroles WHERE server_id = $1"
-    await conn.execute(query, guild_id)
-
-    query = "DELETE FROM spammers WHERE server_id = $1"
     await conn.execute(query, guild_id)
 
     log.info("Destroyed server [{guild_id}]")

@@ -24,6 +24,61 @@ class Stats(commands.Cog):
         self.bot = bot
 
     @decorators.command(
+        aliases=['flags'],
+        brief="Show all the badges a user has",
+        implemented="2021-06-04 01:06:21.329396",
+        updated="2021-06-04 01:06:21.329396",
+        examples="""
+                {0}badges @Hecate
+                {0}flags 708584008065351681
+                """
+    )
+    async def badges(self, ctx, *, user: converters.DiscordUser = None):
+        """
+        Usage: {0}badges [user]
+        Alias: {0}flags
+        Output: Shows all the badges a user has
+        Notes: Will default to you if no user is passed.
+        """
+        if user is None:
+            user = ctx.author
+        if user.bot:
+            raise commands.BadArgument(f"`{user}` is a bot account.")
+        badges = []
+        if user.public_flags.staff:
+            badges.append(self.bot.emote_dict['staff'])
+        if user.public_flags.partner:
+            badges.append(self.bot.emote_dict['partner'])
+        if user.public_flags.hypesquad:
+            badges.append(self.bot.emote_dict['hypesquad'])
+        if user.public_flags.hypesquad_balance:
+            badges.append(self.bot.emote_dict['balance'])
+        if user.public_flags.hypesquad_bravery:
+            badges.append(self.bot.emote_dict['bravery'])
+        if user.public_flags.hypesquad_brilliance:
+            badges.append(self.bot.emote_dict['brilliance'])
+        if user.public_flags.bug_hunter:
+            badges.append(self.bot.emote_dict['bughunter']) 
+        if user.public_flags.bug_hunter_level_2:
+            badges.append(self.bot.emote_dict['bughuntergold'])
+        if user.public_flags.verified_bot_developer or user.public_flags.early_verified_bot_developer:
+            badges.append(self.bot.emote_dict['dev'])
+        if user.public_flags.early_supporter:
+            badges.append(self.bot.emote_dict['supporter'])
+        if hasattr(user, "premium_since") and user.premium_since is not None:
+            badges.append(self.bot.emote_dict['nitro'])
+            badges.append(self.bot.emote_dict['boost'])
+        else:
+            if user.is_avatar_animated():
+                badges.append(self.bot.emote_dict['nitro'])
+        if isinstance(user, discord.Member) and user.premium_since is not None:
+            badges.append(self.bot.emote_dict['nitro'])
+            badges.append(self.bot.emote_dict['boost'])
+        if not badges:
+            return await ctx.fail(f"User `{user}` has no badges.")
+        await ctx.success(f"`{user}'s` badges: {' '.join(badges)}")
+
+    @decorators.command(
         aliases=["ci"],
         brief="Get info about a channel.",
         implemented="2021-03-25 01:42:04.359878",
@@ -179,6 +234,15 @@ class Stats(commands.Cog):
             "dnd": f"{self.bot.emote_dict['dnd']} Do Not Disturb",
             "idle": f"{self.bot.emote_dict['idle']} Idle",
         }
+        if member.id in self.bot.owner_ids:
+            emoji = self.bot.emote_dict["dev"]
+        elif member.id == ctx.guild.owner.id:
+            emoji = self.bot.emote_dict["owner"]
+        elif member.bot:
+            emoji = self.bot.emote_dict["bot"]
+        else:
+            emoji = self.bot.emote_dict["user"]
+
         embed = discord.Embed(color=self.bot.constants.embed)
         embed.set_author(name=f"{member}", icon_url=member.avatar_url)
         embed.set_thumbnail(url=member.avatar_url)
@@ -187,7 +251,7 @@ class Stats(commands.Cog):
         )
         embed.add_field(
             name="Nickname",
-            value=f"{self.bot.emote_dict['owner'] if member.id == ctx.guild.owner.id else self.bot.emote_dict['bot'] if member.bot else ''} {member.display_name}",
+            value=f"{emoji} {member.display_name}",
         )
         embed.add_field(
             name="Messages", value=f"{self.bot.emote_dict['messages']}  {messages[0]}"

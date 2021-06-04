@@ -227,7 +227,9 @@ class Utility(commands.Cog):
             Defaults to me if no bot is specified.
         """
         if not bot:
-            await ctx.send_or_reply("<"+ discord.utils.oauth_url(self.bot.user.id) + ">")
+            await ctx.send_or_reply(
+                "<" + discord.utils.oauth_url(self.bot.user.id) + ">"
+            )
             return
         if permissions:
             permissions = discord.Permissions(permissions)
@@ -301,9 +303,7 @@ class Utility(commands.Cog):
                 """,
     )
     @checks.bot_has_perms(embed_links=True)
-    async def gtoken(
-        self, ctx, user: converters.DiscordUser = None
-    ):
+    async def gtoken(self, ctx, user: converters.DiscordUser = None):
         """
         Usage: {0}gtoken <user>
         Aliases: {0}gt, {0}generatetoken
@@ -1605,7 +1605,6 @@ class Utility(commands.Cog):
         if msg is None:
             return
         embed.description = msg
-
 
         m = await ctx.send_or_reply(
             "Enter your embed's image URL (must be a valid http(s) URL):"

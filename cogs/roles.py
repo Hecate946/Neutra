@@ -105,7 +105,9 @@ class Roles(commands.Cog):
                     failed.append((role.name, res))
                     continue
                 if role in target.roles:
-                    failed.append((role.name, f"User `{target}` already has the role `{role}`"))
+                    failed.append(
+                        (role.name, f"User `{target}` already has the role `{role}`")
+                    )
                     continue
                 try:
                     await target.add_roles(role, reason="Role added by command")
@@ -148,7 +150,7 @@ class Roles(commands.Cog):
         """
         if not len(users) or not len(roles):
             return await ctx.usage()
-       
+
         role_list = []
         target_list = []
         failed = []
@@ -160,7 +162,9 @@ class Roles(commands.Cog):
                     failed.append((role.name, res))
                     continue
                 if role in target.roles:
-                    failed.append((role.name, f"User `{target}` does not have the role `{role}`"))
+                    failed.append(
+                        (role.name, f"User `{target}` does not have the role `{role}`")
+                    )
                     continue
                 try:
                     await target.remove_roles(role, reason="Role removed by command")
@@ -393,7 +397,7 @@ class Roles(commands.Cog):
         Output: Counts all server roles
         """
         await ctx.send_or_reply(
-            self.bot.emote_dict['graph']
+            self.bot.emote_dict["graph"]
             + " This server has {:,} total roles.".format(len(ctx.guild.roles) - 1)
         )
 
@@ -515,7 +519,9 @@ class Roles(commands.Cog):
         implemented="2021-05-16 15:06:06.479013",
         updated="2021-05-31 05:13:52.253369",
     )
-    async def _add(self, ctx, option: converters.MassRoleConverter, *, role: converters.DiscordRole):
+    async def _add(
+        self, ctx, option: converters.MassRoleConverter, *, role: converters.DiscordRole
+    ):
         """
         Usage: {0}role add <option> <role>
         Permission: Manage Roles
@@ -574,7 +580,6 @@ class Roles(commands.Cog):
             targets = [bot for bot in bots if role not in bot.roles]
             await self.do_massrole(ctx, "add", targets, role, "bot")
 
-
     @_role.group(
         name="remove",
         aliases=["rm", "rem"],
@@ -584,7 +589,9 @@ class Roles(commands.Cog):
         invoke_without_command=True,
         case_insensitive=True,
     )
-    async def _remove(self, ctx, option: converters.MassRoleConverter, *, role: converters.DiscordRole):
+    async def _remove(
+        self, ctx, option: converters.MassRoleConverter, *, role: converters.DiscordRole
+    ):
         """
         Usage: {0}role remove <option> <role>
         Aliases: {0}role rm, {0}role rem
@@ -642,7 +649,6 @@ class Roles(commands.Cog):
             bots = [m for m in ctx.guild.members if m.bot]
             targets = [bot for bot in bots if role in bot.roles]
             await self.do_massrole(ctx, "remove", targets, role, "bot")
-
 
     @decorators.command(
         aliases=["trole"],

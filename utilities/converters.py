@@ -764,10 +764,12 @@ class BotActivity(commands.Converter):
             raise commands.BadArgument(f"**Invalid Activity.**{completed}")
         return activity
 
+
 class MassRoleConverter(commands.Converter):
     """
     Converter for massrole command
     """
+
     async def convert(self, ctx, argument):
         role_options = ["must be a valid role.", "e.g. @Helper"]
         all_options = ["all", "everyone"]
@@ -797,7 +799,9 @@ class MassRoleConverter(commands.Converter):
                 table.set_columns(headers)
                 table.add_rows(rows)
                 render = table.render()
-                completed = f"```sml\nVALID {str(ctx.command).upper()} OPTIONS:\n{render}```"
+                completed = (
+                    f"```sml\nVALID {str(ctx.command).upper()} OPTIONS:\n{render}```"
+                )
                 raise commands.BadArgument(f"**Invalid Option.**{completed}")
             return option
 

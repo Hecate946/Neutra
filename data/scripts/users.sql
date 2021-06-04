@@ -43,13 +43,6 @@ CREATE TABLE IF NOT EXISTS tracker (
     action TEXT
 );
 
-CREATE TABLE IF NOT EXISTS spammers (
-    user_id BIGINT,
-    server_id BIGINT,
-    spamcount BIGINT,
-    UNIQUE(user_id, server_id)
-);
-
 CREATE TABLE IF NOT EXISTS userstatus (
     user_id BIGINT PRIMARY KEY,
     online DOUBLE PRECISION DEFAULT 0 NOT NULL,

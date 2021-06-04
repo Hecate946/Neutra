@@ -90,7 +90,9 @@ class Help(commands.Cog):
                 await msg.clear_reactions()
             except Exception:  # No perms to clear rxns, delete manually.
                 try:
-                    await msg.remove_reaction(self.bot.emote_dict["trash"], self.bot.user)
+                    await msg.remove_reaction(
+                        self.bot.emote_dict["trash"], self.bot.user
+                    )
                 except discord.NotFound:  # Message already deleted
                     return
 
@@ -953,7 +955,7 @@ class Help(commands.Cog):
         examples="""
                 commandsearch cmd
                 cmdsearch emoj
-                """
+                """,
     )
     async def commandsearch(self, ctx, search: str):
         """
@@ -964,9 +966,14 @@ class Help(commands.Cog):
             commands based off a search query.
             Outputs the results in tabular format.
         """
-        option_list = utils.disambiguate(search, [c for x in self.bot.commands for c in x.aliases], None, 10)
+        option_list = utils.disambiguate(
+            search, [c for x in self.bot.commands for c in x.aliases], None, 10
+        )
         title_str = f"{self.bot.emote_dict['search']} **Similar command search results from `{search}`**"
-        rows = [(idx, search['result'], f"{search['ratio']:.2%}") for idx, search in enumerate(option_list, start=1)]
+        rows = [
+            (idx, search["result"], f"{search['ratio']:.2%}")
+            for idx, search in enumerate(option_list, start=1)
+        ]
         table = formatting.TabularData()
         table.set_columns(["INDEX", "COMMAND", "SIMILARITY"])
         table.add_rows(rows)
@@ -982,7 +989,7 @@ class Help(commands.Cog):
         examples="""
                 {0}aliases help
                 {0}alias emojistats
-                """
+                """,
     )
     async def aliases(self, ctx, command: converters.DiscordCommand):
         """

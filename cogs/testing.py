@@ -11,14 +11,17 @@ from utilities import decorators
 from utilities import utils
 from datetime import datetime
 
+
 def setup(bot):
     bot.add_cog(Testing(bot))
     slash = SlashClient(bot)
+
 
 class Testing(commands.Cog):
     """
     A cog for testing features
     """
+
     def __init__(self, bot):
         self.bot = bot
         self.avatar_batch = []
@@ -29,18 +32,18 @@ class Testing(commands.Cog):
         self.inserter.start()
         self.dispatch_avatars.start()
 
-
     @decorators.command()
     async def archive(self, ctx):
-        #await self.insertion()
+        # await self.insertion()
         query = """
                 SELECT user_id, avatar
                 FROM testavs LIMIT 1;
                 """
         record = await self.bot.cxn.fetchrow(query)
         print(record)
-        await ctx.send_or_reply(f"https://img.discord.wf/avatars/{record['user_id']}/{record['avatar']}.png?size=1024")
-
+        await ctx.send_or_reply(
+            f"https://img.discord.wf/avatars/{record['user_id']}/{record['avatar']}.png?size=1024"
+        )
 
     async def insertion(self):
         query = """
@@ -50,18 +53,21 @@ class Testing(commands.Cog):
                 AS x(user_id BIGINT, avatar TEXT);
                 """
         for user in self.bot.users:
-            async with self.bot.session.get(f"https://img.discord.wf/avatars/{user.id}/{user.avatar}.png") as resp:
+            async with self.bot.session.get(
+                f"https://img.discord.wf/avatars/{user.id}/{user.avatar}.png"
+            ) as resp:
                 print(resp.content)
-            self.avs.append({
-                "user_id": user.id,
-                "avatar": user.avatar,
-            })
+            self.avs.append(
+                {
+                    "user_id": user.id,
+                    "avatar": user.avatar,
+                }
+            )
 
         data = json.dumps(self.avs)
         await self.bot.cxn.execute(query, data)
 
         print("completed")
-
 
     @commands.command()
     async def wut(self, ctx):
@@ -70,26 +76,13 @@ class Testing(commands.Cog):
         await ctx.buttons("This message has buttons!")
 
     @commands.command()
-    async def a(self, ctx, role:discord.Role):
+    async def a(self, ctx, role: discord.Role):
         st = time.time()
         users = sum(1 for m in role.guild.members if m._roles.has(role.id))
         await ctx.send(str(time.time() - st))
         st = time.time()
         users = sum(1 for m in role.guild.members if role in m.roles)
         await ctx.send(str(time.time() - st))
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -108,7 +101,9 @@ class Testing(commands.Cog):
                         dfile = discord.File(data, filename=f"{after.id}.png")
                         self.queue.put_nowait(dfile)
                     except Exception as e:
-                        await self.bot.logging_webhook.send(f"Error in avatar_batcher: {e}")
+                        await self.bot.logging_webhook.send(
+                            f"Error in avatar_batcher: {e}"
+                        )
                         await self.bot.logging_webhook.send(
                             "```prolog\n" + str(traceback.format_exc()) + "```"
                         )
@@ -126,8 +121,6 @@ class Testing(commands.Cog):
                 data = json.dumps(self.avatar_batch)
                 await self.bot.cxn.execute(query, data)
                 self.avatar_batch.clear()
-
-
 
     @tasks.loop(seconds=0.0)
     async def dispatch_avatars(self):

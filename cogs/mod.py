@@ -973,8 +973,8 @@ class Mod(commands.Cog):
     @commands.guild_only()
     async def cleanup(self, ctx, search=100):
         """
-        Usage: -cleanup [search]
-        Alias: -clean
+        Usage: {0}cleanup [search]
+        Alias: {0}clean
         Output: Cleans up the bot's messages from the channel.
         Notes:
             If a search number is specified, it searches that many messages to delete.

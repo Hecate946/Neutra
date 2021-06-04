@@ -74,7 +74,7 @@ class Info(commands.Cog):
                 WHERE client_id = $1;
                 """
         v = await self.bot.cxn.fetchval(query, self.bot.user.id)
-        version = ".".join(str(round(v, 1)).replace(".",""))
+        version = ".".join(str(round(v, 1)).replace(".", ""))
         return version
 
     @decorators.command(
@@ -657,26 +657,21 @@ class Info(commands.Cog):
             to invite me to your server
         """
         button_row = ActionRow(
-            Button(
-                style=ButtonStyle.link,
-                label="Recommended",
-                url=self.bot.oauth
-            ),
+            Button(style=ButtonStyle.link, label="Recommended", url=self.bot.oauth),
             Button(
                 style=ButtonStyle.link,
                 label="Administrator",
                 url=discord.utils.oauth_url(
-                    self.bot.user.id,
-                    permissions=discord.Permissions(8)
-                )
+                    self.bot.user.id, permissions=discord.Permissions(8)
+                ),
             ),
             Button(
                 style=ButtonStyle.link,
                 label="Default",
                 url=discord.utils.oauth_url(
                     self.bot.user.id,
-                )
-            )
+                ),
+            ),
         )
         await ctx.reply(
             "Select an invite link from the options below to invite me to your server.",

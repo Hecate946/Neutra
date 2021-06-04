@@ -531,7 +531,6 @@ class Batch(commands.Cog):
             async with self.batch_lock:
                 self.emoji_batch[message.guild.id].update(map(int, matches))
 
-
     @commands.Cog.listener()
     @decorators.wait_until_ready()
     @decorators.event_check(lambda s, c, u, w: not u.bot)

@@ -582,8 +582,9 @@ class Files(commands.Cog):
             chan = ctx
 
         mess = await ctx.send_or_reply(
-            "{} Saving logs to **{}**..."
-            .format(self.bot.emote_dict['loading'], log_file),
+            "{} Saving logs to **{}**...".format(
+                self.bot.emote_dict["loading"], log_file
+            ),
         )
 
         counter = 0
@@ -613,7 +614,10 @@ class Files(commands.Cog):
 
         await mess.edit(content="Uploading `{}`...".format(log_file))
         try:
-            await ctx.author.send(f"**{self.bot.emote_dict['graph']} {messages} latest messages in {ctx.channel.mention}**", file=discord.File(data, filename=log_file))
+            await ctx.author.send(
+                f"**{self.bot.emote_dict['graph']} {messages} latest messages in {ctx.channel.mention}**",
+                file=discord.File(data, filename=log_file),
+            )
         except Exception:
             await ctx.send_or_reply(
                 file=discord.File(data, filename=log_file),
