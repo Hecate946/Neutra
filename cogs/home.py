@@ -5,6 +5,7 @@ import PIL as pillow
 from datetime import datetime
 from discord.ext import commands
 
+from utilities import converters
 from utilities import decorators
 
 HOME = 805638877762420786  # Support Server
@@ -61,11 +62,10 @@ class Home(commands.Cog):
         blue.paste(im=composite, box=(0, 0), mask=composite)
         banner.paste(im=blue, box=(30, 30), mask=blue.split()[3])
 
-        text = f"{str(member)}\nWelcome to {member.guild.name}"
+        text = u"{}\nWelcome to {}".format(str(member), member.guild.name)
         draw = pillow.ImageDraw.Draw(banner)
-        font = pillow.ImageFont.truetype("./data/assets/Roboto-Black.ttf", 30)
-        draw.text((170, 60), text, (211, 211, 211), font=font)
-
+        font = pillow.ImageFont.truetype("./data/assets/FreeSansBold.ttf", 30, encoding="utf-8")
+        draw.text((170, 56), text, (211, 211, 211), font=font)
         buffer = io.BytesIO()
         banner.save(buffer, "png")  # 'save' function for PIL
         buffer.seek(0)
@@ -84,3 +84,12 @@ class Home(commands.Cog):
         embed.set_image(url="attachment://welcome.png")
         embed.set_footer(text=f"Server Population: {member.guild.member_count} ")
         await self.welcomer.send(f"{member.mention}", file=dfile, embed=embed)
+
+    @decorators.command(
+        hidden=True,
+        brief="Test the welcome"
+    )
+    async def pil(self, ctx, user: converters.DiscordMember = None):
+        if user is None:
+            user = ctx.author
+        await self.welcome(user)
