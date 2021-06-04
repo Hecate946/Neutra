@@ -319,10 +319,12 @@ whohas: Show the people who have a role.
 ```
 
 ### Stats
-#### Module for server stats (16 Commands)
+#### Module for server stats (17 Commands)
 
 ```yaml
 admins: Show the server admins.
+
+badges: Show all the badges a user has
 
 channelinfo: Get info about a channel.
 
@@ -379,7 +381,7 @@ utcnow: Show the current utc time.
 ```
 
 ### Tracking
-#### Module for all user stats (20 Commands)
+#### Module for all user stats (19 Commands)
 
 ```yaml
 activity: Show the most active server users.
@@ -407,8 +409,6 @@ nicknames: Show a user's past nicknames.
 platform: Show a user's discord platform.
 
 seen: Check when a user was last seen.
-
-spammers: Show all recorded spammers.
 
 status: Show a user's discord status.
 
