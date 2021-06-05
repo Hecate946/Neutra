@@ -328,7 +328,7 @@ class Botconfig(commands.Cog):
         self,
         ctx,
         _objects: commands.Greedy[
-            typing.Union[discord.User, converters.DiscordGuild]
+            typing.Union[discord.User, converters.DiscordGuild, discord.Object]
         ] = None,
         *,
         reason: typing.Optional[str] = None,
