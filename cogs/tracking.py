@@ -1091,7 +1091,6 @@ class Tracking(commands.Cog):
     )
     @commands.guild_only()
     @checks.bot_has_perms(embed_links=True)
-    @checks.has_perms(manage_messages=True)
     async def activity(self, ctx, unit: str = "month"):
         """
         Usage: {0}activity [unit of time]
