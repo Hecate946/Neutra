@@ -130,7 +130,6 @@ class Utility(commands.Cog):
                 if user is not None
             ]
             total.extend(users)
-
         count = len(collections.Counter(total))
         rows = list(itertools.zip_longest(*formats.values(), fillvalue=""))
         pluralize = "" if count == 1 else "s"
@@ -1851,7 +1850,7 @@ class Utility(commands.Cog):
                 self.bot.emote_dict["failed"],
                 formula.replace("*", "\\*").replace("`", "\\`").replace("_", "\\_"),
             )
-            msg += "```yaml\n" + ctx.command.help + "```"
+            msg += "```yaml\n" + ctx.command.help.format(ctx.prefix) + "```"
             return await ctx.send_or_reply(msg)
 
         if int(answer) == answer:
