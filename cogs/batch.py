@@ -470,7 +470,7 @@ class Batch(commands.Cog):
                     {
                         "user_id": after.id,
                         "server_id": after.guild.id,
-                        "nickname": after.display_name,
+                        "nickname": before.display_name,
                     }
                 )
 
