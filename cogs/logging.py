@@ -81,7 +81,7 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
-    @decorators.event_check(lambda s, m: m.guild and not m.bot)
+    @decorators.event_check(lambda s, m: m.guild and not m.author.bot)
     async def on_message(self, message):
         webhook = await self.get_webhook(guild=message.guild)
         if webhook is None:
