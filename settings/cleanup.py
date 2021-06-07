@@ -36,9 +36,6 @@ async def purge_discrepancies(guilds):
     await find_discrepancy(query, guilds)
     print(f"{query.split()[-1]}_query")
 
-    query = "SELECT server_id FROM ignored"
-    await find_discrepancy(query, guilds)
-
     query = "SELECT server_id FROM lockedchannels"
     await find_discrepancy(query, guilds)
     print(f"{query.split()[-1]}_query")
@@ -78,9 +75,6 @@ async def destroy_server(guild_id):
     await conn.execute(query, guild_id)
 
     query = "DELETE FROM logging WHERE server_id = $1"
-    await conn.execute(query, guild_id)
-
-    query = "DELETE FROM ignored WHERE server_id = $1"
     await conn.execute(query, guild_id)
 
     query = "DELETE FROM lockedchannels WHERE server_id = $1"

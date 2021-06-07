@@ -187,7 +187,6 @@ async def load_settings():
             "autoroles": autoroles,
             "antiinvite": antiinvite,
             "reassign": reassign,
-            "ignored_users": {},
             "logging": {},
         }
 
@@ -202,19 +201,6 @@ async def load_settings():
         prefixes = x[1]
 
         settings[server_id]["prefixes"] = prefixes
-
-    # Load the ignored users
-    query = """SELECT (server_id, user_id, react) FROM ignored;"""
-    results = await postgres.fetch(query)
-
-    if results == []:
-        pass
-    for x in results:
-        server_id = x[0][0]
-        user_id = x[0][1]
-        react = x[0][2]
-
-        settings[server_id]["ignored_users"][user_id] = react
 
     # Load the logging configuration
 
@@ -318,7 +304,6 @@ async def fix_server(server):
             "autoroles": autoroles,
             "antiinvite": antiinvite,
             "reassign": reassign,
-            "ignored_users": {},
             "logging": {},
         }
 
@@ -335,19 +320,6 @@ async def fix_server(server):
         settings[server_id]["prefixes"] = prefixes
     except TypeError:  # No custom prefixes, must be new server
         pass
-
-    # Load the ignored users
-    query = """SELECT (server_id, user_id, react) FROM ignored WHERE server_id = $1;"""
-    results = await postgres.fetch(query, server)
-
-    if results == []:
-        pass
-    for x in results:
-        server_id = x[0][0]
-        user_id = x[0][1]
-        react = x[0][2]
-
-        settings[server_id]["ignored_users"][user_id] = react
 
     # Load the logging configuration
     query = """SELECT * FROM logging WHERE server_id = $1;"""

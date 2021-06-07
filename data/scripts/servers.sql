@@ -34,7 +34,6 @@ CREATE TABLE IF NOT EXISTS logging (
     discord_invites BOOLEAN DEFAULT True,
     server_updates BOOLEAN DEFAULT True,
     emojis BOOLEAN DEFAULT True,
-    ignored_channels TEXT,
     logchannel BIGINT,
     logging_webhook_id VARCHAR(100)
 );
