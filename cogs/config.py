@@ -153,6 +153,9 @@ class Config(commands.Cog):
                 {0}plonk #images Hecate#3523
                 """,
     )
+    @commands.cooldown(2.0, 10, commands.BucketType.guild)
+    @commands.guild_only()
+    @checks.bot_has_perms(external_emojis=True)
     @checks.has_perms(manage_guild=True)
     async def ignore(self, ctx, *entities: converters.ChannelOrRoleOrMember):
         """
@@ -185,6 +188,9 @@ class Config(commands.Cog):
 
     @ignore.command(name="list")
     @commands.cooldown(2.0, 30.0, commands.BucketType.guild)
+    @commands.guild_only()
+    @checks.bot_has_perms(external_emojis=True)
+    @checks.has_perms(manage_guild=True)
     async def ignore_list(self, ctx, dm: converters.Flag = None):
         """
         Usage: {0}ignore list
@@ -244,6 +250,10 @@ class Config(commands.Cog):
             await ctx.send_or_reply(content, file=file)
 
     @ignore.command(name="all", brief="Ignore all server users.")
+    @commands.cooldown(2.0, 10, commands.BucketType.guild)
+    @commands.guild_only()
+    @checks.bot_has_perms(external_emojis=True)
+    @checks.has_perms(manage_guild=True)
     async def _all(self, ctx):
         """
         Usage: {0}ignore all
@@ -259,6 +269,9 @@ class Config(commands.Cog):
         await self.ignore_entities(ctx, [ctx.guild.default_role])
 
     @ignore.command(name="clear")
+    @commands.cooldown(2.0, 10, commands.BucketType.guild)
+    @commands.guild_only()
+    @checks.bot_has_perms(external_emojis=True)
     @checks.has_perms(manage_guild=True)
     async def ignore_clear(self, ctx):
         """
@@ -287,6 +300,9 @@ class Config(commands.Cog):
                 {0}unplonk #images Hecate#3523
                 """,
     )
+    @commands.cooldown(2.0, 10, commands.BucketType.guild)
+    @commands.guild_only()
+    @checks.bot_has_perms(external_emojis=True)
     @checks.has_perms(manage_guild=True)
     async def unignore(self, ctx, *entities: converters.ChannelOrRoleOrMember):
         """
@@ -315,6 +331,9 @@ class Config(commands.Cog):
         )
 
     @unignore.command(name="all", brief="Unignore all users, roles, and channels")
+    @commands.cooldown(2.0, 10, commands.BucketType.guild)
+    @commands.guild_only()
+    @checks.bot_has_perms(external_emojis=True)
     @checks.has_perms(manage_guild=True)
     async def unignore_all(self, ctx):
         """
@@ -383,6 +402,7 @@ class Config(commands.Cog):
         invoke_without_command=True,
         brief="Disable commands for users, roles, and channels.",
     )
+    @commands.cooldown(2.0, 10, commands.BucketType.guild)
     @commands.guild_only()
     @checks.bot_has_perms(external_emojis=True)
     @checks.has_perms(manage_guild=True)
@@ -427,6 +447,10 @@ class Config(commands.Cog):
     @disable.command(
         name="list", brief="Show all the disabled channels, roles, and users."
     )
+    @commands.cooldown(2.0, 10, commands.BucketType.guild)
+    @commands.guild_only()
+    @checks.bot_has_perms(external_emojis=True)
+    @checks.has_perms(manage_guild=True)
     async def disable_list(
         self,
         ctx,
@@ -484,7 +508,10 @@ class Config(commands.Cog):
             await ctx.send_or_reply(content, file=file)
 
     @disable.command(name="clear")
-    @commands.cooldown(2.0, 60, commands.BucketType.guild)
+    @commands.cooldown(2.0, 10, commands.BucketType.guild)
+    @commands.guild_only()
+    @checks.bot_has_perms(external_emojis=True)
+    @checks.has_perms(manage_guild=True)
     async def disable_clear(self, ctx):
         """
         Usage: {0}disable clear
@@ -504,6 +531,7 @@ class Config(commands.Cog):
         invoke_without_command=True,
         brief="Enable commands for users, roles, and channels.",
     )
+    @commands.cooldown(2.0, 10, commands.BucketType.guild)
     @commands.guild_only()
     @checks.bot_has_perms(external_emojis=True)
     @checks.has_perms(manage_guild=True)
@@ -545,8 +573,11 @@ class Config(commands.Cog):
             entity = ctx.guild
         await self.enable_command(ctx, entity, [str(c) for c in commands])
 
-    @enable.command()
-    @commands.cooldown(2.0, 60, commands.BucketType.guild)
+    @enable.command(name="all", brief="Enable all disabled commands")
+    @commands.cooldown(2.0, 10, commands.BucketType.guild)
+    @commands.guild_only()
+    @checks.bot_has_perms(external_emojis=True)
+    @checks.has_perms(manage_guild=True)
     async def enable_all(self, ctx):
         """
         Usage: {0}enable all
@@ -696,6 +727,9 @@ class Config(commands.Cog):
     @decorators.command(
         brief="Show ignored roles, users, and channels."
     )
+    @commands.cooldown(2.0, 10, commands.BucketType.guild)
+    @commands.guild_only()
+    @checks.bot_has_perms(external_emojis=True)
     @checks.has_perms(manage_guild=True)
     async def ignored(self, ctx, dm: converters.Flag = None):
         """
@@ -710,6 +744,9 @@ class Config(commands.Cog):
     @decorators.command(
         brief="Show disabled commands."
     )
+    @commands.cooldown(2.0, 10, commands.BucketType.guild)
+    @commands.guild_only()
+    @checks.bot_has_perms(external_emojis=True)
     @checks.has_perms(manage_guild=True)
     async def disabled(self, ctx, option: converters.ChannelOrRoleOrMemberOption = None, dm: converters.Flag = None):
         """

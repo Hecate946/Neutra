@@ -484,6 +484,7 @@ class Roles(commands.Cog):
                 """,
     )
     @commands.guild_only()
+    @commands.cooldown(2.0, 60, commands.BucketType.guild)
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(manage_roles=True)
     async def _role(self, ctx):
@@ -519,6 +520,10 @@ class Roles(commands.Cog):
         implemented="2021-05-16 15:06:06.479013",
         updated="2021-05-31 05:13:52.253369",
     )
+    @commands.guild_only()
+    @commands.cooldown(2.0, 60, commands.BucketType.guild)
+    @checks.bot_has_perms(manage_roles=True)
+    @checks.has_perms(manage_roles=True)
     async def _add(
         self, ctx, option: converters.MassRoleConverter, *, role: converters.DiscordRole
     ):
@@ -589,6 +594,10 @@ class Roles(commands.Cog):
         invoke_without_command=True,
         case_insensitive=True,
     )
+    @commands.guild_only()
+    @commands.cooldown(2.0, 60, commands.BucketType.guild)
+    @checks.bot_has_perms(manage_roles=True)
+    @checks.has_perms(manage_roles=True)
     async def _remove(
         self, ctx, option: converters.MassRoleConverter, *, role: converters.DiscordRole
     ):
@@ -661,6 +670,7 @@ class Roles(commands.Cog):
                 """,
     )
     @commands.guild_only()
+    @commands.cooldown(2.0, 60, commands.BucketType.guild)
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(manage_roles=True)
     async def temprole(
