@@ -1,3 +1,4 @@
+from math import perm
 import re
 import json
 import shlex
@@ -8,6 +9,7 @@ import discord
 
 from collections import Counter
 from discord.ext import commands
+from discord.ext.commands.core import check
 
 from utilities import utils
 from utilities import checks
@@ -568,7 +570,7 @@ class Mod(commands.Cog):
     ):
         if limit > 2000:
             return await ctx.send_or_reply(
-                content=f"Too many messages to search given ({limit}/2000)",
+                f"Too many messages to search given ({limit}/2000)",
             )
 
         if not before:
@@ -595,40 +597,39 @@ class Mod(commands.Cog):
         deleted = len(deleted)
         if message is True:
             msg = await ctx.send_or_reply(
-                content=f'{self.bot.emote_dict["trash"]} Deleted {deleted} message{"" if deleted == 1 else "s"}',
+                f"{self.bot.emote_dict['trash']} Deleted {deleted} message{'' if deleted == 1 else 's'}",
             )
-            await asyncio.sleep(7)
-            await ctx.message.delete()
-            await msg.delete()
+            await asyncio.sleep(5)
+            to_delete = [msg.id, ctx.message.id]
+            await ctx.channel.purge(check=lambda m: m.id in to_delete)
 
     @purge.command(brief="Purge messages with embeds.")
     async def embeds(self, ctx, search=100):
         """
-        Usage: -purge embeds [amount]
+        Usage: {0}purge embeds [amount]
         Output:
             Deletes all messages that
             contain embeds in them.
         Examples:
-            -purge embeds 2000
-            -prune embeds
+            {0}purge embeds 2000
+            {0}prune embeds
         """
         await self.do_removal(ctx, search, lambda e: len(e.embeds))
 
     @purge.command(brief="Purge messages with invites.", aliases=["ads"])
     async def invites(self, ctx, search=100):
         """
-        Usage: -purge invites [amount]
-        Alias: -purge ads
+        Usage: {0}purge invites [amount]
+        Alias: {0}purge ads
         Output:
             Deletes all messages with
             invite links in them.
         Examples:
-            -purge invites
-            -prune invites 125
+            {0}purge invites
+            {0}prune invites 125
         """
 
         def predicate(m):
-            print(self.dregex.search(m.content))
             return self.dregex.search(m.content)
 
         await self.do_removal(ctx, search, predicate)
@@ -636,21 +637,20 @@ class Mod(commands.Cog):
     @purge.command(aliases=["link", "url", "links"], brief="Purge messages with URLs.")
     async def urls(self, ctx, search=100):
         """
-        Usage: -purge urls [amount]
+        Usage: {0}purge urls [amount]
         Aliases:
-            -purge link
-            -purge links
-            -purge url
+            {0}purge link
+            {0}purge links
+            {0}purge url
         Output:
             Deletes all messages that
             contain URLs in them.
         Examples:
-            -purge urls
-            -prune urls 125
+            {0}purge urls
+            {0}prune urls 125
         """
 
         def predicate(m):
-            print(self.uregex.search(m.content))
             return self.uregex.search(m.content)
 
         await self.do_removal(ctx, search, predicate)
@@ -658,15 +658,15 @@ class Mod(commands.Cog):
     @purge.command(brief="Purge messages with attachments.", aliases=["attachments"])
     async def files(self, ctx, search=100):
         """
-        Usage: -purge files [amount]
+        Usage: {0}purge files [amount]
         Aliases:
-            -purge attachments
+            {0}purge attachments
         Output:
             Deletes all messages that
             contain attachments in them.
         Examples:
-            -purge attachments
-            -prune files 125
+            {0}purge attachments
+            {0}prune files 125
         """
         await self.do_removal(ctx, search, lambda e: len(e.attachments))
 
@@ -677,15 +677,15 @@ class Mod(commands.Cog):
         """
         Usage: -purge mentions [amount]
         Aliases:
-            -purge pings
-            -purge ping
-            -purge mention
+            {0}purge pings
+            {0}purge ping
+            {0}purge mention
         Output:
             Deletes all messages that
             contain user mentions in them.
         Examples:
-            -purge mentions
-            -prune pings 125
+            {0}purge mentions
+            {0}prune pings 125
         """
         await self.do_removal(
             ctx, search, lambda e: len(e.mentions) or len(e.role_mentions)
@@ -696,17 +696,17 @@ class Mod(commands.Cog):
     )
     async def images(self, ctx, search=100):
         """
-        Usage: -purge mentions [amount]
+        Usage: {0}purge mentions [amount]
         Aliases:
-            -purge pics
-            -purge pictures
-            -purge image
+            {0}purge pics
+            {0}purge pictures
+            {0}purge image
         Output:
             Deletes all messages that
             contain images in them.
         Examples:
-            -purge pictures
-            -prune images 125
+            {0}purge pictures
+            {0}prune images 125
         """
         await self.do_removal(
             ctx, search, lambda e: len(e.embeds) or len(e.attachments)
@@ -715,56 +715,52 @@ class Mod(commands.Cog):
     @purge.command(name="all", brief="Purge all messages.", aliases=["messages"])
     async def _remove_all(self, ctx, search=100):
         """
-        Usage: -purge all [amount]
+        Usage: {0}purge all [amount]
         Aliases:
-            -purge
-            -purge messages
+            {0}purge
+            {0}purge messages
         Output:
             Deletes all messages.
         Examples:
-            -purge
-            -prune 2000
-            -prune messages 125
+            {0}purge
+            {0}prune 2000
+            {0}prune messages 125
         """
         await self.do_removal(ctx, search, lambda e: True)
 
     @purge.command(brief="Purge messages sent by a user.", aliases=["member"])
-    async def user(self, ctx, member: converters.DiscordMember = None, search=100):
+    async def user(self, ctx, user: converters.DiscordMember, search=100):
         """
-        Usage: -purge user <user> [amount]
+        Usage: {0}purge user <user> [amount]
         Aliases:
-            -purge member
+            {0}purge member
         Output:
             Deletes all messages that
             were sent by the passed user.
         Examples:
-            -purge user
-            -prune member 125
+            {0}purge user
+            {0}prune member 125
         """
-        if member is None:
-            return await ctx.usage(f"<user> [amount]")
-        await self.do_removal(ctx, search, lambda e: e.author == member)
+        await self.do_removal(ctx, search, lambda e: e.author.id == user.id)
 
     @purge.command(brief="Customize purging messages.", aliases=["has"])
     async def contains(self, ctx, *, substr: str):
         """
-        Usage: -purge contains <string>
+        Usage: {0}purge contains <string>
         Alias:
-            -purge has
+            {0}purge has
         Output:
             Deletes all messages that
             contain the passed string.
         Examples:
-            -purge contains hello
-            -prune has no
+            {0}purge contains hello
+            {0}prune has no
         Notes:
             The string must a minimum
             of 2 characters in length.
         """
         if len(substr) < 2:
-            await ctx.fail(
-                content="The substring length must be at least 3 characters.",
-            )
+            await ctx.fail("The substring length must be at least 2 characters.")
         else:
             await self.do_removal(ctx, 100, lambda e: substr in e.content)
 
@@ -773,15 +769,15 @@ class Mod(commands.Cog):
     )
     async def _bots(self, ctx, search=100, prefix=None):
         """
-        Usage: -purge bots [amount] [prefix]
+        Usage: {0}purge bots [amount] [prefix]
         Alias:
-            -purge robots
+            {0}purge robots
         Output:
             Deletes all messages
             that were sent by bots.
         Examples:
-            -purge robots 200
-            -prune bote 150 >
+            {0}purge robots 200
+            {0}prune bots 150
         Notes:
             Specify an optional prefix to
             remove all messages that start
@@ -793,7 +789,6 @@ class Mod(commands.Cog):
             prefix = search
             search = 100
         if prefix:
-
             def predicate(m):
                 return (m.webhook_id is None and m.author.bot) or m.content.startswith(
                     prefix
@@ -811,15 +806,15 @@ class Mod(commands.Cog):
     )
     async def webhooks(self, ctx, search=100):
         """
-        Usage: -purge webhooks [amount]
+        Usage: {0}purge webhooks [amount]
         Alias:
-            -purge webhook
+            {0}purge webhook
         Output:
             Deletes all messages that
             were sent by webhooks.
         Examples:
-            -purge webhook
-            -prune webhooks 125
+            {0}purge webhook
+            {0}prune webhooks 125
         """
 
         def predicate(m):
@@ -834,19 +829,19 @@ class Mod(commands.Cog):
     )
     async def _users(self, ctx, search=100):
         """
-        Usage: -purge humans [amount]
+        Usage: {0}purge humans [amount]
         Aliases:
-            -purge users
-            -purge members
-            -purge people
+            {0}purge users
+            {0}purge members
+            {0}purge people
         Output:
             Deletes all messages
             sent by user accounts.
             Bot and webhook messages
             will not be deleted.
         Examples:
-            -purge humans
-            -prune people 125
+            {0}purge humans
+            {0}prune people 125
         """
 
         def predicate(m):
@@ -861,17 +856,17 @@ class Mod(commands.Cog):
     )
     async def _emojis(self, ctx, search=100):
         """
-        Usage: -purge emojis [amount]
+        Usage: {0}purge emojis [amount]
         Aliases:
-            -purge emotes
-            -purge emote
-            -purge emoji
+            {0}purge emotes
+            {0}purge emote
+            {0}purge emoji
         Output:
             Deletes all messages that
             contain custom discord emojis.
         Examples:
-            -purge emojis
-            -prune emotes 125
+            {0}purge emojis
+            {0}prune emotes 125
         """
         custom_emoji = re.compile(r"<a?:(.*?):(\d{17,21})>|[\u263a-\U0001f645]")
 
@@ -883,13 +878,13 @@ class Mod(commands.Cog):
     @purge.command(name="reactions", brief="Purge reactions from messages.")
     async def _reactions(self, ctx, search=100):
         """
-        Usage: -purge emojis [amount]
+        Usage: {0}purge emojis [amount]
         Output:
             Demoves all reactions from
             messages that were reacted on.
         Examples:
-            -purge reactions
-            -prune reactions 125
+            {0}purge reactions
+            {0}prune reactions 125
         Notes:
             The messages are not deleted.
             Only the reactions are removed.
@@ -904,38 +899,44 @@ class Mod(commands.Cog):
             if len(message.reactions):
                 total_reactions += sum(r.count for r in message.reactions)
                 await message.clear_reactions()
-        await ctx.send_or_reply(
-            f'{self.bot.emote_dict["trash"]} Successfully removed {total_reactions} reactions.',
-            delete_after=7,
+        msg = await ctx.send_or_reply(
+            f'{self.bot.emote_dict["trash"]} Successfully removed {total_reactions} reactions.'
         )
+        to_delete = [msg.id, ctx.message.id]
+        await ctx.channel.purge(check=lambda m: m.id in to_delete)
 
     @purge.command(
         name="until", aliases=["after"], brief="Purge messages after a message."
     )
-    async def _until(self, ctx, message_id: int):
+    async def _until(self, ctx, message: discord.Message):
         """
-        Usage: -purge until <message id>
-        Alias: -purge after
+        Usage: {0}purge until <message id>
+        Alias: {0}purge after
         Output:
             Purges all messages until
             the given message_id.
             Given ID is not deleted
         Examples:
-            -purge until 810377376269
-            -prune after 810377376269
+            {0}purge until 810377376269
+            {0}prune after 810377376269
         """
-        channel = ctx.message.channel
-        try:
-            message = await channel.fetch_message(message_id)
-        except commands.errors.NotFound:
-            await ctx.send_or_reply(
-                content="Message could not be found in this channel",
-            )
-            return
+        await self.do_removal(ctx, 100, None, after=message.id)
 
-        await ctx.message.delete()
-        await channel.purge(after=message)
-        return True
+    @purge.command(
+        name="between", brief="Purge messages between 2 messages."
+    )
+    async def _between(self, ctx, message1: discord.Message, message2: discord.Message):
+        """
+        Usage: {0}purge between <message id> <message id>
+        Output:
+            Purges all messages until
+            the given message_id.
+            Given ID is not deleted
+        Examples:
+            {0}purge until 810377376269
+            {0}prune after 810377376269
+        """
+        await self.do_removal(ctx, 100, None, before=message2.id, after=message1.id)
 
     async def _basic_cleanup_strategy(self, ctx, search):
         count = 0
@@ -946,8 +947,7 @@ class Mod(commands.Cog):
         return {"Bot": count}
 
     async def _complex_cleanup_strategy(self, ctx, search):
-        prefixes = tuple(self.bot.get_guild_prefixes(ctx.guild))  # thanks startswith
-
+        prefixes = tuple(self.bot.get_guild_prefixes(ctx.guild))
         def check(m):
             return m.author == ctx.me or m.content.startswith(prefixes)
 
@@ -1011,13 +1011,16 @@ class Mod(commands.Cog):
         em.color = self.bot.constants.embed
         em.description = desc
 
-        await ctx.send_or_reply(embed=em, delete_after=10)
+        msg = await ctx.send_or_reply(embed=em)
+        await asyncio.sleep(5)
+        to_delete = [msg.id, ctx.message.id]
+        await ctx.channel.purge(check=lambda m: m.id in to_delete)
 
     @decorators.command(brief="Set the slowmode for a channel")
     @commands.guild_only()
     @checks.bot_has_perms(manage_channels=True)
     @checks.has_perms(manage_channels=True)
-    async def slowmode(self, ctx, channel=None, time: float = None):
+    async def slowmode(self, ctx, channel: typing.Optional[discord.TextChannel] = None, time: float = None):
         """
         Usage: {0}slowmode [channel] [seconds]
         Permission: Manage Channels
@@ -1027,174 +1030,185 @@ class Mod(commands.Cog):
             If no slowmode is passed, will reset the slowmode.
         """
         if channel is None:
-            channel_obj = ctx.channel
-            time = 0.0
-        else:
-            try:
-                channel_obj = await commands.TextChannelConverter().convert(
-                    ctx, channel
-                )
-            except commands.ChannelNotFound:
-                channel_obj = ctx.channel
-                if channel.isdigit():
-                    time = float(channel)
-                else:
-                    time = 0.0
+            channel = ctx.channel
+        if time is None:
+            return await ctx.success(f"The current slowmode for {channel.mention} is `{channel.slowmode_delay}s`")
         try:
-            await channel_obj.edit(slowmode_delay=time)
+            await channel.edit(slowmode_delay=time)
         except discord.HTTPException as e:
-            await ctx.send_or_reply(
-                content=f'{self.bot.emote_dict["failed"]} Failed to set slowmode because of an error\n{e}',
-            )
+            await ctx.fail(f"Failed to set slowmode because of an error\n{e}")
         else:
-            await ctx.send_or_reply(
-                content=f'{self.bot.emote_dict["success"]} Slowmode for {channel_obj.mention} set to `{time}s`',
-            )
+            await ctx.success(f"Slowmode for {channel.mention} set to `{time}s`")
 
     @decorators.command(aliases=["lockdown", "lockchannel"], brief="Lock a channel")
     @commands.guild_only()
-    @checks.bot_has_perms(manage_channels=True, manage_roles=True)
+    @commands.bot_has_guild_permissions(manage_channels=True, manage_roles=True)
     @checks.has_perms(administrator=True)
-    async def lock(self, ctx, channel=None, minutes_: int = None):
+    async def lock(
+        self,
+        ctx,
+        channel: typing.Optional[discord.TextChannel] = None, *,
+        duration: humantime.UserFriendlyTime(commands.clean_content, default="\u2026") = None):
         """
-        Usage: -lock [channel] [minutes]
-        Aliases: -lockdown, -lockchannel
+        Usage: {0}lock [channel] [duration]
+        Aliases: {0}lockdown, {0}lockchannel
         Permission: Administrator
         Output:
-            Locked channel for the specified time. Infinite if not specified
-        Notes:
-            Max timed lock is 2 hours
-        """
-        if channel is None:
-            channel_obj = ctx.channel
-        else:
-            try:
-                channel_obj = await commands.TextChannelConverter().convert(
-                    ctx, channel
-                )
-            except commands.ChannelNotFound:
-                channel_obj = ctx.channel
-                if channel.isdigit():
-                    minutes_ = int(channel)
-                else:
-                    minutes_ = None
-        try:
-            channel = channel_obj
-            overwrites_everyone = channel.overwrites_for(ctx.guild.default_role)
-            my_overwrites = channel.overwrites_for(ctx.guild.me)
-            everyone_overwrite_current = overwrites_everyone.send_messages
-            msg = await ctx.send_or_reply(
-                content=f"Locking channel {channel.mention}...",
-            )
-            try:
-                await self.bot.cxn.execute(
-                    "INSERT INTO lockedchannels VALUES ($1, $2, $3, $4)",
-                    channel.id,
-                    ctx.guild.id,
-                    ctx.author.id,
-                    str(everyone_overwrite_current),
-                )
-            except asyncpg.UniqueViolationError:
-                return await msg.edit(
-                    content=f"{self.bot.emote_dict['failed']} Channel {channel.mention} is already locked."
-                )
-
-            my_overwrites.send_messages = True
-            overwrites_everyone.send_messages = False
-            await ctx.message.channel.set_permissions(
-                ctx.guild.default_role,
-                overwrite=overwrites_everyone,
-                reason=(
-                    utils.responsible(ctx.author, "Channel locked by command execution")
-                ),
-            )
-            if minutes_:
-                if minutes_ > 120:
-                    raise commands.BadArgument("Max timed lock is 120 minutes.")
-                elif minutes_ < 0:
-                    raise commands.BadArgument("Minutes must be greater than 0.")
-                minutes = minutes_
-
-                await msg.edit(
-                    content=f"{self.bot.emote_dict['lock']} Channel {channel.mention} locked for `{minutes}` minute{'' if minutes == 1 else 's'}. ID: `{channel.id}`"
-                )
-                await asyncio.sleep(minutes * 60)
-                await self.unlock(ctx, channel=channel, surpress=True)
-            else:
-                await msg.edit(
-                    content=f"{self.bot.emote_dict['lock']} Channel {channel.mention} locked. ID: `{channel.id}`"
-                )
-        except discord.Forbidden:
-            await msg.edit(
-                content=f"{self.bot.emote_dict['failed']} I have insufficient permission to lock channels."
-            )
-
-    @decorators.command(brief="Unlock a channel.", aliases=["unlockchannel"])
-    @commands.guild_only()
-    @checks.bot_has_perms(manage_channels=True)
-    @checks.has_perms(administrator=True)
-    async def unlock(self, ctx, channel: discord.TextChannel = None, surpress=False):
-        """
-        Usage: -unlock [channel]
-        Alias: -unlockchannel
-        Permission: Administrator
-        Output: Unlocks a previously locked channel
+            Locked channel for a specified duration.
+            Infinite if not specified
         """
         if channel is None:
             channel = ctx.channel
-        try:
-            locked = (
-                await self.bot.cxn.fetchrow(
-                    "SELECT channel_id FROM lockedchannels WHERE channel_id = $1",
-                    channel.id,
-                )
-                or (None)
-            )
-            if locked is None:
-                if surpress is True:
-                    return
-                else:
-                    return await ctx.send_or_reply(
-                        f"{self.bot.emote_dict['lock']} Channel {channel.mention} is already unlocked. ID: `{channel.id}`"
-                    )
+        await ctx.trigger_typing()
+        if not channel.permissions_for(ctx.guild.me).read_messages:
+            raise commands.BadArgument(f"I need to be able to read messages in {channel.mention}")
+        if not channel.permissions_for(ctx.guild.me).send_messages:
+            raise commands.BadArgument(f"I need to be able to send messages in {channel.mention}")
+        query = """
+                select (id)
+                from tasks
+                where event = 'lockdown'
+                and extra->'kwargs'->>'channel_id' = $1;
+                """
+        s = await self.bot.cxn.fetchval(query, str(channel.id))
+        if s:
+            raise commands.BadArgument(f"Channel {channel.mention} is already locked.")
 
-            msg = await ctx.send_or_reply(
-                content=f"Unlocking channel {channel.mention}...",
-            )
-            old_overwrites = await self.bot.cxn.fetchrow(
-                "SELECT everyone_perms FROM lockedchannels WHERE channel_id = $1",
-                channel.id,
-            )
-            everyone_perms = old_overwrites[0]
+        overwrites = channel.overwrites_for(ctx.guild.default_role)
+        perms = overwrites.send_messages
+        if perms is False:
+            raise commands.BadArgument(f"Channel {channel.mention} is already locked.")
 
-            if everyone_perms == "None":
-                everyone_perms = None
-            elif everyone_perms == "False":
-                everyone_perms = False
-            elif everyone_perms == "True":
-                everyone_perms = True
+        task = self.bot.get_cog("Tasks")
+        if not task:
+            raise commands.BadArgument("This feature is unavailable.")
 
-            overwrites_everyone = ctx.channel.overwrites_for(ctx.guild.default_role)
-            overwrites_everyone.send_messages = everyone_perms
-            await ctx.message.channel.set_permissions(
-                ctx.guild.default_role,
-                overwrite=overwrites_everyone,
-                reason=(
-                    utils.responsible(
-                        ctx.author, "Channel unlocked by command execution"
-                    )
-                ),
+        msg = await ctx.load(f"Locking channel {channel.mention}...")
+        bot_perms = channel.overwrites_for(ctx.guild.me)
+        if not bot_perms.send_messages:
+            bot_perms.send_messages = True
+            await channel.set_permissions(
+                ctx.guild.me,
+                overwrite=bot_perms,
+                reason="For channel lockdown."
             )
-            await self.bot.cxn.execute(
-                "DELETE FROM lockedchannels WHERE channel_id = $1", channel.id
+
+        endtime = duration.dt if duration else None
+
+        timer = await task.create_timer(
+            endtime,
+            "lockdown",
+            ctx.guild.id,
+            ctx.author.id,
+            channel.id,
+            perms=perms,
+            channel_id=channel.id,
+            connection=self.bot.cxn,
+            created=ctx.message.created_at,
+        )
+        overwrites.send_messages = False
+        reason = "Channel locked by command."
+        await channel.set_permissions(
+            ctx.guild.default_role,
+            overwrite=overwrites,
+            reason=await converters.ActionReason().convert(ctx, reason)
+        )
+
+        if duration and duration.dt:
+            timefmt = humantime.human_timedelta(
+                endtime, source=timer.created_at
             )
-            await msg.edit(
-                content=f"{self.bot.emote_dict['unlock']} Channel {channel.mention} unlocked. ID: `{channel.id}`"
-            )
-        except discord.errors.Forbidden:
-            await msg.edit(
-                content=f"{self.bot.emote_dict['failed']} I have insufficient permission to unlock channels."
-            )
+        else:
+            timefmt = None
+            
+        formatting = f" for {timefmt}" if timefmt else ""
+        await msg.edit(
+            content=f"{self.bot.emote_dict['lock']} Channel {channel.mention} locked{formatting}."
+        )
+
+    @decorators.command(brief="Unlock a channel.", aliases=["unlockchannel"])
+    @commands.guild_only()
+    @commands.bot_has_guild_permissions(manage_channels=True, manage_roles=True)
+    @checks.has_perms(administrator=True)
+    async def unlock(self, ctx, *, channel: discord.TextChannel = None):
+        if channel is None:
+            channel = ctx.channel
+        await ctx.trigger_typing()
+        if not channel.permissions_for(ctx.guild.me).read_messages:
+            raise commands.BadArgument(f"I need to be able to read messages in {channel.mention}")
+        if not channel.permissions_for(ctx.guild.me).send_messages:
+            raise commands.BadArgument(f"I need to be able to send messages in {channel.mention}")
+        query = """
+                select (id, extra)
+                from tasks
+                where event = 'lockdown'
+                and extra->'kwargs'->>'channel_id' = $1;
+                """
+        s = await self.bot.cxn.fetchval(query, str(channel.id))
+        if not s:
+            return await ctx.fail(f"Channel {channel.mention} is already unlocked.")
+
+        msg = await ctx.load(f"Unlocking {channel.mention}...")
+        task_id = s[0]
+        args_and_kwargs = json.loads(s[1])
+        perms = args_and_kwargs["kwargs"]["perms"]
+        reason = "Channel unlocked by command execution"
+
+        query = """
+                DELETE FROM tasks
+                WHERE id = $1
+                """
+        await self.bot.cxn.execute(query, task_id)
+
+        overwrites = channel.overwrites_for(ctx.guild.default_role)
+        overwrites.send_messages = perms
+        await channel.set_permissions(
+            ctx.guild.default_role,
+            overwrite=overwrites,
+            reason=await converters.ActionReason().convert(ctx, reason),
+        )
+        await msg.edit(
+            content=f"{self.bot.emote_dict['unlock']} Channel {channel.mention} unlocked."
+        )
+
+    @commands.Cog.listener()
+    @decorators.wait_until_ready()
+    async def on_lockdown_timer_complete(self, timer):
+        guild_id, mod_id, channel_id = timer.args
+        perms = timer.kwargs["perms"]
+
+        guild = self.bot.get_guild(guild_id)
+        if guild is None:
+            # RIP
+            return
+
+        channel = self.bot.get_channel(channel_id)
+        if channel is None:
+            # RIP
+            return
+
+        moderator = guild.get_member(mod_id)
+        if moderator is None:
+            try:
+                moderator = await self.bot.fetch_user(mod_id)
+            except:
+                # request failed somehow
+                moderator = f"Mod ID {mod_id}"
+            else:
+                moderator = f"{moderator} (ID: {mod_id})"
+        else:
+            moderator = f"{moderator} (ID: {mod_id})"
+
+        reason = (
+            f"Automatic unlock from timer made on {timer.created_at} by {moderator}."
+        )
+        overwrites = channel.overwrites_for(guild.default_role)
+        overwrites.send_messages = perms
+        await channel.set_permissions(
+            guild.default_role,
+            overwrite=overwrites,
+            reason=reason,
+        )
 
     @decorators.command(
         aliases=["tban"],
@@ -1381,10 +1395,7 @@ class Mod(commands.Cog):
 
         reason = duration.arg if duration and duration.arg != "…" else None
         endtime = duration.dt if duration else None
-        if reason:
-            dm = True
-        else:
-            dm = False
+        dm = True if reason else False
 
         failed = []
         muted = []
@@ -1404,7 +1415,8 @@ class Mod(commands.Cog):
             query = """
                     select (id)
                     from tasks
-                    where extra->'kwargs'->>'user_id' = $1;
+                    where event = 'mute'
+                    and extra->'kwargs'->>'user_id' = $1;
                     """
             s = await self.bot.cxn.fetchval(query, str(user.id))
             if s:
@@ -1497,7 +1509,8 @@ class Mod(commands.Cog):
             query = """
                     select (id, extra)
                     from tasks
-                    where extra->'kwargs'->>'user_id' = $1;
+                    where event = 'mute'
+                    and extra->'kwargs'->>'user_id' = $1;
                     """
             s = await self.bot.cxn.fetchval(query, str(user.id))
             if not s:

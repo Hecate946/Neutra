@@ -1,12 +1,12 @@
 import io
-import re
 import discord
 
 from datetime import datetime
 from discord.ext import commands
-from utilities import humantime
+
 from utilities import utils
 from utilities import checks
+from utilities import humantime
 from utilities import converters
 from utilities import decorators
 
@@ -26,7 +26,7 @@ class Logging(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.current_streamers = list()
+        self.current_streamers = []
 
     # Helper function to truncate oversized strings.
     def truncate(self, string, max_chars):
@@ -81,11 +81,8 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
+    @decorators.event_check(lambda s, m: m.guild and not m.bot)
     async def on_message(self, message):
-        if message.author.bot:
-            return
-        if not message.guild:
-            return
         webhook = await self.get_webhook(guild=message.guild)
         if webhook is None:
             return
@@ -113,11 +110,11 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_update(self, before, after):
-        webhook = await self.get_webhook(guild=after)
-
-        if webhook is None:
+        if not await self.check(snowflake=after.guild.id, event="server_updated"):
             return
-        if not self.bot.server_settings[after.id]["logging"]["server_updates"]:
+
+        webhook = await self.get_webhook(guild=after)
+        if not webhook:
             return
 
         audit = [
@@ -126,7 +123,7 @@ class Logging(commands.Cog):
                 action=discord.AuditLogAction.guild_update
             )
         ][0]
-        if not before.name == after.name:
+        if before.name != after.name:
             embed = discord.Embed(
                 description=f"**Author:**  `{audit.user.name}#{audit.user.discriminator}`\n\n"
                 f"**___Previous Name___**: ```fix\n{before.name}```"
@@ -139,28 +136,29 @@ class Logging(commands.Cog):
                 icon_url=UPDATED_MESSAGE,
             )
 
-            return await webhook.send(embed=embed)
-        embed = discord.Embed(
-            description=f"**Author:**  `{audit.user.name}#{audit.user.discriminator}`\n"
-            "**New Image below**",
-            color=self.bot.constants.embed,
-        )
+            await webhook.send(embed=embed)
+        if before.icon_url != after.icon_url:
+            embed = discord.Embed(
+                description=f"**Author:**  `{audit.user.name}#{audit.user.discriminator}`\n"
+                "**New Image below**",
+                color=self.bot.constants.embed,
+            )
 
-        embed.set_author(
-            name="Server Icon Edited",
-            icon_url=UPDATED_MESSAGE,
-        )
+            embed.set_author(
+                name="Server Icon Edited",
+                icon_url=UPDATED_MESSAGE,
+            )
 
-        embed.set_image(url=after.icon_url)
-        return await webhook.send(embed=embed)
+            embed.set_image(url=after.icon_url)
+            await webhook.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_guild_emojis_update(self, guild, before, after):
-        webhook = await self.get_webhook(guild=guild)
-        if webhook is None:
+        if not await self.check(snowflake=after.id, event="emojis"):
             return
 
-        if not self.bot.server_settings[guild.id]["logging"]["emojis"]:
+        webhook = await self.get_webhook(guild=guild)
+        if not webhook:
             return
 
         new = True if len(after) > len(before) else False
@@ -169,7 +167,6 @@ class Logging(commands.Cog):
         if not new:
             for emoji in before:
                 if emoji not in after:
-                    old_emoji = emoji
                     new = False
 
         embed = discord.Embed(
@@ -178,12 +175,8 @@ class Logging(commands.Cog):
             footer={"text": emoji.id},
         )
 
-        if new:
-            embed.description = (
-                f"**Emoji: <:{emoji.name}:{emoji.id}>\nName: `{emoji.name}`**\n",
-            )
-        else:
-            embed.description = f"**Name: `{emoji.name}`**\n"
+        embed.description = f"**Emoji: {str(emoji)}\nName: `{emoji.name}`**\n" if new else f"**Name: `{emoji.name}`**\n"
+
 
         embed.set_author(
             name=f"Emoji {'created' if new else 'deleted'}.",
@@ -362,11 +355,11 @@ class Logging(commands.Cog):
     # Create our custom event listener for all moderation actions
     @commands.Cog.listener()
     async def on_mod_action(self, ctx, targets):
-        webhook = await self.get_webhook(guild=ctx.guild)
-        if webhook is None:
+        if not await self.check(snowflake=ctx.guild.id, event="bans"):
             return
 
-        if not await self.check(snowflake=ctx.guild.id, event="bans"):
+        webhook = await self.get_webhook(guild=ctx.guild)
+        if not webhook:
             return
 
         embed = discord.Embed(

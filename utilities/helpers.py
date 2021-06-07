@@ -42,7 +42,10 @@ async def error_info(ctx, failed, option="User"):
         try:
             await mess.clear_reactions()
         except Exception:
-            await mess.remove_reaction(ctx.bot.emote_dict["error"], ctx.bot.user)
+            try:
+                await mess.remove_reaction(ctx.bot.emote_dict["error"], ctx.bot.user)
+            except Exception:
+                pass
 
 
 async def userperms(ctx):

@@ -101,6 +101,7 @@ class BotContext(commands.Context):
 class BotCommand(commands.Command):
     def __init__(self, func, **kwargs):
         super().__init__(func, **kwargs)
+        self.cooldown_after_parsing = True
         self.examples = kwargs.pop("examples", None)
         self.implemented = kwargs.pop("implemented", None)
         self.updated = kwargs.pop("updated", None)

@@ -1,3 +1,4 @@
+import asyncio
 import discord
 import functools
 from discord.ext import commands
@@ -34,6 +35,16 @@ def wait_until_ready(bot=None):
             bot = bot or self.bot
         if bot.ready:
             return True
+
+    return event_check(predicate)
+
+def defer_ratelimit(bot=None):
+    async def predicate(*args, **_):
+        nonlocal bot
+        self = args[0] if args else None
+        if isinstance(self, commands.Cog):
+            bot = bot or self.bot
+        await asyncio.sleep(1)
 
     return event_check(predicate)
 
