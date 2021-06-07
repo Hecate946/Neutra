@@ -153,7 +153,7 @@ class Config(commands.Cog):
                 {0}plonk #images Hecate#3523
                 """,
     )
-    @checks.is_mod()
+    @checks.has_perms(manage_guild=True)
     async def ignore(self, ctx, *entities: converters.ChannelOrRoleOrMember):
         """
         Usage: {0}ignore [entities...]
@@ -259,7 +259,7 @@ class Config(commands.Cog):
         await self.ignore_entities(ctx, [ctx.guild.default_role])
 
     @ignore.command(name="clear")
-    @checks.is_mod()
+    @checks.has_perms(manage_guild=True)
     async def ignore_clear(self, ctx):
         """
         Usage: {0}ignore clear
@@ -287,7 +287,7 @@ class Config(commands.Cog):
                 {0}unplonk #images Hecate#3523
                 """,
     )
-    @checks.is_mod()
+    @checks.has_perms(manage_guild=True)
     async def unignore(self, ctx, *entities: converters.ChannelOrRoleOrMember):
         """
         Usage: {0}unignore [entities...]
@@ -315,7 +315,7 @@ class Config(commands.Cog):
         )
 
     @unignore.command(name="all", brief="Unignore all users, roles, and channels")
-    @checks.is_mod()
+    @checks.has_perms(manage_guild=True)
     async def unignore_all(self, ctx):
         """
         Usage: {0}unignore all
@@ -385,7 +385,7 @@ class Config(commands.Cog):
     )
     @commands.guild_only()
     @checks.bot_has_perms(external_emojis=True)
-    @checks.is_mod()
+    @checks.has_perms(manage_guild=True)
     async def disable(
         self,
         ctx,
@@ -506,7 +506,7 @@ class Config(commands.Cog):
     )
     @commands.guild_only()
     @checks.bot_has_perms(external_emojis=True)
-    @checks.is_mod()
+    @checks.has_perms(manage_guild=True)
     async def enable(
         self,
         ctx,
@@ -696,6 +696,7 @@ class Config(commands.Cog):
     @decorators.command(
         brief="Show ignored roles, users, and channels."
     )
+    @checks.has_perms(manage_guild=True)
     async def ignored(self, ctx, dm: converters.Flag = None):
         """
         Usage: {0}ignored
@@ -709,6 +710,7 @@ class Config(commands.Cog):
     @decorators.command(
         brief="Show disabled commands."
     )
+    @checks.has_perms(manage_guild=True)
     async def disabled(self, ctx, option: converters.ChannelOrRoleOrMemberOption = None, dm: converters.Flag = None):
         """
         Usage: {0}disabled
