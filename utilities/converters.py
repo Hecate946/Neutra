@@ -474,6 +474,8 @@ DiscordChannel = typing.Union[
     commands.converter.TextChannelConverter,
     commands.converter.VoiceChannelConverter,
     commands.converter.CategoryChannelConverter,
+    commands.converter.StageChannelConverter,
+    commands.converter.StoreChannelConverter,
 ]
 
 

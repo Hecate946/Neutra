@@ -724,9 +724,7 @@ class Config(commands.Cog):
                 value = f'{title}\nhttps://hastebin.com/{js["key"]}.txt'
                 await ctx.success(value)
 
-    @decorators.command(
-        brief="Show ignored roles, users, and channels."
-    )
+    @decorators.command(brief="Show ignored roles, users, and channels.")
     @commands.cooldown(2.0, 10, commands.BucketType.guild)
     @commands.guild_only()
     @checks.bot_has_perms(external_emojis=True)
@@ -741,14 +739,17 @@ class Config(commands.Cog):
         """
         await ctx.invoke(self.ignore_list, dm=dm)
 
-    @decorators.command(
-        brief="Show disabled commands."
-    )
+    @decorators.command(brief="Show disabled commands.")
     @commands.cooldown(2.0, 10, commands.BucketType.guild)
     @commands.guild_only()
     @checks.bot_has_perms(external_emojis=True)
     @checks.has_perms(manage_guild=True)
-    async def disabled(self, ctx, option: converters.ChannelOrRoleOrMemberOption = None, dm: converters.Flag = None):
+    async def disabled(
+        self,
+        ctx,
+        option: converters.ChannelOrRoleOrMemberOption = None,
+        dm: converters.Flag = None,
+    ):
         """
         Usage: {0}disabled
         Permission Manage Server

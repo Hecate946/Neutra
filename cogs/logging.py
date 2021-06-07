@@ -175,8 +175,11 @@ class Logging(commands.Cog):
             footer={"text": emoji.id},
         )
 
-        embed.description = f"**Emoji: {str(emoji)}\nName: `{emoji.name}`**\n" if new else f"**Name: `{emoji.name}`**\n"
-
+        embed.description = (
+            f"**Emoji: {str(emoji)}\nName: `{emoji.name}`**\n"
+            if new
+            else f"**Name: `{emoji.name}`**\n"
+        )
 
         embed.set_author(
             name=f"Emoji {'created' if new else 'deleted'}.",

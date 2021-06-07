@@ -38,6 +38,7 @@ def wait_until_ready(bot=None):
 
     return event_check(predicate)
 
+
 def defer_ratelimit(bot=None):
     async def predicate(*args, **_):
         nonlocal bot

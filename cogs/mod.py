@@ -789,6 +789,7 @@ class Mod(commands.Cog):
             prefix = search
             search = 100
         if prefix:
+
             def predicate(m):
                 return (m.webhook_id is None and m.author.bot) or m.content.startswith(
                     prefix
@@ -922,9 +923,7 @@ class Mod(commands.Cog):
         """
         await self.do_removal(ctx, 100, None, after=message.id)
 
-    @purge.command(
-        name="between", brief="Purge messages between 2 messages."
-    )
+    @purge.command(name="between", brief="Purge messages between 2 messages.")
     async def _between(self, ctx, message1: discord.Message, message2: discord.Message):
         """
         Usage: {0}purge between <message id> <message id>
@@ -948,6 +947,7 @@ class Mod(commands.Cog):
 
     async def _complex_cleanup_strategy(self, ctx, search):
         prefixes = tuple(self.bot.get_guild_prefixes(ctx.guild))
+
         def check(m):
             return m.author == ctx.me or m.content.startswith(prefixes)
 
@@ -1020,7 +1020,12 @@ class Mod(commands.Cog):
     @commands.guild_only()
     @checks.bot_has_perms(manage_channels=True)
     @checks.has_perms(manage_channels=True)
-    async def slowmode(self, ctx, channel: typing.Optional[discord.TextChannel] = None, time: float = None):
+    async def slowmode(
+        self,
+        ctx,
+        channel: typing.Optional[discord.TextChannel] = None,
+        time: float = None,
+    ):
         """
         Usage: {0}slowmode [channel] [seconds]
         Permission: Manage Channels
@@ -1032,7 +1037,9 @@ class Mod(commands.Cog):
         if channel is None:
             channel = ctx.channel
         if time is None:
-            return await ctx.success(f"The current slowmode for {channel.mention} is `{channel.slowmode_delay}s`")
+            return await ctx.success(
+                f"The current slowmode for {channel.mention} is `{channel.slowmode_delay}s`"
+            )
         try:
             await channel.edit(slowmode_delay=time)
         except discord.HTTPException as e:
@@ -1040,15 +1047,29 @@ class Mod(commands.Cog):
         else:
             await ctx.success(f"Slowmode for {channel.mention} set to `{time}s`")
 
-    @decorators.command(aliases=["lockdown", "lockchannel"], brief="Lock a channel")
+    @decorators.command(
+        aliases=["lockdown", "lockchannel"],
+        brief="Prevent messages in a channel.",
+        implemented="2021-04-05 17:55:24.797692",
+        updated="2021-06-07 23:50:42.589677",
+        examples="""
+                {0}lock #chatting 2 mins
+                {0}lockchannel
+                {0}lockdown #help until 3 pm
+                """,
+    )
     @commands.guild_only()
     @commands.bot_has_guild_permissions(manage_channels=True, manage_roles=True)
     @checks.has_perms(administrator=True)
     async def lock(
         self,
         ctx,
-        channel: typing.Optional[discord.TextChannel] = None, *,
-        duration: humantime.UserFriendlyTime(commands.clean_content, default="\u2026") = None):
+        channel: typing.Optional[converters.DiscordChannel] = None,
+        *,
+        duration: humantime.UserFriendlyTime(
+            commands.clean_content, default="\u2026"
+        ) = None,
+    ):
         """
         Usage: {0}lock [channel] [duration]
         Aliases: {0}lockdown, {0}lockchannel
@@ -1059,11 +1080,28 @@ class Mod(commands.Cog):
         """
         if channel is None:
             channel = ctx.channel
+
+        def fmt(channel):
+            return (
+                str(type(channel).__name__)
+                .split(".")[-1]
+                .lower()
+                .replace("channel", " channels")
+            )
+
+        if not isinstance(channel, discord.TextChannel):
+            raise commands.BadArgument(f"I cannot lock {fmt(channel)}.")
+
         await ctx.trigger_typing()
         if not channel.permissions_for(ctx.guild.me).read_messages:
-            raise commands.BadArgument(f"I need to be able to read messages in {channel.mention}")
+            raise commands.BadArgument(
+                f"I need to be able to read messages in {channel.mention}"
+            )
         if not channel.permissions_for(ctx.guild.me).send_messages:
-            raise commands.BadArgument(f"I need to be able to send messages in {channel.mention}")
+            raise commands.BadArgument(
+                f"I need to be able to send messages in {channel.mention}"
+            )
+
         query = """
                 select (id)
                 from tasks
@@ -1088,9 +1126,7 @@ class Mod(commands.Cog):
         if not bot_perms.send_messages:
             bot_perms.send_messages = True
             await channel.set_permissions(
-                ctx.guild.me,
-                overwrite=bot_perms,
-                reason="For channel lockdown."
+                ctx.guild.me, overwrite=bot_perms, reason="For channel lockdown."
             )
 
         endtime = duration.dt if duration else None
@@ -1111,22 +1147,30 @@ class Mod(commands.Cog):
         await channel.set_permissions(
             ctx.guild.default_role,
             overwrite=overwrites,
-            reason=await converters.ActionReason().convert(ctx, reason)
+            reason=await converters.ActionReason().convert(ctx, reason),
         )
 
         if duration and duration.dt:
-            timefmt = humantime.human_timedelta(
-                endtime, source=timer.created_at
-            )
+            timefmt = humantime.human_timedelta(endtime, source=timer.created_at)
         else:
             timefmt = None
-            
+
         formatting = f" for {timefmt}" if timefmt else ""
         await msg.edit(
             content=f"{self.bot.emote_dict['lock']} Channel {channel.mention} locked{formatting}."
         )
 
-    @decorators.command(brief="Unlock a channel.", aliases=["unlockchannel"])
+    @decorators.command(
+        brief="Unlock a channel.",
+        aliases=["unlockchannel", "unlockdown"],
+        implemented="2021-04-05 17:55:24.797692",
+        updated="2021-06-07 23:50:42.589677",
+        examples="""
+                {0}unlock #chatting
+                {0}unlockchannel
+                {0}unlockdown #help
+                """,
+    )
     @commands.guild_only()
     @commands.bot_has_guild_permissions(manage_channels=True, manage_roles=True)
     @checks.has_perms(administrator=True)
@@ -1135,9 +1179,14 @@ class Mod(commands.Cog):
             channel = ctx.channel
         await ctx.trigger_typing()
         if not channel.permissions_for(ctx.guild.me).read_messages:
-            raise commands.BadArgument(f"I need to be able to read messages in {channel.mention}")
+            raise commands.BadArgument(
+                f"I need to be able to read messages in {channel.mention}"
+            )
         if not channel.permissions_for(ctx.guild.me).send_messages:
-            raise commands.BadArgument(f"I need to be able to send messages in {channel.mention}")
+            raise commands.BadArgument(
+                f"I need to be able to send messages in {channel.mention}"
+            )
+
         query = """
                 select (id, extra)
                 from tasks
