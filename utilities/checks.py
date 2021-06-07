@@ -1,7 +1,6 @@
 from re import L
 import discord
 from discord.ext import commands
-from discord.ext.commands import bot
 
 from settings import constants
 
@@ -21,6 +20,13 @@ def is_admin(ctx):
     ):
         return True
     return
+
+
+def is_mod():
+    async def pred(ctx):
+        return await check_permissions(ctx, {"manage_guild": True})
+
+    return commands.check(pred)
 
 
 async def check_permissions(ctx, perms, *, check=all):

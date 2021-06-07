@@ -46,7 +46,7 @@ class Roles(commands.Cog):
                 """,
     )
     @checks.bot_has_perms(embed_links=True)
-    async def roleinfo(self, ctx, role: converters.DiscordRole):
+    async def roleinfo(self, ctx, *, role: converters.DiscordRole):
         """
         Usage: {0}roleinfo <role>
         Alias: {0}ri

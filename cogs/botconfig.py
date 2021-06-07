@@ -37,7 +37,7 @@ class Botconfig(commands.Cog):
         implemented="2021-03-22 06:59:02.430491",
         updated="2021-05-19 06:10:56.241058",
     )
-    async def config(self, ctx, key, value):
+    async def conf(self, ctx, key, value):
         """
         Usage: {0}config <Key to change> <New Value>
         Output:

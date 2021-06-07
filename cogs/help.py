@@ -430,6 +430,16 @@ class Help(commands.Cog):
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )
 
+            if invokercommand.lower() in [
+                "conf",
+                "configuration",
+                "config",
+            ]:
+                cog = self.bot.get_cog("Config")
+                return await self.helper_func(
+                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
+                )
+
             ########################
             ## Botadmin Only Help ##
             ########################
@@ -441,12 +451,12 @@ class Help(commands.Cog):
                     )
                 return await ctx.send_help("jishaku")
 
-            if invokercommand.lower() in ["conf", "config", "owner"]:
+            if invokercommand.lower() in ["botconfig", "owner"]:
                 if not checks.is_owner(ctx):
                     return await ctx.send_or_reply(
                         f"{self.bot.emote_dict['warn']} No command named `{invokercommand}` found."
                     )
-                cog = self.bot.get_cog("Config")
+                cog = self.bot.get_cog("Botconfig")
                 return await self.helper_func(
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )

@@ -39,13 +39,22 @@ CREATE TABLE IF NOT EXISTS logging (
     logging_webhook_id VARCHAR(100)
 );
 
-CREATE TABLE IF NOT EXISTS ignored (
-    server_id BIGINT,
-    user_id BIGINT,
-    author_id BIGINT,
-    react BOOLEAN,
-    timestamp TIMESTAMP
+CREATE TABLE IF NOT EXISTS command_config (
+  id BIGSERIAL PRIMARY KEY,
+  server_id BIGINT,
+  entity_id BIGINT,
+  command TEXT,
+  insertion TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
 );
+CREATE UNIQUE INDEX IF NOT EXISTS command_config_idx ON command_config(entity_id, command);
+
+CREATE TABLE IF NOT EXISTS plonks (
+    id BIGSERIAL PRIMARY KEY,
+    server_id BIGINT,
+    entity_id BIGINT,
+    insertion TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
+);
+CREATE UNIQUE INDEX IF NOT EXISTS permissions_idx ON plonks(server_id, entity_id);
 
 CREATE TABLE IF NOT EXISTS lockedchannels (
     channel_id bigint PRIMARY KEY,

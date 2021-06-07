@@ -62,9 +62,11 @@ class Home(commands.Cog):
         blue.paste(im=composite, box=(0, 0), mask=composite)
         banner.paste(im=blue, box=(30, 30), mask=blue.split()[3])
 
-        text = u"{}\nWelcome to {}".format(str(member), member.guild.name)
+        text = "{}\nWelcome to {}".format(str(member), member.guild.name)
         draw = pillow.ImageDraw.Draw(banner)
-        font = pillow.ImageFont.truetype("./data/assets/FreeSansBold.ttf", 30, encoding="utf-8")
+        font = pillow.ImageFont.truetype(
+            "./data/assets/FreeSansBold.ttf", 30, encoding="utf-8"
+        )
         draw.text((170, 56), text, (211, 211, 211), font=font)
         buffer = io.BytesIO()
         banner.save(buffer, "png")  # 'save' function for PIL
@@ -85,11 +87,7 @@ class Home(commands.Cog):
         embed.set_footer(text=f"Server Population: {member.guild.member_count} ")
         await self.welcomer.send(f"{member.mention}", file=dfile, embed=embed)
 
-    
-    @decorators.command(
-        hidden=True,
-        brief="Test the welcome"
-    )
+    @decorators.command(hidden=True, brief="Test the welcome")
     @decorators.is_home(HOME)
     async def pil(self, ctx, user: converters.DiscordMember = None):
         if user is None:

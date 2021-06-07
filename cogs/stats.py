@@ -264,7 +264,8 @@ class Stats(commands.Cog):
             value=f"{emoji} {user.display_name}",
         )
         embed.add_field(
-            name="Messages", value=f"{self.bot.emote_dict['messages']}  {message_count:,}"
+            name="Messages",
+            value=f"{self.bot.emote_dict['messages']}  {message_count:,}",
         )
         embed.add_field(
             name="Commands",

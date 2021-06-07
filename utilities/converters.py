@@ -765,6 +765,44 @@ class BotActivity(commands.Converter):
         return activity
 
 
+class Flag(commands.Converter):
+    async def convert(self, ctx, argument):
+        nodm_options = ["--nodm", "--nopm", "-nodm", "-nopm", " nodm", " nopm"]
+        dm_options = ["--dm", "--pm", "-dm", "-pm", " dm", " pm"]
+        if argument in ["--nodm", "--nopm", "-nodm", "-nopm", "nodm", "nopm"]:
+            dm_bool = False
+        elif argument in ["--dm", "--pm", "-dm", "-pm", "dm", "pm"]:
+            dm_bool = True
+        else:
+            headers = ["SEND DM", "DO NOT DM"]
+            rows = tuple(zip(dm_options, nodm_options))
+            table = formatting.TabularData()
+            table.set_columns(headers)
+            table.add_rows(rows)
+            render = table.render()
+            completed = f"```sml\nVALID FLAGS:\n{render}```"
+            raise commands.BadArgument(f"**Invalid flag.**{completed}")
+        return dm_bool
+
+
+class Arguments(argparse.ArgumentParser):
+    def error(self, message):
+        raise RuntimeError(message)
+
+
+class Prefix(commands.Converter):
+    async def convert(self, ctx, argument):
+        user_id = ctx.bot.user.id
+        if argument.startswith((f"<@{user_id}>", f"<@!{user_id}>")):
+            raise commands.BadArgument("That prefix cannot be modified.")
+        elif len(argument) > 20:
+            raise commands.BadArgument("Max prefix length is 20 characters.")
+        return argument
+
+
+# Command Specific Converters
+
+
 class MassRoleConverter(commands.Converter):
     """
     Converter for massrole command
@@ -806,36 +844,54 @@ class MassRoleConverter(commands.Converter):
             return option
 
 
-class Flag(commands.Converter):
+class ChannelOrRoleOrMember(commands.Converter):
+    """
+    Converter for config command group
+    """
+
     async def convert(self, ctx, argument):
-        nodm_options = ["--nodm", "--nopm", "-nodm", "-nopm", " nodm", " nopm"]
-        dm_options = ["--dm", "--pm", "-dm", "-pm", " dm", " pm"]
-        if argument in ["--nodm", "--nopm", "-nodm", "-nopm", "nodm", "nopm"]:
-            dm_bool = False
-        elif argument in ["--dm", "--pm", "-dm", "-pm", "dm", "pm"]:
-            dm_bool = True
+        try:
+            return await commands.TextChannelConverter().convert(ctx, argument)
+        except commands.ChannelNotFound:
+            try:
+                return await DiscordRole().convert(ctx, argument)
+            except Exception:
+                try:
+                    return await DiscordMember().convert(ctx, argument)
+                except Exception:
+                    raise commands.BadArgument(
+                        f"Entity `{await prettify(ctx, argument)}` is an invalid input. Please specify a channel, role, or user."
+                    )
+
+
+class ChannelOrRoleOrMemberOption(commands.Converter):
+    async def convert(self, ctx, argument):
+        server_options = ["servers", "server", "guilds", "guild"]
+        channel_options = ["channels", "channel", "textchannels", "textchannel"]
+        member_options = ["users", "user", "members", "member"]
+        role_options = ["roles", "role", "discordrole", "r"]
+        if argument.lower() in channel_options:
+            option = "channels"
+        elif argument.lower() in member_options:
+            option = "users"
+        elif argument.lower() in role_options:
+            option = "roles"
+        elif argument.lower() in server_options:
+            option = "servers"
         else:
-            headers = ["SEND DM", "DO NOT DM"]
-            rows = tuple(zip(dm_options, nodm_options))
+            headers = ["SERVER", "CHANNEL", "ROLE", "USER"]
+            rows = tuple(
+                zip(
+                    server_options,
+                    channel_options,
+                    role_options,
+                    member_options,
+                )
+            )
             table = formatting.TabularData()
             table.set_columns(headers)
             table.add_rows(rows)
             render = table.render()
-            completed = f"```sml\nVALID FLAGS:\n{render}```"
-            raise commands.BadArgument(f"**Invalid flag.**{completed}")
-        return dm_bool
-
-
-class Arguments(argparse.ArgumentParser):
-    def error(self, message):
-        raise RuntimeError(message)
-
-
-class Prefix(commands.Converter):
-    async def convert(self, ctx, argument):
-        user_id = ctx.bot.user.id
-        if argument.startswith((f"<@{user_id}>", f"<@!{user_id}>")):
-            raise commands.BadArgument("That prefix cannot be modified.")
-        elif len(argument) > 20:
-            raise commands.BadArgument("Max prefix length is 20 characters.")
-        return argument
+            completed = f"```sml\nVALID OPTIONS:\n{render}```"
+            raise commands.BadArgument(f"**Invalid Option.**{completed}")
+        return option
