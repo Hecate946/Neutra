@@ -110,7 +110,7 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_update(self, before, after):
-        if not await self.check(snowflake=after.id, event="server_updated"):
+        if not await self.check(snowflake=after.id, event="server_updates"):
             return
 
         webhook = await self.get_webhook(guild=after)
