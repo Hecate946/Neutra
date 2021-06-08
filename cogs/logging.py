@@ -170,7 +170,7 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_emojis_update(self, guild, before, after):
-        if not await self.check(snowflake=after.id, event="emojis"):
+        if not await self.check(snowflake=guild.id, event="emojis"):
             return
 
         webhook = await self.get_webhook(guild=guild)
