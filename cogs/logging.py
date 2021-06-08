@@ -110,7 +110,7 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_update(self, before, after):
-        if not await self.check(snowflake=after.guild.id, event="server_updated"):
+        if not await self.check(snowflake=after.id, event="server_updated"):
             return
 
         webhook = await self.get_webhook(guild=after)
@@ -125,7 +125,7 @@ class Logging(commands.Cog):
         ][0]
         if before.name != after.name:
             embed = discord.Embed(
-                description=f"**Author:**  `{audit.user.name}#{audit.user.discriminator}`\n\n"
+                description=f"**Author:**  `{str(audit.user)}`\n\n"
                 f"**___Previous Name___**: ```fix\n{before.name}```"
                 f"**___Current Name___**: ```fix\n{after.name}```",
                 color=self.bot.constants.embed,
@@ -137,19 +137,35 @@ class Logging(commands.Cog):
             )
 
             await webhook.send(embed=embed)
+            
         if before.icon_url != after.icon_url:
             embed = discord.Embed(
-                description=f"**Author:**  `{audit.user.name}#{audit.user.discriminator}`\n"
-                "**New Image below**",
+                description=f"**Author:**  `{str(audit.user)}`\n"
+                "**New icon below**",
                 color=self.bot.constants.embed,
             )
 
             embed.set_author(
-                name="Server Icon Edited",
+                name="Server Icon Updated",
                 icon_url=UPDATED_MESSAGE,
             )
 
             embed.set_image(url=after.icon_url)
+            await webhook.send(embed=embed)
+
+        if before.banner_url != after.banner_url:
+            embed = discord.Embed(
+                description=f"**Author:**  `{str(audit.user)}`\n"
+                "**New banner below**",
+                color=self.bot.constants.embed,
+            )
+
+            embed.set_author(
+                name="Server Banner Updated",
+                icon_url=UPDATED_MESSAGE,
+            )
+
+            embed.set_image(url=after.banner_url)
             await webhook.send(embed=embed)
 
     @commands.Cog.listener()
