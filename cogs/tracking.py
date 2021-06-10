@@ -1050,10 +1050,10 @@ class Tracking(commands.Cog):
             )
 
         usage = list(all_words).index(word)
-        common = utils.number_format(count)
+        common = utils.number_format(usage)
 
         await message.edit(
-            content=f"{self.bot.emote_dict['graph']} The word `{word}` has been used {usage} time{'' if usage == 1 else 's'} and is the {common} most common word used by **{user}**"
+            content=f"{self.bot.emote_dict['graph']} The word `{word}` has been used {count} time{'' if usage == 1 else 's'} and is the {common} most common word used by **{user}**"
         )
 
     @decorators.command(
