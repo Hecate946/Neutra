@@ -17,6 +17,7 @@ Some examples include managing user timezones, role management, and logging.
 ##### [Config](#Config-1)
 ##### [Files](#Files-1)
 ##### [Help](#Help-1)
+##### [Info](#Info-1)
 ##### [Logging](#Logging-1)
 ##### [Mod](#Mod-1)
 ##### [Roles](#Roles-1)
@@ -24,7 +25,6 @@ Some examples include managing user timezones, role management, and logging.
 ##### [Times](#Times-1)
 ##### [Tracking](#Tracking-1)
 ##### [Utility](#Utility-1)
-##### [Info](#Info-1)
 
 
 ### Admin
@@ -166,6 +166,59 @@ where: Show where a command can be run.
 writer: Show who wrote a command.
 
 writers: Show all people who wrote for me.
+```
+
+### Info
+#### Module for bot information. (24 Commands)
+
+```yaml
+about: Display information about the bot.
+
+avgping: View the average message latency.
+
+botadmins: Show the bot's admins.
+
+botowners: Show the bot's owners.
+
+bugreport: Send a bugreport to the developer.
+
+changelog: Show my changelog.
+
+cogs: List all my cogs in an embed.
+
+hostinfo: Show the bot's host environment.
+
+invite: Invite me to your server!
+
+lines: Show sourcecode statistics.
+
+neofetch: Run the neofetch command.
+
+overview: Show some info on the bot's purpose.
+
+ping: Test the bot's response latency.
+
+privacy: View the privacy policy.
+
+replytime: Show reply latencies.
+
+sharedservers: Show servers shared with the bot.
+
+socket: Show global bot socket stats.
+
+source: Display the source code.
+
+suggest: Send a suggestion to the developer.
+
+support: Join my support server!
+
+uptime: Show the bot's uptime.
+
+uptimeinfo: Show a graph of uptime stats
+
+users: Show users I'm connected to.
+
+vote: Show your support by voting for me!
 ```
 
 ### Logging
@@ -411,57 +464,4 @@ snowflake: Show info on a discord snowflake.
 type: Find the type of a discord object.
 
 voiceusers: Show all the users in a vc.
-```
-
-### Info
-#### Module for bot information. (24 Commands)
-
-```yaml
-about: Display information about the bot.
-
-avgping: View the average message latency.
-
-botadmins: Show the bot's admins.
-
-botowners: Show the bot's owners.
-
-bugreport: Send a bugreport to the developer.
-
-changelog: Show my changelog.
-
-cogs: List all my cogs in an embed.
-
-hostinfo: Show the bot's host environment.
-
-invite: Invite me to your server!
-
-lines: Show sourcecode statistics.
-
-neofetch: Run the neofetch command.
-
-overview: Show some info on the bot's purpose.
-
-ping: Test the bot's response latency.
-
-privacy: View the privacy policy.
-
-replytime: Show reply latencies.
-
-sharedservers: Show servers shared with the bot.
-
-socket: Show global bot socket stats.
-
-source: Display the source code.
-
-suggest: Send a suggestion to the developer.
-
-support: Join my support server!
-
-uptime: Show the bot's uptime.
-
-uptimeinfo: Show a graph of uptime stats
-
-users: Show users I'm connected to.
-
-vote: Show your support by voting for me!
 ```

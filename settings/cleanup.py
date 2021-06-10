@@ -74,12 +74,6 @@ async def destroy_server(guild_id):
     query = "DELETE FROM prefixes WHERE server_id = $1"
     await conn.execute(query, guild_id)
 
-    query = "DELETE FROM logging WHERE server_id = $1"
-    await conn.execute(query, guild_id)
-
-    query = "DELETE FROM lockedchannels WHERE server_id = $1"
-    await conn.execute(query, guild_id)
-
     query = "DELETE FROM warn WHERE server_id = $1"
     await conn.execute(query, guild_id)
 
@@ -98,4 +92,4 @@ async def destroy_server(guild_id):
     query = "DELETE FROM userroles WHERE server_id = $1"
     await conn.execute(query, guild_id)
 
-    log.info("Destroyed server [{guild_id}]")
+    log.info(f"Destroyed server [{guild_id}]")

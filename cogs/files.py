@@ -961,7 +961,7 @@ class Files(commands.Cog):
         premsg += "\n## Categories\n"
         msg = ""
 
-        cog_list = [self.bot.get_cog(cog) for cog in self.bot.cogs]
+        cog_list = [self.bot.get_cog(cog) for cog in sorted(self.bot.cogs)]
         for cog in cog_list:
             if (
                 cog.qualified_name.upper()
