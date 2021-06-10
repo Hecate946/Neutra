@@ -19,23 +19,27 @@ CREATE TABLE IF NOT EXISTS prefixes (
     UNIQUE (server_id, prefix)
 );
 
-CREATE TABLE IF NOT EXISTS logging (
+
+CREATE TABLE IF NOT EXISTS logs (
     server_id BIGINT PRIMARY KEY,
-    message_edits BOOLEAN DEFAULT True,
-    message_deletions BOOLEAN DEFAULT True,
-    role_changes BOOLEAN DEFAULT True,
-    channel_updates BOOLEAN DEFAULT True,
-    name_updates BOOLEAN DEFAULT True,
-    voice_state_updates BOOLEAN DEFAULT True,
-    avatar_changes BOOLEAN DEFAULT True,
-    bans BOOLEAN DEFAULT True,
-    leaves BOOLEAN DEFAULT True,
-    joins BOOLEAN DEFAULT True,
-    discord_invites BOOLEAN DEFAULT True,
-    server_updates BOOLEAN DEFAULT True,
+    channels BOOLEAN DEFAULT True,
     emojis BOOLEAN DEFAULT True,
-    logchannel BIGINT,
-    logging_webhook_id VARCHAR(100)
+    invites BOOLEAN DEFAULT True,
+    joins BOOLEAN DEFAULT True,
+    messages BOOLEAN DEFAULT True,
+    moderation BOOLEAN DEFAULT True,
+    users BOOLEAN DEFAULT True,
+    roles BOOLEAN DEFAULT True,
+    server BOOLEAN DEFAULT True,
+    voice BOOLEAN DEFAULT True
+);
+
+CREATE TABLE IF NOT EXISTS log_data (
+    server_id BIGINT PRIMARY KEY,
+    channel_id BIGINT,
+    webhook_id BIGINT,
+    webhook_token TEXT,
+    entities BIGINT[] DEFAULT '{}'
 );
 
 CREATE TABLE IF NOT EXISTS command_config (
