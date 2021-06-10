@@ -74,7 +74,6 @@ async def update_server(server, member_list):
         color(fore="#46648F", text=f"Server insertion : {str(time.time() - st)[:10]} s")
     )
 
-
     st = time.time()
     query = """
             INSERT INTO userstatus (user_id)
@@ -248,7 +247,7 @@ async def fix_server(server):
     except TypeError:  # No custom prefixes, must be new server
         pass
 
- 
+
 async def load_prefixes():
     query = """
             SELECT server_id, ARRAY_REMOVE(ARRAY_AGG(prefix), NULL) as prefix_list

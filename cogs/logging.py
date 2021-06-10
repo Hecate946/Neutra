@@ -1,4 +1,3 @@
-
 import io
 import json
 import discord
@@ -22,15 +21,17 @@ DELETED_MESSAGE = "https://cdn.discordapp.com/attachments/846597178918436885/846
 def setup(bot):
     bot.add_cog(Logging(bot))
 
+
 class WebhookLimit(commands.BadArgument):
     """
     Custom exception to raise when the max
     webhook limit for a channel is reached.
     """
+
     def __init__(self, channel, *args):
         msg = f"Channel {channel.mention} has reached the maximum number of webhooks (10). Please delete a webhook and retry."
         super().__init__(message=msg, *args)
-    
+
 
 class Logging(commands.Cog):
     def __init__(self, bot):
@@ -60,8 +61,8 @@ class Logging(commands.Cog):
         self.dispatch_webhooks.start()  # Start the task loop
 
         self.map = {
-            True: bot.emote_dict['pass'],
-            False: bot.emote_dict['fail']
+            True: bot.emote_dict["pass"],
+            False: bot.emote_dict["fail"],
         }  # Map for determining the emote.
 
     def cog_unload(self):
@@ -88,7 +89,9 @@ class Logging(commands.Cog):
         records = await self.bot.cxn.fetch(query)
         if records:
             for record in records:
-                self.settings[record["server_id"]].update(json.loads(record["settings"]))
+                self.settings[record["server_id"]].update(
+                    json.loads(record["settings"])
+                )
 
     async def load_log_data(self):
         query = """
@@ -104,14 +107,15 @@ class Logging(commands.Cog):
         records = await self.bot.cxn.fetch(query)
         if records:
             for record in records:
-                self.log_data[record["server_id"]].update(json.loads(record["log_data"]))
-                self.entities[record["server_id"]].extend(record['entities'])
+                self.log_data[record["server_id"]].update(
+                    json.loads(record["log_data"])
+                )
+                self.entities[record["server_id"]].extend(record["entities"])
                 webhook = self.parse_json(json.loads(record["log_data"]))
                 self.webhooks[record["server_id"]] = webhook
 
-
     def parse_json(self, data):
-        return self.fetch_webhook(data['webhook_id'], data['webhook_token'])
+        return self.fetch_webhook(data["webhook_id"], data["webhook_token"])
 
     def fetch_webhook(self, webhook_id, webhook_token):
         try:
@@ -175,7 +179,7 @@ class Logging(commands.Cog):
 
     # Helper function to truncate oversized strings.
     def truncate(self, string, max_chars):
-        return (string[:max_chars - 3] + "...") if len(string) > max_chars else string
+        return (string[: max_chars - 3] + "...") if len(string) > max_chars else string
 
     # Helper function to check if an object is ignored
     def is_ignored(self, guild, objects):
@@ -199,7 +203,6 @@ class Logging(commands.Cog):
                     files.clear()
                     self.tasks[webhook] = objects[10:]
 
-
     @decorators.group(
         name="log",
         brief="Manage the logging setup.",
@@ -208,7 +211,9 @@ class Logging(commands.Cog):
         invoke_without_command=True,
         case_insensitive=True,
     )
-    @commands.bot_has_guild_permissions(manage_channels=True, manage_webhooks=True)
+    @commands.guild_only()
+    @commands.cooldown(2.0, 30, commands.BucketType.guild)
+    @commands.bot_has_guild_permissions(manage_webhooks=True)
     @checks.has_perms(manage_guild=True)
     async def _log(self, ctx, event: converters.LoggingEvent = None):
         """
@@ -260,7 +265,9 @@ class Logging(commands.Cog):
                 if event == "all":  # Want to log all events.
                     current = all([e is True for e in settings.values()])
                     if current is True:  # All events already enabled...
-                        return await ctx.success("All logging events are already enabled.")
+                        return await ctx.success(
+                            "All logging events are already enabled."
+                        )
 
                     query = """
                             DELETE FROM logs
@@ -280,7 +287,9 @@ class Logging(commands.Cog):
                 else:  # They specified an event
                     current = settings.get(event)
                     if current is True:  # Already logging this event.
-                        return await ctx.success(f"Logging event `{event}` is already enabled.")
+                        return await ctx.success(
+                            f"Logging event `{event}` is already enabled."
+                        )
 
                     query = f"""
                             UPDATE logs
@@ -371,7 +380,11 @@ class Logging(commands.Cog):
         await self.bot.cxn.execute(query, ctx.guild.id, channel.id, wh.id, wh.token)
 
         # Update log_data so it matches the data in the DB
-        self.log_data[ctx.guild.id] = {"channel_id": channel.id, "webhook_id": wh.id, "webhook_token": wh.token}
+        self.log_data[ctx.guild.id] = {
+            "channel_id": channel.id,
+            "webhook_id": wh.id,
+            "webhook_token": wh.token,
+        }
         # Update the settings to reflect the default logging config.
         self.settings[ctx.guild.id] = {log_type: True for log_type in self.log_types}
         # Set the server logging webhook to the webhook we just created.
@@ -386,6 +399,10 @@ class Logging(commands.Cog):
         implemented="2021-03-17 07:09:57.666073",
         updated="2021-06-08 17:18:43.698120",
     )
+    @commands.guild_only()
+    @commands.cooldown(2.0, 30, commands.BucketType.guild)
+    @commands.bot_has_guild_permissions(manage_webhooks=True)
+    @checks.has_perms(manage_guild=True)
     async def unlog(self, ctx, event: converters.LoggingEvent):
         """
         Usage: {0}unlog [event]
@@ -422,10 +439,12 @@ class Logging(commands.Cog):
             # Update all the cached event settings to false
             self.settings[ctx.guild.id] = {x: False for x in self.log_types}
             await ctx.success("All logging events have been disabled.")
-        else:  # They specified an event. 
+        else:  # They specified an event.
             current = settings.get(event)
             if current is not True:  # Not logging this event.
-                return await ctx.success(f"Logging event `{event}` is already disabled.")
+                return await ctx.success(
+                    f"Logging event `{event}` is already disabled."
+                )
 
             query = f"""
                     UPDATE logs
@@ -437,7 +456,48 @@ class Logging(commands.Cog):
             # Update the cache to match the DB
             self.settings[ctx.guild.id][event] = False
             await ctx.success(f"Logging event `{event}` has been disabled.")
-        
+
+    ###################
+    ## Group Aliases ##
+    ###################
+
+    @decorators.command(
+        brief="Set your server's logging channel.",
+        aliases=["logserver", "setlogchannel"],
+    )
+    @commands.guild_only()
+    @commands.cooldown(2.0, 30, commands.BucketType.guild)
+    @checks.bot_has_perms(manage_webhooks=True)
+    @checks.has_perms(manage_guild=True)
+    async def logchannel(self, ctx, *, channel: discord.TextChannel = None):
+        """
+        Usage: {0}logchannel [channel]
+        Aliases: {0}logserver, {0}setlogchannel
+        Output: Sets up a logging channel for the server
+        Notes:
+            Use {0}log [event] and {0}unlog [event] to enable/disable
+            specific logging events that are sent to the logchannel
+        """
+        await ctx.invoke(self.channel, channel)
+
+    @decorators.command(
+        brief="Remove your server's logging channel.",
+        aliases=["unlogserver"],
+    )
+    @commands.guild_only()
+    @commands.cooldown(2.0, 30, commands.BucketType.guild)
+    @checks.bot_has_perms(manage_webhooks=True)
+    @checks.has_perms(manage_guild=True)
+    async def unlogchannel(self, ctx):
+        """
+        Usage: {0}unlogchannel
+        Aliases: {0}unlogserver
+        Output: Removes the server's logging channel
+        Notes:
+            Use {0}log [event] and {0}unlog [event] to enable/disable
+            specific logging events that are sent to the logchannel
+        """
+        await ctx.invoke(self.disable)
     #####################
     ## Event Listeners ##
     #####################
@@ -1043,7 +1103,6 @@ class Logging(commands.Cog):
             filename=f"Bulk-Deleted-Messages-{datetime.now().__format__('%m-%d-%Y')}.txt",
         )
         await self.send_webhook(webhook, file=file)
-
 
     ####################
     ## Other Commands ##
