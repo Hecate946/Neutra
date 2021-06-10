@@ -8,6 +8,7 @@
 *.json
 *.log
 *.rdb
+*.0
 # These just contain logging files
 /data/json
 /data/logs

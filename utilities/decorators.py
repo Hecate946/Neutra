@@ -46,6 +46,7 @@ def defer_ratelimit(bot=None):
         if isinstance(self, commands.Cog):
             bot = bot or self.bot
         await asyncio.sleep(1)
+        return True
 
     return event_check(predicate)
 

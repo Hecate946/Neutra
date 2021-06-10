@@ -167,3 +167,8 @@ class Testing(commands.Cog):
                     pass
             except Exception as e:
                 self.bot.dispatch("error", "queue_error", tb=utils.traceback_maker(e))
+
+    @commands.Cog.listener()
+    @decorators.defer_ratelimit()
+    async def on_message(self, message):
+        print(message)

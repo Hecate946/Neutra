@@ -105,14 +105,16 @@ class BotCommand(commands.Command):
         self.examples = kwargs.pop("examples", None)
         self.implemented = kwargs.pop("implemented", None)
         self.updated = kwargs.pop("updated", None)
-        self.writer = kwargs.pop(
-            "writer", 708584008065351681
-        )  # Maybe someday more will contribute... :((
+        self.writer = kwargs.pop("writer", 708584008065351681) 
+        # Maybe someday more will contribute... :((
 
 
 class BotGroup(commands.Group):
     def __init__(self, func, **kwargs):
         super().__init__(func, **kwargs)
+        self.case_insensitive = True
+        self.cooldown_after_parsing = True
+        self.invoke_without_command = True
         self.examples = kwargs.pop("examples", None)
         self.implemented = kwargs.pop("implemented", None)
         self.updated = kwargs.pop("updated", None)

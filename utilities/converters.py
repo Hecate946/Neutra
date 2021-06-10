@@ -866,6 +866,34 @@ class ChannelOrRoleOrMember(commands.Converter):
                     )
 
 
+class LoggingEvent(commands.Converter):
+    async def convert(self, ctx, argument):
+        log_types = {
+            "all": "Enable all logging events.",
+            "channels": "Log when channels are created, deleted, and updated.",
+            "emojis": "Log when emojis are added, removed, or edited.",
+            "invites": "Log when discord invites are posted, created, and deleted.",
+            "joins": "Log when users join or leave the server.",
+            "messages": "Log when messages are purged, deleted, and edited.",
+            "moderation": "Log when a moderation action is performed using the bot.",
+            "users": "Log when users change their nickname, username, and avatar.",
+            "roles": "Log when roles are created, deleted, updated, and added/removed from users.",
+            "server": "Log when the server's icon, banner, name, or region is updated.",
+            "voice": "Log when users join, leave and switch voice channels.",
+        }
+
+        if argument.lower() not in log_types.keys():
+            headers = ["EVENT", "DESCRIPTION"]
+            table = formatting.TabularData()
+            table.set_columns(headers)
+            table.add_rows([(event, desc) for event, desc in log_types.items()])
+            render = table.render()
+            completed = f"```yml\nVALID EVENTS:\n{render}```"
+            raise commands.BadArgument(f"**Invalid Event.**{completed}")
+        else:
+            return argument.lower()
+
+
 class ChannelOrRoleOrMemberOption(commands.Converter):
     async def convert(self, ctx, argument):
         server_options = ["servers", "server", "guilds", "guild"]

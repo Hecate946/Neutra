@@ -574,8 +574,9 @@ class Snowbot(commands.AutoShardedBot):
         All event errors and dispatched errors
         will be logged via the error webhook.
         """
+        e = traceback.format_exc()
         title = f"**{self.emote_dict['failed']} Error `{datetime.utcnow()}`**"
-        description = f"```prolog\n{event.upper()}:\n{kwargs.get('tb') or traceback.format_exc()}\n```"
+        description = f"```prolog\n{event.upper()}:\n{kwargs.get('tb') or e}\n```"
         dfile = None
         arguments = None
         args_str = []
@@ -603,7 +604,7 @@ class Snowbot(commands.AutoShardedBot):
                     avatar_url=self.constants.avatars["red"],
                 )
         except Exception:
-            pass
+            print(e)
 
     async def on_command_error(self, ctx, error):
         """
