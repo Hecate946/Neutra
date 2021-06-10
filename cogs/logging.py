@@ -478,7 +478,7 @@ class Logging(commands.Cog):
             Use {0}log [event] and {0}unlog [event] to enable/disable
             specific logging events that are sent to the logchannel
         """
-        await ctx.invoke(self.channel, channel)
+        await ctx.invoke(self.ch, channel=channel)
 
     @decorators.command(
         brief="Remove your server's logging channel.",
