@@ -940,7 +940,7 @@ class Tracking(commands.Cog):
     @commands.guild_only()
     @checks.bot_has_perms(add_reactions=True, external_emojis=True)
     @checks.has_perms(manage_messages=True)
-    async def words(self, ctx, user=None, limit: str = "100"):
+    async def words(self, ctx, user: typing.Optional[converters.DiscordMember] = None, limit = 100):
         """
         Usage: {0}words [user] [limit]
         Output: Most commonly used words by the passed user
@@ -951,41 +951,26 @@ class Tracking(commands.Cog):
             argument to limit the number of common words to show.
         """
         if user is None:
-            member = ctx.author
-            limit = int(limit)
-        else:
-            try:
-                member = await commands.MemberConverter().convert(ctx, user)
-                if not limit.isdigit():
-                    raise commands.BadArgument(
-                        "The `limit` argument must be an integer."
-                    )
-                else:
-                    limit = int(limit)
-            except commands.MemberNotFound:
-                member = ctx.author
-                if user.isdigit():
-                    limit = int(user)
-                else:
-                    raise commands.BadArgument(f"User `{user}` not found.")
+            user = ctx.author
 
-        if member.bot:
-            return await ctx.fail("I do not track bots.")
+        if user.bot:
+            raise commands.BadArgument("I do not track bots.")
+
         message = await ctx.send_or_reply(
             content=f"**{self.bot.emote_dict['loading']} Collecting Word Statistics...**",
         )
         query = """
-                SELECT content
+                SELECT ARRAY_AGG(content)
                 FROM messages
                 WHERE author_id = $1
                 AND server_id = $2;
                 """
-        all_msgs = await self.bot.cxn.fetch(
+        all_msgs = await self.bot.cxn.fetchval(
             query,
-            member.id,
+            user.id,
             ctx.guild.id,
         )
-        all_msgs = [x[0] for x in all_msgs]
+
         all_msgs = " ".join(all_msgs).split()
         all_msgs = list(filter(lambda x: len(x) > 0, all_msgs))
         all_words = Counter(all_msgs).most_common()[:limit]
@@ -1002,7 +987,7 @@ class Tracking(commands.Cog):
                 content=f"{self.bot.emote_dict['failed']} **Failed. Please try again.**"
             )
         await message.edit(
-            content=f"Most common words sent by **{member.display_name}**",
+            content=f"{self.bot.emote_dict['graph']} Most common words sent by **{user}**",
         )
         try:
             await pages.start(ctx)
@@ -1015,16 +1000,16 @@ class Tracking(commands.Cog):
         updated="2021-05-07 03:51:54.934511",
         examples="""
                 {0}word Hello
-                {0}word Hello Hecate
-                {0}word Hello @Hecate
-                {0}word Hello Hecate#3523
-                {0}word Hello 708584008065351681
+                {0}word Hecate Hello
+                {0}word @Hecate Hello
+                {0}word Hecate#3523 Hello
+                {0}word 708584008065351681 Hello
                 """,
     )
     @commands.guild_only()
     @checks.bot_has_perms(add_reactions=True, external_emojis=True)
     @checks.has_perms(manage_messages=True)
-    async def word(self, ctx, word, member: converters.DiscordMember = None):
+    async def word(self, ctx, user: typing.Optional[converters.DiscordMember] = None, word: str = None):
         """
         Usage: {0}word <word> [user]
         Permission: Manage Messages
@@ -1034,45 +1019,41 @@ class Tracking(commands.Cog):
         Notes:
             Will default to you if no user is passed.
         """
-        if member is None:
-            member = ctx.author
-        if member.bot:
+        if word is None:
+            return await ctx.usage()
+        if user is None:
+            user = ctx.author
+        if user.bot:
             raise commands.BadArgument("I do not track bots.")
         message = await ctx.send_or_reply(
             content=f"**{self.bot.emote_dict['loading']} Collecting Word Statistics...**",
         )
-        query = """
-                SELECT content
+        query = f"""
+                SELECT ARRAY_AGG(content)
                 FROM messages
                 WHERE author_id = $1
-                AND server_id = $2
+                AND server_id = $2;
                 """
-        all_msgs = await self.bot.cxn.fetch(query, member.id, ctx.guild.id)
-        all_msgs = [x[0] for x in all_msgs]
+        all_msgs = await self.bot.cxn.fetchval(query, user.id, ctx.guild.id)
+        if not all_msgs:
+            return await message.edit(
+                content=f"{self.bot.emote_dict['graph']} The word `{word}` has never been used by **{user}**",
+            )
         all_msgs = " ".join(all_msgs).split()
         all_msgs = list(filter(lambda x: len(x) > 0, all_msgs))
-        all_msgs = " ".join(all_msgs).split()
-        all_msgs = list(all_msgs)
-        all_words = Counter(all_msgs).most_common()
-        found = []
-        for x in all_words:
-            if x[0] == word:
-                found.append(x)
-                found.append(int(all_words.index(x)) + 1)
-        if found == []:
+        all_words = Counter(all_msgs)
+        count = all_words.get(word)
+
+        if not count:
             return await message.edit(
-                content=f"The word `{word}` has never been used by **{member.display_name}**",
+                content=f"{self.bot.emote_dict['graph']} The word `{word}` has never been used by **{user}**",
             )
-        if str(found[1]).endswith("1") and found[1] != 11:
-            common = str(found[1]) + "st"
-        elif str(found[1]).endswith("2") and found[1] != 12:
-            common = str(found[1]) + "nd"
-        elif str(found[1]).endswith("3") and found[1] != 13:
-            common = str(found[1]) + "rd"
-        else:
-            common = str(found[1]) + "th"
+
+        usage = list(all_words).index(word)
+        common = utils.number_format(count)
+
         await message.edit(
-            content=f"The word `{word}` has been used {found[0][1]} time{'' if found[0][1] == 1 else 's'} and is the {common} most common word used by **{member.display_name}**"
+            content=f"{self.bot.emote_dict['graph']} The word `{word}` has been used {usage} time{'' if usage == 1 else 's'} and is the {common} most common word used by **{user}**"
         )
 
     @decorators.command(
