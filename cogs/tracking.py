@@ -998,6 +998,7 @@ class Tracking(commands.Cog):
         brief="Usage for a specific word.",
         implemented="2021-03-13 18:18:34.790741",
         updated="2021-05-07 03:51:54.934511",
+        ignore_extra=False,
         examples="""
                 {0}word Hello
                 {0}word Hecate Hello
@@ -1056,6 +1057,13 @@ class Tracking(commands.Cog):
             content=f"{self.bot.emote_dict['graph']} The word `{word}` has been used {count} time{'' if usage == 1 else 's'} and is the {common} most common word used by **{user}**"
         )
 
+    @word.error
+    async def word_error(self, ctx, error):
+        if isinstance(error, commands.TooManyArguments):
+            await ctx.fail(
+                "Please only provide one word at a time to search."
+            )
+            
     @decorators.command(
         brief="Show the most active server users.",
         invoke_without_command=True,

@@ -214,6 +214,7 @@ class Logging(commands.Cog):
     @commands.guild_only()
     @commands.cooldown(2.0, 30, commands.BucketType.guild)
     @commands.bot_has_guild_permissions(manage_webhooks=True)
+    @checks.bot_has_perms(embed_links=True)
     @checks.has_perms(manage_guild=True)
     async def _log(self, ctx, event: converters.LoggingEvent = None):
         """
