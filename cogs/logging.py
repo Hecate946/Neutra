@@ -34,6 +34,9 @@ class WebhookLimit(commands.BadArgument):
 
 
 class Logging(commands.Cog):
+    """
+    Manage the logging system
+    """
     def __init__(self, bot):
         self.bot = bot
         self.entities = defaultdict(list)
@@ -3098,7 +3101,7 @@ class Logging(commands.Cog):
             result = await self.bot.cxn.fetchrow(query, ctx.channel.id, member.id)
 
         if not result:
-            return await ctx.fail(f"There are no edits to snipe.")
+            return await ctx.fail("There are no edits to snipe.")
 
         author = result["author_id"]
         message_id = result["message_id"]

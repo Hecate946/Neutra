@@ -673,8 +673,28 @@ class Info(commands.Cog):
                 ),
             ),
         )
-        await ctx.reply(
+        await ctx.rep_or_ref(
             "Select an invite link from the options below to invite me to your server.",
+            components=[button_row],
+        )
+
+    @decorators.command(
+        brief="Show your support by voting for me!",
+        implemented="2021-06-10 07:29:06.990221",
+        updated="2021-06-10 07:29:06.990221",
+    )
+    async def vote(self, ctx):
+        """
+        Usage: {0}vote
+        Output:
+            A link to top.gg where you can
+            vote to support me.
+        """
+        button_row = ActionRow(
+            Button(style=ButtonStyle.link, label="Vote for me!", url="https://top.gg/bot/810377376269205546/vote"),
+        )
+        await ctx.rep_or_ref(
+            "Thanks for showing interest in supporting me! Click the button below to vote for me on top.gg.",
             components=[button_row],
         )
 
@@ -690,7 +710,7 @@ class Info(commands.Cog):
         Aliases: {0}sup, {0}assist, {0}assistance
         Output: An invite link to my support server
         """
-        await ctx.reply(self.bot.constants.support)
+        await ctx.rep_or_ref(self.bot.constants.support)
 
     @decorators.command(
         aliases=["userstats", "usercount"],
@@ -830,7 +850,7 @@ class Info(commands.Cog):
 
         text = text[:-3]
 
-        pages = pagination.MainMenu(pagination.TextPageSource(text, prefix="```prolog"))
+        pages = pagination.MainMenu(pagination.TextPageSource(text, prefix="```autohotkey"))
         try:
             await pages.start(ctx)
         except menus.MenuError as e:

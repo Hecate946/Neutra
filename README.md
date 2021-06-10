@@ -8,16 +8,15 @@ Hello! I'm Snowbot, and I specialize in tracking and moderation.
 I was designed to collect all sorts of data on servers, users,
 messages, emojis, online time, and more! I also come with a fast
 and clean moderation system that offers every opportunity for effective
-server management. Apart from moderation and tracking, I feature 248
+server management. Apart from moderation and tracking, I feature 246
 commands across 13 categories that provide awesome utilities!
 Some examples include managing user timezones, role management, and logging.
 ## Categories
 ##### [Admin](#Admin-1)
 ##### [Automod](#Automod-1)
+##### [Config](#Config-1)
 ##### [Files](#Files-1)
 ##### [Help](#Help-1)
-##### [Home](#Home-1)
-##### [Info](#Info-1)
 ##### [Logging](#Logging-1)
 ##### [Mod](#Mod-1)
 ##### [Roles](#Roles-1)
@@ -25,10 +24,11 @@ Some examples include managing user timezones, role management, and logging.
 ##### [Times](#Times-1)
 ##### [Tracking](#Tracking-1)
 ##### [Utility](#Utility-1)
+##### [Info](#Info-1)
 
 
 ### Admin
-#### Module for server administration. (20 Commands)
+#### Module for server administration. (11 Commands)
 
 ```yaml
 addprefix: Add a custom server prefix.
@@ -37,25 +37,9 @@ checkinactive: Count the inactive users.
 
 clearprefix: Clear all custom prefixes.
 
-disable: Disable a command.
-
-disableall: Disable all commands.
-
-disabledreact: React on disabled commands.
-
-enable: Enable a command.
-
-enableall: Enable all commands
-
-ignore: Disallow users from using the bot.
-
-isdisabled: Show the status of a command.
-
 kickinactive: Kick all inactive server members
 
 leave: Have the bot leave the server.
-
-listdisabled: List disabled commands.
 
 massascify: Mass nickname users with odd names.
 
@@ -68,8 +52,6 @@ muterole: Setup server muting system.
 prefixes: Show all server prefixes.
 
 removeprefix: Remove a custom server prefix
-
-unignore: Reallow users to use the bot.
 ```
 
 ### Automod
@@ -93,6 +75,23 @@ serverwarns: Display the server warnlist.
 warn: Warn users with an optional reason.
 
 warncount: Count the warnings a user has.
+```
+
+### Config
+#### Configure the permission system. (6 Commands)
+
+```yaml
+disable: Disable commands for users, roles, and channels.
+
+disabled: Show disabled commands.
+
+enable: Enable commands for users, roles, and channels.
+
+ignore: Ignore channels, roles, and users.
+
+ignored: Show ignored roles, users, and channels.
+
+unignore: Unignore channels, users, and roles.
 ```
 
 ### Files
@@ -169,81 +168,23 @@ writer: Show who wrote a command.
 writers: Show all people who wrote for me.
 ```
 
-### Home
-#### Server specific cog. (0 Commands)
-
-```yaml
-
-```
-
-### Info
-#### Module for bot information. (23 Commands)
-
-```yaml
-about: Display information about the bot.
-
-avgping: View the average message latency.
-
-botadmins: Show the bot's admins.
-
-botowners: Show the bot's owners.
-
-bugreport: Send a bugreport to the developer.
-
-changelog: Show my changelog.
-
-cogs: List all my cogs in an embed.
-
-hostinfo: Show the bot's host environment.
-
-invite: Invite me to your server!
-
-lines: Show sourcecode statistics.
-
-neofetch: Run the neofetch command.
-
-overview: Show some info on the bot's purpose.
-
-ping: Test the bot's response latency.
-
-privacy: View the privacy policy.
-
-replytime: Show reply latencies.
-
-sharedservers: Show servers shared with the bot.
-
-socket: Show global bot socket stats.
-
-source: Display the source code.
-
-suggest: Send a suggestion to the developer.
-
-support: Join my support server!
-
-uptime: Show the bot's uptime.
-
-uptimeinfo: Show a graph of uptime stats
-
-users: Show users I'm connected to.
-```
-
 ### Logging
-#### Log all server events. (7 Commands)
+#### Manage the logging system (7 Commands)
 
 ```yaml
 auditcount: Count the audit log entries of a user.
 
 editsnipe: Snipe an edited message.
 
-log: Enable specific logging events.
+log: Manage the logging setup.
 
 logchannel: Set your server's logging channel.
 
 snipe: Snipe a deleted message.
 
-unlog: Disable specific logging events.
+unlog: Disable logging events.
 
-unlogchannel: Remove the logging channel.
+unlogchannel: Remove your server's logging channel.
 ```
 
 ### Mod
@@ -262,7 +203,7 @@ hackban: Hackban multiple users.
 
 kick: Kick users from the server.
 
-lock: Lock a channel
+lock: Prevent messages in a channel.
 
 mute: Mute users for a duration.
 
@@ -470,4 +411,57 @@ snowflake: Show info on a discord snowflake.
 type: Find the type of a discord object.
 
 voiceusers: Show all the users in a vc.
+```
+
+### Info
+#### Module for bot information. (24 Commands)
+
+```yaml
+about: Display information about the bot.
+
+avgping: View the average message latency.
+
+botadmins: Show the bot's admins.
+
+botowners: Show the bot's owners.
+
+bugreport: Send a bugreport to the developer.
+
+changelog: Show my changelog.
+
+cogs: List all my cogs in an embed.
+
+hostinfo: Show the bot's host environment.
+
+invite: Invite me to your server!
+
+lines: Show sourcecode statistics.
+
+neofetch: Run the neofetch command.
+
+overview: Show some info on the bot's purpose.
+
+ping: Test the bot's response latency.
+
+privacy: View the privacy policy.
+
+replytime: Show reply latencies.
+
+sharedservers: Show servers shared with the bot.
+
+socket: Show global bot socket stats.
+
+source: Display the source code.
+
+suggest: Send a suggestion to the developer.
+
+support: Join my support server!
+
+uptime: Show the bot's uptime.
+
+uptimeinfo: Show a graph of uptime stats
+
+users: Show users I'm connected to.
+
+vote: Show your support by voting for me!
 ```

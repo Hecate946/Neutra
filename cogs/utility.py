@@ -233,7 +233,7 @@ class Utility(commands.Cog):
         if permissions:
             permissions = discord.Permissions(permissions)
         oauth_url = discord.utils.oauth_url(bot.id, permissions=permissions)
-        await ctx.reply("<" + oauth_url + ">")
+        await ctx.rep_or_ref("<" + oauth_url + ">")
 
     @decorators.command(  # For anyone looking here, these tokens are not valid.
         aliases=["pt", "parsetoken"],

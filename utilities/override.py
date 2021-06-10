@@ -28,6 +28,14 @@ class BotContext(commands.Context):
             )
         return await self.send(content, **kwargs)
 
+    async def rep_or_ref(self, content=None, **kwargs):
+        ref = self.message.reference
+        if ref and isinstance(ref.resolved, discord.Message):
+            return await self.send(
+                content, **kwargs, reference=ref.resolved.to_reference()
+            )
+        return await self.reply(content, **kwargs)
+
     async def react(self, reaction=None, content=None, **kwargs):
         return await self.message.add_reaction(reaction)
 

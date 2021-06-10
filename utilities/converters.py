@@ -134,12 +134,16 @@ class GuildEmojiConverter(commands.Converter):
             return match
 
         try:
-            return await commands.converter.EmojiConverter().convert(ctx, argument)
+            emoji = await commands.converter.EmojiConverter().convert(ctx, argument)
+            if emoji.guild.id == ctx.guild.id:
+                return emoji
         except commands.EmojiNotFound:
             pass
 
         try:
-            return await commands.PartialEmojiConverter().convert(ctx, argument)
+            emoji = await commands.PartialEmojiConverter().convert(ctx, argument)
+            if emoji.guild.id == ctx.guild.id:
+                return emoji
         except commands.PartialEmojiConversionFailure:
             pass
 
