@@ -32,14 +32,6 @@ async def purge_discrepancies(guilds):
     await find_discrepancy(query, guilds)
     print(f"{query.split()[-1]}_query")
 
-    query = "SELECT server_id FROM logging"
-    await find_discrepancy(query, guilds)
-    print(f"{query.split()[-1]}_query")
-
-    query = "SELECT server_id FROM lockedchannels"
-    await find_discrepancy(query, guilds)
-    print(f"{query.split()[-1]}_query")
-
     query = "SELECT server_id FROM warn"
     await find_discrepancy(query, guilds)
     print(f"{query.split()[-1]}_query")
