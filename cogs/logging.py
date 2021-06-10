@@ -327,10 +327,11 @@ class Logging(commands.Cog):
             await ctx.success("Logging successfully disabled.")
 
     @_log.command(
+        name="channel",
         aliases=["enable"],
         brief="Setup default logging.",
     )
-    async def channel(self, ctx, *, channel: discord.TextChannel = None):
+    async def _channel(self, ctx, *, channel: discord.TextChannel = None):
         """
         Usage: {0}log channel [channel]
         Alias: {0}log enable [channel]
@@ -478,7 +479,7 @@ class Logging(commands.Cog):
             Use {0}log [event] and {0}unlog [event] to enable/disable
             specific logging events that are sent to the logchannel
         """
-        await ctx.invoke(self.channel, channel=channel)
+        await ctx.invoke(self._channel, channel=channel)
 
     @decorators.command(
         brief="Remove your server's logging channel.",
