@@ -74,18 +74,6 @@ async def update_server(server, member_list):
         color(fore="#46648F", text=f"Server insertion : {str(time.time() - st)[:10]} s")
     )
 
-    st = time.time()
-    await postgres.execute(
-        """INSERT INTO logging (server_id, logchannel) VALUES ($1, $2)
-    ON CONFLICT (server_id) DO NOTHING""",
-        server.id,
-        None,
-    )
-    print(
-        color(
-            fore="#46648F", text=f"Logging insertion : {str(time.time() - st)[:10]} s"
-        )
-    )
 
     st = time.time()
     query = """
@@ -115,18 +103,6 @@ async def update_db(guilds, member_list):
     print(
         color(
             fore="#46648F", text=f"Servers  insertion : {str(time.time() - st)[:10]} s"
-        )
-    )
-
-    st = time.time()
-    await postgres.executemany(
-        """INSERT INTO logging (server_id, logchannel) VALUES ($1, $2)
-    ON CONFLICT (server_id) DO NOTHING""",
-        ((server.id, None) for server in guilds),
-    )
-    print(
-        color(
-            fore="#46648F", text=f"Logging  insertion : {str(time.time() - st)[:10]} s"
         )
     )
 
@@ -202,54 +178,6 @@ async def load_settings():
 
         settings[server_id]["prefixes"] = prefixes
 
-    # Load the logging configuration
-
-    query = """SELECT * FROM logging;"""
-    results = await postgres.fetch(query)
-
-    if results == []:
-        pass
-    for x in results:
-        server_id = x[0]
-        message_edits = x[1]
-        message_deletions = x[2]
-        role_changes = x[3]
-        channel_updates = x[4]
-        name_updates = x[5]
-        voice_state_updates = x[6]
-        avatar_changes = x[7]
-        bans = x[8]
-        leaves = x[9]
-        joins = x[10]
-        discord_invites = x[11]
-        server_updates = x[12]
-        emojis = x[11]
-        ignored_channels = x[14]
-        logchannel = x[15]
-        webhook_id = x[16]
-
-        if ignored_channels is None:
-            ignored_channels = []
-        else:
-            ignored_channels = [x for x in ignored_channels.split(",")]
-
-        settings[server_id]["logging"]["message_edits"] = message_edits
-        settings[server_id]["logging"]["message_deletions"] = message_deletions
-        settings[server_id]["logging"]["role_changes"] = role_changes
-        settings[server_id]["logging"]["channel_updates"] = channel_updates
-        settings[server_id]["logging"]["name_updates"] = name_updates
-        settings[server_id]["logging"]["voice_state_updates"] = voice_state_updates
-        settings[server_id]["logging"]["avatar_changes"] = avatar_changes
-        settings[server_id]["logging"]["bans"] = bans
-        settings[server_id]["logging"]["leaves"] = leaves
-        settings[server_id]["logging"]["joins"] = joins
-        settings[server_id]["logging"]["discord_invites"] = discord_invites
-        settings[server_id]["logging"]["server_updates"] = server_updates
-        settings[server_id]["logging"]["emojis"] = emojis
-        settings[server_id]["logging"]["ignored_channels"] = ignored_channels
-        settings[server_id]["logging"]["logchannel"] = logchannel
-        settings[server_id]["logging"]["webhook_id"] = webhook_id
-
 
 async def fix_server(server):
     query = """ SELECT (
@@ -304,7 +232,6 @@ async def fix_server(server):
             "autoroles": autoroles,
             "antiinvite": antiinvite,
             "reassign": reassign,
-            "logging": {},
         }
 
     # load the prefixes
@@ -321,54 +248,7 @@ async def fix_server(server):
     except TypeError:  # No custom prefixes, must be new server
         pass
 
-    # Load the logging configuration
-    query = """SELECT * FROM logging WHERE server_id = $1;"""
-    results = await postgres.fetch(query, server)
-
-    if results == []:
-        pass
-    for x in results:
-        server_id = x[0]
-        message_edits = x[1]
-        message_deletions = x[2]
-        role_changes = x[3]
-        channel_updates = x[4]
-        name_updates = x[5]
-        voice_state_updates = x[6]
-        avatar_changes = x[7]
-        bans = x[8]
-        leaves = x[9]
-        joins = x[10]
-        discord_invites = x[11]
-        server_updates = x[12]
-        emojis = x[11]
-        ignored_channels = x[14]
-        logchannel = x[15]
-        webhook_id = x[16]
-
-        if ignored_channels is None:
-            ignored_channels = []
-        else:
-            ignored_channels = [x for x in ignored_channels.split(",")]
-
-        settings[server_id]["logging"]["message_edits"] = message_edits
-        settings[server_id]["logging"]["message_deletions"] = message_deletions
-        settings[server_id]["logging"]["role_changes"] = role_changes
-        settings[server_id]["logging"]["channel_updates"] = channel_updates
-        settings[server_id]["logging"]["name_updates"] = name_updates
-        settings[server_id]["logging"]["voice_state_updates"] = voice_state_updates
-        settings[server_id]["logging"]["avatar_changes"] = avatar_changes
-        settings[server_id]["logging"]["bans"] = bans
-        settings[server_id]["logging"]["leaves"] = leaves
-        settings[server_id]["logging"]["joins"] = joins
-        settings[server_id]["logging"]["discord_invites"] = discord_invites
-        settings[server_id]["logging"]["server_updates"] = server_updates
-        settings[server_id]["logging"]["emojis"] = emojis
-        settings[server_id]["logging"]["ignored_channels"] = ignored_channels
-        settings[server_id]["logging"]["logchannel"] = logchannel
-        settings[server_id]["logging"]["webhook_id"] = webhook_id
-
-
+ 
 async def load_prefixes():
     query = """
             SELECT server_id, ARRAY_REMOVE(ARRAY_AGG(prefix), NULL) as prefix_list
