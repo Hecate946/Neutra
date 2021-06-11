@@ -870,8 +870,6 @@ class Logging(commands.Cog):
                 continue
 
             if before.name != after.name:
-                if await self.check(snowflake=guild.id, event="name_updates"):
-
                     embed = discord.Embed(
                         description=f"**User:** {after.mention} **Name:** `{after}`\n"
                         f"**Old Username:** `{before.name}`\n"
@@ -885,8 +883,6 @@ class Logging(commands.Cog):
                     await self.send_webhook(webhook, embed=embed)
 
             elif before.discriminator != after.discriminator:
-                if await self.check(snowflake=guild.id, event="name_updates"):
-
                     embed = discord.Embed(
                         description=f"**User:** {after.mention} **Name:** `{after}`\n"
                         f"**Old Discriminator:** `{before.discriminator}`\n"
@@ -900,8 +896,6 @@ class Logging(commands.Cog):
                     await self.send_webhook(webhook, embed=embed)
 
             elif before.avatar_url != after.avatar_url:
-                if await self.check(snowflake=guild.id, event="avatar_changes"):
-
                     embed = discord.Embed(
                         description=f"**User:** {after.mention} **Name:** `{after}`\n"
                         "New image below, old image to the right.",
