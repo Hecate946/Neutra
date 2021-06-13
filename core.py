@@ -148,7 +148,7 @@ class Snowbot(commands.AutoShardedBot):
 
         self.cog_exceptions = ["BOTCONFIG", "BOTADMIN", "MANAGER", "JISHAKU"]
         self.hidden_cogs = ["TESTING", "BATCH", "SLASH", "TASKS", "HOME"]
-        self.do_not_load = ["CONVERSION", "TESTING"]
+        self.do_not_load = ["TESTING"]
 
         # Webhooks for monitering and data saving.
         self.avatar_webhook = None
@@ -458,6 +458,7 @@ class Snowbot(commands.AutoShardedBot):
                 if cog.upper() not in self.do_not_load:
                     self.load_extension(f"cogs.{cog}")
         except Exception as e:
+            print(utils.traceback_maker(e))
             self.dispatch("error", "extension_error", tb=utils.traceback_maker(e))
 
         print(f"{self.user} ({self.user.id})")

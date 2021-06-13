@@ -265,10 +265,8 @@ class Admin(commands.Cog):
     @decorators.command(
         aliases=["multiban"],
         brief="Massban users matching a search.",
-        botperms=["ban_members"],
-        permissions=["manage_guild", "ban_members"],
         implemented="2021-05-02 04:12:14.126319",
-        updated="2021-05-05 19:23:39.306805",
+        updated="2021-06-13 01:41:29.818783",
     )
     @commands.guild_only()
     @checks.bot_has_perms(ban_members=True)
@@ -281,7 +279,7 @@ class Admin(commands.Cog):
         Output:
             Massbans users matching searches
         Notes:
-            Use -massban --help
+            Use {0}massban --help
             to show all valid arguments.
         """
 
@@ -342,7 +340,7 @@ class Admin(commands.Cog):
         parser.add_argument("--regex")
         parser.add_argument("--no-avatar", action="store_true")
         parser.add_argument("--no-roles", action="store_true")
-        parser.add_argument("--has-role", type=int)
+        parser.add_argument("--has-role", nargs="+")
         parser.add_argument("--warns", "--warn", type=int)
         parser.add_argument("--created", type=int)
         parser.add_argument("--joined", type=int)
@@ -365,7 +363,7 @@ class Admin(commands.Cog):
         try:
             args = parser.parse_args(shlex.split(args))
         except Exception as e:
-            return await ctx.send_or_reply(str(e).capitalize())
+            return await ctx.fail(str(e).capitalize())
 
         members = []
 
@@ -387,7 +385,7 @@ class Admin(commands.Cog):
                 try:
                     _match = re.compile(args.match)
                 except re.error as e:
-                    return await ctx.send_or_reply(
+                    return await ctx.fail(
                         f"Invalid regex passed to `--match`: {e}"
                     )
                 else:
@@ -421,7 +419,7 @@ class Admin(commands.Cog):
             try:
                 _regex = re.compile(args.regex)
             except re.error as e:
-                return await ctx.send_or_reply(
+                return await ctx.fail(
                     f"Invalid regex passed to `--regex`: {e}"
                 )
             else:
@@ -432,10 +430,8 @@ class Admin(commands.Cog):
         if args.no_roles:
             predicates.append(lambda m: len(getattr(m, "roles", [])) <= 1)
         if args.has_role:
-
-            role = ctx.guild.get_role(args.has_role)
-            if role is None:
-                return await ctx.fail("Invalid role.")
+            discord_role = " ".join(args.has_role)
+            role = await converters.DiscordRole().convert(ctx, str(discord_role))
             predicates.append(lambda m: role in m.roles)
 
         now = datetime.utcnow()
@@ -493,7 +489,7 @@ class Admin(commands.Cog):
         members = {m for m in members if all(p(m) for p in predicates)}
         # members.add([x for x in await p(m)])
         if len(members) == 0:
-            return await ctx.send_or_reply("No members found matching criteria.")
+            return await ctx.fail("No users found matching criteria.")
 
         if args.show:
             members = sorted(members, key=lambda m: m.joined_at or now)
@@ -501,14 +497,14 @@ class Admin(commands.Cog):
                 f"{m.id}\tJoined: {m.joined_at}\tCreated: {m.created_at}\t{m}"
                 for m in members
             )
-            content = f"Current Time: {datetime.utcnow()}\nTotal members: {len(members)}\n{fmt}"
+            content = f"Current Time: {datetime.utcnow()}\nTotal users: {len(members)}\n{fmt}"
             file = discord.File(
-                io.BytesIO(content.encode("utf-8")), filename="members.txt"
+                io.BytesIO(content.encode("utf-8")), filename="users.txt"
             )
             return await ctx.send_or_reply(file=file)
 
         if args.reason is None:
-            return await ctx.send_or_reply("--reason flag is required.")
+            return await ctx.fail("--reason flag is required.")
         else:
             reason = " ".join(args.reason)
             raw_reason = reason
@@ -535,8 +531,281 @@ class Admin(commands.Cog):
                 continue
 
         if banned:
-            await ctx.success(f"Massbanned {len(banned)}/{len(members)} users.")
+            await ctx.success(f"Mass banned {len(banned)}/{len(members)} user{'' if len(banned) == 1 else 's'}.")
             self.bot.dispatch("mod_action", ctx, targets=banned)
+        if failed:
+            await helpers.error_info(ctx, failed)
+
+
+    @decorators.command(
+        aliases=["multikick"],
+        brief="Mass kick users matching a search.",
+        implemented="2021-06-13 01:27:18.598560",
+        updated="2021-06-13 01:27:18.598560",
+    )
+    @commands.guild_only()
+    @checks.bot_has_perms(kick_members=True)
+    @checks.has_perms(manage_guild=True, kick_members=True)
+    async def masskick(self, ctx, *, args):
+        """
+        Usage: {0}masskick <arguments>
+        Aliases: {0}multikick
+        Permissions: Manage Server, Ban Members
+        Output:
+            Mass kicks users matching searches
+        Notes:
+            Use -masskick --help
+            to show all valid arguments.
+        """
+
+        help_docstr = ""
+        help_docstr += "**Valid Masskick Flags:**"
+        help_docstr += "```yaml\n"
+        help_docstr += "Flags: [Every flag is optional.]\n"
+        help_docstr += "\t--help|-h: Shows this message\n"
+        help_docstr += "\t--channel|-c: Channel to search for message history.\n"
+        help_docstr += "\t--reason|-r: The reason for the ban.\n"
+        help_docstr += "\t--regex: Regex that usernames must match.\n"
+        help_docstr += (
+            "\t--created: Matches users that registered after X minutes ago.\n"
+        )
+        help_docstr += "\t--joined: Matches users that joined after X minutes ago.\n"
+        help_docstr += (
+            "\t--joined-before: Matches users who joined before the user ID given.\n"
+        )
+        help_docstr += (
+            "\t--joined-after: Matches users who joined after the user ID given.\n"
+        )
+        help_docstr += (
+            "\t--no-avatar: Matches users who have no avatar. (no arguments)\n"
+        )
+        help_docstr += "\t--no-roles: Matches users that have no role. (no arguments)\n"
+        help_docstr += "\t--has-role: Matches users that have a specific role.\n"
+        help_docstr += (
+            "\t--show: Show members instead of banning them. (no arguments)\n"
+        )
+        help_docstr += (
+            "\t--warns: Matches users who's warn count is more than a value.\n"
+        )
+        help_docstr += "\tMessage history filters (Requires --channel):\n"
+        help_docstr += "\t\t--contains: A substring to search for in the message.\n"
+        help_docstr += (
+            "\t\t--starts: A substring to search if the message starts with.\n"
+        )
+        help_docstr += "\t\t--ends: A substring to search if the message ends with.\n"
+        help_docstr += "\t\t--match: A regex to match the message content to.\n"
+        help_docstr += (
+            "\t\t--search: How many messages to search. Default 100. Max 2000.\n"
+        )
+        help_docstr += "\t\t--after: Messages must come after this message ID.\n"
+        help_docstr += "\t\t--before: Messages must come before this message ID.\n"
+        help_docstr += (
+            "\t\t--files: Checks if the message has attachments (no arguments).\n"
+        )
+        help_docstr += (
+            "\t\t--embeds: Checks if the message has embeds (no arguments).\n"
+        )
+        help_docstr += "```"
+
+        parser = converters.Arguments(add_help=False, allow_abbrev=False)
+        parser.add_argument("--help", "-h", action="store_true")
+        parser.add_argument("--channel", "-c")
+        parser.add_argument("--reason", "-r", nargs="+")
+        parser.add_argument("--search", type=int, default=100)
+        parser.add_argument("--regex")
+        parser.add_argument("--no-avatar", action="store_true")
+        parser.add_argument("--no-roles", action="store_true")
+        parser.add_argument("--has-role", nargs="+")
+        parser.add_argument("--warns", "--warn", type=int)
+        parser.add_argument("--created", type=int)
+        parser.add_argument("--joined", type=int)
+        parser.add_argument("--joined-before", type=int)
+        parser.add_argument("--joined-after", type=int)
+        parser.add_argument("--contains")
+        parser.add_argument("--starts")
+        parser.add_argument("--ends")
+        parser.add_argument("--match")
+        parser.add_argument("--show", action="store_true")
+        parser.add_argument(
+            "--embeds", action="store_const", const=lambda m: len(m.embeds)
+        )
+        parser.add_argument(
+            "--files", action="store_const", const=lambda m: len(m.attachments)
+        )
+        parser.add_argument("--after", type=int)
+        parser.add_argument("--before", type=int)
+
+        try:
+            args = parser.parse_args(shlex.split(args))
+        except Exception as e:
+            return await ctx.fail(str(e).capitalize())
+
+        members = []
+
+        if args.help:
+            return await ctx.send_or_reply(help_docstr)
+
+        if args.channel:
+            channel = await commands.TextChannelConverter().convert(ctx, args.channel)
+            before = args.before and discord.Object(id=args.before)
+            after = args.after and discord.Object(id=args.after)
+            predicates = []
+            if args.contains:
+                predicates.append(lambda m: args.contains in m.content)
+            if args.starts:
+                predicates.append(lambda m: m.content.startswith(args.starts))
+            if args.ends:
+                predicates.append(lambda m: m.content.endswith(args.ends))
+            if args.match:
+                try:
+                    _match = re.compile(args.match)
+                except re.error as e:
+                    return await ctx.fail(f"Invalid regex passed to `--match`: {e}")
+                else:
+                    predicates.append(lambda m, x=_match: x.match(m.content))
+            if args.embeds:
+                predicates.append(args.embeds)
+            if args.files:
+                predicates.append(args.files)
+
+            async for message in channel.history(
+                limit=min(max(1, args.search), 2000), before=before, after=after
+            ):
+                if all(p(message) for p in predicates):
+                    members.append(message.author)
+        else:
+            if ctx.guild.chunked:
+                members = ctx.guild.members
+            else:
+                async with ctx.typing():
+                    await ctx.guild.chunk(cache=True)
+                members = ctx.guild.members
+
+        # member filters
+        predicates = [
+            lambda m: m.discriminator != "0000",  # No deleted users
+        ]
+
+        converter = commands.MemberConverter()
+
+        if args.regex:
+            try:
+                _regex = re.compile(args.regex)
+            except re.error as e:
+                return await ctx.fail(
+                    f"Invalid regex passed to `--regex`: {e}"
+                )
+            else:
+                predicates.append(lambda m, x=_regex: x.match(m.name))
+
+        if args.no_avatar:
+            predicates.append(lambda m: m.avatar is None)
+        if args.no_roles:
+            predicates.append(lambda m: len(getattr(m, "roles", [])) <= 1)
+        if args.has_role:
+            discord_role = " ".join(args.has_role)
+            print(discord_role)
+            role = await converters.DiscordRole().convert(ctx, str(discord_role))
+            predicates.append(lambda m: role in m.roles)
+
+        now = datetime.utcnow()
+        if args.created:
+
+            def created(member, *, offset=now - timedelta(minutes=args.created)):
+                return member.created_at > offset
+
+            predicates.append(created)
+        if args.joined:
+
+            def joined(member, *, offset=now - timedelta(minutes=args.joined)):
+                if isinstance(member, discord.User):
+                    # If the member is a user then they left already
+                    return True
+                return member.joined_at and member.joined_at > offset
+
+            predicates.append(joined)
+        if args.joined_after:
+            _joined_after_member = await converter.convert(ctx, str(args.joined_after))
+
+            def joined_after(member, *, _other=_joined_after_member):
+                return (
+                    member.joined_at
+                    and _other.joined_at
+                    and member.joined_at > _other.joined_at
+                )
+
+            predicates.append(joined_after)
+        if args.joined_before:
+            _joined_before_member = await converter.convert(
+                ctx, str(args.joined_before)
+            )
+
+            def joined_before(member, *, _other=_joined_before_member):
+                return (
+                    member.joined_at
+                    and _other.joined_at
+                    and member.joined_at < _other.joined_at
+                )
+
+            predicates.append(joined_before)
+
+        warned = []
+        if args.warns:
+            wcs = await self.get_warncount(ctx.guild)
+            for user, warns in wcs.items():
+                if warns >= args.warns:
+                    warned.append(user)
+
+            def warns(member):
+                return member.id in warned
+
+            predicates.append(warns)
+        members = {m for m in members if all(p(m) for p in predicates)}
+        if len(members) == 0:
+            return await ctx.fail("No users found matching criteria.")
+
+        if args.show:
+            members = sorted(members, key=lambda m: m.joined_at or now)
+            fmt = "\n".join(
+                f"{m.id}\tJoined: {m.joined_at}\tCreated: {m.created_at}\t{m}"
+                for m in members
+            )
+            content = f"Current Time: {datetime.utcnow()}\nTotal users: {len(members)}\n{fmt}"
+            file = discord.File(
+                io.BytesIO(content.encode("utf-8")), filename="users.txt"
+            )
+            return await ctx.send_or_reply(file=file)
+
+        if args.reason is None:
+            return await ctx.fail("--reason flag is required.")
+        else:
+            reason = " ".join(args.reason)
+            raw_reason = reason
+            reason = await converters.ActionReason().convert(ctx, reason)
+
+        confirm = await ctx.confirm(
+            f"This action will kick {len(members)} user{'' if len(members) == 1 else 's'}."
+        )
+        if not confirm:
+            return
+
+        kicked = []
+        failed = []
+        for member in members:
+            res = await checks.check_priv(ctx, member)
+            if res:
+                failed.append((str(member), res))
+                continue
+            try:
+                await ctx.guild.kick(member, reason=reason)
+                kicked.append((str(member), raw_reason))
+            except Exception as e:
+                failed.append((str(member), e))
+                continue
+
+        if kicked:
+            await ctx.success(f"Mass kicked {len(kicked)}/{len(members)} user{'' if len(kicked) == 1 else 's'}.")
+            self.bot.dispatch("mod_action", ctx, targets=kicked)
         if failed:
             await helpers.error_info(ctx, failed)
 
@@ -621,7 +890,6 @@ class Admin(commands.Cog):
     @decorators.command(
         aliases=["createprefix"],
         brief="Add a custom server prefix.",
-        permissions=["manage_guild"],
         implemented="2021-05-03 09:14:59.219515",
         updated="2021-05-05 19:23:39.306805",
     )

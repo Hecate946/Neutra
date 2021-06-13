@@ -68,16 +68,12 @@ class Conversion(commands.Cog):
     @decorators.command(
         brief="Convert pounds to kilograms", aliases=["lbs", "pounds", "pound"]
     )
-    async def lb(self, ctx, lbs: float = None):
+    async def lb(self, ctx, lbs: float):
         """
         Usage: -lb <value>
         Aliases: -lbs, pounds, pound
         Output: Turn lb into kg (imperial to metric)
         """
-        if lbs is None:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}lbs <value>`",
-            )
         await ctx.send_or_reply(
             content="That is {0:.2f} kg".format(lbs * 0.453592),
         )
@@ -85,23 +81,19 @@ class Conversion(commands.Cog):
     @decorators.command(
         brief="Convert kilograms to pounds.", aliases=["kgs", "kilograms", "kilogram"]
     )
-    async def kg(self, ctx, kg: float = None):
+    async def kg(self, ctx, kg: float):
         """
-        Usage: -kg <value>
-        Alias: -kgs, kilograms
+        Usage: {0}kg <value>
+        Alias: {0}kgs, kilograms
         Output: Turn kg into lb (metric to imperial)
         """
-        if float is None:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}kg <value>`",
-            )
-        await ctx.channel.send("That is {0:.2f} lbs".format(kg * 2.20462))
+        await ctx.send_or_reply("That is {0:.2f} lbs".format(kg * 2.20462))
 
     @decorators.command(brief="Convert feet.inches to centimeters", aliases=["feet"])
     async def ft(self, ctx):
         """
-        Usage: -ft <value>
-        Alias: -feet
+        Usage: {0}ft <value>
+        Alias: {0}feet
         Output:
             Turns height ft.inch (Eg: 5.11)
             to cm (imperial to metric)
@@ -110,7 +102,7 @@ class Conversion(commands.Cog):
         lb = int(value)
         inch = (value - int(value)) * 10
         cm = lb * 30.48 + inch * 2.54
-        await ctx.channel.send("{0:.2f} cm".format(cm))
+        await ctx.send_or_reply("{0:.2f} cm".format(cm))
 
     @decorators.command(brief="Convert centimeters to feet and inches.")
     async def cm(self, ctx):
@@ -124,7 +116,7 @@ class Conversion(commands.Cog):
         value = float(ctx.message.content.split()[1])
         ft = int(value * 0.0328084)
         inch = round((value * 0.0328084 - ft) * 12)
-        await ctx.channel.send("That is {}ft {}inches".format(ft, inch))
+        await ctx.send_or_reply("That is {}ft {}inches".format(ft, inch))
 
     # Helper methods
     def _to_bytes(self, in_string):
@@ -223,7 +215,7 @@ class Conversion(commands.Cog):
     @decorators.command(brief="Convert hex to decimal.")
     async def hexdec(self, ctx, *, input_hex=None):
         """
-        Usage: -hexdec <hex>
+        Usage: {0}hexdec <hex>
         """
         if input_hex == None:
             await ctx.send_or_reply(
@@ -233,52 +225,33 @@ class Conversion(commands.Cog):
 
         input_hex = self._check_hex(input_hex)
         if not len(input_hex):
-            await ctx.send_or_reply(content="Malformed hex - try again.")
+            await ctx.fail("Malformed hex - try again.")
             return
 
         try:
             dec = int(input_hex, 16)
         except Exception:
-            await ctx.send_or_reply(
-                content="I couldn't make that conversion!",
-            )
+            await ctx.fail("I couldn't make that conversion!")
             return
 
         await ctx.send_or_reply(dec)
 
     @decorators.command(brief="Convert decimal into hex.")
-    async def dechex(self, ctx, *, input_dec=None):
+    async def dechex(self, ctx, *, input_dec: int):
         """
-        Usage: -dechex <hex>
+        Usage: {0}dechex <hex>
         """
-        if input_dec == None:
-            await ctx.send_or_reply(
-                content="Usage: `{}dechex [input_dec]`".format(ctx.prefix),
-            )
-            return
-
-        try:
-            input_dec = int(input_dec)
-        except Exception:
-            await ctx.send_or_reply(content="Input must be an integer.")
-            return
-        min_length = 2
         hex_str = "{:x}".format(input_dec).upper()
-        hex_str = "0" * (len(hex_str) % min_length) + hex_str
-        await ctx.send_or_reply(content="0x" + hex_str)
+        hex_str = "0" * (len(hex_str) %2) + hex_str
+        await ctx.send_or_reply("#" + hex_str)
 
     @decorators.command(brief="Convert a string to binary.")
-    async def strbin(self, ctx, *, input_string=None):
+    async def strbin(self, ctx, *, input_string: str):
         """
-        Usage: -strbin <string>
+        Usage: {0}strbin <string>
         Output:
             Converts the input string to its binary representation.
         """
-        if input_string == None:
-            await ctx.send_or_reply(
-                content="Usage: `{}strbin [input_string]`".format(ctx.prefix),
-            )
-            return
         msg = "".join("{:08b}".format(ord(c)) for c in input_string)
         # Format into blocks:
         # - First split into chunks of 8
@@ -290,36 +263,28 @@ class Conversion(commands.Cog):
         await ctx.send_or_reply(msg)
 
     @decorators.command(brief="Convert binary to a string")
-    async def binstr(self, ctx, *, input_binary=None):
+    async def binstr(self, ctx, *, input_binary: str):
         """
         Usage: -binstr <binary>
         Output:
             Converts the input binary to its string representation.
         """
-        if input_binary == None:
-            await ctx.send_or_reply(
-                content="Usage: `{}binstr [input_binary]`".format(ctx.prefix),
-            )
-            return
         # Clean the string
         new_bin = ""
         for char in input_binary:
             if char == "0" or char == "1":
                 new_bin += char
         if not len(new_bin):
-            await ctx.send_or_reply(
-                content="Usage: `{}binstr [input_binary]`".format(ctx.prefix),
-            )
-            return
+            return await ctx.usage()
         msg = "".join(
             chr(int(new_bin[i : i + 8], 2)) for i in range(0, len(new_bin), 8)
         )
-        await ctx.send_or_reply(content=msg)
+        await ctx.send_or_reply(msg)
 
     @decorators.command(brief="Convert binary to an integer.")
     async def binint(self, ctx, *, input_binary=None):
         """
-        Usage: -binint <binary>
+        Usage: {0}binint <binary>
         Output:
             Converts the input binary to its integer representation.
         """
@@ -332,31 +297,20 @@ class Conversion(commands.Cog):
             msg = int(input_binary, 2)
         except Exception:
             msg = "I couldn't make that conversion!"
-        await ctx.send_or_reply(content=msg)
+        await ctx.send_or_reply(msg)
 
     @decorators.command(brief="Convert an integer to binary.")
-    async def intbin(self, ctx, *, input_int=None):
+    async def intbin(self, ctx, *, input_int: int):
         """
-        Usage: -intbin <integer>
+        Usage: {0}intbin <integer>
         Output:
             Converts the input integer to its binary representation."""
-        if input_int == None:
-            await ctx.send_or_reply(
-                content="Usage: `{}intbin [input_int]`".format(ctx.prefix),
-            )
-            return
-        try:
-            input_int = int(input_int)
-        except Exception:
-            await ctx.send_or_reply(content="Input must be an integer.")
-            return
-
-        await ctx.send_or_reply(content="{:08b}".format(input_int))
+        await ctx.send_or_reply("{:08b}".format(input_int))
 
     @decorators.group(brief="Encode to: b32, b64, b85, rot13, hex.")
     async def encode(self, ctx):
         """
-        Usage: -encode <method>
+        Usage: {0}encode <method>
         Methods:
             b32
             b64
@@ -370,7 +324,7 @@ class Conversion(commands.Cog):
     @decorators.group(brief="Decode from b32, b64, b85, rot13, hex.")
     async def decode(self, ctx):
         """
-        Usage: -decode <method>
+        Usage: {0}decode <method>
         Methods:
             b32
             b64
@@ -401,9 +355,7 @@ class Conversion(commands.Cog):
     async def encryptout(self, ctx, convert: str, input):
         """ The main, modular function to control encrypt/decrypt commands """
         if not input:
-            return await ctx.send_or_reply(
-                content=f"Aren't you going to give me anything to encode/decode **{ctx.author.name}**",
-            )
+            return await ctx.usage()
 
         async with ctx.channel.typing():
             if len(input) > 1900:
@@ -414,7 +366,7 @@ class Conversion(commands.Cog):
 
                 try:
                     return await ctx.send_or_reply(
-                        content=f"📑 **{convert}**",
+                        content=f"{self.bot.emote_dict['log']} **{convert}**",
                         file=discord.File(data, filename=utils.timetext("Encryption")),
                     )
                 except discord.HTTPException:
@@ -424,11 +376,11 @@ class Conversion(commands.Cog):
 
             try:
                 await ctx.send_or_reply(
-                    content=f"📑 **{convert}**```fix\n{input.decode('UTF-8')}```",
+                    content=f"{self.bot.emote_dict['log']} **{convert}**```fix\n{input.decode('UTF-8')}```",
                 )
             except AttributeError:
                 await ctx.send_or_reply(
-                    content=f"📑 **{convert}**```fix\n{input}```",
+                    content=f"{self.bot.emote_dict['log']} **{convert}**```fix\n{input}```",
                 )
 
     @encode.command(name="base32", aliases=["b32"])
@@ -568,7 +520,7 @@ class Conversion(commands.Cog):
     @decorators.command(brief="Show the morse lookup table")
     async def morsetable(self, ctx, num_per_row=None):
         """
-        Usage: -morsetable
+        Usage: {0}morsetable
         Output:
             Prints out the morse code lookup table.
         """
@@ -602,7 +554,7 @@ class Conversion(commands.Cog):
         await ctx.send_or_reply(msg)
 
     @decorators.command(brief="Converts ascii to morse code.")
-    async def morse(self, ctx, *, content=None):
+    async def morse(self, ctx, *, content):
         """
         Usage: -morse <content>
         Output: Converts ascii to morse code.
@@ -612,13 +564,6 @@ class Conversion(commands.Cog):
             and separated by 1 space.
             Each word is separated by 4 spaces.
         """
-
-        if content == None:
-            await ctx.send_or_reply(
-                content="Usage `{}morse [content]`".format(ctx.prefix),
-            )
-            return
-
         # Only accept alpha numeric stuff and spaces
         word_list = content.split()
         morse_list = []
@@ -648,22 +593,15 @@ class Conversion(commands.Cog):
         await ctx.send_or_reply(msg)
 
     @decorators.command(brief="Converts morse code to ascii.")
-    async def unmorse(self, ctx, *, content=None):
+    async def unmorse(self, ctx, *, content):
         """
-        Usage: -unmorse <morse>
+        Usage: {0}unmorse <morse>
         Output: Converts morse code to ascii.
         Notes:
             Each letter is comprised of "-" or "."
             and separated by 1 space.
             Each word is separated by 4 spaces.
         """
-
-        if content == None:
-            await ctx.send_or_reply(
-                content="Usage `{}unmorse [content]`".format(ctx.prefix),
-            )
-            return
-
         # Only accept morse symbols
         content = "".join([x for x in content if x in " .-"])
         word_list = content.split("    ")
