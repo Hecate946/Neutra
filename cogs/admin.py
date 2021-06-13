@@ -550,7 +550,7 @@ class Admin(commands.Cog):
         """
         Usage: {0}masskick <arguments>
         Aliases: {0}multikick
-        Permissions: Manage Server, Ban Members
+        Permissions: Manage Server, Kick Members
         Output:
             Mass kicks users matching searches
         Notes:
