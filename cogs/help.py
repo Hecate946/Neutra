@@ -221,7 +221,7 @@ class Help(commands.Cog):
                     if ctx.guild.id in self.bot.home_guilds:
                         line = f"\n`{c.qualified_name}` {c.description}\n"
                     else:
-                        line = ''
+                        line = ""
                 else:
                     line = f"\n`{c.qualified_name}` {c.description}\n"
                 if ctx.guild:
@@ -500,8 +500,6 @@ class Help(commands.Cog):
                 return await self.helper_func(
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )
-
-
 
             ##########################
             ## Manages Command Help ##
