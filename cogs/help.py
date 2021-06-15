@@ -217,7 +217,13 @@ class Help(commands.Cog):
                     continue
                 valid_cogs.append(c)
             for c in valid_cogs:
-                line = f"\n`{c.qualified_name}` {c.description}\n"
+                if c.qualified_name.upper() in self.bot.home_cogs:
+                    if ctx.guild.id in self.bot.home_guilds:
+                        line = f"\n`{c.qualified_name}` {c.description}\n"
+                    else:
+                        line = ''
+                else:
+                    line = f"\n`{c.qualified_name}` {c.description}\n"
                 if ctx.guild:
                     disabled_comms = self.bot.server_settings[ctx.guild.id][
                         "disabled_commands"
@@ -480,6 +486,22 @@ class Help(commands.Cog):
                 return await self.helper_func(
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )
+
+            #################
+            ## Home Guilds ##
+            #################
+
+            if invokercommand.lower() in ["music", "player", "audio"]:
+                if ctx.guild.id not in self.bot.home_guilds:
+                    return await ctx.send_or_reply(
+                        f"{self.bot.emote_dict['warn']} No command named `{invokercommand}` found."
+                    )
+                cog = self.bot.get_cog("Music")
+                return await self.helper_func(
+                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
+                )
+
+
 
             ##########################
             ## Manages Command Help ##

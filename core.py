@@ -149,6 +149,9 @@ class Snowbot(commands.AutoShardedBot):
         self.cog_exceptions = ["BOTCONFIG", "BOTADMIN", "MANAGER", "JISHAKU"]
         self.hidden_cogs = ["TESTING", "BATCH", "SLASH", "TASKS", "HOME"]
         self.do_not_load = ["TESTING"]
+        self.home_cogs = ["MUSIC"]
+
+        self.home_guilds = [805638877762420786, 776345386482270209, 740734113086177433]
 
         # Webhooks for monitering and data saving.
         self.avatar_webhook = None
