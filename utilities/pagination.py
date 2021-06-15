@@ -216,18 +216,18 @@ class SimplePageSource(menus.ListPageSource):
             )
             self.initial_page = False
 
-        formatted_pages = []
-        for i in pages:
-            formatted_pages.append(
-                str(i).replace("[", "").replace("]", "").replace("'", "")
-            )
+        # formatted_pages = []
+        # for i in pages:
+        #     formatted_pages.append(
+        #         str(i).replace("[", "").replace("]", "").replace("'", "")
+        #     )
 
         if self.desc_head and self.desc_foot:
             menu.embed.description = (
-                self.desc_head + "\n".join(formatted_pages) + self.desc_foot
+                self.desc_head + "\n".join(pages) + self.desc_foot
             )
         else:
-            menu.embed.description = "\n".join(formatted_pages)
+            menu.embed.description = "\n".join(pages)
         return menu.embed
 
 

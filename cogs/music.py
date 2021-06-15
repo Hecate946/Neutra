@@ -8,11 +8,12 @@ import itertools
 import youtube_dl
 
 from datetime import datetime
-from discord.ext import commands
+from discord.ext import commands, menus
 
 from settings import constants
 from utilities import checks
 from utilities import decorators
+from utilities import pagination
 
 # Silence useless bug reports messages
 youtube_dl.utils.bug_reports_message = lambda: ''
@@ -322,7 +323,7 @@ class VoiceState:
                 self.voice.play(self.current.source, after=self.play_next_song)
                 await self.current.source.channel.send(embed=self.current.create_embed())
             
-            #If the song is looped
+            # If the song is looped
             elif self.loop == True:
                 self.now = discord.FFmpegPCMAudio(self.current.source.stream_url, **YTDLSource.FFMPEG_OPTIONS)
                 self.voice.play(self.now, after=self.play_next_song)
@@ -386,9 +387,6 @@ class Music(commands.Cog):
     async def cog_before_invoke(self, ctx):
         ctx.voice_state = self.get_voice_state(ctx)
 
-    async def cog_command_error(self, ctx, error):
-        await ctx.send('An error occurred: {}'.format(str(error)))
-        raise error
 
     @decorators.command(
         name='connect',
@@ -398,6 +396,16 @@ class Music(commands.Cog):
         updated="2021-06-15 06:50:53.661786",
     )
     async def _connect(self, ctx, *, channel: typing.Union[discord.VoiceChannel, discord.StageChannel] = None):
+        """
+        Usage: {0}connect [channel]
+        Alias: {0}join
+        Output:
+            Joins a specified channel
+        Notes:
+            If you do not specify a channel,
+            the bot will join your current
+            channel. (If possible)
+        """
         if channel is None:
             if not hasattr(ctx.author.voice, "channel"):
                 return await ctx.usage()
@@ -425,7 +433,12 @@ class Music(commands.Cog):
         updated="2021-06-15 06:50:53.661786",
     )
     async def _disconnect(self, ctx):
-        """Clears the queue and leaves the voice channel."""
+        """
+        Usage: {0}disconnect
+        Alias: {0}dc
+        Output:
+            Clears the queue and leaves the voice channel.
+        """
         if hasattr(ctx.guild.me.voice, "channel"):
             channel = ctx.guild.me.voice.channel
             await ctx.guild.voice_client.disconnect(force=True)
@@ -446,7 +459,6 @@ class Music(commands.Cog):
     @checks.has_perms(manage_guild=True)
     async def _volume(self, ctx, volume: int):
         """Sets the volume of the player for the current song."""
-
         if not ctx.voice_state.is_playing:
             return await ctx.fail("Nothing is currently being played.")
 
@@ -457,31 +469,42 @@ class Music(commands.Cog):
         await ctx.send_or_reply(f"{self.bot.emote_dict['volume']} Volume of the player set to {volume}%")
 
     @decorators.command(
-        name='now',
+        name='current',
         brief="Displays the currently playing song.",
-        aliases=['current', 'np'],
+        aliases=['now', 'np'],
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )
-    async def _now(self, ctx):
-        """Displays the currently playing song."""
+    async def _current(self, ctx):
+        """
+        Usage: {0}now
+        Aliases: {0}now {0}np
+        Output: Displays the currently playing song.
+        """
+        if not ctx.voice_state.is_playing:
+            return await ctx.fail("Nothing is currently being played.")
         embed = ctx.voice_state.current.create_embed()
         await ctx.send(embed=embed)
 
     @decorators.command(
         name='pause',
         brief="Pauses the currently playing song.",
-        aliases=['pa'],
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )
     async def _pause(self, ctx):
-        """Pauses the currently playing song."""
+        """
+        Usage: {0}pause
+        Output: Pauses the currently playing song.
+        """
         if not ctx.voice_state.is_playing:
-            return await ctx.send("Nothing is currently being played.")
-        elif ctx.voice_state.is_playing and ctx.voice_state.voice.is_playing():
-            ctx.voice_state.voice.pause()
-            await ctx.message.add_reaction(self.bot.emote_dict['pause'])
+            return await ctx.fail("Nothing is currently being played.")
+
+        if ctx.voice_state.voice.is_paused():
+            return await ctx.fail("The player is already paused.")
+
+        ctx.voice_state.voice.pause()
+        await ctx.message.add_reaction(self.bot.emote_dict['pause'])
 
     @decorators.command(
         name='resume',
@@ -490,10 +513,20 @@ class Music(commands.Cog):
         updated="2021-06-15 06:50:53.661786",
     )
     async def _resume(self, ctx):
-        """Resumes a currently paused song."""
-        if ctx.voice_state.is_playing and ctx.voice_state.voice.is_paused():
+        """
+        Usage: {0}resume
+        Output:
+            Resumes a currently paused song.
+        """
+        if not ctx.voice_state.is_playing:
+            return await ctx.fail("Nothing is currently being played.")
+
+        if ctx.voice_state.voice.is_paused():
             ctx.voice_state.voice.resume()
             await ctx.message.add_reaction(self.bot.emote_dict['play'])
+        
+        else:
+            return await ctx.fail("The player is not paused.")
 
     @decorators.command(
         name='stop',
@@ -502,7 +535,11 @@ class Music(commands.Cog):
         updated="2021-06-15 06:50:53.661786",
     )
     async def _stop(self, ctx):
-        """Stops playing song and clears the queue."""
+        """
+        {0}Usage: {0}stop
+        Output:
+            Stops playing song and clears the queue.
+        """
 
         ctx.voice_state.songs.clear()
 
@@ -518,8 +555,15 @@ class Music(commands.Cog):
         updated="2021-06-15 06:50:53.661786",
     )
     async def _skip(self, ctx):
-        """Vote to skip a song. The requester can automatically skip.
-        3 skip votes are needed for the song to be skipped.
+        """
+        Usage: {0}skip
+        Aliases: {0}s, {0}fs, {0}vs
+        Output: Vote to skip a song.
+        Notes:
+            The song requester and those with the
+            Manage Server permission can automatically skip
+            Otherwise half the listeners neet to vote skip
+            for the song to be skipped.
         """
         if not ctx.voice_state.is_playing:
             return await ctx.fail("Nothing is currently being played.")
@@ -542,7 +586,7 @@ class Music(commands.Cog):
                 await ctx.message.add_reaction(self.bot.emote_dict['skip'])
                 ctx.voice_state.skip()
             else:
-                await ctx.success('Skip vote added, currently at **{}/{}**'.format(total_votes, required_voters))
+                await ctx.success('Skip vote added, currently at `{}/{}`'.format(total_votes, required_voters))
         else:
             await ctx.fail('You have already voted to skip this song.')
 
@@ -552,32 +596,47 @@ class Music(commands.Cog):
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )
-    async def _queue(self, ctx, page: int = 1):
+    @checks.bot_has_perms(add_reactions=True, external_emojis=True)
+    async def _queue(self, ctx):
         """
-        Usage: {0}queue [page number]
+        Usage: {0}queue
         Output:
-            Shows the player's queue.
+            Starts a pagination session showing
+            all the songs in the current queue.
         Notes:
-            You can optionally specify the page to show.
-            Each page contains 10 elements.
+            Each page contains 10 queue elements.
         """
 
         if len(ctx.voice_state.songs) == 0:
             return await ctx.fail('The queue is currently empty.')
 
-        items_per_page = 10
-        pages = math.ceil(len(ctx.voice_state.songs) / items_per_page)
+        entries = [f"[**{song.source.title}**]({song.source.url})" for song in ctx.voice_state.songs]
+        p = pagination.SimplePages(entries, per_page=10, index=True)
+        p.embed.title = "Current Queue"
+        
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send(e)
 
-        start = (page - 1) * items_per_page
-        end = start + items_per_page
-
-        queue = ''
-        for i, song in enumerate(ctx.voice_state.songs[start:end], start=start):
-            queue += '`{0}.` [**{1.source.title}**]({1.source.url})\n'.format(i + 1, song)
-
-        embed = (discord.Embed(description='**{} tracks:**\n\n{}'.format(len(ctx.voice_state.songs), queue))
-                 .set_footer(text='Viewing page {}/{}'.format(page, pages)))
-        await ctx.send(embed=embed)
+    @decorators.command(
+        name='clear',
+        aliases=['c'],
+        brief="Remove all queued songs.",
+        implemented="2021-06-15 06:50:53.661786",
+        updated="2021-06-15 06:50:53.661786",
+    )
+    async def _clear(self, ctx):
+        """
+        Usage: {0}clear
+        Alias: {0}c
+        Output:
+            Removes all queued songs
+        """
+        if len(ctx.voice_state.songs) == 0:
+            return await ctx.fail("The queue is already empty")
+        ctx.voice_state.songs.clear()
+        await ctx.success("Cleared all songs from the queue.")
 
     @decorators.command(
         name='shuffle',
@@ -607,7 +666,7 @@ class Music(commands.Cog):
         """Removes a song from the queue at a given index."""
 
         if len(ctx.voice_state.songs) == 0:
-            return await ctx.send('Empty queue.')
+            return await ctx.send("The queue is already empty")
         try:
             ctx.voice_state.songs.remove(index - 1)
         except Exception:
@@ -687,7 +746,7 @@ class Music(commands.Cog):
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )
-    async def _play(self, ctx, *, search: str):
+    async def _play(self, ctx, *, search: str = None):
         """
         Usage: {0}play <search>
         Alias: {0}p
@@ -703,10 +762,16 @@ class Music(commands.Cog):
             https://rg3.github.io/youtube-dl/supportedsites.html
         """
         await ctx.trigger_typing()
-        if ctx.voice_state.is_playing and ctx.voice_state.voice.is_paused():
-            ctx.voice_state.voice.resume()
-            await ctx.message.add_reaction(self.bot.emote_dict['play'])
-            await ctx.success("Resumed the player")
+        await self.ensure_voice_state(ctx)
+
+        if search is None:
+            if ctx.voice_state.is_playing and ctx.voice_state.voice.is_paused():
+                ctx.voice_state.voice.resume()
+                await ctx.message.add_reaction(self.bot.emote_dict['play'])
+                await ctx.success("Resumed the player")
+            else:
+                return await ctx.usage()
+
         else:
             try:
                 source = await YTDLSource.create_source(ctx, search, loop=self.bot.loop)
@@ -737,6 +802,7 @@ class Music(commands.Cog):
             Each title in the list can be clicked as a link.
         """
         await ctx.trigger_typing()
+        await self.ensure_voice_state(ctx)
         try:
             source = await YTDLSource.search_source(ctx, search, loop=self.bot.loop, bot=self.bot)
         except YTDLError as e:
@@ -751,12 +817,23 @@ class Music(commands.Cog):
             else:
                 song = Song(source)
                 await ctx.voice_state.songs.put(song)
-                await ctx.send('Queued {}'.format(str(source)))
-            
-    @_play.before_invoke
-    @_youtube.before_invoke
-    async def ensure_voice_state(self, ctx):
-        ctx.voice_state = self.get_voice_state(ctx)
-        if not ctx.voice_state.voice:
-            await ctx.invoke(self._connect)
+                await ctx.send_or_reply(f"{self.bot.emote_dict['music']} Queued {source}")
 
+    async def ensure_voice_state(self, ctx):
+        if not ctx.voice_state.voice:
+            if not hasattr(ctx.author.voice, "channel"):
+                raise commands.BadArgument("You must be connected to a voice channel")
+
+            channel = ctx.author.voice.channel
+            try:
+                ctx.voice_state.voice = await channel.connect(timeout=None)
+            except discord.ClientException:
+                if hasattr(ctx.guild.me.voice, "channel"):
+                    if ctx.guild.me.voice.channel == channel:
+                        raise commands.BadArgument(f"Already in channel {channel.mention}")
+                    else:
+                        await ctx.guild.voice_client.disconnect(force=True)
+                        ctx.voice_state.voice = await channel.connect(timeout=None)
+                else:
+                    await ctx.guild.voice_client.disconnect(force=True)
+                    ctx.voice_state.voice = await channel.connect(timeout=None)
