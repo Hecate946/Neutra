@@ -269,11 +269,11 @@ class Song:
             )
             .add_field(name="URL", value=f"[Click]({self.source.url})")
             .add_field(
-                name="Likes", value=f'{constants.emotes["like"]} {self.source.likes}'
+                name="Likes", value=f'{constants.emotes["like"]} {self.source.likes:,}'
             )
             .add_field(
                 name="Dislikes",
-                value=f'{constants.emotes["dislike"]} {self.source.dislikes}',
+                value=f'{constants.emotes["dislike"]} {self.source.dislikes:,}',
             )
             .set_thumbnail(url=self.source.thumbnail)
             .set_author(name=self.requester.name, icon_url=self.requester.avatar_url)
