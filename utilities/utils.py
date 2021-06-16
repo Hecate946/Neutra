@@ -487,6 +487,7 @@ def cleanup_code(content):
     # remove `foo`
     return content.strip("` \n")
 
+
 def number_format(number):
     if str(number).endswith("1") and number != 11:
         fmt = str(number) + "st"
@@ -497,6 +498,8 @@ def number_format(number):
     else:
         fmt = str(number) + "th"
     return fmt
+
+
 class CachedHistoryIterator(HistoryIterator):
     """HistoryIterator, but we hit the cache first."""
 

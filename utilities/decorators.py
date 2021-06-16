@@ -53,6 +53,7 @@ def defer_ratelimit(bot=None):
 
 def is_home(home):
     """Support server only commands"""
+
     async def predicate(ctx):
         if type(home) != list:
             home_guild_list = [home]

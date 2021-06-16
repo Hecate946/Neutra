@@ -4,13 +4,14 @@ import typing
 import discord
 import inspect
 
-from collections import Counter, OrderedDict
+from collections import Counter
 from datetime import datetime
 from discord.ext import commands, menus
 from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
 
 from utilities import utils
 from utilities import checks
+from utilities import images
 from utilities import cleaner
 from utilities import converters
 from utilities import decorators
@@ -940,7 +941,9 @@ class Tracking(commands.Cog):
     @commands.guild_only()
     @checks.bot_has_perms(add_reactions=True, external_emojis=True)
     @checks.has_perms(manage_messages=True)
-    async def words(self, ctx, user: typing.Optional[converters.DiscordMember] = None, limit = 100):
+    async def words(
+        self, ctx, user: typing.Optional[converters.DiscordMember] = None, limit=100
+    ):
         """
         Usage: {0}words [user] [limit]
         Output: Most commonly used words by the passed user
@@ -1010,7 +1013,12 @@ class Tracking(commands.Cog):
     @commands.guild_only()
     @checks.bot_has_perms(add_reactions=True, external_emojis=True)
     @checks.has_perms(manage_messages=True)
-    async def word(self, ctx, user: typing.Optional[converters.DiscordMember] = None, word: str = None):
+    async def word(
+        self,
+        ctx,
+        user: typing.Optional[converters.DiscordMember] = None,
+        word: str = None,
+    ):
         """
         Usage: {0}word <word> [user]
         Permission: Manage Messages
@@ -1060,10 +1068,8 @@ class Tracking(commands.Cog):
     @word.error
     async def word_error(self, ctx, error):
         if isinstance(error, commands.TooManyArguments):
-            await ctx.fail(
-                "Please only provide one word at a time to search."
-            )
-            
+            await ctx.fail("Please only provide one word at a time to search.")
+
     @decorators.command(
         brief="Show the most active server users.",
         invoke_without_command=True,
@@ -1514,3 +1520,80 @@ class Tracking(commands.Cog):
         em.title = f"{user}'s Status Statistics"
         em.set_image(url="attachment://statusinfo.png")
         await ctx.send_or_reply(embed=em, file=dfile)
+
+    @decorators.command(
+        aliases=["bstatus", "bs"],
+        brief="Status info in a bar graph.",
+        implemented="2021-06-16 03:45:38.139631",
+        updated="2021-06-16 03:45:38.139631",
+        examples="""
+                {0}bs
+                {0}bs Hecate
+                {0}bs @Hecate
+                {0}bs Hecate#3523
+                {0}bs 708584008065351681
+                {0}bstatus
+                {0}bstatus Hecate
+                {0}bstatus @Hecate
+                {0}bstatus Hecate#3523
+                {0}bstatus 708584008065351681
+                {0}barstatus
+                {0}barstatus Hecate
+                {0}barstatus @Hecate
+                {0}barstatus Hecate#3523
+                {0}barstatus 708584008065351681
+                """,
+    )
+    @checks.bot_has_perms(attach_files=True, embed_links=True)
+    @checks.has_perms(view_audit_log=True)
+    async def barstatus(self, ctx, *, user: converters.DiscordMember = None):
+        """
+        Usage: {0}barstatus [user]
+        Aliases: {0}bs {0}bstatus
+        Output:
+            Generates a bar graph showing
+            a given user's status info.
+        Notes:
+            Will default to you if no
+            user is explicitly specified
+        """
+        user = user or ctx.author
+        await ctx.trigger_typing()
+        query = """
+                SELECT * FROM userstatus
+                WHERE user_id = $1;
+                """
+        data = await self.bot.cxn.fetch(query, user.id)
+        if not data:
+            return await self.do_generic(ctx, user)
+        for row in data:
+            starttime = row["starttime"]
+            online_time = row["online"]
+            idle_time = row["idle"]
+            dnd_time = row["dnd"]
+            last_change = row["last_changed"]
+
+        unix = time.time()
+        if str(user.status) == "online":
+            online_time += unix - last_change
+        elif str(user.status) == "idle":
+            idle_time += unix - last_change
+        elif str(user.status) == "dnd":
+            dnd_time += unix - last_change
+
+        offline_time = unix - starttime
+        statuses = {
+            "online": online_time,
+            "idle": idle_time,
+            "dnd": dnd_time,
+            "offline": offline_time,
+        }
+        barstatus_file = await self.bot.loop.run_in_executor(
+            None, images.get_barstatus, "", statuses
+        )
+        embed = discord.Embed(color=self.bot.constants.embed)
+        embed.title = f"{user}'s status usage since {datetime.utcfromtimestamp(starttime).__format__('%B %-d, %Y')}"
+        embed.set_image(url="attachment://barstatus.png")
+        await ctx.send_or_reply(
+            embed=embed, file=discord.File(barstatus_file, filename="barstatus.png")
+        )

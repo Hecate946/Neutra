@@ -27,7 +27,7 @@ def setup(bot):
 
 class Batch(commands.Cog):
     """
-    Manage batch inserts
+    Batch inserts all data
     """
 
     def __init__(self, bot):
@@ -599,43 +599,30 @@ class Batch(commands.Cog):
 
         await asyncio.sleep(2)  # API rest.
 
-        async with self.batch_lock:
-            self.usernames_batch.append(
-                {
-                    "user_id": member.id,
-                    "name": str(member),
-                }
-            )
-            self.nicknames_batch.append(
-                {
-                    "user_id": member.id,
-                    "server_id": member.guild.id,
-                    "nickname": member.display_name,
-                }
-            )
         try:
             if not member.guild.me.guild_permissions.manage_guild:
                 return
         except AttributeError:  # Sometimes if we're getting kicked as they join...
             return
-        old_invites = self.bot.invites[member.guild.id]
-        new_invites = await member.guild.invites()
-        for invite in old_invites:
-            if not invite:
-                self.bot.logging_webhook.send(f"**Invite is NoneType**")
-                continue
-            if not self.get_invite(new_invites, invite.code):
-                self.bot.logging_webhook.send(f"**Invite code was not matched**")
-                continue
-            if invite.uses < self.get_invite(new_invites, invite.code).uses:
-                self.invite_batch.append(
-                    {
-                        "invitee": member.id,
-                        "inviter": invite.inviter.id,
-                        "server_id": member.guild.id,
-                    }
-                )
-        self.bot.invites[member.guild.id] = new_invites
+        async with self.batch_lock:
+            old_invites = self.bot.invites[member.guild.id]
+            new_invites = await member.guild.invites()
+            for invite in old_invites:
+                if not invite:
+                    self.bot.logging_webhook.send(f"**Invite is NoneType**")
+                    continue
+                if not self.get_invite(new_invites, invite.code):
+                    self.bot.logging_webhook.send(f"**Invite code was not matched**")
+                    continue
+                if invite.uses < self.get_invite(new_invites, invite.code).uses:
+                    self.invite_batch.append(
+                        {
+                            "invitee": member.id,
+                            "inviter": invite.inviter.id,
+                            "server_id": member.guild.id,
+                        }
+                    )
+            self.bot.invites[member.guild.id] = new_invites
 
     def get_invite(self, invite_list, code):
         for invite in invite_list:

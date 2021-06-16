@@ -6,6 +6,14 @@ CREATE TABLE IF NOT EXISTS useravatars (
 );
 CREATE INDEX IF NOT EXISTS useravatars_idx ON useravatars(user_id, avatar_id);
 
+CREATE TABLE IF NOT EXISTS useravatars (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT,
+    avatar_id BIGINT,
+    insertion TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
+);
+CREATE INDEX IF NOT EXISTS useravatars_idx ON useravatars(user_id, avatar_id);
+
 CREATE TABLE IF NOT EXISTS usernames (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT,

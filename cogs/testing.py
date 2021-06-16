@@ -1,15 +1,22 @@
+import PIL
 import discord
 import time
 import io
 import traceback
 import asyncio
+import typing
 from discord.ext import commands, tasks
 from dislash.interactions import *
 from dislash.slash_commands import *
 import json
+
+from matplotlib.pyplot import show
 from utilities import decorators
 from utilities import utils
+from utilities import images
 from datetime import datetime
+import numpy as np
+from PIL import Image
 
 
 def setup(bot):
@@ -168,7 +175,34 @@ class Testing(commands.Cog):
             except Exception as e:
                 self.bot.dispatch("error", "queue_error", tb=utils.traceback_maker(e))
 
-    @commands.Cog.listener()
-    @decorators.defer_ratelimit()
-    async def on_message(self, message):
-        print(message)
+    @commands.command()
+    async def blah(self, ctx):
+        from utilities import images
+
+        query = """
+                SELECT author_id, COUNT(*) FROM messages
+                WHERE server_id = $1
+                GROUP BY author_id
+                ORDER BY count DESC
+                LIMIT 5;
+                """
+        await ctx.trigger_typing()
+        records = await self.bot.cxn.fetch(query, ctx.guild.id)
+        data = {
+            str(await self.bot.fetch_user(record["author_id"])): record["count"]
+            for record in records
+        }
+        image = Image.new("RGBA", (len(data) * 200, 1000), (216, 183, 255))
+        while max(data.values()) > 1000:
+            data = {user: count // 2 for user, count in data.items()}
+        for user, count in data.items():
+            bar = images.get_bar(user, count)
+            image.paste(im=bar, box=(list(data.values()).index(count) * 200, 0))
+
+        buffer = io.BytesIO()
+        image.save(buffer, "png")  # 'save' function for PIL
+        buffer.seek(0)
+        dfile = discord.File(fp=buffer, filename="mstats.png")
+        em = discord.Embed(title="Message Stats", color=self.bot.constants.embed)
+        em.set_image(url="attachment://mstats.png")
+        await ctx.send_or_reply(embed=em, file=dfile)

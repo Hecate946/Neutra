@@ -242,7 +242,7 @@ class Conversion(commands.Cog):
         Usage: {0}dechex <hex>
         """
         hex_str = "{:x}".format(input_dec).upper()
-        hex_str = "0" * (len(hex_str) %2) + hex_str
+        hex_str = "0" * (len(hex_str) % 2) + hex_str
         await ctx.send_or_reply("#" + hex_str)
 
     @decorators.command(brief="Convert a string to binary.")

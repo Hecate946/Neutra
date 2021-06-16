@@ -691,7 +691,11 @@ class Info(commands.Cog):
             vote to support me.
         """
         button_row = ActionRow(
-            Button(style=ButtonStyle.link, label="Vote for me!", url="https://top.gg/bot/810377376269205546/vote"),
+            Button(
+                style=ButtonStyle.link,
+                label="Vote for me!",
+                url="https://top.gg/bot/810377376269205546/vote",
+            ),
         )
         await ctx.rep_or_ref(
             "Thanks for showing interest in supporting me! Click the button below to vote for me on top.gg.",
@@ -850,7 +854,9 @@ class Info(commands.Cog):
 
         text = text[:-3]
 
-        pages = pagination.MainMenu(pagination.TextPageSource(text, prefix="```autohotkey"))
+        pages = pagination.MainMenu(
+            pagination.TextPageSource(text, prefix="```autohotkey")
+        )
         try:
             await pages.start(ctx)
         except menus.MenuError as e:

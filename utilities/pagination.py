@@ -223,9 +223,7 @@ class SimplePageSource(menus.ListPageSource):
         #     )
 
         if self.desc_head and self.desc_foot:
-            menu.embed.description = (
-                self.desc_head + "\n".join(pages) + self.desc_foot
-            )
+            menu.embed.description = self.desc_head + "\n".join(pages) + self.desc_foot
         else:
             menu.embed.description = "\n".join(pages)
         return menu.embed

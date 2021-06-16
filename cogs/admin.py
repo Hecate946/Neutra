@@ -385,9 +385,7 @@ class Admin(commands.Cog):
                 try:
                     _match = re.compile(args.match)
                 except re.error as e:
-                    return await ctx.fail(
-                        f"Invalid regex passed to `--match`: {e}"
-                    )
+                    return await ctx.fail(f"Invalid regex passed to `--match`: {e}")
                 else:
                     predicates.append(lambda m, x=_match: x.match(m.content))
             if args.embeds:
@@ -419,9 +417,7 @@ class Admin(commands.Cog):
             try:
                 _regex = re.compile(args.regex)
             except re.error as e:
-                return await ctx.fail(
-                    f"Invalid regex passed to `--regex`: {e}"
-                )
+                return await ctx.fail(f"Invalid regex passed to `--regex`: {e}")
             else:
                 predicates.append(lambda m, x=_regex: x.match(m.name))
 
@@ -497,7 +493,9 @@ class Admin(commands.Cog):
                 f"{m.id}\tJoined: {m.joined_at}\tCreated: {m.created_at}\t{m}"
                 for m in members
             )
-            content = f"Current Time: {datetime.utcnow()}\nTotal users: {len(members)}\n{fmt}"
+            content = (
+                f"Current Time: {datetime.utcnow()}\nTotal users: {len(members)}\n{fmt}"
+            )
             file = discord.File(
                 io.BytesIO(content.encode("utf-8")), filename="users.txt"
             )
@@ -531,11 +529,12 @@ class Admin(commands.Cog):
                 continue
 
         if banned:
-            await ctx.success(f"Mass banned {len(banned)}/{len(members)} user{'' if len(banned) == 1 else 's'}.")
+            await ctx.success(
+                f"Mass banned {len(banned)}/{len(members)} user{'' if len(banned) == 1 else 's'}."
+            )
             self.bot.dispatch("mod_action", ctx, targets=banned)
         if failed:
             await helpers.error_info(ctx, failed)
-
 
     @decorators.command(
         aliases=["multikick"],
@@ -692,9 +691,7 @@ class Admin(commands.Cog):
             try:
                 _regex = re.compile(args.regex)
             except re.error as e:
-                return await ctx.fail(
-                    f"Invalid regex passed to `--regex`: {e}"
-                )
+                return await ctx.fail(f"Invalid regex passed to `--regex`: {e}")
             else:
                 predicates.append(lambda m, x=_regex: x.match(m.name))
 
@@ -770,7 +767,9 @@ class Admin(commands.Cog):
                 f"{m.id}\tJoined: {m.joined_at}\tCreated: {m.created_at}\t{m}"
                 for m in members
             )
-            content = f"Current Time: {datetime.utcnow()}\nTotal users: {len(members)}\n{fmt}"
+            content = (
+                f"Current Time: {datetime.utcnow()}\nTotal users: {len(members)}\n{fmt}"
+            )
             file = discord.File(
                 io.BytesIO(content.encode("utf-8")), filename="users.txt"
             )
@@ -804,7 +803,9 @@ class Admin(commands.Cog):
                 continue
 
         if kicked:
-            await ctx.success(f"Mass kicked {len(kicked)}/{len(members)} user{'' if len(kicked) == 1 else 's'}.")
+            await ctx.success(
+                f"Mass kicked {len(kicked)}/{len(members)} user{'' if len(kicked) == 1 else 's'}."
+            )
             self.bot.dispatch("mod_action", ctx, targets=kicked)
         if failed:
             await helpers.error_info(ctx, failed)

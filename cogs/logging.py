@@ -37,6 +37,7 @@ class Logging(commands.Cog):
     """
     Manage the logging system
     """
+
     def __init__(self, bot):
         self.bot = bot
         self.entities = defaultdict(list)
@@ -503,6 +504,7 @@ class Logging(commands.Cog):
             specific logging events that are sent to the logchannel
         """
         await ctx.invoke(self.disable)
+
     #####################
     ## Event Listeners ##
     #####################
@@ -870,44 +872,44 @@ class Logging(commands.Cog):
                 continue
 
             if before.name != after.name:
-                    embed = discord.Embed(
-                        description=f"**User:** {after.mention} **Name:** `{after}`\n"
-                        f"**Old Username:** `{before.name}`\n"
-                        f"**New Username:** `{after.name}`\n",
-                        colour=self.bot.constants.embed,
-                        timestamp=datetime.utcnow(),
-                    )
-                    embed.set_author(name=f"Username Change")
-                    embed.set_footer(text=f"User ID: {after.id}")
+                embed = discord.Embed(
+                    description=f"**User:** {after.mention} **Name:** `{after}`\n"
+                    f"**Old Username:** `{before.name}`\n"
+                    f"**New Username:** `{after.name}`\n",
+                    colour=self.bot.constants.embed,
+                    timestamp=datetime.utcnow(),
+                )
+                embed.set_author(name=f"Username Change")
+                embed.set_footer(text=f"User ID: {after.id}")
 
-                    await self.send_webhook(webhook, embed=embed)
+                await self.send_webhook(webhook, embed=embed)
 
             elif before.discriminator != after.discriminator:
-                    embed = discord.Embed(
-                        description=f"**User:** {after.mention} **Name:** `{after}`\n"
-                        f"**Old Discriminator:** `{before.discriminator}`\n"
-                        f"**New Discriminator:** `{after.discriminator}`\n",
-                        colour=self.bot.constants.embed,
-                        timestamp=datetime.utcnow(),
-                    )
-                    embed.set_author(name=f"Discriminator Change")
-                    embed.set_footer(text=f"User ID: {after.id}")
+                embed = discord.Embed(
+                    description=f"**User:** {after.mention} **Name:** `{after}`\n"
+                    f"**Old Discriminator:** `{before.discriminator}`\n"
+                    f"**New Discriminator:** `{after.discriminator}`\n",
+                    colour=self.bot.constants.embed,
+                    timestamp=datetime.utcnow(),
+                )
+                embed.set_author(name=f"Discriminator Change")
+                embed.set_footer(text=f"User ID: {after.id}")
 
-                    await self.send_webhook(webhook, embed=embed)
+                await self.send_webhook(webhook, embed=embed)
 
             elif before.avatar_url != after.avatar_url:
-                    embed = discord.Embed(
-                        description=f"**User:** {after.mention} **Name:** `{after}`\n"
-                        "New image below, old image to the right.",
-                        colour=self.bot.constants.embed,
-                        timestamp=datetime.utcnow(),
-                    )
+                embed = discord.Embed(
+                    description=f"**User:** {after.mention} **Name:** `{after}`\n"
+                    "New image below, old image to the right.",
+                    colour=self.bot.constants.embed,
+                    timestamp=datetime.utcnow(),
+                )
 
-                    embed.set_thumbnail(url=before.avatar_url)
-                    embed.set_image(url=after.avatar_url)
-                    embed.set_author(name=f"Avatar Change")
-                    embed.set_footer(text=f"User ID: {after.id}")
-                    await self.send_webhook(webhook, embed=embed)
+                embed.set_thumbnail(url=before.avatar_url)
+                embed.set_image(url=after.avatar_url)
+                embed.set_author(name=f"Avatar Change")
+                embed.set_footer(text=f"User ID: {after.id}")
+                await self.send_webhook(webhook, embed=embed)
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
