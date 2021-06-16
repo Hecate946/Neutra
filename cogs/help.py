@@ -174,8 +174,8 @@ class Help(commands.Cog):
     )
     async def _help(self, ctx, *, invokercommand: str = None):
         """
-        Usage:  -help [command/category] [pm = true]
-        Output: HELP!
+        Usage:  {0}help [command/category] [pm = true]
+        Output: Show documentation for all my commands.
         """
         delete_after = None
         pm = False
