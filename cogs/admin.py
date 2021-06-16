@@ -3,6 +3,7 @@ import re
 import copy
 import shlex
 import typing
+import asyncio
 import discord
 
 from datetime import datetime
@@ -524,6 +525,7 @@ class Admin(commands.Cog):
             try:
                 await ctx.guild.ban(member, reason=reason)
                 banned.append((str(member), raw_reason))
+                await asyncio.sleep(1)
             except Exception as e:
                 failed.append((str(member), e))
                 continue
@@ -798,6 +800,7 @@ class Admin(commands.Cog):
             try:
                 await ctx.guild.kick(member, reason=reason)
                 kicked.append((str(member), raw_reason))
+                await asyncio.sleep(1)
             except Exception as e:
                 failed.append((str(member), e))
                 continue
