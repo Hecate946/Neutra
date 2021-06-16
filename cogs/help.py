@@ -50,7 +50,7 @@ class Help(commands.Cog):
                 )
                 return
             try:
-                msg = await ctx.send_or_reply(
+                msg = await ctx.author.send(
                     embed=embed, delete_after=delete_after, components=[self.button_row]
                 )
                 try:
@@ -58,9 +58,13 @@ class Help(commands.Cog):
                 except Exception:  # Probably no perms. Ignore
                     pass
             except Exception:  # Couldn't send the message to the user. Send it to the channel.
-                msg = await ctx.send_or_reply(
-                    embed=embed, delete_after=delete_after, components=[self.button_row]
-                )
+                try:
+                    msg = await ctx.send_or_reply(
+                        embed=embed, delete_after=delete_after, components=[self.button_row]
+                    )
+                except Exception:
+                    await ctx.fail(f"I was unable to send you help. Please ensure I have the `Embed Links` permission in this channel or enable your DMs for this server.")
+                    return
         else:  # Not trying to DM the user, send to the channel.
             msg = await ctx.send_or_reply(
                 embed=embed, delete_after=delete_after, components=[self.button_row]
@@ -218,7 +222,7 @@ class Help(commands.Cog):
                 valid_cogs.append(c)
             for c in valid_cogs:
                 if c.qualified_name.upper() in self.bot.home_cogs:
-                    if ctx.guild.id in self.bot.home_guilds:
+                    if not ctx.guild or ctx.guild.id in self.bot.home_guilds:
                         line = f"\n`{c.qualified_name}` {c.description}\n"
                     else:
                         line = ""
