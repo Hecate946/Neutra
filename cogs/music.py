@@ -635,7 +635,7 @@ class Music(commands.Cog):
             await ctx.message.add_reaction(self.bot.emote_dict["skip"])
             ctx.voice_state.skip()
 
-        elif checks.is_admin(voter) or voter.guild_permissions.manage_guild:
+        elif checks.is_admin(ctx) or voter.guild_permissions.manage_guild:
             await ctx.message.add_reaction(self.bot.emote_dict["skip"])
             ctx.voice_state.skip()
 

@@ -519,7 +519,6 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
-    @decorators.event_check(lambda s, m: m.guild and not m.author.bot)
     async def on_guild_remove(self, guild):
         webhook = self.get_webhook(guild)
         if webhook:
