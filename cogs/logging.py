@@ -519,6 +519,18 @@ class Logging(commands.Cog):
     @commands.Cog.listener()
     @decorators.wait_until_ready()
     @decorators.event_check(lambda s, m: m.guild and not m.author.bot)
+    async def on_guild_remove(self, guild):
+        webhook = self.get_webhook(guild)
+        if webhook:
+            await self.destroy_logging(guild)  # Drop from DB and delete webhooks.
+            self.log_data[guild.id].clear()  # Clear data cache
+            self.settings[guild.id].clear()  # Clear settings cache
+            self.webhooks.pop(guild.id, None)  # Clear cached webhook
+            self.tasks.pop(webhook, None)  # Delete any pending embeds/files to be sent.
+
+    @commands.Cog.listener()
+    @decorators.wait_until_ready()
+    @decorators.event_check(lambda s, m: m.guild and not m.author.bot)
     async def on_message(self, message):
         webhook = self.get_webhook(message.guild, "invites")
         if not webhook:
