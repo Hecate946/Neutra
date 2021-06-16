@@ -62,6 +62,7 @@ class Logging(commands.Cog):
             "voice",
         ]  # Helper list with all our logging types.
 
+        self.dispatch_webhooks.add_exception_type(discord.NotFound)
         self.dispatch_webhooks.start()  # Start the task loop
 
         self.map = {
