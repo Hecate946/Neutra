@@ -173,7 +173,10 @@ class Logging(commands.Cog):
 
         webhook = self.get_webhook(guild)
         if webhook:
-            await webhook.delete()
+            try:
+                await webhook.delete()
+            except discord.NotFound:  # Couldn't get the webhook
+                pass
 
     async def send_webhook(self, webhook, *, embed=None, file=None):
         if embed:
@@ -206,6 +209,10 @@ class Logging(commands.Cog):
                     embeds.clear()
                     files.clear()
                     self.tasks[webhook] = objects[10:]
+
+    @dispatch_webhooks.error
+    async def logging_error(self, exc):
+        self.bot.dispatch("error", "logging_error", tb=utils.traceback_maker(exc))
 
     @decorators.group(
         name="log",
