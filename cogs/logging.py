@@ -62,7 +62,7 @@ class Logging(commands.Cog):
             "voice",
         ]  # Helper list with all our logging types.
 
-        self.dispatch_webhooks.add_exception_type(discord.NotFound)
+        # self.dispatch_webhooks.add_exception_type(discord.NotFound)
         self.dispatch_webhooks.start()  # Start the task loop
 
         self.map = {
@@ -201,12 +201,15 @@ class Logging(commands.Cog):
                     to_send = objects[:10]
                     embeds = [x for x in to_send if type(x) is discord.Embed]
                     files = [x for x in to_send if type(x) is discord.File]
-                    await webhook.send(
-                        embeds=embeds,
-                        files=files,
-                        username=f"{self.bot.user.name}-logger",
-                        avatar_url=self.bot.user.avatar_url,
-                    )
+                    try:
+                        await webhook.send(
+                            embeds=embeds,
+                            files=files,
+                            username=f"{self.bot.user.name}-logger",
+                            avatar_url=self.bot.user.avatar_url,
+                        )
+                    except Exception as e:
+                        self.bot.dispatch("error", "logging_error", tb=utils.traceback_maker(e))
                     embeds.clear()
                     files.clear()
                     self.tasks[webhook] = objects[10:]
