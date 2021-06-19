@@ -834,7 +834,7 @@ class Automod(commands.Cog):
                 try:
                     await message.delete()
                     await message.channel.send(
-                        "No invite links allowed", delete_after=7
+                        f"{self.bot.emote_dict['failed']} No invite links allowed", delete_after=7
                     )
                 except Exception:  # We tried...
                     pass

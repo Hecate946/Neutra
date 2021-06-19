@@ -70,7 +70,7 @@ class Logging(commands.Cog):
             False: bot.emote_dict["fail"],
         }  # Map for determining the emote.
 
-    def cog_unload(self):
+    def cog_unload(self):  # Stop the task loop
         self.dispatch_webhooks.stop()
 
     async def load_settings(self):
@@ -123,18 +123,22 @@ class Logging(commands.Cog):
         return self.fetch_webhook(data["webhook_id"], data["webhook_token"])
 
     def fetch_webhook(self, webhook_id, webhook_token):
-        try:
+        try:  # Here we get a partial webhook from the ID and Token
             webhook = discord.Webhook.partial(
                 id=webhook_id,
                 token=webhook_token,
                 adapter=discord.AsyncWebhookAdapter(self.bot.session),
             )
-        except Exception:
+        except Exception:  # Failed so do nothing
             return
-        else:
+        else:  # Got the webhook
             return webhook
 
     def get_webhook(self, guild, event=None):
+        """
+        Helper function to get the webhook for a guild.
+        Also checks if an event is being logged.
+        """
         webhook = self.webhooks.get(guild.id)
         if event is None:
             return webhook
@@ -208,6 +212,8 @@ class Logging(commands.Cog):
                             username=f"{self.bot.user.name}-logger",
                             avatar_url=self.bot.user.avatar_url,
                         )
+                    except discord.NotFound:  # Raised when users manually delete the webhook.
+                        pass
                     except Exception as e:
                         self.bot.dispatch("error", "logging_error", tb=utils.traceback_maker(e))
                     embeds.clear()

@@ -516,10 +516,16 @@ class Music(commands.Cog):
         updated="2021-06-15 06:50:53.661786",
     )
     @checks.has_perms(manage_guild=True)
-    async def _volume(self, ctx, volume: int):
+    async def _volume(self, ctx, volume: int = None):
         """Sets the volume of the player for the current song."""
         if not ctx.voice_state.is_playing:
             return await ctx.fail("Nothing is currently being played.")
+
+        if volume is None:  # Output what we have
+            v = ctx.voice_state.current.source.volume
+            return await ctx.send_or_reply(
+                f"{self.bot.emote_dict['volume']} Volume of the player is currently {v}%"
+            )
 
         if volume < 0 or volume > 100:
             return await ctx.fail("Volume percentage must be between 0 and 100")
