@@ -524,7 +524,7 @@ class Music(commands.Cog):
         if volume is None:  # Output what we have
             v = ctx.voice_state.current.source.volume
             return await ctx.send_or_reply(
-                f"{self.bot.emote_dict['volume']} Volume of the player is currently {v}%"
+                f"{self.bot.emote_dict['volume']} Volume of the player is currently {v * 100}%"
             )
 
         if volume < 0 or volume > 100:

@@ -70,8 +70,8 @@ class Conversion(commands.Cog):
     )
     async def lb(self, ctx, lbs: float):
         """
-        Usage: -lb <value>
-        Aliases: -lbs, pounds, pound
+        Usage: {0}lb <value>
+        Aliases: {0}lbs, pounds, pound
         Output: Turn lb into kg (imperial to metric)
         """
         await ctx.send_or_reply(
@@ -265,7 +265,7 @@ class Conversion(commands.Cog):
     @decorators.command(brief="Convert binary to a string")
     async def binstr(self, ctx, *, input_binary: str):
         """
-        Usage: -binstr <binary>
+        Usage: {0}binstr <binary>
         Output:
             Converts the input binary to its string representation.
         """
@@ -427,7 +427,7 @@ class Conversion(commands.Cog):
                 ctx, "base64 -> Text", base64.urlsafe_b64decode(input.encode("UTF-8"))
             )
         except Exception:
-            await ctx.send_or_reply(content="Invalid base64...")
+            await ctx.fail("Invalid base64.")
 
     @encode.command(name="rot13", aliases=["r13"])
     async def encode_rot13(self, ctx, *, input: commands.clean_content = None):
@@ -556,7 +556,7 @@ class Conversion(commands.Cog):
     @decorators.command(brief="Converts ascii to morse code.")
     async def morse(self, ctx, *, content):
         """
-        Usage: -morse <content>
+        Usage: {0}morse <content>
         Output: Converts ascii to morse code.
         Notes:
             Accepts a-z and 0-9.
@@ -631,3 +631,79 @@ class Conversion(commands.Cog):
         msg = " ".join(ascii_list)
         msg = "```fix\n" + msg + "```"
         await ctx.send_or_reply(msg)
+
+    @decorators.command(
+        aliases=["tconvert", "temperature"],
+        brief="Convert between units of temperature.",
+        implemented="",
+        updated="",
+        examples="""
+                {0}temp 20 Kelvin Fahrenheit
+                {0}temperatur 200 Fahrenheit Celsius
+                {0}tconvert -40 C K
+                """
+    )
+    async def temp(self, ctx, *, temp_value, from_unit=None, to_unit=None):
+        """
+        Usage: {0}temp [temp_value] [from unit] [to unit]
+        Aliases: {0}temperature, {0}tconvert
+        Output: Converts between Fahrenheit, Celsius, and Kelvin.
+        Units:
+            (F)ahrenheit
+            (C)elsius
+            (K)elvin
+        """
+        
+        types = [ "Fahrenheit", "Celsius", "Kelvin"]
+
+        args = temp_value.split()
+        if not len(args) == 3:
+            return await ctx.usage()
+        try:
+            f = next((x for x in types if x.lower() == args[1].lower() or x.lower()[:1] == args[1][:1].lower()), None)
+            t = next((x for x in types if x.lower() == args[2].lower() or x.lower()[:1] == args[2][:1].lower()), None)
+            m = int(args[0])
+        except Exception:
+            return await ctx.usage()
+        if not(f) or not(t):
+            # No valid types
+            await ctx.fail("Temperature units are: {}".format(", ".join(types)))
+            return
+        if f == t:
+            # Same in as out
+            await ctx.fail("No change when converting {} ➔ {}.".format(f, t))
+            return
+        try:
+            out_val = None
+            if f == "Fahrenheit":
+                if t == "Celsius":
+                    out_val = self._f_to_c(m)
+                else:
+                    out_val = self._f_to_k(m)
+            elif f == "Celsius":
+                if t == "Fahrenheit":
+                    out_val = self._c_to_f(m)
+                else:
+                    out_val = self._c_to_k(m)
+            else:
+                if t == "Celsius":
+                    out_val = self._k_to_c(m)
+                else:
+                    out_val = self._k_to_f(m)
+            output = "{:,} {} {} is {:,} {} {}".format(m, "degree" if (m==1 or m==-1) else "degrees", f, out_val, "degree" if (out_val==1 or out_val==-1) else "degrees", t)
+        except Exception:
+            return await ctx.fail("Failed to make that conversion")
+        await ctx.success(output)
+
+    def _f_to_c(self, f):
+        return int((int(f)-32)/1.8)
+    def _c_to_f(self, c):
+        return int((int(c)*1.8)+32)
+    def _c_to_k(self, c):
+        return int(int(c)+273)
+    def _k_to_c(self, k):
+        return int(int(k)-273)
+    def _f_to_k(self, f):
+        return self._c_to_k(self._f_to_c(int(f)))
+    def _k_to_f(self, k):
+        return self._c_to_f(self._k_to_c(int(k)))

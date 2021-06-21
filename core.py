@@ -760,7 +760,14 @@ class Snowbot(commands.AutoShardedBot):
             return  # Only check for invite links in DMs
         if message.author.id == self.user.id:
             return  # Don't reply to ourselves
-        if self.dregex.match(message.content):  # When a user DMs the bot an invite...
+
+        content = message.content
+
+        def predicate(content):  # Check for key words in the message.
+            triggers = ["support", "invite", "join"]
+            return any(trigger in content.lower() for trigger in triggers)
+
+        if self.dregex.match(content) or predicate(content):  # Invite link or keyword trigger.
             ctx = await self.get_context(message, cls=commands.Context)
             invite = self.get_command("invite")
             await ctx.invoke(invite)
@@ -773,7 +780,7 @@ class Snowbot(commands.AutoShardedBot):
         if not after.edited_at or not after.created_at:
             return  # Need these timestamps to check time since msg.
         if (after.edited_at - after.created_at).total_seconds() > 10:
-            return  # We do not allow edit command invokations after 10s.
+            return  # We do not allow edit command invocations after 10s.
         await self.process_commands(after)
 
 

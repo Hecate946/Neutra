@@ -407,7 +407,7 @@ class Batch(commands.Cog):
                     "prefix": ctx.prefix,
                     "command": ctx.command.qualified_name,
                     "failed": ctx.command_failed,
-                    "content": ctx.message.clean_content,
+                    "content": ctx.message.clean_content.replace("\u0000", ""),
                 }
             )
 
@@ -470,7 +470,7 @@ class Batch(commands.Cog):
                     {
                         "user_id": after.id,
                         "server_id": after.guild.id,
-                        "nickname": before.display_name,
+                        "nickname": before.display_name.replace("\u0000", ""),
                     }
                 )
 
@@ -503,7 +503,7 @@ class Batch(commands.Cog):
                 self.usernames_batch.append(
                     {
                         "user_id": before.id,
-                        "name": str(before),
+                        "name": str(before).replace("\u0000", ""),
                     }
                 )
                 self.tracker_batch[before.id] = (time.time(), "updating their username")
@@ -517,7 +517,7 @@ class Batch(commands.Cog):
                 {
                     "unix": message.created_at.replace(tzinfo=timezone.utc).timestamp(),
                     "timestamp": str(message.created_at.utcnow()),
-                    "content": message.clean_content,
+                    "content": message.clean_content.replace("\u0000", ""),
                     "message_id": message.id,
                     "author_id": message.author.id,
                     "channel_id": message.channel.id,
