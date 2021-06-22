@@ -1,4 +1,3 @@
-import math
 import random
 import typing
 import asyncio
@@ -12,13 +11,38 @@ from discord.ext import commands, menus
 
 from settings import constants
 from utilities import checks
+from utilities import images
 from utilities import decorators
 from utilities import pagination
 
 # Silence useless bug reports messages
 youtube_dl.utils.bug_reports_message = lambda: ""
 
+def parse_duration(duration: int):
+    """
+    Helper function to get visually pleasing
+    timestamps from position of song in seconds.
+    """
+    if duration > 0:
+        minutes, seconds = divmod(duration, 60)
+        hours, minutes = divmod(minutes, 60)
+        days, hours = divmod(hours, 24)
 
+        duration = []
+        if days > 0:
+            duration.append("{}".format(str(days).zfill(2)))
+        if hours > 0:
+            duration.append("{}".format(str(hours).zfill(2)))
+        if minutes > 0:
+            duration.append("{}".format(str(minutes).zfill(2)))
+        duration.append("{}".format(str(seconds).zfill(2)))
+
+        value = ":".join(duration)
+
+    elif duration == 0:
+        value = "LIVE"
+
+    return value
 class VoiceError(Exception):
     pass
 
@@ -67,7 +91,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         self.thumbnail = data.get("thumbnail")
         self.description = data.get("description")
         self.raw_duration = data.get("duration")
-        self.duration = self.parse_duration(int(data.get("duration")))
+        self.duration = parse_duration(int(data.get("duration")))
         self.tags = data.get("tags")
         self.url = data.get("webpage_url")
         self.views = data.get("view_count")
@@ -222,30 +246,6 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
         return rtrn
 
-    @staticmethod
-    def parse_duration(duration: int):
-        if duration > 0:
-            minutes, seconds = divmod(duration, 60)
-            hours, minutes = divmod(minutes, 60)
-            days, hours = divmod(hours, 24)
-
-            duration = []
-            if days > 0:
-                duration.append("{}".format(days))
-            if hours > 0:
-                duration.append("{}".format(hours))
-            if minutes > 0:
-                duration.append("{}".format(minutes))
-            if seconds > 0:
-                duration.append("{}".format(seconds))
-
-            value = ":".join(duration)
-
-        elif duration == 0:
-            value = "LIVE"
-
-        return value
-
 
 class Song:
     __slots__ = ("source", "requester")
@@ -253,33 +253,61 @@ class Song:
     def __init__(self, source: YTDLSource):
         self.source = source
         self.requester = source.requester
+        if not hasattr(self.source, "position"):
+            self.source.position = 0
 
     def create_embed(self):
-        embed = (
-            discord.Embed(
+        embed = discord.Embed(
                 title="Now playing",
                 description=f"```fix\n{self.source.title}\n```",
                 color=constants.embed,
             )
-            .add_field(name="Duration", value=self.source.duration)
-            .add_field(name="Requested by", value=self.requester.mention)
-            .add_field(
-                name="Uploader",
-                value=f"[{self.source.uploader}]({self.source.uploader_url})",
-            )
-            .add_field(name="URL", value=f"[Click]({self.source.url})")
-            .add_field(
-                name="Likes", value=f'{constants.emotes["like"]} {self.source.likes:,}'
-            )
-            .add_field(
-                name="Dislikes",
-                value=f'{constants.emotes["dislike"]} {self.source.dislikes:,}',
-            )
-            .set_thumbnail(url=self.source.thumbnail)
-            .set_author(name=self.requester.name, icon_url=self.requester.avatar_url)
+        embed.add_field(name="Duration", value=self.source.duration)
+        embed.add_field(name="Requested by", value=self.requester.mention)
+        embed.add_field(
+            name="Uploader",
+            value=f"[{self.source.uploader}]({self.source.uploader_url})",
         )
+        embed.add_field(name="URL", value=f"[Click]({self.source.url})")
+        embed.add_field(
+            name="Likes", value=f'{constants.emotes["like"]} {self.source.likes:,}'
+        )
+        embed.add_field(
+            name="Dislikes",
+            value=f'{constants.emotes["dislike"]} {self.source.dislikes:,}',
+        )
+        embed.set_thumbnail(url=self.source.thumbnail)
+
         return embed
 
+    def create_embed2(self):
+        embed = discord.Embed(
+                title="Now playing",
+                description=f"```fix\n{self.source.title}\n```",
+                color=constants.embed,
+            )
+        embed.add_field(name="Duration", value=self.source.duration)
+        embed.add_field(name="Requested by", value=self.requester.mention)
+        embed.add_field(
+            name="Uploader",
+            value=f"[{self.source.uploader}]({self.source.uploader_url})",
+        )
+        embed.add_field(name="URL", value=f"[Click]({self.source.url})")
+        embed.add_field(
+            name="Likes", value=f'{constants.emotes["like"]} {self.source.likes:,}'
+        )
+        embed.add_field(
+            name="Dislikes",
+            value=f'{constants.emotes["dislike"]} {self.source.dislikes:,}',
+        )
+        embed.set_thumbnail(url=self.source.thumbnail)
+
+        percent = self.source.position/self.source.raw_duration
+        embed.set_footer(text=f"Current Position: {parse_duration(int(self.source.position))} ({percent:.2%} completed)")
+        dfile, fname = images.get_progress_bar(percent)
+        embed.set_image(url=f"attachment://{fname}")
+
+        return (embed, dfile)
 
 class SongQueue(asyncio.Queue):
     def __getitem__(self, item):
@@ -302,6 +330,11 @@ class SongQueue(asyncio.Queue):
 
     def remove(self, index: int):
         del self._queue[index]
+    
+    def append_left(self, item):
+        print(self._queue)
+        self._queue.appendleft(item)
+
 
 
 class VoiceState:
@@ -372,6 +405,7 @@ class VoiceState:
                 await self.current.source.channel.send(
                     embed=self.current.create_embed()
                 )
+                await self.bot.loop.create_task(self.increase_position())
 
             # If the song is looped
             elif self.loop == True:
@@ -381,6 +415,11 @@ class VoiceState:
                 self.voice.play(self.now, after=self.play_next_song)
 
             await self.next.wait()
+
+    async def increase_position(self):
+        while self.voice.is_playing():
+            self.current.source.position += 1
+            await asyncio.sleep(1)
 
     def play_next_song(self, error=None):
         if error:
@@ -550,8 +589,8 @@ class Music(commands.Cog):
         """
         if not ctx.voice_state.is_playing:
             return await ctx.fail("Nothing is currently being played.")
-        embed = ctx.voice_state.current.create_embed()
-        await ctx.send(embed=embed)
+        embed, file = ctx.voice_state.current.create_embed2()
+        await ctx.send(embed=embed, file=file)
 
     @decorators.command(
         name="pause",
@@ -662,6 +701,7 @@ class Music(commands.Cog):
             await ctx.fail("You have already voted to skip this song.")
 
     @decorators.command(
+        aliases=['q'],
         name="queue",
         brief="Display the queue.",
         implemented="2021-06-15 06:50:53.661786",
@@ -671,6 +711,7 @@ class Music(commands.Cog):
     async def _queue(self, ctx):
         """
         Usage: {0}queue
+        Alias: {0}q
         Output:
             Starts a pagination session showing
             all the songs in the current queue.
@@ -792,27 +833,116 @@ class Music(commands.Cog):
         await ctx.message.add_reaction(self.bot.emote_dict["success"])
 
     @decorators.command(
+        aliases=["jump"],
         name="seek",
         brief="Seek to a position in a song.",
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )
-    async def _seek(self, ctx, time: int = 0):
+    async def _seek(self, ctx, position: int = 0):
+        """
+        Usage: {0}seek [time]
+        Alias: {0}jump
+        Output:
+            Seeks to a certain position in the track
+        Notes:
+            The position must be given in seconds.
+        """
+        if not ctx.voice_state.is_playing:
+            return await ctx.fail("Nothing is currently being played.")
         song = ctx.voice_state.current
-        if time < 0:
+        if position < 0:
             return await ctx.fail("Seek time cannot be negative.")
-        if time > song.source.raw_duration:
+        if position > song.source.raw_duration:
             return await ctx.fail(
                 f"Seek time must be less than the length of the song. `{song.source.raw_duration} seconds`"
             )
-        ffmpeg_options = f"-vn -ss {time}"  # This seeks to the specified timestamp
+        ffmpeg_options = f"-vn -ss {position}"  # This seeks to the specified timestamp
         ctx.voice_state.voice.pause()  # Pause the audio before seeking
         now = discord.FFmpegPCMAudio(
             song.source.stream_url, before_options=ffmpeg_options
         )
         ctx.voice_state.voice.play(now, after=ctx.voice_state.play_next_song)
+        ctx.voice_state.current.source.position = position
 
-        await ctx.success(f"Seeked to second `{time}`")
+        await ctx.success(f"{ctx.invoked_with.capitalize()}ed to second `{position}`")
+
+    @decorators.command(
+        aliases=["ff", "ffw"],
+        name="fastforward",
+        brief="Fast forward a number of seconds",
+        implemented="2021-06-22 01:55:36.152071",
+        updated="2021-06-22 01:55:36.152071",
+    )
+    async def _fastforward(self, ctx, seconds: int = 0):
+        if not ctx.voice_state.is_playing:
+            return await ctx.fail("Nothing is currently being played.")
+        song = ctx.voice_state.current
+        if seconds < 0:
+            return await ctx.invoke(self._rewind, seconds)
+        position = seconds + song.source.position
+        if position > song.source.raw_duration:
+            return await ctx.fail(
+                f"You cannot fast forward past the end of the song. `Current position: {song.source.position}/{song.source.raw_duration} seconds`"
+            )
+        ffmpeg_options = f"-vn -ss {position}"  # This seeks to the specified timestamp
+        ctx.voice_state.voice.pause()  # Pause the audio before seeking
+        now = discord.FFmpegPCMAudio(
+            song.source.stream_url, before_options=ffmpeg_options
+        )
+        ctx.voice_state.voice.play(now, after=ctx.voice_state.play_next_song)
+        ctx.voice_state.current.source.position = position
+
+        await ctx.success(f"Fast forwarded to second `{position}`")
+
+    @decorators.command(
+        aliases=["fb", "fbw", "rw", "fastback", "fastbackwards"],
+        name="rewind",
+        brief="Rewind a number of seconds",
+        implemented="2021-06-22 01:55:36.152071",
+        updated="2021-06-22 01:55:36.152071",
+    )
+    async def _rewind(self, ctx, seconds: int = 0):
+        if not ctx.voice_state.is_playing:
+            return await ctx.fail("Nothing is currently being played.")
+        song = ctx.voice_state.current
+        if seconds < 0:
+            seconds = abs(seconds)
+        position = song.source.position - seconds
+        if position < 0:
+            return await ctx.fail(
+                f"You cannot rewind past the beginning of the song. `Current position: {song.source.position}/{song.source.raw_duration} seconds`"
+            )
+        ffmpeg_options = f"-vn -ss {position}"  # This seeks to the specified timestamp
+        ctx.voice_state.voice.pause()  # Pause the audio before seeking
+        now = discord.FFmpegPCMAudio(
+            song.source.stream_url, before_options=ffmpeg_options
+        )
+        ctx.voice_state.voice.play(now, after=ctx.voice_state.play_next_song)
+        ctx.voice_state.current.source.position = position
+
+        await ctx.success(f"Rewinded to second `{position}`")
+
+    @decorators.command(
+        aliases=['pos'],
+        name="position",
+        brief="Show the current position of the song.",
+        implemented="2021-06-21 23:09:55.015228",
+        updated="2021-06-21 23:09:55.015228",
+    )
+    async def _position(self, ctx):
+        """
+        Usage: {0}position
+        Alias: {0}pos
+        Output:
+            Shows the current position of the song
+        """
+        if not ctx.voice_state.is_playing:
+            return await ctx.fail("Nothing is currently being played.")
+        dur = ctx.voice_state.current.source.duration
+        pos = ctx.voice_state.current.source.position
+        raw = ctx.voice_state.current.source.raw_duration
+        await ctx.success(f"Current position: {dur} `({pos}/{raw}) seconds`")
 
     @decorators.command(
         name="play",
@@ -857,6 +987,47 @@ class Music(commands.Cog):
                 ctx.voice_state.songs.put_nowait(song)
                 await ctx.send_or_reply(
                     f"{self.bot.emote_dict['music']} Queued {source}"
+                )
+
+    @decorators.command(
+        name="playnext",
+        brief="Add a song to the beginning of the queue.",
+        aliases=["pn"],
+        implemented=" 2021-06-21 23:09:55.015228",
+        updated=" 2021-06-21 23:09:55.015228",
+    )
+    async def _playnext(self, ctx, *, search: str = None):
+        """
+        Usage: {0}play <search>
+        Alias: {0}p
+        Output:
+            Plays a song from your selection.
+        Notes:
+            If there are songs in the queue,
+            this will be queued before
+            all other songs in the queue.
+        """
+        await ctx.trigger_typing()
+        await self.ensure_voice_state(ctx)
+
+        if search is None:
+            if ctx.voice_state.is_playing and ctx.voice_state.voice.is_paused():
+                ctx.voice_state.voice.resume()
+                await ctx.message.add_reaction(self.bot.emote_dict["play"])
+                await ctx.success("Resumed the player")
+            else:
+                return await ctx.usage()
+
+        else:
+            try:
+                source = await YTDLSource.create_source(ctx, search, loop=self.bot.loop)
+            except YTDLError as e:
+                await ctx.fail(f"Request failed: {e}")
+            else:
+                song = Song(source)
+                ctx.voice_state.songs.append_left(song)
+                await ctx.send_or_reply(
+                    f"{self.bot.emote_dict['music']} Front Queued {source}"
                 )
 
     @decorators.command(

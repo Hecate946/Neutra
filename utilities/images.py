@@ -1,4 +1,6 @@
 import io
+import numpy
+import discord
 
 from PIL import Image, ImageFont, ImageDraw
 
@@ -92,3 +94,38 @@ def get_time_unit(stat):
     if stat > 1 or stat == 0.0:
         word += "s"
     return stat, word
+
+
+def get_progress_bar(ratio, *, fname="progress", length=800, width=80):
+    bar_length = ratio * length
+    a = 0
+    b = -1
+    c = width / 2
+    w = (width / 2) + 1
+
+    shell = Image.new('RGB', (length, width), color=GRAY)
+    imgsize = (int(bar_length), width) #The size of the image
+    image = Image.new('RGB', imgsize, color=GRAY) #Create the image
+
+    innerColor = BLUE #Color at the center
+    outerColor = [0, 0, 0] #Color at the edge
+
+    for y in range(imgsize[1]):
+        for x in range(imgsize[0]):
+
+            dist = (a*x + b*y + c)/numpy.sqrt(a*a+b*b)
+            color_coef = abs(dist)/w
+
+            if abs(dist) < w:
+                red = outerColor[0] * color_coef + innerColor[0] * (1 - color_coef)
+                green = outerColor[1] * color_coef + innerColor[1] * (1 - color_coef)
+                blue = outerColor[2] * color_coef + innerColor[2] * (1 - color_coef)
+
+                image.putpixel((x, y), (int(red), int(green), int(blue)))
+
+    shell.paste(image)
+    buffer = io.BytesIO()
+    shell.save(buffer, "png")  # 'save' function for PIL
+    buffer.seek(0)
+    dfile = discord.File(fp=buffer, filename=f"{fname}.png")
+    return (dfile, f"{fname}.png")
