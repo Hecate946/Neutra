@@ -10,6 +10,7 @@ RED = (237, 41, 57)
 GRAY = (97, 109, 126)
 BLUE = (10, 24, 34)
 WHITE = (255, 255, 255)
+PINK = (255, 196, 235)
 
 statusmap = {"online": GREEN, "idle": YELLOW, "dnd": RED, "offline": GRAY}
 

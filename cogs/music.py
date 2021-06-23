@@ -1,6 +1,6 @@
-import copy
+import io
 import random
-from re import L
+import re
 import typing
 import asyncio
 import discord
@@ -72,6 +72,9 @@ class YTDLSource(discord.PCMVolumeTransformer):
         "no_warnings": True,
         "default_search": "ytsearch",
         "source_address": "0.0.0.0",
+        "subtitleslangs": ["en"],
+        "writesubtitles": True,
+        "writeautomaticsub": True,
     }
     FFMPEG_OPTIONS = {
         "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
@@ -84,11 +87,13 @@ class YTDLSource(discord.PCMVolumeTransformer):
         self, ctx, source: discord.FFmpegPCMAudio, *, data: dict, volume: float = 0.5
     ):
         super().__init__(source, volume)
+        self.ctx = ctx
 
         self.requester = ctx.author
         self.channel = ctx.channel
         self.data = data
 
+        self.id = data.get("id")
         self.uploader = data.get("uploader")
         self.uploader_url = data.get("uploader_url")
         date = data.get("upload_date")
@@ -104,9 +109,24 @@ class YTDLSource(discord.PCMVolumeTransformer):
         self.likes = data.get("like_count")
         self.dislikes = data.get("dislike_count")
         self.stream_url = data.get("url")
+        
+        ctx.bot.loop.create_task(self.get_subtitles())
+
+        self.subtitles = None
 
     def __str__(self):
         return "**{0.title}** by **{0.uploader}**".format(self)
+
+    async def get_subtitles(self):
+        data = self.data.get("subtitles")
+        if not data:
+            data = self.data.get("requested_subtitles")
+        
+        if data:
+            url = "https://www.youtube.com/api/timedtext?lang=en&v=" + self.id
+            text = await self.ctx.bot.get(url, res_method="read")
+            clean_text = re.sub(r"(?=<).*?(?<=>)", "", string=text.decode("utf-8"))
+            self.subtitles = clean_text.strip("\n").replace("♪♪", "♪\n♪")
 
     @classmethod
     async def create_source(
@@ -318,6 +338,7 @@ class Song:
         return (embed, dfile)
 
 
+
 class SongQueue(asyncio.Queue):
     def __getitem__(self, item):
         if isinstance(item, slice):
@@ -408,7 +429,6 @@ class VoiceState:
                 self.current.source.volume = self._volume
 
                 self.voice.play(self.current.source, after=self.play_next_song)
-                print(dir(self.current.source))
                 await self.current.source.channel.send(
                     embed=self.current.create_embed()
                 )
@@ -1132,6 +1152,34 @@ class Music(commands.Cog):
                 await ctx.send_or_reply(
                     f"{self.bot.emote_dict['music']} Queued {source}"
                 )
+
+
+    @decorators.command(
+        name="subtitles",
+        aliases=["lyrics"],
+        brief="Request subtitles for the song.",
+        implemented="2021-06-23 06:48:27.194755",
+        updated="2021-06-23 06:48:27.194755",
+    )
+    async def _subtitle(self, ctx):
+        if not ctx.voice_state.current:
+            return await ctx.fail("No song is currently being played.")
+        if not ctx.voice_state.is_playing:
+            return await ctx.fail("No song is currently being played.")
+
+        subtitles = ctx.voice_state.current.source.subtitles
+        if subtitles:
+            print(subtitles)
+            if len(subtitles) > 2048:
+                data = io.BytesIO(subtitles.encode("utf-8"))
+                file = discord.File(data, filename="subtitles.txt")
+                await ctx.send(file=file)
+            else:
+                embed = discord.Embed(title="Subtitles", color=self.bot.constants.embed)
+                embed.description = subtitles
+                await ctx.send(embed=embed)
+        else:
+            return await ctx.fail("Lyrics not available.")
 
     async def ensure_voice_state(self, ctx):
         if not ctx.voice_state.voice:
