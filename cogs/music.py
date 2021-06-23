@@ -1179,7 +1179,7 @@ class Music(commands.Cog):
                 embed.description = subtitles
                 await ctx.send(embed=embed)
         else:
-            return await ctx.fail("Lyrics not available.")
+            return await ctx.fail("Subtitles not available.")
 
     async def ensure_voice_state(self, ctx):
         if not ctx.voice_state.voice:
