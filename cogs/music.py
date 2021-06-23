@@ -730,7 +730,7 @@ class Music(commands.Cog):
     @decorators.command(
         aliases=["q"],
         name="queue",
-        brief="Display the queue.",
+        brief="Display the current song queue.",
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )
