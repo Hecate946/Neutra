@@ -767,7 +767,9 @@ class Snowbot(commands.AutoShardedBot):
             triggers = ["support", "invite", "join"]
             return any(trigger in content.lower() for trigger in triggers)
 
-        if self.dregex.match(content) or predicate(content):  # Invite link or keyword trigger.
+        if self.dregex.match(content) or predicate(
+            content
+        ):  # Invite link or keyword trigger.
             ctx = await self.get_context(message, cls=commands.Context)
             invite = self.get_command("invite")
             await ctx.invoke(invite)

@@ -103,18 +103,18 @@ def get_progress_bar(ratio, *, fname="progress", length=800, width=80):
     c = width / 2
     w = (width / 2) + 1
 
-    shell = Image.new('RGB', (length, width), color=GRAY)
-    imgsize = (int(bar_length), width) #The size of the image
-    image = Image.new('RGB', imgsize, color=GRAY) #Create the image
+    shell = Image.new("RGB", (length, width), color=GRAY)
+    imgsize = (int(bar_length), width)  # The size of the image
+    image = Image.new("RGB", imgsize, color=GRAY)  # Create the image
 
-    innerColor = BLUE #Color at the center
-    outerColor = [0, 0, 0] #Color at the edge
+    innerColor = BLUE  # Color at the center
+    outerColor = [0, 0, 0]  # Color at the edge
 
     for y in range(imgsize[1]):
         for x in range(imgsize[0]):
 
-            dist = (a*x + b*y + c)/numpy.sqrt(a*a+b*b)
-            color_coef = abs(dist)/w
+            dist = (a * x + b * y + c) / numpy.sqrt(a * a + b * b)
+            color_coef = abs(dist) / w
 
             if abs(dist) < w:
                 red = outerColor[0] * color_coef + innerColor[0] * (1 - color_coef)

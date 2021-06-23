@@ -60,10 +60,14 @@ class Help(commands.Cog):
             except Exception:  # Couldn't send the message to the user. Send it to the channel.
                 try:
                     msg = await ctx.send_or_reply(
-                        embed=embed, delete_after=delete_after, components=[self.button_row]
+                        embed=embed,
+                        delete_after=delete_after,
+                        components=[self.button_row],
                     )
                 except Exception:
-                    await ctx.fail(f"I was unable to send you help. Please ensure I have the `Embed Links` permission in this channel or enable your DMs for this server.")
+                    await ctx.fail(
+                        f"I was unable to send you help. Please ensure I have the `Embed Links` permission in this channel or enable your DMs for this server."
+                    )
                     return
         else:  # Not trying to DM the user, send to the channel.
             msg = await ctx.send_or_reply(

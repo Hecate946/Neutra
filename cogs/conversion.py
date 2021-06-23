@@ -641,7 +641,7 @@ class Conversion(commands.Cog):
                 {0}temp 20 Kelvin Fahrenheit
                 {0}temperatur 200 Fahrenheit Celsius
                 {0}tconvert -40 C K
-                """
+                """,
     )
     async def temp(self, ctx, *, temp_value, from_unit=None, to_unit=None):
         """
@@ -653,19 +653,35 @@ class Conversion(commands.Cog):
             (C)elsius
             (K)elvin
         """
-        
-        types = [ "Fahrenheit", "Celsius", "Kelvin"]
+
+        types = ["Fahrenheit", "Celsius", "Kelvin"]
 
         args = temp_value.split()
         if not len(args) == 3:
             return await ctx.usage()
         try:
-            f = next((x for x in types if x.lower() == args[1].lower() or x.lower()[:1] == args[1][:1].lower()), None)
-            t = next((x for x in types if x.lower() == args[2].lower() or x.lower()[:1] == args[2][:1].lower()), None)
+            f = next(
+                (
+                    x
+                    for x in types
+                    if x.lower() == args[1].lower()
+                    or x.lower()[:1] == args[1][:1].lower()
+                ),
+                None,
+            )
+            t = next(
+                (
+                    x
+                    for x in types
+                    if x.lower() == args[2].lower()
+                    or x.lower()[:1] == args[2][:1].lower()
+                ),
+                None,
+            )
             m = int(args[0])
         except Exception:
             return await ctx.usage()
-        if not(f) or not(t):
+        if not (f) or not (t):
             # No valid types
             await ctx.fail("Temperature units are: {}".format(", ".join(types)))
             return
@@ -690,20 +706,32 @@ class Conversion(commands.Cog):
                     out_val = self._k_to_c(m)
                 else:
                     out_val = self._k_to_f(m)
-            output = "{:,} {} {} is {:,} {} {}".format(m, "degree" if (m==1 or m==-1) else "degrees", f, out_val, "degree" if (out_val==1 or out_val==-1) else "degrees", t)
+            output = "{:,} {} {} is {:,} {} {}".format(
+                m,
+                "degree" if (m == 1 or m == -1) else "degrees",
+                f,
+                out_val,
+                "degree" if (out_val == 1 or out_val == -1) else "degrees",
+                t,
+            )
         except Exception:
             return await ctx.fail("Failed to make that conversion")
         await ctx.success(output)
 
     def _f_to_c(self, f):
-        return int((int(f)-32)/1.8)
+        return int((int(f) - 32) / 1.8)
+
     def _c_to_f(self, c):
-        return int((int(c)*1.8)+32)
+        return int((int(c) * 1.8) + 32)
+
     def _c_to_k(self, c):
-        return int(int(c)+273)
+        return int(int(c) + 273)
+
     def _k_to_c(self, k):
-        return int(int(k)-273)
+        return int(int(k) - 273)
+
     def _f_to_k(self, f):
         return self._c_to_k(self._f_to_c(int(f)))
+
     def _k_to_f(self, k):
         return self._c_to_f(self._k_to_c(int(k)))

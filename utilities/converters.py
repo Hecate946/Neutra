@@ -771,6 +771,26 @@ class BotActivity(commands.Converter):
         return activity
 
 
+class SingleOrQueue(commands.Converter):
+    async def convert(self, ctx, argument):
+        queue_options = ["playlist", "queue", "songs", "all", "q"]
+        single_options = ["current", "single", "track", "song", "one"]
+        if argument.lower() in queue_options:
+            option = "queue"
+        elif argument.lower() in single_options:
+            option = "single"
+        else:
+            headers = ["LOOP QUEUE", "LOOP SONG"]
+            rows = tuple(zip(queue_options, single_options))
+            table = formatting.TabularData()
+            table.set_columns(headers)
+            table.add_rows(rows)
+            render = table.render()
+            completed = f"```sml\nVALID LOOP OPTIONS:\n{render}```"
+            raise commands.BadArgument(f"**Invalid Option.**{completed}")
+        return option
+
+
 class Flag(commands.Converter):
     async def convert(self, ctx, argument):
         nodm_options = ["--nodm", "--nopm", "-nodm", "-nopm", " nodm", " nopm"]

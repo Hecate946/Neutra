@@ -215,7 +215,9 @@ class Logging(commands.Cog):
                     except discord.NotFound:  # Raised when users manually delete the webhook.
                         pass
                     except Exception as e:
-                        self.bot.dispatch("error", "logging_error", tb=utils.traceback_maker(e))
+                        self.bot.dispatch(
+                            "error", "logging_error", tb=utils.traceback_maker(e)
+                        )
                     embeds.clear()
                     files.clear()
                     self.tasks[webhook] = objects[10:]

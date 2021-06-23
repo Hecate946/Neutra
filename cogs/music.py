@@ -1,4 +1,6 @@
+import copy
 import random
+from re import L
 import typing
 import asyncio
 import discord
@@ -12,11 +14,13 @@ from discord.ext import commands, menus
 from settings import constants
 from utilities import checks
 from utilities import images
+from utilities import converters
 from utilities import decorators
 from utilities import pagination
 
 # Silence useless bug reports messages
 youtube_dl.utils.bug_reports_message = lambda: ""
+
 
 def parse_duration(duration: int):
     """
@@ -43,6 +47,8 @@ def parse_duration(duration: int):
         value = "LIVE"
 
     return value
+
+
 class VoiceError(Exception):
     pass
 
@@ -60,7 +66,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         "restrictfilenames": True,
         "noplaylist": True,
         "nocheckcertificate": True,
-        "ignoreerrors": False,
+        "ignoreerrors": True,
         "logtostderr": False,
         "quiet": True,
         "no_warnings": True,
@@ -69,7 +75,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
     }
     FFMPEG_OPTIONS = {
         "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
-        "options": f"-vn",
+        "options": "-vn",
     }
 
     ytdl = youtube_dl.YoutubeDL(YTDL_OPTIONS)
@@ -258,10 +264,10 @@ class Song:
 
     def create_embed(self):
         embed = discord.Embed(
-                title="Now playing",
-                description=f"```fix\n{self.source.title}\n```",
-                color=constants.embed,
-            )
+            title="Now playing",
+            description=f"```fix\n{self.source.title}\n```",
+            color=constants.embed,
+        )
         embed.add_field(name="Duration", value=self.source.duration)
         embed.add_field(name="Requested by", value=self.requester.mention)
         embed.add_field(
@@ -280,12 +286,12 @@ class Song:
 
         return embed
 
-    def create_embed2(self):
+    def current_embed(self):
         embed = discord.Embed(
-                title="Now playing",
-                description=f"```fix\n{self.source.title}\n```",
-                color=constants.embed,
-            )
+            title="Now playing",
+            description=f"```fix\n{self.source.title}\n```",
+            color=constants.embed,
+        )
         embed.add_field(name="Duration", value=self.source.duration)
         embed.add_field(name="Requested by", value=self.requester.mention)
         embed.add_field(
@@ -302,12 +308,15 @@ class Song:
         )
         embed.set_thumbnail(url=self.source.thumbnail)
 
-        percent = self.source.position/self.source.raw_duration
-        embed.set_footer(text=f"Current Position: {parse_duration(int(self.source.position))} ({percent:.2%} completed)")
+        percent = self.source.position / self.source.raw_duration
+        embed.set_footer(
+            text=f"Current Position: {parse_duration(int(self.source.position))} ({percent:.2%} completed)"
+        )
         dfile, fname = images.get_progress_bar(percent)
         embed.set_image(url=f"attachment://{fname}")
 
         return (embed, dfile)
+
 
 class SongQueue(asyncio.Queue):
     def __getitem__(self, item):
@@ -330,11 +339,9 @@ class SongQueue(asyncio.Queue):
 
     def remove(self, index: int):
         del self._queue[index]
-    
-    def append_left(self, item):
-        print(self._queue)
-        self._queue.appendleft(item)
 
+    def append_left(self, item):
+        self._queue.appendleft(item)
 
 
 class VoiceState:
@@ -342,13 +349,15 @@ class VoiceState:
         self.bot = bot
         self._ctx = ctx
 
-        self.current = None
+        self.current = None  # Current song
+        self.previous = None  # Previous song
         self.voice = None
         self.next = asyncio.Event()
         self.songs = SongQueue()
         self.exists = True
 
         self._loop = False
+        self._queue_loop = False
         self._volume = 0.5
         self.skip_votes = set()
 
@@ -364,6 +373,14 @@ class VoiceState:
     @loop.setter
     def loop(self, value: bool):
         self._loop = value
+
+    @property
+    def queue_loop(self):
+        return self._queue_loop
+
+    @queue_loop.setter
+    def queue_loop(self, value: bool):
+        self._queue_loop = value
 
     @property
     def volume(self):
@@ -385,38 +402,48 @@ class VoiceState:
             if self.voice is None:
                 await Music(self.bot).get_voice_client(self._ctx)
 
-            if self.loop is False:
-                # Try to get the next song within 3 minutes.
-                # If no song will be added to the queue in time,
-                # the player will disconnect due to performance
-                # reasons.
-                try:
-                    self.current = await self.songs.get()
-                except Exception as e:
-                    raise e
-                # except asyncio.TimeoutError:
-                #     self.bot.loop.create_task(self.stop())
-                #     self.exists = False
-                #     return
-
+            if not self.loop and not self.queue_loop:
+                # we're not looping a single song
+                self.current = await self.songs.get()
                 self.current.source.volume = self._volume
 
                 self.voice.play(self.current.source, after=self.play_next_song)
+                print(dir(self.current.source))
                 await self.current.source.channel.send(
                     embed=self.current.create_embed()
                 )
                 await self.bot.loop.create_task(self.increase_position())
 
-            # If the song is looped
-            elif self.loop == True:
+            elif self.loop:  # Single song is looped.
                 self.now = discord.FFmpegPCMAudio(
                     self.current.source.stream_url, **YTDLSource.FFMPEG_OPTIONS
                 )
                 self.voice.play(self.now, after=self.play_next_song)
 
+                await self.current.source.channel.send(
+                    embed=self.current.create_embed()
+                )
+                await self.bot.loop.create_task(self.increase_position())
+
+            elif self.queue_loop:  # Entire queue is looped
+                self.current = await self.songs.get()  # Get the song from the queue
+                self.current.source.volume = self._volume  # Establish the volume
+                self.songs.put_nowait(
+                    self.current
+                )  #  Put the song back into the end of the queue.
+                self.now = discord.FFmpegPCMAudio(  # Play the song
+                    self.current.source.stream_url, **YTDLSource.FFMPEG_OPTIONS
+                )
+                self.voice.play(self.now, after=self.play_next_song)
+
             await self.next.wait()
+            self.previous = self.current
 
     async def increase_position(self):
+        """
+        Helper function to increase the position
+        of the song while it's being played.
+        """
         while self.voice.is_playing():
             self.current.source.position += 1
             await asyncio.sleep(1)
@@ -525,15 +552,15 @@ class Music(commands.Cog):
 
     @decorators.command(
         name="disconnect",
-        aliases=["dc"],
-        brief="Disconnects from the voice or stage channel.",
+        aliases=["dc", "leave"],
+        brief="Disconnect the bot from a channel.",
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )
     async def _disconnect(self, ctx):
         """
         Usage: {0}disconnect
-        Alias: {0}dc
+        Alias: {0}dc, {0}leave
         Output:
             Clears the queue and leaves the voice channel.
         """
@@ -589,7 +616,7 @@ class Music(commands.Cog):
         """
         if not ctx.voice_state.is_playing:
             return await ctx.fail("Nothing is currently being played.")
-        embed, file = ctx.voice_state.current.create_embed2()
+        embed, file = ctx.voice_state.current.current_embed()
         await ctx.send(embed=embed, file=file)
 
     @decorators.command(
@@ -701,7 +728,7 @@ class Music(commands.Cog):
             await ctx.fail("You have already voted to skip this song.")
 
     @decorators.command(
-        aliases=['q'],
+        aliases=["q"],
         name="queue",
         brief="Display the queue.",
         implemented="2021-06-15 06:50:53.661786",
@@ -755,7 +782,7 @@ class Music(commands.Cog):
 
     @decorators.command(
         name="shuffle",
-        brief="Shuffle the queue.",
+        brief="Shuffle the current song queue.",
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )
@@ -764,21 +791,26 @@ class Music(commands.Cog):
         Usage: {0}shuffle
         Output: Shuffles the queue.
         """
-
         if len(ctx.voice_state.songs) == 0:
             return await ctx.fail("The queue is currently empty.")
 
         ctx.voice_state.songs.shuffle()
-        await ctx.success("Shuffled the queue.")
+        await ctx.send_or_reply(f"{self.bot.emote_dict['shuffle']} Shuffled the queue.")
 
     @decorators.command(
-        name="pop",
+        aliases=["pop"],
+        name="remove",
         brief="Remove a song from the queue.",
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )
-    async def _pop(self, ctx, index: int):
-        """Removes a song from the queue at a given index."""
+    async def _remove(self, ctx, index: int):
+        """
+        Usage: {0}remove [index]
+        Alias: {0}pop
+        Output:
+            Removes a song from the queue at a given index.
+        """
 
         if len(ctx.voice_state.songs) == 0:
             return await ctx.send("The queue is already empty")
@@ -789,48 +821,58 @@ class Music(commands.Cog):
         await ctx.success(f"Removed item {index} from the queue.")
 
     @decorators.command(
-        name="loop",
-        brief="Loop the current song.",
-        implemented="2021-06-15 06:50:53.661786",
-        updated="2021-06-15 06:50:53.661786",
-    )
-    async def _loop(self, ctx):
-        """
-        Usage: {0}loop
-        Output: Loops the currently playing song.
-        """
-        if not ctx.voice_state.is_playing:
-            return await ctx.fail("Nothing is currently being played.")
-
-        if ctx.voice_state.loop:
-            return await ctx.fail("Already looping this song.")
-
-        ctx.voice_state.loop = True
-        await ctx.message.add_reaction(self.bot.emote_dict["loop"])
-
-    @decorators.command(
-        name="unloop",
         aliases=["deloop"],
-        brief="Un-loop the current song.",
+        name="unloop",
+        brief="Un-loop the current song or queue.",
         implemented="2021-06-15 06:50:53.661786",
-        updated="2021-06-15 06:50:53.661786",
+        updated="2021-06-22 17:48:57.021225",
     )
     async def _unloop(self, ctx):
         """
         Usage: {0}unloop
         Alias: {0}deloop
         Output:
-            Stops looping the current song
+            Stops looping the current song or queue
         """
-
         if not ctx.voice_state.is_playing:
             return await ctx.fail("Nothing is currently being played.")
 
-        if not ctx.voice_state.loop:
-            return await ctx.fail("Not currently looping this song.")
-
         ctx.voice_state.loop = False
+        ctx.voice_state.queue_loop = False
         await ctx.message.add_reaction(self.bot.emote_dict["success"])
+
+    @decorators.command(
+        name="loop",
+        brief="Loop the current song or queue.",
+        implemented="2021-06-15 06:50:53.661786",
+        updated="2021-06-15 06:50:53.661786",
+    )
+    async def _loop(self, ctx, option: converters.SingleOrQueue = "single"):
+        """
+        Usage: {0}loop [option]
+        Output: Loops the currently playing song.
+        """
+        if not ctx.voice_state.is_playing:
+            return await ctx.fail("Nothing is currently being played.")
+
+        if option == "single":
+            if ctx.voice_state.loop:
+                return await ctx.fail("Already looping this song.")
+
+            ctx.voice_state.loop = True
+            await ctx.message.add_reaction(self.bot.emote_dict["loop"])
+            await ctx.success("The current song is now looped.")
+        else:
+            if ctx.voice_state.queue_loop:
+                return await ctx.fail("Already looping this queue.")
+
+            ctx.voice_state.queue_loop = True
+            ctx.voice_state.loop = False  # In case we were looping a single song.
+            ctx.voice_state.songs.put_nowait(
+                ctx.voice_state.current
+            )  # Put back the current song.
+            await ctx.message.add_reaction(self.bot.emote_dict["loop"])
+            await ctx.success("The current queue is now looped.")
 
     @decorators.command(
         aliases=["jump"],
@@ -924,7 +966,27 @@ class Music(commands.Cog):
         await ctx.success(f"Rewinded to second `{position}`")
 
     @decorators.command(
-        aliases=['pos'],
+        aliases=["last", "back"],
+        name="previous",
+        brief="Play the previous song.",
+        implemented="2021-06-22 19:55:33.279989",
+        updated="2021-06-22 19:55:33.279989",
+    )
+    async def _previous(self, ctx):
+        if not ctx.voice_state.previous:
+            return await ctx.fail("No previous song to play.")
+        song = ctx.voice_state.previous
+        ytdlsrc = await YTDLSource.create_source(
+            ctx, song.source.url, loop=self.bot.loop
+        )
+        song = Song(ytdlsrc)
+        ctx.voice_state.songs.append_left(song)
+        await ctx.send_or_reply(
+            f"{self.bot.emote_dict['music']} Requeued the previous song: {song.source}"
+        )
+
+    @decorators.command(
+        aliases=["pos"],
         name="position",
         brief="Show the current position of the song.",
         implemented="2021-06-21 23:09:55.015228",
@@ -946,7 +1008,7 @@ class Music(commands.Cog):
 
     @decorators.command(
         name="play",
-        brief="Play a song",
+        brief="Play a song from a youtube search.",
         aliases=["p"],
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
@@ -993,8 +1055,8 @@ class Music(commands.Cog):
         name="playnext",
         brief="Add a song to the beginning of the queue.",
         aliases=["pn"],
-        implemented=" 2021-06-21 23:09:55.015228",
-        updated=" 2021-06-21 23:09:55.015228",
+        implemented="2021-06-21 23:09:55.015228",
+        updated="2021-06-21 23:09:55.015228",
     )
     async def _playnext(self, ctx, *, search: str = None):
         """

@@ -88,18 +88,17 @@ class Admin(commands.Cog):
         )
 
     @decorators.command(
-        aliases=["kill", "die"],
+        aliases=["die"],
         brief="Have the bot leave the server.",
-        permissions=["administrator"],
         implemented="2021-04-28 20:21:42.190256",
         updated="2021-05-05 19:43:51.209242",
     )
     @commands.guild_only()
     @checks.has_perms(manage_guild=True)
-    async def leave(self, ctx):
+    async def kill(self, ctx):
         """
-        Usage: {0}leave
-        Aliases: {0}kill, {0}die
+        Usage: {0}kill
+        Aliases: {0}die
         Output:
             Clears all stored server data
             and kicks the bot from the server.

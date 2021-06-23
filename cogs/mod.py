@@ -507,7 +507,7 @@ class Mod(commands.Cog):
 
     @decorators.group(
         brief="Remove any type of content.",
-        aliases=["prune", "delete", "remove"],
+        aliases=["prune", "delete"],
         description="Methods:"
         "\nAll - Purge all messages."
         "\nBots - Purge messages sent by bots."
@@ -532,7 +532,7 @@ class Mod(commands.Cog):
     async def purge(self, ctx):
         """
         Usage: {0}purge <option> <amount>
-        Aliases: {0}prune, {0}delete, {0}remove
+        Aliases: {0}prune, {0}delete
         Permission: Manage Messages
         Options:
             all, bots, contains, embeds,

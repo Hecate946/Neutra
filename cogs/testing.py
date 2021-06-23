@@ -39,6 +39,9 @@ class Testing(commands.Cog):
         self.inserter.start()
         self.dispatch_avatars.start()
 
+        self.test_var = "blah"
+        self.test_var2 = self.test_var
+
     @decorators.command()
     async def archive(self, ctx):
         # await self.insertion()
