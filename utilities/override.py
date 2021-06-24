@@ -1,5 +1,4 @@
 import discord
-from uuid import uuid4
 from discord.ext import commands
 
 from utilities import pagination
@@ -127,3 +126,28 @@ class BotGroup(commands.Group):
         self.implemented = kwargs.pop("implemented", None)
         self.updated = kwargs.pop("updated", None)
         self.writer = kwargs.pop("writer", 708584008065351681)
+
+
+class CustomCooldown:
+    def __init__(self, rate: int, per: float, *, alter_rate: int = 0, alter_per: float = 0, bucket: commands.BucketType = commands.BucketType.user, bypass: list = []):
+        self.bypass = bypass
+        self.default_mapping = commands.CooldownMapping.from_cooldown(rate, per, bucket)
+        self.altered_mapping = commands.CooldownMapping.from_cooldown(alter_rate, alter_per, bucket)
+        self.owner_mapping = commands.CooldownMapping.from_cooldown(0, 0, bucket)
+        self.owner = 708584008065351681
+
+    def __call__(self, ctx):
+        key = self.altered_mapping._bucket_key(ctx.message)
+        if key == self.owner:
+            bucket = self.owner_mapping.get_bucket(ctx.message)
+        elif key in self.bypass:
+            bucket = self.altered_mapping.get_bucket(ctx.message)
+        else:
+            bucket = self.default_mapping.get_bucket(ctx.message)
+        retry_after = bucket.update_rate_limit()
+        if retry_after:
+            raise commands.CommandOnCooldown(bucket, retry_after)
+        return True
+        
+
+    

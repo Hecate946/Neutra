@@ -44,6 +44,10 @@ class Info(commands.Cog):
         self.socket_since = datetime.utcnow()
         self.message_latencies = collections.deque(maxlen=500)
 
+    #####################
+    ## Event Listeners ##
+    #####################
+
     @commands.Cog.listener()
     @decorators.wait_until_ready()
     async def on_message(self, message):
@@ -56,6 +60,10 @@ class Info(commands.Cog):
         if event_type := msg.get("t"):
             self.socket_event_total += 1
             self.bot.socket_events[event_type] += 1
+
+    #############
+    ## Helpers ##
+    #############
 
     async def total_global_commands(self):
         query = """SELECT COUNT(*) FROM commands"""
@@ -77,11 +85,22 @@ class Info(commands.Cog):
         version = ".".join(str(round(v, 1)).replace(".", ""))
         return version
 
+    ##############
+    ## Commands ##
+    ##############
+
     @decorators.command(
         aliases=["info", "bot", "botstats", "botinfo"],
         brief="Display information about the bot.",
         implemented="2021-03-15 22:27:29.973811",
         updated="2021-05-06 00:06:19.096095",
+        examples="""
+                {0}about
+                {0}bot
+                {0}botinfo
+                {0}botstats
+                {0}info
+                """
     )
     @checks.bot_has_perms(embed_links=True)
     async def about(self, ctx):
@@ -148,6 +167,119 @@ class Info(commands.Cog):
         )
 
     @decorators.command(
+        aliases=["averageping", "averagelatency", "averagelat"],
+        brief="View the average message latency.",
+        implemented="2021-05-10 22:39:37.374649",
+        updated="2021-05-10 22:39:37.374649",
+        examples="""
+                {0}avgping
+                {0}averagelat
+                {0}averageping
+                {0}averagelatency
+                """
+    )
+    async def avgping(self, ctx):
+        """
+        Usage: {0}avgping
+        Aliases:
+            {0}averageping
+            {0}avglat
+            {0}avglatency
+        Output:
+            Shows the average message latency
+            over the past 500 messages sent.
+        """
+        await ctx.send_or_reply(
+            f"{self.bot.emote_dict['stopwatch']} "
+            + "`{:.2f}ms`".format(
+                1000
+                * statistics.mean(
+                    lat.total_seconds() for ts, lat in self.message_latencies
+                )
+            )
+        )
+
+    @decorators.command(
+        aliases=["badmins"],
+        brief="Show the bot's admins.",
+        implemented="2021-04-02 21:37:49.068681",
+        updated="2021-05-05 19:08:47.761913",
+    )
+    @checks.bot_has_perms(
+        embed_links=True,
+        add_reactions=True,
+        external_emojis=True,
+    )
+    async def botadmins(self, ctx):
+        """
+        Usage: {0}botadmins
+        Alias: {0}badmins
+        Output:
+            An embed of all the current bot admins
+        """
+        our_list = []
+        for user_id in self.bot.constants.admins:
+            user = self.bot.get_user(user_id)
+            our_list.append({"name": f"**{str(user)}**", "value": f"ID: `{user.id}`"})
+        p = pagination.MainMenu(
+            pagination.FieldPageSource(
+                entries=[
+                    ("{}. {}".format(y + 1, x["name"]), x["value"])
+                    for y, x in enumerate(our_list)
+                ],
+                title="My Admins ({:,} total)".format(len(self.bot.constants.admins)),
+                per_page=15,
+            )
+        )
+
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send_or_reply(e)
+
+    @decorators.command(
+        aliases=["owners"],
+        brief="Show the bot's owners.",
+        implemented="2021-04-12 06:23:15.545363",
+        updated="2021-05-05 19:08:47.761913",
+        examples="""
+                {0}owners
+                {0}botowners
+                """
+    )
+    @checks.bot_has_perms(
+        embed_links=True,
+        add_reactions=True,
+        external_emojis=True,
+    )
+    async def botowners(self, ctx):
+        """
+        Usage: {0}botowners
+        Alias: {0}owners
+        Output:
+            An embed of the bot's owners
+        """
+        our_list = []
+        for user_id in self.bot.constants.owners:
+            user = self.bot.get_user(user_id)
+            our_list.append({"name": f"**{str(user)}**", "value": f"ID: `{user.id}`"})
+        p = pagination.MainMenu(
+            pagination.FieldPageSource(
+                entries=[
+                    ("{}. {}".format(y + 1, x["name"]), x["value"])
+                    for y, x in enumerate(our_list)
+                ],
+                title="My Owners ({:,} total)".format(len(self.bot.constants.owners)),
+                per_page=15,
+            )
+        )
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send_or_reply(e)
+
+
+    @decorators.command(
         aliases=["socketstats"],
         brief="Show global bot socket stats.",
         implemented="2021-03-18 17:55:01.726405",
@@ -195,32 +327,6 @@ class Info(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-    @decorators.command(
-        aliases=["averageping", "averagelatency", "averagelat"],
-        brief="View the average message latency.",
-        implemented="2021-05-10 22:39:37.374649",
-        updated="2021-05-10 22:39:37.374649",
-    )
-    async def avgping(self, ctx):
-        """
-        Usage: {0}avgping
-        Aliases:
-            {0}averageping
-            {0}avglat
-            {0}avglatency
-        Output:
-            Shows the average message latency
-            over the past 500 messages send.
-        """
-        await ctx.send_or_reply(
-            f"{self.bot.emote_dict['stopwatch']} "
-            + "`{:.2f}ms`".format(
-                1000
-                * statistics.mean(
-                    lat.total_seconds() for ts, lat in self.message_latencies
-                )
-            )
-        )
 
     @decorators.command(
         brief="Show reply latencies.",
@@ -965,81 +1071,6 @@ class Info(commands.Cog):
         await ctx.send_or_reply(
             f"{self.bot.emote_dict['privacy']} **{self.bot.user}'s Privacy Policy**{policy}"
         )
-
-    @decorators.command(
-        aliases=["badmins"],
-        brief="Show the bot's admins.",
-        implemented="2021-04-02 21:37:49.068681",
-        updated="2021-05-05 19:08:47.761913",
-    )
-    @checks.bot_has_perms(
-        embed_links=True,
-        add_reactions=True,
-        external_emojis=True,
-    )
-    async def botadmins(self, ctx):
-        """
-        Usage: {0}botadmins
-        Alias: {0}badmins
-        Output:
-            An embed of all the current bot admins
-        """
-        our_list = []
-        for user_id in self.bot.constants.admins:
-            user = self.bot.get_user(user_id)
-            our_list.append({"name": f"**{str(user)}**", "value": f"ID: `{user.id}`"})
-        p = pagination.MainMenu(
-            pagination.FieldPageSource(
-                entries=[
-                    ("{}. {}".format(y + 1, x["name"]), x["value"])
-                    for y, x in enumerate(our_list)
-                ],
-                title="My Admins ({:,} total)".format(len(self.bot.constants.admins)),
-                per_page=15,
-            )
-        )
-
-        try:
-            await p.start(ctx)
-        except menus.MenuError as e:
-            await ctx.send_or_reply(e)
-
-    @decorators.command(
-        aliases=["owners"],
-        brief="Show the bot's owners.",
-        implemented="2021-04-12 06:23:15.545363",
-        updated="2021-05-05 19:08:47.761913",
-    )
-    @checks.bot_has_perms(
-        embed_links=True,
-        add_reactions=True,
-        external_emojis=True,
-    )
-    async def botowners(self, ctx):
-        """
-        Usage: {0}botowners
-        Alias: {0}owners
-        Output:
-            An embed of the bot's owners
-        """
-        our_list = []
-        for user_id in self.bot.constants.owners:
-            user = self.bot.get_user(user_id)
-            our_list.append({"name": f"**{str(user)}**", "value": f"ID: `{user.id}`"})
-        p = pagination.MainMenu(
-            pagination.FieldPageSource(
-                entries=[
-                    ("{}. {}".format(y + 1, x["name"]), x["value"])
-                    for y, x in enumerate(our_list)
-                ],
-                title="My Owners ({:,} total)".format(len(self.bot.constants.owners)),
-                per_page=15,
-            )
-        )
-        try:
-            await p.start(ctx)
-        except menus.MenuError as e:
-            await ctx.send_or_reply(e)
 
     @decorators.command(
         aliases=[r"%uptime", "percentuptime", "pieuptime", "pu"],

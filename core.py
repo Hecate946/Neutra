@@ -151,7 +151,11 @@ class Snowbot(commands.AutoShardedBot):
         self.do_not_load = ["TESTING"]
         self.home_cogs = ["MUSIC"]
 
-        self.home_guilds = [805638877762420786, 776345386482270209, 740734113086177433]
+        self.home_guilds = [
+            805638877762420786,
+            776345386482270209,
+            740734113086177433
+        ]  # My servers that have "premium" features
 
         # Webhooks for monitering and data saving.
         self.avatar_webhook = None

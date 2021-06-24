@@ -9,6 +9,10 @@ command = functools.partial(commands.command, cls=override.BotCommand)
 group = functools.partial(commands.group, cls=override.BotGroup)
 
 
+def cooldown(*args, **kwargs):
+    return commands.check(override.CustomCooldown(*args, **kwargs))
+
+
 def event_check(func):
     """
     Event decorator check.

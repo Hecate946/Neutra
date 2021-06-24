@@ -709,9 +709,10 @@ class Tracking(commands.Cog):
                 """,
     )
     @checks.has_perms(view_audit_log=True)
-    async def seen(self, ctx, *, user: converters.DiscordUser):
+    @decorators.cooldown(3, 10)
+    async def seen(self, ctx, *, user: converters.DiscordUser = None):
         """
-        Usage: {0}seen <user>
+        Usage: {0}seen [user]
         Aliases:
             {0}lastseen, {0}track, {0}tracker, {0}observed
         Permission: View Audit Log
@@ -721,8 +722,11 @@ class Tracking(commands.Cog):
         Notes:
             User can be a mention, user id, or full discord
             username with discrim Username#0001.
+            Will default to you if no user is specified.
         """
         async with ctx.typing():
+            user = user or ctx.author
+            
             if user.bot:
                 raise commands.BadArgument("I do not track bots.")
 

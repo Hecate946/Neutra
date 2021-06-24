@@ -12,8 +12,10 @@ from datetime import datetime
 from discord.ext import commands, menus
 
 from settings import constants
+from utilities import utils
 from utilities import checks
 from utilities import images
+from utilities import spotify
 from utilities import converters
 from utilities import decorators
 from utilities import pagination
@@ -195,18 +197,11 @@ class YTDLSource(discord.PCMVolumeTransformer):
         )
         info = await loop.run_in_executor(None, partial)
 
-        # self.search = {}
-        # self.search["title"] = f'Search results for:\n**{search}**'
-        # self.search["type"] = 'rich'
-        # self.search["color"] = int(str(robot.color).replace("#",""))
-        # self.search["author"] = {'name': f'{ctx.author.name}', 'url': f'{ctx.author.avatar_url}',
-        #                         'icon_url': f'{ctx.author.avatar_url}'}
 
         lst = []
         count = 0
         e_list = []
         for e in info["entries"]:
-            # lst.append(f'`{info["entries"].index(e) + 1}.` {e.get("title")} **[{YTDLSource.parse_duration(int(e.get("duration")))}]**\n')
             VId = e.get("id")
             VUrl = "https://www.youtube.com/watch?v=%s" % (VId)
             lst.append(f'`{count + 1}.` [{e.get("title")}]({VUrl})\n')
@@ -214,7 +209,6 @@ class YTDLSource(discord.PCMVolumeTransformer):
             e_list.append(e)
 
         lst.append("\n**Type a number to make a choice, Type `cancel` to exit**")
-        # self.search["description"] = "\n".join(lst)
 
         embed = discord.Embed(
             title=f"Search results for:\n**{search}**",
@@ -500,6 +494,14 @@ class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.voice_states = {}
+
+        self.spotify_client_id = utils.config()["spotify_client_id"]
+        self.spotify_client_secret = utils.config()["spotify_client_secret"]
+        self.spotify = None
+
+        if self.spotify_client_id and self.spotify_client_secret:
+            self.spotify = spotify.Spotify(self.spotify_client_id, self.spotify_client_secret, aiosession=self.bot.session, loop=self.bot.loop)
+
 
     def get_voice_state(self, ctx):
         state = self.voice_states.get(ctx.guild.id)
@@ -1060,16 +1062,79 @@ class Music(commands.Cog):
                 return await ctx.usage()
 
         else:
+            linksRegex = '((http(s)*:[/][/]|www.)([a-z]|[A-Z]|[0-9]|[/.]|[~])*)'
+            pattern = re.compile(linksRegex)
+            matchUrl = pattern.match(search)
+            song_url = search.replace('/', '%2F') if matchUrl is None else search
+
+            # Rewrite YouTube playlist URLs if the wrong URL type is given
+            playlistRegex = r'watch\?v=.+&(list=[^&]+)'
+            matches = re.search(playlistRegex, song_url)
+            groups = matches.groups() if matches is not None else []
+            song_url = "https://www.youtube.com/playlist?" + groups[0] if len(groups) > 0 else song_url
+
+            if self.spotify:
+                if 'open.spotify.com' in song_url:
+                    song_url = 'spotify:' + re.sub('(http[s]?:\/\/)?(open.spotify.com)\/', '', song_url).replace('/', ':')
+                    # remove session id (and other query stuff)
+                    song_url = re.sub('\?.*', '', song_url)
+                if song_url.startswith('spotify:'):
+                    parts = song_url.split(":")
+                    try:
+                        if 'track' in parts:
+                            res = await self.spotify.get_track(parts[-1])
+                            song_url = res['artists'][0]['name'] + ' ' + res['name']
+
+                        elif 'album' in parts:
+                            res = await self.spotify.get_album(parts[-1])
+                            song_urls = [i['name'] + ' ' + i['artists'][0]['name'] for i in res['tracks']['items']]
+                            await self.enqueue_songs(ctx, song_urls)
+                            return
+                                
+                        elif 'playlist' in parts:
+                            res = []
+                            r = await self.spotify.get_playlist_tracks(parts[-1])
+                            while True:
+                                res.extend(r['items'])
+                                if r['next'] is not None:
+                                    r = await self.spotify.make_spotify_req(r['next'])
+                                    continue
+                                else:
+                                    break
+            
+                            song_urls = [i['track']['name'] + ' ' + i['track']['artists'][0]['name'] for i in res]
+                            await self.enqueue_songs(ctx, song_urls)
+                            return
+                        
+                        else:
+                            return await ctx.fail("Invalid Spotify URI.")
+                    except spotify.SpotifyError:
+                        return await ctx.fail("Invalid Spotify URI.")
+                try:
+                    source = await YTDLSource.create_source(ctx, song_url, loop=self.bot.loop)
+                except YTDLError as e:
+                    await ctx.fail(f"Request failed: {e}")
+                else:
+                    song = Song(source)
+                    ctx.voice_state.songs.put_nowait(song)
+                    await ctx.send_or_reply(
+                        f"{self.bot.emote_dict['music']} Queued {source}"
+                    )
+
+    async def enqueue_songs(self, ctx, songs):
+        msg = await ctx.load(f"Enqueueing {len(songs)} tracks...")
+        queued = 0
+        for song in songs:
             try:
-                source = await YTDLSource.create_source(ctx, search, loop=self.bot.loop)
-            except YTDLError as e:
-                await ctx.fail(f"Request failed: {e}")
+                source = await YTDLSource.create_source(ctx, song, loop=self.bot.loop)
+            except YTDLError:
+                continue
             else:
                 song = Song(source)
                 ctx.voice_state.songs.put_nowait(song)
-                await ctx.send_or_reply(
-                    f"{self.bot.emote_dict['music']} Queued {source}"
-                )
+                queued += 1
+
+        await msg.edit(content=f"**{self.bot.emote_dict['music']} Queued {queued} tracks.**")
 
     @decorators.command(
         name="playnext",
