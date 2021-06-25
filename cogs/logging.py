@@ -50,13 +50,15 @@ class Logging(commands.Cog):
         bot.loop.create_task(self.load_log_data())
 
         self.log_types = [
+            "avatars",
             "channels",
             "emojis",
             "invites",
             "joins",
-            "messages",
+            "leaves" "messages",
             "moderation",
-            "users",
+            "nicknames",
+            "usernames",
             "roles",
             "server",
             "voice",
@@ -78,13 +80,16 @@ class Logging(commands.Cog):
                 SELECT 
                 logs.server_id,
                 (SELECT ROW_TO_JSON(_) FROM (SELECT
+                    logs.avatars,
                     logs.channels,
                     logs.emojis,
                     logs.invites,
                     logs.joins,
+                    logs.leaves,
                     logs.messages,
                     logs.moderation,
-                    logs.users,
+                    logs.nicknames,
+                    logs.usernames,
                     logs.roles,
                     logs.server,
                     logs.voice
@@ -235,8 +240,8 @@ class Logging(commands.Cog):
         case_insensitive=True,
     )
     @commands.guild_only()
-    @commands.cooldown(2.0, 30, commands.BucketType.guild)
-    @commands.bot_has_guild_permissions(manage_webhooks=True)
+    @decorators.cooldown(2, 30, bucket=commands.BucketType.guild)
+    @checks.bot_has_guild_perms(manage_webhooks=True)
     @checks.bot_has_perms(embed_links=True)
     @checks.has_perms(manage_guild=True)
     async def _log(self, ctx, event: converters.LoggingEvent = None):
@@ -250,13 +255,16 @@ class Logging(commands.Cog):
             with no arguments to output the
             current logging configuration.
         Events:
+            avatars
             channels
             emojis
             invites
             joins
+            leaves
             messages
             moderation
-            users
+            nicknames
+            usernames
             roles
             server
             voice
@@ -425,8 +433,8 @@ class Logging(commands.Cog):
         updated="2021-06-08 17:18:43.698120",
     )
     @commands.guild_only()
-    @commands.cooldown(2.0, 30, commands.BucketType.guild)
-    @commands.bot_has_guild_permissions(manage_webhooks=True)
+    @decorators.cooldown(2, 30, bucket=commands.BucketType.guild)
+    @checks.bot_has_guild_perms(manage_webhooks=True)
     @checks.has_perms(manage_guild=True)
     async def unlog(self, ctx, event: converters.LoggingEvent):
         """
@@ -457,7 +465,7 @@ class Logging(commands.Cog):
             args = [False] * 10
             query = """
                     INSERT INTO logs
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
                     """  # Insert false for all events
             await self.bot.cxn.execute(query, ctx.guild.id, *args)
 
@@ -491,7 +499,7 @@ class Logging(commands.Cog):
         aliases=["logserver", "setlogchannel"],
     )
     @commands.guild_only()
-    @commands.cooldown(2.0, 30, commands.BucketType.guild)
+    @decorators.cooldown(2, 30, bucket=commands.BucketType.guild)
     @checks.bot_has_perms(manage_webhooks=True)
     @checks.has_perms(manage_guild=True)
     async def logchannel(self, ctx, *, channel: discord.TextChannel = None):
@@ -510,7 +518,7 @@ class Logging(commands.Cog):
         aliases=["unlogserver"],
     )
     @commands.guild_only()
-    @commands.cooldown(2.0, 30, commands.BucketType.guild)
+    @decorators.cooldown(2, 30, bucket=commands.BucketType.guild)
     @checks.bot_has_perms(manage_webhooks=True)
     @checks.has_perms(manage_guild=True)
     async def unlogchannel(self, ctx):
@@ -861,7 +869,7 @@ class Logging(commands.Cog):
     @decorators.event_check(lambda s, b, a: not a.bot)
     async def on_member_update(self, before, after):
         if before.display_name != after.display_name:
-            webhook = self.get_webhook(after.guild, "users")
+            webhook = self.get_webhook(after.guild, "nicknames")
             if webhook:
                 embed = discord.Embed(
                     description=f"**User:** {after.mention} **Name:** `{after}`\n"
@@ -897,11 +905,13 @@ class Logging(commands.Cog):
     @decorators.event_check(lambda s, b, a: not a.bot)
     async def on_user_update(self, before, after):
         for guild in after.mutual_guilds:
-            webhook = self.get_webhook(guild, "users")
-            if not webhook:
-                continue
 
             if before.name != after.name:
+
+                webhook = self.get_webhook(guild, "usernames")
+                if not webhook:
+                    continue
+
                 embed = discord.Embed(
                     description=f"**User:** {after.mention} **Name:** `{after}`\n"
                     f"**Old Username:** `{before.name}`\n"
@@ -915,6 +925,11 @@ class Logging(commands.Cog):
                 await self.send_webhook(webhook, embed=embed)
 
             elif before.discriminator != after.discriminator:
+
+                webhook = self.get_webhook(guild, "usernames")
+                if not webhook:
+                    continue
+
                 embed = discord.Embed(
                     description=f"**User:** {after.mention} **Name:** `{after}`\n"
                     f"**Old Discriminator:** `{before.discriminator}`\n"
@@ -928,14 +943,18 @@ class Logging(commands.Cog):
                 await self.send_webhook(webhook, embed=embed)
 
             elif before.avatar_url != after.avatar_url:
+
+                webhook = self.get_webhook(guild, "avatars")
+                if not webhook:
+                    continue
+
                 embed = discord.Embed(
                     description=f"**User:** {after.mention} **Name:** `{after}`\n"
-                    "New image below, old image to the right.",
+                    "New image below",
                     colour=self.bot.constants.embed,
                     timestamp=datetime.utcnow(),
                 )
 
-                embed.set_thumbnail(url=before.avatar_url)
                 embed.set_image(url=after.avatar_url)
                 embed.set_author(name=f"Avatar Change")
                 embed.set_footer(text=f"User ID: {after.id}")

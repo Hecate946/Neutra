@@ -24,26 +24,30 @@ async def prettify(ctx, arg):
     pretty_arg = await commands.clean_content().convert(ctx, str(arg))
     return pretty_arg
 
+
 async def disambiguate(ctx, matches, sort=lambda m: str(m), timeout=30):
     if len(matches) == 1:
         return matches[0]
 
     matches = sorted(matches, key=sort)
-    
+
     user_value = "**Nickname:** {0.display_name}\n**ID:** `{0.id}`"
     role_value = "**Mention:** {0.mention}\n**ID:** `{0.id}`"
     generic = "**ID:** `{0.id}`"
 
     def pred(match):
         if type(match) in [discord.User, discord.Member]:
-            result =  user_value.format(match)
+            result = user_value.format(match)
         elif type(match) == discord.Role:
             result = role_value.format(match)
         else:
             result = generic.format(match)
         return result
 
-    entries = [(f"{idx}. {str(match)}", pred(match)) for idx, match in enumerate(matches, start=1)]
+    entries = [
+        (f"{idx}. {str(match)}", pred(match))
+        for idx, match in enumerate(matches, start=1)
+    ]
 
     p = pagination.MainMenu(
         pagination.FieldPageSource(
@@ -61,11 +65,14 @@ async def disambiguate(ctx, matches, sort=lambda m: str(m), timeout=30):
     except menus.MenuError as e:
         m = await ctx.send(e)
         messages.append(m.id)
-        
+
     try:
-        msg = await ctx.bot.wait_for('message', timeout=timeout,
-                check=lambda m: m.author.id == ctx.author.id and
-                                m.channel.id == ctx.channel.id)
+        msg = await ctx.bot.wait_for(
+            "message",
+            timeout=timeout,
+            check=lambda m: m.author.id == ctx.author.id
+            and m.channel.id == ctx.channel.id,
+        )
     except asyncio.TimeoutError:
         m = await ctx.fail("**Disambiguation timer expired.**")
         messages.append(m.id)
@@ -73,7 +80,9 @@ async def disambiguate(ctx, matches, sort=lambda m: str(m), timeout=30):
     else:
         messages.append(msg.id)
         if not msg.content.isdigit():
-            m = await ctx.fail(f"**Disabiguation failed. `{msg.content}` is not a number.**")
+            m = await ctx.fail(
+                f"**Disabiguation failed. `{msg.content}` is not a number.**"
+            )
             messages.append(m.id)
             return
         index = int(msg.content)
@@ -85,6 +94,7 @@ async def disambiguate(ctx, matches, sort=lambda m: str(m), timeout=30):
         return matches[index - 1]
     finally:
         ctx.bot.loop.create_task(attempt_cleanup(ctx, messages))
+
 
 async def attempt_cleanup(ctx, msg_ids):
     if ctx.channel.permissions_for(ctx.me).manage_messages:
@@ -961,13 +971,16 @@ class LoggingEvent(commands.Converter):
     async def convert(self, ctx, argument):
         log_types = {
             "all": "Enable all logging events.",
+            "avatars": "Log when users change their avatar.",
             "channels": "Log when channels are created, deleted, and updated.",
             "emojis": "Log when emojis are added, removed, or edited.",
             "invites": "Log when discord invites are posted, created, and deleted.",
-            "joins": "Log when users join or leave the server.",
+            "joins": "Log when users join the server.",
+            "leaves": "Log when users leave the server.",
             "messages": "Log when messages are purged, deleted, and edited.",
             "moderation": "Log when a moderation action is performed using the bot.",
-            "users": "Log when users change their nickname, username, and avatar.",
+            "nicknames": "Log when users change their nickname.",
+            "usernames": "Log when users change their username.",
             "roles": "Log when roles are created, deleted, updated, and added/removed from users.",
             "server": "Log when the server's icon, banner, name, or region is updated.",
             "voice": "Log when users join, leave and switch voice channels.",
@@ -981,6 +994,26 @@ class LoggingEvent(commands.Converter):
             render = table.render()
             completed = f"```yml\nVALID EVENTS:\n{render}```"
             raise commands.BadArgument(f"**Invalid Event.**{completed}")
+        else:
+            return argument.lower()
+
+
+class ServerDataOption(commands.Converter):
+    async def convert(self, ctx, argument):
+        types = {
+            "nicknames": "Delete all recorded nicknames for a user on this server.",
+            "messages": "Delete all message data recorded for a user on this server.",
+            "invites": "Delete all invite data recorded for a user on this server.",
+        }
+
+        if argument.lower() not in types.keys():
+            headers = ["OPTION", "DESCRIPTION"]
+            table = formatting.TabularData()
+            table.set_columns(headers)
+            table.add_rows([(event, desc) for event, desc in types.items()])
+            render = table.render()
+            completed = f"```yml\nVALID OPTIONS:\n{render}```"
+            raise commands.BadArgument(f"**Invalid Option.**{completed}")
         else:
             return argument.lower()
 

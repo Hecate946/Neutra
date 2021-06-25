@@ -1,4 +1,3 @@
-from re import L
 import discord
 from discord.ext import commands
 
@@ -64,6 +63,11 @@ async def check_bot_permissions(ctx, perms, *, check=all):
 
 
 def has_perms(*, check=all, **perms):  # Decorator to check if a user has perms
+
+    invalid = set(perms) - set(discord.Permissions.VALID_FLAGS)
+    if invalid:
+        raise TypeError(f"Invalid permission(s): {', '.join(invalid)}")
+
     async def pred(ctx):
         result = await check_permissions(ctx, perms, check=check)
         perm_list = [
@@ -80,6 +84,11 @@ def has_perms(*, check=all, **perms):  # Decorator to check if a user has perms
 
 
 def bot_has_perms(*, check=all, **perms):  # Decorator to check if the bot has perms
+
+    invalid = set(perms) - set(discord.Permissions.VALID_FLAGS)
+    if invalid:
+        raise TypeError(f"Invalid permission(s): {', '.join(invalid)}")
+
     async def pred(ctx):
         result = await check_bot_permissions(ctx, perms, check=check)
         if (
@@ -189,3 +198,72 @@ def can_handle(ctx, permission: str):
     return isinstance(ctx.channel, discord.DMChannel) or getattr(
         ctx.channel.permissions_for(ctx.guild.me), permission
     )
+
+
+def has_guild_permissions(**perms):
+
+    invalid = set(perms) - set(discord.Permissions.VALID_FLAGS)
+    if invalid:
+        raise TypeError(f"Invalid permission(s): {', '.join(invalid)}")
+
+    def predicate(ctx):
+        if not ctx.guild:
+            raise commands.NoPrivateMessage
+
+        permissions = ctx.author.guild_permissions
+        missing = [
+            perm for perm, value in perms.items() if getattr(permissions, perm) != value
+        ]
+
+        if not missing:
+            return True
+
+        perm_list = [x.title().replace("_", " ").replace("Tts", "TTS") for x in missing]
+        raise commands.BadArgument(
+            f"You require the following permission{'' if len(perm_list) == 1 else 's'}: `{', '.join(perm_list)}`"
+        )
+
+    return commands.check(predicate)
+
+
+def bot_has_guild_perms(**perms):
+
+    invalid = set(perms) - set(discord.Permissions.VALID_FLAGS)
+    if invalid:
+        raise TypeError(f"Invalid permission(s): {', '.join(invalid)}")
+
+    def predicate(ctx):
+        if not ctx.guild:
+            raise commands.NoPrivateMessage
+
+        permissions = ctx.me.guild_permissions
+        missing = [
+            perm for perm, value in perms.items() if getattr(permissions, perm) != value
+        ]
+        if not missing:
+            return True
+
+        perm_list = [x.title().replace("_", " ").replace("Tts", "TTS") for x in missing]
+        raise commands.BadArgument(
+            f"I require the following permission{'' if len(perm_list) == 1 else 's'}: `{', '.join(perm_list)}`"
+        )
+
+    return commands.check(predicate)
+
+
+def dm_only():
+    def predicate(ctx):
+        if ctx.guild is not None:
+            raise commands.PrivateMessageOnly()
+        return True
+
+    return commands.check(predicate)
+
+
+def guild_only():
+    def predicate(ctx):
+        if ctx.guild is None:
+            raise commands.NoPrivateMessage()
+        return True
+
+    return commands.check(predicate)

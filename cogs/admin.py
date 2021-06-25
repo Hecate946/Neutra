@@ -1124,3 +1124,47 @@ class Admin(commands.Cog):
         await ctx.send_or_reply(
             f"{self.bot.emote_dict['graph']} Your server has {to_be_pruned} inactive users matching your specifications."
         )
+
+    @decorators.command(
+        brief="Reset stored information for a user",
+        implemented="2021-06-25 04:36:26.518644",
+        updated="2021-06-25 04:36:26.518644",
+    )
+    @decorators.cooldown(3, 60)
+    @checks.has_perms(manage_guild=True)
+    async def reset(
+        self, ctx, option: converters.ServerDataOption, *, user: converters.DiscordUser
+    ):
+        """
+        Usage: {0}reset <option> <user>
+        Output:
+            Delete recorded data for a user
+        Notes:
+            Once removed, the data cannot be
+            recovered. Use with caution.
+        """
+        c = await ctx.confirm(
+            f"This action will delete all {option[:-1]} data collected on this server for `{user}`."
+        )
+        if c:
+            if option == "nicknames":
+                query = """
+                        DELETE FROM usernicks
+                        WHERE server_id = $1
+                        AND user_id = $2;
+                        """
+            elif option == "messages":
+                query = """
+                        DELETE FROM messages
+                        WHERE server_id = $1
+                        AND author_id = $2;
+                        """
+            else:
+                query = """
+                        DELETE FROM invites
+                        WHERE server_id = $1
+                        AND inviter = $2;
+                        """
+
+            await self.bot.cxn.execute(query, ctx.guild.id, user.id)
+            await ctx.success(f"Reset all {option[:-1]} data for `{user}`")

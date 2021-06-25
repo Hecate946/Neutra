@@ -22,13 +22,16 @@ CREATE TABLE IF NOT EXISTS prefixes (
 
 CREATE TABLE IF NOT EXISTS logs (
     server_id BIGINT PRIMARY KEY,
+    avatars BOOLEAN DEFAULT True,
     channels BOOLEAN DEFAULT True,
     emojis BOOLEAN DEFAULT True,
     invites BOOLEAN DEFAULT True,
     joins BOOLEAN DEFAULT True,
+    leaves BOOLEAN DEFAULT True,
     messages BOOLEAN DEFAULT True,
     moderation BOOLEAN DEFAULT True,
-    users BOOLEAN DEFAULT True,
+    nicknames BOOLEAN DEFAULT True,
+    usernames BOOLEAN DEFAULT True,
     roles BOOLEAN DEFAULT True,
     server BOOLEAN DEFAULT True,
     voice BOOLEAN DEFAULT True
