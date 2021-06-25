@@ -176,23 +176,17 @@ class Botadmin(commands.Cog):
         brief="DM any user the bot knows.",
     )
     @commands.is_owner()
-    async def _message(self, ctx, user_id: int, *, message: str):
+    async def _message(self, ctx, user: converters.DiscordUser, *, message: str):
         """
-        Usage:       -message <id> <message>
-        Alias:       -pm, -dm
-        Example:     -dm 384059834985989 Hi
+        Usage:       {0}message <user> <message>
+        Alias:       {0}pm, {0}dm
+        Example:     {0}dm 384059834985989 Hi
         Permissions: Bot Owner
         """
-        user = self.bot.get_user(user_id)
-        if not user:
-            return await ctx.send_or_reply(
-                content=f"Could not find any UserID matching **{user_id}**",
-            )
-
         try:
             await user.send(message)
             await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['letter']} Sent a DM to **{user_id}**",
+                content=f"{self.bot.emote_dict['letter']} Sent a DM to **{user}**",
             )
         except discord.Forbidden:
             await ctx.send_or_reply(

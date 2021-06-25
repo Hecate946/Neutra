@@ -164,7 +164,7 @@ def responsible(target, reason):
     return f"{responsible} {reason}"
 
 
-def makeBar(progress):
+def make_bar(progress):
     return "[{0}{1}] {2}%".format(
         "#" * (int(round(progress / 3))),
         " " * (33 - (int(round(progress / 3)))),

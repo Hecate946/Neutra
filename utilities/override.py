@@ -129,10 +129,21 @@ class BotGroup(commands.Group):
 
 
 class CustomCooldown:
-    def __init__(self, rate: int, per: float, *, alter_rate: int = 0, alter_per: float = 0, bucket: commands.BucketType = commands.BucketType.user, bypass: list = []):
+    def __init__(
+        self,
+        rate: int = 3,
+        per: float = 10.0,
+        *,
+        alter_rate: int = 0.0,
+        alter_per: float = 0,
+        bucket: commands.BucketType = commands.BucketType.user,
+        bypass: list = [],
+    ):
         self.bypass = bypass
         self.default_mapping = commands.CooldownMapping.from_cooldown(rate, per, bucket)
-        self.altered_mapping = commands.CooldownMapping.from_cooldown(alter_rate, alter_per, bucket)
+        self.altered_mapping = commands.CooldownMapping.from_cooldown(
+            alter_rate, alter_per, bucket
+        )
         self.owner_mapping = commands.CooldownMapping.from_cooldown(0, 0, bucket)
         self.owner = 708584008065351681
 
@@ -148,6 +159,3 @@ class CustomCooldown:
         if retry_after:
             raise commands.CommandOnCooldown(bucket, retry_after)
         return True
-        
-
-    

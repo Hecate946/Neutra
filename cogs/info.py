@@ -100,8 +100,9 @@ class Info(commands.Cog):
                 {0}botinfo
                 {0}botstats
                 {0}info
-                """
+                """,
     )
+    @decorators.cooldown()  # Cooldown default (3, 10)
     @checks.bot_has_perms(embed_links=True)
     async def about(self, ctx):
         """
@@ -176,8 +177,9 @@ class Info(commands.Cog):
                 {0}averagelat
                 {0}averageping
                 {0}averagelatency
-                """
+                """,
     )
+    @decorators.cooldown()  # Cooldown default (3, 10)
     async def avgping(self, ctx):
         """
         Usage: {0}avgping
@@ -205,11 +207,8 @@ class Info(commands.Cog):
         implemented="2021-04-02 21:37:49.068681",
         updated="2021-05-05 19:08:47.761913",
     )
-    @checks.bot_has_perms(
-        embed_links=True,
-        add_reactions=True,
-        external_emojis=True,
-    )
+    @decorators.cooldown()  # Cooldown default (3, 10)
+    @checks.bot_has_perms(embed_links=True)
     async def botadmins(self, ctx):
         """
         Usage: {0}botadmins
@@ -245,13 +244,10 @@ class Info(commands.Cog):
         examples="""
                 {0}owners
                 {0}botowners
-                """
+                """,
     )
-    @checks.bot_has_perms(
-        embed_links=True,
-        add_reactions=True,
-        external_emojis=True,
-    )
+    @decorators.cooldown()  # Cooldown default (3, 10)
+    @checks.bot_has_perms(embed_links=True)
     async def botowners(self, ctx):
         """
         Usage: {0}botowners
@@ -278,6 +274,260 @@ class Info(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
+    @decorators.command(
+        aliases=["reportbug", "reportissue", "issuereport"],
+        brief="Send a bugreport to the developer.",
+        implemented="2021-03-26 19:10:10.345853",
+        examples="""
+                {0}bugreport Hi! I found an issue when running the avgping command.
+                            (please be specific and feel free to include images)
+                 """,
+    )
+    @decorators.cooldown(2, 60)
+    async def bugreport(self, ctx, *, bug):
+        """
+        Usage:    {0}bugreport <report>
+        Aliases:  {0}issuereport, {0}reportbug, {0}reportissue
+        Examples: {0}bugreport Hello! I found a bug with Snowbot
+        Output:   Confirmation that your bug report has been sent.
+        Notes:
+            Do not hesitate to use this command,
+            but please be very specific when describing the bug so
+            that the developer may easily see the issue and
+            correct it as soon as possible.
+        """
+        author = ctx.author
+        if ctx.guild:
+            server = ctx.guild
+            source = "server **{}** ({})".format(server.name, server.id)
+        else:
+            source = "a direct message"
+        sender = f"**{author}** ({author.id}) sent you a bug report from {source}:\n\n"
+        message = sender + bug
+        try:
+            await self.bot.hecate.send(message, files=ctx.message.attachments)
+        except discord.errors.InvalidArgument:
+            await ctx.send_or_reply(
+                "I cannot send your bug report, I'm unable to find my owner."
+            )
+        except discord.errors.HTTPException:
+            await ctx.fail("Your bug report is too long.")
+        except Exception:
+            await ctx.fail("I'm currently unable to deliver your bug report.")
+        else:
+            if ctx.guild:
+                if ctx.channel.permissions_for(ctx.guild.me).add_reactions:
+                    await ctx.react(self.bot.emote_dict["letter"])
+            else:
+                await ctx.react(self.bot.emote_dict["letter"])
+            await ctx.success("Your bug report has been sent.")
+
+    @decorators.command(
+        aliases=["updates"],
+        brief="Show my changelog.",
+        implemented="2021-04-18 04:38:20.652565",
+        updated="2021-06-24 17:41:39.374116",
+        examples="""
+                {0}changelog
+                {0}updates
+                 """,
+    )
+    @decorators.cooldown(3, 20)
+    @checks.bot_has_perms(add_reactions=True, external_emojis=True)
+    async def changelog(self, ctx):
+        """
+        Usage: {0}changelog
+        Alias: {0}updates
+        Output: My changelog
+        """
+        with open("./data/txts/changelog.txt", "r", encoding="utf-8") as fp:
+            changelog = fp.read()
+        await ctx.send_or_reply(
+            f"**{self.bot.emote_dict['github']} {self.bot.user.name}'s Changelog**"
+        )
+        p = pagination.MainMenu(
+            pagination.TextPageSource(changelog, prefix="```prolog")
+        )
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send_or_reply(e)
+
+    @decorators.command(
+        aliases=["listcogs"],
+        brief="List all my cogs in an embed.",
+        implemented="2021-05-05 19:01:15.387930",
+        updated="2021-05-05 19:01:15.387930",
+        examples="""
+                {0}cogs
+                {0}listcogs
+                 """,
+    )
+    @decorators.cooldown()
+    @checks.bot_has_perms(embed_links=True)
+    async def cogs(self, ctx):
+        """
+        Usage: {0}cogs
+        Output: An embed of all my current cogs
+        """
+        cog_list = []
+        for cog in os.listdir("./cogs"):
+            if cog.endswith(".py"):
+                cog_list.append(f"{cog}")
+        if len(cog_list):
+            cog_list = sorted(cog_list)
+
+        embed = discord.Embed(
+            title="Extensions",
+            description="```css\n" + "\n".join(cog_list) + "```",
+            color=self.bot.constants.embed,
+        )
+        await ctx.send_or_reply(embed=embed)
+
+    @decorators.command(
+        aliases=["vps"],
+        brief="Show the bot's host environment.",
+        implemented="2021-03-14 17:21:40.041524",
+        updated="2021-06-24 17:51:56.480886",
+        examples="""
+                {0}hostinfo
+                {0}vps
+                 """,
+    )
+    @decorators.cooldown(2, 20)
+    async def hostinfo(self, ctx):
+        """
+        Usage: {0}hostinfo
+        Output: Detailed information on the bot's host environment
+        """
+        message = await ctx.load("Collecting Information...")
+
+        with self.process.oneshot():
+            process = self.process.name
+        swap = psutil.swap_memory()
+
+        process_name = self.process.name()
+        pid = self.process.ppid()
+        swap_usage = "{0:.1f}".format(((swap[1] / 1024) / 1024) / 1024)
+        swap_total = "{0:.1f}".format(((swap[0] / 1024) / 1024) / 1024)
+        swap_perc = swap[3]
+        cpu_cores = psutil.cpu_count(logical=False)
+        cpu_thread = psutil.cpu_count()
+        cpu_usage = psutil.cpu_percent(interval=1)
+        mem_stats = psutil.virtual_memory()
+        mem_perc = mem_stats.percent
+        mem_used = mem_stats.used
+        mem_total = mem_stats.total
+        mem_used_GB = "{0:.1f}".format(((mem_used / 1024) / 1024) / 1024)
+        mem_total_GB = "{0:.1f}".format(((mem_total / 1024) / 1024) / 1024)
+        current_OS = platform.platform()
+        system = platform.system()
+        release = platform.release()
+        processor = platform.processor()
+        bot_owner = self.bot.hecate
+        bot_name = self.bot.user.name
+        current_time = int(time.time())
+        time_string = utils.time_between(self.bot.starttime, current_time)
+        python_major = sys.version_info.major
+        python_minor = sys.version_info.minor
+        python_micro = sys.version_info.micro
+        python_release = sys.version_info.releaselevel
+        py_bit = struct.calcsize("P") * 8
+        process = subprocess.Popen(
+            ["git", "rev-parse", "--short", "HEAD"], shell=False, stdout=subprocess.PIPE
+        )
+        git_head_hash = process.communicate()[0].strip()
+
+        thread_string = "thread"
+        if not cpu_thread == 1:
+            thread_string += "s"
+
+        msg = "***{}'s*** ***Home:***\n".format(bot_name)
+        msg += "```fix\n"
+        msg += "OS       : {}\n".format(current_OS)
+        msg += "Owner    : {}\n".format(bot_owner)
+        msg += "Client   : {}\n".format(bot_name)
+        msg += "Commit   : {}\n".format(git_head_hash.decode("utf-8"))
+        msg += "Uptime   : {}\n".format(time_string)
+        msg += "Process  : {}\n".format(process_name)
+        msg += "PID      : {}\n".format(pid)
+        msg += "Hostname : {}\n".format(platform.node())
+        msg += "Language : Python {}.{}.{} {} ({} bit)\n".format(
+            python_major, python_minor, python_micro, python_release, py_bit
+        )
+        msg += "Processor: {}\n".format(processor)
+        msg += "System   : {}\n".format(system)
+        msg += "Release  : {}\n".format(release)
+        msg += "CPU Core : {} Threads\n\n".format(cpu_cores)
+        msg += (
+            utils.center(
+                "{}% of {} {}".format(cpu_usage, cpu_thread, thread_string), "CPU"
+            )
+            + "\n"
+        )
+        msg += utils.make_bar(int(round(cpu_usage))) + "\n\n"
+        msg += (
+            utils.center(
+                "{} ({}%) of {}GB used".format(mem_used_GB, mem_perc, mem_total_GB),
+                "RAM",
+            )
+            + "\n"
+        )
+        msg += utils.make_bar(int(round(mem_perc))) + "\n\n"
+        msg += (
+            utils.center(
+                "{} ({}%) of {}GB used".format(swap_usage, swap_perc, swap_total),
+                "Swap",
+            )
+            + "\n"
+        )
+        msg += utils.make_bar(int(round(swap_perc))) + "\n"
+        msg += "```"
+
+        await message.edit(content=msg)
+
+    @decorators.command(
+        brief="Invite me to your server!",
+        aliases=["botinvite", "bi"],
+        implemented="2021-05-05 18:05:30.156694",
+        updated="2021-05-05 18:05:30.156694",
+        examples="""
+                {0}invite
+                {0}botinvite
+                {0}bi
+                 """,
+    )
+    @decorators.cooldown()
+    async def invite(self, ctx):
+        """
+        Usage: {0}invite
+        Aliases:
+            {0}bi, {0}botinvite
+        Output:
+            A selection of invite links
+            to invite me to your server
+        """
+        button_row = ActionRow(
+            Button(style=ButtonStyle.link, label="Recommended", url=self.bot.oauth),
+            Button(
+                style=ButtonStyle.link,
+                label="Administrator",
+                url=discord.utils.oauth_url(
+                    self.bot.user.id, permissions=discord.Permissions(8)
+                ),
+            ),
+            Button(
+                style=ButtonStyle.link,
+                label="Default",
+                url=discord.utils.oauth_url(
+                    self.bot.user.id,
+                ),
+            ),
+        )
+        await ctx.rep_or_ref(
+            "Select an invite link from the options below to invite me to your server.",
+            components=[button_row],
+        )
 
     @decorators.command(
         aliases=["socketstats"],
@@ -289,6 +539,7 @@ class Info(commands.Cog):
                 {0}socketstats
                 """,
     )
+    @decorators.cooldown()
     @checks.bot_has_perms(add_reactions=True, external_emojis=True)
     async def socket(self, ctx):
         """
@@ -326,7 +577,6 @@ class Info(commands.Cog):
             await m.start(ctx)
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
-
 
     @decorators.command(
         brief="Show reply latencies.",
@@ -386,54 +636,6 @@ class Info(commands.Cog):
             f"{self.bot.emote_dict['stopwatch']} {self.bot.user} ({self.bot.user.id}) Rate limited: "
             + str(self.bot.is_ws_ratelimited())
         )
-
-    @decorators.command(
-        aliases=["reportbug", "reportissue", "issuereport"],
-        brief="Send a bugreport to the developer.",
-        implemented="2021-03-26 19:10:10.345853",
-    )
-    @commands.cooldown(2, 60, commands.BucketType.user)
-    async def bugreport(self, ctx, *, bug):
-        """
-        Usage:    {0}bugreport <report>
-        Aliases:  {0}issuereport, {0}reportbug, {0}reportissue
-        Examples: {0}bugreport Hello! I found a bug with Snowbot
-        Output:   Confirmation that your bug report has been sent.
-        Notes:
-            Do not hesitate to use this command,
-            but please be very specific when describing the bug so
-            that the developer may easily see the issue and
-            correct it as soon as possible.
-        """
-        author = ctx.message.author
-        if ctx.guild:
-            server = ctx.message.guild
-            source = "server **{}** ({})".format(server.name, server.id)
-        else:
-            source = "a direct message"
-        sender = "**{0}** ({0.id}) sent you a bug report from {1}:\n\n".format(
-            author, source
-        )
-        message = sender + bug
-        try:
-            await self.bot.hecate.send(message)
-        except discord.errors.InvalidArgument:
-            await ctx.send_or_reply(
-                "I cannot send your bug report, I'm unable to find my owner."
-            )
-        except discord.errors.HTTPException:
-            await ctx.fail("Your bug report is too long.")
-        except Exception:
-            await ctx.fail("I'm currently unable to deliver your bug report.")
-        else:
-            if ctx.guild:
-                if ctx.channel.permissions_for(ctx.guild.me):
-                    await ctx.react(self.bot.emote_dict["letter"])
-            else:
-                await ctx.react(self.bot.emote_dict["letter"])
-            await ctx.success(
-                content="Your bug report has been sent.",
-            )
 
     @decorators.command(
         brief="Send a suggestion to the developer.", aliases=["suggestion"]
@@ -537,105 +739,9 @@ class Info(commands.Cog):
             msg += "```"
         await message.edit(content=msg)
 
-    @decorators.command(brief="Show the bot's host environment.")
-    @commands.cooldown(1, 10, commands.BucketType.user)
-    async def hostinfo(self, ctx):
-        """
-        Usage: {0}hostinfo
-        Output: Detailed information on the bot's host environment
-        """
-        message = await ctx.channel.send(
-            f'{self.bot.emote_dict["loading"]} **Collecting Information...**'
-        )
-
-        with self.process.oneshot():
-            process = self.process.name
-        swap = psutil.swap_memory()
-
-        processName = self.process.name()
-        pid = self.process.ppid()
-        swapUsage = "{0:.1f}".format(((swap[1] / 1024) / 1024) / 1024)
-        swapTotal = "{0:.1f}".format(((swap[0] / 1024) / 1024) / 1024)
-        swapPerc = swap[3]
-        cpuCores = psutil.cpu_count(logical=False)
-        cpuThread = psutil.cpu_count()
-        cpuUsage = psutil.cpu_percent(interval=1)
-        memStats = psutil.virtual_memory()
-        memPerc = memStats.percent
-        memUsed = memStats.used
-        memTotal = memStats.total
-        memUsedGB = "{0:.1f}".format(((memUsed / 1024) / 1024) / 1024)
-        memTotalGB = "{0:.1f}".format(((memTotal / 1024) / 1024) / 1024)
-        currentOS = platform.platform()
-        system = platform.system()
-        release = platform.release()
-        version = platform.version()
-        processor = platform.processor()
-        botOwner = self.bot.get_user(self.bot.constants.owners[0])
-        botName = self.bot.user
-        currentTime = int(time.time())
-        timeString = utils.time_between(self.bot.starttime, currentTime)
-        pythonMajor = sys.version_info.major
-        pythonMinor = sys.version_info.minor
-        pythonMicro = sys.version_info.micro
-        pythonRelease = sys.version_info.releaselevel
-        pyBit = struct.calcsize("P") * 8
-        process = subprocess.Popen(
-            ["git", "rev-parse", "--short", "HEAD"], shell=False, stdout=subprocess.PIPE
-        )
-        git_head_hash = process.communicate()[0].strip()
-
-        threadString = "thread"
-        if not cpuThread == 1:
-            threadString += "s"
-
-        msg = "***{}'s*** ***Home:***\n".format(botName)
-        msg += "```fix\n"
-        msg += "OS       : {}\n".format(currentOS)
-        msg += "Owner    : {}\n".format(botOwner)
-        msg += "Client   : {}\n".format(botName)
-        msg += "Commit   : {}\n".format(git_head_hash.decode("utf-8"))
-        msg += "Uptime   : {}\n".format(timeString)
-        msg += "Process  : {}\n".format(processName)
-        msg += "PID      : {}\n".format(pid)
-        msg += "Hostname : {}\n".format(platform.node())
-        msg += "Language : Python {}.{}.{} {} ({} bit)\n".format(
-            pythonMajor, pythonMinor, pythonMicro, pythonRelease, pyBit
-        )
-        msg += "Processor: {}\n".format(processor)
-        msg += "System   : {}\n".format(system)
-        msg += "Release  : {}\n".format(release)
-        msg += "CPU Core : {} Threads\n\n".format(cpuCores)
-        msg += (
-            utils.center(
-                "{}% of {} {}".format(cpuUsage, cpuThread, threadString), "CPU"
-            )
-            + "\n"
-        )
-        msg += utils.makeBar(int(round(cpuUsage))) + "\n\n"
-        msg += (
-            utils.center(
-                "{} ({}%) of {}GB used".format(memUsedGB, memPerc, memTotalGB), "RAM"
-            )
-            + "\n"
-        )
-        msg += utils.makeBar(int(round(memPerc))) + "\n\n"
-        msg += (
-            utils.center(
-                "{} ({}%) of {}GB used".format(swapUsage, swapPerc, swapTotal), "Swap"
-            )
-            + "\n"
-        )
-        msg += utils.makeBar(int(round(swapPerc))) + "\n"
-        # msg += 'Processor Version: {}\n\n'.format(version)
-        msg += "```"
-
-        await message.edit(content=msg)
-
     @decorators.command(
         aliases=["purpose"],
         brief="Show some info on the bot's purpose.",
-        botperms=["embed_links"],
         implemented="2021-03-15 19:38:03.463155",
         updated="2021-05-06 01:12:57.626085",
     )
@@ -658,26 +764,6 @@ class Info(commands.Cog):
         )
         embed.set_author(name=owner, icon_url=owner.avatar_url)
         await ctx.send_or_reply(embed=embed)
-
-    @decorators.command(brief="Show my changelog.", aliases=["updates"])
-    async def changelog(self, ctx):
-        """
-        Usage: {0}changelog
-        Alias: {0}updates
-        Output: My changelog
-        """
-        with open("./data/txts/changelog.txt", "r", encoding="utf-8") as fp:
-            changelog = fp.read()
-        await ctx.send_or_reply(
-            content=f"**{self.bot.user.name}'s Changelog**",
-        )
-        p = pagination.MainMenu(
-            pagination.TextPageSource(changelog, prefix="```prolog")
-        )
-        try:
-            await p.start(ctx)
-        except menus.MenuError as e:
-            await ctx.send_or_reply(e)
 
     @decorators.command(brief="Display the source code.", aliases=["sourcecode", "src"])
     async def source(self, ctx, *, command: str = None):
@@ -720,69 +806,6 @@ class Info(commands.Cog):
         final_url = f"<{source_url}/blob/{branch}/{location}#L{firstlineno}-L{firstlineno + len(lines) - 1}>"
         msg = f"**__My source {'' if command is None else f'for {command}'} is located at:__**\n\n{final_url}"
         await ctx.send_or_reply(msg)
-
-    @decorators.command(
-        aliases=["listcogs"],
-        brief="List all my cogs in an embed.",
-        implemented="2021-05-05 19:01:15.387930",
-        updated="2021-05-05 19:01:15.387930",
-    )
-    @checks.bot_has_perms(embed_links=True)
-    async def cogs(self, ctx):
-        """
-        Usage: {0}cogs
-        Output: An embed of all my current cogs
-        """
-        cog_list = []
-        for cog in os.listdir("./cogs"):
-            if cog.endswith(".py"):
-                cog_list.append(f"{cog}")
-        if len(cog_list):
-            cog_list = sorted(cog_list)
-
-        embed = discord.Embed(
-            title="Extensions",
-            description="```css\n" + "\n".join(cog_list) + "```",
-            color=self.bot.constants.embed,
-        )
-        await ctx.send_or_reply(embed=embed)
-
-    @decorators.command(
-        brief="Invite me to your server!",
-        aliases=["botinvite", "bi"],
-        implemented="2021-05-05 18:05:30.156694",
-        updated="2021-05-05 18:05:30.156694",
-    )
-    async def invite(self, ctx):
-        """
-        Usage: {0}invite
-        Aliases:
-            {0}bi, {0}botinvite
-        Output:
-            A selection of invite links
-            to invite me to your server
-        """
-        button_row = ActionRow(
-            Button(style=ButtonStyle.link, label="Recommended", url=self.bot.oauth),
-            Button(
-                style=ButtonStyle.link,
-                label="Administrator",
-                url=discord.utils.oauth_url(
-                    self.bot.user.id, permissions=discord.Permissions(8)
-                ),
-            ),
-            Button(
-                style=ButtonStyle.link,
-                label="Default",
-                url=discord.utils.oauth_url(
-                    self.bot.user.id,
-                ),
-            ),
-        )
-        await ctx.rep_or_ref(
-            "Select an invite link from the options below to invite me to your server.",
-            components=[button_row],
-        )
 
     @decorators.command(
         brief="Show your support by voting for me!",

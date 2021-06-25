@@ -154,7 +154,7 @@ class Snowbot(commands.AutoShardedBot):
         self.home_guilds = [
             805638877762420786,
             776345386482270209,
-            740734113086177433
+            740734113086177433,
         ]  # My servers that have "premium" features
 
         # Webhooks for monitering and data saving.

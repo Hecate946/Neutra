@@ -1,12 +1,14 @@
 import re
 import typing
+import asyncio
 import argparse
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, menus
 
 from utilities import checks
 from utilities import formatting
+from utilities import pagination
 
 EMOJI_REGEX = re.compile(r"<a?:.+?:([0-9]{15,21})>")
 EMOJI_NAME_REGEX = re.compile(r"[0-9a-zA-Z\_]{2,32}")
@@ -21,6 +23,76 @@ ROLE_MENTION_REGEX = re.compile(r"<@&([0-9]+)>$")
 async def prettify(ctx, arg):
     pretty_arg = await commands.clean_content().convert(ctx, str(arg))
     return pretty_arg
+
+async def disambiguate(ctx, matches, sort=lambda m: str(m), timeout=30):
+    if len(matches) == 1:
+        return matches[0]
+
+    matches = sorted(matches, key=sort)
+    
+    user_value = "**Nickname:** {0.display_name}\n**ID:** `{0.id}`"
+    role_value = "**Mention:** {0.mention}\n**ID:** `{0.id}`"
+    generic = "**ID:** `{0.id}`"
+
+    def pred(match):
+        if type(match) in [discord.User, discord.Member]:
+            result =  user_value.format(match)
+        elif type(match) == discord.Role:
+            result = role_value.format(match)
+        else:
+            result = generic.format(match)
+        return result
+
+    entries = [(f"{idx}. {str(match)}", pred(match)) for idx, match in enumerate(matches, start=1)]
+
+    p = pagination.MainMenu(
+        pagination.FieldPageSource(
+            entries=entries,
+            title=f"{len(matches):,} Matches Found {ctx.bot.emote_dict['search']}",
+            description="Please enter the number corresponding to the desired entry.",
+            per_page=10,
+        )
+    )
+
+    messages = []  # List to store the message IDs for cleanup
+    try:
+        await p.start(ctx)
+        messages.append(p.message.id)
+    except menus.MenuError as e:
+        m = await ctx.send(e)
+        messages.append(m.id)
+        
+    try:
+        msg = await ctx.bot.wait_for('message', timeout=timeout,
+                check=lambda m: m.author.id == ctx.author.id and
+                                m.channel.id == ctx.channel.id)
+    except asyncio.TimeoutError:
+        m = await ctx.fail("**Disambiguation timer expired.**")
+        messages.append(m.id)
+        return
+    else:
+        messages.append(msg.id)
+        if not msg.content.isdigit():
+            m = await ctx.fail(f"**Disabiguation failed. `{msg.content}` is not a number.**")
+            messages.append(m.id)
+            return
+        index = int(msg.content)
+
+        if index < 1 or index >= (len(matches) + 1):
+            m = await ctx.fail("**Disabiguation failed. Invalid index provided.**")
+            messages.append(m.id)
+            return
+        return matches[index - 1]
+    finally:
+        ctx.bot.loop.create_task(attempt_cleanup(ctx, messages))
+
+async def attempt_cleanup(ctx, msg_ids):
+    if ctx.channel.permissions_for(ctx.me).manage_messages:
+        await ctx.channel.purge(check=lambda m: m.id in msg_ids)
+    else:
+        async for msg in ctx.history(limit=100, after=ctx.message):
+            if msg.author == ctx.me and msg.id in msg_ids:
+                await msg.delete()
 
 
 class SearchEmojiConverter(commands.Converter):
@@ -251,7 +323,7 @@ class DiscordBot(commands.Converter):
 
         results = await self.get_by_name(ctx, argument)
         if results:
-            return results[0]
+            return await disambiguate(ctx, results)
 
     async def convert(self, ctx, argument):
         match = await self.find_match(ctx, argument)
@@ -577,7 +649,7 @@ class DiscordMember(commands.Converter):
 
         results = await self.get_by_name(ctx, argument)
         if results:
-            return results[0]
+            return await disambiguate(ctx, results)
 
     async def convert(self, ctx, argument):
         if not ctx.guild:
@@ -617,18 +689,13 @@ class DiscordRole(commands.Converter):
         If found in current guild, return Member, else User.
         (Will not do bot-wide inexact match)
         """
-
-        result = None
         if ctx.guild:
-            result = discord.utils.find(
-                lambda s: role_name.lower() == str(s.name).lower(), ctx.guild.roles
-            )
-            if not result:
-                raise commands.BadArgument(
-                    f"Role `{await prettify(ctx, role_name)}` not found."
-                )
-            if result:
-                return [result]
+            role_name = role_name.lower()
+
+            def pred(role):
+                return role.name.lower() == role_name
+
+            return [r for r in ctx.guild.roles if pred(r)]
         return []
 
     async def find_match(self, ctx, argument):
@@ -650,7 +717,7 @@ class DiscordRole(commands.Converter):
 
         results = await self.get_by_name(ctx, argument)
         if results:
-            return results[0]
+            return await disambiguate(ctx, results)
 
     async def convert(self, ctx, argument):
         if not ctx.guild:

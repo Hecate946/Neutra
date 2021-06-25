@@ -726,7 +726,7 @@ class Tracking(commands.Cog):
         """
         async with ctx.typing():
             user = user or ctx.author
-            
+
             if user.bot:
                 raise commands.BadArgument("I do not track bots.")
 

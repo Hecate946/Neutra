@@ -45,7 +45,12 @@ class Testing(commands.Cog):
         self.spotify = None
 
         if self.spotify_client_id and self.spotify_client_secret:
-            self.spotify = spotify.Spotify(self.spotify_client_id, self.spotify_client_secret, aiosession=self.bot.session, loop=self.bot.loop)
+            self.spotify = spotify.Spotify(
+                self.spotify_client_id,
+                self.spotify_client_secret,
+                aiosession=self.bot.session,
+                loop=self.bot.loop,
+            )
 
     @decorators.command()
     async def archive(self, ctx):
@@ -216,58 +221,69 @@ class Testing(commands.Cog):
         await ctx.send_or_reply(embed=em, file=dfile)
 
     @commands.command()
-    @decorators.cooldown(3, 10, bucket=commands.BucketType.user, bypass=[770690986908581948])
+    @decorators.cooldown(
+        3, 10, bucket=commands.BucketType.user, bypass=[770690986908581948]
+    )
     async def meh(self, ctx):
         await ctx.reply("blah")
 
-
     @decorators.command(name="spotify")
     async def _spotify(self, ctx, *, url):
-        linksRegex = '((http(s)*:[/][/]|www.)([a-z]|[A-Z]|[0-9]|[/.]|[~])*)'
+        linksRegex = "((http(s)*:[/][/]|www.)([a-z]|[A-Z]|[0-9]|[/.]|[~])*)"
         pattern = re.compile(linksRegex)
         matchUrl = pattern.match(url)
-        song_url = url.replace('/', '%2F') if matchUrl is None else url
+        song_url = url.replace("/", "%2F") if matchUrl is None else url
 
         # Rewrite YouTube playlist URLs if the wrong URL type is given
-        playlistRegex = r'watch\?v=.+&(list=[^&]+)'
+        playlistRegex = r"watch\?v=.+&(list=[^&]+)"
         matches = re.search(playlistRegex, song_url)
         groups = matches.groups() if matches is not None else []
-        song_url = "https://www.youtube.com/playlist?" + groups[0] if len(groups) > 0 else song_url
+        song_url = (
+            "https://www.youtube.com/playlist?" + groups[0]
+            if len(groups) > 0
+            else song_url
+        )
 
         if self.spotify:
-            if 'open.spotify.com' in song_url:
-                song_url = 'spotify:' + re.sub('(http[s]?:\/\/)?(open.spotify.com)\/', '', song_url).replace('/', ':')
+            if "open.spotify.com" in song_url:
+                song_url = "spotify:" + re.sub(
+                    "(http[s]?:\/\/)?(open.spotify.com)\/", "", song_url
+                ).replace("/", ":")
                 # remove session id (and other query stuff)
-                song_url = re.sub('\?.*', '', song_url)
-            if song_url.startswith('spotify:'):
+                song_url = re.sub("\?.*", "", song_url)
+            if song_url.startswith("spotify:"):
                 parts = song_url.split(":")
                 try:
-                    if 'track' in parts:
+                    if "track" in parts:
                         res = await self.spotify.get_track(parts[-1])
-                        song_url = res['artists'][0]['name'] + ' ' + res['name']
+                        song_url = res["artists"][0]["name"] + " " + res["name"]
                         await ctx.send(song_url)
 
-                    elif 'album' in parts:
+                    elif "album" in parts:
                         res = await self.spotify.get_album(parts[-1])
-                        for i in res['tracks']['items']:
-                            song_url = i['name'] + ' ' + i['artists'][0]['name']
+                        for i in res["tracks"]["items"]:
+                            song_url = i["name"] + " " + i["artists"][0]["name"]
                             await ctx.send(song_url)
-                            
-                    elif 'playlist' in parts:
+
+                    elif "playlist" in parts:
                         res = []
                         r = await self.spotify.get_playlist_tracks(parts[-1])
                         print(r)
                         while True:
-                            res.extend(r['items'])
-                            if r['next'] is not None:
-                                r = await self.spotify.make_spotify_req(r['next'])
+                            res.extend(r["items"])
+                            if r["next"] is not None:
+                                r = await self.spotify.make_spotify_req(r["next"])
                                 continue
                             else:
                                 break
                         for i in res:
-                            song_url = i['track']['name'] + ' ' + i['track']['artists'][0]['name']
-                            #await ctx.send(song_url)
-                    
+                            song_url = (
+                                i["track"]["name"]
+                                + " "
+                                + i["track"]["artists"][0]["name"]
+                            )
+                            # await ctx.send(song_url)
+
                     else:
                         return await ctx.fail("Invalid Spotify URI.")
                 except spotify.SpotifyError:

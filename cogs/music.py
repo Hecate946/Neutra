@@ -111,7 +111,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         self.likes = data.get("like_count")
         self.dislikes = data.get("dislike_count")
         self.stream_url = data.get("url")
-        
+
         ctx.bot.loop.create_task(self.get_subtitles())
 
         self.subtitles = None
@@ -123,7 +123,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         data = self.data.get("subtitles")
         if not data:
             data = self.data.get("requested_subtitles")
-        
+
         if data:
             url = "https://www.youtube.com/api/timedtext?lang=en&v=" + self.id
             text = await self.ctx.bot.get(url, res_method="read")
@@ -196,7 +196,6 @@ class YTDLSource(discord.PCMVolumeTransformer):
             self.ytdl.extract_info, self.search_query, download=False, process=False
         )
         info = await loop.run_in_executor(None, partial)
-
 
         lst = []
         count = 0
@@ -330,7 +329,6 @@ class Song:
         embed.set_image(url=f"attachment://{fname}")
 
         return (embed, dfile)
-
 
 
 class SongQueue(asyncio.Queue):
@@ -500,8 +498,12 @@ class Music(commands.Cog):
         self.spotify = None
 
         if self.spotify_client_id and self.spotify_client_secret:
-            self.spotify = spotify.Spotify(self.spotify_client_id, self.spotify_client_secret, aiosession=self.bot.session, loop=self.bot.loop)
-
+            self.spotify = spotify.Spotify(
+                self.spotify_client_id,
+                self.spotify_client_secret,
+                aiosession=self.bot.session,
+                loop=self.bot.loop,
+            )
 
     def get_voice_state(self, ctx):
         state = self.voice_states.get(ctx.guild.id)
@@ -1062,56 +1064,72 @@ class Music(commands.Cog):
                 return await ctx.usage()
 
         else:
-            linksRegex = '((http(s)*:[/][/]|www.)([a-z]|[A-Z]|[0-9]|[/.]|[~])*)'
+            linksRegex = "((http(s)*:[/][/]|www.)([a-z]|[A-Z]|[0-9]|[/.]|[~])*)"
             pattern = re.compile(linksRegex)
             matchUrl = pattern.match(search)
-            song_url = search.replace('/', '%2F') if matchUrl is None else search
+            song_url = search.replace("/", "%2F") if matchUrl is None else search
 
             # Rewrite YouTube playlist URLs if the wrong URL type is given
-            playlistRegex = r'watch\?v=.+&(list=[^&]+)'
+            playlistRegex = r"watch\?v=.+&(list=[^&]+)"
             matches = re.search(playlistRegex, song_url)
             groups = matches.groups() if matches is not None else []
-            song_url = "https://www.youtube.com/playlist?" + groups[0] if len(groups) > 0 else song_url
+            song_url = (
+                "https://www.youtube.com/playlist?" + groups[0]
+                if len(groups) > 0
+                else song_url
+            )
 
             if self.spotify:
-                if 'open.spotify.com' in song_url:
-                    song_url = 'spotify:' + re.sub('(http[s]?:\/\/)?(open.spotify.com)\/', '', song_url).replace('/', ':')
+                if "open.spotify.com" in song_url:
+                    song_url = "spotify:" + re.sub(
+                        "(http[s]?:\/\/)?(open.spotify.com)\/", "", song_url
+                    ).replace("/", ":")
                     # remove session id (and other query stuff)
-                    song_url = re.sub('\?.*', '', song_url)
-                if song_url.startswith('spotify:'):
+                    song_url = re.sub("\?.*", "", song_url)
+                if song_url.startswith("spotify:"):
                     parts = song_url.split(":")
                     try:
-                        if 'track' in parts:
+                        if "track" in parts:
                             res = await self.spotify.get_track(parts[-1])
-                            song_url = res['artists'][0]['name'] + ' ' + res['name']
+                            song_url = res["artists"][0]["name"] + " " + res["name"]
 
-                        elif 'album' in parts:
+                        elif "album" in parts:
                             res = await self.spotify.get_album(parts[-1])
-                            song_urls = [i['name'] + ' ' + i['artists'][0]['name'] for i in res['tracks']['items']]
+                            song_urls = [
+                                i["name"] + " " + i["artists"][0]["name"]
+                                for i in res["tracks"]["items"]
+                            ]
                             await self.enqueue_songs(ctx, song_urls)
                             return
-                                
-                        elif 'playlist' in parts:
+
+                        elif "playlist" in parts:
                             res = []
                             r = await self.spotify.get_playlist_tracks(parts[-1])
                             while True:
-                                res.extend(r['items'])
-                                if r['next'] is not None:
-                                    r = await self.spotify.make_spotify_req(r['next'])
+                                res.extend(r["items"])
+                                if r["next"] is not None:
+                                    r = await self.spotify.make_spotify_req(r["next"])
                                     continue
                                 else:
                                     break
-            
-                            song_urls = [i['track']['name'] + ' ' + i['track']['artists'][0]['name'] for i in res]
+
+                            song_urls = [
+                                i["track"]["name"]
+                                + " "
+                                + i["track"]["artists"][0]["name"]
+                                for i in res
+                            ]
                             await self.enqueue_songs(ctx, song_urls)
                             return
-                        
+
                         else:
                             return await ctx.fail("Invalid Spotify URI.")
                     except spotify.SpotifyError:
                         return await ctx.fail("Invalid Spotify URI.")
                 try:
-                    source = await YTDLSource.create_source(ctx, song_url, loop=self.bot.loop)
+                    source = await YTDLSource.create_source(
+                        ctx, song_url, loop=self.bot.loop
+                    )
                 except YTDLError as e:
                     await ctx.fail(f"Request failed: {e}")
                 else:
@@ -1134,7 +1152,9 @@ class Music(commands.Cog):
                 ctx.voice_state.songs.put_nowait(song)
                 queued += 1
 
-        await msg.edit(content=f"**{self.bot.emote_dict['music']} Queued {queued} tracks.**")
+        await msg.edit(
+            content=f"**{self.bot.emote_dict['music']} Queued {queued} tracks.**"
+        )
 
     @decorators.command(
         name="playnext",
@@ -1217,7 +1237,6 @@ class Music(commands.Cog):
                 await ctx.send_or_reply(
                     f"{self.bot.emote_dict['music']} Queued {source}"
                 )
-
 
     @decorators.command(
         name="subtitles",
