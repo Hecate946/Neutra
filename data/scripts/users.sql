@@ -59,3 +59,20 @@ CREATE TABLE IF NOT EXISTS userstatus (
     last_changed DOUBLE PRECISION DEFAULT EXTRACT(EPOCH FROM NOW()),
     starttime DOUBLE PRECISION DEFAULT EXTRACT(EPOCH FROM NOW())
 );
+
+CREATE TABLE IF NOT EXISTS avatars (
+    hash TEXT PRIMARY KEY,
+    url TEXT,
+    msgid BIGINT,
+    id bigint,
+    size bigint,
+    height bigint,
+    width bigint,
+    insertion TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
+);
+
+CREATE TABLE IF NOT EXISTS useravatars (
+    user_id BIGINT,
+    avatar TEXT,
+    first_seen TIMESTAMP
+);

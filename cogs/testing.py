@@ -2,7 +2,7 @@ import PIL
 import discord
 import time
 import io
-import re
+import math
 import traceback
 import asyncio
 import typing
@@ -13,8 +13,9 @@ import json
 
 from matplotlib.pyplot import show
 from utilities import decorators
-from utilities import utils
-from utilities import spotify
+from utilities import images
+from utilities import avatars
+from utilities import converters
 from datetime import datetime
 import numpy as np
 from PIL import Image
@@ -37,20 +38,7 @@ class Testing(commands.Cog):
         self.batch_lock = asyncio.Lock(loop=bot.loop)
         self.queue = asyncio.Queue(loop=bot.loop)
 
-        self.inserter.start()
-        self.dispatch_avatars.start()
-
-        self.spotify_client_id = utils.config()["spotify_client_id"]
-        self.spotify_client_secret = utils.config()["spotify_client_secret"]
-        self.spotify = None
-
-        if self.spotify_client_id and self.spotify_client_secret:
-            self.spotify = spotify.Spotify(
-                self.spotify_client_id,
-                self.spotify_client_secret,
-                aiosession=self.bot.session,
-                loop=self.bot.loop,
-            )
+        self.avatar_saver = avatars.AvatarSaver(bot, "hi")
 
     @decorators.command()
     async def archive(self, ctx):
@@ -112,6 +100,7 @@ class Testing(commands.Cog):
         Here's where we get notified of avatar changes
         """
         if before.avatar != after.avatar:
+            await self.avatar_saver.do_avatar(after)
             if self.bot.testing_webhook:  # Check if we have the webhook set up.
                 async with self.batch_lock:
                     try:
@@ -142,51 +131,6 @@ class Testing(commands.Cog):
                 await self.bot.cxn.execute(query, data)
                 self.avatar_batch.clear()
 
-    @tasks.loop(seconds=0.0)
-    async def dispatch_avatars(self):
-        while True:
-            files = [await self.queue.get() for _ in range(10)]
-            try:
-                upload_batch = await self.bot.testing_webhook.send(
-                    files=files, wait=True
-                )
-                for x in upload_batch.attachments:
-                    self.avatar_batch.append(
-                        {
-                            "user_id": int(x.filename.split(".")[0]),
-                            "avatar_id": x.id,
-                        }
-                    )
-            except discord.HTTPException as e:
-                # Here the combined files likely went over the 8mb file limit
-                # Lets divide them up into 2 parts and send them separately.
-                upload_batch_1 = await self.bot.testing_webhook.send(
-                    files=files[:5], wait=True
-                )
-                upload_batch_2 = await self.bot.testing_webhook.send(
-                    files=files[5:], wait=True
-                )
-                new_upload_batch = (
-                    upload_batch_1.attachments + upload_batch_2.attachments
-                )
-                for x in new_upload_batch:
-                    self.avatar_batch.append(
-                        {
-                            "user_id": int(x.filename.split(".")[0]),
-                            "avatar_id": x.id,
-                        }
-                    )
-                try:
-                    await self.bot.logging_webhook.send(
-                        f"{self.emote_dict['success']} **Information** `{datetime.utcnow()}`\n"
-                        f"```prolog\nQueue: Payload data limit resolved.```",
-                        username=f"{self.user.name} Logger",
-                        avatar_url=self.bot.constants.avatars["green"],
-                    )
-                except Exception:
-                    pass
-            except Exception as e:
-                self.bot.dispatch("error", "queue_error", tb=utils.traceback_maker(e))
 
     @commands.command()
     async def blah(self, ctx):
@@ -221,70 +165,29 @@ class Testing(commands.Cog):
         await ctx.send_or_reply(embed=em, file=dfile)
 
     @commands.command()
-    @decorators.cooldown(
-        3, 10, bucket=commands.BucketType.user, bypass=[770690986908581948]
-    )
-    async def meh(self, ctx):
-        await ctx.reply("blah")
+    async def avyquilt(self, ctx, user: converters.DiscordMember = None):
+        user = user or ctx.author
 
-    @decorators.command(name="spotify")
-    async def _spotify(self, ctx, *, url):
-        linksRegex = "((http(s)*:[/][/]|www.)([a-z]|[A-Z]|[0-9]|[/.]|[~])*)"
-        pattern = re.compile(linksRegex)
-        matchUrl = pattern.match(url)
-        song_url = url.replace("/", "%2F") if matchUrl is None else url
+        query = """
+                SELECT avs.url
+                FROM (SELECT avatar, first_seen
+                FROM (SELECT avatar, LAG(avatar)
+                OVER (order by first_seen desc) AS old_avatar, first_seen
+                FROM avatars WHERE avatars.user_id = $1) a
+                WHERE avatar != old_avatar OR old_avatar IS NULL) avys
+                LEFT JOIN avs ON avs.hash = avys.avatar
+                ORDER BY avys.first_seen DESC LIMIT 100
+                """
 
-        # Rewrite YouTube playlist URLs if the wrong URL type is given
-        playlistRegex = r"watch\?v=.+&(list=[^&]+)"
-        matches = re.search(playlistRegex, song_url)
-        groups = matches.groups() if matches is not None else []
-        song_url = (
-            "https://www.youtube.com/playlist?" + groups[0]
-            if len(groups) > 0
-            else song_url
-        )
+        urls = await self.bot.cxn.fetch(query, user.id)
 
-        if self.spotify:
-            if "open.spotify.com" in song_url:
-                song_url = "spotify:" + re.sub(
-                    "(http[s]?:\/\/)?(open.spotify.com)\/", "", song_url
-                ).replace("/", ":")
-                # remove session id (and other query stuff)
-                song_url = re.sub("\?.*", "", song_url)
-            if song_url.startswith("spotify:"):
-                parts = song_url.split(":")
-                try:
-                    if "track" in parts:
-                        res = await self.spotify.get_track(parts[-1])
-                        song_url = res["artists"][0]["name"] + " " + res["name"]
-                        await ctx.send(song_url)
+        async def url_to_bytes(url):
+            if not url:
+                return None
+            bytes_av = await self.bot.get(url, res_method="read")
+            return bytes_av
 
-                    elif "album" in parts:
-                        res = await self.spotify.get_album(parts[-1])
-                        for i in res["tracks"]["items"]:
-                            song_url = i["name"] + " " + i["artists"][0]["name"]
-                            await ctx.send(song_url)
+        avys = await asyncio.gather(*[url_to_bytes(url['url']) for url in urls])
+        file = await self.bot.loop.run_in_executor(None, images.quilt, avys)
 
-                    elif "playlist" in parts:
-                        res = []
-                        r = await self.spotify.get_playlist_tracks(parts[-1])
-                        print(r)
-                        while True:
-                            res.extend(r["items"])
-                            if r["next"] is not None:
-                                r = await self.spotify.make_spotify_req(r["next"])
-                                continue
-                            else:
-                                break
-                        for i in res:
-                            song_url = (
-                                i["track"]["name"]
-                                + " "
-                                + i["track"]["artists"][0]["name"]
-                            )
-                            # await ctx.send(song_url)
-
-                    else:
-                        return await ctx.fail("Invalid Spotify URI.")
-                except spotify.SpotifyError:
-                    return await ctx.fail("Invalid Spotify URI.")
+        await ctx.send(file=discord.File(file, f'{user.id}_avatars.png'))

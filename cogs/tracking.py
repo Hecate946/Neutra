@@ -1,6 +1,7 @@
 import io
 import time
 import typing
+import asyncio
 import discord
 import inspect
 
@@ -626,58 +627,39 @@ class Tracking(commands.Cog):
         Notes:
             Will default to you if no user is passed.
         """
-        if user is None:
-            user = ctx.author
+        user = user or ctx.author
         if user.bot:
             return await ctx.fail("I do not track bots.")
 
-        batch = self.bot.get_cog("Batch")
-        if not batch:
-            raise commands.DisabledCommand()
+        await ctx.trigger_typing()
 
-        msg = await ctx.load(f"Collecting {user}'s Avatars...")
-        avatars = await batch.get_avs(user)
-        if not avatars:
-            # Tack on their current avatar
-            avatars.append([str(user.avatar_url_as(format="png", size=256))])
+        query = """
+                SELECT avatars.url
+                FROM (SELECT avatar, first_seen
+                FROM (SELECT avatar, LAG(avatar)
+                OVER (order by first_seen desc) AS old_avatar, first_seen
+                FROM useravatars WHERE useravatars.user_id = $1) a
+                WHERE avatar != old_avatar OR old_avatar IS NULL) avys
+                LEFT JOIN avatars ON avatars.hash = avys.avatar
+                ORDER BY avys.first_seen DESC LIMIT 100;
+                """
+
+        urls = await self.bot.cxn.fetch(query, user.id)
+
+        async def url_to_bytes(url):
+            if not url:
+                return None
+            bytes_av = await self.bot.get(url, res_method="read")
+            return bytes_av
+
+        avys = await asyncio.gather(*[url_to_bytes(url['url']) for url in urls])
+        file = await self.bot.loop.run_in_executor(None, images.quilt, avys)
+        dfile=discord.File(file, "avatars.png")
 
         em = discord.Embed(color=self.bot.constants.embed)
         em.title = f"Recorded Avatars for {user}"
-        iteration = 0
-        parent = Image.new("RGBA", (1024, 1024), (0, 0, 0, 0))
-        for av in avatars:
-            if iteration < 4:
-                val = 0
-                x = iteration
-            elif iteration >= 4 and iteration < 8:
-                val = 1
-                x = iteration - 4
-            elif iteration >= 8 and iteration < 12:
-                val = 2
-                x = iteration - 8
-            elif iteration >= 12 and iteration < 16:
-                val = 3
-                x = iteration - 12
-            else:
-                break
 
-            res = await self.bot.get(str(av), res_method="read")
-            av_bytes = io.BytesIO(res)
-            av_bytes.seek(0)
-            try:
-                im = Image.open(av_bytes)
-            except UnidentifiedImageError:
-                continue
-            im = im.resize((256, 256))
-            parent.paste(im, (x * 256, 256 * val))
-            iteration += 1
-
-        buffer = io.BytesIO()
-        parent.save(buffer, "png")  # 'save' function for PIL
-        buffer.seek(0)
-        dfile = discord.File(fp=buffer, filename="avatars.png")
         em.set_image(url="attachment://avatars.png")
-        await msg.delete()
         await ctx.send_or_reply(embed=em, file=dfile)
 
     @decorators.command(

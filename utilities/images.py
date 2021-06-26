@@ -1,8 +1,11 @@
+# https://github.com/CuteFwan/Koishi
+
 import io
+import math
 import numpy
 import discord
 
-from PIL import Image, ImageFont, ImageDraw
+from PIL import Image, ImageFont, ImageDraw, ImageSequence
 
 GREEN = (46, 204, 113)
 YELLOW = (255, 228, 0)
@@ -130,3 +133,65 @@ def get_progress_bar(ratio, *, fname="progress", length=800, width=80):
     buffer.seek(0)
     dfile = discord.File(fp=buffer, filename=f"{fname}.png")
     return (dfile, f"{fname}.png")
+
+def resize_to_limit(data, limit):
+    '''
+        Downsize it for huge PIL images.
+        Half the resolution until the byte count is within the limit.
+    '''
+    current_size = data.getbuffer().nbytes
+    while current_size > limit:
+        with Image.open(data) as im:
+            data = io.BytesIO()
+            if im.format == 'PNG':
+                im = im.resize([i//2 for i in im.size], resample=Image.BICUBIC)
+                im.save(data, 'png')
+            elif im.format == 'GIF':
+                durations = []
+                new_frames = []
+                for frame in ImageSequence.Iterator(im):
+                    durations.append(frame.info['duration'])
+                    new_frames.append(frame.resize([i//2 for i in im.size], resample=Image.BICUBIC))
+                new_frames[0].save(
+                    data,
+                    save_all=True,
+                    append_images=new_frames[1:],
+                    format='gif',
+                    version=im.info['version'],
+                    duration=durations,
+                    loop=0,
+                    background=im.info['background'],
+                    palette=im.getpalette())
+            data.seek(0)
+            current_size = data.getbuffer().nbytes
+    return data
+
+def extract_first_frame(data):
+    with Image.open(data) as im:
+        im = im.convert('RGBA')
+        b = io.BytesIO()
+        im.save(b, 'gif')
+        b.seek(0)
+        return b
+
+def quilt(images):
+    xbound = math.ceil(math.sqrt(len(images)))
+    ybound = math.ceil(len(images) / xbound)
+    size = int(2520 / xbound)
+
+    with Image.new('RGBA', size=(xbound * size, ybound * size), color=(0,0,0,0)) as base:
+        x, y = 0, 0
+        for avy in images:
+            if avy:
+                im = Image.open(io.BytesIO(avy)).resize((size,size), resample=Image.BICUBIC)
+                base.paste(im, box=(x * size, y * size))
+            if x < xbound - 1:
+                x += 1
+            else:
+                x = 0
+                y += 1
+        buffer = io.BytesIO()
+        base.save(buffer, 'png')
+        buffer.seek(0)
+        buffer = resize_to_limit(buffer, 8000000)
+        return buffer

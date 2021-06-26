@@ -13,6 +13,7 @@ from datetime import timezone
 from discord.ext import commands, tasks
 
 from utilities import utils
+from utilities import avatars
 from utilities import decorators
 
 command_logger = logging.getLogger("Snowbot")
@@ -33,7 +34,6 @@ class Batch(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         # Data holders
-        self.avatar_batch = []
         self.command_batch = []
         self.edited_batch = []
         self.emoji_batch = defaultdict(Counter)
@@ -50,15 +50,18 @@ class Batch(commands.Cog):
         self.queue = asyncio.Queue(loop=bot.loop)
 
         self.bulk_inserter.start()
-        self.dispatch_avatars.start()
         self.invite_tracker.start()
         self.message_inserter.start()
         self.status_inserter.start()
 
+        webhook = bot.avatar_webhook
+        pool = bot.cxn
+        session = bot.session
+        loop = bot.loop
+        self.avatar_saver = avatars.AvatarSaver(webhook, pool, session, loop)
+
     def cog_unload(self):
-        self.background_task.stop()
         self.bulk_inserter.stop()
-        self.dispatch_avatars.stop()
         self.message_inserter.stop()
         self.status_inserter.stop()
         self.invite_tracker.stop()
@@ -70,52 +73,6 @@ class Batch(commands.Cog):
             for guild in self.bot.guilds
             if guild.me.guild_permissions.manage_guild
         }
-
-    @tasks.loop(seconds=0.0)
-    async def dispatch_avatars(self):
-        while True:
-            files = [await self.queue.get() for _ in range(10)]
-            try:
-                upload_batch = await self.bot.avatar_webhook.send(
-                    files=files, wait=True
-                )
-                for x in upload_batch.attachments:
-                    self.avatar_batch.append(
-                        {
-                            "user_id": int(x.filename.split(".")[0]),
-                            "avatar_id": x.id,
-                        }
-                    )
-            except discord.HTTPException as e:
-                # Here the combined files likely went over the 8mb file limit
-                # Lets divide them up into 2 parts and send them separately.
-                upload_batch_1 = await self.bot.avatar_webhook.send(
-                    files=files[:5], wait=True
-                )
-                upload_batch_2 = await self.bot.avatar_webhook.send(
-                    files=files[5:], wait=True
-                )
-                new_upload_batch = (
-                    upload_batch_1.attachments + upload_batch_2.attachments
-                )
-                for x in new_upload_batch:
-                    self.avatar_batch.append(
-                        {
-                            "user_id": int(x.filename.split(".")[0]),
-                            "avatar_id": x.id,
-                        }
-                    )
-                try:
-                    await self.bot.logging_webhook.send(
-                        f"{self.emote_dict['success']} **Information** `{datetime.utcnow()}`\n"
-                        f"```prolog\nQueue: Payload data limit resolved.```",
-                        username=f"{self.user.name} Logger",
-                        avatar_url=self.bot.constants.avatars["green"],
-                    )
-                except Exception:
-                    pass
-            except Exception as e:
-                self.bot.dispatch("error", "queue_error", tb=utils.traceback_maker(e))
 
     @tasks.loop(seconds=0.5)
     async def status_inserter(self):
@@ -316,18 +273,6 @@ class Batch(commands.Cog):
                 )
                 self.tracker_batch.clear()
 
-        if self.avatar_batch:  # Save user avatars
-            query = """
-                    INSERT INTO useravatars (user_id, avatar_id)
-                    SELECT x.user_id, x.avatar_id
-                    FROM JSONB_TO_RECORDSET($1::JSONB)
-                    AS x(user_id BIGINT, avatar_id BIGINT)
-                    """
-            async with self.batch_lock:
-                data = json.dumps(self.avatar_batch)
-                await self.bot.cxn.execute(query, data)
-                self.avatar_batch.clear()
-
         if self.usernames_batch:  # Save usernames
             query = """
                     INSERT INTO usernames (user_id, username)
@@ -485,18 +430,7 @@ class Batch(commands.Cog):
         if await self.avatar_changed(before, after):
             async with self.batch_lock:
                 self.tracker_batch[before.id] = (time.time(), "updating their avatar")
-            if self.bot.avatar_webhook:  # Check if we have the webhook set up.
-                try:
-                    avatar_url = str(after.avatar_url_as(format="png", size=1024))
-                    resp = await self.bot.get((avatar_url), res_method="read")
-                    data = io.BytesIO(resp)
-                    dfile = discord.File(data, filename=f"{after.id}.png")
-                    self.queue.put_nowait(dfile)
-                except Exception as e:
-                    await self.bot.logging_webhook.send(f"Error in avatar_batcher: {e}")
-                    await self.bot.logging_webhook.send(
-                        "```prolog\n" + str(traceback.format_exc()) + "```"
-                    )
+                self.avatar_saver.save(after)
 
         if await self.username_changed(before, after):
             async with self.batch_lock:
