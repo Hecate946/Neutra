@@ -616,6 +616,7 @@ class Tracking(commands.Cog):
         add_reactions=True, attach_files=True, embed_links=True, external_emojis=True
     )
     @checks.has_perms(view_audit_log=True)
+    @decorators.cooldown(1, 10)
     async def avatars(self, ctx, user: converters.DiscordMember = None):
         """
         Usage: {0}avatars [user]
