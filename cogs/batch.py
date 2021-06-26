@@ -54,12 +54,6 @@ class Batch(commands.Cog):
         self.message_inserter.start()
         self.status_inserter.start()
 
-        webhook = bot.avatar_webhook
-        pool = bot.cxn
-        session = bot.session
-        loop = bot.loop
-        self.avatar_saver = avatars.AvatarSaver(webhook, pool, session, loop)
-
     def cog_unload(self):
         self.bulk_inserter.stop()
         self.message_inserter.stop()
@@ -430,7 +424,7 @@ class Batch(commands.Cog):
         if await self.avatar_changed(before, after):
             async with self.batch_lock:
                 self.tracker_batch[before.id] = (time.time(), "updating their avatar")
-                self.avatar_saver.save(after)
+                self.bot.avatar_saver.save(after)
 
         if await self.username_changed(before, after):
             async with self.batch_lock:

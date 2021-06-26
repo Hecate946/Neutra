@@ -653,8 +653,15 @@ class Tracking(commands.Cog):
             return bytes_av
 
         avys = await asyncio.gather(*[url_to_bytes(url['url']) for url in urls])
-        file = await self.bot.loop.run_in_executor(None, images.quilt, avys)
-        dfile=discord.File(file, "avatars.png")
+        if avys:
+            file = await self.bot.loop.run_in_executor(None, images.quilt, avys)
+        else:
+            if self.bot.avatar_saver.is_saving:
+                self.bot.avatar_saver.save(user)
+                await ctx.reinvoke()
+            else:
+                raise commands.DisabledCommand()
+        dfile = discord.File(file, "avatars.png")
 
         em = discord.Embed(color=self.bot.constants.embed)
         em.title = f"Recorded Avatars for {user}"

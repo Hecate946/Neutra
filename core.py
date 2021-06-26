@@ -19,7 +19,7 @@ from logging.handlers import RotatingFileHandler
 from dislash.slash_commands import SlashClient
 
 from settings import cleanup, database, constants
-from utilities import utils, override
+from utilities import utils, avatars, override
 
 MAX_LOGGING_BYTES = 32 * 1024 * 1024  # 32 MiB
 
@@ -458,6 +458,13 @@ class Snowbot(commands.AutoShardedBot):
     async def finalize_startup(self):
         # Delete all records of servers that kicked the bot
         await cleanup.basic_cleanup(self.guilds)
+
+        self.avatar_saver = avatars.AvatarSaver(
+            self.avatar_webhook,
+            self.cxn,
+            self.session,
+            self.loop
+        )  # Start saving avatars.
 
         # load all initial extensions
         try:
