@@ -658,7 +658,9 @@ class Tracking(commands.Cog):
         else:
             if self.bot.avatar_saver.is_saving:
                 self.bot.avatar_saver.save(user)
-                await ctx.reinvoke()
+                avatar = user.avatar_url_as(format="png", size=1024)
+                bytes_av = await self.bot.get(avatar, res_method="read")
+                file = io.BytesIO(bytes_av)
             else:
                 raise commands.DisabledCommand()
         dfile = discord.File(file, "avatars.png")
