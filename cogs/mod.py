@@ -291,7 +291,6 @@ class Mod(commands.Cog):
 
     @decorators.command(
         brief="Ban users from the server.",
-        permissions=["ban_members"],
     )
     @commands.guild_only()
     @checks.bot_has_perms(ban_members=True)
@@ -348,14 +347,14 @@ class Mod(commands.Cog):
     async def softban(
         self,
         ctx,
-        targets: commands.Greedy[converters.DiscordMember],
+        targets: commands.Greedy[converters.DiscordUser],
         delete_message_days: typing.Optional[int] = 7,
         *,
         reason: typing.Optional[str] = "No reason.",
     ):
         """
-        Usage:      -softban <targets> [delete message = 7] [reason]
-        Example:    -softban @Jacob Sarah 6 for advertising
+        Usage:      {0}softban <targets> [delete message = 7] [reason]
+        Example:    {0}softban @Jacob Sarah 6 for advertising
         Permission: Kick Members
         Output:     Softbans members from the server.
         Notes:
@@ -364,7 +363,7 @@ class Mod(commands.Cog):
             The days to delete messages is set to 7 days.
         """
         if not len(targets):
-            return await ctx.usage("<user> [days to delete messages] [reason]")
+            return await ctx.usage()
 
         if delete_message_days > 7:
             delete_message_days = 7
@@ -433,11 +432,12 @@ class Mod(commands.Cog):
             reason = await converters.ActionReason().convert(ctx, reason)
 
             if args.delete:
-                delete = args.delete
-                if delete >= 7:
+                if args.delete >= 7:
                     delete = 7
-                if delete <= 0:
+                if args.delete <= 0:
                     delete = 0
+                else:
+                    delete = args.delete
             else:
                 delete = 1
         else:
@@ -472,8 +472,8 @@ class Mod(commands.Cog):
     @checks.has_perms(ban_members=True)
     async def unban(self, ctx, member: converters.BannedMember, *, reason: str = None):
         """
-        Usage:      -unban <user> [reason]
-        Alias:      -revokeban
+        Usage:      {0}unban <user> [reason]
+        Alias:      {0}revokeban
         Example:    Unban Hecate#3523 Because...
         Permission: Ban Members
         Output:     Unbans a member from the server.

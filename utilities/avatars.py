@@ -65,6 +65,7 @@ class AvatarSaver:
                     """
             data = json.dumps(self.pending)
             await self.pool.execute(query, data)
+            self.pending.clear()
 
     async def downloader(self):
         async def url_to_bytes(hash, url):

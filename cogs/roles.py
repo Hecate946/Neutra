@@ -1,6 +1,5 @@
 import discord
 import colorsys
-from discord import user
 
 from discord.ext import commands, menus
 
@@ -124,7 +123,7 @@ class Roles(commands.Cog):
             )
             self.bot.dispatch("mod_action", ctx, targets=target_list)
         if failed:
-            await helpers.error_info(ctx, failed)
+            await helpers.error_info(ctx, failed, options="Role")
 
     @decorators.command(
         aliases=["rr", "remrole", "rmrole"],
@@ -161,7 +160,7 @@ class Roles(commands.Cog):
                 if res:
                     failed.append((role.name, res))
                     continue
-                if role in target.roles:
+                if role not in target.roles:
                     failed.append(
                         (role.name, f"User `{target}` does not have the role `{role}`")
                     )
@@ -181,7 +180,7 @@ class Roles(commands.Cog):
             )
             self.bot.dispatch("mod_action", ctx, targets=target_list)
         if failed:
-            await helpers.error_info(ctx, failed)
+            await helpers.error_info(ctx, failed, option="Role")
 
     def role_accumulate(self, check_roles, members):
         ## iterate over the members to accumulate a count of each role
