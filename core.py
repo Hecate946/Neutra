@@ -105,10 +105,11 @@ def get_prefixes(bot, msg):
     and defaults to mentions & the prefix
     in ./config.json.
     """
+    common_prefixes = ["!", ".", ">", "<", "$", "&", "-", "+", "=", "?", ";", ":"]
     user_id = bot.user.id
     base = [f"<@!{user_id}> ", f"<@{user_id}> "]
     if msg.guild is None:
-        base.append(constants.prefix)
+        base.extend([constants.prefix] + bot.common_prefixes)
     else:
         base.extend(bot.prefixes.get(msg.guild.id, [constants.prefix]))
     return base
@@ -140,7 +141,7 @@ class Snowbot(commands.AutoShardedBot):
         )  # discord invite regex
         self.emote_dict = constants.emotes
         self.prefixes = database.prefixes
-        # self.command_config = database.command_config
+        self.common_prefixes = ["!", ".", ">", "<", "$", "&", "-", "+", "=", "?", ";", ":"]
         self.ready = False
         self.session = aiohttp.ClientSession(loop=self.loop)
         self.slash = SlashCommand(self, sync_commands=True)
@@ -626,9 +627,8 @@ class Snowbot(commands.AutoShardedBot):
         Here's where we handle all command errors
         so we can give the user feedback
         """
-        # This prevents any commands with local handlers being handled here in on_command_error.
-        if hasattr(ctx.command, "on_error"):
-            return
+        if ctx.handled:
+            return # Already handled locally
 
         # This prevents any cogs with an overwritten cog_command_error being handled here.
         if ctx.cog:
@@ -650,6 +650,7 @@ class Snowbot(commands.AutoShardedBot):
                 arg = str(error).split()[-1].strip('."')
                 error = f"The `{arg}` argument must be an integer."
             await ctx.fail(str(error))
+
 
         elif isinstance(error, commands.BadUnionArgument):
             await ctx.fail(str(error))
@@ -764,6 +765,7 @@ class Snowbot(commands.AutoShardedBot):
             )
         except Exception:
             pass
+
 
     async def on_message(self, message):
         await self.process_commands(message)

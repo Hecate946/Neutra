@@ -616,7 +616,7 @@ class Tracking(commands.Cog):
         add_reactions=True, attach_files=True, embed_links=True, external_emojis=True
     )
     @checks.has_perms(view_audit_log=True)
-    @decorators.cooldown(1, 10)
+    @checks.cooldown(1, 10)
     async def avatars(self, ctx, user: converters.DiscordMember = None):
         """
         Usage: {0}avatars [user]
@@ -701,7 +701,7 @@ class Tracking(commands.Cog):
                 """,
     )
     @checks.has_perms(view_audit_log=True)
-    @decorators.cooldown(3, 10)
+    @checks.cooldown(3, 10)
     async def seen(self, ctx, *, user: converters.DiscordUser = None):
         """
         Usage: {0}seen [user]
@@ -1065,6 +1065,7 @@ class Tracking(commands.Cog):
     async def word_error(self, ctx, error):
         if isinstance(error, commands.TooManyArguments):
             await ctx.fail("Please only provide one word at a time to search.")
+            ctx.handled = True
 
     @decorators.command(
         brief="Show the most active server users.",

@@ -240,7 +240,7 @@ class Logging(commands.Cog):
         case_insensitive=True,
     )
     @commands.guild_only()
-    @decorators.cooldown(2, 30, bucket=commands.BucketType.guild)
+    @checks.cooldown(2, 30, bucket=commands.BucketType.guild)
     @checks.bot_has_guild_perms(manage_webhooks=True)
     @checks.bot_has_perms(embed_links=True)
     @checks.has_perms(manage_guild=True)
@@ -433,7 +433,7 @@ class Logging(commands.Cog):
         updated="2021-06-08 17:18:43.698120",
     )
     @commands.guild_only()
-    @decorators.cooldown(2, 30, bucket=commands.BucketType.guild)
+    @checks.cooldown(2, 30, bucket=commands.BucketType.guild)
     @checks.bot_has_guild_perms(manage_webhooks=True)
     @checks.has_perms(manage_guild=True)
     async def unlog(self, ctx, event: converters.LoggingEvent):
@@ -499,7 +499,7 @@ class Logging(commands.Cog):
         aliases=["logserver", "setlogchannel"],
     )
     @commands.guild_only()
-    @decorators.cooldown(2, 30, bucket=commands.BucketType.guild)
+    @checks.cooldown(2, 30, bucket=commands.BucketType.guild)
     @checks.bot_has_perms(manage_webhooks=True)
     @checks.has_perms(manage_guild=True)
     async def logchannel(self, ctx, *, channel: discord.TextChannel = None):
@@ -518,7 +518,7 @@ class Logging(commands.Cog):
         aliases=["unlogserver"],
     )
     @commands.guild_only()
-    @decorators.cooldown(2, 30, bucket=commands.BucketType.guild)
+    @checks.cooldown(2, 30, bucket=commands.BucketType.guild)
     @checks.bot_has_perms(manage_webhooks=True)
     @checks.has_perms(manage_guild=True)
     async def unlogchannel(self, ctx):

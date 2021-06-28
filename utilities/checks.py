@@ -3,6 +3,8 @@ from discord.ext import commands
 
 from settings import constants
 
+from utilities import override
+
 owners = constants.owners
 admins = constants.admins
 
@@ -267,3 +269,6 @@ def guild_only():
         return True
 
     return commands.check(predicate)
+
+def cooldown(*args, **kwargs):
+    return commands.check(override.CustomCooldown(*args, **kwargs))

@@ -839,19 +839,22 @@ class Admin(commands.Cog):
         await ctx.invoke(self.prefixes)
 
     @prefix.command(name="add", ignore_extra=False, hidden=True)
+    @checks.guild_only()
     @checks.has_perms(manage_guild=True)
-    async def prefix_add(self, ctx, prefix: converters.Prefix = None):
+    async def prefix_add(self, ctx, prefix: converters.Prefix):
         await ctx.invoke(self.addprefix, prefix)
 
     @prefix.command(
         name="remove", aliases=["delete", "rm", "rem"], ignore_extra=False, hidden=True
     )
+    @checks.guild_only()
     @checks.has_perms(manage_guild=True)
-    async def prefix_remove(self, ctx, prefix: converters.Prefix = None):
+    async def prefix_remove(self, ctx, prefix: converters.Prefix):
         await ctx.invoke(self.removeprefix, prefix)
 
-    @checks.has_perms(manage_guild=True)
     @prefix.command(name="clear", hidden=True)
+    @checks.guild_only()
+    @checks.has_perms(manage_guild=True)
     async def prefix_clear(self, ctx, prefix: converters.Prefix = None):
         await ctx.invoke(self.clearprefix, prefix)
 
@@ -877,26 +880,34 @@ class Admin(commands.Cog):
         Output:
             Shows all my current server prefixes.
         """
+        if not ctx.guild:
+            prefixes = list(set(self.bot.common_prefixes + [self.bot.constants.prefix]))
+            prefixes = prefixes.copy()
+            mention_fmt = self.bot.user.name
+        else:
+            prefixes = self.bot.get_guild_prefixes(ctx.guild)
+            mention_fmt = ctx.guild.me.display_name
+            # Lets remove the mentions and replace with @name
+            del prefixes[0]
+            del prefixes[0]
 
-        prefixes = self.bot.get_guild_prefixes(ctx.guild)
-
-        # Lets remove the mentions and replace with @name
-        del prefixes[0]
-        del prefixes[0]
-        prefixes.insert(0, f"@{ctx.guild.me.display_name}")
+        prefixes.insert(0, f"@{mention_fmt}")
 
         await ctx.success(
             f"My current prefix{' is' if len(prefixes) == 1 else 'es are'} `{', '.join(prefixes)}`"
         )
 
-    @checks.has_perms(manage_guild=True)
+
     @decorators.command(
         aliases=["createprefix"],
         brief="Add a custom server prefix.",
         implemented="2021-05-03 09:14:59.219515",
         updated="2021-05-05 19:23:39.306805",
+        ignore_extra=False,
     )
-    async def addprefix(self, ctx, prefix: converters.Prefix = None):
+    @checks.guild_only()
+    @checks.has_perms(manage_guild=True)
+    async def addprefix(self, ctx, prefix: converters.Prefix):
         """
         Usage: {0}addprefix <new prefix>
         Aliases:
@@ -910,9 +921,6 @@ class Admin(commands.Cog):
             each a maximum of 20 characters in length.
             Multi-word prefixes must be quoted.
         """
-        if prefix is None:
-            return await ctx.usage("<new prefix>")
-
         current_prefixes = self.bot.get_raw_guild_prefixes(ctx.guild.id)
         if prefix in current_prefixes:
             return await ctx.fail(f"`{prefix}` is already a registered prefix.")
@@ -930,17 +938,18 @@ class Admin(commands.Cog):
             await ctx.fail(
                 "If your prefix is multiple words, surround it in quotes. Otherwise, add them one at a time."
             )
+            ctx.handled = True
 
-    @checks.has_perms(manage_guild=True)
     @decorators.command(
         aliases=["deleteprefix", "rmprefix", "remprefix", "delprefix"],
         brief="Remove a custom server prefix",
-        ignore_extra=False,
-        permissions=["manage_guild"],
         implemented="2021-05-03 09:14:59.219515",
         updated="2021-05-05 19:23:39.306805",
+        ignore_extra=False,
     )
-    async def removeprefix(self, ctx, prefix: converters.Prefix = None):
+    @checks.guild_only()
+    @checks.has_perms(manage_guild=True)
+    async def removeprefix(self, ctx, prefix: converters.Prefix):
         """
         Usage: {0}removeprefix <new prefix>
         Aliases:
@@ -954,9 +963,6 @@ class Admin(commands.Cog):
             Will ask for confirmation if only one
             custom prefix is currently in use.
         """
-        if prefix is None:
-            return await ctx.usage("<current prefix>")
-
         current_prefixes = self.bot.get_raw_guild_prefixes(ctx.guild.id)
         if len(current_prefixes) == 0:
             return await ctx.fail("I currently have no prefixes registered.")
@@ -985,7 +991,14 @@ class Admin(commands.Cog):
         else:
             await ctx.success(f"Successfully removed prefix: `{prefix}`")
 
-    @checks.has_perms(manage_guild=True)
+    @removeprefix.error
+    async def prefix_rem_error(self, ctx, error):
+        if isinstance(error, commands.TooManyArguments):
+            await ctx.fail(
+                "If your prefix is multiple words, surround it in quotes. Otherwise, remove them one at a time."
+            )
+            ctx.handled = True
+
     @decorators.command(
         aliases=["clearprefixes", "resetprefix", "resetprefixes"],
         brief="Clear all custom prefixes.",
@@ -993,6 +1006,8 @@ class Admin(commands.Cog):
         implemented="2021-05-03 09:14:59.219515",
         updated="2021-05-05 19:23:39.306805",
     )
+    @checks.guild_only()
+    @checks.has_perms(manage_guild=True)
     async def clearprefix(self, ctx):
         """
         Usage: {0}clearprefix
@@ -1036,6 +1051,7 @@ class Admin(commands.Cog):
                 {0}pruneinactive @Verified
                 """,
     )
+    @checks.guild_only()
     @checks.bot_has_perms(kick_members=True)
     @checks.has_perms(administrator=True)
     async def kickinactive(
@@ -1090,6 +1106,7 @@ class Admin(commands.Cog):
         implemented="2021-05-10 02:59:21.229362",
         updated="2021-05-10 02:59:21.229362",
     )
+    @checks.guild_only()
     @checks.bot_has_perms(kick_members=True)
     @checks.has_perms(view_audit_log=True)
     async def checkinactive(
@@ -1130,8 +1147,9 @@ class Admin(commands.Cog):
         implemented="2021-06-25 04:36:26.518644",
         updated="2021-06-25 04:36:26.518644",
     )
-    @decorators.cooldown(3, 60)
+    @checks.guild_only()
     @checks.has_perms(manage_guild=True)
+    @checks.cooldown(3, 60)
     async def reset(
         self, ctx, option: converters.ServerDataOption, *, user: converters.DiscordUser
     ):

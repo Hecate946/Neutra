@@ -102,7 +102,7 @@ class Info(commands.Cog):
                 {0}info
                 """,
     )
-    @decorators.cooldown()  # Cooldown default (3, 10)
+    @checks.cooldown()  # Cooldown default (3, 10)
     @checks.bot_has_perms(embed_links=True)
     async def about(self, ctx):
         """
@@ -179,7 +179,7 @@ class Info(commands.Cog):
                 {0}averagelatency
                 """,
     )
-    @decorators.cooldown()  # Cooldown default (3, 10)
+    @checks.cooldown()  # Cooldown default (3, 10)
     async def avgping(self, ctx):
         """
         Usage: {0}avgping
@@ -207,7 +207,7 @@ class Info(commands.Cog):
         implemented="2021-04-02 21:37:49.068681",
         updated="2021-05-05 19:08:47.761913",
     )
-    @decorators.cooldown()  # Cooldown default (3, 10)
+    @checks.cooldown()  # Cooldown default (3, 10)
     @checks.bot_has_perms(embed_links=True)
     async def botadmins(self, ctx):
         """
@@ -246,7 +246,7 @@ class Info(commands.Cog):
                 {0}botowners
                 """,
     )
-    @decorators.cooldown()  # Cooldown default (3, 10)
+    @checks.cooldown()  # Cooldown default (3, 10)
     @checks.bot_has_perms(embed_links=True)
     async def botowners(self, ctx):
         """
@@ -283,7 +283,7 @@ class Info(commands.Cog):
                             (please be specific and feel free to include images)
                  """,
     )
-    @decorators.cooldown(2, 60)
+    @checks.cooldown(2, 60)
     async def bugreport(self, ctx, *, bug):
         """
         Usage:    {0}bugreport <report>
@@ -332,7 +332,7 @@ class Info(commands.Cog):
                 {0}updates
                  """,
     )
-    @decorators.cooldown(3, 20)
+    @checks.cooldown(3, 20)
     @checks.bot_has_perms(add_reactions=True, external_emojis=True)
     async def changelog(self, ctx):
         """
@@ -363,7 +363,7 @@ class Info(commands.Cog):
                 {0}listcogs
                  """,
     )
-    @decorators.cooldown()
+    @checks.cooldown()
     @checks.bot_has_perms(embed_links=True)
     async def cogs(self, ctx):
         """
@@ -394,7 +394,7 @@ class Info(commands.Cog):
                 {0}vps
                  """,
     )
-    @decorators.cooldown(2, 20)
+    @checks.cooldown(2, 20)
     async def hostinfo(self, ctx):
         """
         Usage: {0}hostinfo
@@ -497,7 +497,7 @@ class Info(commands.Cog):
                 {0}bi
                  """,
     )
-    @decorators.cooldown()
+    @checks.cooldown()
     async def invite(self, ctx):
         """
         Usage: {0}invite
@@ -539,7 +539,7 @@ class Info(commands.Cog):
                 {0}socketstats
                 """,
     )
-    @decorators.cooldown()
+    @checks.cooldown()
     @checks.bot_has_perms(add_reactions=True, external_emojis=True)
     async def socket(self, ctx):
         """
@@ -1096,22 +1096,19 @@ class Info(commands.Cog):
         )
 
     @decorators.command(
-        aliases=[r"%uptime", "percentuptime", "pieuptime", "pu"],
+        aliases=["percentuptime", "pieuptime", "pu"],
         brief="Show a graph of uptime stats",
         implemented="2021-04-28 00:34:35.847886",
         updated="2021-05-25 19:14:05.652822",
     )
-    @checks.bot_has_perms(
-        attach_files=True,
-        embed_links=True,
-    )
+    @checks.bot_has_perms(attach_files=True, embed_links=True)
     async def uptimeinfo(self, ctx):
         """
         Usage: {0}uptimeinfo
-        Aliases: {0}%uptime, {0}percentuptime, {0}pieuptime, {0}pu
+        Aliases: {0}percentuptime, {0}pieuptime, {0}pu
         Output:
             Shows a pie-chart graph
-            of my uptime across all time
+            of bot uptime across all time
         """
         await ctx.trigger_typing()
         query = """

@@ -7,6 +7,7 @@ from utilities import pagination
 class BotContext(commands.Context):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.handled = False
 
     async def fail(self, content=None, **kwargs):
         return await self.send_or_reply(
@@ -20,6 +21,8 @@ class BotContext(commands.Context):
         )
 
     async def send_or_reply(self, content=None, **kwargs):
+        if not self.channel.permissions_for(self.me).send_messages:
+            return
         ref = self.message.reference
         if ref and isinstance(ref.resolved, discord.Message):
             return await self.send(
@@ -72,6 +75,12 @@ class BotContext(commands.Context):
             await self.author.send(content, **kwargs)
         except Exception:
             await self.send_or_reply(content, **kwargs)
+
+    async def trigger_typing(self):
+        if self.channel.permissions_for(self.me).send_messages:
+            return await super().trigger_typing()
+        else:
+            return
 
     # async def log(self, _type=None, content=None, **kwargs):
     #     if _type in ["info", "i", "information"]:

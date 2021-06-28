@@ -522,15 +522,15 @@ class BannedMember(commands.Converter):
                 return await ctx.guild.fetch_ban(discord.Object(id=member_id))
             except discord.NotFound:
                 raise commands.BadArgument(
-                    f"Member {await prettify(ctx, argument)} has not been previously banned."
+                    f"User {await prettify(ctx, argument)} has not been previously banned."
                 ) from None
 
         ban_list = await ctx.guild.bans()
         entity = discord.utils.find(lambda u: str(u.user) == argument, ban_list)
 
-        if entity is None:
+        if not entity:
             raise commands.BadArgument(
-                f"Member {await prettify(ctx, argument)} has not been previously banned."
+                f"User {await prettify(ctx, argument)} has not been previously banned."
             )
         return entity
 
