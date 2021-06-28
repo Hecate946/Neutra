@@ -3,7 +3,7 @@ import json
 import discord
 
 from collections import defaultdict
-from datetime import datetime
+from datetime import date, datetime
 from discord.ext import commands, tasks
 
 from utilities import utils
@@ -1098,59 +1098,33 @@ class Logging(commands.Cog):
     @decorators.wait_until_ready()
     @decorators.event_check(lambda s, m: m[0].guild is not None)
     async def on_bulk_message_delete(self, messages):
+        
+        message = messages[0]
+        messages = [m for m in messages if not m.author.bot]
+        if not messages:
+            return
 
-        webhook = self.get_webhook(messages[0].guild, "messages")
+        if len(messages) == 1:
+            self.bot.dispatch("message_delete", messages[0])
+            return
+
+        webhook = self.get_webhook(message.guild, "messages")
         if not webhook:
             return
 
-        allmessages = ""
-        spaces = " " * 10
-        for message in messages:
-            if message.author.bot:
-                continue
-            allmessages += f"Content: {message.content}{spaces}Author: {message.author}{spaces}ID: {message.id}\n\n"
-
-        embed = discord.Embed(
-            description=f"**Channel:** {message.channel.mention} **ID:** `{message.channel.id}`\n"
-            f"**Server:** `{message.guild.name}` **ID:** `{message.guild.id}`\n\n",
-            color=self.bot.constants.embed,
-            timestamp=datetime.utcnow(),
-        )
-        embed.set_author(
-            name="Bulk Message Delete",
-            icon_url=DELETED_MESSAGE,
-        )
-
-        await self.send_webhook(webhook, embed=embed)
-
-        counter = 0
-        msg = ""
-        for message in messages:
-            counter += 1
-            msg += message.content + "\n"
-            msg += (
-                "----Sent-By: "
-                + message.author.name
-                + "#"
-                + message.author.discriminator
-                + "\n"
-            )
-            msg += (
-                "---------At: " + message.created_at.strftime("%Y-%m-%d %H.%M") + "\n"
-            )
-            if message.edited_at:
-                msg += (
-                    "--Edited-At: "
-                    + message.edited_at.strftime("%Y-%m-%d %H.%M")
-                    + "\n"
-                )
+        msg = f"{len(messages):,} bulk deleted messages in #{message.channel.name} (ID: {message.channel.id})\n"
+        for m in messages:
+            msg += "\nMessage: " + m.clean_content
+            msg += "\nSent-By: " + f"{str(m.author)} ID: {m.author.id}"
+            msg += "\nSent-At: " + m.created_at.strftime("%Y-%m-%d %-I.%M %p UTC")
             msg += "\n"
 
         data = io.BytesIO(msg[:-2].encode("utf-8"))
 
+        date_fmt = datetime.now().__format__('%Y-%m-%d')
         file = discord.File(
             data,
-            filename=f"Bulk-Deleted-Messages-{datetime.now().__format__('%m-%d-%Y')}.txt",
+            filename=f"Bulk-Deleted-Messages-{date_fmt}.yml",
         )
         await self.send_webhook(webhook, file=file)
 
