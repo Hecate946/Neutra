@@ -8,8 +8,8 @@ Hello! I'm Snowbot, and I specialize in tracking and moderation.
 I was designed to collect all sorts of data on servers, users,
 messages, emojis, online time, and more! I also come with a fast
 and clean moderation system that offers every opportunity for effective
-server management. Apart from moderation and tracking, I feature 246
-commands across 13 categories that provide awesome utilities!
+server management. Apart from moderation and tracking, I feature 268
+commands across 12 categories that provide awesome utilities!
 Some examples include managing user timezones, role management, and logging.
 ## Categories
 ##### [Admin](#Admin-1)
@@ -20,15 +20,14 @@ Some examples include managing user timezones, role management, and logging.
 ##### [Info](#Info-1)
 ##### [Logging](#Logging-1)
 ##### [Mod](#Mod-1)
-##### [Roles](#Roles-1)
+##### [Music](#Music-1)
 ##### [Stats](#Stats-1)
-##### [Times](#Times-1)
 ##### [Tracking](#Tracking-1)
 ##### [Utility](#Utility-1)
 
 
 ### Admin
-#### Module for server administration. (11 Commands)
+#### Module for server administration. (14 Commands)
 
 ```yaml
 addprefix: Add a custom server prefix.
@@ -39,7 +38,7 @@ clearprefix: Clear all custom prefixes.
 
 kickinactive: Kick all inactive server members
 
-leave: Have the bot leave the server.
+kill: Have the bot leave the server.
 
 massascify: Mass nickname users with odd names.
 
@@ -47,15 +46,21 @@ massban: Massban users matching a search.
 
 massdehoist: Dehoist all server users.
 
+masskick: Mass kick users matching a search.
+
 muterole: Setup server muting system.
 
 prefixes: Show all server prefixes.
 
 removeprefix: Remove a custom server prefix
+
+reset: Manage stored user data.
+
+role: Manage mass adding/removing roles.
 ```
 
 ### Automod
-#### Manage the automod system. (9 Commands)
+#### Manage the automod system. (10 Commands)
 
 ```yaml
 antiinvite: Enable or disable auto-deleting invite links
@@ -66,15 +71,17 @@ clearwarns: Clear a user's warnings
 
 filter: Manage the server's word filter.
 
+listwarns: Show all warnings a user has.
+
 reassign: Reassign roles on user rejoin.
 
-revokewarn: Revoke a warning from a user
-
-serverwarns: Display the server warnlist.
+unwarn: Revoke a warning from a user
 
 warn: Warn users with an optional reason.
 
 warncount: Count the warnings a user has.
+
+warns: Display the server warnlist.
 ```
 
 ### Config
@@ -126,7 +133,7 @@ dumpusers: DMs you a file of server members.
 
 dumpvoicechannels: DMs you a file of voice channels.
 
-readme: DMs you my readme file.
+dumpwarns: DMs you a file of server bans.
 ```
 
 ### Help
@@ -169,7 +176,7 @@ writers: Show all people who wrote for me.
 ```
 
 ### Info
-#### Module for bot information. (24 Commands)
+#### Module for bot information. (23 Commands)
 
 ```yaml
 about: Display information about the bot.
@@ -217,8 +224,6 @@ uptime: Show the bot's uptime.
 uptimeinfo: Show a graph of uptime stats
 
 users: Show users I'm connected to.
-
-vote: Show your support by voting for me!
 ```
 
 ### Logging
@@ -241,9 +246,11 @@ unlogchannel: Remove your server's logging channel.
 ```
 
 ### Mod
-#### Keep your server under control. (20 Commands)
+#### Keep your server under control. (22 Commands)
 
 ```yaml
+addrole: Add multiple roles to a user.
+
 ban: Ban users from the server.
 
 blind: Hide a channel from a user.
@@ -251,8 +258,6 @@ blind: Hide a channel from a user.
 block: Restrict users from sending messages.
 
 cleanup: Clean up bot command usage.
-
-hackban: Hackban multiple users.
 
 kick: Kick users from the server.
 
@@ -262,11 +267,15 @@ mute: Mute users for a duration.
 
 purge: Remove any type of content.
 
+removerole: Remove multiple roles to a user.
+
 slowmode: Set the slowmode for a channel
 
 softban: Softban users from the server.
 
 tempban: Temporarily ban users.
+
+temprole: Temporarily add roles to users.
 
 unban: Unban a previously banned user.
 
@@ -285,46 +294,72 @@ vcmove: Move a user from a voice channel.
 vcpurge: Kick all users from a voice channel.
 ```
 
-### Roles
-#### Manage all actions regarding roles. (11 Commands)
+### Music
+#### Module for playing music (24 Commands)
 
 ```yaml
-addrole: Add multiple roles to multiple users.
+clear: Remove all queued songs.
 
-emptyroles: Show roles that have no users.
+connect: Joins a voice or stage channel.
 
-listroles: Show an embed of all server roles.
+current: Displays the currently playing song.
 
-removerole: Remove multiple roles from multiple users.
+disconnect: Disconnect the bot from a channel.
 
-role: Manage mass adding/removing roles.
+fastforward: Fast forward a number of seconds
 
-rolecall: Counts the users with a role.
+loop: Loop the current song or queue.
 
-rolecount: Counts the roles on the server.
+move: Move a song in the queue.
 
-roleinfo: Get information on a role.
+pause: Pauses the currently playing song.
 
-roleperms: Show the permissions for a role.
+play: Play a song from a youtube search.
 
-temprole: Temporarily add roles to users.
+playnext: Add a song to the beginning of the queue.
 
-whohas: Show the people who have a role.
+position: Show the current position of the song.
+
+previous: Play the previous song.
+
+queue: Display the current song queue.
+
+remove: Remove a song from the queue.
+
+resume: Resumes a currently paused song.
+
+rewind: Rewind a number of seconds
+
+seek: Seek to a position in a song.
+
+shuffle: Shuffle the current song queue.
+
+skip: Vote to skip the current song.
+
+stop: Stops playing song and clears the queue.
+
+subtitles: Request subtitles for the song.
+
+unloop: Un-loop the current song or queue.
+
+volume: Set the volume of the player.
+
+youtube: Search for anything on youtube.
 ```
 
 ### Stats
-#### Module for server stats (17 Commands)
+#### Module for server stats (23 Commands)
 
 ```yaml
 admins: Show the server admins.
-
-badges: Show all the badges a user has
 
 channelinfo: Get info about a channel.
 
 emoji: Get usage stats on an emoji.
 
 emojistats: Emoji usage tracking.
+
+emptyroles: Show roles that have no users.
 
 firstjoins: Show the first users to join.
 
@@ -340,51 +375,46 @@ listbots: Shows all the server's bots.
 
 listchannels: Show the server's channels.
 
-mods: Show the server mods.
+listroles: Show an embed of all server roles.
+
+mods: Show the server moderators.
 
 permissions: Show a user's permissions.
+
+rolecall: Counts the users with a role.
+
+rolecount: Counts the roles on the server.
+
+roleinfo: Get information on a role.
+
+roleperms: Show the permissions for a role.
 
 serverinfo: Show server information.
 
 topic: Show the topic of a channel.
 
 userinfo: Show information on a user.
-```
 
-### Times
-#### Module for time functions. (9 Commands)
-
-```yaml
-clock: Get the time of any location
-
-listtz: List all available timezones.
-
-removetz: Remove your timezone.
-
-settz: Set your timezone.
-
-stopwatch: Start or stop a stopwatch.
-
-timezone: See a member's timezone.
-
-usertime: Show a user's current time.
-
-usertimes: Show times for all users.
-
-utcnow: Show the current utc time.
+whohas: Show the people who have a role.
 ```
 
 ### Tracking
-#### Module for all user stats (19 Commands)
+#### Module for all user stats (24 Commands)
 
 ```yaml
 activity: Show the most active server users.
 
 avatars: Show a user's past avatars.
 
+barstatus: Status info in a bar graph.
+
 botusage: Show the top bot users.
 
 characters: Show character usage.
+
+clocker: Show the days a user was active.
+
+clocking: Show all active users.
 
 commandcount: Count the commands run by a user.
 
@@ -396,17 +426,21 @@ invites: Count the invites of a user.
 
 messagecount: Count the messages a user sent.
 
-messagestats: Show the top message senders.
+messagestats: Show messaging stats on users.
 
 nicknames: Show a user's past nicknames.
 
-platform: Show a user's discord platform.
-
 seen: Check when a user was last seen.
+
+spoke: Check when a user last spoke.
+
+spokehere: Check when a user last spoke here.
 
 status: Show a user's discord status.
 
 statusinfo: Status info and online time stats.
+
+top: Show the top message senders.
 
 user: Show information on a user.
 
@@ -418,12 +452,14 @@ words: Most used words from a user.
 ```
 
 ### Utility
-#### Module for general utilities. (22 Commands)
+#### Module for general utilities. (24 Commands)
 
 ```yaml
 ascify: Convert special characters to ascii.
 
 avatar: Show a user's avatar.
+
+badges: Show all the badges a user has
 
 calculate: Calculate a math formula.
 
@@ -446,6 +482,8 @@ gtoken: Generate a discord token.
 nickname: Edit or reset a user's nickname
 
 oauth: Generate a bot invite link.
+
+platform: Show a user's discord platform.
 
 ptoken: Decode a discord token.
 
