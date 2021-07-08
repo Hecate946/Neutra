@@ -40,7 +40,7 @@ async def purge_discrepancies(guilds):
     await find_discrepancy(query, guilds)
     print(f"{query.split()[-1]}_query")
 
-    query = "SELECT server_id FROM warn"
+    query = "SELECT server_id FROM warns"
     await find_discrepancy(query, guilds)
     print(f"{query.split()[-1]}_query")
 
@@ -74,7 +74,7 @@ async def destroy_server(guild_id):
     query = "DELETE FROM prefixes WHERE server_id = $1"
     await conn.execute(query, guild_id)
 
-    query = "DELETE FROM warn WHERE server_id = $1"
+    query = "DELETE FROM warns WHERE server_id = $1"
     await conn.execute(query, guild_id)
 
     query = "DELETE FROM invites WHERE server_id = $1"
