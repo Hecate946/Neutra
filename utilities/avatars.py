@@ -42,7 +42,7 @@ class AvatarSaver:
 
     def save(self, user):
         if self.is_saving:
-            avatar_name = user.avatar if user.avatar else user.default_avatar.name
+            avatar_name = user.avatar.key if user.avatar else user.default_avatar.key
             self.pending.append(
                 {
                     "user_id": user.id,
