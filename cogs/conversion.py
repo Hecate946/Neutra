@@ -219,7 +219,7 @@ class Conversion(commands.Cog):
         """
         if input_hex == None:
             await ctx.send_or_reply(
-                content="Usage: `{}hexdec [input_hex]`".format(ctx.prefix),
+                content="Usage: `{}hexdec [input_hex]`".format(ctx.clean_prefix),
             )
             return
 
@@ -290,7 +290,7 @@ class Conversion(commands.Cog):
         """
         if input_binary == None:
             await ctx.send_or_reply(
-                content="Usage: `{}binint [input_binary]`".format(ctx.prefix),
+                content="Usage: `{}binint [input_binary]`".format(ctx.clean_prefix),
             )
             return
         try:

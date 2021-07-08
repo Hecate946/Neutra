@@ -171,7 +171,34 @@ class TextPageSource(menus.ListPageSource):
         pages = CommandPaginator(prefix=prefix, suffix=suffix, max_size=max_size - 200)
         text = cleaner.clean_all(text)
         for line in text.split("\n"):
-            pages.add_line(line)
+            try:
+                pages.add_line(line)
+            except RuntimeError:  # Line too long
+                continue
+
+        super().__init__(entries=pages.pages, per_page=1)
+
+    async def format_page(self, menu, content):
+        maximum = self.get_max_pages()
+        if maximum > 1:
+            return f"{content}\nPage {menu.current_page + 1}/{maximum}"
+        return content
+
+
+class LinePageSource(menus.ListPageSource):
+    def __init__(self, text, *, prefix="```", suffix="```", max_size=2000, lines=2000):
+        pages = CommandPaginator(prefix=prefix, suffix=suffix, max_size=max_size - 200)
+        text = cleaner.clean_all(text)
+        index = 0
+        for line in text.split("\n"):
+            index += 1
+            try:
+                pages.add_line(line)
+            except RuntimeError:  # Line too long
+                continue
+            if index == lines:
+                index = 0
+                pages.close_page()
 
         super().__init__(entries=pages.pages, per_page=1)
 
@@ -559,7 +586,7 @@ class Embed:
                 em.set_author(
                     name=self._truncate_string(name, self.auth_max),
                     # Ignore the url here
-                    icon_url=self.author.avatar_url,
+                    icon_url=self.author.avatar.url,
                 )
             elif type(self.author) is dict:
                 if any(item in self.author for item in ["name", "url", "icon"]):

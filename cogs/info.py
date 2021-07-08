@@ -19,8 +19,6 @@ from discord import __version__ as dv
 from discord.ext import commands, menus
 from PIL import Image, ImageDraw, ImageFont
 
-from dislash.interactions import ActionRow, ButtonStyle, Button
-
 from utilities import utils
 from utilities import checks
 from utilities import converters
@@ -41,7 +39,7 @@ class Info(commands.Cog):
         self.bot = bot
         self.socket_event_total = 0
         self.process = psutil.Process(os.getpid())
-        self.socket_since = datetime.utcnow()
+        self.socket_since = discord.utils.utcnow()
         self.message_latencies = collections.deque(maxlen=500)
 
     #####################
@@ -51,7 +49,7 @@ class Info(commands.Cog):
     @commands.Cog.listener()
     @decorators.wait_until_ready()
     async def on_message(self, message):
-        now = datetime.utcnow()
+        now = discord.utils.utcnow()
         self.message_latencies.append((now, now - message.created_at))
 
     @commands.Cog.listener()  # Update our socket counters
@@ -90,7 +88,7 @@ class Info(commands.Cog):
     ##############
 
     @decorators.command(
-        aliases=["info", "bot", "botstats", "botinfo"],
+        aliases=["info", "bot", "botstats", "botinfo", "ab"],
         brief="Display information about the bot.",
         implemented="2021-03-15 22:27:29.973811",
         updated="2021-05-06 00:06:19.096095",
@@ -102,8 +100,8 @@ class Info(commands.Cog):
                 {0}info
                 """,
     )
-    @checks.cooldown()  # Cooldown default (3, 10)
     @checks.bot_has_perms(embed_links=True)
+    @checks.cooldown()  # Cooldown default (3, 10)
     async def about(self, ctx):
         """
         Usage: {0}about
@@ -124,10 +122,12 @@ class Info(commands.Cog):
         ram_usage = self.process.memory_full_info().rss / 1024 ** 2
 
         embed = discord.Embed(colour=self.bot.constants.embed)
-        embed.set_thumbnail(url=self.bot.user.avatar_url)
+        embed.set_thumbnail(url=self.bot.user.avatar.url)
         embed.add_field(
             name="Last Boot",
-            value=str(utils.timeago(datetime.utcnow() - self.bot.uptime)).capitalize(),
+            value=str(
+                utils.timeago(discord.utils.utcnow() - self.bot.uptime)
+            ).capitalize(),
         )
         embed.add_field(
             name=f"Developer{'' if len(self.bot.constants.owners) == 1 else 's'}",
@@ -246,8 +246,8 @@ class Info(commands.Cog):
                 {0}botowners
                 """,
     )
-    @checks.cooldown()  # Cooldown default (3, 10)
     @checks.bot_has_perms(embed_links=True)
+    @checks.cooldown()  # Cooldown default (3, 10)
     async def botowners(self, ctx):
         """
         Usage: {0}botowners
@@ -507,26 +507,23 @@ class Info(commands.Cog):
             A selection of invite links
             to invite me to your server
         """
-        button_row = ActionRow(
-            Button(style=ButtonStyle.link, label="Recommended", url=self.bot.oauth),
-            Button(
-                style=ButtonStyle.link,
-                label="Administrator",
-                url=discord.utils.oauth_url(
-                    self.bot.user.id, permissions=discord.Permissions(8)
-                ),
-            ),
-            Button(
-                style=ButtonStyle.link,
-                label="Default",
-                url=discord.utils.oauth_url(
-                    self.bot.user.id,
-                ),
-            ),
-        )
+        admin_inv = discord.utils.oauth_url(self.bot.user.id, permissions=discord.Permissions(8))
+        default_inv = discord.utils.oauth_url(self.bot.user.id)
+
+
+        reco = discord.ui.Button(label="Recommended", url=self.bot.oauth)
+        admin = discord.ui.Button(label="Administrator", url=admin_inv)
+        default = discord.ui.Button(label="Default", url=default_inv)
+
+        view = discord.ui.View()
+        view.add_item(reco)
+        view.add_item(admin)
+        view.add_item(default)
+
+
         await ctx.rep_or_ref(
             "Select an invite link from the options below to invite me to your server.",
-            components=[button_row],
+            view=view,
         )
 
     @decorators.command(
@@ -549,7 +546,7 @@ class Info(commands.Cog):
             Fetch information on the socket
             events received from Discord.
         """
-        running_s = (datetime.utcnow() - self.socket_since).total_seconds()
+        running_s = (discord.utils.utcnow() - self.socket_since).total_seconds()
 
         per_s = self.socket_event_total / running_s
 
@@ -583,6 +580,7 @@ class Info(commands.Cog):
         implemented="2021-05-10 23:53:06.937010",
         updated="2021-05-10 23:53:06.937010",
     )
+    @checks.cooldown()
     async def replytime(self, ctx):
         """
         Usage: {0}replytime
@@ -600,10 +598,10 @@ class Info(commands.Cog):
                 check=lambda m: (m.author == ctx.bot.user and m.content == msg_content),
             )
         )
-        now = datetime.utcnow()
+        now = discord.utils.utcnow()
         sent_message = await ctx.send_or_reply(msg_content)
         await task
-        rtt_time = datetime.utcnow()
+        rtt_time = discord.utils.utcnow()
         content = "```prolog\n"
         content += "Client Timestamp - Discord  Timestamp: {:.2f}ms\n"
         content += "Posted Timestamp - Response Timestamp: {:.2f}ms\n"
@@ -640,7 +638,7 @@ class Info(commands.Cog):
     @decorators.command(
         brief="Send a suggestion to the developer.", aliases=["suggestion"]
     )
-    @commands.cooldown(2, 60, commands.BucketType.user)
+    @checks.cooldown(2, 60)
     async def suggest(self, ctx, *, suggestion: str = None):
         """
         Usage:    {0}suggest <report>
@@ -654,7 +652,7 @@ class Info(commands.Cog):
         """
         if suggestion is None:
             return await ctx.send_or_reply(
-                content=f"Usage `{ctx.prefix}suggest <suggestion>`",
+                content=f"Usage `{ctx.clean_prefix}suggest <suggestion>`",
             )
         author = ctx.author
         if ctx.guild:
@@ -667,9 +665,9 @@ class Info(commands.Cog):
         )
         message = sender + suggestion
         try:
-            await self.bot.hecate.send(message)
+            await self.bot.hecate.send(message, files=ctx.message.attachments)
         except discord.errors.InvalidArgument:
-            await ctx.send_or_reply(content="I cannot send your message")
+            await ctx.fail("I cannot send your message.")
         except discord.errors.HTTPException:
             await ctx.fail("Your message is too long.")
         except Exception:
@@ -711,9 +709,7 @@ class Info(commands.Cog):
         """
         async with ctx.channel.typing():
             start = time.time()
-            message = await ctx.send_or_reply(
-                content=f'{self.bot.emote_dict["loading"]} **Calculating Latency...**',
-            )
+            message = await ctx.load("Calculating Latency...")
             end = time.time()
 
             db_start = time.time()
@@ -722,14 +718,9 @@ class Info(commands.Cog):
 
             p = str(round((end - start) * 1000, 2))
             q = str(round(self.bot.latency * 1000, 2))
-
             v = str(round((elapsed) * 1000, 2))
 
-            formatter = []
-            formatter.append(p)
-            formatter.append(q)
-            formatter.append(v)
-            width = max(len(a) for a in formatter)
+            width = max(len(p), len(q), len(v))
 
             msg = "**Results:**\n"
             msg += "```yaml\n"
@@ -746,13 +737,13 @@ class Info(commands.Cog):
         updated="2021-05-06 01:12:57.626085",
     )
     @checks.bot_has_perms(embed_links=True)
+    @checks.cooldown()
     async def overview(self, ctx):
         """
         Usage:  {0}overview
         Alias:  {0}purpose
         Output: Me and my purpose
         """
-
         owner, command_list, category_list = self.bot.public_stats()
         with open("./data/txts/overview.txt", "r", encoding="utf-8") as fp:
             overview = fp.read()
@@ -762,7 +753,7 @@ class Info(commands.Cog):
             ),
             color=self.bot.constants.embed,
         )
-        embed.set_author(name=owner, icon_url=owner.avatar_url)
+        embed.set_author(name=owner, icon_url=owner.avatar.url)
         await ctx.send_or_reply(embed=embed)
 
     @decorators.command(brief="Display the source code.", aliases=["sourcecode", "src"])
@@ -807,29 +798,29 @@ class Info(commands.Cog):
         msg = f"**__My source {'' if command is None else f'for {command}'} is located at:__**\n\n{final_url}"
         await ctx.send_or_reply(msg)
 
-    @decorators.command(
-        brief="Show your support by voting for me!",
-        implemented="2021-06-10 07:29:06.990221",
-        updated="2021-06-10 07:29:06.990221",
-    )
-    async def vote(self, ctx):
-        """
-        Usage: {0}vote
-        Output:
-            A link to top.gg where you can
-            vote to support me.
-        """
-        button_row = ActionRow(
-            Button(
-                style=ButtonStyle.link,
-                label="Vote for me!",
-                url="https://top.gg/bot/810377376269205546/vote",
-            ),
-        )
-        await ctx.rep_or_ref(
-            "Thanks for showing interest in supporting me! Click the button below to vote for me on top.gg.",
-            components=[button_row],
-        )
+    # @decorators.command(
+    #     brief="Show your support by voting for me!",
+    #     implemented="2021-06-10 07:29:06.990221",
+    #     updated="2021-06-10 07:29:06.990221",
+    # )
+    # async def vote(self, ctx):
+    #     """
+    #     Usage: {0}vote
+    #     Output:
+    #         A link to top.gg where you can
+    #         vote to support me.
+    #     """
+    #     button_row = ActionRow(
+    #         Button(
+    #             style=ButtonStyle.link,
+    #             label="Vote for me!",
+    #             url="https://top.gg/bot/810377376269205546/vote",
+    #         ),
+    #     )
+    #     await ctx.rep_or_ref(
+    #         "Thanks for showing interest in supporting me! Click the button below to vote for me on top.gg.",
+    #         components=[button_row],
+    #     )
 
     @decorators.command(
         aliases=["sup", "assistance", "assist"],
@@ -911,6 +902,7 @@ class Info(commands.Cog):
         implemented="2021-03-16 18:59:54.146823",
         updated="2021-05-06 01:30:32.347076",
     )
+    @checks.cooldown()
     async def sharedservers(self, ctx, *, user: converters.DiscordUser = None):
         """
         Usage: {0}sharedservers [user]
@@ -966,7 +958,7 @@ class Info(commands.Cog):
         ]
 
     @decorators.command(aliases=["nf"], brief="Run the neofetch command.")
-    @commands.cooldown(1, 10, commands.BucketType.user)
+    @checks.cooldown()
     async def neofetch(self, ctx):
         """
         Usage: {0}neofetch
@@ -994,11 +986,11 @@ class Info(commands.Cog):
     @decorators.command(
         aliases=["code", "cloc", "codeinfo"],
         brief="Show sourcecode statistics.",
-        botperms=["embed_links"],
         implemented="2021-03-22 08:19:35.838365",
         updated="2021-05-06 01:21:46.580294",
     )
     @checks.bot_has_perms(embed_links=True)
+    @checks.cooldown()
     async def lines(self, ctx):
         """
         Usage: {0}lines
@@ -1078,6 +1070,7 @@ class Info(commands.Cog):
         implemented="2021-04-26 17:22:59.340513",
         updated="2021-05-05 22:15:27.364699",
     )
+    @checks.cooldown()
     async def privacy(self, ctx):
         """
         Usage: {0}privacy
@@ -1089,7 +1082,7 @@ class Info(commands.Cog):
         with open("./data/txts/privacy.txt") as fp:
             privacy = fp.read()
         policy = (
-            f"```fix\n{privacy.format(self.bot.user, self.bot.user.id, ctx.prefix)}```"
+            f"```fix\n{privacy.format(self.bot.user, self.bot.user.id, ctx.clean_prefix)}```"
         )
         await ctx.send_or_reply(
             f"{self.bot.emote_dict['privacy']} **{self.bot.user}'s Privacy Policy**{policy}"
@@ -1102,6 +1095,7 @@ class Info(commands.Cog):
         updated="2021-05-25 19:14:05.652822",
     )
     @checks.bot_has_perms(attach_files=True, embed_links=True)
+    @checks.cooldown()
     async def uptimeinfo(self, ctx):
         """
         Usage: {0}uptimeinfo
@@ -1171,7 +1165,7 @@ class Info(commands.Cog):
         )
         draw.text(
             (1200, 910),
-            f"Last reboot: {utils.timeago(datetime.utcnow() - self.bot.uptime)}",
+            f"Last reboot: {utils.timeago(discord.utils.utcnow() - self.bot.uptime)}",
             fill=(255, 255, 255),
             font=font,
         )

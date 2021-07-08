@@ -1458,7 +1458,7 @@ class Manager(commands.Cog):
         aliases=["evaluate", "e", "exe", "exec"],
         brief="Evaluate python code.",
     )
-    async def _eval(self, ctx, *, body: str):
+    async def _eval(self, ctx, *, body: str = None):
         """
         Usage: {0}eval <body>
         Aliases:
@@ -1495,8 +1495,11 @@ class Manager(commands.Cog):
         }
 
         env.update(globals())
-
-        body = utils.cleanup_code(body)
+        if len(ctx.message.attachments) == 0:
+            body = utils.cleanup_code(body)
+        else:
+            file = await ctx.message.attachments[0].read()
+            body = file.decode("utf-8")
         stdout = io.StringIO()
 
         to_compile = f'async def func():\n{textwrap.indent(body, "  ")}'

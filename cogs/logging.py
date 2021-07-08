@@ -3,7 +3,6 @@ import json
 import discord
 
 from collections import defaultdict
-from datetime import date, datetime
 from discord.ext import commands, tasks
 
 from utilities import utils
@@ -11,6 +10,7 @@ from utilities import checks
 from utilities import humantime
 from utilities import converters
 from utilities import decorators
+from utilities import exceptions
 
 
 CREATED_MESSAGE = "https://cdn.discordapp.com/attachments/846597178918436885/846841649542725632/messagecreate.png"
@@ -20,17 +20,6 @@ DELETED_MESSAGE = "https://cdn.discordapp.com/attachments/846597178918436885/846
 
 def setup(bot):
     bot.add_cog(Logging(bot))
-
-
-class WebhookLimit(commands.BadArgument):
-    """
-    Custom exception to raise when the max
-    webhook limit for a channel is reached.
-    """
-
-    def __init__(self, channel, *args):
-        msg = f"Channel {channel.mention} has reached the maximum number of webhooks (10). Please delete a webhook and retry."
-        super().__init__(message=msg, *args)
 
 
 class Logging(commands.Cog):
@@ -132,7 +121,7 @@ class Logging(commands.Cog):
             webhook = discord.Webhook.partial(
                 id=webhook_id,
                 token=webhook_token,
-                adapter=discord.AsyncWebhookAdapter(self.bot.session),
+                session=self.bot.session,
             )
         except Exception:  # Failed so do nothing
             return
@@ -215,7 +204,7 @@ class Logging(commands.Cog):
                             embeds=embeds,
                             files=files,
                             username=f"{self.bot.user.name}-logger",
-                            avatar_url=self.bot.user.avatar_url,
+                            avatar_url=self.bot.user.avatar.url,
                         )
                     except discord.NotFound:  # Raised when users manually delete the webhook.
                         pass
@@ -380,7 +369,7 @@ class Logging(commands.Cog):
 
         if len(await channel.webhooks()) == 10:
             # Too many webhooks to create a new one.
-            raise WebhookLimit(channel)
+            raise exceptions.WebhookLimit(channel)
 
         settings = self.get_settings(ctx.guild)
         if settings:  # Logging already set up. Check if they want to override.
@@ -566,7 +555,7 @@ class Logging(commands.Cog):
             f"**__Invite Link:___**```fix\n{regex_match.group(0)}```\n"
             f"**[Jump to message](https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id})**",
             color=self.bot.constants.embed,
-            timestamp=datetime.utcnow(),
+            timestamp=discord.utils.utcnow(),
         )
         embed.set_author(
             name="Invite Link Posted",
@@ -601,7 +590,7 @@ class Logging(commands.Cog):
 
             await self.send_webhook(webhook, embed=embed)
 
-        if before.icon_url != after.icon_url:
+        if before.icon.url != after.icon.url:
             embed = discord.Embed(
                 description=f"**Author:**  `{str(audit.user)}`\n" "**New icon below**",
                 color=self.bot.constants.embed,
@@ -612,7 +601,7 @@ class Logging(commands.Cog):
                 icon_url=UPDATED_MESSAGE,
             )
 
-            embed.set_image(url=after.icon_url)
+            embed.set_image(url=after.icon.url)
             await self.send_webhook(webhook, embed=embed)
 
         if before.banner_url != after.banner_url:
@@ -646,7 +635,7 @@ class Logging(commands.Cog):
 
         embed = discord.Embed(
             color=self.bot.constants.embed,
-            timestamp=datetime.utcnow(),
+            timestamp=discord.utils.utcnow(),
             footer={"text": emoji.id},
         )
 
@@ -674,7 +663,7 @@ class Logging(commands.Cog):
             description=f"**Channel:** `{channel.name}` **ID:** `{channel.id}`\n"
             f"**Server:** `{channel.guild.name}` **ID:** `{channel.guild.id}`\n\n",
             color=self.bot.constants.embed,
-            timestamp=datetime.utcnow(),
+            timestamp=discord.utils.utcnow(),
         )
         embed.set_author(
             name="Channel Created",
@@ -694,7 +683,7 @@ class Logging(commands.Cog):
             description=f"**Channel:** `{channel.name}` **ID:** `{channel.id}`\n"
             f"**Server:** `{channel.guild.name}` **ID:** `{channel.guild.id}`\n\n",
             color=self.bot.constants.embed,
-            timestamp=datetime.utcnow(),
+            timestamp=discord.utils.utcnow(),
         )
         embed.set_author(
             name="Channel Deleted",
@@ -716,7 +705,7 @@ class Logging(commands.Cog):
                 f"**Old Name:** `{before.name}`\n"
                 f"**New Name:** `{after.name}`\n",
                 colour=self.bot.constants.embed,
-                timestamp=datetime.utcnow(),
+                timestamp=discord.utils.utcnow(),
             )
             embed.set_author(name=f"Channel Update")
             embed.set_footer(text=f"Channel ID: {after.id}")
@@ -728,7 +717,7 @@ class Logging(commands.Cog):
                 f"**Old Category:** `{before.category}`\n"
                 f"**New Category:** `{after.category}`\n",
                 colour=self.bot.constants.embed,
-                timestamp=datetime.utcnow(),
+                timestamp=discord.utils.utcnow(),
             )
             embed.set_author(name=f"Channel Update")
             embed.set_footer(text=f"Channel ID: {after.id}")
@@ -741,7 +730,7 @@ class Logging(commands.Cog):
                     f"**Old Topic:** `{before.topic}`\n"
                     f"**New Topic:** `{after.topic}`\n",
                     colour=self.bot.constants.embed,
-                    timestamp=datetime.utcnow(),
+                    timestamp=discord.utils.utcnow(),
                 )
                 embed.set_author(name=f"Channel Update")
                 embed.set_footer(text=f"Channel ID: {after.id}")
@@ -754,7 +743,7 @@ class Logging(commands.Cog):
                     f"**Old Slowmode:** `{before.slowmode_delay}`\n"
                     f"**New Slowmode:** `{after.slowmode_delay}`\n",
                     colour=self.bot.constants.embed,
-                    timestamp=datetime.utcnow(),
+                    timestamp=discord.utils.utcnow(),
                 )
                 embed.set_author(name=f"Channel Update")
                 embed.set_footer(text=f"Channel ID: {after.id}")
@@ -767,7 +756,7 @@ class Logging(commands.Cog):
                     f"**Old User Limit:** `{before.user_limit}`\n"
                     f"**New User Limit:** `{after.user_limit}`\n",
                     colour=self.bot.constants.embed,
-                    timestamp=datetime.utcnow(),
+                    timestamp=discord.utils.utcnow(),
                 )
                 embed.set_author(name=f"Channel Update")
                 embed.set_footer(text=f"Channel ID: {after.id}")
@@ -803,7 +792,7 @@ class Logging(commands.Cog):
                 f"**Old Role Overwrites:** {old_overwrites}\n"
                 f"**New Role Overwrites:** {new_overwrites}\n",
                 colour=self.bot.constants.embed,
-                timestamp=datetime.utcnow(),
+                timestamp=discord.utils.utcnow(),
             )
             embed.set_author(name=f"Channel Update")
             embed.set_footer(text=f"Channel ID: {after.id}")
@@ -819,11 +808,11 @@ class Logging(commands.Cog):
         embed = discord.Embed(
             description=f"**Mod:**  {ctx.author.mention}, **ID:** `{ctx.author.id}`\n"
             f"**Command:** `{ctx.command}` **Category:** `{ctx.command.cog_name}`\n"
-            f"**Targets:** `{', '.join(targets)}`\n\n"
+            f"**Targets:** `{', '.join(str(t) for t in targets)}`\n\n"
             f"**__Message Content__**\n ```fix\n{ctx.message.clean_content}```\n"
             f"**[Jump to action](https://discord.com/channels/{ctx.guild.id}/{ctx.channel.id}/{ctx.message.id})**",
             color=self.bot.constants.embed,
-            timestamp=datetime.utcnow(),
+            timestamp=discord.utils.utcnow(),
         )
         embed.set_author(
             name="Moderation Action",
@@ -842,7 +831,7 @@ class Logging(commands.Cog):
         embed = discord.Embed(
             description=f"**User:** {member.mention} **Name:** `{member}`\n",
             colour=self.bot.constants.embed,
-            timestamp=datetime.utcnow(),
+            timestamp=discord.utils.utcnow(),
         )
         embed.set_author(name=f"User Joined")
         embed.set_footer(text=f"User ID: {member.id}")
@@ -858,7 +847,7 @@ class Logging(commands.Cog):
         embed = discord.Embed(
             description=f"**User:** {member.mention} **Name:** `{member}`\n",
             colour=self.bot.constants.embed,
-            timestamp=datetime.utcnow(),
+            timestamp=discord.utils.utcnow(),
         )
         embed.set_author(name=f"User Left")
         embed.set_footer(text=f"User ID: {member.id}")
@@ -876,7 +865,7 @@ class Logging(commands.Cog):
                     f"**Old Nickname:** `{before.display_name}`\n"
                     f"**New Nickname:** `{after.display_name}`\n",
                     colour=self.bot.constants.embed,
-                    timestamp=datetime.utcnow(),
+                    timestamp=discord.utils.utcnow(),
                 )
                 embed.set_author(name=f"Nickname Change")
                 embed.set_footer(text=f"User ID: {after.id}")
@@ -893,7 +882,7 @@ class Logging(commands.Cog):
                     f"**Old Roles:** {', '.join([r.mention for r in before.roles if r != after.guild.default_role])}\n"
                     f"**New Roles:** {', '.join([r.mention for r in after.roles if r != after.guild.default_role])}\n",
                     colour=self.bot.constants.embed,
-                    timestamp=datetime.utcnow(),
+                    timestamp=discord.utils.utcnow(),
                 )
                 embed.set_author(name=f"Role Updates")
                 embed.set_footer(text=f"User ID: {after.id}")
@@ -917,7 +906,7 @@ class Logging(commands.Cog):
                     f"**Old Username:** `{before.name}`\n"
                     f"**New Username:** `{after.name}`\n",
                     colour=self.bot.constants.embed,
-                    timestamp=datetime.utcnow(),
+                    timestamp=discord.utils.utcnow(),
                 )
                 embed.set_author(name=f"Username Change")
                 embed.set_footer(text=f"User ID: {after.id}")
@@ -935,14 +924,14 @@ class Logging(commands.Cog):
                     f"**Old Discriminator:** `{before.discriminator}`\n"
                     f"**New Discriminator:** `{after.discriminator}`\n",
                     colour=self.bot.constants.embed,
-                    timestamp=datetime.utcnow(),
+                    timestamp=discord.utils.utcnow(),
                 )
                 embed.set_author(name=f"Discriminator Change")
                 embed.set_footer(text=f"User ID: {after.id}")
 
                 await self.send_webhook(webhook, embed=embed)
 
-            elif before.avatar_url != after.avatar_url:
+            elif before.avatar.url != after.avatar.url:
 
                 webhook = self.get_webhook(guild, "avatars")
                 if not webhook:
@@ -952,10 +941,10 @@ class Logging(commands.Cog):
                     description=f"**User:** {after.mention} **Name:** `{after}`\n"
                     "New image below",
                     colour=self.bot.constants.embed,
-                    timestamp=datetime.utcnow(),
+                    timestamp=discord.utils.utcnow(),
                 )
 
-                embed.set_image(url=after.avatar_url)
+                embed.set_image(url=after.avatar.url)
                 embed.set_author(name=f"Avatar Change")
                 embed.set_footer(text=f"User ID: {after.id}")
                 await self.send_webhook(webhook, embed=embed)
@@ -972,7 +961,7 @@ class Logging(commands.Cog):
             embed = discord.Embed(
                 description=f"**User:** {member.mention} **Name:** `{member}`\n**Channel:** {after.channel.mention} ID: `{after.channel.id}`\n",
                 colour=self.bot.constants.embed,
-                timestamp=datetime.utcnow(),
+                timestamp=discord.utils.utcnow(),
             )
             embed.set_author(name=f"User Joined Voice Channel")
             embed.set_footer(text=f"User ID: {member.id}")
@@ -983,7 +972,7 @@ class Logging(commands.Cog):
             embed = discord.Embed(
                 description=f"**User:** {member.mention} **Name:** `{member}`\n**Channel:** {before.channel.mention} **ID:** `{before.channel.id}`\n",
                 colour=self.bot.constants.embed,
-                timestamp=datetime.utcnow(),
+                timestamp=discord.utils.utcnow(),
             )
             embed.set_author(name=f"User Left Voice Channel")
             embed.set_footer(text=f"User ID: {member.id}")
@@ -997,7 +986,7 @@ class Logging(commands.Cog):
                     f"**Old Channel:** {before.channel.mention} **ID:** `{before.channel.id}`\n"
                     f"**New Channel:** {after.channel.mention} **ID:** `{after.channel.id}`\n",
                     colour=self.bot.constants.embed,
-                    timestamp=datetime.utcnow(),
+                    timestamp=discord.utils.utcnow(),
                 )
                 embed.set_author(name=f"User Switched Voice Channels")
                 embed.set_footer(text=f"User ID: {member.id}")
@@ -1037,7 +1026,7 @@ class Logging(commands.Cog):
             f"**Channel:** {after.channel.mention} **ID:** `{after.channel.id}`\n"
             f"**Server:** `{after.guild.name}` **ID:** `{after.guild.id}`\n **\n**",
             color=self.bot.constants.embed,
-            timestamp=datetime.utcnow(),
+            timestamp=discord.utils.utcnow(),
         )
         embed.add_field(
             name="__**Old Message Content**__", value=bcontent, inline=False
@@ -1085,7 +1074,7 @@ class Logging(commands.Cog):
             f"{content}"
             f"{attachments}",
             color=self.bot.constants.embed,
-            timestamp=datetime.utcnow(),
+            timestamp=discord.utils.utcnow(),
         )
         embed.set_author(
             name="Message Deleted",
@@ -1098,7 +1087,7 @@ class Logging(commands.Cog):
     @decorators.wait_until_ready()
     @decorators.event_check(lambda s, m: m[0].guild is not None)
     async def on_bulk_message_delete(self, messages):
-        
+
         message = messages[0]
         messages = [m for m in messages if not m.author.bot]
         if not messages:
@@ -1121,7 +1110,7 @@ class Logging(commands.Cog):
 
         data = io.BytesIO(msg[:-2].encode("utf-8"))
 
-        date_fmt = datetime.now().__format__('%Y-%m-%d')
+        date_fmt = discord.utils.utcnow().__format__("%Y-%m-%d")
         file = discord.File(
             data,
             filename=f"Bulk-Deleted-Messages-{date_fmt}.yml",
@@ -3075,7 +3064,7 @@ class Logging(commands.Cog):
             f"**Sent at:** `{timestamp}`\n\n"
             f"{content}",
             color=self.bot.constants.embed,
-            timestamp=datetime.utcnow(),
+            timestamp=discord.utils.utcnow(),
         )
         embed.set_author(
             name="Deleted Message Retrieved",
@@ -3143,7 +3132,7 @@ class Logging(commands.Cog):
             f"**Sent at:** `{timestamp}`\n\n"
             f"{content}",
             color=self.bot.constants.embed,
-            timestamp=datetime.utcnow(),
+            timestamp=discord.utils.utcnow(),
         )
         embed.set_author(
             name="Edited Message Retrieved",

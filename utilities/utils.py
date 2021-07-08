@@ -434,23 +434,35 @@ async def async_json(url, headers=None):
         return data
 
 
-UNKNOWN_CUTOFF = datetime.utcfromtimestamp(1420070400.000)
+UNKNOWN_CUTOFF = datetime.utcfromtimestamp(1420070400.000).replace(tzinfo=timezone.utc)
 UNKNOWN_CUTOFF_TZ = UNKNOWN_CUTOFF.replace(tzinfo=timezone.utc)
 
 
 def format_time(time):
-    if time is None or time < UNKNOWN_CUTOFF:
+    if time is None:
         return "Unknown"
-    return "{} - [{} UTC]".format(
-        humanize.naturaltime(time + (datetime.now() - datetime.utcnow())), time
+    time = time.replace(tzinfo=timezone.utc)
+    if time < UNKNOWN_CUTOFF:
+        return "Unknown"
+    return "{} - [{}]".format(
+        humanize.naturaltime(
+            time.replace(tzinfo=None) + (datetime.now() - datetime.utcnow())
+        ),
+        time,
     )
 
 
 def short_time(time):
-    if time is None or time < UNKNOWN_CUTOFF:
+    if time is None:
+        return "Unknown"
+    time = time.replace(tzinfo=timezone.utc)
+    if time < UNKNOWN_CUTOFF:
         return "Unknown"
     return "{}".format(
-        humanize.naturaltime(time + (datetime.now() - datetime.utcnow())), time
+        humanize.naturaltime(
+            time.replace(tzinfo=None) + (datetime.now() - datetime.utcnow())
+        ),
+        time,
     )
 
 

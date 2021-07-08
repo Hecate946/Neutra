@@ -131,5 +131,6 @@ emotes = {
     "loop": "<:loop:854254549488107561>",
     "shuffle": "<:shuffle:857063084854476840>",
     "github": "<:github:857675832432525342>",
+    "admin": "<:admin:860645534423318579>",
     "clarinet": "<:clarinet:854217207248977930>",  # For me :)
 }

@@ -5,9 +5,7 @@ import asyncio
 import base64
 import time
 
-
-class SpotifyError(Exception):
-    pass
+from utilities import exceptions
 
 
 class Spotify:
@@ -38,6 +36,12 @@ class Spotify:
         """Get an album's info from its URI"""
         return await self.make_spotify_req(self.API_BASE + "albums/{0}".format(uri))
 
+    async def get_artist(self, uri):
+        """Get an artist's info from its URI"""
+        return await self.make_spotify_req(
+            self.API_BASE + "artists/{0}/top-tracks?market=US".format(uri)
+        )
+
     async def get_playlist(self, user, uri):
         """Get a playlist's info from its URI"""
         return await self.make_spotify_req(
@@ -61,7 +65,7 @@ class Spotify:
         """Makes a GET request and returns the results"""
         async with self.aiosession.get(url, headers=headers) as r:
             if r.status != 200:
-                raise SpotifyError(
+                raise exceptions.SpotifyError(
                     "Issue making GET request to {0}: [{1.status}] {2}".format(
                         url, r, await r.json()
                     )
@@ -72,7 +76,7 @@ class Spotify:
         """Makes a POST request and returns the results"""
         async with self.aiosession.post(url, data=payload, headers=headers) as r:
             if r.status != 200:
-                raise SpotifyError(
+                raise exceptions.SpotifyError(
                     "Issue making POST request to {0}: [{1.status}] {2}".format(
                         url, r, await r.json()
                     )
@@ -86,7 +90,7 @@ class Spotify:
 
         token = await self.request_token()
         if token is None:
-            raise SpotifyError(
+            raise exceptions.SpotifyError(
                 "Requested a token from Spotify, did not end up getting one"
             )
         token["expires_at"] = int(time.time()) + token["expires_in"]

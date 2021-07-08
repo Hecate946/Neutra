@@ -7,6 +7,7 @@ import asyncpg
 import discord
 import datetime
 
+from datetime import timedelta
 from discord.ext import commands
 
 from utilities import humantime
@@ -82,7 +83,7 @@ class Tasks(commands.Cog):
         query = "SELECT * FROM tasks WHERE expires < (CURRENT_DATE + $1::interval) ORDER BY expires LIMIT 1;"
         con = connection or self.bot.cxn
 
-        record = await con.fetchrow(query, datetime.timedelta(days=days))
+        record = await con.fetchrow(query, timedelta(days=days))
         if record:
             if type(record["extra"]) is dict:
                 extra = record["extra"]

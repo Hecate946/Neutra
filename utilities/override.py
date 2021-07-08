@@ -1,3 +1,4 @@
+import typing
 import discord
 from discord.ext import commands
 
@@ -8,6 +9,7 @@ class BotContext(commands.Context):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.handled = False
+        
 
     async def fail(self, content=None, **kwargs):
         return await self.send_or_reply(
@@ -82,6 +84,8 @@ class BotContext(commands.Context):
         else:
             return
 
+    
+
     # async def log(self, _type=None, content=None, **kwargs):
     #     if _type in ["info", "i", "information"]:
     #         logger = info_logger
@@ -117,7 +121,7 @@ class BotContext(commands.Context):
 class BotCommand(commands.Command):
     def __init__(self, func, **kwargs):
         super().__init__(func, **kwargs)
-        self.cooldown_after_parsing = True
+        self.cooldown_after_parsing = kwargs.pop("cooldown_after_parsing", True)
         self.examples = kwargs.pop("examples", None)
         self.implemented = kwargs.pop("implemented", None)
         self.updated = kwargs.pop("updated", None)
@@ -128,9 +132,9 @@ class BotCommand(commands.Command):
 class BotGroup(commands.Group):
     def __init__(self, func, **kwargs):
         super().__init__(func, **kwargs)
-        self.case_insensitive = True
-        self.cooldown_after_parsing = True
-        self.invoke_without_command = True
+        self.case_insensitive = kwargs.pop("case_insensitive", True)
+        self.cooldown_after_parsing = kwargs.pop("cooldown_after_parsing", True)
+        self.invoke_without_command = kwargs.pop("invoke_without_command", False)
         self.examples = kwargs.pop("examples", None)
         self.implemented = kwargs.pop("implemented", None)
         self.updated = kwargs.pop("updated", None)
@@ -168,3 +172,55 @@ class CustomCooldown:
         if retry_after:
             raise commands.CommandOnCooldown(bucket, retry_after)
         return True
+
+
+T = typing.TypeVar("T")
+
+
+class Greedy(typing.List[T]):
+    r"""A special converter that greedily consumes arguments until it can't.
+    As a consequence of this behaviour, most input errors are silently discarded,
+    since it is used as an indicator of when to stop parsing.
+    When a parser error is met the greedy converter stops converting, undoes the
+    internal string parsing routine, and continues parsing regularly.
+    For example, in the following code:
+    .. code-block:: python3
+        @commands.command()
+        async def test(ctx, numbers: Greedy[int], reason: str):
+            await ctx.send("numbers: {}, reason: {}".format(numbers, reason))
+    An invocation of ``[p]test 1 2 3 4 5 6 hello`` would pass ``numbers`` with
+    ``[1, 2, 3, 4, 5, 6]`` and ``reason`` with ``hello``\.
+    For more information, check :ref:`ext_commands_special_converters`.
+    """
+
+    def __init__(self, *, converter: T):
+        self.converter = converter
+
+    def __repr__(self):
+        converter = getattr(self.converter, "__name__", repr(self.converter))
+        return f"Greedy[{converter}]"
+
+    def __class_getitem__(cls, params: typing.Union[typing.Tuple[T], T]):
+        if not isinstance(params, tuple):
+            params = (params,)
+        if len(params) != 1:
+            raise TypeError("Greedy[...] only takes a single argument")
+        converter = params[0]
+
+        origin = getattr(converter, "__origin__", None)
+        args = getattr(converter, "__args__", ())
+
+        if not (
+            callable(converter)
+            or isinstance(converter, discord.Converter)
+            or origin is not None
+        ):
+            raise TypeError("Greedy[...] expects a type or a Converter instance.")
+
+        if converter in (str, type(None)) or origin is Greedy:
+            raise TypeError(f"Greedy[{converter.__name__}] is invalid.")
+
+        if origin is typing.Union and type(None) in args:
+            raise TypeError(f"Greedy[{converter!r}] is invalid.")
+
+        return cls(converter=converter)

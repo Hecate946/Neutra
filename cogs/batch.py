@@ -1,19 +1,13 @@
-import datetime
-import io
 import re
 import json
 import time
 import asyncio
-import discord
 import logging
-import traceback
 
 from collections import Counter, defaultdict
-from datetime import timezone
 from discord.ext import commands, tasks
 
 from utilities import utils
-from utilities import avatars
 from utilities import decorators
 
 command_logger = logging.getLogger("Snowbot")
@@ -370,7 +364,7 @@ class Batch(commands.Cog):
 
     @staticmethod
     async def avatar_changed(before, after):
-        if before.avatar_url != after.avatar_url:
+        if before.avatar.url != after.avatar.url:
             return True
 
     @staticmethod
@@ -443,7 +437,7 @@ class Batch(commands.Cog):
         async with self.batch_lock:
             self.message_batch.append(
                 {
-                    "unix": message.created_at.replace(tzinfo=timezone.utc).timestamp(),
+                    "unix": message.created_at.timestamp(),
                     "timestamp": str(message.created_at.utcnow()),
                     "content": message.clean_content.replace("\u0000", ""),
                     "message_id": message.id,
@@ -588,43 +582,17 @@ class Batch(commands.Cog):
                 WHERE user_id = $1
                 ORDER BY unix DESC;
                 """
-        last_seen = await self.bot.cxn.fetchrow(query, member.id) or None
+        last_seen_data = await self.bot.cxn.fetchrow(query, member.id) or None
 
-        query = """
-                SELECT MAX(unix)
-                FROM messages
-                WHERE author_id = $1;
-                """
-        last_spoke = await self.bot.cxn.fetchval(query, member.id) or None
-        server_last_spoke = None
-        if hasattr(member, "guild"):
-            query = """
-                    SELECT MAX(unix)
-                    FROM messages
-                    WHERE author_id = $1
-                    AND server_id = $2;
-                    """
-            server_last_spoke = await self.bot.cxn.fetchval(
-                query, member.id, member.guild.id
-            )
+        last_spoke = await self.get_last_spoke(member)
+        server_last_spoke = await self.get_server_last_spoke(member)
 
-        if last_seen:
-            action = last_seen[1]
-            last_seen = last_seen[0]
-            last_seen = utils.time_between(int(last_seen), int(time.time()))
+        if last_seen_data:
+            unix, action = last_seen_data
+            last_seen = utils.time_between(int(unix), int(time.time()))
         else:
             action = None
             last_seen = None
-        if last_spoke:
-            last_spoke = utils.time_between(int(last_spoke), int(time.time()))
-        else:
-            last_spoke = None
-        if server_last_spoke:
-            server_last_spoke = utils.time_between(
-                int(server_last_spoke), int(time.time())
-            )
-        else:
-            server_last_spoke = None
 
         observed_data = {
             "action": action,
@@ -633,28 +601,6 @@ class Batch(commands.Cog):
             "server_last_spoke": server_last_spoke,
         }
         return observed_data
-
-    async def get_avs(self, user):
-        """
-        Lookup all saved user avatars
-        """
-        avatars = []
-        query = """
-                SELECT ARRAY(
-                    SELECT avatar_id
-                    FROM useravatars
-                    WHERE user_id = $1
-                    ORDER BY insertion DESC
-                ) as avatar_list;
-                """
-        results = await self.bot.cxn.fetchval(query, user.id)
-        avatars.extend(results)
-        if avatars:
-            avatars = [
-                f"https://cdn.discordapp.com/attachments/{self.bot.avatar_webhook.channel.id}/{x}/{user.id}.png"
-                for x in avatars
-            ]
-        return avatars
 
     async def get_names(self, user):
         """
@@ -694,3 +640,26 @@ class Batch(commands.Cog):
         if results:
             nicknames.extend(results)
         return nicknames
+
+    async def get_last_spoke(self, user):
+        query = """
+                SELECT MAX(unix)
+                FROM messages
+                WHERE author_id = $1;
+                """
+        last_spoke = await self.bot.cxn.fetchval(query, user.id)
+        if last_spoke:
+            return utils.time_between(int(last_spoke), int(time.time()))
+
+    async def get_server_last_spoke(self, user):
+        if not hasattr(user, "guild"):
+            return
+        query = """
+                SELECT MAX(unix)
+                FROM messages
+                WHERE author_id = $1
+                AND server_id = $2;
+                """
+        server_spoke = await self.bot.cxn.fetchval(query, user.id, user.guild.id)
+        if server_spoke:
+            return utils.time_between(int(server_spoke), int(time.time()))

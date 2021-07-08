@@ -165,7 +165,7 @@ class Botadmin(commands.Cog):
 
         url = await self.create_gist(
             content,
-            description=f"Uploaded by {ctx.author} ({ctx.author.id}) at {datetime.datetime.utcnow()}",
+            description=f"Uploaded by {ctx.author} ({ctx.author.id}) at {discord.utils.utcnow()}",
             filename=fname,
         )
         await ctx.reply(f"<:pepeLaugh:779433733400166420> <{url}>")
@@ -847,7 +847,7 @@ class Botadmin(commands.Cog):
         server_embed.title = guild.name
 
         # Get localized user time
-        local_time = datetime.datetime.utcnow()
+        local_time = discord.utils.utcnow()
         # local_time = UserTime.getUserTime(ctx.author, self.settings, guild.created_at)
         time_str = "{}".format(local_time)
 
@@ -973,7 +973,7 @@ class Botadmin(commands.Cog):
             )  # Add the disabled if any
 
         server_embed.set_thumbnail(
-            url=guild.icon_url if len(guild.icon_url) else ctx.author.default_avatar_url
+            url=guild.icon.url if len(guild.icon.url) else ctx.author.default_avatar.url
         )
         server_embed.set_footer(text="Server ID: {}".format(guild.id))
         # Let's send all the embeds we need finishing off with extra emojis as
@@ -993,9 +993,9 @@ class Botadmin(commands.Cog):
                 server_embed = discord.Embed(color=self.bot.constants.embed)
                 server_embed.title = guild.name
                 server_embed.set_thumbnail(
-                    url=guild.icon_url
-                    if len(guild.icon_url)
-                    else ctx.author.default_avatar_url
+                    url=guild.icon.url
+                    if len(guild.icon.url)
+                    else ctx.author.default_avatar.url
                 )
                 server_embed.set_footer(text="Server ID: {}".format(guild.id))
                 server_embed.description = "Continued Emojis:"

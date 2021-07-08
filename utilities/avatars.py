@@ -9,7 +9,6 @@ import discord
 import logging
 
 from collections import defaultdict
-from datetime import datetime
 from yarl import URL
 
 from utilities import images
@@ -41,17 +40,17 @@ class AvatarSaver:
             self.loop.create_task(self.downloader())
             self.is_saving = True
 
-
     def save(self, user):
         if self.is_saving:
             avatar_name = user.avatar if user.avatar else user.default_avatar.name
-            self.pending.append({
-                "user_id": user.id,
-                "avatar": avatar_name,
-                "first_seen": str(datetime.utcnow())
-            })
-            self.avatars[avatar_name] = str(user.avatar_url_as(static_format='png'))
-
+            self.pending.append(
+                {
+                    "user_id": user.id,
+                    "avatar": avatar_name,
+                    "first_seen": str(discord.utils.utcnow()),
+                }
+            )
+            self.avatars[avatar_name] = user.avatar.url
 
     async def inserter(self):
         while True:
@@ -86,13 +85,15 @@ class AvatarSaver:
                     elif r.status == 415:
                         # Avatar is too large. Retry with lower size.
                         url = URL(str(url))
-                        new_size = int(url.query.get('size', 1024))//2
+                        new_size = int(url.query.get("size", 1024)) // 2
                         if new_size > 128:
                             # give up resizing it. Its too small to be worthwhile.
                             new_url = url.with_query(size=str(new_size))
                         else:
                             # could not find a gif size that did not throw 415, changing format to png.
-                            new_url = url.with_path(url.path.replace('gif','png')).with_query(size=1024)
+                            new_url = url.with_path(
+                                url.path.replace("gif", "png")
+                            ).with_query(size=1024)
                         self.avatars[hash] = new_url
                     else:
                         # Put it back in for next round if there are retries left.
@@ -102,6 +103,7 @@ class AvatarSaver:
             except (asyncio.TimeoutError, aiohttp.ClientError):
                 log.warning(f"downloading {url} failed.")
                 self.avatars[hash] = url
+
         try:
             while True:
                 while len(self.avatars) == 0:
@@ -114,10 +116,10 @@ class AvatarSaver:
                 to_check = list(self.avatars.keys())
                 batch_size = 50000
                 for i in range(0, len(to_check)):
-                    results = await self.pool.fetch(query, to_check[i:i+batch_size])
+                    results = await self.pool.fetch(query, to_check[i : i + batch_size])
                     for r in results:
                         # remove items in the avatar url dict that are already in the db
-                        self.avatars.pop(r['hash'], None)
+                        self.avatars.pop(r["hash"], None)
 
                 chunk = dict()
                 while len(self.avatars) > 0 and len(chunk) < (50 - self.queue.qsize()):
@@ -125,14 +127,15 @@ class AvatarSaver:
                     avy, url = self.avatars.popitem()
                     chunk[avy] = url
                 if chunk:
-                    await asyncio.gather(*[url_to_bytes(avy, url) for avy, url in chunk.items()])
+                    await asyncio.gather(
+                        *[url_to_bytes(avy, url) for avy, url in chunk.items()]
+                    )
                 await asyncio.sleep(2)
         except asyncio.CancelledError:
             log.warning("avatar downloading task cancelled")
 
-
     async def batch_post_avatars(self):
-        log.info('started avatar posting task')
+        log.info("started avatar posting task")
         try:
             while True:
                 if self.queue.qsize() == 0:
@@ -145,13 +148,20 @@ class AvatarSaver:
                     s = file.getbuffer().nbytes
                     if post_size + s < 8000000:
                         post_size += s
-                        to_post[avy] = discord.File(file, filename=f'{avy}.{"png" if not avy.startswith("a_") else "gif"}')
+                        to_post[avy] = discord.File(
+                            file,
+                            filename=f'{avy}.{"png" if not avy.startswith("a_") else "gif"}',
+                        )
                     elif s > 8000000:
                         new_bytes = None
-                        if avy.startswith('a_'):
-                            new_bytes = await self.loop.run_in_executor(None, images.extract_first_frame, file)
+                        if avy.startswith("a_"):
+                            new_bytes = await self.loop.run_in_executor(
+                                None, images.extract_first_frame, file
+                            )
                         else:
-                            new_bytes = await self.loop.run_in_executor(None, images.resize_to_limit, file, 8000000)
+                            new_bytes = await self.loop.run_in_executor(
+                                None, images.resize_to_limit, file, 8000000
+                            )
                         await self.queue.put((avy, new_bytes))
                         continue
                     else:
@@ -164,9 +174,19 @@ class AvatarSaver:
 
                 for tries in range(5):
                     if tries > 0:
-                        to_post = {k: discord.File(io.BytesIO(v.getbuffer()), filename=f'{k}.{"png" if not k.startswith("a_") else "gif"}') for k, v in backup.items()}
+                        to_post = {
+                            k: discord.File(
+                                io.BytesIO(v.getbuffer()),
+                                filename=f'{k}.{"png" if not k.startswith("a_") else "gif"}',
+                            )
+                            for k, v in backup.items()
+                        }
                     try:
-                        message = await self.wh.send(content='\n'.join(to_post.keys()), wait=True, files=list(to_post.values()))
+                        message = await self.wh.send(
+                            content="\n".join(to_post.keys()),
+                            wait=True,
+                            files=list(to_post.values()),
+                        )
                         transformed = []
                         for a in message.attachments:
                             if a.height:
@@ -179,17 +199,17 @@ class AvatarSaver:
                                         "id": a.id,
                                         "size": a.size,
                                         "height": a.height,
-                                        "width": a.width
+                                        "width": a.width,
                                     }
                                 )
                                 backup.pop(file_hash)
-                        query = '''
+                        query = """
                             insert into avatars
                             (hash, url, msgid, id, size, height, width)
                             select x.hash, x.url, x.msgid, x.id, x.size, x.height, x.width
                             from jsonb_to_recordset($1::jsonb) as x(hash text, url text, msgid bigint, id bigint, size bigint, height bigint, width bigint)
                             on conflict (hash) do nothing
-                        '''
+                        """
                         await self.pool.execute(query, json.dumps(transformed))
                         if len(backup) == 0:
                             break
@@ -199,7 +219,7 @@ class AvatarSaver:
                     except aiohttp.ClientError:
                         log.warning("Aiohttp client error in downloader")
                     except ValueError:
-                        log.warning('Avatar file closed.')
+                        log.warning("Avatar file closed.")
                     except TypeError:
                         log.warning("Discord api returned nothing.")
                     except asyncio.TimeoutError:

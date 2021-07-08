@@ -7,7 +7,7 @@ from collections import Counter
 from datetime import datetime
 from discord.ext import commands, menus
 
-from dislash.interactions import ActionRow, ButtonStyle, Button
+# from dislash.interactions import ActionRow, ButtonStyle, Button
 
 from utilities import utils
 from utilities import checks
@@ -30,13 +30,12 @@ class Help(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.command_exceptions = []  # pass command names to hide from help command
-        self.button_row = ActionRow(
-            Button(
-                style=ButtonStyle.link,
-                label="Need more help?",
-                url=self.bot.constants.support,
-            )
+        self.view = discord.ui.View()
+        item = discord.ui.Button(
+            label="Need more help?",
+            url=self.bot.constants.support,
         )
+        self.view.add_item(item=item)
 
     ############################
     ## Get Commands From Cogs ##
@@ -46,12 +45,12 @@ class Help(commands.Cog):
         if pm is True:  # We're DMing the user
             if not ctx.guild:  # They invoked from a DM
                 msg = await ctx.send_or_reply(
-                    embed=embed, delete_after=delete_after, components=[self.button_row]
+                    embed=embed, delete_after=delete_after, view=self.view
                 )
                 return
             try:
                 msg = await ctx.author.send(
-                    embed=embed, delete_after=delete_after, components=[self.button_row]
+                    embed=embed, delete_after=delete_after, view=self.view
                 )
                 try:
                     await ctx.message.add_reaction(self.bot.emote_dict["letter"])
@@ -62,7 +61,7 @@ class Help(commands.Cog):
                     msg = await ctx.send_or_reply(
                         embed=embed,
                         delete_after=delete_after,
-                        components=[self.button_row],
+                        view=self.view,
                     )
                 except Exception:
                     await ctx.fail(
@@ -71,7 +70,7 @@ class Help(commands.Cog):
                     return
         else:  # Not trying to DM the user, send to the channel.
             msg = await ctx.send_or_reply(
-                embed=embed, delete_after=delete_after, components=[self.button_row]
+                embed=embed, delete_after=delete_after, view=self.view
             )
 
         def reaction_check(m):
@@ -144,7 +143,7 @@ class Help(commands.Cog):
             color=self.bot.constants.embed,
         )
         embed.set_footer(
-            text=f'Use "{await converters.prettify(ctx, ctx.prefix)}help command" for information on a command.\n'
+            text=f'Use "{await converters.prettify(ctx, ctx.clean_prefix)}help command" for information on a command.\n'
         )
 
         msg = ""
@@ -185,7 +184,7 @@ class Help(commands.Cog):
         pm = False
 
         if ctx.guild:
-            if not ctx.guild.me.permissions_in(ctx.channel).embed_links:
+            if not ctx.channel.permissions_for(ctx.me).embed_links:
                 pm = True
 
         if invokercommand:
@@ -208,7 +207,7 @@ class Help(commands.Cog):
             )
 
             embed.set_footer(
-                text=f'Use "{await converters.prettify(ctx, ctx.prefix)}help category" for information on a category.'
+                text=f'Use "{await converters.prettify(ctx, ctx.clean_prefix)}help category" for information on a category.'
             )
 
             valid_cogs = []
@@ -275,13 +274,13 @@ class Help(commands.Cog):
                 "subcommand",
             ]:  # Someone took the embed footer too literally.
                 if invokercommand.lower() == "subcommand":
-                    example = f"{ctx.prefix}help purge until"
+                    example = f"{ctx.clean_prefix}help purge until"
                 elif invokercommand.lower() == "group":
-                    example = f"{ctx.prefix}help purge"
+                    example = f"{ctx.clean_prefix}help purge"
                 elif invokercommand.lower() == "command":
-                    example = f"{ctx.prefix}help userinfo"
+                    example = f"{ctx.clean_prefix}help userinfo"
                 else:
-                    example = f"{ctx.prefix}help info"
+                    example = f"{ctx.clean_prefix}help info"
                 await ctx.fail(
                     f"Please specify a valid {invokercommand.lower()} name. Example: `{example}`"
                 )
@@ -565,11 +564,11 @@ class Help(commands.Cog):
                         color=self.bot.constants.embed,
                     )
                     help_embed.set_footer(
-                        text=f'Use "{await converters.prettify(ctx, ctx.prefix)}help category" for information on a category.'
+                        text=f'Use "{await converters.prettify(ctx, ctx.clean_prefix)}help category" for information on a category.'
                     )
                     help_embed.add_field(
                         name=f"**Command Name:** `{valid_commands.title()}`\n**Description:** `{valid_brief}`\n",
-                        value=f"** **" f"```yaml\n{valid_help.format(ctx.prefix)}```",
+                        value=f"** **" f"```yaml\n{valid_help.format(ctx.clean_prefix)}```",
                     )
                     await self.send_help(ctx, help_embed, pm, delete_after)
                     return
@@ -599,7 +598,7 @@ class Help(commands.Cog):
                     if not x.help or x.help == "":
                         _help = "No help"
                     else:
-                        _help = x.help.format(ctx.prefix)
+                        _help = x.help.format(ctx.clean_prefix)
                     help_embed = discord.Embed(
                         title=f"Category: `{str(command.cog.qualified_name).title()}`",
                         description=f"**Bot Invite Link:** [https://snowbot.discord.bot]({self.bot.oauth})\n"
@@ -607,7 +606,7 @@ class Help(commands.Cog):
                         color=self.bot.constants.embed,
                     )
                     help_embed.set_footer(
-                        text=f'Use "{await converters.prettify(ctx, ctx.prefix)}help category" for information on a category.'
+                        text=f'Use "{await converters.prettify(ctx, ctx.clean_prefix)}help category" for information on a category.'
                     )
                     help_embed.add_field(
                         name=f"**Command Group:** `{command.name.title()}`\n**Subcommand:** `{x.name.title()}`\n**Description:** `{brief}`",
@@ -628,7 +627,7 @@ class Help(commands.Cog):
         if not command.help or command.help == "":
             _help = "No help"
         else:
-            _help = command.help.format(ctx.prefix)
+            _help = command.help.format(ctx.clean_prefix)
         help_embed = discord.Embed(
             title=f"Category: `{str(command.cog.qualified_name).title()}`",
             description=f"**Bot Invite Link:** [https://snowbot.discord.bot]({self.bot.oauth})\n"
@@ -636,7 +635,7 @@ class Help(commands.Cog):
             color=self.bot.constants.embed,
         )
         help_embed.set_footer(
-            text=f'Use "{await converters.prettify(ctx, ctx.prefix)}help {command.name} option" for information on a option.'
+            text=f'Use "{await converters.prettify(ctx, ctx.clean_prefix)}help {command.name} option" for information on a option.'
         )
         help_embed.add_field(
             name=f"**Command Group:** `{command.name.title()}`\n**Description:** `{brief}`\n",
@@ -729,7 +728,7 @@ class Help(commands.Cog):
             return await ctx.fail(
                 f"No examples are currently available for the command `{command}`"
             )
-        examples = inspect.cleandoc(command.examples.format(ctx.prefix))
+        examples = inspect.cleandoc(command.examples.format(ctx.clean_prefix))
         p = pagination.MainMenu(pagination.TextPageSource(examples, prefix="```prolog"))
         try:
             await p.start(ctx)
@@ -896,7 +895,7 @@ class Help(commands.Cog):
                 }
             )
         collection.append(
-            {"Usage": f"{ctx.prefix}{command.qualified_name} {command.signature}"}
+            {"Usage": f"{ctx.clean_prefix}{command.qualified_name} {command.signature}"}
         )
         collection.append({"Status": f"{'Enabled' if command.enabled else 'Disabled'}"})
         collection.append({"Hidden": command.hidden})

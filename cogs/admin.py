@@ -6,7 +6,6 @@ import typing
 import asyncio
 import discord
 
-from datetime import datetime
 from datetime import timedelta
 from discord.ext import commands
 from unidecode import unidecode
@@ -430,7 +429,7 @@ class Admin(commands.Cog):
             role = await converters.DiscordRole().convert(ctx, str(discord_role))
             predicates.append(lambda m: role in m.roles)
 
-        now = datetime.utcnow()
+        now = discord.utils.utcnow()
         if args.created:
 
             def created(member, *, offset=now - timedelta(minutes=args.created)):
@@ -493,9 +492,7 @@ class Admin(commands.Cog):
                 f"{m.id}\tJoined: {m.joined_at}\tCreated: {m.created_at}\t{m}"
                 for m in members
             )
-            content = (
-                f"Current Time: {datetime.utcnow()}\nTotal users: {len(members)}\n{fmt}"
-            )
+            content = f"Current Time: {discord.utils.utcnow()}\nTotal users: {len(members)}\n{fmt}"
             file = discord.File(
                 io.BytesIO(content.encode("utf-8")), filename="users.txt"
             )
@@ -702,11 +699,10 @@ class Admin(commands.Cog):
             predicates.append(lambda m: len(getattr(m, "roles", [])) <= 1)
         if args.has_role:
             discord_role = " ".join(args.has_role)
-            print(discord_role)
             role = await converters.DiscordRole().convert(ctx, str(discord_role))
             predicates.append(lambda m: role in m.roles)
 
-        now = datetime.utcnow()
+        now = discord.utils.utcnow()
         if args.created:
 
             def created(member, *, offset=now - timedelta(minutes=args.created)):
@@ -768,9 +764,7 @@ class Admin(commands.Cog):
                 f"{m.id}\tJoined: {m.joined_at}\tCreated: {m.created_at}\t{m}"
                 for m in members
             )
-            content = (
-                f"Current Time: {datetime.utcnow()}\nTotal users: {len(members)}\n{fmt}"
-            )
+            content = f"Current Time: {discord.utils.utcnow()}\nTotal users: {len(members)}\n{fmt}"
             file = discord.File(
                 io.BytesIO(content.encode("utf-8")), filename="users.txt"
             )
@@ -824,6 +818,236 @@ class Admin(commands.Cog):
             results[x[0][1]] = x[0][0]
 
         return results
+
+    @decorators.group(
+        name="role",
+        aliases=["massrole", "multirole"],
+        brief="Manage mass adding/removing roles.",
+        implemented="2021-05-16 15:06:06.479013",
+        updated="2021-05-31 05:13:52.253369",
+        case_insensitive=True,
+        examples="""
+                {0}role add all @Helper
+                {0}massrole remove @Helper Mod
+                {0}multirole add bots @Bots
+                """,
+    )
+    @checks.guild_only()
+    @checks.bot_has_perms(manage_roles=True)
+    @checks.has_perms(manage_roles=True)
+    @checks.cooldown(2, 60)
+    async def _role(self, ctx):
+        """
+        Usage: {0}role <add/remove> <option> <role>
+        Aliases: {0}massrole, {0}multirole
+        Permission: Manage Roles
+        Output:
+            Mass adds or removes a role to and from
+            all users matching your specifications
+        Add options:
+            all/everyone:  Add everyone a role
+            humans/people:  Add humans a role
+            bots/robots:  Add bots a role
+            role:  Add a role to all users with this role
+        Remove options:
+            all/everyone:  Remove everyone a role
+            humans/people:  Remove humans a role
+            bots/robots:  Remove bots a role
+            role:  Remove a role from all users with this role
+        Examples:
+            {0}role add all @Helper
+            {0}massrole remove @Helper Mod
+            {0}multirole add bots @BotRole
+        """
+        if ctx.invoked_subcommand is None:
+            await ctx.usage("<add/remove> <all/humans/bots/role> <role>")
+
+    @_role.command(
+        name="add",
+        aliases=["apply"],
+        brief="Add roles users with a role.",
+        implemented="2021-05-16 15:06:06.479013",
+        updated="2021-05-31 05:13:52.253369",
+    )
+    @checks.guild_only()
+    @checks.bot_has_perms(manage_roles=True)
+    @checks.has_perms(manage_roles=True)
+    @checks.cooldown(2, 60)
+    async def _add(
+        self, ctx, option: converters.MassRoleConverter, *, role: converters.DiscordRole
+    ):
+        """
+        Usage: {0}role add <option> <role>
+        Permission: Manage Roles
+        Output:
+            Mass adds a role to all users
+            matching your specifications.
+        Options:
+            all/everyone:  Add everyone a role
+            humans/people:  Add humans a role
+            bots/robots:  Add bots a role
+            role:  Add a role to all users with this role
+        Notes:
+            Pass two roles to add
+            the second role to all users
+            who have the first role.
+            Pass 'bots' and a role to add
+            all bots to a specified role
+            Pass 'humans' and a role to add
+            all humans to a specified role
+            Pass 'all' and a role to add
+            all users to a specified role
+
+            If no role is found and 'bots',
+            'humans' and 'all' were not used as an
+            option, the bot will show a table
+            with all valid option inputs.
+
+            Roles can be passed as a mention,
+            case-insensitive name, or an ID
+        Examples:
+            {0}role add all @Helper
+            {0}massrole add @Helper Mod
+            {0}multirole add bots @Bots
+        """
+        if isinstance(option, discord.Role):
+            res = await checks.role_priv(ctx, option)
+            if res:
+                return await ctx.fail(res)
+
+            role_members = [m for m in ctx.guild.members if option in m.roles]
+            targets = [m for m in role_members if role not in m.roles]
+            await self.do_massrole(ctx, "add", targets, role, "user")
+
+        elif option == "all":
+            targets = [m for m in ctx.guild.members if role not in m.roles]
+            await self.do_massrole(ctx, "add", targets, role, "user")
+
+        elif option == "humans":
+            humans = [m for m in ctx.guild.members if not m.bot]
+            targets = [h for h in humans if role not in h.roles]
+            await self.do_massrole(ctx, "add", targets, role, "human")
+
+        elif option == "bots":
+            bots = [m for m in ctx.guild.members if m.bot]
+            targets = [bot for bot in bots if role not in bot.roles]
+            await self.do_massrole(ctx, "add", targets, role, "bot")
+
+    @_role.command(
+        name="remove",
+        aliases=["rm", "rem"],
+        brief="Add roles users with a role.",
+        implemented="2021-05-16 15:06:06.479013",
+        updated="2021-05-31 05:13:52.253369",
+        invoke_without_command=True,
+        case_insensitive=True,
+    )
+    @checks.guild_only()
+    @checks.bot_has_perms(manage_roles=True)
+    @checks.has_perms(manage_roles=True)
+    @checks.cooldown(2, 60)
+    async def _remove(
+        self, ctx, option: converters.MassRoleConverter, *, role: converters.DiscordRole
+    ):
+        """
+        Usage: {0}role remove <option> <role>
+        Aliases: {0}role rm, {0}role rem
+        Permission: Manage Roles
+        Output:
+            Mass removes a role from all users
+            matching your specifications.
+        Options:
+            all/everyone:  Add everyone a role
+            humans/people:  Add humans a role
+            bots/robots:  Add bots a role
+            role:  Remove a role from all users with this role
+        Notes:
+            Pass two roles to remove
+            the second role from all users
+            who have the first role.
+            Pass 'bots' and a role to remove
+            all bots from a specified role
+            Pass 'humans' and a role to remove
+            all humans from a specified role
+            Pass 'all' and a role to remove
+            all users from a specified role
+
+            If no role is found and 'bots',
+            'humans' and 'all' were not used as an
+            option, the bot will show a table
+            with all valid option inputs.
+
+            Roles can be passed as a mention,
+            case-insensitive name, or an ID
+        Examples:
+            {0}role remove all @Helper
+            {0}massrole rem @Helper Mod
+            {0}multirole rm bots @Bots
+        """
+        if isinstance(option, discord.Role):
+            res = await checks.role_priv(ctx, option)
+            if res:
+                return await ctx.fail(res)
+
+            role_members = [m for m in ctx.guild.members if option in m.roles]
+            targets = [m for m in role_members if role in m.roles]
+            await self.do_massrole(ctx, "remove", targets, role, "user")
+
+        elif option == "all":
+            targets = [m for m in ctx.guild.members if role in m.roles]
+            await self.do_massrole(ctx, "remove", targets, role, "user")
+
+        elif option == "humans":
+            humans = [m for m in ctx.guild.members if not m.bot]
+            targets = [h for h in humans if role in h.roles]
+            await self.do_massrole(ctx, "remove", targets, role, "human")
+
+        elif option == "bots":
+            bots = [m for m in ctx.guild.members if m.bot]
+            targets = [bot for bot in bots if role in bot.roles]
+            await self.do_massrole(ctx, "remove", targets, role, "bot")
+
+    async def do_massrole(self, ctx, add_or_remove, targets, role, obj):
+        if add_or_remove.lower() == "add":
+            add = True
+        else:
+            add = False
+        res = await checks.role_priv(ctx, role)
+        if res:
+            return await ctx.fail(res)
+
+        success = []
+        failed = []
+
+        warning = "This process may take several minutes. Please be patient."
+        ternary = "Add" if add else "Remov"
+        to_from = "to" if add else "from"
+        plural = lambda l: "" if len(l) == 1 else "s"
+        em = self.bot.emote_dict["loading"]
+        msg = await ctx.send_or_reply(
+            f"{em} {ternary}ing role `{role.name}` {to_from} {len(targets)} {obj}{plural(targets)}. {warning}"
+        )
+
+        for target in targets:
+            try:
+                reason = f"Role {ternary.lower()}ed by command."
+                if add:
+                    await target.add_roles(role, reason=reason)
+                else:
+                    await target.remove_roles(role, reason=reason)
+                success.append(str(target))
+            except Exception as e:
+                failed.append((str(target), e))
+
+        if success or not failed:
+            em = self.bot.emote_dict["success"]
+            await msg.edit(
+                content=f"{em} {ternary}ed role `{role.name}` {to_from} {len(success)} {obj}{plural(success)}."
+            )
+            self.bot.dispatch("mod_action", ctx, targets=success)
+        if failed:
+            await helpers.error_info(ctx, failed)
+
 
     @decorators.group(
         name="prefix",
@@ -896,7 +1120,6 @@ class Admin(commands.Cog):
         await ctx.success(
             f"My current prefix{' is' if len(prefixes) == 1 else 'es are'} `{', '.join(prefixes)}`"
         )
-
 
     @decorators.command(
         aliases=["createprefix"],
@@ -1142,21 +1365,145 @@ class Admin(commands.Cog):
             f"{self.bot.emote_dict['graph']} Your server has {to_be_pruned} inactive users matching your specifications."
         )
 
-    @decorators.command(
-        brief="Reset stored information for a user",
-        implemented="2021-06-25 04:36:26.518644",
-        updated="2021-06-25 04:36:26.518644",
+    # @decorators.command(
+    #     brief="Reset stored information for a user",
+    #     implemented="2021-06-25 04:36:26.518644",
+    #     updated="2021-06-25 04:36:26.518644",
+    # )
+    # @checks.guild_only()
+    # @checks.has_perms(manage_guild=True)
+    # @checks.cooldown(3, 60)
+    # async def reset(
+    #     self, ctx, option: converters.ServerDataOption, *, user: converters.DiscordUser
+    # ):
+    #     """
+    #     Usage: {0}reset <option> <user>
+    #     Output:
+    #         Delete recorded data for a user
+    #     Notes:
+    #         Once removed, the data cannot be
+    #         recovered. Use with caution.
+    #     """
+    #     c = await ctx.confirm(
+    #         f"This action will delete all {option[:-1]} data collected on this server for `{user}`."
+    #     )
+    #     if c:
+    #         if option == "nicknames":
+    #             query = """
+    #                     DELETE FROM usernicks
+    #                     WHERE server_id = $1
+    #                     AND user_id = $2;
+    #                     """
+    #         elif option == "messages":
+    #             query = """
+    #                     DELETE FROM messages
+    #                     WHERE server_id = $1
+    #                     AND author_id = $2;
+    #                     """
+    #         else:
+    #             query = """
+    #                     DELETE FROM invites
+    #                     WHERE server_id = $1
+    #                     AND inviter = $2;
+    #                     """
+
+    #         await self.bot.cxn.execute(query, ctx.guild.id, user.id)
+    #         await ctx.success(f"Reset all {option[:-1]} data for `{user}`")
+
+
+    @decorators.group(
+        name="reset",
+        brief="Manage stored user data.",
+        implemented="2021-07-08 16:15:20.525820",
+        updated="2021-07-08 16:15:20.525820",
+        invoke_without_command=True
+    )
+    async def _reset(self, ctx):
+        """
+        Usage: {0}reset <subcommand> <data option> [user]
+        Subcommands:
+            my: Reset data for yourself
+            user: Reset server data for a user
+            server: Reset data for the whole server
+        Notes:
+            For any assistance in deleting data,
+            join the support server.
+            Invite: https://discord.gg/H2qTG4yxqb
+        """
+        if ctx.invoked_subcommand is None:
+            await ctx.usage("<my/user/server> <data option> [user]")
+
+    @_reset.command(
+        aliases=['me'],
+        brief="Reset your global data",
+    )
+    @checks.cooldown(2, 60)
+    async def my(self, ctx, option: converters.UserDataOption):
+        """
+        Usage: {0}reset my [option]
+        Alias: {0}reset me
+        Options:
+            avatars
+            statuses
+            usernames
+        Notes:
+            If you wish to delete data
+            not in the above options,
+            voice your wish in the support server.
+            Invite: https://discord.gg/H2qTG4yxqb
+        """
+        def opt_fmt(option):
+            if option == "statuses":
+                return "status"
+            return option[:-1]
+
+        c = await ctx.confirm(
+            f"This action will delete all your {opt_fmt(option)} data."
+        )
+        if c:   
+            if option == "avatars":
+                query = """
+                        DELETE FROM avatars a
+                        USING useravatars u
+                        WHERE a.hash = u.avatar
+                        AND u.user_id = $1;
+                        DELETE FROM useravatars u
+                        WHERE u.user_id = $1;
+                        """
+            elif option == "usernames":
+                query = """
+                        DELETE FROM usernames
+                        WHERE user_id = $1;
+                        """
+            
+            elif option == "statuses":
+                query = """
+                        DELETE FROM userstatus
+                        WHERE user_id = $1;
+                        """
+
+            await self.bot.cxn.execute(query, ctx.author.id)
+            await ctx.success(f"Reset all your {opt_fmt(option)} data.")
+
+    @_reset.command(
+        name="user",
+        aliases=["member"],
+        brief="Reset server data for a user."
     )
     @checks.guild_only()
-    @checks.has_perms(manage_guild=True)
-    @checks.cooldown(3, 60)
-    async def reset(
+    @checks.is_mod()
+    @checks.cooldown(2, 60)
+    async def reset_user(
         self, ctx, option: converters.ServerDataOption, *, user: converters.DiscordUser
     ):
         """
-        Usage: {0}reset <option> <user>
+        Usage: {0}reset user <option> <user>
         Output:
             Delete recorded data for a user
+        Options:
+            invites
+            messages
+            nicknames
         Notes:
             Once removed, the data cannot be
             recovered. Use with caution.
@@ -1165,11 +1512,11 @@ class Admin(commands.Cog):
             f"This action will delete all {option[:-1]} data collected on this server for `{user}`."
         )
         if c:
-            if option == "nicknames":
+            if option == "invites":
                 query = """
-                        DELETE FROM usernicks
+                        DELETE FROM invites
                         WHERE server_id = $1
-                        AND user_id = $2;
+                        AND inviter = $2;
                         """
             elif option == "messages":
                 query = """
@@ -1177,12 +1524,59 @@ class Admin(commands.Cog):
                         WHERE server_id = $1
                         AND author_id = $2;
                         """
-            else:
+            elif option == "nicknames":
                 query = """
-                        DELETE FROM invites
+                        DELETE FROM usernicks
                         WHERE server_id = $1
-                        AND inviter = $2;
+                        AND user_id = $2;
                         """
 
             await self.bot.cxn.execute(query, ctx.guild.id, user.id)
             await ctx.success(f"Reset all {option[:-1]} data for `{user}`")
+
+    @_reset.command(
+        name="server",
+        aliases=["guild"],
+        brief="Reset server data for a user."
+    )
+    @checks.guild_only()
+    @checks.is_mod()
+    @checks.cooldown(2, 60)
+    async def reset_server(self, ctx, option: converters.ServerDataOption):
+        """
+        Usage: {0}reset server <option>
+        Output:
+            Delete recorded data for the entire server
+        Options:
+            invites
+            messages
+            nicknames
+        Notes:
+            Once removed, the data cannot be
+            recovered. Use with caution.
+        """
+        c = await ctx.confirm(
+            f"This action will delete all {option[:-1]} data collected on this server."
+        )
+        if c:
+            if option == "invites":
+                query = """
+                        DELETE FROM invites
+                        WHERE server_id = $1;
+                        """
+            elif option == "messages":
+                query = """
+                        DELETE FROM messages
+                        WHERE server_id = $1;
+                        """
+            elif option == "nicknames":
+                query = """
+                        DELETE FROM usernicks
+                        WHERE server_id = $1;
+                        """
+
+            await self.bot.cxn.execute(query, ctx.guild.id)
+            await ctx.success(f"Reset all {option[:-1]} data for this server.")
+        
+
+        

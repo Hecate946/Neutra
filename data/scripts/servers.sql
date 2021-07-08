@@ -19,7 +19,6 @@ CREATE TABLE IF NOT EXISTS prefixes (
     UNIQUE (server_id, prefix)
 );
 
-
 CREATE TABLE IF NOT EXISTS logs (
     server_id BIGINT PRIMARY KEY,
     avatars BOOLEAN DEFAULT True,
@@ -62,17 +61,12 @@ CREATE TABLE IF NOT EXISTS plonks (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS permissions_idx ON plonks(server_id, entity_id);
 
-CREATE TABLE IF NOT EXISTS lockedchannels (
-    channel_id bigint PRIMARY KEY,
-    server_id bigint,
-    command_executor bigint,
-    everyone_perms text
-);
-
-CREATE TABLE IF NOT EXISTS warn (
-    user_id bigint,
-    server_id bigint,
-    warnings smallint
+CREATE TABLE IF NOT EXISTS warns (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT,
+    server_id BIGINT,
+    reason TEXT,
+    insertion TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
 );
 
 CREATE TABLE IF NOT EXISTS tasks (

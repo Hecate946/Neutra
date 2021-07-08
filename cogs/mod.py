@@ -1,15 +1,13 @@
-from math import perm
 import re
+import copy
 import json
 import shlex
 import typing
 import asyncio
-import asyncpg
 import discord
 
 from collections import Counter
 from discord.ext import commands
-from discord.ext.commands.core import check
 
 from utilities import utils
 from utilities import checks
@@ -42,15 +40,23 @@ class Mod(commands.Cog):
     ## VOICE COMMANDS ##
     ####################
 
-    @decorators.command(brief="Move a user from a voice channel.")
-    @commands.guild_only()
+    @decorators.command(
+        brief="Move a user from a voice channel.",
+        implemented="2021-04-22 01:28:27.769502",
+        updated="2021-07-04 17:47:31.565880",
+        examples="""
+                {0}vcmove Hecate Snowbot #music
+                """
+    )
+    @checks.guild_only()
     @checks.bot_has_perms(move_members=True)
     @checks.has_perms(move_members=True)
+    @checks.cooldown()
     async def vcmove(
         self,
         ctx,
-        targets: commands.Greedy[converters.DiscordMember],
-        *,
+        targets: commands.Greedy[converters.DiscordMember(False)],
+        *,  # Do not disambiguate when accepting multiple members.
         channel: discord.VoiceChannel,
     ):
         """
@@ -58,84 +64,89 @@ class Mod(commands.Cog):
         Output: Moves members into a new voice channel
         Permission: Move Members
         """
-        if not len(targets) or not channel:
+        if not len(targets):
             return await ctx.usage()
 
         vcmoved = []
+        failed = []
         for target in targets:
             try:
-                await target.edit(voice_channel=channel)
+                await target.move_to(channel)
             except discord.HTTPException:
-                await ctx.send_or_reply(
-                    content=f"{self.bot.emote_dict['warn']} Target is not connected to a voice channel"
-                )
+                failed.append((str(target), e))
                 continue
+            except Exception as e:
+                failed.append((str(target, e)))
             vcmoved.append(str(target))
         if vcmoved:
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['success']} VC Moved `{', '.join(vcmoved)}`"
-            )
+            await ctx.success(f"VC Moved `{', '.join(vcmoved)}`")
+        if failed:
+            await helpers.error_info(ctx, failed)
 
-    @decorators.command(brief="Kick all users from a voice channel.")
-    @commands.guild_only()
+    @decorators.command(
+        brief="Kick all users from a voice channel.",
+        implemented="2021-04-22 01:13:53.346822",
+        updated="2021-07-04 17:59:53.792869",
+        examples="""
+                {0}vcpurge #music
+                """
+    )
+    @checks.guild_only()
     @checks.has_perms(move_members=True)
     @checks.bot_has_perms(move_members=True)
-    async def vcpurge(self, ctx, *, channel: discord.VoiceChannel = None):
+    @checks.cooldown()
+    async def vcpurge(self, ctx, *, channel: discord.VoiceChannel):
         """
         Usage: {0}vcpurge <voice channel>
         Output: Kicks all members from the channel
         Permission: Move Members
         """
-        if channel is None:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}vcpurge <voice channel name/id>`",
-            )
         if len(channel.members) == 0:
-            return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['warn']} No members in voice channel {channel.mention}.",
-            )
+            return await ctx.fail(f"No users in voice channel {channel.mention}.")
         failed = []
         for member in channel.members:
             try:
-                await member.edit(voice_channel=None)
+                await member.move_to(None)
             except Exception as e:
                 failed.append((str(member), e))
                 continue
-        await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['success']} Purged {channel.mention}.",
-        )
+        await ctx.success(f"Purged {channel.mention}.")
         if failed:
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['success']} Failed to vckick {len(failed)} user{'' if len(failed) == 1 else 's'}.",
-            )
+            await helpers.error_info(ctx, failed)
 
-    @decorators.command(brief="Kick users from a voice channel.")
-    @commands.guild_only()
+    @decorators.command(
+        brief="Kick users from a voice channel.",
+        implemented="2021-04-22 01:13:53.346822",
+        updated="2021-07-04 17:59:53.792869",
+        examples="""
+                {0}vckick Snowbot Hecate#3523
+                """
+    )
+    @checks.guild_only()
     @checks.has_perms(move_members=True)
     @checks.bot_has_perms(move_members=True)
-    async def vckick(self, ctx, targets: commands.Greedy[converters.DiscordMember]):
+    @checks.cooldown()
+    async def vckick(self, ctx, *targets: converters.DiscordMember(False)):
         """
         Usage: {0}vckick <targets>...
         Output: Kicks passed members from their channel
         Permission: Move Members
         """
-        if not len(targets):
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}vckick <target> [target]...`",
-            )
         vckicked = []
+        failed = []
         for target in targets:
             try:
-                await target.edit(voice_channel=None)
+                await target.move_to(None)
             except discord.HTTPException:
-                await ctx.send_or_reply(
-                    f"{self.bot.emote_dict['warn']} Target is not connected to a voice channel."
-                )
+                failed.append((str(target), e))
+                continue
+            except Exception as e:
+                failed.append((str(target, e)))
             vckicked.append(str(target))
         if vckicked:
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['success']} VC Kicked `{', '.join(vckicked)}`"
-            )
+            await ctx.success(f"VC Kicked `{', '.join(vckicked)}`")
+        if failed:
+            await helpers.error_info(ctx, failed)
 
     ##########################
     ## Restriction Commands ##
@@ -151,108 +162,104 @@ class Mod(commands.Cog):
             overwrite.send_messages = boolean
         else:
             overwrite.read_messages = boolean
-        restrict = []
-        failed = []
-        for target in targets:
-            res = await checks.check_priv(ctx, target)
-            if res:
-                failed.append((str(target), res))
-                continue
-            try:
-                await ctx.channel.set_permissions(target, overwrite=overwrite)
-                restrict.append(str(target))
-            except Exception as e:
-                failed.append((str(target), e))
-                continue
-        if restrict:
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['success']} {ctx.command.name.capitalize()}ed `{', '.join(restrict)}`"
-            )
-            self.bot.dispatch("mod_action", ctx, targets=restrict)
-        if failed:
-            await helpers.error_info(ctx, failed)
 
-    @decorators.command(brief="Restrict users from sending messages.")
-    @commands.guild_only()
-    @checks.has_perms(kick_members=True)
-    async def block(self, ctx, targets: commands.Greedy[converters.DiscordMember]):
+        for target in targets:
+            await ctx.channel.set_permissions(target, overwrite=overwrite)
+
+        await ctx.success(f"{ctx.command.name.capitalize()}ed `{', '.join(str(t) for t in targets)}`")
+        self.bot.dispatch("mod_action", ctx, targets=targets)
+
+
+    @decorators.command(
+        brief="Restrict users from sending messages.",
+        implemented="2021-04-09 19:26:19.417481",
+        updated="2021-07-04 18:46:24.713058",
+    )
+    @checks.guild_only()
+    @checks.bot_has_perms(manage_roles=True)
+    @checks.has_perms(manage_channels=True)
+    @checks.cooldown()
+    async def block(self, ctx, *targets: converters.UniqueMember):
         """
         Usage: {0}block <target> [target]...
         Example: {0}block Hecate 708584008065351681 @Elizabeth
         Permission: Kick Members
         Output: Stops users from messaging in the channel.
         """
-        if not len(targets):
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}block <target> [target] [target]...`",
-            )
         await self.restrictor(ctx, targets, "on", "block")
 
-    @decorators.command(brief="Reallow users to send messages.")
-    @commands.guild_only()
-    @checks.has_perms(kick_members=True)
-    async def unblock(
-        self, ctx, targets: commands.Greedy[converters.DiscordMember] = None
-    ):
+    @decorators.command(
+        brief="Reallow users to send messages.",
+        implemented="2021-04-09 19:26:19.417481",
+        updated="2021-07-04 18:46:24.713058",
+    )
+    @checks.guild_only()
+    @checks.bot_has_perms(manage_roles=True)
+    @checks.has_perms(manage_channels=True)
+    @checks.cooldown()
+    async def unblock(self, ctx, *targets: converters.UniqueMember):
         """
         Usage:      {0}unblock <target> [target]...
         Example:    {0}unblock Hecate 708584008065351681 @Elizabeth
         Permission: Kick Members
         Output:     Reallows blocked users to send messages.
         """
-        if not targets:  # checks if there is user
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}unblock <target> [target] [target]...`",
-            )
         await self.restrictor(ctx, targets, "off", "unblock")
 
-    @decorators.command(brief="Hide a channel from a user.")
-    @commands.guild_only()
-    @checks.has_perms(kick_members=True)
-    async def blind(
-        self, ctx, targets: commands.Greedy[converters.DiscordMember] = None
-    ):
+    @decorators.command(
+        brief="Hide a channel from a user.",
+        implemented="2021-04-09 19:26:19.417481",
+        updated="2021-07-04 18:46:24.713058",
+    )
+    @checks.guild_only()
+    @checks.bot_has_perms(manage_roles=True)
+    @checks.has_perms(manage_channels=True)
+    @checks.cooldown()
+    async def blind(self, ctx, *targets: converters.UniqueMember):
         """
         Usage:      {0}blind <target> [target]...
         Example:    {0}blind Hecate 708584008065351681 @Elizabeth
         Permission: Kick Members
         Output:     Prevents users from seeing the channel.
         """
-        if not targets:  # checks if there is user
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}blind <target> [target] [target]...`",
-            )
         await self.restrictor(ctx, targets, "on", "blind")
 
-    @decorators.command(brief="Reallow users see a channel.")
-    @commands.guild_only()
-    @checks.has_perms(kick_members=True)
-    async def unblind(
-        self, ctx, targets: commands.Greedy[converters.DiscordMember] = None
-    ):
+    @decorators.command(
+        brief="Reallow users see a channel.",
+        implemented="2021-04-09 19:26:19.417481",
+        updated="2021-07-04 18:46:24.713058",
+    )
+    @checks.guild_only()
+    @checks.bot_has_perms(manage_roles=True)
+    @checks.has_perms(manage_channels=True)
+    @checks.cooldown()
+    async def unblind(self, ctx, *targets: converters.UniqueMember):
         """
         Usage:      {0}unblind <targets>...
         Example:    {0}unblind Hecate 708584008065351681 @Elizabeth
         Permission: Kick Members
         Output:     Reallows blinded users to see the channel.
         """
-        if not targets:  # checks if there is user
-            return await ctx.usage()
         await self.restrictor(ctx, targets, "off", "unblind")
 
-    ##################
-    ## Kick Command ##
-    ##################
+    #######################
+    ## Kick/Ban commands ##
+    #######################
 
-    @decorators.command(brief="Kick users from the server.")
-    @commands.guild_only()
+    @decorators.command(
+        brief="Kick users from the server.",
+        implemented="2021-03-22 05:39:26.804850",
+        updated="2021-07-06 05:43:21.995689",
+    )
+    @checks.guild_only()
     @checks.bot_has_perms(kick_members=True)
     @checks.has_perms(kick_members=True)
+    @checks.cooldown()
     async def kick(
         self,
         ctx,
-        users: commands.Greedy[converters.DiscordMember],
-        *,
+        targets: commands.Greedy[converters.DiscordMember(False)],
+        *,  # Do not disambiguate when accepting multiple users.
         reason: typing.Optional[str] = "No reason",
     ):
         """
@@ -261,12 +268,12 @@ class Mod(commands.Cog):
         Permission: Kick Members
         Output:     Kicks passed members from the server.
         """
-        if not len(users):
+        if not len(targets):
             await ctx.usage()
 
         kicked = []
         failed = []
-        for target in users:
+        for target in targets:
             res = await checks.check_priv(ctx, target)
             if res:
                 failed.append((str(target), res))
@@ -278,9 +285,7 @@ class Mod(commands.Cog):
                 failed.append((str(target), e))
                 continue
         if kicked:
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['success']} Kicked `{', '.join(kicked)}`",
-            )
+            await ctx.success(f"Kicked `{', '.join(kicked)}`")
             self.bot.dispatch("mod_action", ctx, targets=kicked)
         if failed:
             await helpers.error_info(ctx, failed)
@@ -291,16 +296,18 @@ class Mod(commands.Cog):
 
     @decorators.command(
         brief="Ban users from the server.",
+        implemented="2021-03-22 05:39:26.804850",
+        updated="2021-07-06 05:43:21.995689",
     )
-    @commands.guild_only()
+    @checks.guild_only()
     @checks.bot_has_perms(ban_members=True)
     @checks.has_perms(ban_members=True)
     async def ban(
         self,
         ctx,
-        targets: commands.Greedy[converters.DiscordMember],
+        targets: commands.Greedy[converters.DiscordUser(False)],
         delete_message_days: typing.Optional[int] = 1,
-        *,
+        *,  # Do not disambiguate when accepting multiple users.
         reason: typing.Optional[str] = "No reason.",
     ):
         """
@@ -310,12 +317,12 @@ class Mod(commands.Cog):
         Output: Ban passed members from the server.
         """
         if not len(targets):
-            return await ctx.usage()
+            await ctx.usage()
 
         if delete_message_days > 7:
-            delete_message_days = 7
+            raise commands.BadArgument("The number of days to delete messages must be less than 7.")
         elif delete_message_days < 0:
-            delete_message_days = 0
+            raise commands.BadArgument("The number of days to delete messages must be greater than 0.")
 
         banned = []
         failed = []
@@ -340,14 +347,18 @@ class Mod(commands.Cog):
         if failed:
             await helpers.error_info(ctx, failed)
 
-    @decorators.command(brief="Softban users from the server.")
-    @commands.guild_only()
+    @decorators.command(
+        brief="Softban users from the server.",
+        implemented="2021-03-22 05:39:26.804850",
+        updated="2021-07-06 05:43:21.995689",
+    )
+    @checks.guild_only()
     @checks.bot_has_perms(ban_members=True)
     @checks.has_perms(kick_members=True)
     async def softban(
         self,
         ctx,
-        targets: commands.Greedy[converters.DiscordUser],
+        targets: commands.Greedy[converters.DiscordMember(False)],
         delete_message_days: typing.Optional[int] = 7,
         *,
         reason: typing.Optional[str] = "No reason.",
@@ -358,17 +369,17 @@ class Mod(commands.Cog):
         Permission: Kick Members
         Output:     Softbans members from the server.
         Notes:
-            A softban bans the member and immediately
-            unbans s/he in order to delete messages.
+            A softban bans the user and immediately
+            unbans them in order to delete messages.
             The days to delete messages is set to 7 days.
         """
         if not len(targets):
             return await ctx.usage()
 
         if delete_message_days > 7:
-            delete_message_days = 7
+            raise commands.BadArgument("The number of days to delete messages must be less than 7.")
         elif delete_message_days < 0:
-            delete_message_days = 0
+            raise commands.BadArgument("The number of days to delete messages must be greater than 0.")
 
         banned = []
         failed = []
@@ -396,80 +407,16 @@ class Mod(commands.Cog):
         if failed:
             await helpers.error_info(ctx, failed)
 
-    @decorators.command(brief="Hackban multiple users.")
+    @decorators.command(
+        aliases=["revokeban"],
+        brief="Unban a previously banned user.",
+        implemented="2021-03-22 05:39:26.804850",
+        updated="2021-07-06 05:43:21.995689",
+    )
+    @checks.guild_only()
     @checks.bot_has_perms(ban_members=True)
     @checks.has_perms(ban_members=True)
-    async def hackban(
-        self,
-        ctx,
-        users: commands.Greedy[converters.UserIDConverter],
-        *,
-        args=None,
-    ):
-        """
-        Usage: -hackban <user id> <user id>... [--reason] [--delete]
-        Example:
-            -hackban 805871188462010398 --reason for spamming --delete 2
-        Permission: Ban Members
-        Output: Hackbans multiple users.
-        Notes: Users do not have to be in the server.
-        """
-        if not len(users):
-            return await ctx.usage("<user> [user]... [--reason] [--delete]")
-
-        if args:
-            parser = converters.Arguments(add_help=False, allow_abbrev=False)
-            parser.add_argument("--reason", nargs="+", default="No reason.")
-            parser.add_argument("--delete", type=int, default=1)
-
-            try:
-                args = parser.parse_args(shlex.split(args))
-            except Exception as e:
-                return await ctx.fail(str(e).capitalize())
-
-            if args.reason:
-                reason = " ".join(args.reason)
-            reason = await converters.ActionReason().convert(ctx, reason)
-
-            if args.delete:
-                if args.delete >= 7:
-                    delete = 7
-                if args.delete <= 0:
-                    delete = 0
-                else:
-                    delete = args.delete
-            else:
-                delete = 1
-        else:
-            delete = 1
-            reason = "No reason"
-        banned = []
-        failed = []
-        for user in users:
-            if isinstance(user, discord.Member):
-                res = await checks.check_priv(ctx, user)
-                if res:
-                    failed.append((str(user), res))
-                    continue
-            try:
-                await ctx.guild.ban(
-                    user,
-                    reason=reason,
-                    delete_message_days=delete,
-                )
-                banned.append(str(user))
-            except Exception as e:
-                failed.append((str(user), e))
-                continue
-        if banned:
-            await ctx.success(f"Hackbanned `{', '.join(banned)}`")
-            self.bot.dispatch("mod_action", ctx, targets=banned)
-        if failed:
-            await helpers.error_info(ctx, failed)
-
-    @decorators.command(brief="Unban a previously banned user.", aliases=["revokeban"])
-    @commands.guild_only()
-    @checks.has_perms(ban_members=True)
+    @checks.cooldown()
     async def unban(self, ctx, member: converters.BannedMember, *, reason: str = None):
         """
         Usage:      {0}unban <user> [reason]
@@ -479,10 +426,6 @@ class Mod(commands.Cog):
         Output:     Unbans a member from the server.
         Notes:      Pass either the user's ID or their username
         """
-        if not member:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}unban <id/name#discriminator> [reason]`",
-            )
         if reason is None:
             reason = utils.responsible(
                 ctx.author, f"Unbanned member {member} by command execution"
@@ -490,13 +433,9 @@ class Mod(commands.Cog):
 
         await ctx.guild.unban(member.user, reason=reason)
         if member.reason:
-            await ctx.send_or_reply(
-                content=f'{self.bot.emote_dict["success"]} Unbanned `{member.user} (ID: {member.user.id})`, previously banned for `{member.reason}.`',
-            )
+            await ctx.success(f"Unbanned `{member.user} (ID: {member.user.id})`, previously banned for `{member.reason}.`")
         else:
-            await ctx.send_or_reply(
-                content=f'{self.bot.emote_dict["success"]} Unbanned `{member.user} (ID: {member.user.id}).`',
-            )
+            await ctx.success(f"Unbanned `{member.user} (ID: {member.user.id}).`")
         self.bot.dispatch("mod_action", ctx, targets=[str(member.user)])
 
     # https://github.com/AlexFlipnote/discord_bot.py with my own additions
@@ -525,10 +464,10 @@ class Mod(commands.Cog):
         "\nUser - Purge messages sent by a user."
         "\nWebhooks - Purge messages sent by wehooks.",
     )
-    @commands.guild_only()
-    @commands.max_concurrency(5, per=commands.BucketType.guild)
+    @checks.guild_only()
     @checks.bot_has_perms(manage_messages=True)
     @checks.has_perms(manage_messages=True)
+    @checks.cooldown()
     async def purge(self, ctx):
         """
         Usage: {0}purge <option> <amount>
@@ -970,7 +909,8 @@ class Mod(commands.Cog):
         aliases=["clean"],
         updated="2021-05-05 16:00:23.974656",
     )
-    @commands.guild_only()
+    @checks.guild_only()
+    @checks.cooldown()
     async def cleanup(self, ctx, search=100):
         """
         Usage: {0}cleanup [search]
@@ -1017,9 +957,10 @@ class Mod(commands.Cog):
         await ctx.channel.purge(check=lambda m: m.id in to_delete)
 
     @decorators.command(brief="Set the slowmode for a channel")
-    @commands.guild_only()
+    @checks.guild_only()
     @checks.bot_has_perms(manage_channels=True)
     @checks.has_perms(manage_channels=True)
+    @checks.cooldown()
     async def slowmode(
         self,
         ctx,
@@ -1034,9 +975,8 @@ class Mod(commands.Cog):
         Notes:
             If no slowmode is passed, will reset the slowmode.
         """
-        if channel is None:
-            channel = ctx.channel
-        if time is None:
+        channel = channel or ctx.channel
+        if time is None:  # Output current slowmode.
             return await ctx.success(
                 f"The current slowmode for {channel.mention} is `{channel.slowmode_delay}s`"
             )
@@ -1058,9 +998,10 @@ class Mod(commands.Cog):
                 {0}lockdown #help until 3 pm
                 """,
     )
-    @commands.guild_only()
-    @commands.bot_has_guild_permissions(manage_channels=True, manage_roles=True)
+    @checks.guild_only()
+    @checks.bot_has_guild_perms(manage_channels=True, manage_roles=True)
     @checks.has_perms(administrator=True)
+    @checks.cooldown()
     async def lock(
         self,
         ctx,
@@ -1171,12 +1112,12 @@ class Mod(commands.Cog):
                 {0}unlockdown #help
                 """,
     )
-    @commands.guild_only()
-    @commands.bot_has_guild_permissions(manage_channels=True, manage_roles=True)
+    @checks.guild_only()
+    @checks.bot_has_guild_perms(manage_channels=True, manage_roles=True)
     @checks.has_perms(administrator=True)
     async def unlock(self, ctx, *, channel: discord.TextChannel = None):
-        if channel is None:
-            channel = ctx.channel
+        channel = channel or ctx.channel
+
         await ctx.trigger_typing()
         if not channel.permissions_for(ctx.guild.me).read_messages:
             raise commands.BadArgument(
@@ -1188,10 +1129,10 @@ class Mod(commands.Cog):
             )
 
         query = """
-                select (id, extra)
-                from tasks
-                where event = 'lockdown'
-                and extra->'kwargs'->>'channel_id' = $1;
+                SELECT (id, extra)
+                FROM tasks
+                WHERE event = 'lockdown'
+                AND extra->'kwargs'->>'channel_id' = $1;
                 """
         s = await self.bot.cxn.fetchval(query, str(channel.id))
         if not s:
@@ -1269,17 +1210,17 @@ class Mod(commands.Cog):
                 {0}tban 708584008065351681 Hecate 2 hours for spamming
                 """,
     )
-    @commands.guild_only()
+    @checks.guild_only()
     @checks.bot_has_perms(ban_members=True)
     @checks.has_perms(ban_members=True)
     async def tempban(
         self,
         ctx,
-        users: commands.Greedy[converters.DiscordMember],
+        users: commands.Greedy[converters.DiscordMember(False)],
         *,
         duration: humantime.UserFriendlyTime(
             commands.clean_content, default="\u2026"
-        ) = None,
+        ),
     ):
         """
         Usage: {0}tempban <users> [duration] [reason]
@@ -1294,8 +1235,8 @@ class Mod(commands.Cog):
             raise commands.BadArgument(f"This feature is unavailable.")
         if not len(users):
             return await ctx.usage()
-        if not duration:
-            raise commands.BadArgument(f"You must specify a duration.")
+        if not duration.dt:
+            raise commands.BadArgument("Invalid duration. Try using `2 days` or `3 hours`")
 
         reason = duration.arg if duration and duration.arg != "…" else None
         endtime = duration.dt
@@ -1335,18 +1276,18 @@ class Mod(commands.Cog):
                     ctx.author.id,
                     user.id,
                     connection=self.bot.cxn,
-                    created=ctx.message.created_at,
+                    created=ctx.message.created_at.replace(tzinfo=None),
                 )
                 banned.append(str(user))
             except Exception as e:
                 failed.append((str(user), e))
-        if failed:
-            await helpers.error_info(ctx, failed)
         if banned:
             self.bot.dispatch("mod_action", ctx, targets=banned)
             await ctx.success(
                 f"Tempbanned `{', '.join(banned)}` for {humantime.human_timedelta(duration.dt, source=timer.created_at)}."
             )
+        if failed:
+            await helpers.error_info(ctx, failed)
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -1399,7 +1340,7 @@ class Mod(commands.Cog):
     async def mute(
         self,
         ctx,
-        users: commands.Greedy[converters.DiscordMember],
+        users: commands.Greedy[converters.DiscordMember(False)],
         *,
         duration: humantime.UserFriendlyTime(
             commands.clean_content, default="\u2026"
@@ -1439,11 +1380,11 @@ class Mod(commands.Cog):
         muterole = ctx.guild.get_role(muterole)
         if not muterole:
             raise commands.BadArgument(
-                f"Run the `{ctx.prefix}muterole <role>` command to set up a mute role."
+                f"Run the `{ctx.clean_prefix}muterole <role>` command to set up a mute role."
             )
 
         reason = duration.arg if duration and duration.arg != "…" else None
-        endtime = duration.dt if duration else None
+        endtime = duration.dt.replace(tzinfo=None) if duration else None
         dm = True if reason else False
 
         failed = []
@@ -1482,13 +1423,13 @@ class Mod(commands.Cog):
                     user_id=user.id,
                     roles=[x.id for x in user.roles],
                     connection=self.bot.cxn,
-                    created=ctx.message.created_at,
+                    created=ctx.message.created_at.replace(tzinfo=None),
                 )
                 await user.edit(roles=[muterole], reason=reason)
                 muted.append(str(user))
                 if reason:
                     embed = discord.Embed(color=self.bot.constants.embed)
-                    embed.title = f"{self.bot.emote_dict['audioremove']} Mute Notice"
+                    embed.title = f"Mute Notice"
                     embed.description = (
                         f"**Server: `{ctx.guild.name} ({ctx.guild.id})`**\n"
                     )
@@ -1533,7 +1474,7 @@ class Mod(commands.Cog):
     async def unmute(
         self,
         ctx,
-        users: commands.Greedy[converters.DiscordMember],
+        users: commands.Greedy[converters.DiscordMember(False)],
         *,
         reason: typing.Optional[str] = "No reason",
     ):
@@ -1585,7 +1526,7 @@ class Mod(commands.Cog):
                 continue
             if dm:
                 embed = discord.Embed(color=self.bot.constants.embed)
-                embed.title = f"{self.bot.emote_dict['audioadd']} Unmute Notice"
+                embed.title = f"Unmute Notice"
                 embed.description = f"**Server: `{ctx.guild.name} ({ctx.guild.id})`**\n"
                 embed.description += f"**Moderator: `{ctx.author} ({ctx.author.id})`**"
                 try:
@@ -1640,3 +1581,169 @@ class Mod(commands.Cog):
                 await member.send(embed=embed)
             except Exception:
                 pass
+
+    @decorators.command(
+        aliases=["trole"],
+        brief="Temporarily add roles to users.",
+        implemented="2021-05-31 04:09:38.799221",
+        updated="2021-05-31 04:09:38.799221",
+        examples="""
+                {0}temprole @Hecate 2 days for advertising
+                {0}trole 708584008065351681 Hecate 2 hours for spamming
+                """,
+    )
+    @checks.guild_only()
+    @checks.bot_has_perms(manage_roles=True)
+    @checks.has_perms(manage_roles=True)
+    @checks.cooldown(2, 30)
+    async def temprole(
+        self,
+        ctx,
+        user: converters.DiscordMember,
+        role: converters.DiscordRole,
+        *,
+        duration: humantime.UserFriendlyTime(
+            commands.clean_content, default="\u2026"
+        ),
+    ):
+        """
+        Usage: {0}temprole <user> <duration>
+        Alias: {0}trole
+        Output:
+            Adds a role to a user for the specified duration.
+            The duration can be a a short time form, e.g. 30d or a more human
+            duration like "until thursday at 3PM".
+        """
+        task = self.bot.get_cog("Tasks")
+        if not task:
+            raise commands.BadArgument("This feature is unavailable.")
+
+        if not duration.dt:
+            raise commands.BadArgument("Invalid duration. Try using `2 hours` or `3d` as durations.")
+
+        endtime = duration.dt.replace(tzinfo=None)
+
+        res = await checks.role_priv(ctx, role)
+        if res:  # We failed the role hierarchy test
+            return await ctx.fail(res)
+
+        if role in user.roles:
+            return await ctx.fail(f"User `{user}` already has role `{role.name}`")
+
+        try:
+            await user.add_roles(role)
+        except Exception as e:
+            await helpers.error_info(ctx, [(str(user), e)])
+            return
+        timer = await task.create_timer(
+            endtime,
+            "temprole",
+            ctx.guild.id,
+            user.id,
+            role.id,
+            connection=self.bot.cxn,
+            created=ctx.message.created_at.replace(tzinfo=None),
+        )
+
+        self.bot.dispatch("mod_action", ctx, targets=[str(user)])
+        try:
+            time_fmt = humantime.human_timedelta(duration.dt, source=timer.created_at)
+        except Exception:
+            time_fmt = "unknown duration"
+        await ctx.success(f"Temproled `{user}` the role `{role.name}` for {time_fmt}.")
+
+    @commands.Cog.listener()
+    @decorators.wait_until_ready()
+    async def on_temprole_timer_complete(self, timer):
+        guild_id, member_id, role_id = timer.args
+
+        guild = self.bot.get_guild(guild_id)
+        if not guild:  # We were kicked or it was deleted.
+            return
+        member = guild.get_member(member_id)
+        if not member:  # They left the server
+            return
+        role = guild.get_role(role_id)
+        if not role:  # Role deleted.
+            return
+
+        reason = f"Temprole removal from timer made on {timer.created_at}."
+        try:
+            await member.remove_roles(role, reason)
+        except Exception:  # We tried
+            pass
+
+
+    @decorators.command(
+        aliases=["ar", "addroles"],
+        brief="Add multiple roles to a user.",
+        implemented="2021-03-11 23:21:57.831313",
+        updated="2021-07-03 17:29:45.745560",
+        examples="""
+                {0}ar Hecate helper verified
+                {0}addrole Hecate#3523 @Helper
+                """
+    )
+    @checks.guild_only()
+    @checks.bot_has_perms(manage_roles=True)
+    @checks.has_perms(manage_roles=True)
+    @checks.cooldown()
+    async def addrole(
+        self,
+        ctx,
+        user: converters.DiscordMember,
+        *roles: converters.UniqueRole,
+    ):
+        """
+        Usage:      {0}addrole <user> [roles]...
+        Aliases:    {0}ar, {0}addroles
+        Permission: Manage Roles
+        Output:     Adds multiple roles to a user
+        Notes:
+            If the role is multiple words, it must
+            be surrounded in quotations.
+            e.g. {0}ar Hecate "this role"
+        """
+        await user.add_roles(*roles, reason="Roles added by command")
+        await ctx.success(
+            f'Added user `{user}` '
+            f'the role{"" if len(roles) == 1 else "s"} `{", ".join(str(r) for r in roles)}`'
+        )
+        self.bot.dispatch("mod_action", ctx, targets=[str(user)])
+
+    @decorators.command(
+        aliases=["rr", "rmrole", "remrole"],
+        brief="Remove multiple roles to a user.",
+        implemented="2021-03-11 23:21:57.831313",
+        updated="2021-07-03 17:29:45.745560",
+        examples="""
+                {0}rr Hecate helper verified
+                {0}rmrole Hecate#3523 @Helper
+                """
+    )
+    @checks.guild_only()
+    @checks.bot_has_perms(manage_roles=True)
+    @checks.has_perms(manage_roles=True)
+    @checks.cooldown()
+    async def removerole(
+        self,
+        ctx,
+        user: converters.DiscordMember,
+        *roles: converters.UniqueRole,
+    ):
+        """
+        Usage:      {0}removerole <user> [roles]...
+        Aliases:    {0}rr, {0}rmrole, {0}remrole
+        Permission: Manage Roles
+        Output:     Removes multiple roles to a user
+        Notes:
+            If the role is multiple words, it must
+            be surrounded in quotations.
+            e.g. {0}rr Hecate "this role"
+        """
+        await user.remove_roles(*roles, reason="Roles removed by command")
+        await ctx.success(
+            f'Added user `{user}` '
+            f'the role{"" if len(roles) == 1 else "s"} `{", ".join(str(r) for r in roles)}`'
+        )
+        self.bot.dispatch("mod_action", ctx, targets=[str(user)])

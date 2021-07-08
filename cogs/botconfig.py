@@ -4,7 +4,6 @@ import typing
 import aiohttp
 import discord
 
-from datetime import datetime
 from discord.ext import commands, menus
 
 from utilities import utils
@@ -109,7 +108,7 @@ class Botconfig(commands.Cog):
     async def change_avatar(self, ctx, url: str = None):
         if url is None and len(ctx.message.attachments) == 0:
             return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}change avatar <avatar>`",
+                content=f"Usage: `{ctx.clean_prefix}change avatar <avatar>`",
             )
         if url is None and len(ctx.message.attachments) == 1:
             url = ctx.message.attachments[0].url
@@ -217,7 +216,7 @@ class Botconfig(commands.Cog):
     async def add(self, ctx, *, todo: str = None):
         if todo is None:
             return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}todo add <todo>`",
+                content=f"Usage: `{ctx.clean_prefix}todo add <todo>`",
             )
         with open(self.todo, "a", encoding="utf-8") as fp:
             fp.write(todo + "\n")
@@ -229,7 +228,7 @@ class Botconfig(commands.Cog):
     async def remove(self, ctx, *, index_or_todo: str = None):
         if index_or_todo is None:
             return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}todo remove <todo>`",
+                content=f"Usage: `{ctx.clean_prefix}todo remove <todo>`",
             )
         with open(self.todo, mode="r", encoding="utf-8") as fp:
             lines = fp.readlines()
@@ -307,14 +306,14 @@ class Botconfig(commands.Cog):
     async def changelog(self, ctx, *, entry: str = None):
         if entry is None:
             return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}write changelog <entry>`",
+                content=f"Usage: `{ctx.clean_prefix}write changelog <entry>`",
             )
         c = await pagination.Confirmation(
             f"**{self.bot.emote_dict['exclamation']} This action will post to my changelog. Do you wish to continue?**"
         ).prompt(ctx)
         if c:
             with open("./data/txts/changelog.txt", "a", encoding="utf-8") as fp:
-                fp.write(f"({datetime.utcnow()}+00:00) " + entry + "\n")
+                fp.write(f"({discord.utils.utcnow()}) " + entry + "\n")
             await ctx.send_or_reply(
                 content=f"{self.bot.emote_dict['success']} **Successfully posted to the changelog.**",
             )
@@ -389,7 +388,7 @@ class Botconfig(commands.Cog):
         command = self.bot.get_command(command)
         if command is None:
             return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}toggle <command>`",
+                content=f"Usage: `{ctx.clean_prefix}toggle <command>`",
             )
         if command.name in EXCEPTIONS:
             return await ctx.send_or_reply(

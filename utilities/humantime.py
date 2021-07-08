@@ -1,7 +1,7 @@
 # R.danny
 # https://github.com/Rapptz/RoboDanny/blob/rewrite/cogs/utils/time.py
-
 import datetime
+import discord
 import parsedatetime as pdt
 from dateutil.relativedelta import relativedelta
 from utilities.formatting import plural, human_join
@@ -33,7 +33,7 @@ class ShortTime:
             raise commands.BadArgument("invalid time provided")
 
         data = {k: int(v) for k, v in match.groupdict(default=0).items()}
-        now = now or datetime.datetime.utcnow()
+        now = now or discord.utils.utcnow()
         self.dt = now + relativedelta(**data)
 
     @classmethod
@@ -57,11 +57,13 @@ class PastShortTime:
     def __init__(self, argument, *, now=None):
         match = self.compiled.fullmatch(argument)
         if match is None or not match.group(0):
-            raise commands.BadArgument("invalid time provided")
+            raise commands.BadArgument("Invalid time provided")
 
         data = {k: int(v) for k, v in match.groupdict(default=0).items()}
-        now = now or datetime.datetime.utcnow()
+        now = now or discord.utils.utcnow()
         self.dt = now - relativedelta(**data)
+        print("THIS IS THE DT")
+        print(self.dt)
 
     @classmethod
     async def convert(cls, ctx, argument):
@@ -72,7 +74,7 @@ class HumanTime:
     calendar = pdt.Calendar(version=pdt.VERSION_CONTEXT_STYLE)
 
     def __init__(self, argument, *, now=None):
-        now = now or datetime.datetime.utcnow()
+        now = now or discord.utils.utcnow()
         dt, status = self.calendar.parseDT(argument, sourceTime=now)
         if not status.hasDateOrTime:
             raise commands.BadArgument(
@@ -86,7 +88,10 @@ class HumanTime:
                 minute=now.minute,
                 second=now.second,
                 microsecond=now.microsecond,
+                tzinfo=datetime.timezone.utc,
             )
+        else:
+            dt = dt.replace(tzinfo=datetime.timezone.utc)
 
         self.dt = dt
         self._past = dt < now
@@ -100,12 +105,12 @@ class PastHumanTime:
     calendar = pdt.Calendar(version=pdt.VERSION_CONTEXT_STYLE)
 
     def __init__(self, argument, *, now=None):
-        now = now or datetime.datetime.utcnow()
+        now = now or discord.utils.utcnow()
         argument = argument + " ago"
         dt, status = self.calendar.parseDT(argument, sourceTime=now)
         if not status.hasDateOrTime:
             raise commands.BadArgument(
-                'Invalid time provided, try e.g. "tomorrow" or "3 days"'
+                'Invalid time provided, try e.g. "yesterday" or "3 days ago"'
             )
 
         if not status.hasTime:
@@ -115,7 +120,10 @@ class PastHumanTime:
                 minute=now.minute,
                 second=now.second,
                 microsecond=now.microsecond,
+                tzinfo=datetime.timezone.utc,
             )
+        else:
+            dt = dt.replace(tzinfo=datetime.timezone.utc)
 
         self.dt = dt
         self._past = dt < now
@@ -141,6 +149,7 @@ class NegativeTime(PastHumanTime):
         try:
             o = PastShortTime(argument, now=now)
         except Exception as e:
+            print(e)
             super().__init__(argument)
         else:
             self.dt = o.dt
@@ -249,7 +258,7 @@ class UserFriendlyTime(commands.Converter):
                 )
             if begin not in (0, 1) and end != len(argument):
                 raise commands.BadArgument(
-                    f"I did not understand your input. Please use the `{ctx.prefix}examples` command for assistance."
+                    f"I did not understand your input. Please use the `{ctx.clean_prefix}examples` command for assistance."
                 )
 
             if not status.hasTime:
@@ -259,7 +268,10 @@ class UserFriendlyTime(commands.Converter):
                     minute=now.minute,
                     second=now.second,
                     microsecond=now.microsecond,
+                    tzinfo=datetime.timezone.utc,
                 )
+            else:
+                dt = dt.replace(tzinfo=datetime.timezone.utc)
 
             # if midnight is provided, just default to next day
             if status.accuracy == pdt.pdtContext.ACU_HALFDAY:
@@ -287,18 +299,15 @@ class UserFriendlyTime(commands.Converter):
                 remaining = argument[:begin].strip()
 
             return await result.check_constraints(ctx, now, remaining)
-        except:
-            import traceback
-
-            traceback.print_exc()
-            raise
+        except Exception as e:
+            print(f"Error in UserFriendlyTime: {e}")
 
 
 def human_timedelta(dt, *, source=None, accuracy=3, brief=False, suffix=True):
-    now = source or datetime.datetime.utcnow()
+    now = source or discord.utils.utcnow()
     # Microsecond free zone
-    now = now.replace(microsecond=0)
-    dt = dt.replace(microsecond=0)
+    now = now.replace(microsecond=0, tzinfo=datetime.timezone.utc)
+    dt = dt.replace(microsecond=0, tzinfo=datetime.timezone.utc)
 
     # This implementation uses relativedelta instead of the much more obvious
     # divmod approach with seconds because the seconds approach is not entirely

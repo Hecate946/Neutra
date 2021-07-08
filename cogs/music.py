@@ -8,7 +8,6 @@ import functools
 import itertools
 import youtube_dl
 
-from datetime import datetime
 from discord.ext import commands, menus
 
 from settings import constants
@@ -18,6 +17,7 @@ from utilities import images
 from utilities import spotify
 from utilities import converters
 from utilities import decorators
+from utilities import exceptions
 from utilities import pagination
 
 # Silence useless bug reports messages
@@ -213,16 +213,16 @@ class YTDLSource(discord.PCMVolumeTransformer):
             title=f"Search results for:\n**{search}**",
             description="\n".join(lst),
             color=robot.color,
-            timestamp=datetime.utcnow(),
+            timestamp=discord.utils.utcnow(),
         )
         embed.set_author(
             name=f"{ctx.author.name}",
-            url=f"{ctx.author.avatar_url}",
-            icon_url=f"{ctx.author.avatar_url}",
+            url=f"{ctx.author.avatar.url}",
+            icon_url=f"{ctx.author.avatar.url}",
         )
 
         # em = discord.Embed.from_dict(self.search)
-        await ctx.send(embed=embed, delete_after=45.0)
+        await ctx.send_or_reply(embed=embed, delete_after=45.0)
 
         def check(msg):
             return (
@@ -299,12 +299,18 @@ class Song:
 
         return embed
 
+    def truncate(self, string, max_chars=2000):
+        if len(string) > max_chars:
+            return string[: max_chars - 3] + "..."
+        return string
+
     def current_embed(self):
         embed = discord.Embed(
             title="Now playing",
-            description=f"```fix\n{self.source.title}\n```",
+            description=f"```fix\n{self.source.title}\n```\n",
             color=constants.embed,
         )
+        embed.description += self.truncate("\n" + self.source.description)
         embed.add_field(name="Duration", value=self.source.duration)
         embed.add_field(name="Requested by", value=self.requester.mention)
         embed.add_field(
@@ -352,6 +358,14 @@ class SongQueue(asyncio.Queue):
 
     def remove(self, index: int):
         del self._queue[index]
+
+    def pop(self, index: int):
+        song = self._queue[index]
+        del self._queue[index]
+        return song
+
+    def insert(self, index: int, item):
+        self._queue.insert(index, item)
 
     def append_left(self, item):
         self._queue.appendleft(item)
@@ -628,7 +642,7 @@ class Music(commands.Cog):
     @decorators.command(
         name="current",
         brief="Displays the currently playing song.",
-        aliases=["now", "np"],
+        aliases=["now", "np", "nowplaying"],
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )
@@ -641,7 +655,7 @@ class Music(commands.Cog):
         if not ctx.voice_state.is_playing:
             return await ctx.fail("Nothing is currently being played.")
         embed, file = ctx.voice_state.current.current_embed()
-        await ctx.send(embed=embed, file=file)
+        await ctx.send_or_reply(embed=embed, file=file)
 
     @decorators.command(
         name="pause",
@@ -837,7 +851,7 @@ class Music(commands.Cog):
         """
 
         if len(ctx.voice_state.songs) == 0:
-            return await ctx.send("The queue is already empty")
+            return await ctx.send_or_reply("The queue is already empty")
         try:
             ctx.voice_state.songs.remove(index - 1)
         except Exception:
@@ -1010,6 +1024,33 @@ class Music(commands.Cog):
         )
 
     @decorators.command(
+        aliases=["relocate", "switch"],
+        name="move",
+        brief="Move a song in the queue.",
+        implemented="2021-07-01 04:12:22.192236",
+        updated="2021-07-01 04:12:22.192236",
+    )
+    async def _move(self, ctx, index: int, position: int):
+        total = len(ctx.voice_state.songs)
+        if total == 0:
+            return await ctx.fail("The queue is currently empty.")
+        elif index > total or index < 1:
+            return await ctx.fail("Invalid index.")
+        elif position > total or position < 1:
+            return await ctx.fail("Invalid position.")
+        elif index == position:
+            await ctx.success("Song queue remains unchanged.")
+            return
+
+        song = ctx.voice_state.songs.pop(index - 1)
+
+        ctx.voice_state.songs.insert(position - 1, song)
+
+        await ctx.success(
+            f"Moved song #{index} to the {utils.number_format(position)} position in the queue."
+        )
+
+    @decorators.command(
         aliases=["pos"],
         name="position",
         brief="Show the current position of the song.",
@@ -1102,6 +1143,15 @@ class Music(commands.Cog):
                             await self.enqueue_songs(ctx, song_urls)
                             return
 
+                        elif "artist" in parts:
+                            res = await self.spotify.get_artist(parts[-1])
+                            song_urls = [
+                                i["name"] + " " + i["artists"][0]["name"]
+                                for i in res["tracks"]
+                            ]
+                            await self.enqueue_songs(ctx, song_urls)
+                            return
+
                         elif "playlist" in parts:
                             res = []
                             r = await self.spotify.get_playlist_tracks(parts[-1])
@@ -1124,7 +1174,7 @@ class Music(commands.Cog):
 
                         else:
                             return await ctx.fail("Invalid Spotify URI.")
-                    except spotify.SpotifyError:
+                    except exceptions.SpotifyError as e:
                         return await ctx.fail("Invalid Spotify URI.")
                 try:
                     source = await YTDLSource.create_source(
@@ -1223,7 +1273,7 @@ class Music(commands.Cog):
                 ctx, search, loop=self.bot.loop, bot=self.bot
             )
         except YTDLError as e:
-            await ctx.send(f"Request failed: {e}")
+            await ctx.fail(f"Request failed: {e}")
         else:
             if source == "sel_invalid":
                 await ctx.fail("Invalid selection")
@@ -1257,11 +1307,11 @@ class Music(commands.Cog):
             if len(subtitles) > 2048:
                 data = io.BytesIO(subtitles.encode("utf-8"))
                 file = discord.File(data, filename="subtitles.txt")
-                await ctx.send(file=file)
+                await ctx.send_or_reply(file=file)
             else:
                 embed = discord.Embed(title="Subtitles", color=self.bot.constants.embed)
                 embed.description = subtitles
-                await ctx.send(embed=embed)
+                await ctx.send_or_reply(embed=embed)
         else:
             return await ctx.fail("Subtitles not available.")
 

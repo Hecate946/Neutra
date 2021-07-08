@@ -88,6 +88,63 @@ class Utility(commands.Cog):
         return timestamp
 
     @decorators.command(
+        aliases=["flags"],
+        brief="Show all the badges a user has",
+        implemented="2021-06-04 01:06:21.329396",
+        updated="2021-06-04 01:06:21.329396",
+        examples="""
+                {0}badges @Hecate
+                {0}flags 708584008065351681
+                """,
+    )
+    async def badges(self, ctx, *, user: converters.DiscordUser = None):
+        """
+        Usage: {0}badges [user]
+        Alias: {0}flags
+        Output: Shows all the badges a user has
+        Notes: Will default to you if no user is passed.
+        """
+        user = user or ctx.author
+        if user.bot:
+            raise commands.BadArgument(f"User `{user}` is a bot account.")
+
+        badges = []
+        if user.public_flags.staff:
+            badges.append(self.bot.emote_dict["staff"])
+        if user.public_flags.partner:
+            badges.append(self.bot.emote_dict["partner"])
+        if user.public_flags.hypesquad:
+            badges.append(self.bot.emote_dict["hypesquad"])
+        if user.public_flags.hypesquad_balance:
+            badges.append(self.bot.emote_dict["balance"])
+        if user.public_flags.hypesquad_bravery:
+            badges.append(self.bot.emote_dict["bravery"])
+        if user.public_flags.hypesquad_brilliance:
+            badges.append(self.bot.emote_dict["brilliance"])
+        if user.public_flags.bug_hunter:
+            badges.append(self.bot.emote_dict["bughunter"])
+        if user.public_flags.bug_hunter_level_2:
+            badges.append(self.bot.emote_dict["bughuntergold"])
+        if user.public_flags.discord_certified_moderator:
+            badges.append(self.bot.emote_dict["moderator"])
+        if (
+            user.public_flags.verified_bot_developer
+            or user.public_flags.early_verified_bot_developer
+        ):
+            badges.append(self.bot.emote_dict["dev"])
+        if user.public_flags.early_supporter:
+            badges.append(self.bot.emote_dict["supporter"])
+        if hasattr(user, "premium_since") and user.premium_since is not None:
+            badges.append(self.bot.emote_dict["nitro"])
+            badges.append(self.bot.emote_dict["boost"])
+        else:
+            if user.avatar.is_animated():
+                badges.append(self.bot.emote_dict["nitro"])
+        if not badges:
+            return await ctx.fail(f"User `{user}` has no badges.")
+        await ctx.success(f"`{user}'s` badges: {' '.join(badges)}")
+
+    @decorators.command(
         aliases=["reactions"],
         brief="Get react info on a message.",
         implemented="2021-05-28 20:09:52.796946",
@@ -97,6 +154,7 @@ class Utility(commands.Cog):
                 {0}reactions 847929402116669482
                 """,
     )
+    @checks.cooldown()
     async def reactinfo(self, ctx, message: discord.Message):
         """
         Usage: {0}reactinfo [message id]
@@ -157,6 +215,7 @@ class Utility(commands.Cog):
                 {0}vcusers #music
                 """,
     )
+    @checks.cooldown()
     async def voiceusers(self, ctx, channel: discord.VoiceChannel):
         """
         Usage: {0}voiceusers [voice channel]
@@ -210,8 +269,12 @@ class Utility(commands.Cog):
                 {0}genbotoauth @Snowbot 34985
                 """,
     )
+    @checks.cooldown()
     async def oauth(
-        self, ctx, bot: converters.DiscordBot = None, permissions: int = None
+        self,
+        ctx,
+        bot: typing.Optional[converters.DiscordBot] = None,
+        permissions: int = None,
     ):
         """
         Usage: {0}oauth [bot] [permissions]
@@ -225,14 +288,12 @@ class Utility(commands.Cog):
         Notes:
             Defaults to me if no bot is specified.
         """
-        if not bot:
-            await ctx.send_or_reply(
-                "<" + discord.utils.oauth_url(self.bot.user.id) + ">"
-            )
-            return
-        if permissions:
-            permissions = discord.Permissions(permissions)
-        oauth_url = discord.utils.oauth_url(bot.id, permissions=permissions)
+        bot = bot or self.bot.user
+        if not permissions:
+            oauth_url = discord.utils.oauth_url(bot.id)
+        else:
+            perms = discord.Permissions(permissions=permissions)
+            oauth_url = discord.utils.oauth_url(bot.id, permissions=perms)
         await ctx.rep_or_ref("<" + oauth_url + ">")
 
     @decorators.command(  # For anyone looking here, these tokens are not valid.
@@ -248,6 +309,7 @@ class Utility(commands.Cog):
                 """,
     )
     @checks.bot_has_perms(embed_links=True)
+    @checks.cooldown()
     async def ptoken(self, ctx, token):
         """
         Usage: {0}ptoken <token>
@@ -286,7 +348,7 @@ class Utility(commands.Cog):
             f"**Token Created:** `{timestamp}`",
         )
         embed.color = self.bot.constants.embed
-        embed.set_thumbnail(url=user.avatar_url)
+        embed.set_thumbnail(url=user.avatar.url)
         await ctx.send_or_reply(embed=embed)
 
     @decorators.command(
@@ -302,6 +364,7 @@ class Utility(commands.Cog):
                 """,
     )
     @checks.bot_has_perms(embed_links=True)
+    @checks.cooldown()
     async def gtoken(self, ctx, user: converters.DiscordUser = None):
         """
         Usage: {0}gtoken <user>
@@ -343,7 +406,7 @@ class Utility(commands.Cog):
             f"**Generated token:** `{complete}`\n",
         )
         embed.color = self.bot.constants.embed
-        embed.set_thumbnail(url=user.avatar_url)
+        embed.set_thumbnail(url=user.avatar.url)
         await ctx.send_or_reply(embed=embed)
 
     @decorators.command(
@@ -356,6 +419,7 @@ class Utility(commands.Cog):
                 """,
     )
     @checks.bot_has_perms(embed_links=True)
+    @checks.cooldown()
     async def replies(self, ctx, message: discord.Message):
         """
         Usage: {0}replies <message>
@@ -398,6 +462,8 @@ class Utility(commands.Cog):
                 {0}findtype 840103070402740274
                 """,
     )
+    @checks.bot_has_perms(embed_links=True)
+    @checks.cooldown()
     async def type_(self, ctx, obj_id: discord.Object):
         """
         Usage: {0}type <discord object>
@@ -494,6 +560,128 @@ class Utility(commands.Cog):
             )
 
     @decorators.command(
+        brief="Convert special characters to ascii.",
+        implemented="2021-04-21 05:14:23.747367",
+        updated="2021-05-24 16:13:50.890038",
+        examples="""
+                {0}ascify H̷̗́̊ẻ̵̩̚ċ̷͎̖̚a̴̛͎͊t̸̳̭̂͌ȇ̴̲̯
+                {0}ascify 708584008065351681
+                """,
+    )
+    @checks.cooldown()
+    async def ascify(self, ctx, *, string_or_member):
+        """
+        Usage: {0}ascify <string/member>
+        Aliases: {0}ascii, {0}normalize
+        Output:
+            Attempts to convert a string or member's
+            nickname to ascii by replacing special
+            characters.
+        Notes:
+            If the passed argument is a user and both the
+            command executor and the bot have
+            the required permissions, the bot will
+            set the user's nickname to the ascified
+            version of the word. Otherwise, it will
+            simply return the ascified version. If
+            the passed string is already in ASCII,
+            it will return the same result.
+        """
+        try:
+            member = await converters.DiscordMember().convert(ctx, string_or_member)
+            if member:
+                current_name = copy.copy(member.display_name)
+                ascified = unidecode(member.display_name)
+                if ctx.guild and ctx.author.guild_permissions.manage_nicknames:
+                    try:
+                        await member.edit(nick=ascified)
+                        return await ctx.success(
+                            f"Ascified **{current_name}** to **{ascified}**"
+                        )
+                    except Exception:
+                        ascified = unidecode(string_or_member)
+                else:
+                    ascified = unidecode(string_or_member)
+            else:
+                ascified = unidecode(string_or_member)
+        except commands.BadArgument:
+            ascified = unidecode(string_or_member)
+        await ctx.success(f"Result: **{ascified}**")
+
+    @decorators.command(
+        brief="Dehoist a specified user.",
+        implemented="2021-05-06 02:22:00.614849",
+        updated="2021-05-24 16:13:50.890038",
+        examples="""
+                {0}dehoist Hecate
+                {0}dehoist @Hecate
+                {0}dehoist Hecate#3523
+                {0}dehoist 708584008065351681
+                """,
+    )
+    @commands.guild_only()
+    @checks.cooldown()
+    async def dehoist(self, ctx, user: converters.DiscordMember):
+        """
+        Usage: {0}dehoist <user>
+        Permission: Manage Nicknames
+        Output:
+            Re nicknames a single user who hoists
+            themselves at the top of the member
+            list by using special characters
+        Notes:
+            To dehoist all users with a single command,
+            use {0}massdehoist. If the bot or the command
+            author lack permissions to edit a nickname,
+            the bot will output a dehoisted version of
+            the target user's name.
+        """
+        characters = [
+            "!",
+            '"',
+            "#",
+            "$",
+            "%",
+            "&",
+            "'",
+            "(",
+            ")",
+            "*",
+            "+",
+            ",",
+            "-",
+            ".",
+            "/",
+        ]
+        if user.display_name.startswith(tuple(characters)):
+            name = copy.copy(user.display_name)
+            while name.startswith(tuple(characters)):
+                name = name[1:]
+            if name.strip() == "":
+                name = "Dehoisted"
+            bot_perms = ctx.guild.me.guild_permissions.manage_nicknames
+            user_perms = ctx.author.guild_permissions.manage_nicknames
+            if user_perms and bot_perms:
+                try:
+                    await user.edit(
+                        nick=name,
+                        reason=utils.responsible(
+                            ctx.author, "Nickname edited by dehoist command."
+                        ),
+                    )
+                    await ctx.success(f"Dehoisted user `{user}` to `{name.strip()}`")
+                    return
+                except Exception as e:
+                    await helpers.error_info(ctx, [(str(user), e)])
+                    return
+            else:
+                await ctx.success(
+                    f"The dehoisted version of `{user}` is `{name.strip()}`"
+                )
+        else:
+            await ctx.fail(f"User `{user}` is not hoisting.")
+
+    @decorators.command(
         brief="Show a given color and its values.",
         implemented="2021-04-16 00:19:02.842207",
         updated="2021-05-07 05:44:12.543100",
@@ -504,6 +692,8 @@ class Utility(commands.Cog):
                 {0}color 0xFF00FF
                 """,
     )
+    @checks.bot_has_perms(embed_links=True, attach_files=True)
+    @checks.cooldown()
     async def color(self, ctx, *, value):
         """
         Usage: {0}color <value>
@@ -618,126 +808,6 @@ class Utility(commands.Cog):
             em.set_image(url="attachment://color.png")
             await ctx.send_or_reply(embed=em, file=dfile)
 
-    @decorators.command(
-        brief="Dehoist a specified user.",
-        implemented="2021-05-06 02:22:00.614849",
-        updated="2021-05-24 16:13:50.890038",
-        examples="""
-                {0}dehoist Hecate
-                {0}dehoist @Hecate
-                {0}dehoist Hecate#3523
-                {0}dehoist 708584008065351681
-                """,
-    )
-    @commands.guild_only()
-    async def dehoist(self, ctx, user: converters.DiscordMember):
-        """
-        Usage: {0}dehoist <user>
-        Permission: Manage Nicknames
-        Output:
-            Re nicknames a single user who hoists
-            themselves at the top of the member
-            list by using special characters
-        Notes:
-            To dehoist all users with a single command,
-            use {0}massdehoist. If the bot or the command
-            author lack permissions to edit a nickname,
-            the bot will output a dehoisted version of
-            the target user's name.
-        """
-        characters = [
-            "!",
-            '"',
-            "#",
-            "$",
-            "%",
-            "&",
-            "'",
-            "(",
-            ")",
-            "*",
-            "+",
-            ",",
-            "-",
-            ".",
-            "/",
-        ]
-        if user.display_name.startswith(tuple(characters)):
-            name = copy.copy(user.display_name)
-            while name.startswith(tuple(characters)):
-                name = name[1:]
-            if name.strip() == "":
-                name = "Dehoisted"
-            bot_perms = ctx.guild.me.guild_permissions.manage_nicknames
-            user_perms = ctx.author.guild_permissions.manage_nicknames
-            if user_perms and bot_perms:
-                try:
-                    await user.edit(
-                        nick=name,
-                        reason=utils.responsible(
-                            ctx.author, "Nickname edited by dehoist command."
-                        ),
-                    )
-                    await ctx.success(f"Dehoisted user `{user}` to `{name.strip()}`")
-                    return
-                except Exception as e:
-                    await helpers.error_info(ctx, [(str(user), e)])
-                    return
-            else:
-                await ctx.success(
-                    f"The dehoisted version of `{user}` is `{name.strip()}`"
-                )
-        else:
-            await ctx.fail(f"User `{user}` is not hoisting.")
-
-    @decorators.command(
-        brief="Convert special characters to ascii.",
-        implemented="2021-04-21 05:14:23.747367",
-        updated="2021-05-24 16:13:50.890038",
-        examples="""
-                {0}ascify H̷̗́̊ẻ̵̩̚ċ̷͎̖̚a̴̛͎͊t̸̳̭̂͌ȇ̴̲̯
-                {0}ascify 708584008065351681
-                """,
-    )
-    async def ascify(self, ctx, *, string_or_member):
-        """
-        Usage: {0}ascify <string/member>
-        Aliases: {0}ascii, {0}normalize
-        Output:
-            Attempts to convert a string or member's
-            nickname to ascii by replacing special
-            characters.
-        Notes:
-            If the passed argument is a user and both the
-            command executor and the bot have
-            the required permissions, the bot will
-            set the user's nickname to the ascified
-            version of the word. Otherwise, it will
-            simply return the ascified version. If
-            the passed string is already in ASCII,
-            it will return the same result.
-        """
-        try:
-            member = await converters.DiscordMember().convert(ctx, string_or_member)
-            if member:
-                current_name = copy.copy(member.display_name)
-                ascified = unidecode(member.display_name)
-                if ctx.guild and ctx.author.guild_permissions.manage_nicknames:
-                    try:
-                        await member.edit(nick=ascified)
-                        return await ctx.success(
-                            f"Ascified **{current_name}** to **{ascified}**"
-                        )
-                    except Exception:
-                        ascified = unidecode(string_or_member)
-                else:
-                    ascified = unidecode(string_or_member)
-            else:
-                ascified = unidecode(string_or_member)
-        except commands.BadArgument:
-            ascified = unidecode(string_or_member)
-        await ctx.success(f"Result: **{ascified}**")
-
     @decorators.command(  # R. Danny https://github.com/Rapptz/RoboDanny/
         aliases=["unicode"],
         brief="Show information on a character.",
@@ -748,6 +818,7 @@ class Utility(commands.Cog):
                 {0}unicode :emoji:
                 """,
     )
+    @checks.cooldown()
     async def charinfo(self, ctx, *, characters: str):
         """
         Usage: {0}charinfo <characters>
@@ -791,6 +862,7 @@ class Utility(commands.Cog):
                 {0}pfp 708584008065351681
                 """,
     )
+    @checks.cooldown()
     async def avatar(self, ctx, *, user: converters.DiscordUser = None):
         """
         Usage: {0}avatar [user]
@@ -801,7 +873,7 @@ class Utility(commands.Cog):
         """
         if user is None:
             user = ctx.author
-        await self.do_avatar(ctx, user.display_name, url=user.avatar_url)
+        await self.do_avatar(ctx, user.display_name, url=user.avatar.url)
 
     @decorators.command(
         aliases=["dav", "dpfp", "davatar"],
@@ -815,6 +887,7 @@ class Utility(commands.Cog):
                 {0}defaultavatar @Hecate
                 """,
     )
+    @checks.cooldown()
     async def defaultavatar(self, ctx, *, user: converters.DiscordUser = None):
         """
         Usage: {0}defaultavatar [user]
@@ -824,11 +897,76 @@ class Utility(commands.Cog):
         Notes:
             Will default to you if no user is passed.
         """
-        if user is None:
-            user = ctx.author
+        user = user or ctx.author
         await self.do_avatar(
-            ctx, user.display_name, user.default_avatar_url, default=True
+            ctx, user.display_name, user.default_avatar.url, default=True
         )
+
+    @decorators.command(
+        aliases=["mobile", "web", "desktop"],
+        brief="Show a user's discord platform.",
+        implemented="2021-03-25 05:56:35.053930",
+        updated="2021-05-06 23:25:08.685407",
+        examples="""
+                {0}web @Hecate Snowbot 708584008065351681
+                {0}mobile @Hecate Snowbot 708584008065351681
+                {0}desktop @Hecate Snowbot 708584008065351681
+                {0}platform @Hecate Snowbot 708584008065351681
+                """,
+    )
+    @checks.guild_only()
+    @checks.cooldown()
+    async def platform(self, ctx, *users: converters.DiscordMember):
+        """
+        Usage:  {0}platform [users]...
+        Alias:  {0}mobile, {0}desktop, {0}web
+        Output:
+            Shows which discord platform a user
+            is currently on. Can be discord desktop,
+            discord mobile, or discord web.
+        Notes:
+            The bot cannot determine platform
+            when users are offline or if their
+            status is invisible.
+        """
+        if not len(users):
+            return await ctx.usage()
+        desktop = []
+        mobile = []
+        web = []
+        offline = []
+        for member in users:
+            if member.is_on_mobile():  # Member is on discord mobile. :(
+                mobile.append(str(member))
+            elif str(member.status) == "offline":  # Member is offline :((
+                offline.append(str(member))
+            elif str(member.web_status) != "offline":  # Member is on web :(((
+                web.append(str(member))
+            else:
+                desktop.append(str(member))  # Member is on desktop :)
+
+        def fmt(lst):
+            if len(lst) == 1:
+                fmt = f" `{', '.join(lst)}` is"
+            else:
+                fmt = f"s `{', '.join(lst)}` are"
+            return fmt
+
+        msgs = []
+
+        if desktop:
+            em = self.bot.emote_dict["desktop"]
+            msgs.append(f"{em} User{fmt(desktop)} on discord desktop.")
+        if mobile:
+            em = self.bot.emote_dict["mobile"]
+            msgs.append(f"{em} User{fmt(web)} on discord mobile.")
+        if web:
+            em = self.bot.emote_dict["search"]
+            msgs.append(f"{em} User{fmt(web)} on discord web.")
+        if offline:
+            em = self.bot.emote_dict["offline"]
+            msgs.append(f"{em} User{fmt(offline)} offline.")
+        await ctx.send_or_reply("\n".join(msgs))
 
     @decorators.command(
         aliases=["sav", "savatar"],
@@ -842,6 +980,7 @@ class Utility(commands.Cog):
                 {0}defaultavatar @Hecate
                 """,
     )
+    @checks.cooldown()
     async def serveravatar(self, ctx, *, server: converters.DiscordGuild = None):
         """
         Usage: {0}serveravatar
@@ -854,7 +993,7 @@ class Utility(commands.Cog):
         """
         if server is None:
             server = ctx.guild
-        await self.do_avatar(ctx, server, server.icon_url, server=True)
+        await self.do_avatar(ctx, server, server.icon.url, server=True)
 
     @decorators.command(
         aliases=["nick", "setnick"],
@@ -870,6 +1009,7 @@ class Utility(commands.Cog):
     @commands.guild_only()
     @checks.bot_has_perms(manage_nicknames=True)
     @checks.has_perms(manage_nicknames=True)
+    @checks.cooldown()
     async def nickname(
         self, ctx, user: converters.DiscordMember, *, nickname: str = None
     ):
@@ -883,8 +1023,8 @@ class Utility(commands.Cog):
             Nickname will be reset if no new nickname is passed.
         """
         if user.id == ctx.guild.owner.id:
-            return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['failed']} User `{user}` is the server owner. I cannot edit the nickname of the server owner.",
+            raise commands.BadArgument(
+                f"User `{user}` is the server owner. I cannot edit the nickname of the server owner."
             )
         try:
             await user.edit(
@@ -914,6 +1054,7 @@ class Utility(commands.Cog):
     )
     @commands.guild_only()
     @checks.has_perms(manage_messages=True)
+    @checks.cooldown()
     async def find(self, ctx):
         """
         Usage: {0}find <option> <search>
@@ -1257,13 +1398,21 @@ class Utility(commands.Cog):
                 {0}content 840091302532087838
                 """,
     )
-    async def raw(self, ctx, *, message: discord.Message):
+    async def raw(self, ctx, *, message: discord.Message = None):
         """
         Usage: raw [message id]
         Alias: {0}content
         Output: Raw message content
         """
-        raw_data = await self.bot.http.get_message(message.channel.id, message.id)
+        if not message and not ctx.message.reference:
+            return await ctx.usage
+        if not message:
+            message_id = ctx.message.reference.message_id
+            channel_id = ctx.message.reference.channel_id
+        else:
+            message_id = message.id
+            channel_id = message.channel.id
+        raw_data = await self.bot.http.get_message(channel_id, message_id)
         string = json.dumps(raw_data, indent=2)
         string = cleaner.clean_all(string)
         if len(string) < 1990:
@@ -1283,6 +1432,7 @@ class Utility(commands.Cog):
         updated="2021-05-10 20:14:33.223405",
     )
     @checks.has_perms(manage_emojis=True)
+    @checks.cooldown()
     async def emojipost(self, ctx, dm: converters.Flag = None):
         """
         Usage: {0}emojipost [nodm]
@@ -1321,6 +1471,7 @@ class Utility(commands.Cog):
                 {0}bitly https://discord.gg/5n696us4Tf
                 """,
     )
+    @checks.cooldown()
     async def shorten(self, ctx, url):
         """
         Usage: {0}shorten <url>
@@ -1438,6 +1589,7 @@ class Utility(commands.Cog):
     )
     @checks.bot_has_perms(embed_links=True)
     @checks.has_perms(manage_messages=True, embed_links=True)
+    @checks.cooldown(2, 60)
     async def embed(self, ctx):
         """
         Usage: {0}embed
@@ -1823,6 +1975,7 @@ class Utility(commands.Cog):
             {0}math arctan(PI + 30)
             """,
     )
+    @checks.cooldown()
     async def calculate(self, ctx, *, formula):
         """
         Usage: calculate <formula>
@@ -1850,7 +2003,7 @@ class Utility(commands.Cog):
                 self.bot.emote_dict["failed"],
                 formula.replace("*", "\\*").replace("`", "\\`").replace("_", "\\_"),
             )
-            msg += "```yaml\n" + ctx.command.help.format(ctx.prefix) + "```"
+            msg += "```yaml\n" + ctx.command.help.format(ctx.clean_prefix) + "```"
             return await ctx.send_or_reply(msg)
 
         if int(answer) == answer:

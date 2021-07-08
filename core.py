@@ -1,22 +1,19 @@
 import io
-import traceback
-import aiohttp
-import discord
-import collections
-import json
-import logging
 import os
 import re
 import sys
+import json
 import time
+import aiohttp
+import asyncio
+import discord
+import logging
+import traceback
+import collections
 
 from colr import color
-from datetime import datetime
 from discord.ext import commands, tasks
-from discord_slash.client import SlashCommand
 from logging.handlers import RotatingFileHandler
-
-from dislash.slash_commands import SlashClient
 
 from settings import cleanup, database, constants
 from utilities import utils, avatars, override
@@ -105,7 +102,6 @@ def get_prefixes(bot, msg):
     and defaults to mentions & the prefix
     in ./config.json.
     """
-    common_prefixes = ["!", ".", ">", "<", "$", "&", "-", "+", "=", "?", ";", ":"]
     user_id = bot.user.id
     base = [f"<@!{user_id}> ", f"<@{user_id}> "]
     if msg.guild is None:
@@ -141,22 +137,37 @@ class Snowbot(commands.AutoShardedBot):
         )  # discord invite regex
         self.emote_dict = constants.emotes
         self.prefixes = database.prefixes
-        self.common_prefixes = ["!", ".", ">", "<", "$", "&", "-", "+", "=", "?", ";", ":"]
+        self.common_prefixes = [
+            "!",
+            ".",
+            ">",
+            "<",
+            "$",
+            "&",
+            "%",
+            "*" "-",
+            "+",
+            "=",
+            "," "?",
+            ";",
+            ":",
+            "`",
+        ]  # Common prefixes that are valid in DMs
+        # self._is_ready = asyncio.Event()
         self.ready = False
         self.session = aiohttp.ClientSession(loop=self.loop)
-        self.slash = SlashCommand(self, sync_commands=True)
         self.socket_events = collections.Counter()
 
         self.cog_exceptions = ["BOTCONFIG", "BOTADMIN", "MANAGER", "JISHAKU"]
         self.hidden_cogs = ["TESTING", "BATCH", "SLASH", "TASKS", "HOME"]
-        self.do_not_load = ["TESTING"]
+        self.do_not_load = ["TESTING", "TIMES", "CONVERSION"]
         self.home_cogs = ["MUSIC"]
 
         self.home_guilds = [
             805638877762420786,
             776345386482270209,
             740734113086177433,
-        ]  # My servers that have "premium" features
+        ]  # My servers that have "premium" features.
 
         # Webhooks for monitering and data saving.
         self.avatar_webhook = None
@@ -392,7 +403,7 @@ class Snowbot(commands.AutoShardedBot):
             )
 
         if not hasattr(self, "uptime"):
-            self.uptime = datetime.utcnow()
+            self.uptime = discord.utils.utcnow()
 
         if not hasattr(self, "starttime"):
             self.starttime = time.time()
@@ -461,10 +472,7 @@ class Snowbot(commands.AutoShardedBot):
         await cleanup.basic_cleanup(self.guilds)
 
         self.avatar_saver = avatars.AvatarSaver(
-            self.avatar_webhook,
-            self.cxn,
-            self.session,
-            self.loop
+            self.avatar_webhook, self.cxn, self.session, self.loop
         )  # Start saving avatars.
 
         # load all initial extensions
@@ -479,7 +487,7 @@ class Snowbot(commands.AutoShardedBot):
         print(f"{self.user} ({self.user.id})")
         try:
             await self.logging_webhook.send(
-                f"{self.emote_dict['success']} **Information** `{datetime.utcnow()}`\n"
+                f"{self.emote_dict['success']} **Information** `{discord.utils.utcnow()}`\n"
                 f"```prolog\nReady: {self.user} [{self.user.id}]```",
                 username=f"{self.user.name} Logger",
                 avatar_url=self.constants.avatars["green"],
@@ -591,7 +599,7 @@ class Snowbot(commands.AutoShardedBot):
         will be logged via the error webhook.
         """
         e = traceback.format_exc()
-        title = f"**{self.emote_dict['failed']} Error `{datetime.utcnow()}`**"
+        title = f"**{self.emote_dict['failed']} Error `{discord.utils.utcnow()}`**"
         description = f"```prolog\n{event.upper()}:\n{kwargs.get('tb') or e}\n```"
         dfile = None
         arguments = None
@@ -628,7 +636,7 @@ class Snowbot(commands.AutoShardedBot):
         so we can give the user feedback
         """
         if ctx.handled:
-            return # Already handled locally
+            return  # Already handled locally
 
         # This prevents any cogs with an overwritten cog_command_error being handled here.
         if ctx.cog:
@@ -650,7 +658,6 @@ class Snowbot(commands.AutoShardedBot):
                 arg = str(error).split()[-1].strip('."')
                 error = f"The `{arg}` argument must be an integer."
             await ctx.fail(str(error))
-
 
         elif isinstance(error, commands.BadUnionArgument):
             await ctx.fail(str(error))
@@ -742,7 +749,7 @@ class Snowbot(commands.AutoShardedBot):
             self.invites[guild.id] = await guild.invites()
         try:
             await self.logging_webhook.send(
-                f"{self.emote_dict['success']} **Information** `{datetime.utcnow()}`\n"
+                f"{self.emote_dict['success']} **Information** `{discord.utils.utcnow()}`\n"
                 f"```prolog\nServer join: {guild.name} [{guild.id}]```",
                 username=f"{self.user.name} Logger",
                 avatar_url=self.constants.avatars["green"],
@@ -758,14 +765,13 @@ class Snowbot(commands.AutoShardedBot):
         await cleanup.destroy_server(guild.id)
         try:
             await self.logging_webhook.send(
-                f"{self.emote_dict['success']} **Information** `{datetime.utcnow()}`\n"
+                f"{self.emote_dict['success']} **Information** `{discord.utils.utcnow()}`\n"
                 f"```prolog\nServer remove: {guild.name} [{guild.id}]```",
                 username=f"{self.user.name} Logger",
                 avatar_url=self.constants.avatars["green"],
             )
         except Exception:
             pass
-
 
     async def on_message(self, message):
         await self.process_commands(message)
@@ -801,4 +807,3 @@ class Snowbot(commands.AutoShardedBot):
 
 
 bot = Snowbot()
-SlashClient(bot)

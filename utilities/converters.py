@@ -1,3 +1,4 @@
+import enum
 import re
 import typing
 import asyncio
@@ -7,16 +8,15 @@ import discord
 from discord.ext import commands, menus
 
 from utilities import checks
+from utilities import exceptions
 from utilities import formatting
 from utilities import pagination
 
 EMOJI_REGEX = re.compile(r"<a?:.+?:([0-9]{15,21})>")
 EMOJI_NAME_REGEX = re.compile(r"[0-9a-zA-Z\_]{2,32}")
-
-
-tag_regex = re.compile(r"(.*)#(\d{4})")
-lax_id_regex = re.compile(r"([0-9]{15,21})$")
-mention_regex = re.compile(r"<@!?([0-9]+)>$")
+USERNAME_REGEX = re.compile(r"(.*)#(\d{4})")
+SNOWFLAKE_REGEX = re.compile(r"([0-9]{15,21})$")
+USER_MENTION_REGEX = re.compile(r"<@!?([0-9]+)>$")
 ROLE_MENTION_REGEX = re.compile(r"<@&([0-9]+)>$")
 
 
@@ -104,6 +104,168 @@ async def attempt_cleanup(ctx, msg_ids):
             if msg.author == ctx.me and msg.id in msg_ids:
                 await msg.delete()
 
+class UniqueMember(commands.Converter):
+    """
+    Similar to DiscordMember, will raise
+    AmbiguityError if multiple members are found.
+    If mention or ID, return exact match.
+    Try name#discrim then name, then nickname
+    Finally fallback on case insensitivity.
+    """
+
+    async def get_by_id(self, ctx, member_id):
+        """Ger member from ID."""
+        result = None
+        result = ctx.guild.get_member(member_id)
+        if not result:
+            raise commands.BadArgument(
+                f"User `{await prettify(ctx, member_id)}` not found."
+            )
+        return result
+
+    async def get_by_name(self, ctx, member_name):
+        """
+        Lookup a member by name. Username#Discriminator will decrease
+        the chance of raising AmbiguityError. Case sensitivity is preserved
+        to decrease the chances of raising AmbiguityError.
+        Returns list of possible matches.
+        """
+
+        member_tags = [str(m) for m in ctx.guild.members]
+        member_names = [m.name for m in ctx.guild.members]
+        member_nicks = [m.display_name for m in ctx.guild.members]
+
+        lower_member_tags = [str(m).lower() for m in ctx.guild.members]
+        lower_member_names = [m.name.lower() for m in ctx.guild.members]
+        lower_member_nicks = [m.display_name.lower() for m in ctx.guild.members]
+
+        def pred(member):
+            if member_name in member_tags:
+                return str(member) == member_name
+            if member_name in lower_member_tags:  # Case insensitive name#discrim
+                return member.name.lower() == member_name.lower()
+            if member_name in member_names:
+                return member.name == member_name
+            if member_name in lower_member_names:  # Case insensitive name
+                return member.name.lower() == member_name.lower()
+            if member_name in member_nicks:
+                return member.display_name == member_name
+            if member_name in lower_member_nicks:  # Case insensitive nickname
+                return member.display_name.lower() == member_name.lower()
+
+        results = [m for m in ctx.guild.members if pred(m)]
+        if results:
+            if len(results) > 1:
+                raise exceptions.AmbiguityError(member_name, "User")
+            return results[0]
+
+    async def find_match(self, ctx, argument):
+        """
+        Get a match.
+        If argument is a mention, try and get an exact match.
+        If argument is  a number, try lookup by id.
+        Fallback to lookup by name.
+        """
+        mention_match = USER_MENTION_REGEX.match(argument)
+        if mention_match:
+            return await self.get_by_id(ctx, int(mention_match.group(1)))
+
+        lax_id_match = SNOWFLAKE_REGEX.match(argument)
+        if lax_id_match:
+            result = await self.get_by_id(ctx, int(lax_id_match.group(1)))
+            if result:
+                return result
+
+        return await self.get_by_name(ctx, argument)
+
+    async def convert(self, ctx, argument):
+        if not ctx.guild:
+            raise commands.NoPrivateMessage()
+        match = await self.find_match(ctx, argument)
+
+        if not match:
+            raise commands.BadArgument(
+                f"User `{await prettify(ctx, argument)}` not found."
+            )
+
+        failure = await checks.check_priv(ctx, match)
+        if failure:
+            raise exceptions.IntractabilityError(failure)
+        return match
+
+
+class UniqueRole(commands.Converter):
+    """
+    Similar to DiscordRole but will raise AmbiguityError
+    if multiple results are found. Will also
+    raise IntractabilityError if role cannot be manipulated.
+    """
+
+    async def get_by_id(self, ctx, user_id):
+        """Exact role lookup by ID."""
+        result = None
+        result = ctx.guild.get_role(user_id)
+        if not result:
+            raise commands.BadArgument(
+                f"Role `{await prettify(ctx, user_id)}` not found."
+            )
+        return result
+
+    async def get_by_name(self, ctx, role_name):
+        """
+        Lookup by role name. If multiple roles are found,
+        will raise ambiguous error. Retains case-sensitivity
+        to reduce chance of exact name matches.
+        """
+        role_names = [r.name for r in ctx.guild.roles]
+
+        def pred(role):
+            if role_name in role_names:
+                return role.name == role_name
+            else:
+                return role.name.lower() == role_name.lower()
+
+        found = [r for r in ctx.guild.roles if pred(r)]
+        if found:
+            if len(found) > 1:
+                raise exceptions.AmbiguityError(role_name, "Role")
+            return found[0]
+
+    async def find_match(self, ctx, argument):
+        """
+        If argument is a mention, try and get an exact match.
+        If argument is a number, try lookup by id.
+        Fallback to lookup by name.
+        Raise AmbiguityError if multiple matches are found.
+        """
+        mention_match = ROLE_MENTION_REGEX.match(argument)
+        if mention_match:
+            return await self.get_by_id(ctx, int(mention_match.group(1)))
+
+        lax_id_match = SNOWFLAKE_REGEX.match(argument)
+        if lax_id_match:
+            result = await self.get_by_id(ctx, int(lax_id_match.group(1)))
+            if result:
+                return result
+
+        return await self.get_by_name(ctx, argument)
+
+    async def convert(self, ctx, argument):
+        if not ctx.guild:
+            raise commands.NoPrivateMessage()
+        match = await self.find_match(ctx, argument)
+
+        if not match:
+            raise commands.BadArgument(
+                f"Role `{await prettify(ctx, argument)}` not found."
+            )
+
+        failure = await checks.role_priv(ctx, match)
+        if failure:
+            raise exceptions.IntractabilityError(failure)
+
+        return match
+
 
 class SearchEmojiConverter(commands.Converter):
     """Search for matching emoji."""
@@ -135,7 +297,7 @@ class SearchEmojiConverter(commands.Converter):
         Fallback to lookup by name.
         Disambiguate in case we have multiple name results.
         """
-        lax_id_match = lax_id_regex.match(argument)
+        lax_id_match = SNOWFLAKE_REGEX.match(argument)
         if lax_id_match:
             result = await self.get_by_id(ctx, int(lax_id_match.group(1)))
             if result:
@@ -161,7 +323,7 @@ class SearchEmojiConverter(commands.Converter):
         except commands.PartialEmojiConversionFailure:
             pass
 
-        lax_id_match = lax_id_regex.match(argument)
+        lax_id_match = SNOWFLAKE_REGEX.match(argument)
         if lax_id_match:
             return discord.PartialEmoji(
                 name="unknown", id=int(lax_id_match.group(1)), animated=False
@@ -199,7 +361,7 @@ class GuildEmojiConverter(commands.Converter):
         Fallback to lookup by name.
         Disambiguate in case we have multiple name results.
         """
-        lax_id_match = lax_id_regex.match(argument)
+        lax_id_match = SNOWFLAKE_REGEX.match(argument)
         if lax_id_match:
             result = await self.get_by_id(ctx, int(lax_id_match.group(1)))
             if result:
@@ -229,7 +391,7 @@ class GuildEmojiConverter(commands.Converter):
         except commands.PartialEmojiConversionFailure:
             pass
 
-        lax_id_match = lax_id_regex.match(argument)
+        lax_id_match = SNOWFLAKE_REGEX.match(argument)
         if lax_id_match:
             return discord.PartialEmoji(
                 name="unknown", id=int(lax_id_match.group(1)), animated=False
@@ -284,7 +446,7 @@ class DiscordBot(commands.Converter):
         If found in current guild, return Member, else User.
         (Will not do bot-wide inexact match)
         """
-        tag_match = tag_regex.match(bot_name)
+        tag_match = USERNAME_REGEX.match(bot_name)
 
         if tag_match:
 
@@ -321,11 +483,11 @@ class DiscordBot(commands.Converter):
         return []
 
     async def find_match(self, ctx, argument):
-        mention_match = mention_regex.match(argument)
+        mention_match = USER_MENTION_REGEX.match(argument)
         if mention_match:
             return await self.get_by_id(ctx, int(mention_match.group(1)))
 
-        lax_id_match = lax_id_regex.match(argument)
+        lax_id_match = SNOWFLAKE_REGEX.match(argument)
         if lax_id_match:
             result = await self.get_by_id(ctx, int(lax_id_match.group(1)))
             if result:
@@ -357,6 +519,10 @@ class DiscordUser(commands.Converter):
     fallback to bot for User.
     """
 
+    def __init__(self, disambiguate=True) -> None:
+        super().__init__()
+        self.disambiguate = disambiguate
+
     async def get_by_id(self, ctx, user_id):
         """Exact user_id lookup."""
         result = None
@@ -380,7 +546,7 @@ class DiscordUser(commands.Converter):
         If found in current guild, return Member, else User.
         (Will not do bot-wide inexact match)
         """
-        tag_match = tag_regex.match(user_name)
+        tag_match = USERNAME_REGEX.match(user_name)
 
         if tag_match:
 
@@ -423,11 +589,11 @@ class DiscordUser(commands.Converter):
         Fallback to lookup by name.
         Disambiguate in case we have multiple name results.
         """
-        mention_match = mention_regex.match(argument)
+        mention_match = USER_MENTION_REGEX.match(argument)
         if mention_match:
             return await self.get_by_id(ctx, int(mention_match.group(1)))
 
-        lax_id_match = lax_id_regex.match(argument)
+        lax_id_match = SNOWFLAKE_REGEX.match(argument)
         if lax_id_match:
             result = await self.get_by_id(ctx, int(lax_id_match.group(1)))
             if result:
@@ -435,6 +601,8 @@ class DiscordUser(commands.Converter):
 
         results = await self.get_by_name(ctx, argument)
         if results:
+            if disambiguate:
+                return await disambiguate(ctx, results)
             return results[0]
 
     async def convert(self, ctx, argument):
@@ -488,7 +656,7 @@ class DiscordGuild(commands.Converter):
         Only allow matches where ctx.author shares a guild.
         Disambiguate in case we have multiple name results.
         """
-        lax_id_match = lax_id_regex.match(argument)
+        lax_id_match = SNOWFLAKE_REGEX.match(argument)
         if lax_id_match:
             result = ctx.bot.get_guild(int(lax_id_match.group(1)))
 
@@ -587,6 +755,10 @@ class DiscordMember(commands.Converter):
     resolves to member instances.
     """
 
+    def __init__(self, disambiguate=True) -> None:
+        super().__init__()
+        self.disambiguate = disambiguate
+
     async def get_by_id(self, ctx, user_id):
         """Exact user_id lookup."""
         result = None
@@ -606,7 +778,7 @@ class DiscordMember(commands.Converter):
         If found in current guild, return Member, else User.
         (Will not do bot-wide inexact match)
         """
-        tag_match = tag_regex.match(user_name)
+        tag_match = USERNAME_REGEX.match(user_name)
 
         if tag_match:
 
@@ -647,11 +819,11 @@ class DiscordMember(commands.Converter):
         Fallback to lookup by name.
         Disambiguate in case we have multiple name results.
         """
-        mention_match = mention_regex.match(argument)
+        mention_match = USER_MENTION_REGEX.match(argument)
         if mention_match:
             return await self.get_by_id(ctx, int(mention_match.group(1)))
 
-        lax_id_match = lax_id_regex.match(argument)
+        lax_id_match = SNOWFLAKE_REGEX.match(argument)
         if lax_id_match:
             result = await self.get_by_id(ctx, int(lax_id_match.group(1)))
             if result:
@@ -659,7 +831,9 @@ class DiscordMember(commands.Converter):
 
         results = await self.get_by_name(ctx, argument)
         if results:
-            return await disambiguate(ctx, results)
+            if self.disambiguate:
+                return await disambiguate(ctx, results)
+            return results[0]
 
     async def convert(self, ctx, argument):
         if not ctx.guild:
@@ -719,7 +893,7 @@ class DiscordRole(commands.Converter):
         if mention_match:
             return await self.get_by_id(ctx, int(mention_match.group(1)))
 
-        lax_id_match = lax_id_regex.match(argument)
+        lax_id_match = SNOWFLAKE_REGEX.match(argument)
         if lax_id_match:
             result = await self.get_by_id(ctx, int(lax_id_match.group(1)))
             if result:
@@ -1001,9 +1175,28 @@ class LoggingEvent(commands.Converter):
 class ServerDataOption(commands.Converter):
     async def convert(self, ctx, argument):
         types = {
-            "nicknames": "Delete all recorded nicknames for a user on this server.",
-            "messages": "Delete all message data recorded for a user on this server.",
             "invites": "Delete all invite data recorded for a user on this server.",
+            "messages": "Delete all message data recorded for a user on this server.",
+            "nicknames": "Delete all recorded nicknames for a user on this server.",
+        }
+
+        if argument.lower() not in types.keys():
+            headers = ["OPTION", "DESCRIPTION"]
+            table = formatting.TabularData()
+            table.set_columns(headers)
+            table.add_rows([(event, desc) for event, desc in types.items()])
+            render = table.render()
+            completed = f"```yml\nVALID OPTIONS:\n{render}```"
+            raise commands.BadArgument(f"**Invalid Option.**{completed}")
+        else:
+            return argument.lower()
+
+class UserDataOption(commands.Converter):
+    async def convert(self, ctx, argument):
+        types = {
+            "avatars": "Delete all recorded avatars.",
+            "statuses": "Delete all recorded status data.",
+            "usernames": "Delete all recorded usernames.",
         }
 
         if argument.lower() not in types.keys():

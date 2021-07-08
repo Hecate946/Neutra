@@ -1,10 +1,12 @@
-import re
 import discord
 
 from better_profanity import profanity
 from discord.ext import commands, menus
+from discord.ext.commands.core import check
 
+from utilities import utils
 from utilities import checks
+from utilities import helpers
 from utilities import converters
 from utilities import decorators
 from utilities import pagination
@@ -27,18 +29,25 @@ class Automod(commands.Cog):
     ## Warn Commands ##
     ###################
 
-    @decorators.command(brief="Warn users with an optional reason.")
-    @commands.guild_only()
+    @decorators.command(
+        aliases=["strike"],
+        brief="Warn users with an optional reason.",
+        implemented="2021-04-07 01:26:34.603363",
+        updated="2021-07-07 22:07:21.374659",
+    )
+    @checks.guild_only()
     @checks.has_perms(kick_members=True)
+    @checks.cooldown()
     async def warn(
         self,
         ctx,
-        targets: commands.Greedy[converters.DiscordMember],
+        targets: commands.Greedy[converters.DiscordMember(False)],
         *,
         reason: str = None,
     ):
         """
-        Usage: -warn [target] [target]... [reason]
+        Usage: {0}warn [target] [target]... [reason]
+        Alias: {0}strike
         Output: Warns members and DMs them the reason they were warned for
         Permission: Kick Members
         Notes:
@@ -46,117 +55,109 @@ class Automod(commands.Cog):
             They only store a record of how many instances a user has misbehaved.
         """
         if not len(targets):
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}warn <target> [target]... [reason]`",
-            )
+            return await ctx.usage()
         warned = []
+        failed = []
+        insert = []
         for target in targets:
-            if target.id in self.bot.constants.owners:
-                return await ctx.send_or_reply(
-                    content="You cannot warn my developer.",
-                )
-            if target.id == ctx.author.id:
-                return await ctx.send_or_reply(
-                    "I don't think you really want to warn yourself..."
-                )
-            if target.id == self.bot.user.id:
-                return await ctx.send_or_reply(
-                    content="I don't think I want to warn myself...",
-                )
-            if (
-                target.guild_permissions.manage_messages
-                and ctx.author.id not in self.bot.constants.owners
-            ):
-                return await ctx.send_or_reply(
-                    content="You cannot punish other staff members.",
-                )
-            if (
-                ctx.guild.me.top_role.position > target.top_role.position
-                and not target.guild_permissions.administrator
-            ):
+            res = await checks.check_priv(ctx, target)
+            if res:
+                failed.append((str(target), res))
+                continue
+            if reason:
                 try:
-                    warnings = (
-                        await self.bot.cxn.fetchrow(
-                            "SELECT warnings FROM warn WHERE user_id = $1 AND server_id = $2",
-                            target.id,
-                            ctx.guild.id,
-                        )
-                        or (None)
-                    )
-                    if warnings is None:
-                        warnings = 0
-                        await self.bot.cxn.execute(
-                            "INSERT INTO warn VALUES ($1, $2, $3)",
-                            target.id,
-                            ctx.guild.id,
-                            int(warnings) + 1,
-                        )
-                        warned.append(f"{target.name}#{target.discriminator}")
-                    else:
-                        warnings = int(warnings[0])
-                        try:
-                            await self.bot.cxn.execute(
-                                "UPDATE warn SET warnings = warnings + 1 WHERE server_id = $1 AND user_id = $2",
-                                ctx.guild.id,
-                                target.id,
-                            )
-                            warned.append(f"{target.name}#{target.discriminator}")
-                        except Exception:
-                            raise
+                    embed = discord.Embed(color=self.bot.constants.embed)
+                    embed.title = "Warn Notice"
+                    embed.description = f"**Server**: `{ctx.guild.name} ({ctx.guild.id})`\n"
+                    embed.description += f"**Moderator**: `{ctx.author} ({ctx.author.id})`\n"
+                    embed.description += f"**Reason**: `{reason}`"
+                    await target.send(embed=embed)
+                except Exception:
+                    pass
+            warned.append(str(target))
+            insert.append((target.id, ctx.guild.id, reason))
 
-                except Exception as e:
-                    return await ctx.send_or_reply(e)
-                if reason:
-                    try:
-                        await target.send(
-                            f"{self.bot.emote_dict['announce']} You have been warned in **{ctx.guild.name}** `{reason}`."
-                        )
-                    except Exception:
-                        return
-            else:
-                return await ctx.send_or_reply(
-                    "<:fail:816521503554273320> `{0}` could not be warned.".format(
-                        target
-                    )
-                )
+        query = """
+                INSERT INTO warns (user_id, server_id, reason)
+                VALUES ($1, $2, $3)
+                """
+        await self.bot.cxn.executemany(query, (data for data in insert))
+
         if warned:
-            await ctx.send_or_reply(
-                content=f'{self.bot.emote_dict["success"]} Warned `{", ".join(warned)}`',
-            )
-
-    @decorators.command(brief="Count the warnings a user has.", aliases=["listwarns"])
-    @commands.guild_only()
-    async def warncount(self, ctx, *, target: converters.DiscordMember = None):
-        """
-        Usage: -warncount [member]
-        Alias: -listwarns
-        Output: Show how many warnings the user has
-        """
-        if target is None:
-            target = ctx.author
-
-        try:
-            warnings = (
-                await self.bot.cxn.fetchrow(
-                    "SELECT warnings FROM warn WHERE user_id = $1 AND server_id = $2",
-                    target.id,
-                    ctx.guild.id,
-                )
-                or None
-            )
-            if warnings is None:
-                return await ctx.send_or_reply(
-                    f"{self.emote_dict['success']} User `{target}` has no warnings."
-                )
-            warnings = int(warnings[0])
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['announce']} User `{target}` currently has **{warnings}** warning{'' if int(warnings) == 1 else 's'} in this server.",
-            )
-        except Exception as e:
-            return await ctx.send_or_reply(e)
+            await ctx.success(f"Warned `{', '.join(warned)}`")
+        if failed:
+            await helpers.error_info(ctx, failed)
 
     @decorators.command(
-        brief="Clear a user's warnings",
+        brief="Count the warnings a user has.",
+        implemented="2021-04-07 01:26:34.603363",
+        updated="2021-07-07 22:07:21.374659",
+    )
+    @checks.guild_only()
+    @checks.cooldown()
+    async def warncount(self, ctx, *, target: converters.DiscordMember = None):
+        """
+        Usage: {0}warncount [user]
+        Output: Show how many warnings the user has
+        """
+        target = target or ctx.author
+
+        query = """
+                SELECT COUNT(*)
+                FROM warns
+                WHERE user_id = $1
+                AND server_id = $2;
+                """
+        wc = self.bot.cxn.fetchval(query, target.id, ctx.guild.id)
+        if not wc or wc == 0:
+            return await ctx.success(f"User `{target}` has no warnings.")
+
+        em = self.bot.emote_dict['exclamation']
+        fmt = 'warning' if wc == 1 else 'warnings'
+        guild = f"**{ctx.guild.name}**"
+
+        await ctx.send_or_reply(f"{em} User `{target}` currently has **{wc}** {fmt} in {guild}.")
+
+    @decorators.command(
+        brief="Show all warnings a user has.",
+        implemented="2021-07-08 02:15:33.685845",
+        updated="2021-07-08 02:15:33.685845",
+    )
+    @checks.guild_only()
+    @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
+    @checks.cooldown()
+    async def listwarns(self, ctx, target: converters.DiscordMember = None):
+        target = target or ctx.author
+
+        query = """
+                SELECT id, reason AS res, insertion AS time
+                FROM warns WHERE user_id = $1
+                AND server_id = $2 ORDER BY insertion DESC;
+                """
+        warns = await self.bot.cxn.fetch(query, target.id, ctx.guild.id)
+        if not warns:
+            return await ctx.success(f"User `{target}` has no current warnings.")
+        
+        p = pagination.MainMenu(pagination.FieldPageSource(
+            entries=[
+                (
+                    f"**Warning ID:** {rec['id']}",
+                    f"**Issued:** {utils.short_time(rec['time'])}\n"
+                    f"**Reason:** {rec['res']}"
+                ) for rec in warns
+            ],
+            title="User Warnings",
+            per_page=10,
+            description=f"User `{target}` has {len(warns)} total warnings."
+        ))
+
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send_or_reply(e)
+
+
+    @decorators.command(
         aliases=[
             "deletewarnings",
             "removewarns",
@@ -164,141 +165,109 @@ class Automod(commands.Cog):
             "deletewarns",
             "clearwarnings",
         ],
+        brief="Clear a user's warnings",
+        implemented="2021-04-07 01:26:34.603363",
+        updated="2021-07-07 22:07:21.374659",
     )
-    @commands.guild_only()
+    @checks.guild_only()
     @checks.has_perms(kick_members=True)
-    async def clearwarns(self, ctx, *, target: converters.DiscordMember = None):
+    @checks.cooldown()
+    async def clearwarns(self, ctx, *, target: converters.DiscordMember):
         """
-        Usage: -clearwarns [user]
-        Aliases: -deletewarnings, -removewarns, -removewarnings, -deletewarns, -clearwarnings
+        Usage: {0}clearwarns [user]
+        Aliases: {0}deletewarnings, {0}removewarns, {0}removewarnings, {0}deletewarns, {0}clearwarnings
         Permission: Kick Members
         Output: Clears all warnings for that user
         """
-        if target is None:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}deletewarn <target>`",
-            )
+        query = """
+                DELETE FROM warns
+                WHERE user_id = $1
+                AND server_id = $2
+                RETURNING warning;
+                """
+        data = await self.bot.cxn.fetch(query, target.id, ctx.guild.id)
+        if not data:
+            await ctx.success(f"User `{target}` has no current warnings.")
+            return
+        fmt = f"{len(data)} warning{'' if len(data) == 1 else 's'}"
+        await ctx.success(f"Cleared {fmt} for `{target}`")
         try:
-            warnings = (
-                await self.bot.cxn.fetchrow(
-                    "SELECT warnings FROM warn WHERE user_id = $1 AND server_id = $2",
-                    target.id,
-                    ctx.guild.id,
-                )
-                or None
-            )
-            if warnings is None:
-                return await ctx.send_or_reply(
-                    f"{self.emote_dict['success']} User `{target}` has no warnings."
-                )
-            warnings = int(warnings[0])
-            await self.bot.cxn.execute(
-                "DELETE FROM warn WHERE user_id = $1 and server_id = $2",
-                target.id,
-                ctx.guild.id,
-            )
-            await ctx.send_or_reply(
-                content=f"{self.emote_dict['success']} Cleared all warnings for `{target}` in this server.",
-            )
-            try:
-                await target.send(
-                    f"{self.bot.emote_dict['announce']} All your warnings have been cleared in **{ctx.guild.name}**."
-                )
-            except Exception:
-                return
-        except Exception as e:
-            return await ctx.send_or_reply(e)
+            await target.send(f"Moderator `{ctx.author}` has cleared all your warnings in **{ctx.guild.name}**.")
+        except Exception:
+            pass
+    
 
     @decorators.command(
+        aliases=["unstrike"],
         brief="Revoke a warning from a user",
-        aliases=["revokewarning", "undowarning", "undowarn"],
+        implemented="2021-07-08 06:59:09.201252",
+        updated="2021-07-08 06:59:09.201252",
     )
     @commands.guild_only()
     @checks.has_perms(kick_members=True)
-    async def revokewarn(self, ctx, *, target: converters.DiscordMember = None):
+    async def unwarn(self, ctx, warning_id: int):
         """
-        Usage: -revokewarn [user]
-        Aliases: -revokewarning, -undowarning, -undowarn
+        Usage: {0}revokewarn [warning id]
+        Aliases: {0}unstrike
         Permission: Kick Members
         Output: Revokes a warning from a user
         """
-        if target is None:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}revokewarn <target>`",
-            )
-        try:
-            warnings = (
-                await self.bot.cxn.fetchrow(
-                    "SELECT warnings FROM warn WHERE user_id = $1 AND server_id = $2",
-                    target.id,
-                    ctx.guild.id,
-                )
-                or None
-            )
-            if warnings is None:
-                return await ctx.send_or_reply(
-                    f"{self.emote_dict['success']} User `{target}` has no warnings to revoke."
-                )
-            warnings = int(warnings[0])
-            if int(warnings) == 1:
-                await self.bot.cxn.execute(
-                    "DELETE FROM warn WHERE user_id = $1 and server_id = $2",
-                    target.id,
-                    ctx.guild.id,
-                )
-                await ctx.send_or_reply(
-                    f"{self.emote_dict['success']} Cleared all warnings for `{target}` in this server."
-                )
-            else:
-                await self.bot.cxn.execute(
-                    "UPDATE warn SET warnings = warnings - 1 WHERE server_id = $1 AND user_id = $2",
-                    ctx.guild.id,
-                    target.id,
-                )
-                await ctx.send_or_reply(
-                    f"{self.emote_dict['success']} Revoked a warning for `{target}` in this server."
-                )
-            try:
-                await target.send(
-                    f"{self.bot.emote_dict['announce']} You last warning has been revoked in **{ctx.guild.name}**."
-                )
-            except Exception:
-                return
-        except Exception as e:
-            return await ctx.send_or_reply(e)
+        query = """
+                DELETE FROM warns
+                WHERE server_id = $1
+                AND id = $2
+                RETURNING *
+                """
+        data = await self.bot.cxn.fetchrow(query, ctx.guild.id, warning_id)
+        if not data:
+            return await ctx.fail(f"**Invalid warning ID.** Use `{ctx.clean_prefix}listwarns [user]` to view valid warning IDs.")
+        user = await self.bot.fetch_user(data['user_id'])
+        if not user:
+            return await ctx.fail("The user this warning was issued for no longer exists.")
+        await ctx.success(
+            f"Removed warning #{data['id']} for user `{user}`\n"
+            f"\n**Issued:** {utils.short_time(data['insertion'])}"
+            f"\n**Reason:** {data['reason']}"
+        )
 
-    @decorators.command(brief="Display the server warnlist.", aliases=["warns"])
-    @commands.guild_only()
+    @decorators.command(
+        aliases=["serverwarns"],
+        brief="Display the server warnlist.",
+        implemented="2021-04-07 01:26:34.603363",
+        updated="2021-07-07 22:07:21.374659",
+    )
+    @checks.guild_only()
+    @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.has_perms(manage_messages=True)
-    async def serverwarns(self, ctx):
+    @checks.cooldown()
+    async def warns(self, ctx):
         """
-        Usage: -serverwarns
-        Alias: -warns
+        Usage: {0}warns
+        Alias: {0}serverwarns
         Output: Embed of all warned members in the server
         Permission: Manage Messages
         """
-        query = """SELECT COUNT(*) FROM warn WHERE server_id = $1"""
-        count = await self.bot.cxn.fetchrow(query, ctx.guild.id)
-        query = """SELECT user_id, warnings FROM warn WHERE server_id = $1 ORDER BY warnings DESC"""
-        records = await self.bot.cxn.fetch(query, ctx.guild.id) or None
-        if records is None:
-            return await ctx.send_or_reply(
-                content=f"{self.emote_dict['warn']} No current warnings exist on this server.",
-            )
+        query = """
+                SELECT user_id AS u, COUNT(*) as c
+                FROM warns WHERE server_id = $1
+                GROUP BY user_id ORDER BY c DESC;
+                """
+        records = await self.bot.cxn.fetch(query, ctx.guild.id)
+        if not records:
+            return await ctx.success("No current warnings exist on this server.")
+
+        def mem(snowflake):
+            m = ctx.guild.get_member(snowflake)
+            if m:
+                return m
+
+        entries = [f"User: `{mem(rec['u'])}` Warnings: `{rec['c']}`" for rec in records if mem(rec['u'])]
 
         p = pagination.SimplePages(
-            entries=[
-                [
-                    f"User: `{ctx.guild.get_member(x[0]) or 'Not Found'}` Warnings `{x[1]}`"
-                ]
-                for x in records
-            ],
+            entries=entries,
             per_page=20,
         )
-        p.embed.title = "{} Warn List ({:,} total)".format(
-            ctx.guild.name, int(count[0])
-        )
-
+        p.embed.title = f"Server Warn List ({len(entries):,} Users)"
         try:
             await p.start(ctx)
         except menus.MenuError as e:
@@ -307,12 +276,17 @@ class Automod(commands.Cog):
     @decorators.command(
         brief="Enable or disable auto-deleting invite links",
         aliases=["removeinvitelinks", "deleteinvites", "antiinvites"],
+        implemented="2021-04-07 01:26:34.603363",
+        updated="2021-07-07 22:07:21.374659",
     )
+    @checks.guild_only()
+    @checks.bot_has_perms(manage_messages=True)
     @checks.has_perms(manage_guild=True)
+    @checks.cooldown()
     async def antiinvite(self, ctx, *, yes_no=None):
         """
-        Usage:      -antiinvite <yes|enable|true|on||no|disable|false|off>
-        Aliases:    -removeinvites, -deleteinvites, -antiinvites
+        Usage:      {0}antiinvite <yes|enable|true|on||no|disable|false|off>
+        Aliases:    {0}removeinvites, -deleteinvites, -antiinvites
         Permission: Manage Server
         Output:     Removes invite links sent by users.
         Notes:
@@ -356,22 +330,23 @@ class Automod(commands.Cog):
         await ctx.send_or_reply(msg)
 
     @decorators.group(
-        case_insensitive=True,
         aliases=["autoroles", "autoassign"],
         brief="Assign roles to new members.",
+        implemented="2021-04-07 01:26:34.603363",
+        updated="2021-07-07 22:07:21.374659",
     )
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(manage_guild=True, manage_roles=True)
     async def autorole(self, ctx):
         """
-        Usage: -autorole <option>
+        Usage: {0}autorole <option>
         Aliases:
-            -autoassign
-            -autoroles
+            {0}autoassign
+            {0}autoroles
         Output: Assigns roles to new users
         Examples:
-            -autorole add <role1> <role2>
-            -autorole show
+            {0}autorole add <role1> <role2>
+            {0}autorole show
         Permission: Manage Server, Manage Roles
         Options:
             add, remove, clear, show
@@ -382,14 +357,14 @@ class Automod(commands.Cog):
     @autorole.command(brief="Auto-assign roles on user join.")
     async def add(self, ctx, roles: commands.Greedy[converters.DiscordRole] = None):
         """
-        Usage: -autorole add <role1> [role2]...
+        Usage: {0}autorole add <role1> [role2]...
         Output:
             Will automatically assign
             the passed roles to users
             who join the server.
         Examples:
-            -autorole add <role1> [role2]
-            -autoassign add <role>
+            {0}autorole add <role1> [role2]
+            {0}autoassign add <role>
         Notes:
             Accepts any number of roles.
             Roles with multiple words must
@@ -415,14 +390,14 @@ class Automod(commands.Cog):
     @autorole.command(aliases=["rem", "rm"], brief="Remove automatic autoroles.")
     async def remove(self, ctx, roles: commands.Greedy[converters.DiscordRole] = None):
         """
-        Usage: -autorole remove <role1> [role2]...
+        Usage: {0}autorole remove <role1> [role2]...
         Output:
             Will no longer assign
             the passed roles to users
             who join the server.
         Examples:
-            -autorole rm <role1> <role2>
-            -autoassign remove <role>
+            {0}autorole rm <role1> <role2>
+            {0}autoassign remove <role>
         Notes:
             Accepts any number of roles.
             Roles with multiple words must
@@ -443,9 +418,7 @@ class Automod(commands.Cog):
             [str(x) for x in self.bot.server_settings[ctx.guild.id]["autoroles"]]
         )
         await self.bot.cxn.execute(query, autoroles, ctx.guild.id)
-        await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['success']} Updated autorole settings.",
-        )
+        await ctx.success("Updated autorole settings.")
 
     @autorole.command(brief="Clear all current autoroles.")
     async def clear(self, ctx):
@@ -456,8 +429,8 @@ class Automod(commands.Cog):
             any previous autoroles
             to users who join the server.
         Examples:
-            -autorole rm <role1> [role2]
-            -autoassign remove <role>
+            {0}autorole rm <role1> [role2]
+            {0}autoassign remove <role>
         Notes:
             Will ask for confirmation.
         """
@@ -484,20 +457,20 @@ class Automod(commands.Cog):
     @autorole.command(brief="Show all current autoroles.", aliases=["display"])
     async def show(self, ctx):
         """
-        Usage: -autorole show
-        Alias: -autorole display
+        Usage: {0}autorole show
+        Alias: {0}autorole display
         Output:
             Will start a pagination session
             showing all current autoroles
         Examples:
-            -autorole display
-            -autoassign show
+            {0}autorole display
+            {0}autoassign show
         """
         autoroles = self.bot.server_settings[ctx.guild.id]["autoroles"]
 
         if autoroles == []:
             return await ctx.send_or_reply(
-                content=f"No autoroles yet, use `{ctx.prefix}autorole add <roles>`",
+                content=f"No autoroles yet, use `{ctx.clean_prefix}autorole add <roles>`",
             )
 
         p = pagination.SimplePages(
@@ -576,13 +549,13 @@ class Automod(commands.Cog):
     @checks.has_perms(manage_guild=True)
     async def _filter(self, ctx):
         """
-        Usage: -filter <option>
-        Alias: -profanity
+        Usage: {0}filter <option>
+        Alias: {0}profanity
         Permission: Manage Server
         Output:
             Adds, removes, clears, or displays the filter.
         Example:
-            -filter add <badwords>
+            {0}filter add <badwords>
         Options:
             add, remove, display, clear
         Notes:
@@ -592,7 +565,7 @@ class Automod(commands.Cog):
             Manage Messages permission are immune.
             To add or remove multiple words with
             one command, separate the words by a comma.
-            Example: -filter add badword1, badword2
+            Example: {0}filter add badword1, badword2
         """
         if ctx.invoked_subcommand is None:
             help_command = self.bot.get_command("help")
@@ -602,7 +575,7 @@ class Automod(commands.Cog):
     @checks.has_perms(manage_guild=True)
     async def add_words(self, ctx, *, words_to_filter: str = None):
         """
-        Usage: -filter add <words>
+        Usage: {0}filter add <words>
         Output:
             Saves all the passed words
             and will delete when users
@@ -651,10 +624,10 @@ class Automod(commands.Cog):
         brief="Removes words from the filter.",
     )
     @checks.has_perms(manage_guild=True)
-    async def remove_words(self, ctx, *, words: str = None):
+    async def remove_words(self, ctx, *, words: str):
         """
-        Usage: -filter remove <words>
-        Alias: --, -rm , -rem
+        Usage: {0}filter remove <words>
+        Alias: {0}-, {0}rm , {0}rem
         Output:
             Deletes the passed words from
             the filter (if they were saved.)
@@ -662,18 +635,11 @@ class Automod(commands.Cog):
             separate words by a comma
             to remove multiple words at once.
         """
-        if words is None:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.prefix}filter remove <word>`",
-            )
-
         words_to_remove = words.lower().split(",")
 
         word_list = self.bot.server_settings[ctx.guild.id]["profanities"]
-        if word_list == []:
-            return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['warn']} This server has no filtered words.",
-            )
+        if not word_list:
+            return await ctx.fail(f"This server has no filtered words.")
 
         removed = []
         not_found = []
@@ -696,14 +662,14 @@ class Automod(commands.Cog):
         await self.bot.cxn.execute(query, insertion, ctx.guild.id)
 
         if not_found:
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['warn']} The word{'' if len(not_found) == 1 else 's'} `{', '.join(not_found)}` "
+            await ctx.fail(
+                f"The word{'' if len(not_found) == 1 else 's'} `{', '.join(not_found)}` "
                 f"{'was' if len(not_found) == 1 else 'were'} not in the word filter.",
             )
 
         if removed:
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['success']} The word{'' if len(removed) == 1 else 's'} `{', '.join(removed)}` "
+            await ctx.success(
+                f"The word{'' if len(removed) == 1 else 's'} `{', '.join(removed)}` "
                 f"{'was' if len(removed) == 1 else 'were'} successfully removed from the word filter.",
             )
 
@@ -711,17 +677,17 @@ class Automod(commands.Cog):
     @checks.has_perms(manage_guild=True)
     async def display(self, ctx):
         """
-        Usage: -filter display
-        Alias: -filter show
+        Usage: {0}filter display
+        Alias: {0}filter show
         Output:
             Starts a pagination session to
             show all currently filtered words.
         """
         words = self.bot.server_settings[ctx.guild.id]["profanities"]
 
-        if words == []:
-            return await ctx.send_or_reply(
-                content=f"No filtered words yet, use `{ctx.prefix}filter add <word>` to filter words",
+        if not words:
+            return await ctx.fail(
+                f"No filtered words yet, use `{ctx.clean_prefix}filter add <word>` to filter words",
             )
 
         p = pagination.SimplePages(entries=[f"`{x}`" for x in words], per_page=20)
@@ -738,7 +704,7 @@ class Automod(commands.Cog):
     @checks.has_perms(manage_guild=True)
     async def _clear(self, ctx):
         """
-        Usage: -filter clear
+        Usage: {0}filter clear
         Output:
             Confirmation that the filtered
             word list has been cleared.
@@ -749,11 +715,9 @@ class Automod(commands.Cog):
                 WHERE server_id = $1;
                 """
         await self.bot.cxn.execute(query, ctx.guild.id)
-        self.bot.server_settings[ctx.guild.id]["profanities"] = []
+        self.bot.server_settings[ctx.guild.id]["profanities"].clear()
 
-        await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['success']} Removed all filtered words.",
-        )
+        await ctx.success(f"Removed all filtered words.")
 
     #####################
     ## Event Listeners ##
@@ -770,7 +734,8 @@ class Automod(commands.Cog):
         guild = member.guild
         reassign = self.bot.server_settings[member.guild.id]["reassign"]
         if reassign:
-            query = """SELECT roles
+            query = """
+                    SELECT roles
                     FROM userroles
                     WHERE user_id = $1
                     and server_id = $2;

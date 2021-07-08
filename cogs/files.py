@@ -4,7 +4,6 @@ import pytz
 import typing
 import discord
 
-from datetime import datetime
 from discord.ext import commands
 
 from utilities import humantime
@@ -12,6 +11,7 @@ from utilities import utils
 from utilities import checks
 from utilities import converters
 from utilities import decorators
+from utilities import formatting
 
 
 def setup(bot):
@@ -62,14 +62,14 @@ class Files(commands.Cog):
             will send the file to the channel
             where the the command was invoked.
         """
-        timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
+        timestamp = discord.utils.utcnow().strftime("%Y-%m-%d %H.%M")
         help_file = "Help-{}.txt".format(timestamp)
 
         mess = await ctx.send_or_reply(
             content="Saving servers to **{}**...".format(help_file),
         )
         msg = ""
-        prefix = ctx.prefix
+        prefix = ctx.clean_prefix
 
         # Get and format the help
         for cog in sorted(self.bot.cogs):
@@ -159,7 +159,7 @@ class Files(commands.Cog):
             will send the file to the channel
             where the the command was invoked.
         """
-        timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
+        timestamp = discord.utils.utcnow().strftime("%Y-%m-%d %H.%M")
         server_file = "Servers-{}.txt".format(timestamp)
 
         mess = await ctx.send_or_reply(
@@ -218,7 +218,7 @@ class Files(commands.Cog):
             where the the command was invoked.
         """
 
-        timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
+        timestamp = discord.utils.utcnow().strftime("%Y-%m-%d %H.%M")
         settings_file = "Settings-{}.json".format(timestamp)
 
         mess = await ctx.send_or_reply(
@@ -277,7 +277,7 @@ class Files(commands.Cog):
             will send the file to the channel
             where the the command was invoked.
         """
-        timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
+        timestamp = discord.utils.utcnow().strftime("%Y-%m-%d %H.%M")
         role_file = "Roles-{}.txt".format(timestamp)
 
         mess = await ctx.send_or_reply(
@@ -331,7 +331,7 @@ class Files(commands.Cog):
             will send the file to the channel
             where the the command was invoked.
         """
-        timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
+        timestamp = discord.utils.utcnow().strftime("%Y-%m-%d %H.%M")
         role_file = "Channels-{}.txt".format(timestamp)
 
         mess = await ctx.send_or_reply(
@@ -391,7 +391,7 @@ class Files(commands.Cog):
             will send the file to the channel
             where the the command was invoked.
         """
-        timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
+        timestamp = discord.utils.utcnow().strftime("%Y-%m-%d %H.%M")
         role_file = "Channels-{}.txt".format(timestamp)
 
         mess = await ctx.send_or_reply(
@@ -451,7 +451,7 @@ class Files(commands.Cog):
             will send the file to the channel
             where the the command was invoked.
         """
-        timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
+        timestamp = discord.utils.utcnow().strftime("%Y-%m-%d %H.%M")
         role_file = "Channels-{}.txt".format(timestamp)
 
         mess = await ctx.send_or_reply(
@@ -511,7 +511,7 @@ class Files(commands.Cog):
             will send the file to the channel
             where the the command was invoked.
         """
-        timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
+        timestamp = discord.utils.utcnow().strftime("%Y-%m-%d %H.%M")
         role_file = "Emotes-{}.txt".format(timestamp)
 
         mess = await ctx.send_or_reply(
@@ -575,7 +575,7 @@ class Files(commands.Cog):
             raise commands.BadArgument("Maximum message amount is 2000")
         if messages < 1:
             raise commands.BadArgument("Minimum message amount is 1")
-        timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
+        timestamp = discord.utils.utcnow().strftime("%Y-%m-%d %H.%M")
         log_file = "Logs-{}.txt".format(timestamp)
 
         if not chan:
@@ -653,7 +653,7 @@ class Files(commands.Cog):
             where the the command was invoked.
         """
 
-        timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
+        timestamp = discord.utils.utcnow().strftime("%Y-%m-%d %H.%M")
         time_file = "Timezones-{}.txt".format(timestamp)
 
         mess = await ctx.send_or_reply(
@@ -709,7 +709,7 @@ class Files(commands.Cog):
             where the the command was invoked.
         """
 
-        timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
+        timestamp = discord.utils.utcnow().strftime("%Y-%m-%d %H.%M")
         time_file = "Humans-{}.txt".format(timestamp)
 
         mess = await ctx.send_or_reply(
@@ -771,7 +771,7 @@ class Files(commands.Cog):
             where the the command was invoked.
         """
 
-        timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
+        timestamp = discord.utils.utcnow().strftime("%Y-%m-%d %H.%M")
         time_file = "Bots-{}.txt".format(timestamp)
 
         mess = await ctx.send_or_reply(
@@ -832,7 +832,7 @@ class Files(commands.Cog):
             where the the command was invoked.
         """
 
-        timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
+        timestamp = discord.utils.utcnow().strftime("%Y-%m-%d %H.%M")
         time_file = "Members-{}.txt".format(timestamp)
 
         mess = await ctx.send_or_reply(
@@ -888,7 +888,7 @@ class Files(commands.Cog):
             will send the file to the channel
             where the the command was invoked.
         """
-        timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
+        timestamp = discord.utils.utcnow().strftime("%Y-%m-%d %H.%M")
         time_file = "Bans-{}.txt".format(timestamp)
 
         mess = await ctx.send_or_reply(
@@ -923,12 +923,75 @@ class Files(commands.Cog):
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
     @decorators.command(
+        aliases=["dumpstrikes"],
+        brief="DMs you a file of server bans.",
+        implemented="2021-04-09 21:29:18.563027",
+        updated="2021-05-06 16:26:05.161487",
+    )
+    @checks.guild_only()
+    @checks.has_perms(view_audit_log=True)
+    @checks.cooldown()
+    async def dumpwarns(self, ctx):
+        """
+        Usage: {0}dumpwarns
+        Aliases: {0}dumpstrikes
+        Permission: View Audit Log
+        Output:
+            Sends a txt file to your DMs
+            with all current server warns.
+        Notes:
+            If you have your DMs blocked, the bot
+            will send the file to the channel
+            where the the command was invoked.
+        """
+        timestamp = discord.utils.utcnow().strftime("%Y-%m-%d %H.%M")
+        time_file = "Warns-{}.sml".format(timestamp)
+
+        mess = await ctx.send_or_reply(
+            content="Saving warns to **{}**...".format(time_file),
+        )
+
+        query = """
+                SELECT id, user_id, insertion as issued_at, reason FROM warns
+                WHERE server_id = $1;
+                """
+        results = await self.bot.cxn.fetch(query, ctx.guild.id)
+
+        headers = list(results[0].keys())
+        table = formatting.TabularData()
+        table.set_columns(headers)
+        table.add_rows(list(r.values()) for r in results)
+        render = table.render()
+
+        data = io.BytesIO(render.encode("utf-8"))
+        await mess.edit(content="Uploading `{}`...".format(time_file))
+        try:
+            await ctx.author.send(file=discord.File(data, filename=time_file))
+        except Exception:
+            await ctx.send_or_reply(
+                file=discord.File(data, filename=time_file),
+            )
+            await mess.edit(
+                content="{} Uploaded `{}`.".format(
+                    self.bot.emote_dict["success"], time_file
+                )
+            )
+            return
+        await mess.edit(
+            content="{} Uploaded `{}`.".format(
+                self.bot.emote_dict["success"], time_file
+            )
+        )
+        await mess.add_reaction(self.bot.emote_dict["letter"])
+
+    @decorators.command(
         aliases=["md"],
         brief="DMs you my readme file.",
         implemented="2021-04-14 00:48:12.179355",
         updated="2021-05-06 16:30:04.761423",
+        hidden=True,
     )
-    @commands.cooldown(2, 60, commands.BucketType.user)
+    @commands.is_owner()
     async def readme(self, ctx):
         """
         Usage: {0}readme
@@ -1495,7 +1558,7 @@ class Files(commands.Cog):
 
     async def get_and_send_actions(self, ctx, user, after, action, emote, string):
         name = str(action).split(".")[-1] if action else "Action"
-        timestamp = datetime.today().strftime("%Y-%m-%d %H.%M")
+        timestamp = discord.utils.utcnow().strftime("%Y-%m-%d %H.%M")
         filename = f"{name.capitalize()}s-{timestamp}.sml"
         mess = await ctx.send_or_reply(
             content="Saving logs to **{}...**".format(filename),

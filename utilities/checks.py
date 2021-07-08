@@ -135,7 +135,7 @@ async def check_priv(ctx, member):
             return f"You cannot {ctx.command.name} yourself."
         if member.id == ctx.bot.user.id:
             return f"I cannot {ctx.command.name} myself."
-
+        
         # Bot lacks permissions
         if member.id == ctx.guild.owner.id:
             return f"I cannot {ctx.command.name} the server owner."
@@ -166,24 +166,29 @@ async def role_priv(ctx, role):
     Handle permission hierarchy for commands
     Return the reason for failure.
     """
-    try:
-        # Bot lacks permissions
-        if ctx.guild.me.top_role.position == role.position:
-            return f"Role `{role.name}` is highest role."
-        if ctx.guild.me.top_role.position < role.position:
-            return f"Role `{role.name}` is above my highest role."
+    # First role validity check
+    if role.is_bot_managed():
+        return f"Role `{role.name}` is managed by a bot."
+    if role.is_premium_subscriber():
+        return f"Role `{role.name}` is this server's booster role."
+    if role.is_integration():
+        return f"Role `{role.name}` is managed by an integration."
 
-        # Check if user bypasses
-        if ctx.author.id == ctx.guild.owner.id:
-            return
+    # Bot lacks permissions
+    if ctx.guild.me.top_role.position == role.position:
+        return f"Role `{role.name}` is my highest role."
+    if ctx.guild.me.top_role.position < role.position:
+        return f"Role `{role.name}` is above my highest role."
 
-        # Now permission check
-        if ctx.author.top_role.position == role.position:
-            return f"Role `{role.name}` is your highest role."
-        if ctx.author.top_role.position < role.position:
-            return f"Role `{role.name}` is above highest role."
-    except Exception:
-        pass
+    # Check if user bypasses
+    if ctx.author.id == ctx.guild.owner.id:
+        return
+
+    # Now permission check
+    if ctx.author.top_role.position == role.position:
+        return f"Role `{role.name}` is your highest role."
+    if ctx.author.top_role.position < role.position:
+        return f"Role `{role.name}` is above highest role."
 
 
 async def checker(ctx, value):
@@ -269,6 +274,7 @@ def guild_only():
         return True
 
     return commands.check(predicate)
+
 
 def cooldown(*args, **kwargs):
     return commands.check(override.CustomCooldown(*args, **kwargs))

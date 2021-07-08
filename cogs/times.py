@@ -3,9 +3,6 @@ import re
 import json
 import pytz
 import time as t
-import typing
-import discord
-import collections
 
 from datetime import datetime
 from datetime import timedelta
@@ -15,10 +12,8 @@ from geopy import geocoders
 
 from utilities import utils
 from utilities import checks
-from utilities import humantime
 from utilities import converters
 from utilities import decorators
-from utilities import formatting
 from utilities import pagination
 
 
@@ -223,9 +218,7 @@ class Times(commands.Cog):
                     continue
                 t["time"] = utils.getClockForTime(t["time"])
                 msg += f"{str(user[0]).ljust(max(*width))}| {t['time']} ({user[1]})\n"
-            await message.edit(
-                content=f"{self.bot.emote_dict['announce']} **Usertimes:**"
-            )
+            await message.edit(content=f"{self.bot.emote_dict['clock']} **Usertimes:**")
             p = pagination.MainMenu(
                 pagination.TextPageSource(text=msg, prefix="```prolog")
             )
@@ -288,11 +281,11 @@ class Times(commands.Cog):
         if timezone is None:
             return await ctx.send_or_reply(
                 content=f"{self.bot.emote_dict['warn']} `{user}` has not set their timezone. "
-                f"Use the `{ctx.prefix}settz [Region/City]` command.",
+                f"Use the `{ctx.clean_prefix}settz [Region/City]` command.",
             )
 
         await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['announce']} `{user}'s timezone is {timezone}`",
+            content=f"{self.bot.emote_dict['clock']} `{user}'s timezone is {timezone}`",
         )
 
     @decorators.command(
@@ -337,7 +330,7 @@ class Times(commands.Cog):
             msg = (
                 f"{self.bot.emote_dict['warn']} "
                 f"`{member}` hasn't set their timezone yet. "
-                f"They can do so with `{ctx.prefix}settz [Region/City]` command.\n"
+                f"They can do so with `{ctx.clean_prefix}settz [Region/City]` command.\n"
                 f"The current UTC time is **{timenow}**."
             )
             await ctx.send_or_reply(msg)
@@ -349,9 +342,9 @@ class Times(commands.Cog):
             return
         t["time"] = utils.getClockForTime(t["time"])
         if member:
-            msg = f"{self.bot.emote_dict['announce']} `It's currently {t['time']} where {member.display_name} is.`"
+            msg = f"{self.bot.emote_dict['clock']} `It's currently {t['time']} where {member.display_name} is.`"
         else:
-            msg = f"{self.bot.emote_dict['announce']} `It's {t['time']} currently where you are.`"
+            msg = f"{self.bot.emote_dict['clock']} `It's {t['time']} currently where you are.`"
 
         await ctx.send_or_reply(msg)
 
@@ -421,7 +414,7 @@ class Times(commands.Cog):
                 time = datetime.now(zone)
                 time_fmt = time.strftime("%a %I:%M %p")
                 clock = utils.getClockForTime(time_fmt)
-                msg = f"{self.bot.emote_dict['announce']} `It is {clock} in {city_name.title()} ({request['zoneName']})`"
+                msg = f"{self.bot.emote_dict['clock']} `It is {clock} in {city_name.title()} ({request['zoneName']})`"
                 await ctx.send_or_reply(content=msg)
         except Exception as e:
             await ctx.send_or_reply(e)
@@ -486,126 +479,3 @@ class Times(commands.Cog):
             python time format.
         """
         await ctx.send_or_reply(f"{self.bot.emote_dict['clock']} `{datetime.utcnow()}`")
-
-    @decorators.command(
-        hidden=True,
-        brief="Show the days a user was active.",
-        implemented="2021-05-12 07:46:53.635661",
-        updated="2021-05-12 15:25:00.152528",
-        examples="""
-                {0}clocker
-                {0}clocker Hecate
-                {0}clocker @Hecate 3 days ago
-                {0}clocker 708584008065351681 2m
-                {0}clocker Hecate#3523 one month ago
-                """,
-    )
-    @checks.has_perms(view_audit_log=True)
-    async def clocker(
-        self,
-        ctx,
-        user: typing.Optional[converters.DiscordMember] = None,
-        *,
-        time: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}clocker [user] [time]
-        Output:
-            Counts the days that
-            a user has sent a message
-            in the specified time period.
-        Notes:
-            If no time frame is specified,
-            will default to 1 week.
-        """
-        if user is None:
-            user = ctx.author
-        await ctx.trigger_typing()
-        if time:
-            actual_time = (datetime.utcnow() - time.dt).total_seconds()
-            the_datetime = time.dt
-        else:
-            actual_time = 604800  # 1 week
-            the_datetime = datetime.utcfromtimestamp(t.time() - actual_time)
-        query = """
-                SELECT DISTINCT (
-                    SELECT EXTRACT(
-                        DAY FROM (
-                            TO_TIMESTAMP(unix)
-                        )
-                    ) WHERE author_id = $1
-                    AND unix > ((SELECT EXTRACT(EPOCH FROM NOW()) - $2))
-                ) FROM messages;
-                """
-        row = await self.bot.cxn.fetch(query, user.id, (actual_time - 86400))
-        results = len([x[0] for x in row if x[0] is not None])
-        emote = self.bot.emote_dict["graph"]
-        pluralize = "" if results == 1 else "s"
-        timefmt = humantime.human_timedelta(the_datetime, accuracy=1)
-        msg = f"{emote} User `{user}` has logged into discord **{results} day{pluralize} since {timefmt}.**"
-        await ctx.send_or_reply(msg)
-
-    @decorators.command(
-        hidden=True,
-        brief="Show all active users.",
-        implemented="2021-05-12 15:25:00.152528",
-        updated="2021-05-12 15:25:00.152528",
-        examples="""
-                {0}clocking
-                {0}clocking 2m
-                {0}clocking 1 month ago
-                {0}clocking 3 weeks ago
-                """,
-    )
-    @checks.bot_has_perms(attach_files=True)
-    @checks.has_perms(manage_guild=True)
-    async def clocking(self, ctx, *, timeframe: humantime.PastTime = None):
-        """
-        Usage: {0}clocking [time]
-        Output:
-            Shows all users who have
-            sent a message in the server
-            in the specified time frame
-        Notes:
-            If no time frame is specified,
-            will default to 1 week.
-        """
-        await ctx.trigger_typing()
-        if timeframe:
-            actual_time = (datetime.utcnow() - timeframe.dt).total_seconds()
-            the_datetime = timeframe.dt
-        else:
-            actual_time = 604800  # 1 week
-            the_datetime = datetime.utcfromtimestamp(t.time() - actual_time)
-        query = """
-                SELECT DISTINCT author_id, (SELECT EXTRACT(DAY FROM (TO_TIMESTAMP(unix))))
-                FROM messages
-                WHERE server_id = $1
-                AND unix > (SELECT EXTRACT(EPOCH FROM NOW()) - $2);
-                """
-        rows = await self.bot.cxn.fetch(query, ctx.guild.id, (actual_time - 86400))
-        counter = collections.Counter([row[0] for row in rows])
-        fmt = [
-            (str(ctx.guild.get_member(x[0])), x[1])
-            for x in counter.items()
-            if ctx.guild.get_member(x[0]) is not None
-        ]
-        sort = sorted(fmt, key=lambda x: x[1], reverse=True)
-        enumerated = [(y, x[0], x[1]) for y, x in enumerate(sort, start=1)]
-        headers = ["INDEX", "NAME", "DAYS"]
-        table = formatting.TabularData()
-        table.set_columns(headers)
-        table.add_rows(enumerated)
-        render = table.render()
-        completed = f"```sml\n{render}```"
-        emote = self.bot.emote_dict["graph"]
-        pluralize = "" if len(sort) == 1 else "s"
-        timefmt = humantime.human_timedelta(the_datetime, accuracy=1)
-        await ctx.bold(
-            f"{emote} {len(sort)} user{pluralize} have logged in since {timefmt} in {ctx.guild.name}."
-        )
-        if len(completed) > 2000:
-            fp = io.BytesIO(completed.encode("utf-8"))
-            await ctx.send_or_reply(file=discord.File(fp, "results.sml"))
-        else:
-            await ctx.send_or_reply(completed)

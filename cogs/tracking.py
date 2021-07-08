@@ -5,17 +5,18 @@ import asyncio
 import discord
 import inspect
 
-from collections import Counter
-from datetime import datetime
+from datetime import datetime, timedelta
 from discord.ext import commands, menus
-from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
+from PIL import Image, ImageDraw, ImageFont
 
 from utilities import utils
 from utilities import checks
 from utilities import images
 from utilities import cleaner
+from utilities import humantime
 from utilities import converters
 from utilities import decorators
+from utilities import formatting
 from utilities import pagination
 
 
@@ -43,8 +44,9 @@ class Tracking(commands.Cog):
                 {0}inviter 708584008065351681
                 """,
     )
-    @commands.guild_only()
+    @checks.guild_only()
     @checks.has_perms(view_audit_log=True)
+    @checks.cooldown()
     async def invited(self, ctx, user: converters.DiscordMember = None):
         """
         Usage: {0}invited [user]
@@ -82,7 +84,8 @@ class Tracking(commands.Cog):
                 {0}inviter 708584008065351681
                 """,
     )
-    @commands.guild_only()
+    @checks.guild_only()
+    @checks.cooldown()
     async def invites(self, ctx, user: converters.DiscordMember = None):
         """
         Usage: {0}invites [user]
@@ -110,104 +113,6 @@ class Tracking(commands.Cog):
         )
 
     @decorators.command(
-        aliases=["mobile", "web", "desktop"],
-        brief="Show a user's discord platform.",
-        implemented="2021-03-25 05:56:35.053930",
-        updated="2021-05-06 23:25:08.685407",
-        examples="""
-                {0}web @Hecate Snowbot 708584008065351681
-                {0}mobile @Hecate Snowbot 708584008065351681
-                {0}desktop @Hecate Snowbot 708584008065351681
-                {0}platform @Hecate Snowbot 708584008065351681
-                """,
-    )
-    @commands.guild_only()
-    async def platform(self, ctx, users: commands.Greedy[converters.DiscordMember]):
-        """
-        Usage:  {0}platform [users]...
-        Alias:  {0}mobile, {0}desktop, {0}web
-        Output:
-            Shows which discord platform a user
-            is currently on. Can be discord desktop,
-            discord mobile, or discord web.
-        Notes:
-            The bot cannot determine platform
-            when users are offline or if their
-            status is invisible.
-        """
-        if not len(users):
-            return await ctx.usage()
-        mobilestatus = []
-        mobilestatus = []
-        notmobilestatus = []
-        web_status = []
-        offline = []
-        for member in users:
-            try:
-                mobile = member.is_on_mobile()
-            except Exception as e:
-                await ctx.send_or_reply(
-                    f"{self.bot.emote_dict['failed']} Somthing went wrong: {e}"
-                )
-
-            if mobile is True:
-                mobilestatus.append(member)
-            elif mobile is False and str(member.status) == "offline":
-                offline.append(member)
-            elif mobile is False and str(member.web_status) != "offline":
-                web_status.append(member)
-            else:
-                notmobilestatus.append(member)
-        if notmobilestatus:
-            notmobile = []
-            for member in notmobilestatus:
-                users = []
-                people = self.bot.get_user(int(member.id))
-                users.append(people)
-                for user in users:
-                    username = f"{user.name}#{user.discriminator}"
-                    notmobile += [username]
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['desktop']} User{'' if len(notmobile) == 1 else 's'} `{', '.join(notmobile)}` {'is' if len(notmobile) == 1 else 'are'} on discord desktop.",
-            )
-        if mobilestatus:
-            mobile = []
-            for member in mobilestatus:
-                users = []
-                people = self.bot.get_user(int(member.id))
-                users.append(people)
-                for user in users:
-                    username = f"{user.name}#{user.discriminator}"
-                    mobile += [username]
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['mobile']} User{'' if len(mobile) == 1 else 's'} `{', '.join(mobile)}` {'is' if len(mobile) == 1 else 'are'} on discord mobile.",
-            )
-        if web_status:
-            mobile = []
-            for member in web_status:
-                users = []
-                people = self.bot.get_user(int(member.id))
-                users.append(people)
-                for user in users:
-                    username = f"{user.name}#{user.discriminator}"
-                    mobile += [username]
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['search']} User{'' if len(mobile) == 1 else 's'} `{', '.join(mobile)}` {'is' if len(mobile) == 1 else 'are'} on discord web.",
-            )
-        if offline:
-            mobile = []
-            for member in offline:
-                users = []
-                people = self.bot.get_user(int(member.id))
-                users.append(people)
-                for user in users:
-                    username = f"{user.name}#{user.discriminator}"
-                    mobile += [username]
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['offline']} User{'' if len(mobile) == 1 else 's'} `{', '.join(mobile)}` {'is' if len(mobile) == 1 else 'are'} offline",
-            )
-
-    @decorators.command(
         brief="Show information on a user.",
         aliases=["rawuser", "lookup"],
         implemented="2021-03-11 23:54:09.760439",
@@ -231,6 +136,7 @@ class Tracking(commands.Cog):
                 """,
     )
     @checks.has_perms(view_audit_log=True)
+    @checks.cooldown(2, 20)
     async def user(self, ctx, *, user: converters.DiscordUser = None):
         """
         Usage:   {0}user [user]
@@ -285,7 +191,7 @@ class Tracking(commands.Cog):
             msg += f"Last Spoke    : {last_observed['last_spoke']} ago\n"
         if ctx.guild and isinstance(user, discord.Member):
             if last_observed["server_last_spoke"]:
-                msg += f"Spoke here    : {last_observed['server_last_spoke']} ago\n"
+                msg += f"Spoke Here    : {last_observed['server_last_spoke']} ago\n"
             query = """
                     SELECT COUNT(*)
                     FROM commands
@@ -333,7 +239,6 @@ class Tracking(commands.Cog):
             await ctx.send_or_reply(e)
 
     @decorators.command(
-        name="status",
         aliases=["game", "presence", "playing"],
         brief="Show a user's discord status.",
         implemented="2021-03-22 16:31:55.693675",
@@ -361,6 +266,8 @@ class Tracking(commands.Cog):
                 {0}presence 708584008065351681
                 """,
     )
+    @checks.guild_only()
+    @checks.cooldown()
     async def status(self, ctx, *, user: converters.DiscordMember = None):
         """
         Usage: {0}status [user]
@@ -371,8 +278,7 @@ class Tracking(commands.Cog):
         Notes:
             Will default to you if no user is passed.
         """
-        if user is None:
-            user = ctx.author
+        user = user or ctx.author
         status = "\n".join(self.activity_string(a) for a in user.activities)
         if status == "":
             return await ctx.send_or_reply(
@@ -392,7 +298,7 @@ class Tracking(commands.Cog):
                 ret += " - {}".format(activity.state)
             return ret
         elif isinstance(activity, discord.Spotify):
-            elapsed = datetime.utcnow() - activity.start
+            elapsed = discord.utils.utcnow() - activity.start
             return "{}: {} by {} from {} [{}/{}]".format(
                 activity.name,
                 activity.title or "Unknown Song",
@@ -409,51 +315,47 @@ class Tracking(commands.Cog):
         return "{:02d}:{:06.3f}".format(int(ts // 60), ts % 60)
 
     @decorators.command(aliases=["mc"], brief="Count the messages a user sent.")
-    @commands.guild_only()
-    async def messagecount(self, ctx, member: converters.DiscordMember = None):
+    @checks.guild_only()
+    @checks.cooldown()
+    async def messagecount(self, ctx, user: converters.DiscordMember = None):
         """
-        Usage:  -messagecount [user]
-        Alias:  -mc
+        Usage:  {0}messagecount [user]
+        Alias:  {0}mc
         Output: Shows how many messages a user has sent on the server.
         Permission: Manage Messages
         Notes:
             Will default to yourself if no user is passed.
         """
-        user = ctx.author if member is None else member
-        query = """SELECT COUNT(*) as c FROM messages WHERE author_id = $1 AND server_id = $2"""
-        a = await self.bot.cxn.fetchrow(query, user.id, ctx.guild.id) or None
-        if a is None:
-            # await self.fix_member(ctx.author)
-            return await ctx.send_or_reply(
-                content="`{}` has sent **0** messages.".format(user),
-            )
-        else:
-            a = int(a[0])
-            await ctx.send_or_reply(
-                content=f"`{user}` has sent **{a}** message{'' if a == 1 else 's'}",
-            )
+        user = user or ctx.author
+        if user.bot:
+            raise commands.BadArgument("I do not track bots.")
+        query = """
+                SELECT COUNT(*) as c
+                FROM messages
+                WHERE author_id = $1
+                AND server_id = $2
+                """
+        count = await self.bot.cxn.fetchval(query, user.id, ctx.guild.id)
+        await ctx.send_or_reply(
+            f"`{user}` has sent **{count}** message{'' if count == 1 else 's'}"
+        )
 
     @decorators.command(
-        aliases=["top", "messagestatistics"],
         brief="Show the top message senders.",
         implemented="2021-04-03 01:56:35.751553",
         updated="2021-05-06 23:36:18.959143",
         examples="""
                 {0}top
                 {0}top 500
-                {0}messagestats
-                {0}messagestats 200
-                {0}messagestatistics 
-                {0}messagestatistics 40
                 """,
     )
-    @commands.guild_only()
+    @checks.guild_only()
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.has_perms(view_audit_log=True)
-    async def messagestats(self, ctx, limit: str = "100"):
+    @checks.cooldown()
+    async def top(self, ctx, limit: int = 100):
         """
-        Usage: {0}messagestats
-        Alias: {0}top, {0}messagestatistics
+        Usage: {0}top
         Permission: View Audit Log
         Output:
             Show top message senders in the server
@@ -462,9 +364,9 @@ class Tracking(commands.Cog):
             number of members to include in the
             messagestats embed
         """
-        if not limit.isdigit():
+        if not str(limit).isdigit():
             raise commands.BadArgument("The `limit` argument must be an integer.")
-        limit = int(limit)
+
         query = """
                 SELECT author_id,
                 count(author_id)
@@ -474,16 +376,13 @@ class Tracking(commands.Cog):
                 ORDER BY COUNT(author_id)
                 DESC LIMIT $2
                 """
-        a = await self.bot.cxn.fetch(query, ctx.guild.id, limit)
-        sum_query = """SELECT COUNT(*) FROM messages WHERE server_id = $1"""
-        b = await self.bot.cxn.fetchrow(sum_query, ctx.guild.id)
-        b = b[0]
-        p = pagination.SimplePages(
-            entries=[f"<@!{row[0]}>. [ Messages: {row[1]} ]" for row in a], per_page=20
-        )
-        p.embed.title = "**{0}** messages by **{1}** users.".format(
-            b, len([x for x in ctx.guild.members])
-        )
+
+        msg_data = await self.bot.cxn.fetch(query, ctx.guild.id, limit)
+        total = sum([row[1] for row in msg_data])
+        entries = [f"<@!{row[0]}>. **Messages:** {row[1]:,}" for row in msg_data]
+
+        p = pagination.SimplePages(entries=entries, per_page=20)
+        p.embed.title = f"**{total:,}** messages by **{len(msg_data):,}** users."
 
         try:
             await p.start(ctx)
@@ -513,9 +412,10 @@ class Tracking(commands.Cog):
                 {0}usernicks 708584008065351681
                 """,
     )
-    @commands.guild_only()
+    @checks.guild_only()
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.has_perms(view_audit_log=True)
+    @checks.cooldown()
     async def nicknames(self, ctx, user: converters.DiscordMember = None):
         """
         Usage: {0}nicknames [user]
@@ -527,10 +427,10 @@ class Tracking(commands.Cog):
         Notes:
             Will default to yourself if no user is passed
         """
-        if user is None:
-            user = ctx.author
+        user = user or ctx.author
         if user.bot:
-            return await ctx.fail("I do not track bots.")
+            raise commands.BadArgument("I do not track bots.")
+
         batch = self.bot.get_cog("Batch")
         if not batch:
             raise commands.DisabledCommand()
@@ -562,7 +462,7 @@ class Tracking(commands.Cog):
                 {0}usernames 708584008065351681
                 """,
     )
-    @commands.guild_only()
+    @checks.guild_only()
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.has_perms(view_audit_log=True)
     async def usernames(self, ctx, user: converters.DiscordUser = None):
@@ -576,8 +476,7 @@ class Tracking(commands.Cog):
         Notes:
             Will default to you if no user is passed.
         """
-        if user is None:
-            user = ctx.author
+        user = user or ctx.author
         if user.bot:
             return await ctx.fail("I do not track bots.")
         batch = self.bot.get_cog("Batch")
@@ -611,7 +510,7 @@ class Tracking(commands.Cog):
                 {0}avatars 708584008065351681
                 """,
     )
-    @commands.guild_only()
+    @checks.guild_only()
     @checks.bot_has_perms(
         add_reactions=True, attach_files=True, embed_links=True, external_emojis=True
     )
@@ -653,13 +552,13 @@ class Tracking(commands.Cog):
             bytes_av = await self.bot.get(url, res_method="read")
             return bytes_av
 
-        avys = await asyncio.gather(*[url_to_bytes(url['url']) for url in urls])
+        avys = await asyncio.gather(*[url_to_bytes(url["url"]) for url in urls])
         if avys:
             file = await self.bot.loop.run_in_executor(None, images.quilt, avys)
         else:
             if self.bot.avatar_saver.is_saving:
                 self.bot.avatar_saver.save(user)
-                avatar = str(user.avatar_url_as(format="png", size=1024))
+                avatar = str(user.replace(format="png", size=1024))
                 bytes_av = await self.bot.get(avatar, res_method="read")
                 file = io.BytesIO(bytes_av)
             else:
@@ -701,7 +600,7 @@ class Tracking(commands.Cog):
                 """,
     )
     @checks.has_perms(view_audit_log=True)
-    @checks.cooldown(3, 10)
+    @checks.cooldown()
     async def seen(self, ctx, *, user: converters.DiscordUser = None):
         """
         Usage: {0}seen [user]
@@ -726,12 +625,100 @@ class Tracking(commands.Cog):
             data = await tracker.last_observed(user)
 
             if not data["last_seen"]:
-                return await ctx.send_or_reply(content=f"I have not seen `{user}`")
+                return await ctx.fail(f"I have not seen `{user}`")
             if data["action"]:
                 msg = f"User `{user}` was last seen {data['action']} **{data['last_seen']}** ago."
             else:
                 msg = f"User `{user}` was last seen **{data['last_seen']}** ago."
-            await ctx.send_or_reply(f"{self.bot.emote_dict['clock']} {msg}")
+            await ctx.send_or_reply(msg)
+
+    @decorators.command(
+        aliases=["lastspoke"],
+        brief="Check when a user last spoke.",
+        implemented="2021-07-02 00:30:48.728244",
+        updated="2021-07-02 00:30:48.728244",
+        examples="""
+                {0}spoke Hecate
+                {0}spoke @Hecate
+                {0}spoke Hecate#3523
+                {0}spoke 708584008065351681
+                {0}lastspoke Hecate
+                {0}lastspoke @Hecate
+                {0}lastspoke Hecate#3523
+                {0}lastspoke 708584008065351681
+                """,
+    )
+    @checks.has_perms(view_audit_log=True)
+    @checks.cooldown()
+    async def spoke(self, ctx, *, user: converters.DiscordUser = None):
+        """
+        Usage: {0}spoke [user]
+        Alias: {0}lastspoke
+        Permission: View Audit Log
+        Output:
+            Show how long its been since a user
+            last sent a message tracked by the bot.
+        Notes:
+            User can be a mention, user id, or full discord
+            username with discrim Username#0001.
+            Will default to you if no user is specified.
+        """
+        async with ctx.typing():
+            user = user or ctx.author
+
+            if user.bot:
+                raise commands.BadArgument("I do not track bots.")
+
+            tracker = self.bot.get_cog("Batch")
+            data = await tracker.get_last_spoke(user)
+
+            if not data:
+                return await ctx.fail(f"I have not seen `{user}` speak.")
+            await ctx.send_or_reply(f"User `{user}` last spoke **{data}** ago.")
+
+    @decorators.command(
+        aliases=["lastspokehere"],
+        brief="Check when a user last spoke here.",
+        implemented="2021-07-02 00:30:48.728244",
+        updated="2021-07-02 00:30:48.728244",
+        examples="""
+                {0}spokehere Hecate
+                {0}spokehere @Hecate
+                {0}spokehere Hecate#3523
+                {0}spokehere 708584008065351681
+                {0}lastspokehere Hecate
+                {0}lastspokehere @Hecate
+                {0}lastspokehere Hecate#3523
+                {0}lastspokehere 708584008065351681
+                """,
+    )
+    @checks.has_perms(view_audit_log=True)
+    @checks.cooldown()
+    async def spokehere(self, ctx, *, user: converters.DiscordUser = None):
+        """
+        Usage: {0}spokehere [user]
+        Alias: {0}lastspokehere
+        Permission: View Audit Log
+        Output:
+            Show how long its been since a user
+            last sent a message in the server.
+        Notes:
+            User can be a mention, user id, or full discord
+            username with discrim Username#0001.
+            Will default to you if no user is specified.
+        """
+        async with ctx.typing():
+            user = user or ctx.author
+
+            if user.bot:
+                raise commands.BadArgument("I do not track bots.")
+
+            tracker = self.bot.get_cog("Batch")
+            data = await tracker.get_server_last_spoke(user)
+
+            if not data:
+                return await ctx.fail(f"I have not seen `{user}` speak here.")
+            await ctx.send_or_reply(f"User `{user}` last spoke here **{data}** ago.")
 
     @decorators.command(
         aliases=["cs"],
@@ -747,7 +734,7 @@ class Tracking(commands.Cog):
                 {0}commandstats @Hecate 200
                 """,
     )
-    @commands.guild_only()
+    @checks.guild_only()
     @checks.bot_has_perms(add_reactions=True, external_emojis=True)
     @checks.has_perms(view_audit_log=True)
     async def commandstats(
@@ -767,42 +754,52 @@ class Tracking(commands.Cog):
             argument to control how many commands
             should be included (100 by default).
         """
-        if user is None:
+        if limit < 1:
+            raise commands.BadArgument("The `limit` argument must be greater than 1.")
+
+        if user is None:  # Check for whole server
             query = """
-                    SELECT command
+                    SELECT command, COUNT(command) as c
                     FROM commands
-                    WHERE server_id = $1;
+                    WHERE server_id = $1
+                    GROUP BY command
+                    ORDER BY c DESC
+                    LIMIT $2;
                     """
-            command_list = await self.bot.cxn.fetch(query, ctx.guild.id)
-        # if not limit.isdigit():
-        #     raise commands.BadArgument("The `limit` argument must be an integer.")
+
+            command_list = await self.bot.cxn.fetch(query, ctx.guild.id, limit)
+            if not command_list:
+                return await ctx.fail(
+                    f"No commands have been recorded in for this server."
+                )
         else:
             if user.bot:
-                return await ctx.fail(f"I do not track bots.")
-            query = """SELECT command FROM commands WHERE server_id = $1 AND author_id = $2"""
-            command_list = await self.bot.cxn.fetch(query, ctx.guild.id, user.id)
-        formatted_list = []
-        for c in command_list:
-            formatted_list.append(c[0])
+                raise commands.BadArgument("I do not track bots.")
 
-        counter = Counter(formatted_list)
-        try:
-            width = len(max(counter, key=len))
-        except ValueError:
-            return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['warn']} User `{user}` has not run any commands.",
-            )
-        total = sum(counter.values())
+            query = """
+                    SELECT command, COUNT(commands) as c
+                    FROM commands
+                    WHERE server_id = $1
+                    AND author_id = $2
+                    GROUP BY command
+                    ORDER BY c DESC
+                    LIMIT $3;
+                    """
+            command_list = await self.bot.cxn.fetch(query, ctx.guild.id, user.id, limit)
+            if not command_list:
+                return await ctx.fail(f"User `{user}` has not run any commands.")
 
-        if limit > 0:
-            common = counter.most_common(limit)
-        else:
-            common = counter.most_common()[limit:]
-        output = "\n".join("{0:<{1}} : {2}".format(str(k), width, c) for k, c in common)
+        usage_dict = {record["command"]: record["c"] for record in command_list}
+
+        width = len(max(usage_dict, key=len))
+
+        total = sum(usage_dict.values())
+
+        output = "\n".join(f"{cmd:<{width}} : {cnt}" for cmd, cnt in usage_dict.items())
 
         msg = "{0} \n\nTOTAL: {1}".format(output, total)
         pages = pagination.MainMenu(
-            pagination.TextPageSource(msg, prefix="```yaml", max_size=500)
+            pagination.LinePageSource(msg, prefix="```yaml", lines=20)
         )
         if user is None:
             title = f"Most common commands used in **{ctx.guild.name}**"
@@ -833,8 +830,9 @@ class Tracking(commands.Cog):
                 {0}commandcount 708584008065351681
                 """,
     )
-    @commands.guild_only()
+    @checks.guild_only()
     @checks.has_perms(view_audit_log=True)
+    @checks.cooldown()
     async def commandcount(self, ctx, user: converters.DiscordMember = None):
         """
         Usage: {0}commandcount [user]
@@ -852,9 +850,9 @@ class Tracking(commands.Cog):
                     FROM commands
                     WHERE server_id = $1;
                     """
-            command_count = await self.bot.cxn.fetchrow(query, ctx.guild.id)
+            command_count = await self.bot.cxn.fetchval(query, ctx.guild.id)
             return await ctx.send_or_reply(
-                f"{self.bot.emote_dict['graph']} A total of **{command_count[0]:,}** command{' has' if int(command_count[0]) == 1 else 's have'} been executed on this server.",
+                f"{self.bot.emote_dict['graph']} A total of **{command_count:,}** command{' has' if int(command_count[0]) == 1 else 's have'} been executed on this server.",
             )
         else:
             if user.bot:
@@ -865,9 +863,9 @@ class Tracking(commands.Cog):
                     WHERE author_id = $1
                     AND server_id = $2;
                     """
-            command_count = await self.bot.cxn.fetchrow(query, user.id, ctx.guild.id)
+            command_count = await self.bot.cxn.fetchval(query, user.id, ctx.guild.id)
             return await ctx.send_or_reply(
-                f"{self.bot.emote_dict['graph']} User `{user}` has executed **{int(command_count[0]):,}** commands.",
+                f"{self.bot.emote_dict['graph']} User `{user}` has executed **{int(command_count):,}** commands.",
             )
 
     @decorators.command(
@@ -882,9 +880,10 @@ class Tracking(commands.Cog):
                 {0}botusage year
                 """,
     )
-    @commands.guild_only()
+    @checks.guild_only()
     @checks.bot_has_perms(embed_links=True)
     @checks.has_perms(view_audit_log=True)
+    @checks.cooldown()
     async def botusage(self, ctx, unit: str = "month"):
         """
         Usage: {0}botusage [unit of time]
@@ -934,11 +933,15 @@ class Tracking(commands.Cog):
                 {0}words 708584008065351681 600
                 """,
     )
-    @commands.guild_only()
+    @checks.guild_only()
     @checks.bot_has_perms(add_reactions=True, external_emojis=True)
     @checks.has_perms(manage_messages=True)
+    @checks.cooldown()
     async def words(
-        self, ctx, user: typing.Optional[converters.DiscordMember] = None, limit=100
+        self,
+        ctx,
+        user: typing.Optional[converters.DiscordMember] = None,
+        limit: int = 100,
     ):
         """
         Usage: {0}words [user] [limit]
@@ -949,44 +952,45 @@ class Tracking(commands.Cog):
             Pass a limit argument after or instead of a user
             argument to limit the number of common words to show.
         """
-        if user is None:
-            user = ctx.author
+        user = user or ctx.author
 
         if user.bot:
             raise commands.BadArgument("I do not track bots.")
 
-        message = await ctx.send_or_reply(
-            content=f"**{self.bot.emote_dict['loading']} Collecting Word Statistics...**",
-        )
+        if limit < 1:
+            raise commands.BadArgument("The `limit` argument must be greater than 1.")
+        if limit > 1000:
+            raise commands.BadArgument("The `limit` argument must be less than 1000.")
+
+        message = await ctx.load("Collecting Word Statistics...")
+
         query = """
-                SELECT ARRAY_AGG(content)
-                FROM messages
-                WHERE author_id = $1
-                AND server_id = $2;
+                SELECT word, count(*)
+                FROM messages, unnest(
+                string_to_array(
+                translate(content, '\n', ' '),
+                ' ')) word
+                WHERE LENGTH(word) > 1
+                AND server_id = $1
+                AND author_id = $2
+                GROUP BY 1
+                ORDER BY 2 DESC
+                LIMIT $3;
                 """
-        all_msgs = await self.bot.cxn.fetchval(
-            query,
-            user.id,
-            ctx.guild.id,
+        records = await self.bot.cxn.fetch(query, ctx.guild.id, user.id, limit)
+
+        msg = "\n".join(
+            [
+                f"Uses: [{str(record['count']).zfill(2)}] Word: {record['word']}"
+                for record in records
+            ]
+        )
+        pages = pagination.MainMenu(
+            pagination.LinePageSource(msg, prefix="```ini", lines=20)
         )
 
-        all_msgs = " ".join(all_msgs).split()
-        all_msgs = list(filter(lambda x: len(x) > 0, all_msgs))
-        all_words = Counter(all_msgs).most_common()[:limit]
-        msg = ""
-        for i in all_words:
-            msg += f"Uses: [{str(i[1]).zfill(2)}] Word: {i[0]}\n"
-
-        try:
-            pages = pagination.MainMenu(
-                pagination.TextPageSource(msg, prefix="```ini", max_size=1000)
-            )
-        except RuntimeError:
-            return await message.edit(
-                content=f"{self.bot.emote_dict['failed']} **Failed. Please try again.**"
-            )
         await message.edit(
-            content=f"{self.bot.emote_dict['graph']} Most common words sent by **{user}**",
+            content=f"{self.bot.emote_dict['graph']} Top **{limit}** most common words sent by **{user}**",
         )
         try:
             await pages.start(ctx)
@@ -1006,17 +1010,18 @@ class Tracking(commands.Cog):
                 {0}word 708584008065351681 Hello
                 """,
     )
-    @commands.guild_only()
+    @checks.guild_only()
     @checks.bot_has_perms(add_reactions=True, external_emojis=True)
     @checks.has_perms(manage_messages=True)
+    @checks.cooldown()
     async def word(
         self,
         ctx,
-        user: typing.Optional[converters.DiscordMember] = None,
-        word: str = None,
+        user: typing.Optional[converters.DiscordMember],
+        word: str,
     ):
         """
-        Usage: {0}word <word> [user]
+        Usage: {0}word [user] <word>
         Permission: Manage Messages
         Output:
             Show how many times a specific word
@@ -1024,41 +1029,33 @@ class Tracking(commands.Cog):
         Notes:
             Will default to you if no user is passed.
         """
-        if word is None:
-            return await ctx.usage()
-        if user is None:
-            user = ctx.author
+        user = user or ctx.author
         if user.bot:
             raise commands.BadArgument("I do not track bots.")
-        message = await ctx.send_or_reply(
-            content=f"**{self.bot.emote_dict['loading']} Collecting Word Statistics...**",
-        )
-        query = f"""
-                SELECT ARRAY_AGG(content)
-                FROM messages
-                WHERE author_id = $1
-                AND server_id = $2;
+        if len(word) < 2:
+            raise commands.BadArgument("Word must be at least 2 characters in length.")
+        message = await ctx.load("Collecting Word Statistics...")
+
+        query = """
+                SELECT word, count(*)
+                FROM messages, unnest(
+                string_to_array(
+                translate(content, '\n', ' '),
+                ' ')) word
+                WHERE word = $1
+                AND LENGTH(word) > 1
+                AND server_id = $2
+                AND author_id = $3
+                GROUP BY 1;
                 """
-        all_msgs = await self.bot.cxn.fetchval(query, user.id, ctx.guild.id)
-        if not all_msgs:
+        data = await self.bot.cxn.fetchrow(query, word, ctx.guild.id, user.id)
+        if not data:
             return await message.edit(
-                content=f"{self.bot.emote_dict['graph']} The word `{word}` has never been used by **{user}**",
+                content=f"{self.bot.emote_dict['failed']} The word `{word}` has never been used by **{user}**",
             )
-        all_msgs = " ".join(all_msgs).split()
-        all_msgs = list(filter(lambda x: len(x) > 0, all_msgs))
-        all_words = Counter(all_msgs)
-        count = all_words.get(word)
-
-        if not count:
-            return await message.edit(
-                content=f"{self.bot.emote_dict['graph']} The word `{word}` has never been used by **{user}**",
-            )
-
-        usage = list(all_words).index(word)
-        common = utils.number_format(usage)
 
         await message.edit(
-            content=f"{self.bot.emote_dict['graph']} The word `{word}` has been used {count} time{'' if usage == 1 else 's'} and is the {common} most common word used by **{user}**"
+            content=f"{self.bot.emote_dict['graph']} The word `{data['word']}` has been used {data['count']} time{'' if data['count'] == 1 else 's'} by **{user}**"
         )
 
     @word.error
@@ -1081,7 +1078,7 @@ class Tracking(commands.Cog):
                 {0}activity year
                 """,
     )
-    @commands.guild_only()
+    @checks.guild_only()
     @checks.bot_has_perms(embed_links=True)
     async def activity(self, ctx, unit: str = "month"):
         """
@@ -1131,6 +1128,88 @@ class Tracking(commands.Cog):
         await ctx.send_or_reply(embed=e)
 
     @decorators.command(
+        aliases=["ms", "mstats", "messagestatistics"],
+        brief="Show messaging stats on users.",
+        invoke_without_command=True,
+        case_insensitive=True,
+        implemented="2021-03-13 04:47:25.624232",
+        updated="2021-05-07 04:26:00.620200",
+        examples="""
+                {0}mstats
+                {0}messagestats 2d
+                {0}ms since 3 weeks ago
+                {0}messagestatistics 10 mins ago
+                {0}ms since 1 year ago
+                """,
+    )
+    @checks.guild_only()
+    @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
+    @checks.cooldown()
+    async def messagestats(self, ctx, *, since: humantime.PastTime = None):
+        """
+        Usage: {0}activity [since]
+        Permission: Manage Messages
+        Output:
+            Shows the most active server
+            users ordered by the number
+            of messages they've sent.
+        Notes:
+            If no unit of time is specified,
+            of if the unit is invalid, the bot
+            will default to month for its unit.
+        """
+        await ctx.trigger_typing()
+        if not since:  # They didn't specify. Default to past month
+            since = discord.utils.utcnow() - timedelta(30)  # 30 days ago
+        else:
+            since = since.dt
+
+        seconds_ago = (discord.utils.utcnow() - since).total_seconds()
+        diff = time.time() - seconds_ago
+
+        query = """
+                SELECT COUNT(*) as c, author_id as author
+                FROM messages
+                WHERE server_id = $1
+                AND unix > $2
+                GROUP BY author_id
+                ORDER BY c DESC
+                LIMIT 100;
+                """
+        records = await self.bot.cxn.fetch(query, ctx.guild.id, diff)
+
+        def pred(snowflake):
+            mem = ctx.guild.get_member(snowflake)
+            if mem:
+                return str(mem)
+
+        usage_dict = {
+            str(pred(record["author"])): record["c"]
+            for record in records
+            if pred(record["author"])
+        }
+
+        width = len(max(usage_dict, key=len))
+
+        total = sum(usage_dict.values())
+
+        output = "\n".join(
+            f"{user:<{width}} : {cnt}" for user, cnt in usage_dict.items()
+        )
+
+        msg = "{0} \n\nTOTAL: {1}".format(output, total)
+        pages = pagination.MainMenu(
+            pagination.LinePageSource(msg, prefix="```autohotkey", lines=20)
+        )
+        title = f"{self.bot.emote_dict['graph']} Message leaderboard for **{ctx.guild.name}** since **{utils.short_time(since)}**"
+
+        await ctx.send_or_reply(title)
+        try:
+            await pages.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send_or_reply(str(e))
+
+    @decorators.command(
         aliases=["chars"],
         brief="Show character usage.",
         implemented="2021-04-19 06:02:49.713396",
@@ -1148,7 +1227,7 @@ class Tracking(commands.Cog):
                 {0}characters year
                 """,
     )
-    @commands.guild_only()
+    @checks.guild_only()
     @checks.bot_has_perms(embed_links=True)
     @checks.has_perms(manage_messages=True)
     async def characters(self, ctx, unit: str = "day"):
@@ -1195,6 +1274,135 @@ class Tracking(commands.Cog):
         await ctx.send_or_reply(embed=e)
 
     @decorators.command(
+        brief="Show the days a user was active.",
+        implemented="2021-05-12 07:46:53.635661",
+        updated="2021-05-12 15:25:00.152528",
+        examples="""
+                {0}clocker
+                {0}clocker Hecate
+                {0}clocker @Hecate 3 days ago
+                {0}clocker 708584008065351681 2m
+                {0}clocker Hecate#3523 one month ago
+                """,
+    )
+    @checks.has_perms(view_audit_log=True)
+    @checks.cooldown()
+    async def clocker(
+        self,
+        ctx,
+        user: typing.Optional[converters.DiscordMember] = None,
+        *,
+        timeframe: humantime.PastTime = None,
+    ):
+        """
+        Usage: {0}clocker [user] [time]
+        Output:
+            Counts the days that
+            a user has sent a message
+            in the specified time period.
+        Notes:
+            If no time frame is specified,
+            will default to 1 week.
+        """
+        user = user or ctx.author
+        await ctx.trigger_typing()
+        if timeframe:
+            actual_time = (discord.utils.utcnow() - timeframe.dt).total_seconds()
+            the_datetime = timeframe.dt
+        else:
+            actual_time = 604800  # 1 week
+            the_datetime = datetime.utcfromtimestamp(time.time() - actual_time)
+
+        query = """
+                SELECT COUNT(DISTINCT(days)) FROM (
+                SELECT EXTRACT(
+                    DAY FROM (
+                        TO_TIMESTAMP(unix)
+                    )
+                ) AS days
+                FROM messages
+                WHERE server_id = $1
+                WHERE author_id = $2
+                AND unix > (SELECT EXTRACT(EPOCH FROM NOW()) - $3)
+                ) as data
+                WHERE days IS NOT NULL;
+                """
+        days = await self.bot.cxn.fetchval(
+            query, ctx.guild.id, user.id, (actual_time - 86400)
+        )
+        emote = self.bot.emote_dict["graph"]
+        pluralize = "" if days == 1 else "s"
+        timefmt = humantime.human_timedelta(the_datetime, accuracy=1)
+        msg = f"{emote} User `{user}` has sent a message in this server **{days} day{pluralize} since {timefmt}.**"
+        await ctx.send_or_reply(msg)
+
+    @decorators.command(
+        brief="Show all active users.",
+        implemented="2021-05-12 15:25:00.152528",
+        updated="2021-05-12 15:25:00.152528",
+        examples="""
+                {0}clocking
+                {0}clocking 2m
+                {0}clocking 1 month ago
+                {0}clocking 3 weeks ago
+                """,
+    )
+    @checks.bot_has_perms(attach_files=True)
+    @checks.has_perms(manage_guild=True)
+    async def clocking(self, ctx, *, timeframe: humantime.PastTime = None):
+        """
+        Usage: {0}clocking [time]
+        Output:
+            Shows all users who have
+            sent a message in the server
+            in the specified time frame
+        Notes:
+            If no time frame is specified,
+            will default to 1 week.
+        """
+        await ctx.trigger_typing()
+        if timeframe:
+            actual_time = (discord.utils.utcnow() - timeframe.dt).total_seconds()
+            the_datetime = timeframe.dt
+        else:
+            actual_time = 604800  # 1 week
+            the_datetime = datetime.utcfromtimestamp(time.time() - actual_time)
+        query = """
+                SELECT DISTINCT author_id AS user,
+                (SELECT EXTRACT(DAY FROM (TO_TIMESTAMP(unix))))::SMALLINT AS days
+                FROM messages
+                WHERE server_id = $1
+                AND unix > (SELECT EXTRACT(EPOCH FROM NOW()) - $2)
+                ORDER BY days DESC;
+                """
+        rows = await self.bot.cxn.fetch(query, ctx.guild.id, (actual_time - 86400))
+
+        def pred(snowflake):
+            mem = ctx.guild.get_member(snowflake)
+            if mem:
+                return str(mem)
+
+        fmt = {pred(record["user"]): record["days"] for record in rows}
+
+        table = formatting.TabularData()
+        table.set_columns(["NAME", "DAYS"])
+        table.add_rows(fmt.items())
+        render = table.render()
+
+        completed = f"```sml\n{render}```"
+        emote = self.bot.emote_dict["graph"]
+        pluralize = "" if len(fmt) == 1 else "s"
+        timefmt = humantime.human_timedelta(the_datetime, accuracy=1)
+        await ctx.bold(
+            f"{emote} {len(fmt)} user{pluralize} have logged in since {timefmt} in {ctx.guild.name}."
+        )
+        if len(completed) > 2000:
+            fp = io.BytesIO(completed.encode("utf-8"))
+            await ctx.send_or_reply(file=discord.File(fp, "results.sml"))
+        else:
+            await ctx.send_or_reply(completed)
+
+    @decorators.command(
         aliases=["piestatus", "ps"],
         brief="Status info and online time stats.",
         implemented="2021-04-29 22:10:20.348498",
@@ -1217,8 +1425,10 @@ class Tracking(commands.Cog):
                 {0}statusinfo 708584008065351681
                 """,
     )
+    @checks.guild_only()
     @checks.bot_has_perms(attach_files=True, embed_links=True)
     @checks.has_perms(view_audit_log=True)
+    @checks.cooldown()
     async def statusinfo(self, ctx, user: converters.DiscordMember = None):
         """
         Usage: {0}statusinfo [user]
@@ -1229,8 +1439,7 @@ class Tracking(commands.Cog):
         Notes:
             Will default to yourself if no user is passed.
         """
-        if not user:
-            user = ctx.author
+        user = user or ctx.author
         if user.bot:
             raise commands.BadArgument("I do not track bots.")
 
@@ -1541,8 +1750,10 @@ class Tracking(commands.Cog):
                 {0}barstatus 708584008065351681
                 """,
     )
+    @checks.guild_only()
     @checks.bot_has_perms(attach_files=True, embed_links=True)
     @checks.has_perms(view_audit_log=True)
+    @checks.cooldown()
     async def barstatus(self, ctx, *, user: converters.DiscordMember = None):
         """
         Usage: {0}barstatus [user]

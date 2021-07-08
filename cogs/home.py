@@ -2,9 +2,9 @@ import io
 import discord
 import PIL as pillow
 
-from datetime import datetime
 from discord.ext import commands
 
+from utilities import checks
 from utilities import converters
 from utilities import decorators
 
@@ -45,13 +45,31 @@ class Home(commands.Cog):
         await self.welcome(member)
 
     async def welcome(self, member):
+        byteav = await member.avatar.with_size(128).read()
+        buffer = await self.bot.loop.run_in_executor(
+            None, self.create_welcome_image, byteav, member
+        )
+        dfile = discord.File(fp=buffer, filename="welcome.png")
+
+        embed = discord.Embed(
+            title=f"WELCOME TO {member.guild.name.upper()}!",
+            description=f"> Click [here]({self.bot.oauth}) to invite {self.bot.user.mention}\n"
+            f"> Click [here](https://discord.com/channels/{HOME}/{GENERAL}) to start chatting\n"
+            f"> Click [here](https://discord.com/channels/{HOME}/{SUPPORT}) for bot support\n",
+            timestamp=discord.utils.utcnow(),
+            color=self.bot.constants.embed,
+            url=self.bot.oauth,
+        )
+        embed.set_thumbnail(url=member.guild.icon.url)
+        embed.set_image(url="attachment://welcome.png")
+        embed.set_footer(text=f"Server Population: {member.guild.member_count} ")
+        await self.welcomer.send(f"{member.mention}", file=dfile, embed=embed)
+
+    def create_welcome_image(self, bytes_avatar, member):
         banner = pillow.Image.open("./data/assets/banner.png")
         blue = pillow.Image.open("./data/assets/blue.png")
         mask = pillow.Image.open("./data/assets/avatar_mask.png")
 
-        bytes_avatar = await self.bot.get(
-            str(member.avatar_url_as(format="png", size=128)), res_method="read"
-        )
         avatar = pillow.Image.open(io.BytesIO(bytes_avatar))
 
         try:
@@ -71,25 +89,12 @@ class Home(commands.Cog):
         buffer = io.BytesIO()
         banner.save(buffer, "png")  # 'save' function for PIL
         buffer.seek(0)
-        dfile = discord.File(fp=buffer, filename="welcome.png")
+        return buffer
 
-        embed = discord.Embed(
-            title=f"WELCOME TO {member.guild.name.upper()}!",
-            description=f"> Click [here]({self.bot.oauth}) to invite {self.bot.user.mention}\n"
-            f"> Click [here](https://discord.com/channels/{HOME}/{GENERAL}) to start chatting\n"
-            f"> Click [here](https://discord.com/channels/{HOME}/{SUPPORT}) for bot support\n",
-            timestamp=datetime.utcnow(),
-            color=self.bot.constants.embed,
-            url=self.bot.oauth,
-        )
-        embed.set_thumbnail(url=member.guild.icon_url)
-        embed.set_image(url="attachment://welcome.png")
-        embed.set_footer(text=f"Server Population: {member.guild.member_count} ")
-        await self.welcomer.send(f"{member.mention}", file=dfile, embed=embed)
-
-    @decorators.command(hidden=True, brief="Test the welcome")
+    @decorators.command(hidden=True, brief="Test the welcome", name="welcome")
     @decorators.is_home(HOME)
-    async def pil(self, ctx, user: converters.DiscordMember = None):
-        if user is None:
-            user = ctx.author
+    @checks.has_perms(manage_guild=True)
+    @checks.bot_has_perms(embed_links=True, attach_files=True)
+    async def _welcome(self, ctx, user: converters.DiscordMember = None):
+        user = user or ctx.author
         await self.welcome(user)
