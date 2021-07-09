@@ -49,7 +49,7 @@ class Admin(commands.Cog):
     @checks.guild_only()
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(manage_guild=True)
-    @checks.cooldown(2, 60, bucked=commands.BucketType.guild)
+    @checks.cooldown(2, 60, bucket=commands.BucketType.guild)
     async def muterole(self, ctx, role: converters.DiscordRole = None):
         """
         Usage:      {0}muterole <role>
@@ -108,7 +108,7 @@ class Admin(commands.Cog):
     )
     @checks.guild_only()
     @checks.has_perms(manage_guild=True)
-    @checks.cooldown(2, 60, bucked=commands.BucketType.guild)
+    @checks.cooldown(2, 60, bucket=commands.BucketType.guild)
     async def kill(self, ctx):
         """
         Usage: {0}kill
@@ -132,7 +132,7 @@ class Admin(commands.Cog):
     @checks.guild_only()
     @checks.bot_has_perms(manage_nicknames=True)
     @checks.has_perms(manage_guild=True)
-    @checks.cooldown(2, 60, bucked=commands.BucketType.guild)
+    @checks.cooldown(2, 60, bucket=commands.BucketType.guild)
     async def massdehoist(self, ctx, symbol: str = None):
         """
         Usage: {0}massdehoist [symbol]
@@ -227,7 +227,7 @@ class Admin(commands.Cog):
     @checks.guild_only()
     @checks.bot_has_perms(manage_nicknames=True)
     @checks.has_perms(manage_guild=True)
-    @checks.cooldown(2, 60, bucked=commands.BucketType.guild)
+    @checks.cooldown(2, 60, bucket=commands.BucketType.guild)
     async def massascify(self, ctx):
         """
         Usage: {0}massascify
@@ -294,7 +294,7 @@ class Admin(commands.Cog):
     @checks.guild_only()
     @checks.bot_has_perms(ban_members=True)
     @checks.has_perms(manage_guild=True, ban_members=True)
-    @checks.cooldown(2, 60, bucked=commands.BucketType.guild)
+    @checks.cooldown(2, 60, bucket=commands.BucketType.guild)
     async def massban(self, ctx, *, args):
         """
         Usage: {0}massban <arguments>
