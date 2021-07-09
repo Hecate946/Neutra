@@ -689,10 +689,10 @@ class Snowbot(commands.AutoShardedBot):
             pass
 
         elif isinstance(error, commands.CommandInvokeError):
-            err = utils.traceback_maker(error.original, advance=True)
-            self.dispatch("error", "command_error", vars(ctx), tb=err)
             if "or fewer" in str(error):  # Message was too long to send
                 return await ctx.fail(f"Result was greater than the character limit.")
+            err = utils.traceback_maker(error.original, advance=True)
+            self.dispatch("error", "command_error", vars(ctx), tb=err)
             # Then we don't really know what this error is. Log it.
             print(
                 color(

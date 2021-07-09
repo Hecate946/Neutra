@@ -531,10 +531,10 @@ class Batch(commands.Cog):
             new_invites = await member.guild.invites()
             for invite in old_invites:
                 if not invite:
-                    self.bot.logging_webhook.send(f"**Invite is NoneType**")
+                    await self.bot.logging_webhook.send(f"**Invite is NoneType**")
                     continue
                 if not self.get_invite(new_invites, invite.code):
-                    self.bot.logging_webhook.send(f"**Invite code was not matched**")
+                    await self.bot.logging_webhook.send(f"**Invite code was not matched**")
                     continue
                 if invite.uses < self.get_invite(new_invites, invite.code).uses:
                     self.invite_batch.append(

@@ -520,18 +520,21 @@ class Mod(commands.Cog):
         if after:
             after = discord.Object(id=after)
 
-        try:
-            deleted = await ctx.channel.purge(
+        if predicate:
+            coro = ctx.channel.purge(
                 limit=limit, before=before, after=after, check=predicate
             )
+        else:
+            coro = ctx.channel.purge(
+                limit=limit, before=before, after=after
+            )       
+
+        try:
+            deleted = await coro
         except discord.Forbidden:
-            return await ctx.send_or_reply(
-                content="I do not have permissions to delete messages.",
-            )
+            return await ctx.fail("I do not have permissions to delete messages.")
         except discord.HTTPException as e:
-            return await ctx.send_or_reply(
-                content=f"Error: {e} (try a smaller search?)",
-            )
+            return await ctx.fail(f"Error: {e} (try a smaller search?)")
 
         deleted = len(deleted)
         if message is True:

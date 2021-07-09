@@ -636,7 +636,6 @@ class Logging(commands.Cog):
         embed = discord.Embed(
             color=self.bot.constants.embed,
             timestamp=discord.utils.utcnow(),
-            footer={"text": emoji.id},
         )
 
         embed.description = (
@@ -649,6 +648,7 @@ class Logging(commands.Cog):
             name=f"Emoji {'created' if new else 'deleted'}.",
             icon_url=f"{CREATED_MESSAGE if new else DELETED_MESSAGE}",
         )
+        embed.set_footer(text=f"Emoji ID: {emoji.id}")
 
         await self.send_webhook(webhook, embed=embed)
 

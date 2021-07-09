@@ -152,6 +152,7 @@ class CustomCooldown:
         bucket: commands.BucketType = commands.BucketType.user,
         bypass: list = [],
     ):
+        self.type = bucket
         self.bypass = bypass
         self.default_mapping = commands.CooldownMapping.from_cooldown(rate, per, bucket)
         self.altered_mapping = commands.CooldownMapping.from_cooldown(
@@ -170,7 +171,7 @@ class CustomCooldown:
             bucket = self.default_mapping.get_bucket(ctx.message)
         retry_after = bucket.update_rate_limit()
         if retry_after:
-            raise commands.CommandOnCooldown(bucket, retry_after)
+            raise commands.CommandOnCooldown(bucket, retry_after, self.type)
         return True
 
 
