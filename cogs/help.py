@@ -692,7 +692,7 @@ class Help(commands.Cog):
             The long description of the passed command
         """
         await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['announce']} Command docstring for **{command.name}**:```yaml\n{command.help}```",
+            f"Command docstring for **{command.name}**:```yaml\n{command.help.format(ctx.clean_prefix)}```",
         )
 
     @decorators.command(

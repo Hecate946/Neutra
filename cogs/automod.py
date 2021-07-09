@@ -545,8 +545,9 @@ class Automod(commands.Cog):
         aliases=["profanity"],
         brief="Manage the server's word filter.",
     )
-    @commands.guild_only()
+    @checks.guild_only()
     @checks.has_perms(manage_guild=True)
+    @checks.cooldown(bucket=commands.BucketType.guild)
     async def _filter(self, ctx):
         """
         Usage: {0}filter <option>
@@ -573,7 +574,7 @@ class Automod(commands.Cog):
 
     @_filter.command(name="add", aliases=["+"], brief="Add words to the filter.")
     @checks.has_perms(manage_guild=True)
-    async def add_words(self, ctx, *, words_to_filter: str = None):
+    async def add_words(self, ctx, *, words_to_filter: str):
         """
         Usage: {0}filter add <words>
         Output:
@@ -585,9 +586,6 @@ class Automod(commands.Cog):
             separate words by a comma
             to add multiple words at once.
         """
-        if words_to_filter is None:
-            return await ctx.usage("<word>")
-
         words_to_filter = words_to_filter.split(",")
 
         current_filter = self.bot.server_settings[ctx.guild.id]["profanities"]

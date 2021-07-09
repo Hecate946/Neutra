@@ -105,7 +105,7 @@ class Info(commands.Cog):
     async def about(self, ctx):
         """
         Usage: {0}about
-        Aliases: {0}info, {0}bot, {0}botstats, {0}botinfo
+        Aliases: {0}info, {0}bot, {0}botstats, {0}botinfo, {0}ab
         Output: Version info and bot stats
         """
         msg = await ctx.load("Collecting Bot Info...")

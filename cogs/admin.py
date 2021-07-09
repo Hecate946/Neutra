@@ -3,11 +3,11 @@ import re
 import copy
 import shlex
 import typing
-import asyncio
 import discord
 
 from datetime import timedelta
 from discord.ext import commands
+from collections import defaultdict
 from unidecode import unidecode
 
 from utilities import utils
@@ -29,11 +29,27 @@ class Admin(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.mass = defaultdict(str)
+
+    def start_working(self, guild, action):
+        """
+        Checks if a mass command is
+        in progress in a given server
+        and raises an error if it is.
+        """
+        if guild.id in self.mass.keys():
+            prev_action = self.mass.get(guild.id)
+            raise commands.BadArgument(f"Command `{prev_action}` is already in progress. Please wait until it has been completed.")
+        self.mass[guild.id] = action
+
+    def stop_working(self, guild):
+        self.mass.pop(guild.id)
 
     @decorators.command(brief="Setup server muting system.", aliases=["setmuterole"])
-    @commands.guild_only()
+    @checks.guild_only()
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(manage_guild=True)
+    @checks.cooldown(2, 60, bucked=commands.BucketType.guild)
     async def muterole(self, ctx, role: converters.DiscordRole = None):
         """
         Usage:      {0}muterole <role>
@@ -48,9 +64,7 @@ class Admin(commands.Cog):
             channel will have the Send Messages permission set
             to false for the muted role.
         """
-        msg = await ctx.send_or_reply(
-            f"{self.bot.emote_dict['warn']} Creating mute system. This process may take several minutes."
-        )
+        msg = await ctx.load("Creating mute system. This process may take several minutes...")
         if role is None:
             role = await ctx.guild.create_role(
                 name="Muted", reason="For the server muting system"
@@ -92,8 +106,9 @@ class Admin(commands.Cog):
         implemented="2021-04-28 20:21:42.190256",
         updated="2021-05-05 19:43:51.209242",
     )
-    @commands.guild_only()
+    @checks.guild_only()
     @checks.has_perms(manage_guild=True)
+    @checks.cooldown(2, 60, bucked=commands.BucketType.guild)
     async def kill(self, ctx):
         """
         Usage: {0}kill
@@ -114,8 +129,10 @@ class Admin(commands.Cog):
             return
 
     @decorators.command(brief="Dehoist all server users.")
+    @checks.guild_only()
     @checks.bot_has_perms(manage_nicknames=True)
     @checks.has_perms(manage_guild=True)
+    @checks.cooldown(2, 60, bucked=commands.BucketType.guild)
     async def massdehoist(self, ctx, symbol: str = None):
         """
         Usage: {0}massdehoist [symbol]
@@ -160,6 +177,7 @@ class Admin(commands.Cog):
             msg=f"{self.bot.emote_dict['exclamation']} **This command will attempt to nickname all users with hoisting symbols in their names. Do you wish to continue?**"
         ).prompt(ctx)
         if c:
+            self.start_working(ctx.guild, "massdehoist")
             hoisted = []
             for user in ctx.guild.members:
                 if user.display_name.startswith(tuple(characters)):
@@ -189,9 +207,11 @@ class Admin(commands.Cog):
                         ),
                     )
                     edited.append(str(user))
-                except Exception as e:
+                except Exception:
                     failed.append(str(user))
-                    print(e)
+
+            self.stop_working(ctx.guild)
+
             msg = ""
             if edited:
                 msg += f"{self.bot.emote_dict['success']} Dehoisted {len(edited)} user{'' if len(edited) == 1 else 's'}."
@@ -204,8 +224,10 @@ class Admin(commands.Cog):
             )
 
     @decorators.command(brief="Mass nickname users with odd names.")
+    @checks.guild_only()
     @checks.bot_has_perms(manage_nicknames=True)
     @checks.has_perms(manage_guild=True)
+    @checks.cooldown(2, 60, bucked=commands.BucketType.guild)
     async def massascify(self, ctx):
         """
         Usage: {0}massascify
@@ -222,6 +244,8 @@ class Admin(commands.Cog):
             msg=f"{self.bot.emote_dict['exclamation']} **This command will attempt to nickname all users with special symbols in their names. Do you wish to continue?**"
         ).prompt(ctx)
         if c:
+            self.start_working(ctx.guild, "massascify")
+
             odd_names = []
             for user in ctx.guild.members:
                 current_name = copy.copy(user.display_name)
@@ -235,9 +259,7 @@ class Admin(commands.Cog):
                 )
                 return
 
-            message = await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['loading']} **Ascifying {len(odd_names)} user{'' if len(odd_names) == 1 else 's'}...**",
-            )
+            message = await ctx.load(f"Ascifying {len(odd_names)} user{'' if len(odd_names) == 1 else 's'}...")
             edited = []
             failed = []
             for user in odd_names:
@@ -246,10 +268,12 @@ class Admin(commands.Cog):
                     await user.edit(
                         nick=ascified, reason="Nickname changed by massascify command."
                     )
-                    edited.append(user)
-                except Exception as e:
-                    print(e)
-                    failed.append(user)
+                    edited.append(str(user))
+                except Exception:
+                    failed.append(str(user))
+
+            self.stop_working(ctx.guild)
+            
             msg = ""
             if edited:
                 msg += f"{self.bot.emote_dict['success']} Ascified {len(edited)} user{'' if len(edited) == 1 else 's'}."
@@ -267,9 +291,10 @@ class Admin(commands.Cog):
         implemented="2021-05-02 04:12:14.126319",
         updated="2021-06-13 01:41:29.818783",
     )
-    @commands.guild_only()
+    @checks.guild_only()
     @checks.bot_has_perms(ban_members=True)
     @checks.has_perms(manage_guild=True, ban_members=True)
+    @checks.cooldown(2, 60, bucked=commands.BucketType.guild)
     async def massban(self, ctx, *, args):
         """
         Usage: {0}massban <arguments>
@@ -358,6 +383,8 @@ class Admin(commands.Cog):
         )
         parser.add_argument("--after", type=int)
         parser.add_argument("--before", type=int)
+
+        self.start_working(ctx.guild, "massban")
 
         try:
             args = parser.parse_args(shlex.split(args))
@@ -521,7 +548,6 @@ class Admin(commands.Cog):
             try:
                 await ctx.guild.ban(member, reason=reason)
                 banned.append((str(member), raw_reason))
-                await asyncio.sleep(1)
             except Exception as e:
                 failed.append((str(member), e))
                 continue
@@ -540,9 +566,10 @@ class Admin(commands.Cog):
         implemented="2021-06-13 01:27:18.598560",
         updated="2021-06-13 01:27:18.598560",
     )
-    @commands.guild_only()
+    @checks.guild_only()
     @checks.bot_has_perms(kick_members=True)
     @checks.has_perms(manage_guild=True, kick_members=True)
+    @checks.cooldown(2, 60, bucket=commands.BucketType.guild)
     async def masskick(self, ctx, *, args):
         """
         Usage: {0}masskick <arguments>
@@ -631,6 +658,8 @@ class Admin(commands.Cog):
         )
         parser.add_argument("--after", type=int)
         parser.add_argument("--before", type=int)
+
+        self.start_working(ctx.guild, "masskick")
 
         try:
             args = parser.parse_args(shlex.split(args))
@@ -793,10 +822,11 @@ class Admin(commands.Cog):
             try:
                 await ctx.guild.kick(member, reason=reason)
                 kicked.append((str(member), raw_reason))
-                await asyncio.sleep(1)
             except Exception as e:
                 failed.append((str(member), e))
                 continue
+
+        self.stop_working(ctx.guild)
 
         if kicked:
             await ctx.success(
@@ -808,20 +838,18 @@ class Admin(commands.Cog):
 
     async def get_warncount(self, guild):
         query = """
-                SELECT (warnings, user_id)
-                FROM warn WHERE
-                server_id = $1;
+                SELECT user_id, COUNT(*)
+                FROM warns
+                WHERE server_id = $1
+                GROUP BY user_id;
                 """
-        res = await self.bot.cxn.fetch(query, guild.id)
-        results = {}
-        for x in res:
-            results[x[0][1]] = x[0][0]
-
+        records = await self.bot.cxn.fetch(query, guild.id)
+        results = {record["user_id"]: record["count"] for record in records}
         return results
 
     @decorators.group(
-        name="role",
-        aliases=["massrole", "multirole"],
+        name="massrole",
+        aliases=["role", "multirole"],
         brief="Manage mass adding/removing roles.",
         implemented="2021-05-16 15:06:06.479013",
         updated="2021-05-31 05:13:52.253369",
@@ -835,7 +863,7 @@ class Admin(commands.Cog):
     @checks.guild_only()
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(manage_roles=True)
-    @checks.cooldown(2, 60)
+    @checks.cooldown(2, 60, bucket=commands.BucketType.guild)
     async def _role(self, ctx):
         """
         Usage: {0}role <add/remove> <option> <role>
@@ -872,7 +900,7 @@ class Admin(commands.Cog):
     @checks.guild_only()
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(manage_roles=True)
-    @checks.cooldown(2, 60)
+    @checks.cooldown(2, 60, bucket=commands.BucketType.guild)
     async def _add(
         self, ctx, option: converters.MassRoleConverter, *, role: converters.DiscordRole
     ):
@@ -945,7 +973,7 @@ class Admin(commands.Cog):
     @checks.guild_only()
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(manage_roles=True)
-    @checks.cooldown(2, 60)
+    @checks.cooldown(2, 60, bucket=commands.BucketType.guild)
     async def _remove(
         self, ctx, option: converters.MassRoleConverter, *, role: converters.DiscordRole
     ):
@@ -1008,6 +1036,9 @@ class Admin(commands.Cog):
             await self.do_massrole(ctx, "remove", targets, role, "bot")
 
     async def do_massrole(self, ctx, add_or_remove, targets, role, obj):
+
+        self.start_working(ctx.guild, "massrole")
+
         if add_or_remove.lower() == "add":
             add = True
         else:
@@ -1039,6 +1070,8 @@ class Admin(commands.Cog):
             except Exception as e:
                 failed.append((str(target), e))
 
+        self.stop_working(ctx.guild)
+
         if success or not failed:
             em = self.bot.emote_dict["success"]
             await msg.edit(
@@ -1047,7 +1080,7 @@ class Admin(commands.Cog):
             self.bot.dispatch("mod_action", ctx, targets=success)
         if failed:
             await helpers.error_info(ctx, failed)
-
+            
 
     @decorators.group(
         name="prefix",
@@ -1065,6 +1098,7 @@ class Admin(commands.Cog):
     @prefix.command(name="add", ignore_extra=False, hidden=True)
     @checks.guild_only()
     @checks.has_perms(manage_guild=True)
+    @checks.cooldown()
     async def prefix_add(self, ctx, prefix: converters.Prefix):
         await ctx.invoke(self.addprefix, prefix)
 
@@ -1073,6 +1107,7 @@ class Admin(commands.Cog):
     )
     @checks.guild_only()
     @checks.has_perms(manage_guild=True)
+    @checks.cooldown()
     async def prefix_remove(self, ctx, prefix: converters.Prefix):
         await ctx.invoke(self.removeprefix, prefix)
 
@@ -1094,6 +1129,7 @@ class Admin(commands.Cog):
         implemented="2021-05-03 09:14:59.219515",
         updated="2021-05-05 19:23:39.306805",
     )
+    @checks.cooldown()
     async def prefixes(self, ctx):
         """
         Usage: {0}prefix
@@ -1130,6 +1166,7 @@ class Admin(commands.Cog):
     )
     @checks.guild_only()
     @checks.has_perms(manage_guild=True)
+    @checks.cooldown()
     async def addprefix(self, ctx, prefix: converters.Prefix):
         """
         Usage: {0}addprefix <new prefix>
@@ -1172,6 +1209,7 @@ class Admin(commands.Cog):
     )
     @checks.guild_only()
     @checks.has_perms(manage_guild=True)
+    @checks.cooldown()
     async def removeprefix(self, ctx, prefix: converters.Prefix):
         """
         Usage: {0}removeprefix <new prefix>
@@ -1231,6 +1269,7 @@ class Admin(commands.Cog):
     )
     @checks.guild_only()
     @checks.has_perms(manage_guild=True)
+    @checks.cooldown()
     async def clearprefix(self, ctx):
         """
         Usage: {0}clearprefix
@@ -1365,52 +1404,6 @@ class Admin(commands.Cog):
             f"{self.bot.emote_dict['graph']} Your server has {to_be_pruned} inactive users matching your specifications."
         )
 
-    # @decorators.command(
-    #     brief="Reset stored information for a user",
-    #     implemented="2021-06-25 04:36:26.518644",
-    #     updated="2021-06-25 04:36:26.518644",
-    # )
-    # @checks.guild_only()
-    # @checks.has_perms(manage_guild=True)
-    # @checks.cooldown(3, 60)
-    # async def reset(
-    #     self, ctx, option: converters.ServerDataOption, *, user: converters.DiscordUser
-    # ):
-    #     """
-    #     Usage: {0}reset <option> <user>
-    #     Output:
-    #         Delete recorded data for a user
-    #     Notes:
-    #         Once removed, the data cannot be
-    #         recovered. Use with caution.
-    #     """
-    #     c = await ctx.confirm(
-    #         f"This action will delete all {option[:-1]} data collected on this server for `{user}`."
-    #     )
-    #     if c:
-    #         if option == "nicknames":
-    #             query = """
-    #                     DELETE FROM usernicks
-    #                     WHERE server_id = $1
-    #                     AND user_id = $2;
-    #                     """
-    #         elif option == "messages":
-    #             query = """
-    #                     DELETE FROM messages
-    #                     WHERE server_id = $1
-    #                     AND author_id = $2;
-    #                     """
-    #         else:
-    #             query = """
-    #                     DELETE FROM invites
-    #                     WHERE server_id = $1
-    #                     AND inviter = $2;
-    #                     """
-
-    #         await self.bot.cxn.execute(query, ctx.guild.id, user.id)
-    #         await ctx.success(f"Reset all {option[:-1]} data for `{user}`")
-
-
     @decorators.group(
         name="reset",
         brief="Manage stored user data.",
@@ -1418,6 +1411,7 @@ class Admin(commands.Cog):
         updated="2021-07-08 16:15:20.525820",
         invoke_without_command=True
     )
+    @checks.cooldown()
     async def _reset(self, ctx):
         """
         Usage: {0}reset <subcommand> <data option> [user]
