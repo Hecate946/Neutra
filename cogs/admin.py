@@ -173,24 +173,20 @@ class Admin(commands.Cog):
         else:
             characters = [symbol]
 
-        c = await pagination.Confirmation(
-            msg=f"{self.bot.emote_dict['exclamation']} **This command will attempt to nickname all users with hoisting symbols in their names. Do you wish to continue?**"
-        ).prompt(ctx)
+        c = await ctx.confirm("This command will attempt to nickname all users with hoisting symbols in their names.")
         if c:
-            self.start_working(ctx.guild, "massdehoist")
             hoisted = []
             for user in ctx.guild.members:
                 if user.display_name.startswith(tuple(characters)):
                     hoisted.append(user)
 
             if len(hoisted) == 0:
-                await ctx.send_or_reply(
-                    content=f"{self.bot.emote_dict['exclamation']} No users to dehoist.",
-                )
+                await ctx.fail(f"No users to dehoist.")
                 return
-            message = await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['loading']} **Dehoisting {len(hoisted)} user{'' if len(hoisted) == 1 else 's'}...**",
-            )
+            message = await ctx.load(f"Dehoisting {len(hoisted)} user{'' if len(hoisted) == 1 else 's'}...")
+
+            self.start_working(ctx.guild, "massdehoist")
+
             edited = []
             failed = []
             for user in hoisted:
@@ -218,10 +214,7 @@ class Admin(commands.Cog):
             if failed:
                 msg += f"\n{self.bot.emote_dict['failed']} Failed to dehoist {len(failed)} user{'' if len(failed) == 1 else 's'}."
             await message.edit(content=msg)
-        else:
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
-            )
+
 
     @decorators.command(brief="Mass nickname users with odd names.")
     @checks.guild_only()
@@ -240,12 +233,8 @@ class Admin(commands.Cog):
             May take several minutes on larger servers
         """
 
-        c = await pagination.Confirmation(
-            msg=f"{self.bot.emote_dict['exclamation']} **This command will attempt to nickname all users with special symbols in their names. Do you wish to continue?**"
-        ).prompt(ctx)
+        c = await ctx.confirm("This command will attempt to nickname all users with special symbols in their names.")
         if c:
-            self.start_working(ctx.guild, "massascify")
-
             odd_names = []
             for user in ctx.guild.members:
                 current_name = copy.copy(user.display_name)
@@ -260,6 +249,9 @@ class Admin(commands.Cog):
                 return
 
             message = await ctx.load(f"Ascifying {len(odd_names)} user{'' if len(odd_names) == 1 else 's'}...")
+
+            self.start_working(ctx.guild, "massascify")
+
             edited = []
             failed = []
             for user in odd_names:
@@ -280,11 +272,7 @@ class Admin(commands.Cog):
             if failed:
                 msg += f"\n{self.bot.emote_dict['failed']} Failed to ascify {len(failed)} user{'' if len(failed) == 1 else 's'}."
             await message.edit(content=msg)
-        else:
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
-            )
-
+            
     @decorators.command(
         aliases=["multiban"],
         brief="Massban users matching a search.",
@@ -383,8 +371,6 @@ class Admin(commands.Cog):
         )
         parser.add_argument("--after", type=int)
         parser.add_argument("--before", type=int)
-
-        self.start_working(ctx.guild, "massban")
 
         try:
             args = parser.parse_args(shlex.split(args))
@@ -509,7 +495,6 @@ class Admin(commands.Cog):
 
             predicates.append(warns)
         members = {m for m in members if all(p(m) for p in predicates)}
-        # members.add([x for x in await p(m)])
         if len(members) == 0:
             return await ctx.fail("No users found matching criteria.")
 
@@ -537,6 +522,8 @@ class Admin(commands.Cog):
         )
         if not confirm:
             return
+        
+        self.start_working(ctx.guild, "massban")
 
         banned = []
         failed = []
@@ -552,6 +539,8 @@ class Admin(commands.Cog):
                 failed.append((str(member), e))
                 continue
 
+        self.stop_working(ctx.guild)
+
         if banned:
             await ctx.success(
                 f"Mass banned {len(banned)}/{len(members)} user{'' if len(banned) == 1 else 's'}."
@@ -559,6 +548,7 @@ class Admin(commands.Cog):
             self.bot.dispatch("mod_action", ctx, targets=banned)
         if failed:
             await helpers.error_info(ctx, failed)
+
 
     @decorators.command(
         aliases=["multikick"],
@@ -658,8 +648,6 @@ class Admin(commands.Cog):
         )
         parser.add_argument("--after", type=int)
         parser.add_argument("--before", type=int)
-
-        self.start_working(ctx.guild, "masskick")
 
         try:
             args = parser.parse_args(shlex.split(args))
@@ -811,6 +799,8 @@ class Admin(commands.Cog):
         )
         if not confirm:
             return
+
+        self.start_working(ctx.guild, "masskick")
 
         kicked = []
         failed = []
