@@ -578,7 +578,7 @@ class Admin(commands.Cog):
         help_docstr += "Flags: [Every flag is optional.]\n"
         help_docstr += "\t--help|-h: Shows this message\n"
         help_docstr += "\t--channel|-c: Channel to search for message history.\n"
-        help_docstr += "\t--reason|-r: The reason for the ban.\n"
+        help_docstr += "\t--reason|-r: The reason for the kick.\n"
         help_docstr += "\t--regex: Regex that usernames must match.\n"
         help_docstr += (
             "\t--created: Matches users that registered after X minutes ago.\n"
