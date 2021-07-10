@@ -1394,10 +1394,14 @@ class Mod(commands.Cog):
             raise commands.BadArgument(
                 f"Run the `{ctx.clean_prefix}muterole <role>` command to set up a mute role."
             )
-
-        reason = duration.arg if duration and duration.arg != "…" else None
-        endtime = duration.dt.replace(tzinfo=None) if duration else None
-        dm = True if reason else False
+        if duration:
+            reason = duration.arg if duration.arg != "…" else None
+            endtime = duration.dt.replace(tzinfo=None) if duration.dt else None
+            dm = True if reason else False
+        else:
+            reason = None
+            endtime = None
+            dm = False
 
         failed = []
         muted = []
