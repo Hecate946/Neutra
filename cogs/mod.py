@@ -1464,16 +1464,18 @@ class Mod(commands.Cog):
                     pass
             except Exception as e:
                 failed.append((str(user), e))
+        if muted:
+            self.bot.dispatch("mod_action", ctx, targets=muted)
+            reason_str = f" Reason: {reason}" if reason else ""
+            if endtime:
+                timefmt = humantime.human_timedelta(endtime, source=timer.created_at)
+                msg = f"Muted `{', '.join(muted)}` for **{timefmt}.**{reason_str}"
+            else:
+                msg = f"Muted `{', '.join(muted)}`.{reason_str}")
+            await ctx.success(msg)
 
         if failed:
             await helpers.error_info(ctx, failed)
-        if muted:
-            self.bot.dispatch("mod_action", ctx, targets=muted)
-            if endtime:
-                timefmt = humantime.human_timedelta(endtime, source=timer.created_at)
-                await ctx.success(f"Muted `{', '.join(muted)}` for **{timefmt}.**")
-            else:
-                await ctx.success(f"Muted `{', '.join(muted)}`")
 
     @decorators.command(
         brief="Unmute muted users.",
