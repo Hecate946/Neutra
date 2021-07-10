@@ -68,8 +68,12 @@ class Automod(commands.Cog):
                 try:
                     embed = discord.Embed(color=self.bot.constants.embed)
                     embed.title = "Warn Notice"
-                    embed.description = f"**Server**: `{ctx.guild.name} ({ctx.guild.id})`\n"
-                    embed.description += f"**Moderator**: `{ctx.author} ({ctx.author.id})`\n"
+                    embed.description = (
+                        f"**Server**: `{ctx.guild.name} ({ctx.guild.id})`\n"
+                    )
+                    embed.description += (
+                        f"**Moderator**: `{ctx.author} ({ctx.author.id})`\n"
+                    )
                     embed.description += f"**Reason**: `{reason}`"
                     await target.send(embed=embed)
                 except Exception:
@@ -112,11 +116,13 @@ class Automod(commands.Cog):
         if not wc or wc == 0:
             return await ctx.success(f"User `{target}` has no warnings.")
 
-        em = self.bot.emote_dict['exclamation']
-        fmt = 'warning' if wc == 1 else 'warnings'
+        em = self.bot.emote_dict["exclamation"]
+        fmt = "warning" if wc == 1 else "warnings"
         guild = f"**{ctx.guild.name}**"
 
-        await ctx.send_or_reply(f"{em} User `{target}` currently has **{wc}** {fmt} in {guild}.")
+        await ctx.send_or_reply(
+            f"{em} User `{target}` currently has **{wc}** {fmt} in {guild}."
+        )
 
     @decorators.command(
         brief="Show all warnings a user has.",
@@ -137,25 +143,27 @@ class Automod(commands.Cog):
         warns = await self.bot.cxn.fetch(query, target.id, ctx.guild.id)
         if not warns:
             return await ctx.success(f"User `{target}` has no current warnings.")
-        
-        p = pagination.MainMenu(pagination.FieldPageSource(
-            entries=[
-                (
-                    f"**Warning ID:** {rec['id']}",
-                    f"**Issued:** {utils.short_time(rec['time'])}\n"
-                    f"**Reason:** {rec['res']}"
-                ) for rec in warns
-            ],
-            title="User Warnings",
-            per_page=10,
-            description=f"User `{target}` has {len(warns)} total warning{'' if len(warns) == 1 else 's'}."
-        ))
+
+        p = pagination.MainMenu(
+            pagination.FieldPageSource(
+                entries=[
+                    (
+                        f"**Warning ID:** {rec['id']}",
+                        f"**Issued:** {utils.short_time(rec['time'])}\n"
+                        f"**Reason:** {rec['res']}",
+                    )
+                    for rec in warns
+                ],
+                title="User Warnings",
+                per_page=10,
+                description=f"User `{target}` has {len(warns)} total warning{'' if len(warns) == 1 else 's'}.",
+            )
+        )
 
         try:
             await p.start(ctx)
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
-
 
     @decorators.command(
         aliases=[
@@ -192,10 +200,11 @@ class Automod(commands.Cog):
         fmt = f"{len(data)} warning{'' if len(data) == 1 else 's'}"
         await ctx.success(f"Cleared {fmt} for `{target}`")
         try:
-            await target.send(f"Moderator `{ctx.author}` has cleared all your warnings in **{ctx.guild.name}**.")
+            await target.send(
+                f"Moderator `{ctx.author}` has cleared all your warnings in **{ctx.guild.name}**."
+            )
         except Exception:
             pass
-    
 
     @decorators.command(
         aliases=["unstrike"],
@@ -220,10 +229,14 @@ class Automod(commands.Cog):
                 """
         data = await self.bot.cxn.fetchrow(query, ctx.guild.id, warning_id)
         if not data:
-            return await ctx.fail(f"**Invalid warning ID.** Use `{ctx.clean_prefix}listwarns [user]` to view valid warning IDs.")
-        user = await self.bot.fetch_user(data['user_id'])
+            return await ctx.fail(
+                f"**Invalid warning ID.** Use `{ctx.clean_prefix}listwarns [user]` to view valid warning IDs."
+            )
+        user = await self.bot.fetch_user(data["user_id"])
         if not user:
-            return await ctx.fail("The user this warning was issued for no longer exists.")
+            return await ctx.fail(
+                "The user this warning was issued for no longer exists."
+            )
         await ctx.success(
             f"Removed warning #{data['id']} for user `{user}`\n"
             f"\n**Issued:** {utils.short_time(data['insertion'])}"
@@ -261,7 +274,11 @@ class Automod(commands.Cog):
             if m:
                 return m
 
-        entries = [f"User: `{mem(rec['u'])}` Warnings: `{rec['c']}`" for rec in records if mem(rec['u'])]
+        entries = [
+            f"User: `{mem(rec['u'])}` Warnings: `{rec['c']}`"
+            for rec in records
+            if mem(rec["u"])
+        ]
 
         p = pagination.SimplePages(
             entries=entries,

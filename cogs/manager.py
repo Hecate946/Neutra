@@ -116,7 +116,6 @@ class Manager(commands.Cog):
             + str(self.bot.is_ws_ratelimited())
         )
 
-
     @decorators.command(
         brief="Reload the bot variables.",
         implemented="2021-04-03 04:30:16.385794",

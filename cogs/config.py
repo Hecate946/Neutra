@@ -444,10 +444,7 @@ class Config(commands.Cog):
         await ctx.trigger_typing()
         await self.disable_command(ctx, entity, [str(c) for c in commands])
 
-    @disable.command(
-        name="list",
-        brief="Show disabled channels, roles, and users."
-    )
+    @disable.command(name="list", brief="Show disabled channels, roles, and users.")
     @checks.guild_only()
     @checks.bot_has_perms(external_emojis=True)
     @checks.has_perms(manage_guild=True)

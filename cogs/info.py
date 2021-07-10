@@ -507,9 +507,10 @@ class Info(commands.Cog):
             A selection of invite links
             to invite me to your server
         """
-        admin_inv = discord.utils.oauth_url(self.bot.user.id, permissions=discord.Permissions(8))
+        admin_inv = discord.utils.oauth_url(
+            self.bot.user.id, permissions=discord.Permissions(8)
+        )
         default_inv = discord.utils.oauth_url(self.bot.user.id)
-
 
         reco = discord.ui.Button(label="Recommended", url=self.bot.oauth)
         admin = discord.ui.Button(label="Administrator", url=admin_inv)
@@ -519,7 +520,6 @@ class Info(commands.Cog):
         view.add_item(reco)
         view.add_item(admin)
         view.add_item(default)
-
 
         await ctx.rep_or_ref(
             "Select an invite link from the options below to invite me to your server.",
@@ -614,7 +614,6 @@ class Info(commands.Cog):
                 (rtt_time - now).total_seconds() * 1000,
             )
         )
-
 
     @decorators.command(
         brief="Send a suggestion to the developer.", aliases=["suggestion"]
@@ -1062,9 +1061,7 @@ class Info(commands.Cog):
         """
         with open("./data/txts/privacy.txt") as fp:
             privacy = fp.read()
-        policy = (
-            f"```fix\n{privacy.format(self.bot.user, self.bot.user.id, ctx.clean_prefix)}```"
-        )
+        policy = f"```fix\n{privacy.format(self.bot.user, self.bot.user.id, ctx.clean_prefix)}```"
         await ctx.send_or_reply(
             f"{self.bot.emote_dict['privacy']} **{self.bot.user}'s Privacy Policy**{policy}"
         )

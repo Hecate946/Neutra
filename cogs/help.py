@@ -568,7 +568,8 @@ class Help(commands.Cog):
                     )
                     help_embed.add_field(
                         name=f"**Command Name:** `{valid_commands.title()}`\n**Description:** `{valid_brief}`\n",
-                        value=f"** **" f"```yaml\n{valid_help.format(ctx.clean_prefix)}```",
+                        value=f"** **"
+                        f"```yaml\n{valid_help.format(ctx.clean_prefix)}```",
                     )
                     await self.send_help(ctx, help_embed, pm, delete_after)
                     return

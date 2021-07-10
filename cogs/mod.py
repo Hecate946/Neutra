@@ -46,7 +46,7 @@ class Mod(commands.Cog):
         updated="2021-07-04 17:47:31.565880",
         examples="""
                 {0}vcmove Hecate Snowbot #music
-                """
+                """,
     )
     @checks.guild_only()
     @checks.bot_has_perms(move_members=True)
@@ -89,7 +89,7 @@ class Mod(commands.Cog):
         updated="2021-07-04 17:59:53.792869",
         examples="""
                 {0}vcpurge #music
-                """
+                """,
     )
     @checks.guild_only()
     @checks.has_perms(move_members=True)
@@ -120,7 +120,7 @@ class Mod(commands.Cog):
         updated="2021-07-04 17:59:53.792869",
         examples="""
                 {0}vckick Snowbot Hecate#3523
-                """
+                """,
     )
     @checks.guild_only()
     @checks.has_perms(move_members=True)
@@ -166,9 +166,10 @@ class Mod(commands.Cog):
         for target in targets:
             await ctx.channel.set_permissions(target, overwrite=overwrite)
 
-        await ctx.success(f"{ctx.command.name.capitalize()}ed `{', '.join(str(t) for t in targets)}`")
+        await ctx.success(
+            f"{ctx.command.name.capitalize()}ed `{', '.join(str(t) for t in targets)}`"
+        )
         self.bot.dispatch("mod_action", ctx, targets=targets)
-
 
     @decorators.command(
         brief="Restrict users from sending messages.",
@@ -320,9 +321,13 @@ class Mod(commands.Cog):
             await ctx.usage()
 
         if delete_message_days > 7:
-            raise commands.BadArgument("The number of days to delete messages must be less than 7.")
+            raise commands.BadArgument(
+                "The number of days to delete messages must be less than 7."
+            )
         elif delete_message_days < 0:
-            raise commands.BadArgument("The number of days to delete messages must be greater than 0.")
+            raise commands.BadArgument(
+                "The number of days to delete messages must be greater than 0."
+            )
 
         banned = []
         failed = []
@@ -377,9 +382,13 @@ class Mod(commands.Cog):
             return await ctx.usage()
 
         if delete_message_days > 7:
-            raise commands.BadArgument("The number of days to delete messages must be less than 7.")
+            raise commands.BadArgument(
+                "The number of days to delete messages must be less than 7."
+            )
         elif delete_message_days < 0:
-            raise commands.BadArgument("The number of days to delete messages must be greater than 0.")
+            raise commands.BadArgument(
+                "The number of days to delete messages must be greater than 0."
+            )
 
         banned = []
         failed = []
@@ -433,7 +442,9 @@ class Mod(commands.Cog):
 
         await ctx.guild.unban(member.user, reason=reason)
         if member.reason:
-            await ctx.success(f"Unbanned `{member.user} (ID: {member.user.id})`, previously banned for `{member.reason}.`")
+            await ctx.success(
+                f"Unbanned `{member.user} (ID: {member.user.id})`, previously banned for `{member.reason}.`"
+            )
         else:
             await ctx.success(f"Unbanned `{member.user} (ID: {member.user.id}).`")
         self.bot.dispatch("mod_action", ctx, targets=[str(member.user)])
@@ -525,9 +536,7 @@ class Mod(commands.Cog):
                 limit=limit, before=before, after=after, check=predicate
             )
         else:
-            coro = ctx.channel.purge(
-                limit=limit, before=before, after=after
-            )       
+            coro = ctx.channel.purge(limit=limit, before=before, after=after)
 
         try:
             deleted = await coro
@@ -1221,9 +1230,7 @@ class Mod(commands.Cog):
         ctx,
         users: commands.Greedy[converters.DiscordMember(False)],
         *,
-        duration: humantime.UserFriendlyTime(
-            commands.clean_content, default="\u2026"
-        ),
+        duration: humantime.UserFriendlyTime(commands.clean_content, default="\u2026"),
     ):
         """
         Usage: {0}tempban <users> [duration] [reason]
@@ -1239,7 +1246,9 @@ class Mod(commands.Cog):
         if not len(users):
             return await ctx.usage()
         if not duration.dt:
-            raise commands.BadArgument("Invalid duration. Try using `2 days` or `3 hours`")
+            raise commands.BadArgument(
+                "Invalid duration. Try using `2 days` or `3 hours`"
+            )
 
         reason = duration.arg if duration and duration.arg != "…" else None
         endtime = duration.dt.replace(tzinfo=None)
@@ -1605,9 +1614,7 @@ class Mod(commands.Cog):
         user: converters.DiscordMember,
         role: converters.DiscordRole,
         *,
-        duration: humantime.UserFriendlyTime(
-            commands.clean_content, default="\u2026"
-        ),
+        duration: humantime.UserFriendlyTime(commands.clean_content, default="\u2026"),
     ):
         """
         Usage: {0}temprole <user> <duration>
@@ -1622,7 +1629,9 @@ class Mod(commands.Cog):
             raise commands.BadArgument("This feature is unavailable.")
 
         if not duration.dt:
-            raise commands.BadArgument("Invalid duration. Try using `2 hours` or `3d` as durations.")
+            raise commands.BadArgument(
+                "Invalid duration. Try using `2 hours` or `3d` as durations."
+            )
 
         endtime = duration.dt.replace(tzinfo=None)
 
@@ -1676,7 +1685,6 @@ class Mod(commands.Cog):
         except Exception:  # We tried
             pass
 
-
     @decorators.command(
         aliases=["ar", "addroles"],
         brief="Add multiple roles to a user.",
@@ -1685,7 +1693,7 @@ class Mod(commands.Cog):
         examples="""
                 {0}ar Hecate helper verified
                 {0}addrole Hecate#3523 @Helper
-                """
+                """,
     )
     @checks.guild_only()
     @checks.bot_has_perms(manage_roles=True)
@@ -1709,7 +1717,7 @@ class Mod(commands.Cog):
         """
         await user.add_roles(*roles, reason="Roles added by command")
         await ctx.success(
-            f'Added user `{user}` '
+            f"Added user `{user}` "
             f'the role{"" if len(roles) == 1 else "s"} `{", ".join(str(r) for r in roles)}`'
         )
         self.bot.dispatch("mod_action", ctx, targets=[str(user)])
@@ -1722,7 +1730,7 @@ class Mod(commands.Cog):
         examples="""
                 {0}rr Hecate helper verified
                 {0}rmrole Hecate#3523 @Helper
-                """
+                """,
     )
     @checks.guild_only()
     @checks.bot_has_perms(manage_roles=True)
@@ -1746,7 +1754,7 @@ class Mod(commands.Cog):
         """
         await user.remove_roles(*roles, reason="Roles removed by command")
         await ctx.success(
-            f'Added user `{user}` '
+            f"Added user `{user}` "
             f'the role{"" if len(roles) == 1 else "s"} `{", ".join(str(r) for r in roles)}`'
         )
         self.bot.dispatch("mod_action", ctx, targets=[str(user)])

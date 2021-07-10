@@ -104,6 +104,7 @@ async def attempt_cleanup(ctx, msg_ids):
             if msg.author == ctx.me and msg.id in msg_ids:
                 await msg.delete()
 
+
 class UniqueMember(commands.Converter):
     """
     Similar to DiscordMember, will raise
@@ -1190,6 +1191,7 @@ class ServerDataOption(commands.Converter):
             raise commands.BadArgument(f"**Invalid Option.**{completed}")
         else:
             return argument.lower()
+
 
 class UserDataOption(commands.Converter):
     async def convert(self, ctx, argument):

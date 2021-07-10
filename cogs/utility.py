@@ -902,7 +902,11 @@ class Utility(commands.Cog):
     @checks.has_perms(manage_nicknames=True)
     @checks.cooldown()
     async def nickname(
-        self, ctx, user: typing.Optional[converters.DiscordMember], *, nickname: str = None
+        self,
+        ctx,
+        user: typing.Optional[converters.DiscordMember],
+        *,
+        nickname: str = None,
     ):
         """
         Usage: {0}nickname <user> [nickname]

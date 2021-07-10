@@ -9,7 +9,6 @@ class BotContext(commands.Context):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.handled = False
-        
 
     async def fail(self, content=None, **kwargs):
         return await self.send_or_reply(
@@ -83,8 +82,6 @@ class BotContext(commands.Context):
             return await super().trigger_typing()
         else:
             return
-
-    
 
     # async def log(self, _type=None, content=None, **kwargs):
     #     if _type in ["info", "i", "information"]:

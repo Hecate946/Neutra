@@ -39,7 +39,9 @@ class Admin(commands.Cog):
         """
         if guild.id in self.mass.keys():
             prev_action = self.mass.get(guild.id)
-            raise commands.BadArgument(f"Command `{prev_action}` is already in progress. Please wait until it has been completed.")
+            raise commands.BadArgument(
+                f"Command `{prev_action}` is already in progress. Please wait until it has been completed."
+            )
         self.mass[guild.id] = action
 
     def stop_working(self, guild):
@@ -64,7 +66,9 @@ class Admin(commands.Cog):
             channel will have the Send Messages permission set
             to false for the muted role.
         """
-        msg = await ctx.load("Creating mute system. This process may take several minutes...")
+        msg = await ctx.load(
+            "Creating mute system. This process may take several minutes..."
+        )
         if role is None:
             role = await ctx.guild.create_role(
                 name="Muted", reason="For the server muting system"
@@ -173,7 +177,9 @@ class Admin(commands.Cog):
         else:
             characters = [symbol]
 
-        c = await ctx.confirm("This command will attempt to nickname all users with hoisting symbols in their names.")
+        c = await ctx.confirm(
+            "This command will attempt to nickname all users with hoisting symbols in their names."
+        )
         if c:
             hoisted = []
             for user in ctx.guild.members:
@@ -183,7 +189,9 @@ class Admin(commands.Cog):
             if len(hoisted) == 0:
                 await ctx.fail(f"No users to dehoist.")
                 return
-            message = await ctx.load(f"Dehoisting {len(hoisted)} user{'' if len(hoisted) == 1 else 's'}...")
+            message = await ctx.load(
+                f"Dehoisting {len(hoisted)} user{'' if len(hoisted) == 1 else 's'}..."
+            )
 
             self.start_working(ctx.guild, "massdehoist")
 
@@ -215,7 +223,6 @@ class Admin(commands.Cog):
                 msg += f"\n{self.bot.emote_dict['failed']} Failed to dehoist {len(failed)} user{'' if len(failed) == 1 else 's'}."
             await message.edit(content=msg)
 
-
     @decorators.command(brief="Mass nickname users with odd names.")
     @checks.guild_only()
     @checks.bot_has_perms(manage_nicknames=True)
@@ -233,7 +240,9 @@ class Admin(commands.Cog):
             May take several minutes on larger servers
         """
 
-        c = await ctx.confirm("This command will attempt to nickname all users with special symbols in their names.")
+        c = await ctx.confirm(
+            "This command will attempt to nickname all users with special symbols in their names."
+        )
         if c:
             odd_names = []
             for user in ctx.guild.members:
@@ -248,7 +257,9 @@ class Admin(commands.Cog):
                 )
                 return
 
-            message = await ctx.load(f"Ascifying {len(odd_names)} user{'' if len(odd_names) == 1 else 's'}...")
+            message = await ctx.load(
+                f"Ascifying {len(odd_names)} user{'' if len(odd_names) == 1 else 's'}..."
+            )
 
             self.start_working(ctx.guild, "massascify")
 
@@ -265,7 +276,7 @@ class Admin(commands.Cog):
                     failed.append(str(user))
 
             self.stop_working(ctx.guild)
-            
+
             msg = ""
             if edited:
                 msg += f"{self.bot.emote_dict['success']} Ascified {len(edited)} user{'' if len(edited) == 1 else 's'}."
@@ -298,7 +309,7 @@ class Admin(commands.Cog):
         help_docstr = ""
         help_docstr += "**Valid Massban Flags:**"
         help_docstr += "```yaml\n"
-        help_docstr += "Flags: [Every flag is optional.]\n"
+        help_docstr += "Flags: [Every flag is optional except --reason]\n"
         help_docstr += "\t--help|-h: Shows this message\n"
         help_docstr += "\t--channel|-c: Channel to search for message history.\n"
         help_docstr += "\t--reason|-r: The reason for the ban.\n"
@@ -522,7 +533,7 @@ class Admin(commands.Cog):
         )
         if not confirm:
             return
-        
+
         self.start_working(ctx.guild, "massban")
 
         banned = []
@@ -549,7 +560,6 @@ class Admin(commands.Cog):
         if failed:
             await helpers.error_info(ctx, failed)
 
-
     @decorators.command(
         aliases=["multikick"],
         brief="Mass kick users matching a search.",
@@ -575,7 +585,7 @@ class Admin(commands.Cog):
         help_docstr = ""
         help_docstr += "**Valid Masskick Flags:**"
         help_docstr += "```yaml\n"
-        help_docstr += "Flags: [Every flag is optional.]\n"
+        help_docstr += "Flags: [Every flag is optional except --reason]\n"
         help_docstr += "\t--help|-h: Shows this message\n"
         help_docstr += "\t--channel|-c: Channel to search for message history.\n"
         help_docstr += "\t--reason|-r: The reason for the kick.\n"
@@ -1070,7 +1080,6 @@ class Admin(commands.Cog):
             self.bot.dispatch("mod_action", ctx, targets=success)
         if failed:
             await helpers.error_info(ctx, failed)
-            
 
     @decorators.group(
         name="prefix",
@@ -1292,7 +1301,7 @@ class Admin(commands.Cog):
         brief="Manage stored user data.",
         implemented="2021-07-08 16:15:20.525820",
         updated="2021-07-08 16:15:20.525820",
-        invoke_without_command=True
+        invoke_without_command=True,
     )
     @checks.cooldown()
     async def _reset(self, ctx):
@@ -1311,7 +1320,7 @@ class Admin(commands.Cog):
             await ctx.usage("<my/user/server> <data option> [user]")
 
     @_reset.command(
-        aliases=['me'],
+        aliases=["me"],
         brief="Reset your global data",
     )
     @checks.cooldown(2, 60)
@@ -1329,6 +1338,7 @@ class Admin(commands.Cog):
             voice your wish in the support server.
             Invite: https://discord.gg/H2qTG4yxqb
         """
+
         def opt_fmt(option):
             if option == "statuses":
                 return "status"
@@ -1337,7 +1347,7 @@ class Admin(commands.Cog):
         c = await ctx.confirm(
             f"This action will delete all your {opt_fmt(option)} data."
         )
-        if c:   
+        if c:
             if option == "avatars":
                 query = """
                         DELETE FROM avatars a
@@ -1352,7 +1362,7 @@ class Admin(commands.Cog):
                         DELETE FROM usernames
                         WHERE user_id = $1;
                         """
-            
+
             elif option == "statuses":
                 query = """
                         DELETE FROM userstatus
@@ -1363,9 +1373,7 @@ class Admin(commands.Cog):
             await ctx.success(f"Reset all your {opt_fmt(option)} data.")
 
     @_reset.command(
-        name="user",
-        aliases=["member"],
-        brief="Reset server data for a user."
+        name="user", aliases=["member"], brief="Reset server data for a user."
     )
     @checks.guild_only()
     @checks.is_mod()
@@ -1412,9 +1420,7 @@ class Admin(commands.Cog):
             await ctx.success(f"Reset all {option[:-1]} data for `{user}`")
 
     @_reset.command(
-        name="server",
-        aliases=["guild"],
-        brief="Reset server data for a user."
+        name="server", aliases=["guild"], brief="Reset server data for a user."
     )
     @checks.guild_only()
     @checks.is_mod()
@@ -1454,6 +1460,3 @@ class Admin(commands.Cog):
 
             await self.bot.cxn.execute(query, ctx.guild.id)
             await ctx.success(f"Reset all {option[:-1]} data for this server.")
-        
-
-        

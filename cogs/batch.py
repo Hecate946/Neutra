@@ -534,7 +534,9 @@ class Batch(commands.Cog):
                     await self.bot.logging_webhook.send(f"**Invite is NoneType**")
                     continue
                 if not self.get_invite(new_invites, invite.code):
-                    await self.bot.logging_webhook.send(f"**Invite code was not matched**")
+                    await self.bot.logging_webhook.send(
+                        f"**Invite code was not matched**"
+                    )
                     continue
                 if invite.uses < self.get_invite(new_invites, invite.code).uses:
                     self.invite_batch.append(
