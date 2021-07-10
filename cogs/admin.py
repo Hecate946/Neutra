@@ -445,7 +445,7 @@ class Admin(commands.Cog):
                 predicates.append(lambda m, x=_regex: x.match(m.name))
 
         if args.no_avatar:
-            predicates.append(lambda m: m.avatar is None)
+            predicates.append(lambda m: m.avatar.key == m.default_avatar.key)
         if args.no_roles:
             predicates.append(lambda m: len(getattr(m, "roles", [])) <= 1)
         if args.has_role:
@@ -721,7 +721,7 @@ class Admin(commands.Cog):
                 predicates.append(lambda m, x=_regex: x.match(m.name))
 
         if args.no_avatar:
-            predicates.append(lambda m: m.avatar is None)
+            predicates.append(lambda m: m.avatar.key == m.default_avatar.key)
         if args.no_roles:
             predicates.append(lambda m: len(getattr(m, "roles", [])) <= 1)
         if args.has_role:
