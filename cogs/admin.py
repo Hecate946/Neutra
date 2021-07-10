@@ -596,7 +596,7 @@ class Admin(commands.Cog):
         help_docstr += "\t--no-roles: Matches users that have no role. (no arguments)\n"
         help_docstr += "\t--has-role: Matches users that have a specific role.\n"
         help_docstr += (
-            "\t--show: Show members instead of banning them. (no arguments)\n"
+            "\t--show: Show members instead of kicking them. (no arguments)\n"
         )
         help_docstr += (
             "\t--warns: Matches users who's warn count is more than a value.\n"
