@@ -148,7 +148,7 @@ class Automod(commands.Cog):
             ],
             title="User Warnings",
             per_page=10,
-            description=f"User `{target}` has {len(warns)} total warnings."
+            description=f"User `{target}` has {len(warns)} total warning{'' if len(warns) == 1 else 's'}."
         ))
 
         try:

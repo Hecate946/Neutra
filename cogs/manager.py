@@ -97,6 +97,27 @@ class Manager(commands.Cog):
         )
 
     @decorators.command(
+        aliases=["isratelimited"],
+        brief="Check if the bot is rate limited",
+        hidden=True,
+        implemented="2021-04-25 17:30:11.328279",
+        updated="2021-05-06 00:18:04.665898",
+    )
+    async def ratelimited(self, ctx):
+        """
+        Usage: {0}ratelimited
+        Alias: {0}isratelimited
+        Output:
+            Boolean value stating whether
+            or not the bot is rate-limited
+        """
+        await ctx.send_or_reply(
+            f"{self.bot.emote_dict['stopwatch']} {self.bot.user} ({self.bot.user.id}) Rate limited: "
+            + str(self.bot.is_ws_ratelimited())
+        )
+
+
+    @decorators.command(
         brief="Reload the bot variables.",
         implemented="2021-04-03 04:30:16.385794",
         updated="2021-05-11 02:41:27.186046",
@@ -1450,7 +1471,6 @@ class Manager(commands.Cog):
         msg.author = who
         msg.content = ctx.prefix + command
         new_ctx = await self.bot.get_context(msg, cls=type(ctx))
-        # new_ctx._db = ctx._db
         await self.bot.invoke(new_ctx)
 
     @decorators.command(

@@ -272,7 +272,7 @@ class Admin(commands.Cog):
             if failed:
                 msg += f"\n{self.bot.emote_dict['failed']} Failed to ascify {len(failed)} user{'' if len(failed) == 1 else 's'}."
             await message.edit(content=msg)
-            
+
     @decorators.command(
         aliases=["multiban"],
         brief="Massban users matching a search.",
@@ -543,7 +543,7 @@ class Admin(commands.Cog):
 
         if banned:
             await ctx.success(
-                f"Mass banned {len(banned)}/{len(members)} user{'' if len(banned) == 1 else 's'}."
+                f"Mass banned {len(banned)}/{len(members)} user{'' if len(members) == 1 else 's'}."
             )
             self.bot.dispatch("mod_action", ctx, targets=banned)
         if failed:
@@ -820,7 +820,7 @@ class Admin(commands.Cog):
 
         if kicked:
             await ctx.success(
-                f"Mass kicked {len(kicked)}/{len(members)} user{'' if len(kicked) == 1 else 's'}."
+                f"Mass kicked {len(kicked)}/{len(members)} user{'' if len(members) == 1 else 's'}."
             )
             self.bot.dispatch("mod_action", ctx, targets=kicked)
         if failed:
@@ -1286,113 +1286,6 @@ class Admin(commands.Cog):
             )
         else:
             await ctx.send_or_reply(f"**Cancelled.**")
-
-    @decorators.command(
-        aliases=["pruneinactive"],
-        brief="Kick all inactive server members",
-        implemented="2021-05-09 02:09:40.842333",
-        updated="2021-05-09 02:09:40.842333",
-        examples="""
-                {0}kickinactive
-                {0}kickinactive 25
-                {0}kickinactive 12 @Helper
-                {0}kickinactive @Verified
-                {0}pruneinactive
-                {0}pruneinactive 25
-                {0}pruneinactive 12 @Helper
-                {0}pruneinactive @Verified
-                """,
-    )
-    @checks.guild_only()
-    @checks.bot_has_perms(kick_members=True)
-    @checks.has_perms(administrator=True)
-    async def kickinactive(
-        self,
-        ctx,
-        days: typing.Optional[int] = 30,
-        roles: commands.Greedy[converters.DiscordRole] = None,
-    ):
-        """
-        Usage: {0}kickinactive [days] [roles]
-        Alias: {0}pruneinactive
-        Permission: Administrator
-        Output:
-            Searches for all users who have the
-            specified roles (@everyone by default)
-            who have not logged into discord over
-            the specified duration (30 days default).
-            The bot will then show how many inactive
-            users were found, and prompt you for
-            confirmation to kick the users.
-        Notes:
-            The bot will say no inactive
-            users have been found if any
-            of the given roles are above
-            the bot's highest role.
-            All arguments are optional.
-        """
-        if days > 30:
-            raise commands.BadArgument("The `days` argument must be fewer than 30.")
-        elif days < 1:
-            raise commands.BadArgument("The `days` argument must be greater than 0.")
-        to_be_pruned = await ctx.guild.estimate_pruned_members(days=days, roles=roles)
-        if to_be_pruned == 0:
-            return await ctx.success(
-                f"Your server has no inactive users to prune within your specifications."
-            )
-        c = await pagination.Confirmation(
-            f"**{self.bot.emote_dict['exclamation']} This action will kick {to_be_pruned} users. Do you wish to continue?**"
-        ).prompt(ctx)
-        if c:
-            reason = await converters.ActionReason().convert(ctx, "Kick inactive users")
-            await ctx.guild.prune_members(
-                days=days, compute_prune_count=True, roles=roles, reason=reason
-            )
-        else:
-            await ctx.send_or_reply(
-                f"**{self.bot.emote_dict['exclamation']} Cancelled.**"
-            )
-
-    @decorators.command(
-        brief="Count the inactive users.",
-        implemented="2021-05-10 02:59:21.229362",
-        updated="2021-05-10 02:59:21.229362",
-    )
-    @checks.guild_only()
-    @checks.bot_has_perms(kick_members=True)
-    @checks.has_perms(view_audit_log=True)
-    async def checkinactive(
-        self,
-        ctx,
-        days: typing.Optional[int] = 30,
-        roles: commands.Greedy[converters.DiscordRole] = None,
-    ):
-        """
-        Usage: {0}checkinactive [days] [roles]...
-        Permission: View Audit Log
-        Output:
-            Searches for all users who have the
-            specified roles (@everyone by default)
-            who have not logged into discord over
-            the specified duration (30 days default).
-            The bot will then show how many inactive
-            users were found if any.
-        Notes:
-            Run the command {0}kickinactive
-            to kick the users from the server.
-        """
-        if days > 30:
-            raise commands.BadArgument("The `days` argument must be fewer than 30.")
-        elif days < 1:
-            raise commands.BadArgument("The `days` argument must be greater than 0.")
-        to_be_pruned = await ctx.guild.estimate_pruned_members(days=days, roles=roles)
-        if to_be_pruned == 0:
-            return await ctx.success(
-                f"Your server has no inactive users to prune within your specifications."
-            )
-        await ctx.send_or_reply(
-            f"{self.bot.emote_dict['graph']} Your server has {to_be_pruned} inactive users matching your specifications."
-        )
 
     @decorators.group(
         name="reset",
