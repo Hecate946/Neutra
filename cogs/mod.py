@@ -1754,7 +1754,7 @@ class Mod(commands.Cog):
         """
         await user.remove_roles(*roles, reason="Roles removed by command")
         await ctx.success(
-            f"Added user `{user}` "
+            f"Removed user `{user}` "
             f'the role{"" if len(roles) == 1 else "s"} `{", ".join(str(r) for r in roles)}`'
         )
         self.bot.dispatch("mod_action", ctx, targets=[str(user)])
