@@ -1471,7 +1471,7 @@ class Mod(commands.Cog):
                 timefmt = humantime.human_timedelta(endtime, source=timer.created_at)
                 msg = f"Muted `{', '.join(muted)}` for **{timefmt}.**{reason_str}"
             else:
-                msg = f"Muted `{', '.join(muted)}`.{reason_str}")
+                msg = f"Muted `{', '.join(muted)}`.{reason_str}"
             await ctx.success(msg)
 
         if failed:
