@@ -51,7 +51,7 @@ class Admin(commands.Cog):
     @checks.guild_only()
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(manage_guild=True)
-    @checks.cooldown(2, 60, bucket=commands.BucketType.guild)
+    @checks.cooldown(2, 30, bucket=commands.BucketType.guild)
     async def muterole(self, ctx, role: converters.DiscordRole = None):
         """
         Usage:      {0}muterole <role>
@@ -112,7 +112,7 @@ class Admin(commands.Cog):
     )
     @checks.guild_only()
     @checks.has_perms(manage_guild=True)
-    @checks.cooldown(2, 60, bucket=commands.BucketType.guild)
+    @checks.cooldown(2, 30, bucket=commands.BucketType.guild)
     async def kill(self, ctx):
         """
         Usage: {0}kill
@@ -136,7 +136,7 @@ class Admin(commands.Cog):
     @checks.guild_only()
     @checks.bot_has_perms(manage_nicknames=True)
     @checks.has_perms(manage_guild=True)
-    @checks.cooldown(2, 60, bucket=commands.BucketType.guild)
+    @checks.cooldown(2, 30, bucket=commands.BucketType.guild)
     async def massdehoist(self, ctx, symbol: str = None):
         """
         Usage: {0}massdehoist [symbol]
@@ -227,7 +227,7 @@ class Admin(commands.Cog):
     @checks.guild_only()
     @checks.bot_has_perms(manage_nicknames=True)
     @checks.has_perms(manage_guild=True)
-    @checks.cooldown(2, 60, bucket=commands.BucketType.guild)
+    @checks.cooldown(2, 30, bucket=commands.BucketType.guild)
     async def massascify(self, ctx):
         """
         Usage: {0}massascify
@@ -293,7 +293,7 @@ class Admin(commands.Cog):
     @checks.guild_only()
     @checks.bot_has_perms(ban_members=True)
     @checks.has_perms(manage_guild=True, ban_members=True)
-    @checks.cooldown(2, 60, bucket=commands.BucketType.guild)
+    @checks.cooldown(2, 30, bucket=commands.BucketType.guild)
     async def massban(self, ctx, *, args):
         """
         Usage: {0}massban <arguments>
@@ -569,7 +569,7 @@ class Admin(commands.Cog):
     @checks.guild_only()
     @checks.bot_has_perms(kick_members=True)
     @checks.has_perms(manage_guild=True, kick_members=True)
-    @checks.cooldown(2, 60, bucket=commands.BucketType.guild)
+    @checks.cooldown(2, 30, bucket=commands.BucketType.guild)
     async def masskick(self, ctx, *, args):
         """
         Usage: {0}masskick <arguments>
@@ -863,7 +863,7 @@ class Admin(commands.Cog):
     @checks.guild_only()
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(manage_roles=True)
-    @checks.cooldown(2, 60, bucket=commands.BucketType.guild)
+    @checks.cooldown(2, 30, bucket=commands.BucketType.guild)
     async def _role(self, ctx):
         """
         Usage: {0}role <add/remove> <option> <role>
@@ -900,7 +900,7 @@ class Admin(commands.Cog):
     @checks.guild_only()
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(manage_roles=True)
-    @checks.cooldown(2, 60, bucket=commands.BucketType.guild)
+    @checks.cooldown(2, 30, bucket=commands.BucketType.guild)
     async def _add(
         self, ctx, option: converters.MassRoleConverter, *, role: converters.DiscordRole
     ):
@@ -973,7 +973,7 @@ class Admin(commands.Cog):
     @checks.guild_only()
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(manage_roles=True)
-    @checks.cooldown(2, 60, bucket=commands.BucketType.guild)
+    @checks.cooldown(2, 30, bucket=commands.BucketType.guild)
     async def _remove(
         self, ctx, option: converters.MassRoleConverter, *, role: converters.DiscordRole
     ):
@@ -1323,7 +1323,7 @@ class Admin(commands.Cog):
         aliases=["me"],
         brief="Reset your global data",
     )
-    @checks.cooldown(2, 60)
+    @checks.cooldown(2, 30)
     async def my(self, ctx, option: converters.UserDataOption):
         """
         Usage: {0}reset my [option]
@@ -1377,7 +1377,7 @@ class Admin(commands.Cog):
     )
     @checks.guild_only()
     @checks.is_mod()
-    @checks.cooldown(2, 60)
+    @checks.cooldown(2, 30)
     async def reset_user(
         self, ctx, option: converters.ServerDataOption, *, user: converters.DiscordUser
     ):
@@ -1424,7 +1424,7 @@ class Admin(commands.Cog):
     )
     @checks.guild_only()
     @checks.is_mod()
-    @checks.cooldown(2, 60)
+    @checks.cooldown(2, 30)
     async def reset_server(self, ctx, option: converters.ServerDataOption):
         """
         Usage: {0}reset server <option>
