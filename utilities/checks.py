@@ -190,6 +190,18 @@ async def role_priv(ctx, role):
     if ctx.author.top_role.position < role.position:
         return f"Role `{role.name}` is above highest role."
 
+async def nick_priv(ctx, member):
+    if ctx.author.id == member.id:
+        return
+        
+    if member.id == ctx.guild.owner.id:
+        return f"User `{member}` is the server owner. I cannot edit the nickname of the server owner."
+    if ctx.author.top_role.position < member.top_role.position:
+        return f"You cannot nickname a user with superior permissions."
+    if ctx.author.top_role.position == member.top_role.position:
+        return f"You cannot nickname a user with equal permissions."
+
+
 
 async def checker(ctx, value):
     if type(value) is list:

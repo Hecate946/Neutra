@@ -1073,7 +1073,7 @@ class Mod(commands.Cog):
                 ctx.guild.me, overwrite=bot_perms, reason="For channel lockdown."
             )
 
-        endtime = duration.dt if duration else None
+        endtime = duration.dt.replace(tzinfo=None) if duration else None
 
         timer = await task.create_timer(
             endtime,
@@ -1084,7 +1084,7 @@ class Mod(commands.Cog):
             perms=perms,
             channel_id=channel.id,
             connection=self.bot.cxn,
-            created=ctx.message.created_at,
+            created=ctx.message.created_at.replace(tzinfo=None),
         )
         overwrites.send_messages = False
         reason = "Channel locked by command."
@@ -1242,7 +1242,7 @@ class Mod(commands.Cog):
             raise commands.BadArgument("Invalid duration. Try using `2 days` or `3 hours`")
 
         reason = duration.arg if duration and duration.arg != "…" else None
-        endtime = duration.dt
+        endtime = duration.dt.replace(tzinfo=None)
 
         banned = []
         failed = []

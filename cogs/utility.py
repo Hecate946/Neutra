@@ -1011,7 +1011,7 @@ class Utility(commands.Cog):
     @checks.has_perms(manage_nicknames=True)
     @checks.cooldown()
     async def nickname(
-        self, ctx, user: converters.DiscordMember, *, nickname: str = None
+        self, ctx, user: typing.Optional[converters.DiscordMember], *, nickname: str = None
     ):
         """
         Usage: {0}nickname <user> [nickname]
@@ -1022,10 +1022,11 @@ class Utility(commands.Cog):
         Notes:
             Nickname will be reset if no new nickname is passed.
         """
-        if user.id == ctx.guild.owner.id:
-            raise commands.BadArgument(
-                f"User `{user}` is the server owner. I cannot edit the nickname of the server owner."
-            )
+        user = user or ctx.author
+
+        res = await checks.nick_priv(ctx, user)
+        if res:
+            raise commands.BadArgument(res)
         try:
             await user.edit(
                 nick=nickname,
