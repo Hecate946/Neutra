@@ -1411,23 +1411,16 @@ class Mod(commands.Cog):
             ):  # This is because bots sometimes have a role that cannot be removed
                 failed.append((str(user), "I cannot mute bots."))
                 continue  # I mean we could.. but why would someone want to mute a bot.
-            if muterole in user.roles:
-                failed.append((str(user), "User is already muted."))
-                continue
             res = await checks.check_priv(ctx, user)
             if res:
                 failed.append((str(user), res))
                 continue
             query = """
-                    select (id)
-                    from tasks
-                    where event = 'mute'
-                    and extra->'kwargs'->>'user_id' = $1;
+                    DELETE FROM tasks
+                    WHERE event = 'mute'
+                    AND extra->'kwargs'->>'user_id' = $1;
                     """
-            s = await self.bot.cxn.fetchval(query, str(user.id))
-            if s:
-                failed.append((str(user), "User is already muted."))
-                continue
+            await self.bot.cxn.fetchval(query, str(user.id))
             try:
                 timer = await task.create_timer(
                     endtime,
@@ -1505,7 +1498,7 @@ class Mod(commands.Cog):
             that they had before they were muted.
         """
         if not len(users):
-            return await ctx.usage(ctx.command.signature)
+            return await ctx.usage()
         failed = []
         unmuted = []
         for user in users:
@@ -1522,7 +1515,8 @@ class Mod(commands.Cog):
                     """
             s = await self.bot.cxn.fetchval(query, str(user.id))
             if not s:
-                return await ctx.fail(f"User `{user}` is not muted.")
+                unmuted.append(str(user))
+                continue
             await ctx.trigger_typing()
             task_id = s[0]
             args_and_kwargs = json.loads(s[1])
@@ -1551,10 +1545,10 @@ class Mod(commands.Cog):
                     await user.send(embed=embed)
                 except Exception:
                     pass
-        if failed:
-            await helpers.error_info(ctx, failed)
         if unmuted:
             await ctx.success(f"Unmuted `{' '.join(unmuted)}`")
+        if failed:
+            await helpers.error_info(ctx, failed)
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
