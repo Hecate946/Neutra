@@ -1350,12 +1350,17 @@ class Admin(commands.Cog):
         if c:
             if option == "avatars":
                 query = """
-                        DELETE FROM avatars a
-                        USING useravatars u
-                        WHERE a.hash = u.avatar
-                        AND u.user_id = $1;
-                        DELETE FROM useravatars u
-                        WHERE u.user_id = $1;
+                        WITH data AS (
+                            DELETE FROM useravatars
+                            WHERE user_id = $1
+                            RETURNING avatar
+                        )
+                        DELETE FROM avatars
+                        WHERE hash IN (
+                            SELECT avatar
+                            FROM data
+                        );
+```
                         """
             elif option == "usernames":
                 query = """
