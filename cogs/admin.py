@@ -1360,7 +1360,6 @@ class Admin(commands.Cog):
                             SELECT avatar
                             FROM data
                         );
-```
                         """
             elif option == "usernames":
                 query = """
