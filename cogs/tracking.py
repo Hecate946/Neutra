@@ -555,21 +555,21 @@ class Tracking(commands.Cog):
         avys = await asyncio.gather(*[url_to_bytes(url["url"]) for url in urls])
         if avys:
             file = await self.bot.loop.run_in_executor(None, images.quilt, avys)
-            url = "attachment://avatars.png"
+            dfile = discord.File(file, "avatars.png")
+            embed = discord.Embed(color=self.bot.constants.embed)
+            embed.title = f"Recorded Avatars for {user}"
+            embed.set_image(url="attachment://avatars.png")
+            await ctx.send_or_reply(embed=embed, file=dfile)
         else:
             if self.bot.avatar_saver.is_saving:
                 self.bot.avatar_saver.save(user)
-                url = str(user.avatar.with_size(1024))
-                file = None
+                embed = discord.Embed(color=self.bot.constants.embed)
+                embed.title = f"Recorded Avatars for {user}"
+                embed.set_image(url=str(user.avatar.with_size(1024)))
+                await ctx.send_or_reply(embed=embed)
             else:
                 raise commands.DisabledCommand()
-        dfile = discord.File(file, "avatars.png")
 
-        em = discord.Embed(color=self.bot.constants.embed)
-        em.title = f"Recorded Avatars for {user}"
-
-        em.set_image(url=url)
-        await ctx.send_or_reply(embed=em, file=dfile)
 
     @decorators.command(
         aliases=["lastseen", "track", "tracker", "observed"],
