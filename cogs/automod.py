@@ -112,7 +112,7 @@ class Automod(commands.Cog):
                 WHERE user_id = $1
                 AND server_id = $2;
                 """
-        wc = self.bot.cxn.fetchval(query, target.id, ctx.guild.id)
+        wc = await self.bot.cxn.fetchval(query, target.id, ctx.guild.id)
         if not wc or wc == 0:
             return await ctx.success(f"User `{target}` has no warnings.")
 
