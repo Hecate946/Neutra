@@ -184,7 +184,7 @@ class Botadmin(commands.Cog):
         Permissions: Bot Owner
         """
         try:
-            await user.send(message)
+            await user.send(message, files=ctx.message.attachments)
             await ctx.send_or_reply(
                 content=f"{self.bot.emote_dict['letter']} Sent a DM to **{user}**",
             )
