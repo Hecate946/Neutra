@@ -663,44 +663,40 @@ class Config(commands.Cog):
         data = []
         try:
             columns, rows, title = await self.do_user_option(ctx, records)
-        except Exception:
-            user_data = ""
-        else:
             table = formatting.TabularData()
             table.set_columns(columns)
             table.add_rows(rows)
             user_data = f"COMMANDS DISABLED FOR USERS\n{table.render()}"
             data.append(user_data)
+        except Exception:
+            user_data = ""
         try:
             columns, rows, title = await self.do_role_option(ctx, records)
-        except Exception:
-            role_data = ""
-        else:
             table = formatting.TabularData()
             table.set_columns(columns)
             table.add_rows(rows)
             role_data = f"COMMANDS DISABLED FOR ROLES\n{table.render()}"
             data.append(role_data)
+        except Exception:
+            role_data = ""
         try:
             columns, rows, title = await self.do_channel_option(ctx, records)
-        except Exception:
-            channel_data = ""
-        else:
             table = formatting.TabularData()
             table.set_columns(columns)
             table.add_rows(rows)
             channel_data = f"COMMANDS DISABLED FOR CHANNELS\n{table.render()}"
             data.append(channel_data)
+        except Exception:
+            channel_data = ""
         try:
             columns, rows, title = await self.do_server_option(ctx, records)
-        except Exception:
-            server_data = ""
-        else:
             table = formatting.TabularData()
             table.set_columns(columns)
             table.add_rows(rows)
             server_data = f"COMMANDS DISABLED GLOBALLY\n{table.render()}"
             data.append(server_data)
+        except Exception:
+            server_data = ""
 
         title = f"**{ctx.guild.name} Disabled Command Data:**"
         data = "\n\n".join(data)

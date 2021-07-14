@@ -1348,7 +1348,7 @@ class Mod(commands.Cog):
     )
     @commands.guild_only()
     @checks.bot_has_perms(manage_roles=True)
-    @checks.has_perms(manage_roles=True)
+    @checks.has_perms(kick_members=True)
     async def mute(
         self,
         ctx,
@@ -1361,6 +1361,7 @@ class Mod(commands.Cog):
         """
         Usage: {0}mute <users>... [duration] [reason]
         Alias: {0}tempmute
+        Permission: Kick Members
         Output:
             Mutes multiple users.
             This command will attempt
