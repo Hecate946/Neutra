@@ -1162,7 +1162,7 @@ class Help(commands.Cog):
         perms = []
         # Thanks Stella#2000
         for check in checks:
-            if hasattr(check, "__qualname"):
+            if hasattr(check, "__qualname__"):
                 if str(check.__qualname__).split(".")[0] == bot_or_author + "has_perms":
                     try:
                         await check(
