@@ -1179,6 +1179,8 @@ class Tracking(commands.Cog):
                 LIMIT 100;
                 """
         records = await self.bot.cxn.fetch(query, ctx.guild.id, diff)
+        if not records:
+            return await ctx.fail(f"No messate statistics available for that time period.")
 
         def pred(snowflake):
             mem = ctx.guild.get_member(snowflake)
@@ -1190,6 +1192,7 @@ class Tracking(commands.Cog):
             for record in records
             if pred(record["author"])
         }
+
 
         width = len(max(usage_dict, key=len))
 
