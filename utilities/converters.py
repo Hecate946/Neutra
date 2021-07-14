@@ -127,6 +127,8 @@ class SelfMember(commands.Converter):
             raise commands.BadArgument(f"{format_perms(self.perms)} to run this command on other users.")
 
 class SelfUser(commands.Converter):
+    def __init__(self, **perms):
+        self.perms = perms
     async def convert(self, ctx, argument):
         member = await DiscordUser().convert(ctx, argument)
         if member.id == ctx.author.id:
