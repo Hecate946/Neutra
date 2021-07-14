@@ -516,7 +516,7 @@ class Tracking(commands.Cog):
     )
     @checks.has_perms(view_audit_log=True)
     @checks.cooldown(1, 10)
-    async def avatars(self, ctx, user: converters.DiscordMember = None):
+    async def avatars(self, ctx, *, user: converters.DiscordMember = None):
         """
         Usage: {0}avatars [user]
         Alias: {0}avs, {0}avhistory {0}avatarhistory
@@ -978,6 +978,8 @@ class Tracking(commands.Cog):
                 LIMIT $3;
                 """
         records = await self.bot.cxn.fetch(query, ctx.guild.id, user.id, limit)
+        if not records:
+            return await ctx.fail(f"No words have been recorded for `{user}`")
 
         msg = "\n".join(
             [

@@ -924,7 +924,7 @@ class Files(commands.Cog):
 
     @decorators.command(
         aliases=["dumpstrikes"],
-        brief="DMs you a file of server bans.",
+        brief="DMs you a file of server warns.",
         implemented="2021-04-09 21:29:18.563027",
         updated="2021-05-06 16:26:05.161487",
     )
