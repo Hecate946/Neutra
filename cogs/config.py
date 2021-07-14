@@ -76,7 +76,7 @@ class Config(commands.Cog):
             return False  # User is ignored.
 
         if any(
-            (role_id in self.ignored[ctx.guild.id] for role_id in ctx.author._roles)
+            (role_id in self.ignored[ctx.guild.id] for role_id in [r.id for r in ctx.author.roles])
         ):
             return False  # Role is ignored.
 
