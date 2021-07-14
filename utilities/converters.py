@@ -19,6 +19,14 @@ SNOWFLAKE_REGEX = re.compile(r"([0-9]{15,21})$")
 USER_MENTION_REGEX = re.compile(r"<@!?([0-9]+)>$")
 ROLE_MENTION_REGEX = re.compile(r"<@&([0-9]+)>$")
 
+def format_perms(perms):
+    perm_list = [
+        x.title().replace("_", " ").replace("Tts", "TTS").replace("Guild", "Server")
+        for x in perms
+    ]
+    return f"You are missing the following permission{'' if len(perm_list) == 1 else 's'}: `{', '.join(perm_list)}`"
+
+
 
 async def prettify(ctx, arg):
     pretty_arg = await commands.clean_content().convert(ctx, str(arg))
@@ -105,6 +113,30 @@ async def attempt_cleanup(ctx, msg_ids):
                 await msg.delete()
 
 
+class SelfMember(commands.Converter):
+    def __init__(self, **perms):
+        self.perms = perms
+
+    async def convert(self, ctx, argument):
+        member = await DiscordMember().convert(ctx, argument)
+        if member.id == ctx.author.id:
+            return member
+        else:
+            if await checks.check_permissions(ctx, self.perms):
+                return member
+            raise commands.BadArgument(f"{format_perms(self.perms)} to run this command on other users.")
+
+class SelfUser(commands.Converter):
+    async def convert(self, ctx, argument):
+        member = await DiscordUser().convert(ctx, argument)
+        if member.id == ctx.author.id:
+            return member
+        else:
+            if await checks.check_permissions(ctx, self.perms):
+                return member
+            raise commands.BadArgument(f"{format_perms(self.perms)} to run this command on other users.")
+
+
 class UniqueMember(commands.Converter):
     """
     Similar to DiscordMember, will raise
@@ -182,7 +214,7 @@ class UniqueMember(commands.Converter):
     async def convert(self, ctx, argument):
         if not ctx.guild:
             raise commands.NoPrivateMessage()
-        match = await self.find_match(ctx, argument)
+        match = await self.find_match(ctx, str(argument))
 
         if not match:
             raise commands.BadArgument(
@@ -254,7 +286,7 @@ class UniqueRole(commands.Converter):
     async def convert(self, ctx, argument):
         if not ctx.guild:
             raise commands.NoPrivateMessage()
-        match = await self.find_match(ctx, argument)
+        match = await self.find_match(ctx, str(argument))
 
         if not match:
             raise commands.BadArgument(
@@ -309,7 +341,7 @@ class SearchEmojiConverter(commands.Converter):
             return results[0]
 
     async def convert(self, ctx, argument):
-        match = await self.find_match(ctx, argument)
+        match = await self.find_match(ctx, str(argument))
 
         if match:
             return match
@@ -373,7 +405,7 @@ class GuildEmojiConverter(commands.Converter):
             return results[0]
 
     async def convert(self, ctx, argument):
-        match = await self.find_match(ctx, argument)
+        match = await self.find_match(ctx, str(argument))
 
         if match:
             return match
@@ -499,7 +531,7 @@ class DiscordBot(commands.Converter):
             return await disambiguate(ctx, results)
 
     async def convert(self, ctx, argument):
-        match = await self.find_match(ctx, argument)
+        match = await self.find_match(ctx, str(argument))
 
         if not match:
             raise commands.BadArgument(
@@ -607,7 +639,7 @@ class DiscordUser(commands.Converter):
             return results[0]
 
     async def convert(self, ctx, argument):
-        match = await self.find_match(ctx, argument)
+        match = await self.find_match(ctx, str(argument))
 
         if not match:
             raise commands.BadArgument(
@@ -673,7 +705,7 @@ class DiscordGuild(commands.Converter):
             return results[0]
 
     async def convert(self, ctx, argument):
-        match = await self.find_match(ctx, argument)
+        match = await self.find_match(ctx, str(argument))
 
         if not match:
             raise commands.BadArgument(
@@ -839,7 +871,7 @@ class DiscordMember(commands.Converter):
     async def convert(self, ctx, argument):
         if not ctx.guild:
             raise commands.NoPrivateMessage()
-        match = await self.find_match(ctx, argument)
+        match = await self.find_match(ctx, str(argument))
 
         if not match:
             raise commands.BadArgument(
@@ -907,7 +939,7 @@ class DiscordRole(commands.Converter):
     async def convert(self, ctx, argument):
         if not ctx.guild:
             raise commands.NoPrivateMessage()
-        match = await self.find_match(ctx, argument)
+        match = await self.find_match(ctx, str(argument))
 
         if not match:
             raise commands.BadArgument(

@@ -45,9 +45,8 @@ class Tracking(commands.Cog):
                 """,
     )
     @checks.guild_only()
-    @checks.has_perms(view_audit_log=True)
     @checks.cooldown()
-    async def invited(self, ctx, user: converters.DiscordMember = None):
+    async def invited(self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None):
         """
         Usage: {0}invited [user]
         Aliases: {0}inviter, {0}whoinvited
@@ -58,8 +57,7 @@ class Tracking(commands.Cog):
             Will default to you if
             no user is passed.
         """
-        if user is None:
-            user = ctx.author
+        user = user or ctx.author
         query = """
                 SELECT (inviter)
                 FROM invites
@@ -86,7 +84,7 @@ class Tracking(commands.Cog):
     )
     @checks.guild_only()
     @checks.cooldown()
-    async def invites(self, ctx, user: converters.DiscordMember = None):
+    async def invites(self, ctx, *, user: converters.DiscordMember = None):
         """
         Usage: {0}invites [user]
         Output:
@@ -135,9 +133,8 @@ class Tracking(commands.Cog):
                 {0}rawuser 708584008065351681
                 """,
     )
-    @checks.has_perms(view_audit_log=True)
     @checks.cooldown(2, 20)
-    async def user(self, ctx, *, user: converters.DiscordUser = None):
+    async def user(self, ctx, *, user: converters.SelfUser(view_audit_log=True) = None):
         """
         Usage:   {0}user [user]
         Alias:   {0}lookup
@@ -317,7 +314,7 @@ class Tracking(commands.Cog):
     @decorators.command(aliases=["mc"], brief="Count the messages a user sent.")
     @checks.guild_only()
     @checks.cooldown()
-    async def messagecount(self, ctx, user: converters.DiscordMember = None):
+    async def messagecount(self, ctx, *, user: converters.DiscordMember = None):
         """
         Usage:  {0}messagecount [user]
         Alias:  {0}mc
@@ -351,7 +348,6 @@ class Tracking(commands.Cog):
     )
     @checks.guild_only()
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
-    @checks.has_perms(view_audit_log=True)
     @checks.cooldown()
     async def top(self, ctx, limit: int = 100):
         """
@@ -414,9 +410,8 @@ class Tracking(commands.Cog):
     )
     @checks.guild_only()
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
-    @checks.has_perms(view_audit_log=True)
     @checks.cooldown()
-    async def nicknames(self, ctx, user: converters.DiscordMember = None):
+    async def nicknames(self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None):
         """
         Usage: {0}nicknames [user]
         Alias: {0}nicks, {0}usernicks
@@ -465,7 +460,7 @@ class Tracking(commands.Cog):
     @checks.guild_only()
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.has_perms(view_audit_log=True)
-    async def usernames(self, ctx, user: converters.DiscordUser = None):
+    async def usernames(self, ctx, *, user: converters.SelfUser(view_audit_log=True) = None):
         """
         Usage: {0}usernames [user]
         Alias: {0}names
@@ -514,9 +509,8 @@ class Tracking(commands.Cog):
     @checks.bot_has_perms(
         add_reactions=True, attach_files=True, embed_links=True, external_emojis=True
     )
-    @checks.has_perms(view_audit_log=True)
     @checks.cooldown(1, 10)
-    async def avatars(self, ctx, *, user: converters.DiscordMember = None):
+    async def avatars(self, ctx, *, user: converters.SelfUser(view_audit_log=True) = None):
         """
         Usage: {0}avatars [user]
         Alias: {0}avs, {0}avhistory {0}avatarhistory
@@ -599,9 +593,8 @@ class Tracking(commands.Cog):
                 {0}observed 708584008065351681
                 """,
     )
-    @checks.has_perms(view_audit_log=True)
     @checks.cooldown()
-    async def seen(self, ctx, *, user: converters.DiscordUser = None):
+    async def seen(self, ctx, *, user: converters.SelfUser(view_audit_log=True) = None):
         """
         Usage: {0}seen [user]
         Aliases:
@@ -648,9 +641,8 @@ class Tracking(commands.Cog):
                 {0}lastspoke 708584008065351681
                 """,
     )
-    @checks.has_perms(view_audit_log=True)
     @checks.cooldown()
-    async def spoke(self, ctx, *, user: converters.DiscordUser = None):
+    async def spoke(self, ctx, *, user: converters.SelfUser(view_audit_log=True) = None):
         """
         Usage: {0}spoke [user]
         Alias: {0}lastspoke
@@ -692,9 +684,8 @@ class Tracking(commands.Cog):
                 {0}lastspokehere 708584008065351681
                 """,
     )
-    @checks.has_perms(view_audit_log=True)
     @checks.cooldown()
-    async def spokehere(self, ctx, *, user: converters.DiscordUser = None):
+    async def spokehere(self, ctx, *, user: converters.SelfUser(view_audit_log=True) = None):
         """
         Usage: {0}spokehere [user]
         Alias: {0}lastspokehere
@@ -736,7 +727,6 @@ class Tracking(commands.Cog):
     )
     @checks.guild_only()
     @checks.bot_has_perms(add_reactions=True, external_emojis=True)
-    @checks.has_perms(view_audit_log=True)
     async def commandstats(
         self, ctx, user: typing.Optional[converters.DiscordMember], limit: int = 100
     ):
@@ -775,6 +765,8 @@ class Tracking(commands.Cog):
         else:
             if user.bot:
                 raise commands.BadArgument("I do not track bots.")
+
+            user = await converters.SelfMember(view_audit_log=True).convert(ctx, user.id)
 
             query = """
                     SELECT command, COUNT(commands) as c
@@ -831,13 +823,11 @@ class Tracking(commands.Cog):
                 """,
     )
     @checks.guild_only()
-    @checks.has_perms(view_audit_log=True)
     @checks.cooldown()
-    async def commandcount(self, ctx, user: converters.DiscordMember = None):
+    async def commandcount(self, ctx, *, user: converters.DiscordMember = None):
         """
         Usage: {0}commandcount [user]
         Alias: {0}cc
-        Permission: View Audit Log
         Output:
             Command count for a specific user.
         Notes:
@@ -935,7 +925,6 @@ class Tracking(commands.Cog):
     )
     @checks.guild_only()
     @checks.bot_has_perms(add_reactions=True, external_emojis=True)
-    @checks.has_perms(manage_messages=True)
     @checks.cooldown()
     async def words(
         self,
@@ -952,7 +941,10 @@ class Tracking(commands.Cog):
             Pass a limit argument after or instead of a user
             argument to limit the number of common words to show.
         """
-        user = user or ctx.author
+        if user:
+            user = await converters.SelfMember(manage_messages=True).convert(ctx, user.id)
+        else:
+            user = ctx.author
 
         if user.bot:
             raise commands.BadArgument("I do not track bots.")
@@ -1014,7 +1006,6 @@ class Tracking(commands.Cog):
     )
     @checks.guild_only()
     @checks.bot_has_perms(add_reactions=True, external_emojis=True)
-    @checks.has_perms(manage_messages=True)
     @checks.cooldown()
     async def word(
         self,
@@ -1031,7 +1022,10 @@ class Tracking(commands.Cog):
         Notes:
             Will default to you if no user is passed.
         """
-        user = user or ctx.author
+        if user:
+            user = await converters.SelfMember(manage_messages=True).convert(ctx, user.id)
+        else:
+            user = ctx.author
         if user.bot:
             raise commands.BadArgument("I do not track bots.")
         if len(word) < 2:
@@ -1290,7 +1284,6 @@ class Tracking(commands.Cog):
                 {0}clocker Hecate#3523 one month ago
                 """,
     )
-    @checks.has_perms(view_audit_log=True)
     @checks.cooldown()
     async def clocker(
         self,
@@ -1309,7 +1302,10 @@ class Tracking(commands.Cog):
             If no time frame is specified,
             will default to 1 week.
         """
-        user = user or ctx.author
+        if user:
+            user = await converters.SelfMember(view_audit_log=True).convert(ctx, user.id)
+        else:
+            user = ctx.author
         await ctx.trigger_typing()
         if timeframe:
             actual_time = (discord.utils.utcnow() - timeframe.dt).total_seconds()
@@ -1432,9 +1428,8 @@ class Tracking(commands.Cog):
     )
     @checks.guild_only()
     @checks.bot_has_perms(attach_files=True, embed_links=True)
-    @checks.has_perms(view_audit_log=True)
     @checks.cooldown()
-    async def statusinfo(self, ctx, user: converters.DiscordMember = None):
+    async def statusinfo(self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None):
         """
         Usage: {0}statusinfo [user]
         Aliases: {0}piestatus, {0}ps,
@@ -1757,9 +1752,8 @@ class Tracking(commands.Cog):
     )
     @checks.guild_only()
     @checks.bot_has_perms(attach_files=True, embed_links=True)
-    @checks.has_perms(view_audit_log=True)
     @checks.cooldown()
-    async def barstatus(self, ctx, *, user: converters.DiscordMember = None):
+    async def barstatus(self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None):
         """
         Usage: {0}barstatus [user]
         Aliases: {0}bs {0}bstatus
