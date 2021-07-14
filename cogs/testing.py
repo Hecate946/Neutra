@@ -6,6 +6,46 @@ from utilities import checks
 
 from PIL import Image
 
+query = '''
+WITH status_data AS (
+    SELECT status, insertion_chopped as insertion,
+        case when 
+            lag(insertion_chopped) over (order by insertion desc) is null then
+                now() at time zone 'utc'
+            else
+                lag(insertion_chopped) over (order by insertion desc)
+        end as last_seen
+    from (
+        select
+            distinct on (insertion_chopped)
+            insertion,
+            case when insertion < (now() at time zone 'utc' - interval '30 days') then
+                (now() at time zone 'utc' - interval '30 days')
+                else insertion end as insertion_chopped,
+            status,
+            lag(status) over (order by insertion desc) as status_last
+        from ( 
+            (select status, insertion
+            from statuses
+            where user_id=0
+            order by insertion desc)
+            union
+            (select status, insertion
+            from statuses
+            where user_id=$1
+            order by insertion desc
+            limit 3000)
+        ) first3000
+        order by insertion_chopped desc, insertion desc
+    ) subtable
+    where
+        status is distinct from status_last
+    order by insertion desc
+)
+select *
+from status_data
+'''
+
 
 def setup(bot):
     bot.add_cog(Testing(bot))
@@ -63,3 +103,8 @@ class Testing(commands.Cog):
         em = discord.Embed(title="Message Stats", color=self.bot.constants.embed)
         em.set_image(url="attachment://mstats.png")
         await ctx.send_or_reply(embed=em, file=dfile)
+
+    @commands.command()
+    async def statuses(self, ctx):
+        d = await self.bot.cxn.fetch(query , ctx.author.id)
+        print(d)

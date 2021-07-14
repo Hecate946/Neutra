@@ -2,7 +2,6 @@ import discord
 
 from better_profanity import profanity
 from discord.ext import commands, menus
-from discord.ext.commands.core import check
 
 from utilities import utils
 from utilities import checks
@@ -191,7 +190,7 @@ class Automod(commands.Cog):
                 DELETE FROM warns
                 WHERE user_id = $1
                 AND server_id = $2
-                RETURNING warning;
+                RETURNING reason;
                 """
         data = await self.bot.cxn.fetch(query, target.id, ctx.guild.id)
         if not data:
@@ -216,7 +215,7 @@ class Automod(commands.Cog):
     @checks.has_perms(kick_members=True)
     async def unwarn(self, ctx, warning_id: int):
         """
-        Usage: {0}revokewarn [warning id]
+        Usage: {0}unwarn [warning id]
         Aliases: {0}unstrike
         Permission: Kick Members
         Output: Revokes a warning from a user
@@ -808,17 +807,35 @@ class Automod(commands.Cog):
             return  # We are immune!
         if message.author.guild_permissions.manage_messages:
             return  # We are immune!
-        if self.bot.dregex.search(message.content):  # Check for invite linkes
-            removeinvitelinks = self.bot.server_settings[message.guild.id]["antiinvite"]
-            if removeinvitelinks:  # Do we care?
+
+        removeinvitelinks = self.bot.server_settings[message.guild.id]["antiinvite"]
+        if removeinvitelinks:  # Do we care?
+            match = self.bot.dregex.search(message.content)
+            if match:  # Message containg an invite
                 try:
-                    await message.delete()
-                    await message.channel.send(
-                        f"{self.bot.emote_dict['failed']} No invite links allowed",
-                        delete_after=7,
-                    )
-                except Exception:  # We tried...
+                    invite = await self.bot.fetch_invite(match.group(0), with_counts=False, with_expiration=False)
+                except discord.NotFound:
                     pass
+                except discord.HTTPException:
+                    try:
+                        await message.delete()
+                        await message.channel.send(
+                            f"{self.bot.emote_dict['failed']} No invite links allowed",
+                            delete_after=7,
+                        )
+                    except Exception:  # We tried...
+                        pass
+                else:
+                    if invite.guild.id != message.guild.id: # We allow invites for the current server.
+                        try:
+                            await message.delete()
+                            await message.channel.send(
+                                f"{self.bot.emote_dict['failed']} No invite links allowed",
+                                delete_after=7,
+                            )
+                        except Exception:  # We tried...
+                            pass        
+
         bad_words = self.bot.server_settings[message.guild.id]["profanities"]
         if bad_words:
             vulgar = False
@@ -834,9 +851,12 @@ class Automod(commands.Cog):
                     except Exception:  # We tried...
                         pass
             if vulgar:
-                await message.author.send(
-                    f"Your message `{message.content}` was removed in **{message.guild.name}** for containing a filtered word."
-                )
+                try:
+                    await message.author.send(
+                        f"Your message `{message.content}` was removed in **{message.guild.name}** for containing a filtered word."
+                    )
+                except Exception:
+                    pass
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()

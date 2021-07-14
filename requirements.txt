@@ -8,8 +8,8 @@ braceexpand==0.1.7
 chardet==4.0.0
 click==8.0.1
 Colr==0.9.1
-discord-ext-menus==1.0.0a30+g309c702
-discord.py==2.0.0a3383+gaf8742a9
+discord-ext-menus @ git+https://github.com/Rapptz/discord-ext-menus@4429b564fd8f031deaccd60caa5be7320e248816
+discord.py @ git+https://github.com/Rapptz/discord.py@5a7cfb3ce63c0dc9099b029363b315c942f13d54
 graphviz==0.16
 humanize==3.10.0
 idna==3.2

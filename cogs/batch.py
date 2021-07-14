@@ -388,15 +388,6 @@ class Batch(commands.Cog):
     @decorators.wait_until_ready()
     @decorators.event_check(lambda s, b, a: not a.bot)
     async def on_member_update(self, before, after):
-
-        if before.status != after.status:
-            async with self.batch_lock:
-                self.status_batch[str(before.status)][after.id] = time.time()
-
-        if await self.status_changed(before, after):
-            async with self.batch_lock:
-                self.tracker_batch[before.id] = (time.time(), "updating their status")
-
         if await self.nickname_changed(before, after):
             async with self.batch_lock:
                 self.nicknames_batch.append(
@@ -406,6 +397,16 @@ class Batch(commands.Cog):
                         "nickname": before.display_name.replace("\u0000", ""),
                     }
                 )
+
+    @commands.Cog.listener()
+    @decorators.wait_until_ready()
+    @decorators.event_check(lambda s, b, a: not a.bot)
+    async def on_presence_update(self, before, after):
+        if await self.status_changed(before, after):
+            async with self.batch_lock:
+                self.status_batch[str(before.status)][after.id] = time.time()
+                self.tracker_batch[before.id] = (time.time(), "updating their status")
+
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
