@@ -979,7 +979,7 @@ class Tracking(commands.Cog):
                 """
         records = await self.bot.cxn.fetch(query, ctx.guild.id, user.id, limit)
         if not records:
-            return await ctx.fail(f"No words have been recorded for `{user}`")
+            return await message.edit(content=f"No words have been recorded for `{user}`")
 
         msg = "\n".join(
             [

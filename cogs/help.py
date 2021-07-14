@@ -1162,19 +1162,20 @@ class Help(commands.Cog):
         perms = []
         # Thanks Stella#2000
         for check in checks:
-            if str(check.__qualname__).split(".")[0] == bot_or_author + "has_perms":
-                try:
-                    await check(
-                        0
-                    )  # This would raise an error, because `0` is passed as ctx
-                except Exception as e:
-                    frames = [
-                        *traceback.walk_tb(e.__traceback__)
-                    ]  # Iterate through the generator
-                    last_trace = frames[-1]  # get the last trace
-                    frame = last_trace[0]  # get the first element to get the trace
-                    for x in frame.f_locals["perms"]:
-                        perms.append(x)
+            if hasattr(check, "__qualname"):
+                if str(check.__qualname__).split(".")[0] == bot_or_author + "has_perms":
+                    try:
+                        await check(
+                            0
+                        )  # This would raise an error, because `0` is passed as ctx
+                    except Exception as e:
+                        frames = [
+                            *traceback.walk_tb(e.__traceback__)
+                        ]  # Iterate through the generator
+                        last_trace = frames[-1]  # get the last trace
+                        frame = last_trace[0]  # get the first element to get the trace
+                        for x in frame.f_locals["perms"]:
+                            perms.append(x)
         if perms:
             return perms
         return
