@@ -155,7 +155,7 @@ class Utility(commands.Cog):
                 """,
     )
     @checks.cooldown()
-    async def reactinfo(self, ctx, message: discord.Message):
+    async def reactinfo(self, ctx, message: discord.Message = None):
         """
         Usage: {0}reactinfo [message id]
         Alias: {0}reactions
@@ -168,6 +168,9 @@ class Utility(commands.Cog):
             table length is greater than
             discord's character limit.
         """
+        if not message:
+            message = await converters.DiscordMessage().convert(ctx)
+
         if not len(message.reactions):
             raise commands.BadArgument(f"Message `{message.id}` has no reactions.")
         await ctx.trigger_typing()
@@ -408,47 +411,6 @@ class Utility(commands.Cog):
         embed.color = self.bot.constants.embed
         embed.set_thumbnail(url=user.avatar.url)
         await ctx.send_or_reply(embed=embed)
-
-    @decorators.command(
-        brief="Find the first message of a reply thread.",
-        implemented="2021-05-06 01:10:04.331672",
-        updated="2021-05-07 05:49:40.401151",
-        writer=591135329117798400,
-        examples="""
-                {0}replies 840103070402740274
-                """,
-    )
-    @checks.bot_has_perms(embed_links=True)
-    @checks.cooldown()
-    async def replies(self, ctx, message: discord.Message):
-        """
-        Usage: {0}replies <message>
-        Output:
-            The author, replies, message
-            and jump_url to the message.
-        """
-
-        def count_reply(m, replies=0):
-            if isinstance(m, discord.MessageReference):
-                return count_reply(m.cached_message, replies)
-            if isinstance(m, discord.Message):
-                if not m.reference:
-                    return m, replies
-                replies += 1
-                return count_reply(m.reference, replies)
-
-        msg, count = count_reply(message)
-        em = discord.Embed()
-        em.color = self.bot.constants.embed
-        em.title = "Reply Count"
-        em.description = (
-            f"**Original:** `{msg.author}`\n"
-            f"**Message:** {msg.clean_content}\n"
-            f"**Replies:** `{count}`\n"
-            f"**Origin:** [`jump`]({msg.jump_url})"
-        )
-
-        await ctx.send_or_reply(embed=em)
 
     @decorators.command(
         brief="Convert special characters to ascii.",
@@ -1300,15 +1262,10 @@ class Utility(commands.Cog):
         Alias: {0}content
         Output: Raw message content
         """
-        if not message and not ctx.message.reference:
-            return await ctx.usage
         if not message:
-            message_id = ctx.message.reference.message_id
-            channel_id = ctx.message.reference.channel_id
-        else:
-            message_id = message.id
-            channel_id = message.channel.id
-        raw_data = await self.bot.http.get_message(channel_id, message_id)
+            message = await converters.DiscordMessage().convert(ctx)
+
+        raw_data = await self.bot.http.get_message(message.channel.id, message.id)
         string = json.dumps(raw_data, indent=2)
         string = cleaner.clean_all(string)
         if len(string) < 1990:

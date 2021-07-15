@@ -692,56 +692,11 @@ class Botadmin(commands.Cog):
                 help_embed.set_footer(text="{} Extensions Total".format(len(ext_list)))
             await self._send_embed(ctx, help_embed, to_pm)
 
-    @decorators.command(
-        aliases=["emojicount", "ec", "botemojis"],
-        brief="Bot emoji count across all servers.",
-    )
-    async def emotecount(self, ctx):
-        """
-        Usage: emotecount
-        Aliases: {0}emojicount, {0}ec, {0}botemojis
-        Output:
-            Emoji count accross all servers
-        """
-        large_msg = False
-        msg = ""
-        totalecount = 0
-        for g in self.bot.guilds:
-            ecount = 0
-            for e in g.emojis:
-                ecount = ecount + 1
-                totalecount = totalecount + 1
-            msg = msg + (g.name + ": " + str(ecount)) + "\n"
-        if len(msg) > 1900:
-            msg = await self.create_gist(
-                content=msg,
-                description="Emoji Count for " + self.bot.user.name,
-                name="emoji.txt",
-            )
-            large_msg = True
-        embed = discord.Embed(
-            title="Emoji count for " + self.bot.user.name,
-            color=self.bot.constants.embed,
-        )
-        if large_msg:
-            embed.add_field(
-                name="Individual Server Emote Count",
-                value="[Gist of Server Emote Count](" + msg + ")",
-                inline=False,
-            )
-        else:
-            embed.add_field(
-                name="Individual Server Emote Count", value=msg, inline=False
-            )
-        embed.add_field(name="Total Emote Count", value=str(totalecount), inline=False)
-        await ctx.send_or_reply(embed=embed)
 
     @decorators.command(
         rest_is_raw=True,
         aliases=["say"],
         brief="Echo a message.",
-        permissions=["bot_admin"],
-        botperms=["manage_messages"],
     )
     @checks.bot_has_perms(manage_messages=True)
     @checks.is_bot_admin()

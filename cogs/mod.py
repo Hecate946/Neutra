@@ -8,6 +8,7 @@ import discord
 
 from collections import Counter
 from discord.ext import commands
+from discord.ext.commands import converter
 
 from utilities import utils
 from utilities import checks
@@ -860,7 +861,7 @@ class Mod(commands.Cog):
     @purge.command(
         name="until", aliases=["after"], brief="Purge messages after a message."
     )
-    async def _until(self, ctx, message: discord.Message):
+    async def _until(self, ctx, message: discord.Message = None):
         """
         Usage: {0}purge until <message id>
         Alias: {0}purge after
@@ -872,6 +873,8 @@ class Mod(commands.Cog):
             {0}purge until 810377376269
             {0}prune after 810377376269
         """
+        if not message:
+            message = await converters.DiscordMessage().convert(ctx)
         await self.do_removal(ctx, 100, None, after=message.id)
 
     @purge.command(name="between", brief="Purge messages between 2 messages.")

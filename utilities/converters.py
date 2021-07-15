@@ -113,6 +113,20 @@ async def attempt_cleanup(ctx, msg_ids):
                 await msg.delete()
 
 
+class DiscordMessage(commands.Converter):
+    async def convert(self, ctx, argument=None):
+        if not argument and not ctx.message.reference:
+            raise commands.BadArgument(f"A message must be an ID or a reply.")
+        if not argument:
+            ref = ctx.message.reference
+            if ref.cached_message:
+                return ref.cached_message
+            else:
+                return await ctx.channel.fetch_message(ref.message_id)
+        else:
+            return await commands.MessageConverter().convert(ctx, str(argument))
+
+
 class SelfMember(commands.Converter):
     def __init__(self, **perms):
         self.perms = perms

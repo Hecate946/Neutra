@@ -1,5 +1,5 @@
 import os
-import time
+import json
 import typing
 import aiohttp
 import discord
@@ -24,6 +24,7 @@ class Botconfig(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.is_adminlocked = False
         self.is_ownerlocked = False
         self.todo = "./data/txts/todo.txt"
 
@@ -32,13 +33,15 @@ class Botconfig(commands.Cog):
         return checks.is_owner(ctx)
 
     @decorators.command(
+        aliases=["conf"],
         brief="Change a config.json value.",
         implemented="2021-03-22 06:59:02.430491",
         updated="2021-05-19 06:10:56.241058",
     )
-    async def conf(self, ctx, key, value):
+    async def config(self, ctx, key, value):
         """
         Usage: {0}config <Key to change> <New Value>
+        Alias: {0}conf
         Output:
             Edits the specified config.json file key
             to the passed value.
@@ -378,6 +381,17 @@ class Botconfig(commands.Cog):
             return
         await ctx.success(f"Removed `{str(_object)}` from the blacklist.")
 
+
+    @decorators.command(brief="Show blacklisted objects.")
+    async def blacklisted(self, ctx):
+        if not self.bot.blacklist:
+            return await ctx.success(f"No objects are blacklisted.")
+        p = pagination.TextPages(json.dumps(self.bot.blacklist), prefix="```json")
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send(e)
+
     @decorators.command(brief="Toggle disabling a command.")
     async def toggle(self, ctx, *, command):
         """
@@ -588,16 +602,36 @@ class Botconfig(commands.Cog):
                 await ctx.success(f"**Ownerlock Enabled.**")
                 return
 
-    async def message(self, message):
-        # Check the message and see if we should allow it
-        ctx = await self.bot.get_context(message)
-        if not ctx.command:
-            # No command - no need to check
-            return
+    @decorators.command(brief="Toggle locking the bot to owners.")
+    async def adminlock(self, ctx):
+        """
+        Usage: {0}adminlock
+        """
+        if self.is_adminlocked is True:
+            self.is_adminlocked = False
+            return await ctx.success("**Adminlock Disabled.**")
+        else:
+            c = await ctx.confirm(
+                f"This action will prevent usage from all except my admins."
+            )
+            if c:
+                self.is_adminlocked = True
+                await ctx.success(f"**Adminlock Enabled.**")
+                return
+
+
+    async def bot_check(self, ctx):
+        if checks.is_owner(ctx):
+            return True
+
         if self.is_ownerlocked is True:
-            if not checks.is_owner(ctx):
-                return {
-                    "Ignore": True,
-                    "Delete": False,
-                    "React": [self.bot.emote_dict["failed"]],
-                }
+            await ctx.react(self.bot.emote_dict['lock'])
+            return False
+
+        if self.is_adminlocked is True:
+            if checks.is_admin(ctx):
+                return True
+            await ctx.react(self.bot.emote_dict['lock'])
+            return False
+
+        return True

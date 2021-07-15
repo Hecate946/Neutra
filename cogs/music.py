@@ -768,7 +768,7 @@ class Music(commands.Cog):
     @decorators.command(
         aliases=["q"],
         name="queue",
-        brief="Display the current song queue.",
+        brief="Show the song queue.",
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )
@@ -802,7 +802,7 @@ class Music(commands.Cog):
     @decorators.command(
         name="clear",
         aliases=["c"],
-        brief="Remove all queued songs.",
+        brief="Clear all queued songs.",
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )
@@ -820,7 +820,7 @@ class Music(commands.Cog):
 
     @decorators.command(
         name="shuffle",
-        brief="Shuffle the current song queue.",
+        brief="Shuffle the song queue.",
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )
@@ -915,7 +915,7 @@ class Music(commands.Cog):
     @decorators.command(
         aliases=["jump"],
         name="seek",
-        brief="Seek to a position in a song.",
+        brief="Seek to a position in the song.",
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )
@@ -950,7 +950,7 @@ class Music(commands.Cog):
     @decorators.command(
         aliases=["ff", "ffw"],
         name="fastforward",
-        brief="Fast forward a number of seconds",
+        brief="Fast forward the song.",
         implemented="2021-06-22 01:55:36.152071",
         updated="2021-06-22 01:55:36.152071",
     )
@@ -1053,7 +1053,7 @@ class Music(commands.Cog):
     @decorators.command(
         aliases=["pos"],
         name="position",
-        brief="Show the current position of the song.",
+        brief="Show the position of the song.",
         implemented="2021-06-21 23:09:55.015228",
         updated="2021-06-21 23:09:55.015228",
     )
@@ -1073,7 +1073,7 @@ class Music(commands.Cog):
 
     @decorators.command(
         name="play",
-        brief="Play a song from a youtube search.",
+        brief="Play a song from a search or URL.",
         aliases=["p"],
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
@@ -1208,7 +1208,7 @@ class Music(commands.Cog):
 
     @decorators.command(
         name="playnext",
-        brief="Add a song to the beginning of the queue.",
+        brief="Add a song to the front of the queue.",
         aliases=["pn"],
         implemented="2021-06-21 23:09:55.015228",
         updated="2021-06-21 23:09:55.015228",
@@ -1250,7 +1250,7 @@ class Music(commands.Cog):
     @decorators.command(
         name="youtube",
         aliases=["yt"],
-        brief="Search for anything on youtube.",
+        brief="Search for a youtube video.",
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )

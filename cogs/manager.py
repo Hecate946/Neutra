@@ -74,49 +74,6 @@ class Manager(commands.Cog):
         await ctx.success("**Completed**")
 
     @decorators.command(
-        aliases=["batchcount"],
-        brief="Get the batch insert count.",
-        implemented="2021-04-25 06:13:16.030615",
-        updated="2021-05-11 02:02:21.935264",
-        examples="""
-                {0}batches
-                {0}batchcount
-                """,
-    )
-    async def batches(self, ctx):
-        """
-        Usage: {0}batches
-        Alias: {0}batchcount
-        Output:
-            Get the number of successful
-            batch inserts the bot has
-            performed since last reboot.
-        """
-        await ctx.bold(
-            f"{self.bot.emote_dict['db']} {self.bot.user} ({self.bot.user.id}) Batch Inserts: {self.bot.batch_inserts}"
-        )
-
-    @decorators.command(
-        aliases=["isratelimited"],
-        brief="Check if the bot is rate limited",
-        hidden=True,
-        implemented="2021-04-25 17:30:11.328279",
-        updated="2021-05-06 00:18:04.665898",
-    )
-    async def ratelimited(self, ctx):
-        """
-        Usage: {0}ratelimited
-        Alias: {0}isratelimited
-        Output:
-            Boolean value stating whether
-            or not the bot is rate-limited
-        """
-        await ctx.send_or_reply(
-            f"{self.bot.emote_dict['stopwatch']} {self.bot.user} ({self.bot.user.id}) Rate limited: "
-            + str(self.bot.is_ws_ratelimited())
-        )
-
-    @decorators.command(
         brief="Reload the bot variables.",
         implemented="2021-04-03 04:30:16.385794",
         updated="2021-05-11 02:41:27.186046",
@@ -469,7 +426,6 @@ class Manager(commands.Cog):
 
     @decorators.group(
         aliases=["l"],
-        case_insensitive=True,
         invoke_without_command=True,
         brief="View logging files.",
         implemented="2021-05-08 20:16:22.917120",
@@ -716,65 +672,6 @@ class Manager(commands.Cog):
                 break
         await ctx.success(f"Cleared the pm2 {msg} log.")
 
-    @decorators.group(
-        hidden=True,
-        brief="View ./data/json files.",
-        aliases=["j"],
-        case_insensitive=True,
-    )
-    async def json(self, ctx):
-        """
-        Usage: {0}json <option>
-        Alias: {0}j
-        Output: View any json file in ./data/json
-        Options:
-            blacklist|bl
-            stats|statistics
-            settings|config
-        """
-        if ctx.invoked_subcommand is None:
-            return await ctx.usage("<option>")
-
-    @json.command(aliases=["bl"], brief="Show blacklisted discord objects.")
-    async def blacklist(self, ctx):
-        """
-        Usage: {0}json blacklist
-        Alias: {0}json bl
-        Output:
-            Stars a pagination session
-            showing all blacklisted objects.
-        """
-        sh = self.bot.get_command("sh")
-        await ctx.invoke(sh, prefix="json", command="cat ./data/json/blacklist.json")
-
-    @json.command(
-        name="stats",
-        aliases=["statistics"],
-        brief="Basic stats on the last bot run.",
-    )
-    async def _stats(self, ctx):
-        """
-        Usage: {0}json stats
-        Alias: {0}json statistics
-        Output:
-            Stars a pagination session
-            showing stats from the last
-            run the bot made.
-        """
-        sh = self.bot.get_command("sh")
-        await ctx.invoke(sh, prefix="json", command="cat ./data/json/stats.json")
-
-    @json.command(name="settings", aliases=["config"])
-    async def _settings(self, ctx):
-        """
-        Usage: {0}json settings
-        Alias: {0}json config
-        Output:
-            Stars a pagination session
-            showing all server settings.
-        """
-        sh = self.bot.get_command("sh")
-        await ctx.invoke(sh, prefix="json", command="cat ./data/json/settings.json")
 
     @decorators.command(
         aliases=["updatedb"],

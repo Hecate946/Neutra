@@ -40,7 +40,10 @@ class BotContext(commands.Context):
         return await self.reply(content, **kwargs)
 
     async def react(self, reaction=None, content=None, **kwargs):
-        return await self.message.add_reaction(reaction)
+        try:
+            return await self.message.add_reaction(reaction)
+        except discord.Forbidden:
+            pass
 
     async def bold(self, content=None, **kwargs):
         return await self.send_or_reply(
