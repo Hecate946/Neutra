@@ -643,6 +643,9 @@ class Snowbot(commands.AutoShardedBot):
             if ctx.cog._get_overridden_method(ctx.cog.cog_command_error):
                 return
 
+        if isinstance(error, commands.UnexpectedQuoteError):
+            await ctx.fail(f"Unexpected quotation mark received.")
+
         if isinstance(error, commands.MissingRequiredArgument):
             await ctx.usage()
 
