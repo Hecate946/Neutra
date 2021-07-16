@@ -192,6 +192,9 @@ async def role_priv(ctx, role):
 
 
 async def nick_priv(ctx, member):
+    if member.id == ctx.me.id:
+        return  # They can re-nickname the bot
+        
     # Bot lacks permissions
     if member.id == ctx.guild.owner.id:
         return f"User `{member}` is the server owner. I cannot edit the nickname of the server owner."
@@ -202,8 +205,6 @@ async def nick_priv(ctx, member):
     
     if ctx.author.id == ctx.guild.owner.id:
         return  # Owner bypasses
-    if member.id == ctx.me.id:
-        return  # They can re-nickname the bot
     if ctx.author.id == member.id:
         return  # They can edit their own nicknames
 
