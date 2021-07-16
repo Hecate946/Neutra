@@ -2,8 +2,6 @@ import typing
 import discord
 import asyncio
 import re
-import io
-import os
 from discord.ext import commands
 from collections import Counter
 from utilities import decorators
@@ -547,9 +545,7 @@ class Server(commands.Cog):
         to_delete = [msg.id, ctx.message.id]
         await ctx.channel.purge(check=lambda m: m.id in to_delete)
 
-    @commands.group(
-        name="emoji", aliases=["emote"], brief="Manage server emojis."
-    )
+    @commands.group(name="emoji", aliases=["emote"], brief="Manage server emojis.")
     @checks.guild_only()
     @checks.bot_has_perms(manage_emojis=True)
     @checks.has_perms(manage_emojis=True)
@@ -673,5 +669,3 @@ class Server(commands.Cog):
             )
         if failed:
             await helpers.error_info(ctx, failed, option="Role")
-
-
