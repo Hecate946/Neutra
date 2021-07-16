@@ -22,10 +22,6 @@ class Server(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    #####################
-    ## Server Commands ##
-    #####################
-
     ###################
     ## Prune Command ##
     ###################
@@ -641,6 +637,11 @@ class Server(commands.Cog):
         color: typing.Optional[typing.Union[int, discord.Color]],
         hoist: bool = False,
     ):
+        """
+        Usage: {0}role create <name> [color] [hoist=False]
+        Alias: {0}role add
+        Output: Creates a server role
+        """
         try:
             role = await ctx.guild.create_role(
                 reason=f"Role created by {ctx.author}",
@@ -654,6 +655,11 @@ class Server(commands.Cog):
 
     @_role.command(name="delete", aliases=["remove"], brief="Delete a server role.")
     async def _role_delete(self, ctx, *roles: converters.UniqueRole):
+        """
+        Usage: {0}role delete [roles]...
+        Alias: {0}role remove
+        Output: Delete multiple roles from the server.
+        """
         failed = []
         success = []
         for role in roles:

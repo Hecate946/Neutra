@@ -18,6 +18,7 @@ from collections import Counter, namedtuple
 from datetime import datetime
 from discord.ext import commands, menus
 from functools import cmp_to_key
+from geopy import geocoders
 from PIL import Image
 from unidecode import unidecode
 
@@ -46,6 +47,7 @@ class Utility(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.geo = geocoders.Nominatim(user_agent="Snowbot")
         self.msg_collection = []
         self.uregex = re.compile(
             r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
