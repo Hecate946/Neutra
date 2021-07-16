@@ -633,10 +633,16 @@ class Server(commands.Cog):
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(manage_roles=True)
     async def _role(self, ctx):
+        """
+        Usage: {0}role <sumcommand> [role]...
+        Subcommands:
+            create/make # Create a server role
+            delete/destroy # Delete server roles
+        """
         if ctx.subcommand_passed is None:
             return await ctx.usage("<subcommand> [role]")
 
-    @_role.command(name="create", aliases=["add"], brief="Create a server role.")
+    @_role.command(name="create", aliases=["make"], brief="Create a server role.")
     async def _role_create(
         self,
         ctx,
@@ -646,7 +652,7 @@ class Server(commands.Cog):
     ):
         """
         Usage: {0}role create <name> [color] [hoist=False]
-        Alias: {0}role add
+        Alias: {0}role make
         Output: Creates a server role
         """
         try:
@@ -660,11 +666,11 @@ class Server(commands.Cog):
             return await ctx.fail(str(e))
         await ctx.success(f"Successfully created the role {role.mention}")
 
-    @_role.command(name="delete", aliases=["remove"], brief="Delete a server role.")
+    @_role.command(name="delete", aliases=["destroy"], brief="Delete a server role.")
     async def _role_delete(self, ctx, *roles: converters.UniqueRole):
         """
         Usage: {0}role delete [roles]...
-        Alias: {0}role remove
+        Alias: {0}role destroy
         Output: Delete multiple roles from the server.
         """
         failed = []
