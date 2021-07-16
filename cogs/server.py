@@ -632,6 +632,7 @@ class Server(commands.Cog):
     @decorators.group(name="role", brief="Role management commands.")
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(manage_roles=True)
+    @checks.cooldown()
     async def _role(self, ctx):
         """
         Usage: {0}role <sumcommand> [role]...
