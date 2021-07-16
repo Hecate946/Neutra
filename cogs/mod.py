@@ -29,13 +29,6 @@ class Mod(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.mregex = re.compile(r"[0-9]{17,21}")
-        self.dregex = re.compile(
-            r"(?:https?://)?discord(?:app)?\.(?:com/invite|gg)/[a-zA-Z0-9]+/?"
-        )
-        self.uregex = re.compile(
-            r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
-        )
 
     ####################
     ## VOICE COMMANDS ##
