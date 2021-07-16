@@ -371,7 +371,7 @@ class Automod(commands.Cog):
             return await ctx.usage("<option> [arguments]")
 
     @autorole.command(brief="Auto-assign roles on user join.")
-    async def add(self, ctx, roles: commands.Greedy[converters.DiscordRole] = None):
+    async def add(self, ctx, *roles: converters.UniqueRole):
         """
         Usage: {0}autorole add <role1> [role2]...
         Output:
@@ -386,8 +386,6 @@ class Automod(commands.Cog):
             Roles with multiple words must
             be encapsulated by quotes.
         """
-        if roles is None:
-            return await ctx.usage("<roles>")
         for role in roles:
             self.bot.server_settings[ctx.guild.id]["autoroles"].append(role.id)
         query = """
@@ -399,12 +397,10 @@ class Automod(commands.Cog):
             [str(x) for x in self.bot.server_settings[ctx.guild.id]["autoroles"]]
         )
         await self.bot.cxn.execute(query, autoroles, ctx.guild.id)
-        await ctx.send_or_reply(
-            content=f"{self.bot.emote_dict['success']} Updated autorole settings.",
-        )
+        await ctx.success("Updated autorole settings.")
 
     @autorole.command(aliases=["rem", "rm"], brief="Remove automatic autoroles.")
-    async def remove(self, ctx, roles: commands.Greedy[converters.DiscordRole] = None):
+    async def remove(self, ctx, *roles: converters.UniqueRole):
         """
         Usage: {0}autorole remove <role1> [role2]...
         Output:
@@ -419,12 +415,9 @@ class Automod(commands.Cog):
             Roles with multiple words must
             be encapsulated by quotes.
         """
-        if roles is None:
-            return await ctx.usage("<roles>")
         autoroles = self.bot.server_settings[ctx.guild.id]["autoroles"]
         for role in roles:
-            index = autoroles.index(str(role.id))
-            autoroles.pop(index)
+            autoroles.remove(role.id)
         query = """
                 UPDATE servers
                 SET autoroles = $1
@@ -452,23 +445,16 @@ class Automod(commands.Cog):
         """
         if not self.bot.server_settings[ctx.guild.id]["autoroles"]:
             return await ctx.fail("This server has no current autoroles.")
-        content = f"{self.bot.emote_dict['exclamation']} **This action will remove all current autoroles. Do you wish to continue?**"
-        p = await pagination.Confirmation(msg=content).prompt(ctx)
+        p = await ctx.confirm("This action will remove all current autoroles.")
         if p:
-            self.bot.server_settings[ctx.guild.id]["autoroles"] = []
+            self.bot.server_settings[ctx.guild.id]["autoroles"].clear()
             query = """
                     UPDATE servers
                     SET autoroles = NULL
                     WHERE server_id = $1;
                     """
             await self.bot.cxn.execute(query, ctx.guild.id)
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['success']} Cleared all autoroles.",
-            )
-        else:
-            await ctx.send_or_reply(
-                f"{self.bot.emote_dict['exclamation']} **Cancelled.**"
-            )
+            await ctx.success("Cleared all autoroles.")
 
     @autorole.command(brief="Show all current autoroles.", aliases=["display"])
     async def show(self, ctx):
