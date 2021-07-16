@@ -104,14 +104,14 @@ class Help(commands.Cog):
                     return
 
     async def helper_func(self, ctx, cog, name, pm, delete_after):
-        the_cog = sorted(cog.get_commands(), key=lambda x: x.name)
+        the_cog = sorted(cog.walk_commands(), key=lambda x: x.qualified_name)
         cog_commands = []
         for c in the_cog:
             if c.hidden and not checks.is_admin(ctx):
                 continue
-            if str(c.name).upper() in self.command_exceptions and not checks.is_admin(
-                ctx
-            ):
+            if str(
+                c.qualified_name
+            ).upper() in self.command_exceptions and not checks.is_admin(ctx):
                 await ctx.send_or_reply(
                     f"{self.bot.emote_dict['warn']} No command named `{name}` found."
                 )
@@ -150,17 +150,8 @@ class Help(commands.Cog):
         for i in list:
             if not i.brief or i.brief == "":
                 i.brief = "No description"
-            line = f"\n`{i.name}` {i.brief}\n"
-            if ctx.guild:
-                if (
-                    i.name
-                    not in self.bot.server_settings[ctx.guild.id]["disabled_commands"]
-                ):
-                    msg += line
-                else:
-                    msg += f"\n[!] `{i.name}` ~~{i.brief}~~\n"
-            else:
-                msg += line
+            line = f"\n`{i.qualified_name}` {i.brief}\n"
+            msg += line
 
         embed.add_field(name=f"**{cog} Commands**", value=f"** **{msg}")
         try:
@@ -235,7 +226,9 @@ class Help(commands.Cog):
                     disabled_comms = self.bot.server_settings[ctx.guild.id][
                         "disabled_commands"
                     ]
-                    cog_comms = [y.name for y in c.get_commands() if not y.hidden]
+                    cog_comms = [
+                        y.qualified_name for y in c.get_commands() if not y.hidden
+                    ]
                     if all(x in disabled_comms for x in cog_comms):
                         msg += f"\n[!] `{c.qualified_name}` ~~{c.description}~~\n"
                     else:
@@ -378,16 +371,6 @@ class Help(commands.Cog):
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )
 
-            if invokercommand.lower() in [
-                "times",
-                "time",
-                "timezones",
-            ]:
-                cog = self.bot.get_cog("Times")
-                return await self.helper_func(
-                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
-                )
-
             if invokercommand.lower() in ["roles", "serverroles"]:
                 cog = self.bot.get_cog("Roles")
                 return await self.helper_func(
@@ -395,13 +378,20 @@ class Help(commands.Cog):
                 )
 
             if invokercommand.lower() in [
-                "server",
                 "serverstats",
                 "stats",
-                "servers",
                 "statistics",
             ]:
                 cog = self.bot.get_cog("Stats")
+                return await self.helper_func(
+                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
+                )
+
+            if invokercommand.lower() in [
+                "server",
+                "servers",
+            ]:
+                cog = self.bot.get_cog("Server")
                 return await self.helper_func(
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )
@@ -427,6 +417,10 @@ class Help(commands.Cog):
                 "decrypt",
             ]:
                 cog = self.bot.get_cog("Conversion")
+                if not cog:
+                    return await ctx.fail(
+                        f"The conversion category is currently unavailable. Please try again later."
+                    )
                 return await self.helper_func(
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )

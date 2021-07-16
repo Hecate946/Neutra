@@ -672,7 +672,6 @@ class Manager(commands.Cog):
                 break
         await ctx.success(f"Cleared the pm2 {msg} log.")
 
-
     @decorators.command(
         aliases=["updatedb"],
         brief="Update the database.",

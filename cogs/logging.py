@@ -1,16 +1,18 @@
 import io
+import re
 import json
+import codecs
 import discord
 
-from collections import defaultdict
-from discord.ext import commands, tasks
+from collections import defaultdict, Counter
+from discord.ext import commands, menus, tasks
 
 from utilities import utils
 from utilities import checks
-from utilities import humantime
 from utilities import converters
 from utilities import decorators
 from utilities import exceptions
+from utilities import pagination
 
 
 CREATED_MESSAGE = "https://cdn.discordapp.com/attachments/846597178918436885/846841649542725632/messagecreate.png"
@@ -222,13 +224,13 @@ class Logging(commands.Cog):
 
     @decorators.group(
         name="log",
-        brief="Manage the logging setup.",
+        brief="Enable specific logging events.",
         implemented="2021-03-17 07:09:57.666073",
         updated="2021-06-08 17:18:43.698120",
         invoke_without_command=True,
         case_insensitive=True,
     )
-    @commands.guild_only()
+    @checks.guild_only()
     @checks.cooldown(2, 30, bucket=commands.BucketType.guild)
     @checks.bot_has_guild_perms(manage_webhooks=True)
     @checks.bot_has_perms(embed_links=True)
@@ -326,6 +328,7 @@ class Logging(commands.Cog):
     @_log.command(
         aliases=["teardown"],
         brief="Disable server logging.",
+        hidden=True,
     )
     async def disable(self, ctx):
         """
@@ -351,6 +354,7 @@ class Logging(commands.Cog):
         name="channel",
         aliases=["enable"],
         brief="Setup default logging.",
+        hidden=True,
     )
     async def _channel(self, ctx, *, channel: discord.TextChannel = None):
         """
@@ -417,11 +421,11 @@ class Logging(commands.Cog):
         )
 
     @decorators.command(
-        brief="Disable logging events.",
+        brief="Disable specific logging events.",
         implemented="2021-03-17 07:09:57.666073",
         updated="2021-06-08 17:18:43.698120",
     )
-    @commands.guild_only()
+    @checks.guild_only()
     @checks.cooldown(2, 30, bucket=commands.BucketType.guild)
     @checks.bot_has_guild_perms(manage_webhooks=True)
     @checks.has_perms(manage_guild=True)
@@ -487,7 +491,7 @@ class Logging(commands.Cog):
         brief="Set your server's logging channel.",
         aliases=["logserver", "setlogchannel"],
     )
-    @commands.guild_only()
+    @checks.guild_only()
     @checks.cooldown(2, 30, bucket=commands.BucketType.guild)
     @checks.bot_has_perms(manage_webhooks=True)
     @checks.has_perms(manage_guild=True)
@@ -503,10 +507,10 @@ class Logging(commands.Cog):
         await ctx.invoke(self._channel, channel=channel)
 
     @decorators.command(
-        brief="Remove your server's logging channel.",
+        brief="Remove the server logging channel.",
         aliases=["unlogserver"],
     )
-    @commands.guild_only()
+    @checks.guild_only()
     @checks.cooldown(2, 30, bucket=commands.BucketType.guild)
     @checks.bot_has_perms(manage_webhooks=True)
     @checks.has_perms(manage_guild=True)
@@ -604,7 +608,7 @@ class Logging(commands.Cog):
             embed.set_image(url=after.icon.url)
             await self.send_webhook(webhook, embed=embed)
 
-        if before.banner_url != after.banner_url:
+        if before.banner.url != after.banner.url:
             embed = discord.Embed(
                 description=f"**Author:**  `{str(audit.user)}`\n"
                 "**New banner below**",
@@ -616,7 +620,7 @@ class Logging(commands.Cog):
                 icon_url=UPDATED_MESSAGE,
             )
 
-            embed.set_image(url=after.banner_url)
+            embed.set_image(url=after.banner.url)
             await self.send_webhook(webhook, embed=embed)
 
     @commands.Cog.listener()
@@ -1121,1895 +1125,8 @@ class Logging(commands.Cog):
     ## Other Commands ##
     ####################
 
-    @decorators.group(
-        aliases=["actioncount", "ac"],
-        brief="Count the audit log entries of a user.",
-        case_insensitive=True,
-        invoke_without_command=True,
-        implemented="2021-05-07 22:34:00.515826",
-        updated="2021-05-07 22:34:00.515826",
-        examples="""
-                {0}ac
-                {0}ac Hecate 4d
-                {0}ac @Hecate
-                {0}ac Hecate#3523 2m
-                {0}ac 708584008065351681 5months
-                {0}auditcount
-                {0}auditcount Hecate 4d
-                {0}auditcount @Hecate 3 years ago
-                {0}auditcount Hecate#3523 2 minutes
-                {0}auditcount 708584008065351681 6 months ago
-                {0}actioncount
-                {0}actioncount Hecate 4d
-                {0}actioncount @Hecate yesterday
-                {0}actioncount Hecate#3523 2m
-                {0}actioncount 708584008065351681 5 months
-                """,
-    )
-    @checks.bot_has_perms(view_audit_log=True)
-    @checks.has_perms(view_audit_log=True)
-    async def auditcount(
-        self,
-        ctx,
-        user: converters.DiscordMember = None,
-        *,
-        after: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}auditcount <user> [unit]
-        Aliases: {0}actioncount, {0}ac
-        Options:
-            bans, botadds, bulkdeletes,
-            channeladds, channeldeletes,
-            channelupdates, deletes, emojiadds,
-            emojideletes, emojiupdates,
-            integrationadds, integrationdeletes,
-            integrationupdates, inviteadds,
-            invitedeletes, inviteupdates, kicks,
-            moves, pins, roleadds, roledeletes,
-            roleupdates, serverupdates, unbans,
-            unpins, vckicks, webhookadds,
-            webhookdeletes, webhookupdates
-        Output:
-            The number of audit log
-            actions a user has caused
-            across all time unless a time
-            is specified.
-        Notes:
-            Will default to the total if no
-            user is specified. Enter a
-            past time argument to only
-            check entry counts from after
-            that day. If no subcommands
-            are entered, the bot will
-            count all the actions made.
-        Explanation:
-            {0}auditcount Hecate 3d
-            This will select all audit
-            entries made by the user Hecate
-            in the past 3 days.
-        """
-        if not user:
-            user = ctx.author
-        msg = await self.get_action_count(
-            ctx, user, after, None, "executed", "audit log actions"
-        )
-        await ctx.send_or_reply(self.bot.emote_dict["search"] + msg)
-
-    @auditcount.command(
-        aliases=["bc"],
-        brief="Count the audit log entries of a user.",
-        implemented="2021-05-07 22:34:00.515826",
-        updated="2021-05-07 22:34:00.515826",
-        examples="""
-                {0}bc
-                {0}bc Hecate 4d
-                {0}bc @Hecate
-                {0}bc Hecate#3523 2m
-                {0}bc 708584008065351681 5months
-                {0}bans
-                {0}bans Hecate 4d
-                {0}bans @Hecate yesterday
-                {0}bans Hecate#3523 2m
-                {0}bans 708584008065351681 5 months
-                {0}bancount
-                {0}bancount Hecate 4d
-                {0}bancount @Hecate yesterday
-                {0}bancount Hecate#3523 2m
-                {0}bancount 708584008065351681 5 months
-                """,
-    )
-    async def bans(
-        self,
-        ctx,
-        user: converters.DiscordMember = None,
-        *,
-        after: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}bans <user> [unit]
-        Aliases: {0}bancount, {0}bc
-        Output:
-            The number of people a user
-            has banned across all time,
-            or after a specified time.
-        Notes:
-            Will default to you if no
-            user is specified. Enter a
-            past time argument to only
-            check entry counts from after
-            that day. If you wish to
-            select audits by you and
-            specify a past time argument,
-            you must mention yourself.
-        Explanation:
-            {0}auditcount bans Hecate 3d
-            This will select all ban
-            entries made by the user
-            Hecate in the past 3 days.
-        """
-        if not user:
-            user = ctx.author
-        msg = await self.get_action_count(
-            ctx, user, after, discord.AuditLogAction.ban, "banned", "users"
-        )
-        await ctx.send_or_reply(self.bot.emote_dict["ban"] + msg)
-
-    @auditcount.command()
-    async def botadds(
-        self,
-        ctx,
-        user: converters.DiscordMember = None,
-        *,
-        after: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}botadds <user> [unit]
-        Output:
-            The number of bots  a user
-            has invited to the server
-            across all time unless a time
-            is specified.
-        Notes:
-            Will default to you if no
-            user is specified. Enter a
-            past time argument to only
-            check entry counts from after
-            that day. If you wish to
-            select audits by you and
-            specify a past time argument,
-            you must mention yourself.
-        Explanation:
-            {0}auditcount botadds Hecate 3d
-            This will select all audit
-            entries made by the user Hecate
-            in the past 3 days.
-        """
-        if not user:
-            user = ctx.author
-        msg = await self.get_action_count(
-            ctx, user, after, discord.AuditLogAction.bot_add, "added", "bots"
-        )
-        await ctx.send_or_reply(self.bot.emote_dict["robot"] + msg)
-
-    @auditcount.command(
-        aliases=["channelcreates"],
-        brief="Count the audit log entries of a user.",
-        implemented="2021-05-07 22:34:00.515826",
-        updated="2021-05-07 22:34:00.515826",
-        examples="""
-                {0}bc
-                {0}bc Hecate 4d
-                {0}bc @Hecate
-                {0}bc Hecate#3523 2m
-                {0}bc 708584008065351681 5months
-                {0}bans
-                {0}bans Hecate 4d
-                {0}bans @Hecate yesterday
-                {0}bans Hecate#3523 2m
-                {0}bans 708584008065351681 5 months
-                {0}bancount
-                {0}bancount Hecate 4d
-                {0}bancount @Hecate yesterday
-                {0}bancount Hecate#3523 2m
-                {0}bancount 708584008065351681 5 months
-                """,
-    )
-    async def channeladds(
-        self,
-        ctx,
-        user: converters.DiscordMember = None,
-        *,
-        after: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}channeladds <user> [unit]
-        Aliases: {0}channelcreates
-        Output:
-            The number of channels a user
-            has created in the server
-            across all time unless a time
-            is specified.
-        Notes:
-            Will default to you if no
-            user is specified. Enter a
-            past time argument to only
-            check entry counts from after
-            that day. If you wish to
-            select audits by you and
-            specify a past time argument,
-            you must mention yourself.
-        Explanation:
-            {0}auditcount channeladds Hecate 3d
-            This will select all audit
-            entries made by the user Hecate
-            in the past 3 days.
-        """
-        if not user:
-            user = ctx.author
-        msg = await self.get_action_count(
-            ctx,
-            user,
-            after,
-            discord.AuditLogAction.channel_create,
-            "created",
-            "channels",
-        )
-        await ctx.send_or_reply(self.bot.emote_dict["plus"] + msg)
-
-    @auditcount.command(
-        aliases=["channelchanges"],
-        brief="Count the audit log entries of a user.",
-        implemented="2021-05-07 22:34:00.515826",
-        updated="2021-05-07 22:34:00.515826",
-        examples="""
-                {0}bc
-                {0}bc Hecate 4d
-                {0}bc @Hecate
-                {0}bc Hecate#3523 2m
-                {0}bc 708584008065351681 5months
-                {0}bans
-                {0}bans Hecate 4d
-                {0}bans @Hecate yesterday
-                {0}bans Hecate#3523 2m
-                {0}bans 708584008065351681 5 months
-                {0}bancount
-                {0}bancount Hecate 4d
-                {0}bancount @Hecate yesterday
-                {0}bancount Hecate#3523 2m
-                {0}bancount 708584008065351681 5 months
-                """,
-    )
-    async def channelupdates(
-        self,
-        ctx,
-        user: converters.DiscordMember = None,
-        *,
-        after: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}channelupdates <user> [unit]
-        Aliases: {0}channelchanges
-        Output:
-            The number of channels a user
-            has updated in the server across
-            all time unless a time is specified.
-        Notes:
-            Will default to you if no
-            user is specified. Enter a
-            past time argument to only
-            check entry counts from after
-            that day. If you wish to
-            select audits by you and
-            specify a past time argument,
-            you must mention yourself.
-        Explanation:
-            {0}auditcount channelupdates Hecate 3d
-            This will select all audit
-            entries made by the user Hecate
-            in the past 3 days.
-        """
-        if not user:
-            user = ctx.author
-        msg = await self.get_action_count(
-            ctx,
-            user,
-            after,
-            discord.AuditLogAction.channel_update,
-            "updated",
-            "channels",
-        )
-        await ctx.send_or_reply(self.bot.emote_dict["redo"] + msg)
-
-    @auditcount.command(
-        aliases=["channelremoves"],
-        brief="Count the audit log entries of a user.",
-        implemented="2021-05-07 22:34:00.515826",
-        updated="2021-05-07 22:34:00.515826",
-        examples="""
-                {0}bc
-                {0}bc Hecate 4d
-                {0}bc @Hecate
-                {0}bc Hecate#3523 2m
-                {0}bc 708584008065351681 5months
-                {0}bans
-                {0}bans Hecate 4d
-                {0}bans @Hecate yesterday
-                {0}bans Hecate#3523 2m
-                {0}bans 708584008065351681 5 months
-                {0}bancount
-                {0}bancount Hecate 4d
-                {0}bancount @Hecate yesterday
-                {0}bancount Hecate#3523 2m
-                {0}bancount 708584008065351681 5 months
-                """,
-    )
-    async def channeldeletes(
-        self,
-        ctx,
-        user: converters.DiscordMember = None,
-        *,
-        after: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}channeldeletes <user> [unit]
-        Aliases: {0}channelremoves
-        Output:
-            The number of channels a user
-            has created in the server across
-            all time unless a time is specified.
-        Notes:
-            Will default to you if no
-            user is specified. Enter a
-            past time argument to only
-            check entry counts from after
-            that day. If you wish to
-            select audits by you and
-            specify a past time argument,
-            you must mention yourself.
-        Explanation:
-            {0}auditcount channeldeletes Hecate 3d
-            This will select all audit
-            entries made by the user Hecate
-            in the past 3 days.
-        """
-        if not user:
-            user = ctx.author
-        msg = await self.get_action_count(
-            ctx,
-            user,
-            after,
-            discord.AuditLogAction.channel_delete,
-            "deleted",
-            "channels",
-        )
-        await ctx.send_or_reply(self.bot.emote_dict["minus"] + msg)
-
-    @auditcount.command(
-        aliases=["emojicreates", "emoteadds", "emotecreates"],
-        brief="Count the audit log entries of a user.",
-        implemented="2021-05-07 22:34:00.515826",
-        updated="2021-05-07 22:34:00.515826",
-        examples="""
-                {0}bc
-                {0}bc Hecate 4d
-                {0}bc @Hecate
-                {0}bc Hecate#3523 2m
-                {0}bc 708584008065351681 5months
-                {0}bans
-                {0}bans Hecate 4d
-                {0}bans @Hecate yesterday
-                {0}bans Hecate#3523 2m
-                {0}bans 708584008065351681 5 months
-                {0}bancount
-                {0}bancount Hecate 4d
-                {0}bancount @Hecate yesterday
-                {0}bancount Hecate#3523 2m
-                {0}bancount 708584008065351681 5 months
-                """,
-    )
-    async def emojiadds(
-        self,
-        ctx,
-        user: converters.DiscordMember = None,
-        *,
-        after: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}emojiadds <user> [unit]
-        Aliases:
-            {0}emojicreates,
-            {0}emoteadds,
-            {0}emotecreates
-        Output:
-            The number of emojis a user
-            has created in the server
-            across all time unless a time
-            is specified.
-        Notes:
-            Will default to you if no
-            user is specified. Enter a
-            past time argument to only
-            check entry counts from after
-            that day. If you wish to
-            select audits by you and
-            specify a past time argument,
-            you must mention yourself.
-        Explanation:
-            {0}auditcount channeldeletes Hecate 3d
-            This will select all audit
-            entries made by the user Hecate
-            in the past 3 days.
-        """
-        if not user:
-            user = ctx.author
-        msg = await self.get_action_count(
-            ctx, user, after, discord.AuditLogAction.emoji_create, "created", "emojis"
-        )
-        await ctx.send_or_reply(self.bot.emote_dict["plus"] + msg)
-
-    @auditcount.command(
-        aliases=["emojichanges"],
-        brief="Count the audit log entries of a user.",
-        implemented="2021-05-07 22:34:00.515826",
-        updated="2021-05-07 22:34:00.515826",
-        examples="""
-                {0}bc
-                {0}bc Hecate 4d
-                {0}bc @Hecate
-                {0}bc Hecate#3523 2m
-                {0}bc 708584008065351681 5months
-                {0}bans
-                {0}bans Hecate 4d
-                {0}bans @Hecate yesterday
-                {0}bans Hecate#3523 2m
-                {0}bans 708584008065351681 5 months
-                {0}bancount
-                {0}bancount Hecate 4d
-                {0}bancount @Hecate yesterday
-                {0}bancount Hecate#3523 2m
-                {0}bancount 708584008065351681 5 months
-                """,
-    )
-    async def emojiupdates(
-        self,
-        ctx,
-        user: converters.DiscordMember = None,
-        *,
-        after: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}emojiupdates <user> [unit]
-        Aliases: {0}emojichanges
-        Output:
-            The number of emojis a user
-            has updated in the server
-            across all time unless a time
-            is specified.
-        Notes:
-            Will default to you if no
-            user is specified. Enter a
-            past time argument to only
-            check entry counts from after
-            that day. If you wish to
-            select audits by you and
-            specify a past time argument,
-            you must mention yourself.
-        Explanation:
-            {0}auditcount emojiupdates Hecate 3d
-            This will select all audit
-            entries made by the user Hecate
-            in the past 3 days.
-        """
-        if not user:
-            user = ctx.author
-        msg = await self.get_action_count(
-            ctx, user, after, discord.AuditLogAction.emoji_update, "updated", "emojis"
-        )
-        await ctx.send_or_reply(self.bot.emote_dict["redo"] + msg)
-
-    @auditcount.command(
-        aliases=["emojiremoves"],
-        brief="Count the audit log entries of a user.",
-        implemented="2021-05-07 22:34:00.515826",
-        updated="2021-05-07 22:34:00.515826",
-        examples="""
-                {0}bc
-                {0}bc Hecate 4d
-                {0}bc @Hecate
-                {0}bc Hecate#3523 2m
-                {0}bc 708584008065351681 5months
-                {0}bans
-                {0}bans Hecate 4d
-                {0}bans @Hecate yesterday
-                {0}bans Hecate#3523 2m
-                {0}bans 708584008065351681 5 months
-                {0}bancount
-                {0}bancount Hecate 4d
-                {0}bancount @Hecate yesterday
-                {0}bancount Hecate#3523 2m
-                {0}bancount 708584008065351681 5 months
-                """,
-    )
-    async def emojideletes(
-        self,
-        ctx,
-        user: converters.DiscordMember = None,
-        *,
-        after: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}emojideletes <user> [unit]
-        Aliases: {0}emojiremoves
-        Output:
-            The number of emojis a user
-            has deleted in the server
-            across all time unless a time
-            is specified.
-        Notes:
-            Will default to you if no
-            user is specified. Enter a
-            past time argument to only
-            check entry counts from after
-            that day. If you wish to
-            select audits by you and
-            specify a past time argument,
-            you must mention yourself.
-        Explanation:
-            {0}auditcount emojiremoves Hecate 3d
-            This will select all audit
-            entries made by the user Hecate
-            in the past 3 days.
-        """
-        if not user:
-            user = ctx.author
-        msg = await self.get_action_count(
-            ctx, user, after, discord.AuditLogAction.emoji_delete, "deleted", "emojis"
-        )
-        await ctx.send_or_reply(self.bot.emote_dict["minus"] + msg)
-
-    @auditcount.command(
-        aliases=["serverchanges", "guildupdates", "guildchanges"],
-        brief="Count the audit log entries of a user.",
-        implemented="2021-05-07 22:34:00.515826",
-        updated="2021-05-07 22:34:00.515826",
-        examples="""
-                {0}bc
-                {0}bc Hecate 4d
-                {0}bc @Hecate
-                {0}bc Hecate#3523 2m
-                {0}bc 708584008065351681 5months
-                {0}bans
-                {0}bans Hecate 4d
-                {0}bans @Hecate yesterday
-                {0}bans Hecate#3523 2m
-                {0}bans 708584008065351681 5 months
-                {0}bancount
-                {0}bancount Hecate 4d
-                {0}bancount @Hecate yesterday
-                {0}bancount Hecate#3523 2m
-                {0}bancount 708584008065351681 5 months
-                """,
-    )
-    async def serverupdates(
-        self,
-        ctx,
-        user: converters.DiscordMember = None,
-        *,
-        after: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}serverupdates <user> [unit]
-        Aliases:
-            {0}serverchanges,
-            {0}guildupdates,
-            {0}guildchanges
-        Output:
-            The number of updates a user has
-            made to the server across all
-            time unless a time is specified.
-        Notes:
-            Will default to you if no
-            user is specified. Enter a
-            past time argument to only
-            check entry counts from after
-            that day. If you wish to
-            select audits by you and
-            specify a past time argument,
-            you must mention yourself.
-        Explanation:
-            {0}auditcount serverupdates Hecate 3d
-            This will select all audit
-            entries made by the user
-            Hecate in the past 3 days.
-        """
-        if not user:
-            user = ctx.author
-        msg = await self.get_action_count(
-            ctx,
-            user,
-            after,
-            discord.AuditLogAction.guild_update,
-            "updated the server",
-            "times",
-        )
-        await ctx.send_or_reply(self.bot.emote_dict["redo"] + msg)
-
-    @auditcount.command(
-        aliases=["integrationcreates"],
-        brief="Count the audit log entries of a user.",
-        implemented="2021-05-07 22:34:00.515826",
-        updated="2021-05-07 22:34:00.515826",
-        examples="""
-                {0}bc
-                {0}bc Hecate 4d
-                {0}bc @Hecate
-                {0}bc Hecate#3523 2m
-                {0}bc 708584008065351681 5months
-                {0}bans
-                {0}bans Hecate 4d
-                {0}bans @Hecate yesterday
-                {0}bans Hecate#3523 2m
-                {0}bans 708584008065351681 5 months
-                {0}bancount
-                {0}bancount Hecate 4d
-                {0}bancount @Hecate yesterday
-                {0}bancount Hecate#3523 2m
-                {0}bancount 708584008065351681 5 months
-                """,
-    )
-    async def integrationadds(
-        self,
-        ctx,
-        user: converters.DiscordMember = None,
-        *,
-        after: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}integrationadds <user> [unit]
-        Alias: {0}integrationcreates
-        Output:
-            The number of integrations a user
-            has created in the server across
-            all time unless a time is specified.
-        Notes:
-            Will default to you if no
-            user is specified. Enter a
-            past time argument to only
-            check entry counts from after
-            that day. If you wish to
-            select audits by you and
-            specify a past time argument,
-            you must mention yourself.
-        Explanation:
-            {0}integrationadds Hecate 3d
-            This will select all audit
-            entries made by the user
-            Hecate in the past 3 days.
-        """
-        if not user:
-            user = ctx.author
-        msg = await self.get_action_count(
-            ctx,
-            user,
-            after,
-            discord.AuditLogAction.integration_create,
-            "created",
-            "integrations",
-        )
-        await ctx.send_or_reply(self.bot.emote_dict["plus"] + msg)
-
-    @auditcount.command(
-        aliases=["integrationchanges"],
-        brief="Count the audit log entries of a user.",
-        implemented="2021-05-07 22:34:00.515826",
-        updated="2021-05-07 22:34:00.515826",
-        examples="""
-                {0}bc
-                {0}bc Hecate 4d
-                {0}bc @Hecate
-                {0}bc Hecate#3523 2m
-                {0}bc 708584008065351681 5months
-                {0}bans
-                {0}bans Hecate 4d
-                {0}bans @Hecate yesterday
-                {0}bans Hecate#3523 2m
-                {0}bans 708584008065351681 5 months
-                {0}bancount
-                {0}bancount Hecate 4d
-                {0}bancount @Hecate yesterday
-                {0}bancount Hecate#3523 2m
-                {0}bancount 708584008065351681 5 months
-                """,
-    )
-    async def integrationupdates(
-        self,
-        ctx,
-        user: converters.DiscordMember = None,
-        *,
-        after: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}integrationupdates <user> [unit]
-        Alias: {0}integrationchanges
-        Output:
-            The number of integrations a user
-            has created in the server across
-            all time unless a time is specified.
-        Notes:
-            Will default to you if no
-            user is specified. Enter a
-            past time argument to only
-            check entry counts from after
-            that day. If you wish to
-            select audits by you and
-            specify a past time argument,
-            you must mention yourself.
-        Explanation:
-            {0}auditcount integrationupdates Hecate 3d
-            This will select all audit
-            entries made by the user
-            Hecate in the past 3 days.
-        """
-        if not user:
-            user = ctx.author
-        msg = await self.get_action_count(
-            ctx,
-            user,
-            after,
-            discord.AuditLogAction.integration_update,
-            "updated",
-            "integrations",
-        )
-        await ctx.send_or_reply(self.bot.emote_dict["redo"] + msg)
-
-    @auditcount.command(
-        aliases=["integrationremoves"],
-        brief="Count the audit log entries of a user.",
-        implemented="2021-05-07 22:34:00.515826",
-        updated="2021-05-07 22:34:00.515826",
-        examples="""
-                {0}bc
-                {0}bc Hecate 4d
-                {0}bc @Hecate
-                {0}bc Hecate#3523 2m
-                {0}bc 708584008065351681 5months
-                {0}bans
-                {0}bans Hecate 4d
-                {0}bans @Hecate yesterday
-                {0}bans Hecate#3523 2m
-                {0}bans 708584008065351681 5 months
-                {0}bancount
-                {0}bancount Hecate 4d
-                {0}bancount @Hecate yesterday
-                {0}bancount Hecate#3523 2m
-                {0}bancount 708584008065351681 5 months
-                """,
-    )
-    async def integrationdeletes(
-        self,
-        ctx,
-        user: converters.DiscordMember = None,
-        *,
-        after: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}integrationdeletes <user> [unit]
-        Alias: {0}integrationremoves
-        Output:
-            The number of integrations a user
-            has deleted in the server across
-            all time unless a time is specified.
-        Notes:
-            Will default to you if no
-            user is specified. Enter a
-            past time argument to only
-            check entry counts from after
-            that day. If you wish to
-            select audits by you and
-            specify a past time argument,
-            you must mention yourself.
-        Explanation:
-            {0}auditcount integrationdeletes Hecate 3d
-            This will select all audit
-            entries made by the user
-            Hecate in the past 3 days.
-        """
-        if not user:
-            user = ctx.author
-        msg = await self.get_action_count(
-            ctx,
-            user,
-            after,
-            discord.AuditLogAction.integration_delete,
-            "deleted",
-            "integrations",
-        )
-        await ctx.send_or_reply(self.bot.emote_dict["minus"] + msg)
-
-    @auditcount.command(
-        aliases=["invitecreates"],
-        brief="Count the audit log entries of a user.",
-        implemented="2021-05-07 22:34:00.515826",
-        updated="2021-05-07 22:34:00.515826",
-        examples="""
-                {0}bc
-                {0}bc Hecate 4d
-                {0}bc @Hecate
-                {0}bc Hecate#3523 2m
-                {0}bc 708584008065351681 5months
-                {0}bans
-                {0}bans Hecate 4d
-                {0}bans @Hecate yesterday
-                {0}bans Hecate#3523 2m
-                {0}bans 708584008065351681 5 months
-                {0}bancount
-                {0}bancount Hecate 4d
-                {0}bancount @Hecate yesterday
-                {0}bancount Hecate#3523 2m
-                {0}bancount 708584008065351681 5 months
-                """,
-    )
-    async def inviteadds(
-        self,
-        ctx,
-        user: converters.DiscordMember = None,
-        *,
-        after: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}inviteadds <user> [unit]
-        Alias: {0}invitecreates
-        Output:
-            The number of invites a user has
-            created in the server across all
-            time unless a time is specified.
-        Notes:
-            Will default to you if no
-            user is specified. Enter a
-            past time argument to only
-            check entry counts from after
-            that day. If you wish to
-            select audits by you and
-            specify a past time argument,
-            you must mention yourself.
-        Explanation:
-            {0}auditcount inviteadds Hecate 3d
-            This will select all audit
-            entries made by the user
-            Hecate in the past 3 days.
-        """
-        if not user:
-            user = ctx.author
-        msg = await self.get_action_count(
-            ctx,
-            user,
-            after,
-            discord.AuditLogAction.invite_create,
-            "created",
-            "invite links",
-        )
-        await ctx.send_or_reply(self.bot.emote_dict["plus"] + msg)
-
-    @auditcount.command(
-        aliases=["invitechanges"],
-        brief="Count the audit log entries of a user.",
-        implemented="2021-05-07 22:34:00.515826",
-        updated="2021-05-07 22:34:00.515826",
-        examples="""
-                {0}bc
-                {0}bc Hecate 4d
-                {0}bc @Hecate
-                {0}bc Hecate#3523 2m
-                {0}bc 708584008065351681 5months
-                {0}bans
-                {0}bans Hecate 4d
-                {0}bans @Hecate yesterday
-                {0}bans Hecate#3523 2m
-                {0}bans 708584008065351681 5 months
-                {0}bancount
-                {0}bancount Hecate 4d
-                {0}bancount @Hecate yesterday
-                {0}bancount Hecate#3523 2m
-                {0}bancount 708584008065351681 5 months
-                """,
-    )
-    async def inviteupdates(
-        self,
-        ctx,
-        user: converters.DiscordMember = None,
-        *,
-        after: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}inviteupdates <user> [unit]
-        Alias: {0}invitechanges
-        Output:
-            The number of invites a user has
-            updated in the server across all
-            time unless a time is specified.
-        Notes:
-            Will default to you if no
-            user is specified. Enter a
-            past time argument to only
-            check entry counts from after
-            that day. If you wish to
-            select audits by you and
-            specify a past time argument,
-            you must mention yourself.
-        Explanation:
-            {0}auditcount inviteupdates Hecate 3d
-            This will select all audit
-            entries made by the user
-            Hecate in the past 3 days.
-        """
-        if not user:
-            user = ctx.author
-        msg = await self.get_action_count(
-            ctx,
-            user,
-            after,
-            discord.AuditLogAction.invite_update,
-            "updated",
-            "invite links",
-        )
-        await ctx.send_or_reply(self.bot.emote_dict["redo"] + msg)
-
-    @auditcount.command(
-        aliases=["inviteremoves"],
-        brief="Count the audit log entries of a user.",
-        implemented="2021-05-07 22:34:00.515826",
-        updated="2021-05-07 22:34:00.515826",
-        examples="""
-                {0}bc
-                {0}bc Hecate 4d
-                {0}bc @Hecate
-                {0}bc Hecate#3523 2m
-                {0}bc 708584008065351681 5months
-                {0}bans
-                {0}bans Hecate 4d
-                {0}bans @Hecate yesterday
-                {0}bans Hecate#3523 2m
-                {0}bans 708584008065351681 5 months
-                {0}bancount
-                {0}bancount Hecate 4d
-                {0}bancount @Hecate yesterday
-                {0}bancount Hecate#3523 2m
-                {0}bancount 708584008065351681 5 months
-                """,
-    )
-    async def invitedeletes(
-        self,
-        ctx,
-        user: converters.DiscordMember = None,
-        *,
-        after: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}invitedeletes <user> [unit]
-        Alias: {0}inviteremoves
-        Output:
-            The number of invites a user has
-            updated in the server across all
-            time unless a time is specified.
-        Notes:
-            Will default to you if no
-            user is specified. Enter a
-            past time argument to only
-            check entry counts from after
-            that day. If you wish to
-            select audits by you and
-            specify a past time argument,
-            you must mention yourself.
-        Explanation:
-            {0}auditcount inviteupdates Hecate 3d
-            This will select all audit
-            entries made by the user
-            Hecate in the past 3 days.
-        """
-        if not user:
-            user = ctx.author
-        msg = await self.get_action_count(
-            ctx,
-            user,
-            after,
-            discord.AuditLogAction.invite_delete,
-            "deleted",
-            "invite links",
-        )
-        await ctx.send_or_reply(self.bot.emote_dict["minus"] + msg)
-
-    @auditcount.command(
-        aliases=["kickcount", "kc"],
-        brief="Count the audit log entries of a user.",
-        implemented="2021-05-07 22:34:00.515826",
-        updated="2021-05-07 22:34:00.515826",
-        examples="""
-                {0}bc
-                {0}bc Hecate 4d
-                {0}bc @Hecate
-                {0}bc Hecate#3523 2m
-                {0}bc 708584008065351681 5months
-                {0}bans
-                {0}bans Hecate 4d
-                {0}bans @Hecate yesterday
-                {0}bans Hecate#3523 2m
-                {0}bans 708584008065351681 5 months
-                {0}bancount
-                {0}bancount Hecate 4d
-                {0}bancount @Hecate yesterday
-                {0}bancount Hecate#3523 2m
-                {0}bancount 708584008065351681 5 months
-                """,
-    )
-    async def kicks(
-        self,
-        ctx,
-        user: converters.DiscordMember = None,
-        *,
-        after: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}kicks <user> [unit]
-        Aliases: {0}kickcount, {0}kc
-        Output:
-            The number of users a user has
-            kicked in the server across all
-            time unless a time is specified.
-        Notes:
-            Will default to you if no
-            user is specified. Enter a
-            past time argument to only
-            check entry counts from after
-            that day. If you wish to
-            select audits by you and
-            specify a past time argument,
-            you must mention yourself.
-        Explanation:
-            {0}auditcount kicks Hecate 3d
-            This will select all audit
-            entries made by the user
-            Hecate in the past 3 days.
-        """
-        if not user:
-            user = ctx.author
-        msg = await self.get_action_count(
-            ctx, user, after, discord.AuditLogAction.kick, "kicked", "users"
-        )
-        await ctx.send_or_reply(self.bot.emote_dict["kick"] + msg)
-
-    @auditcount.command(
-        aliases=["vckickvount", "vckc"],
-        brief="Count the audit log entries of a user.",
-        implemented="2021-05-07 22:34:00.515826",
-        updated="2021-05-07 22:34:00.515826",
-        examples="""
-                {0}bc
-                {0}bc Hecate 4d
-                {0}bc @Hecate
-                {0}bc Hecate#3523 2m
-                {0}bc 708584008065351681 5months
-                {0}bans
-                {0}bans Hecate 4d
-                {0}bans @Hecate yesterday
-                {0}bans Hecate#3523 2m
-                {0}bans 708584008065351681 5 months
-                {0}bancount
-                {0}bancount Hecate 4d
-                {0}bancount @Hecate yesterday
-                {0}bancount Hecate#3523 2m
-                {0}bancount 708584008065351681 5 months
-                """,
-    )
-    async def vckicks(
-        self,
-        ctx,
-        user: converters.DiscordMember = None,
-        *,
-        after: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}vckicks <user> [unit]
-        Aliases: {0}vckickcount, {0}vckc
-        Output:
-            The number of users a user has
-            voice kicked in the server across
-            all time unless a time is specified.
-        Notes:
-            Will default to you if no
-            user is specified. Enter a
-            past time argument to only
-            check entry counts from after
-            that day. If you wish to
-            select audits by you and
-            specify a past time argument,
-            you must mention yourself.
-        Explanation:
-            {0}auditcount vckicks Hecate 3d
-            This will select all audit
-            entries made by the user
-            Hecate in the past 3 days.
-        """
-        if not user:
-            user = ctx.author
-        msg = await self.get_action_count(
-            ctx,
-            user,
-            after,
-            discord.AuditLogAction.member_disconnect,
-            "vckicked",
-            "users",
-        )
-        await ctx.send_or_reply(self.bot.emote_dict["audioremove"] + msg)
-
-    @auditcount.command(
-        aliases=["vcmoves", "vcmvs"],
-        brief="Count the audit log entries of a user.",
-        implemented="2021-05-07 22:34:00.515826",
-        updated="2021-05-07 22:34:00.515826",
-        examples="""
-                {0}bc
-                {0}bc Hecate 4d
-                {0}bc @Hecate
-                {0}bc Hecate#3523 2m
-                {0}bc 708584008065351681 5months
-                {0}bans
-                {0}bans Hecate 4d
-                {0}bans @Hecate yesterday
-                {0}bans Hecate#3523 2m
-                {0}bans 708584008065351681 5 months
-                {0}bancount
-                {0}bancount Hecate 4d
-                {0}bancount @Hecate yesterday
-                {0}bancount Hecate#3523 2m
-                {0}bancount 708584008065351681 5 months
-                """,
-    )
-    async def moves(
-        self,
-        ctx,
-        user: converters.DiscordMember = None,
-        *,
-        after: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}moves <user> [unit]
-        Aliases: {0}vcmoves, {0}vcmvs
-        Output:
-            The number of users a user has
-            voice moved in the server across
-            all time unless a time is specified.
-        Notes:
-            Will default to you if no
-            user is specified. Enter a
-            past time argument to only
-            check entry counts from after
-            that day. If you wish to
-            select audits by you and
-            specify a past time argument,
-            you must mention yourself.
-        Explanation:
-            {0}auditcount moves Hecate 3d
-            This will select all audit
-            entries made by the user
-            Hecate in the past 3 days.
-        """
-        if not user:
-            user = ctx.author
-        msg = await self.get_action_count(
-            ctx, user, after, discord.AuditLogAction.member_move, "vcmoved", "users"
-        )
-        await ctx.send_or_reply(self.bot.emote_dict["forward1"] + msg)
-
-    @auditcount.command(
-        aliases=["bds", "bd"],
-        brief="Count the audit log entries of a user.",
-        implemented="2021-05-07 22:34:00.515826",
-        updated="2021-05-07 22:34:00.515826",
-        examples="""
-                {0}bc
-                {0}bc Hecate 4d
-                {0}bc @Hecate
-                {0}bc Hecate#3523 2m
-                {0}bc 708584008065351681 5months
-                {0}bans
-                {0}bans Hecate 4d
-                {0}bans @Hecate yesterday
-                {0}bans Hecate#3523 2m
-                {0}bans 708584008065351681 5 months
-                {0}bancount
-                {0}bancount Hecate 4d
-                {0}bancount @Hecate yesterday
-                {0}bancount Hecate#3523 2m
-                {0}bancount 708584008065351681 5 months
-                """,
-    )
-    async def bulkdeletes(
-        self,
-        ctx,
-        user: converters.DiscordMember = None,
-        *,
-        after: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}bulkdeletes <user> [unit]
-        Aliases: {0}bds, {0}bd
-        Output:
-            The number of times a user has
-            bulk deleted in the server across
-            all time unless a time is specified.
-        Notes:
-            Will default to you if no
-            user is specified. Enter a
-            past time argument to only
-            check entry counts from after
-            that day. If you wish to
-            select audits by you and
-            specify a past time argument,
-            you must mention yourself.
-        Explanation:
-            {0}auditcount bulkdeletes Hecate 3d
-            This will select all audit
-            entries made by the user
-            Hecate in the past 3 days.
-        """
-        if not user:
-            user = ctx.author
-        msg = await self.get_action_count(
-            ctx,
-            user,
-            after,
-            discord.AuditLogAction.message_bulk_delete,
-            "bulk deleted messages",
-            "times",
-        )
-        await ctx.send_or_reply(self.bot.emote_dict["trash"] + msg)
-
-    @auditcount.command(
-        aliases=["removes"],
-        brief="Count the audit log entries of a user.",
-        implemented="2021-05-07 22:34:00.515826",
-        updated="2021-05-07 22:34:00.515826",
-        examples="""
-                {0}bc
-                {0}bc Hecate 4d
-                {0}bc @Hecate
-                {0}bc Hecate#3523 2m
-                {0}bc 708584008065351681 5months
-                {0}bans
-                {0}bans Hecate 4d
-                {0}bans @Hecate yesterday
-                {0}bans Hecate#3523 2m
-                {0}bans 708584008065351681 5 months
-                {0}bancount
-                {0}bancount Hecate 4d
-                {0}bancount @Hecate yesterday
-                {0}bancount Hecate#3523 2m
-                {0}bancount 708584008065351681 5 months
-                """,
-    )
-    async def deletes(
-        self,
-        ctx,
-        user: converters.DiscordMember = None,
-        *,
-        after: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}deletes <user> [unit]
-        Alias: {0}removes
-        Output:
-            The number of times a user has deleted
-            a message in the server across all time
-            unless a time is specified.
-        Notes:
-            Will default to you if no
-            user is specified. Enter a
-            past time argument to only
-            check entry counts from after
-            that day. If you wish to
-            select audits by you and
-            specify a past time argument,
-            you must mention yourself.
-        Explanation:
-            {0}auditcount deletes Hecate 3d
-            This will select all audit
-            entries made by the user
-            Hecate in the past 3 days.
-        """
-        if not user:
-            user = ctx.author
-        msg = await self.get_action_count(
-            ctx,
-            user,
-            after,
-            discord.AuditLogAction.message_delete,
-            "deleted",
-            "messages",
-        )
-        await ctx.send_or_reply(self.bot.emote_dict["trash"] + msg)
-
-    @auditcount.command(
-        aliases=["pincount", "pc"],
-        brief="Count the audit log entries of a user.",
-        implemented="2021-05-07 22:34:00.515826",
-        updated="2021-05-07 22:34:00.515826",
-        examples="""
-                {0}bc
-                {0}bc Hecate 4d
-                {0}bc @Hecate
-                {0}bc Hecate#3523 2m
-                {0}bc 708584008065351681 5months
-                {0}bans
-                {0}bans Hecate 4d
-                {0}bans @Hecate yesterday
-                {0}bans Hecate#3523 2m
-                {0}bans 708584008065351681 5 months
-                {0}bancount
-                {0}bancount Hecate 4d
-                {0}bancount @Hecate yesterday
-                {0}bancount Hecate#3523 2m
-                {0}bancount 708584008065351681 5 months
-                """,
-    )
-    async def pins(
-        self,
-        ctx,
-        user: converters.DiscordMember = None,
-        *,
-        after: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}pins <user> [unit]
-        Aliases: {0}pincount, {0}pc
-        Output:
-            The number of times a user has
-            pinned a message in the server
-            across all time unless a time
-            is specified.
-        Notes:
-            Will default to you if no
-            user is specified. Enter a
-            past time argument to only
-            check entry counts from after
-            that day. If you wish to
-            select audits by you and
-            specify a past time argument,
-            you must mention yourself.
-        Explanation:
-            {0}auditcount pins Hecate 3d
-            This will select all audit
-            entries made by the user
-            Hecate in the past 3 days.
-        """
-        if not user:
-            user = ctx.author
-        msg = await self.get_action_count(
-            ctx, user, after, discord.AuditLogAction.message_pin, "pinned", "messages"
-        )
-        await ctx.send_or_reply(self.bot.emote_dict["pin"] + msg)
-
-    @auditcount.command(
-        aliases=["unpincount", "upc"],
-        brief="Count the audit log entries of a user.",
-        implemented="2021-05-07 22:34:00.515826",
-        updated="2021-05-07 22:34:00.515826",
-        examples="""
-                {0}bc
-                {0}bc Hecate 4d
-                {0}bc @Hecate
-                {0}bc Hecate#3523 2m
-                {0}bc 708584008065351681 5months
-                {0}bans
-                {0}bans Hecate 4d
-                {0}bans @Hecate yesterday
-                {0}bans Hecate#3523 2m
-                {0}bans 708584008065351681 5 months
-                {0}bancount
-                {0}bancount Hecate 4d
-                {0}bancount @Hecate yesterday
-                {0}bancount Hecate#3523 2m
-                {0}bancount 708584008065351681 5 months
-                """,
-    )
-    async def unpins(
-        self,
-        ctx,
-        user: converters.DiscordMember = None,
-        *,
-        after: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}pins <user> [unit]
-        Aliases: {0}unpincount, {0}upc
-        Output:
-            The number of times a user has
-            unpinned a message in the server
-            across all time unless a time
-            is specified.
-        Notes:
-            Will default to you if no
-            user is specified. Enter a
-            past time argument to only
-            check entry counts from after
-            that day. If you wish to
-            select audits by you and
-            specify a past time argument,
-            you must mention yourself.
-        Explanation:
-            {0}auditcount unpins Hecate 3d
-            This will select all audit
-            entries made by the user
-            Hecate in the past 3 days.
-        """
-        if not user:
-            user = ctx.author
-        msg = await self.get_action_count(
-            ctx,
-            user,
-            after,
-            discord.AuditLogAction.message_unpin,
-            "unpinned",
-            "messages",
-        )
-        await ctx.send_or_reply(self.bot.emote_dict["pin"] + msg)
-
-    @auditcount.command(
-        aliases=["rolecreates"],
-        brief="Count the audit log entries of a user.",
-        implemented="2021-05-07 22:34:00.515826",
-        updated="2021-05-07 22:34:00.515826",
-        examples="""
-                {0}bc
-                {0}bc Hecate 4d
-                {0}bc @Hecate
-                {0}bc Hecate#3523 2m
-                {0}bc 708584008065351681 5months
-                {0}bans
-                {0}bans Hecate 4d
-                {0}bans @Hecate yesterday
-                {0}bans Hecate#3523 2m
-                {0}bans 708584008065351681 5 months
-                {0}bancount
-                {0}bancount Hecate 4d
-                {0}bancount @Hecate yesterday
-                {0}bancount Hecate#3523 2m
-                {0}bancount 708584008065351681 5 months
-                """,
-    )
-    async def roleadds(
-        self,
-        ctx,
-        user: converters.DiscordMember = None,
-        *,
-        after: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}pins <user> [unit]
-        Aliases: {0}rolecreates
-        Output:
-            The number of times a user has
-            created a role in the server
-            across all time unless a time
-            is specified.
-        Notes:
-            Will default to you if no
-            user is specified. Enter a
-            past time argument to only
-            check entry counts from after
-            that day. If you wish to
-            select audits by you and
-            specify a past time argument,
-            you must mention yourself.
-        Explanation:
-            {0}auditcount roleadds Hecate 3d
-            This will select all audit
-            entries made by the user
-            Hecate in the past 3 days.
-        """
-        if not user:
-            user = ctx.author
-        msg = await self.get_action_count(
-            ctx, user, after, discord.AuditLogAction.role_create, "created", "roles"
-        )
-        await ctx.send_or_reply(self.bot.emote_dict["plus"] + msg)
-
-    @auditcount.command(
-        aliases=["rolechanges"],
-        brief="Count the audit log entries of a user.",
-        implemented="2021-05-07 22:34:00.515826",
-        updated="2021-05-07 22:34:00.515826",
-        examples="""
-                {0}bc
-                {0}bc Hecate 4d
-                {0}bc @Hecate
-                {0}bc Hecate#3523 2m
-                {0}bc 708584008065351681 5months
-                {0}bans
-                {0}bans Hecate 4d
-                {0}bans @Hecate yesterday
-                {0}bans Hecate#3523 2m
-                {0}bans 708584008065351681 5 months
-                {0}bancount
-                {0}bancount Hecate 4d
-                {0}bancount @Hecate yesterday
-                {0}bancount Hecate#3523 2m
-                {0}bancount 708584008065351681 5 months
-                """,
-    )
-    async def roleupdates(
-        self,
-        ctx,
-        user: converters.DiscordMember = None,
-        *,
-        after: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}roleupdates <user> [unit]
-        Aliases: {0}rolechanges
-        Output:
-            The number of times a user has
-            updated a role in the server
-            across all time unless a time
-            is specified.
-        Notes:
-            Will default to you if no
-            user is specified. Enter a
-            past time argument to only
-            check entry counts from after
-            that day. If you wish to
-            select audits by you and
-            specify a past time argument,
-            you must mention yourself.
-        Explanation:
-            {0}auditcount roleupdates Hecate 3d
-            This will select all audit
-            entries made by the user
-            Hecate in the past 3 days.
-        """
-        if not user:
-            user = ctx.author
-        msg = await self.get_action_count(
-            ctx, user, after, discord.AuditLogAction.role_update, "updated", "roles"
-        )
-        await ctx.send_or_reply(self.bot.emote_dict["redo"] + msg)
-
-    @auditcount.command(
-        aliases=["roleremoves"],
-        brief="Count the audit log entries of a user.",
-        implemented="2021-05-07 22:34:00.515826",
-        updated="2021-05-07 22:34:00.515826",
-        examples="""
-                {0}bc
-                {0}bc Hecate 4d
-                {0}bc @Hecate
-                {0}bc Hecate#3523 2m
-                {0}bc 708584008065351681 5months
-                {0}bans
-                {0}bans Hecate 4d
-                {0}bans @Hecate yesterday
-                {0}bans Hecate#3523 2m
-                {0}bans 708584008065351681 5 months
-                {0}bancount
-                {0}bancount Hecate 4d
-                {0}bancount @Hecate yesterday
-                {0}bancount Hecate#3523 2m
-                {0}bancount 708584008065351681 5 months
-                """,
-    )
-    async def roledeletes(
-        self,
-        ctx,
-        user: converters.DiscordMember = None,
-        *,
-        after: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}roledeletes <user> [unit]
-        Alias: {0}roleremoves
-        Output:
-            The number of times a user has
-            updated a role in the server
-            across all time unless a time
-            is specified.
-        Notes:
-            Will default to you if no
-            user is specified. Enter a
-            past time argument to only
-            check entry counts from after
-            that day. If you wish to
-            select audits by you and
-            specify a past time argument,
-            you must mention yourself.
-        Explanation:
-            {0}auditcount roledeletes Hecate 3d
-            This will select all audit
-            entries made by the user
-            Hecate in the past 3 days.
-        """
-        if not user:
-            user = ctx.author
-        msg = await self.get_action_count(
-            ctx, user, after, discord.AuditLogAction.role_delete, "deleted", "roles"
-        )
-        await ctx.send_or_reply(self.bot.emote_dict["minus"] + msg)
-
-    @auditcount.command(
-        aliases=["unbancount", "ubc"],
-        brief="Count the audit log entries of a user.",
-        implemented="2021-05-07 22:34:00.515826",
-        updated="2021-05-07 22:34:00.515826",
-        examples="""
-                {0}bc
-                {0}bc Hecate 4d
-                {0}bc @Hecate
-                {0}bc Hecate#3523 2m
-                {0}bc 708584008065351681 5months
-                {0}bans
-                {0}bans Hecate 4d
-                {0}bans @Hecate yesterday
-                {0}bans Hecate#3523 2m
-                {0}bans 708584008065351681 5 months
-                {0}bancount
-                {0}bancount Hecate 4d
-                {0}bancount @Hecate yesterday
-                {0}bancount Hecate#3523 2m
-                {0}bancount 708584008065351681 5 months
-                """,
-    )
-    async def unbans(
-        self,
-        ctx,
-        user: converters.DiscordMember = None,
-        *,
-        after: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}unbans <user> [after]
-        Aliases: {0}unbancount, {0}ubc
-        Output:
-            The number of times a user has
-            unbanned a user in the server
-            across all time unless a time
-            is specified.
-        Notes:
-            Will default to you if no
-            user is specified. Enter a
-            past time argument to only
-            check entry counts from after
-            that day. If you wish to
-            select audits by you and
-            specify a past time argument,
-            you must mention yourself.
-        Explanation:
-            {0}auditcount unbans Hecate 3d
-            This will select all audit
-            entries made by the user
-            Hecate in the past 3 days.
-        """
-        if not user:
-            user = ctx.author
-        msg = await self.get_action_count(
-            ctx, user, after, discord.AuditLogAction.unban, "unbanned", "users"
-        )
-        await ctx.send_or_reply(self.bot.emote_dict["hammer"] + msg)
-
-    @auditcount.command(
-        aliases=["webhookcreates"],
-        brief="Count the audit log entries of a user.",
-        implemented="2021-05-07 22:34:00.515826",
-        updated="2021-05-07 22:34:00.515826",
-        examples="""
-                {0}bc
-                {0}bc Hecate 4d
-                {0}bc @Hecate
-                {0}bc Hecate#3523 2m
-                {0}bc 708584008065351681 5months
-                {0}bans
-                {0}bans Hecate 4d
-                {0}bans @Hecate yesterday
-                {0}bans Hecate#3523 2m
-                {0}bans 708584008065351681 5 months
-                {0}bancount
-                {0}bancount Hecate 4d
-                {0}bancount @Hecate yesterday
-                {0}bancount Hecate#3523 2m
-                {0}bancount 708584008065351681 5 months
-                """,
-    )
-    async def webhookadds(
-        self,
-        ctx,
-        user: converters.DiscordMember = None,
-        *,
-        after: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}webhookadds <user> [after]
-        Aliases: {0}webhookcreates
-        Output:
-            The number of times a user has
-            created a webhook in the server
-            across all time unless a time
-            is specified.
-        Notes:
-            Will default to you if no
-            user is specified. Enter a
-            past time argument to only
-            check entry counts from after
-            that day. If you wish to
-            select audits by you and
-            specify a past time argument,
-            you must mention yourself.
-        Explanation:
-            {0}auditcount webhookadds Hecate 3d
-            This will select all audit
-            entries made by the user
-            Hecate in the past 3 days.
-        """
-        if not user:
-            user = ctx.author
-        msg = await self.get_action_count(
-            ctx,
-            user,
-            after,
-            discord.AuditLogAction.webhook_create,
-            "created",
-            "webhooks",
-        )
-        await ctx.send_or_reply(self.bot.emote_dict["plus"] + msg)
-
-    @auditcount.command(
-        aliases=["webhookchanges"],
-        brief="Count the audit log entries of a user.",
-        implemented="2021-05-07 22:34:00.515826",
-        updated="2021-05-07 22:34:00.515826",
-        examples="""
-                {0}bc
-                {0}bc Hecate 4d
-                {0}bc @Hecate
-                {0}bc Hecate#3523 2m
-                {0}bc 708584008065351681 5months
-                {0}bans
-                {0}bans Hecate 4d
-                {0}bans @Hecate yesterday
-                {0}bans Hecate#3523 2m
-                {0}bans 708584008065351681 5 months
-                {0}bancount
-                {0}bancount Hecate 4d
-                {0}bancount @Hecate yesterday
-                {0}bancount Hecate#3523 2m
-                {0}bancount 708584008065351681 5 months
-                """,
-    )
-    async def webhookupdates(
-        self,
-        ctx,
-        user: converters.DiscordMember = None,
-        *,
-        after: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}webhookupdates <user> [after]
-        Aliases: {0}webhookchanges
-        Output:
-            The number of times a user has
-            updated a webhook in the server
-            across all time unless a time
-            is specified.
-        Notes:
-            Will default to you if no
-            user is specified. Enter a
-            past time argument to only
-            check entry counts from after
-            that day. If you wish to
-            select audits by you and
-            specify a past time argument,
-            you must mention yourself.
-        Explanation:
-            {0}auditcount webhookupdates Hecate 3d
-            This will select all audit
-            entries made by the user
-            Hecate in the past 3 days.
-        """
-        if not user:
-            user = ctx.author
-        msg = await self.get_action_count(
-            ctx,
-            user,
-            after,
-            discord.AuditLogAction.webhook_update,
-            "updated",
-            "webhooks",
-        )
-        await ctx.send_or_reply(self.bot.emote_dict["redo"] + msg)
-
-    @auditcount.command(
-        aliases=["webhookremoves"],
-        brief="Count the audit log entries of a user.",
-        implemented="2021-05-07 22:34:00.515826",
-        updated="2021-05-07 22:34:00.515826",
-        examples="""
-                {0}bc
-                {0}bc Hecate 4d
-                {0}bc @Hecate
-                {0}bc Hecate#3523 2m
-                {0}bc 708584008065351681 5months
-                {0}bans
-                {0}bans Hecate 4d
-                {0}bans @Hecate yesterday
-                {0}bans Hecate#3523 2m
-                {0}bans 708584008065351681 5 months
-                {0}bancount
-                {0}bancount Hecate 4d
-                {0}bancount @Hecate yesterday
-                {0}bancount Hecate#3523 2m
-                {0}bancount 708584008065351681 5 months
-                """,
-    )
-    async def webhookdeletes(
-        self,
-        ctx,
-        user: converters.DiscordMember = None,
-        *,
-        after: humantime.PastTime = None,
-    ):
-        """
-        Usage: {0}webhookdeletes <user> [after]
-        Aliases: {0}webhookremoves
-        Output:
-            The number of times a user has
-            deleted a webhook in the server
-            across all time unless a time
-            is specified.
-        Notes:
-            Will default to you if no
-            user is specified. Enter a
-            past time argument to only
-            check entry counts from after
-            that day. If you wish to
-            select audits by you and
-            specify a past time argument,
-            you must mention yourself.
-        Explanation:
-            {0}auditcount webhookdeletes Hecate 3d
-            This will select all audit
-            entries made by the user
-            Hecate in the past 3 days.
-        """
-        if not user:
-            user = ctx.author
-        msg = await self.get_action_count(
-            ctx,
-            user,
-            after,
-            discord.AuditLogAction.webhook_delete,
-            "deleted",
-            "webhooks",
-        )
-        await ctx.send_or_reply(self.bot.emote_dict["minus"] + msg)
-
-    async def get_action_count(self, ctx, user, after, action, string1, string2):
-        """
-        Helper function to get audit counts
-        from a user object and an action
-        """
-        await ctx.trigger_typing()
-        entries = await ctx.guild.audit_logs(
-            limit=None, user=user, action=action
-        ).flatten()
-        if after:
-            valid = []
-            for entry in entries:
-                if entry.created_at > after.dt:
-                    valid.append(entry)
-            msg = f" User `{user}` has {string1} {len(valid)} {string2 if len(entries) != 1 else string2[:-1]} since **{utils.timeago(after.dt)}.**"
-        else:
-            msg = f" User `{user}` has {string1} {len(entries)} {string2 if len(entries) != 1 else string2[:-1]}."
-        return msg
-
     @decorators.command(brief="Snipe a deleted message.", aliases=["retrieve"])
-    @commands.guild_only()
+    @checks.guild_only()
     @checks.bot_has_perms(embed_links=True)
     @checks.has_perms(manage_messages=True)
     async def snipe(self, ctx, *, member: converters.DiscordMember = None):
@@ -3077,7 +1194,7 @@ class Logging(commands.Cog):
         brief="Snipe an edited message.",
         aliases=["snipeedit", "retrieveedit", "editretrieve"],
     )
-    @commands.guild_only()
+    @checks.guild_only()
     @checks.bot_has_perms(embed_links=True)
     @checks.has_perms(manage_messages=True)
     async def editsnipe(self, ctx, *, member: converters.DiscordMember = None):
@@ -3140,3 +1257,315 @@ class Logging(commands.Cog):
         )
         embed.set_footer(text=f"Message ID: {message_id}")
         await ctx.send_or_reply(embed=embed)
+
+    # command idea from Alex Flipnote's discord_bot.py bot
+    # https://github.com/AlexFlipnote/discord_bot.py
+    # Subcommands added & converted to use a paginator.
+
+    @decorators.group(
+        aliases=["search"],
+        brief="Find any user using a search.",
+        implemented="2021-03-14 18:18:20.175991",
+        updated="2021-05-07 05:13:20.340824",
+    )
+    @commands.guild_only()
+    @checks.has_perms(manage_messages=True)
+    @checks.cooldown()
+    async def find(self, ctx):
+        """
+        Usage: {0}find <option> <search>
+        Alias: {0}search
+        Output: Users matching your search.
+        Examples:
+            {0}find name Hecate
+            {0}find id 708584008065351681
+        Options:
+            duplicates
+            hardmention
+            hash       (Ex: 3523)
+            nickname   (Ex: Hecate)
+            playing    (Ex: Visual Studio Code)
+            snowflake  (Ex: 708584008065351681)
+            username   (Ex: Hecate)
+        """
+        if ctx.invoked_subcommand is None:
+            return await ctx.usage("<option> <search>")
+
+    @find.command(
+        name="playing",
+        aliases=["status", "activity"],
+        brief="Search for users by game.",
+    )
+    async def find_playing(self, ctx, *, search: str):
+        """
+        Usage: {0}find playing <search>
+        Alias: {0}find status, {0}find activity
+        Output:
+            All the users currently playing
+            the specified activity
+        """
+        loop = []
+        for i in ctx.guild.members:
+            if i.activities and (not i.bot):
+                for g in i.activities:
+                    if g.name and (search.lower() in g.name.lower()):
+                        loop.append(f"{i} | {type(g).__name__}: {g.name} ({i.id})")
+
+        if not loop:
+            return await ctx.fail(f"**No results.**")
+        stuff = "\r\n".join(
+            [f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)]
+        )
+        await ctx.send_or_reply(
+            f"Found **{len(loop)}** on your search for **{search}**"
+        )
+        p = pagination.MainMenu(
+            pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=800)
+        )
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send_or_reply(e)
+
+    @find.command(
+        name="username", aliases=["name", "user"], brief="Search for users by username."
+    )
+    async def find_name(self, ctx, *, search: str):
+        """
+        Usage: {0}find username <search>
+        Aliases:
+            {0}find name
+            {0}find user
+        Output:
+            A pagination session with all user's
+            usernames that match your search
+        """
+        loop = [
+            f"{i} ({i.id})"
+            for i in ctx.guild.members
+            if search.lower() in i.name.lower() and not i.bot
+        ]
+        if not loop:
+            return await ctx.fail(f"**No results.**")
+        stuff = "\r\n".join(
+            [f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)]
+        )
+        await ctx.send_or_reply(
+            f"Found **{len(loop)}** on your search for **{search}**"
+        )
+        p = pagination.MainMenu(
+            pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=800)
+        )
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send_or_reply(e)
+
+    @find.command(
+        name="nicknames",
+        aliases=["nick", "nicks", "nickname"],
+        brief="Search for users by nickname.",
+    )
+    async def find_nickname(self, ctx, *, search: str):
+        """
+        Usage: {0}find nicknames <search>
+        Aliases:
+            {0}find nicks
+            {0}find nick
+            {0}find nickname
+        Output:
+            A pagination session with all user's
+            nicknames that match your search
+        """
+        loop = [
+            f"{i.nick} | {i} ({i.id})"
+            for i in ctx.guild.members
+            if i.nick
+            if (search.lower() in i.nick.lower()) and not i.bot
+        ]
+        if not loop:
+            return await ctx.fail(f"**No results.**")
+        stuff = "\r\n".join(
+            [f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)]
+        )
+        await ctx.send_or_reply(
+            f"Found **{len(loop)}** on your search for **{search}**"
+        )
+        p = pagination.MainMenu(
+            pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=800)
+        )
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send_or_reply(e)
+
+    @find.command(name="id", aliases=["snowflake"], brief="Search for users by id.")
+    async def find_id(self, ctx, *, search: int):
+        """
+        Usage: {0}find id <search>
+        Alias: {0}find snowflake
+        Output:
+            Starts a pagination session
+            showing all users who's IDs
+            contain your search.
+        """
+        loop = [
+            f"{i} | {i} ({i.id})"
+            for i in ctx.guild.members
+            if (str(search) in str(i.id)) and not i.bot
+        ]
+        if not loop:
+            return await ctx.fail(f"**No results.**")
+        stuff = "\r\n".join(
+            [f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)]
+        )
+        await ctx.send_or_reply(
+            f"Found **{len(loop)}** on your search for **{search}**"
+        )
+        p = pagination.MainMenu(
+            pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=800)
+        )
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send_or_reply(e)
+
+    @find.command(
+        name="hash",
+        aliases=["discriminator", "discrim"],
+        brief="Search for users by discriminator.",
+    )
+    async def find_discrim(self, ctx, *, search: str):
+        """
+        Usage: {0}find hash <search>
+        Aliases:
+            {0}find discrim
+            {0}find discriminator
+        Output:
+            Starts a pagination session
+            showing all users who's hash
+            (discriminator) contain your search
+        """
+        if not len(search) == 4 or not re.compile("^[0-9]*$").search(search):
+            return await ctx.send_or_reply(
+                content="You must provide exactly 4 digits",
+            )
+
+        loop = [f"{i} ({i.id})" for i in ctx.guild.members if search == i.discriminator]
+        if not loop:
+            return await ctx.fail(f"**No results.**")
+        stuff = "\r\n".join(
+            [f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)]
+        )
+        await ctx.send_or_reply(
+            f"Found **{len(loop)}** on your search for **{search}**"
+        )
+        p = pagination.MainMenu(
+            pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=1250)
+        )
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send_or_reply(e)
+
+    @find.command(
+        aliases=["dups"],
+        name="duplicates",
+        brief="Find users with identical names.",
+    )
+    async def find_duplicates(self, ctx):
+        """
+        Usage: {0}find duplicates
+        Alias: {0}find dups
+        Output:
+            Starts a pagination session
+            showing all users who's nicknames
+            are not unique on the server
+        """
+        name_list = []
+        for member in ctx.guild.members:
+            name_list.append(member.display_name.lower())
+
+        name_list = Counter(name_list)
+        name_list = name_list.most_common()
+
+        loop = []
+        for name_tuple in name_list:
+            if name_tuple[1] > 1:
+                loop.append(
+                    f"Duplicates: [{str(name_tuple[1]).zfill(2)}] {name_tuple[0]}"
+                )
+
+        if not loop:
+            return await ctx.fail(f"**No results.**")
+        stuff = "\r\n".join(
+            [f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)]
+        )
+        await ctx.send_or_reply(
+            f"Found **{len(loop)}** on your search for **duplicates**"
+        )
+        p = pagination.MainMenu(
+            pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=800)
+        )
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send_or_reply(e)
+
+    def _is_hard_to_mention(self, name):
+        """Determine if a name is hard to mention."""
+        codecs.register_error("newreplace", lambda x: (b" " * (x.end - x.start), x.end))
+
+        encoderes, chars = codecs.getwriter("ascii").encode(name, "newreplace")
+
+        return re.search(br"[^ ][^ ]+", encoderes) is None
+
+    @find.command(
+        name="hard",
+        aliases=["weird", "special", "hardmentions", "hardmention"],
+        brief="Find users with hard to mention names.",
+    )
+    async def find_hard(self, ctx, username: str = None):
+        """
+        Usage: {0}find hard [--username]
+        Alias:
+            {0}find weird
+            {0}find special
+            {0}find hardmention
+        Output:
+            Starts a pagination session showing
+            all users who use special characters
+            that make their name hard to mention
+        Notes:
+            Specify a username kwarg, as in
+            {0}find hardmention --username
+            to search for hard to mention
+            usernames instead of nicknames.
+        """
+        if str(username).lower() in ["--username", " -u", "-username", "--u"]:
+            loop = [
+                member
+                for member in ctx.message.guild.members
+                if self._is_hard_to_mention(str(member.name))
+            ]
+        else:
+            loop = [
+                member
+                for member in ctx.message.guild.members
+                if self._is_hard_to_mention(member.display_name)
+            ]
+        if not loop:
+            return await ctx.fail(f"**No results.**")
+        stuff = "\r\n".join(
+            [f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)]
+        )
+        await ctx.send_or_reply(
+            f"Found **{len(loop)}** on your search for **hard mentions**"
+        )
+        p = pagination.MainMenu(
+            pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=800)
+        )
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send_or_reply(e)

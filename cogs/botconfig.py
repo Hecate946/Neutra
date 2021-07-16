@@ -381,7 +381,6 @@ class Botconfig(commands.Cog):
             return
         await ctx.success(f"Removed `{str(_object)}` from the blacklist.")
 
-
     @decorators.command(brief="Show blacklisted objects.")
     async def blacklisted(self, ctx):
         if not self.bot.blacklist:
@@ -619,19 +618,18 @@ class Botconfig(commands.Cog):
                 await ctx.success(f"**Adminlock Enabled.**")
                 return
 
-
     async def bot_check(self, ctx):
         if checks.is_owner(ctx):
             return True
 
         if self.is_ownerlocked is True:
-            await ctx.react(self.bot.emote_dict['lock'])
+            await ctx.react(self.bot.emote_dict["lock"])
             return False
 
         if self.is_adminlocked is True:
             if checks.is_admin(ctx):
                 return True
-            await ctx.react(self.bot.emote_dict['lock'])
+            await ctx.react(self.bot.emote_dict["lock"])
             return False
 
         return True

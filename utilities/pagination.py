@@ -269,15 +269,11 @@ class SimplePages(MainMenu):
         )
         self.embed = discord.Embed(color=kwargs.get("color", constants.embed))
 
+
 class TextPages(MainMenu):
     def __init__(self, text, *, prefix="```", suffix="```", max_size=2000):
         super().__init__(
-            TextPageSource(
-                text=text,
-                prefix=prefix,
-                suffix=suffix,
-                max_size=max_size
-            )
+            TextPageSource(text=text, prefix=prefix, suffix=suffix, max_size=max_size)
         )
 
 

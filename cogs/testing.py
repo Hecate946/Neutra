@@ -6,7 +6,7 @@ from utilities import checks
 
 from PIL import Image
 
-query = '''
+query = """
 WITH status_data AS (
     SELECT status, insertion_chopped as insertion,
         case when 
@@ -44,7 +44,7 @@ WITH status_data AS (
 )
 select *
 from status_data
-'''
+"""
 
 
 def setup(bot):
@@ -106,5 +106,5 @@ class Testing(commands.Cog):
 
     @commands.command()
     async def statuses(self, ctx):
-        d = await self.bot.cxn.fetch(query , ctx.author.id)
+        d = await self.bot.cxn.fetch(query, ctx.author.id)
         print(d)

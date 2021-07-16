@@ -46,7 +46,9 @@ class Tracking(commands.Cog):
     )
     @checks.guild_only()
     @checks.cooldown()
-    async def invited(self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None):
+    async def invited(
+        self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None
+    ):
         """
         Usage: {0}invited [user]
         Aliases: {0}inviter, {0}whoinvited
@@ -411,7 +413,9 @@ class Tracking(commands.Cog):
     @checks.guild_only()
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.cooldown()
-    async def nicknames(self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None):
+    async def nicknames(
+        self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None
+    ):
         """
         Usage: {0}nicknames [user]
         Alias: {0}nicks, {0}usernicks
@@ -460,7 +464,9 @@ class Tracking(commands.Cog):
     @checks.guild_only()
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.has_perms(view_audit_log=True)
-    async def usernames(self, ctx, *, user: converters.SelfUser(view_audit_log=True) = None):
+    async def usernames(
+        self, ctx, *, user: converters.SelfUser(view_audit_log=True) = None
+    ):
         """
         Usage: {0}usernames [user]
         Alias: {0}names
@@ -510,7 +516,9 @@ class Tracking(commands.Cog):
         add_reactions=True, attach_files=True, embed_links=True, external_emojis=True
     )
     @checks.cooldown(1, 10)
-    async def avatars(self, ctx, *, user: converters.SelfUser(view_audit_log=True) = None):
+    async def avatars(
+        self, ctx, *, user: converters.SelfUser(view_audit_log=True) = None
+    ):
         """
         Usage: {0}avatars [user]
         Alias: {0}avs, {0}avhistory {0}avatarhistory
@@ -563,7 +571,6 @@ class Tracking(commands.Cog):
                 await ctx.send_or_reply(embed=embed)
             else:
                 raise commands.DisabledCommand()
-
 
     @decorators.command(
         aliases=["lastseen", "track", "tracker", "observed"],
@@ -642,7 +649,9 @@ class Tracking(commands.Cog):
                 """,
     )
     @checks.cooldown()
-    async def spoke(self, ctx, *, user: converters.SelfUser(view_audit_log=True) = None):
+    async def spoke(
+        self, ctx, *, user: converters.SelfUser(view_audit_log=True) = None
+    ):
         """
         Usage: {0}spoke [user]
         Alias: {0}lastspoke
@@ -685,7 +694,9 @@ class Tracking(commands.Cog):
                 """,
     )
     @checks.cooldown()
-    async def spokehere(self, ctx, *, user: converters.SelfUser(view_audit_log=True) = None):
+    async def spokehere(
+        self, ctx, *, user: converters.SelfUser(view_audit_log=True) = None
+    ):
         """
         Usage: {0}spokehere [user]
         Alias: {0}lastspokehere
@@ -766,7 +777,9 @@ class Tracking(commands.Cog):
             if user.bot:
                 raise commands.BadArgument("I do not track bots.")
 
-            user = await converters.SelfMember(view_audit_log=True).convert(ctx, user.id)
+            user = await converters.SelfMember(view_audit_log=True).convert(
+                ctx, user.id
+            )
 
             query = """
                     SELECT command, COUNT(commands) as c
@@ -942,7 +955,9 @@ class Tracking(commands.Cog):
             argument to limit the number of common words to show.
         """
         if user:
-            user = await converters.SelfMember(manage_messages=True).convert(ctx, user.id)
+            user = await converters.SelfMember(manage_messages=True).convert(
+                ctx, user.id
+            )
         else:
             user = ctx.author
 
@@ -971,7 +986,9 @@ class Tracking(commands.Cog):
                 """
         records = await self.bot.cxn.fetch(query, ctx.guild.id, user.id, limit)
         if not records:
-            return await message.edit(content=f"No words have been recorded for `{user}`")
+            return await message.edit(
+                content=f"No words have been recorded for `{user}`"
+            )
 
         msg = "\n".join(
             [
@@ -1023,7 +1040,9 @@ class Tracking(commands.Cog):
             Will default to you if no user is passed.
         """
         if user:
-            user = await converters.SelfMember(manage_messages=True).convert(ctx, user.id)
+            user = await converters.SelfMember(manage_messages=True).convert(
+                ctx, user.id
+            )
         else:
             user = ctx.author
         if user.bot:
@@ -1174,7 +1193,9 @@ class Tracking(commands.Cog):
                 """
         records = await self.bot.cxn.fetch(query, ctx.guild.id, diff)
         if not records:
-            return await ctx.fail(f"No messate statistics available for that time period.")
+            return await ctx.fail(
+                f"No messate statistics available for that time period."
+            )
 
         def pred(snowflake):
             mem = ctx.guild.get_member(snowflake)
@@ -1186,7 +1207,6 @@ class Tracking(commands.Cog):
             for record in records
             if pred(record["author"])
         }
-
 
         width = len(max(usage_dict, key=len))
 
@@ -1303,7 +1323,9 @@ class Tracking(commands.Cog):
             will default to 1 week.
         """
         if user:
-            user = await converters.SelfMember(view_audit_log=True).convert(ctx, user.id)
+            user = await converters.SelfMember(view_audit_log=True).convert(
+                ctx, user.id
+            )
         else:
             user = ctx.author
         await ctx.trigger_typing()
@@ -1429,7 +1451,9 @@ class Tracking(commands.Cog):
     @checks.guild_only()
     @checks.bot_has_perms(attach_files=True, embed_links=True)
     @checks.cooldown()
-    async def statusinfo(self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None):
+    async def statusinfo(
+        self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None
+    ):
         """
         Usage: {0}statusinfo [user]
         Aliases: {0}piestatus, {0}ps,
@@ -1753,7 +1777,9 @@ class Tracking(commands.Cog):
     @checks.guild_only()
     @checks.bot_has_perms(attach_files=True, embed_links=True)
     @checks.cooldown()
-    async def barstatus(self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None):
+    async def barstatus(
+        self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None
+    ):
         """
         Usage: {0}barstatus [user]
         Aliases: {0}bs {0}bstatus

@@ -1,11 +1,10 @@
-import collections
 import io
 import re
 import copy
+import pytz
 import json
 import math
 import base64
-import codecs
 import random
 import typing
 import asyncio
@@ -86,6 +85,63 @@ class Utility(commands.Cog):
         if timestamp.year < 2015:
             timestamp = datetime.utcfromtimestamp(decoded + token_epoch)
         return timestamp
+
+    @decorators.command(
+        aliases=["worldclock", "worldtime"],
+        brief="Get the time of any location",
+        implemented="2021-04-15 06:20:17.433895",
+        updated="2021-05-06 21:28:57.052612",
+        examples="""
+                {0}clock Los Angeles
+                {0}clock Netherlands
+                {0}worldtime Los Angeles
+                {0}worldtime Netherlands
+                {0}worldclock Los Angeles
+                {0}worldclock Netherlands
+                """,
+    )
+    async def clock(self, ctx, *, place):
+        """
+        Usage: {0}clock <place>
+        Aliases: {0}worldclock, {0}worldtime
+        Output:
+            Shows the current time of day
+            it is in the specified location.
+        Notes:
+            Can accept cities, states, provinces,
+            and countries as valid locations.
+        """
+        try:
+            if place.lower() == "la":
+                city_name = "Los Angeles"
+            else:
+                city_name = re.sub(r"([^\s\w]|_)+", "", place)
+            location = self.geo.geocode(city_name)
+            if location is None:
+                return await ctx.send_or_reply(
+                    content=f"{self.bot.emote_dict['failed']} Invalid location.",
+                )
+
+            r = await self.bot.get(
+                "http://api.timezonedb.com/v2.1/get-time-zone?key={}&format=json&by=position&lat={}&lng={}".format(
+                    self.bot.constants.timezonedb, location.latitude, location.longitude
+                )
+            )
+            request = json.loads(r)
+
+            if request["status"] != "OK":
+                await ctx.send_or_reply(
+                    content=f"{self.bot.emote_dict['failed']} An API error occurred. Please try again later.",
+                )
+            else:
+                zone = pytz.timezone(request["zoneName"])
+                time = datetime.now(zone)
+                time_fmt = time.strftime("%a %I:%M %p")
+                clock = utils.getClockForTime(time_fmt)
+                msg = f"{self.bot.emote_dict['clock']} `It is {clock} in {city_name.title()} ({request['zoneName']})`"
+                await ctx.send_or_reply(content=msg)
+        except Exception as e:
+            await ctx.send_or_reply(e)
 
     @decorators.command(
         aliases=["flags"],
@@ -191,7 +247,7 @@ class Utility(commands.Cog):
                 if user is not None
             ]
             total.extend(users)
-        count = len(collections.Counter(total))
+        count = len(Counter(total))
         rows = list(itertools.zip_longest(*formats.values(), fillvalue=""))
         pluralize = "" if count == 1 else "s"
         table.set_columns(headers)
@@ -899,318 +955,6 @@ class Utility(commands.Cog):
             await ctx.fail(f"I do not have permission to edit `{user}'s` nickname.")
         except Exception as e:
             await helpers.error_info(ctx, [(str(user), e)])
-
-    # command idea from Alex Flipnote's discord_bot.py bot
-    # https://github.com/AlexFlipnote/discord_bot.py
-    # Subcommands added & converted to use a paginator.
-
-    @decorators.group(
-        aliases=["search"],
-        brief="Find any user using a search.",
-        implemented="2021-03-14 18:18:20.175991",
-        updated="2021-05-07 05:13:20.340824",
-    )
-    @commands.guild_only()
-    @checks.has_perms(manage_messages=True)
-    @checks.cooldown()
-    async def find(self, ctx):
-        """
-        Usage: {0}find <option> <search>
-        Alias: {0}search
-        Output: Users matching your search.
-        Examples:
-            {0}find name Hecate
-            {0}find id 708584008065351681
-        Options:
-            duplicates
-            hardmention
-            hash       (Ex: 3523)
-            nickname   (Ex: Hecate)
-            playing    (Ex: Visual Studio Code)
-            snowflake  (Ex: 708584008065351681)
-            username   (Ex: Hecate)
-        """
-        if ctx.invoked_subcommand is None:
-            return await ctx.usage("<option> <search>")
-
-    @find.command(
-        name="playing",
-        aliases=["status", "activity"],
-        brief="Search for users by game.",
-    )
-    async def find_playing(self, ctx, *, search: str):
-        """
-        Usage: {0}find playing <search>
-        Alias: {0}find status, {0}find activity
-        Output:
-            All the users currently playing
-            the specified activity
-        """
-        loop = []
-        for i in ctx.guild.members:
-            if i.activities and (not i.bot):
-                for g in i.activities:
-                    if g.name and (search.lower() in g.name.lower()):
-                        loop.append(f"{i} | {type(g).__name__}: {g.name} ({i.id})")
-
-        if not loop:
-            return await ctx.fail(f"**No results.**")
-        stuff = "\r\n".join(
-            [f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)]
-        )
-        await ctx.send_or_reply(
-            f"Found **{len(loop)}** on your search for **{search}**"
-        )
-        p = pagination.MainMenu(
-            pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=800)
-        )
-        try:
-            await p.start(ctx)
-        except menus.MenuError as e:
-            await ctx.send_or_reply(e)
-
-    @find.command(
-        name="username", aliases=["name", "user"], brief="Search for users by username."
-    )
-    async def find_name(self, ctx, *, search: str):
-        """
-        Usage: {0}find username <search>
-        Aliases:
-            {0}find name
-            {0}find user
-        Output:
-            A pagination session with all user's
-            usernames that match your search
-        """
-        loop = [
-            f"{i} ({i.id})"
-            for i in ctx.guild.members
-            if search.lower() in i.name.lower() and not i.bot
-        ]
-        if not loop:
-            return await ctx.fail(f"**No results.**")
-        stuff = "\r\n".join(
-            [f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)]
-        )
-        await ctx.send_or_reply(
-            f"Found **{len(loop)}** on your search for **{search}**"
-        )
-        p = pagination.MainMenu(
-            pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=800)
-        )
-        try:
-            await p.start(ctx)
-        except menus.MenuError as e:
-            await ctx.send_or_reply(e)
-
-    @find.command(
-        name="nicknames",
-        aliases=["nick", "nicks", "nickname"],
-        brief="Search for users by nickname.",
-    )
-    async def find_nickname(self, ctx, *, search: str):
-        """
-        Usage: {0}find nicknames <search>
-        Aliases:
-            {0}find nicks
-            {0}find nick
-            {0}find nickname
-        Output:
-            A pagination session with all user's
-            nicknames that match your search
-        """
-        loop = [
-            f"{i.nick} | {i} ({i.id})"
-            for i in ctx.guild.members
-            if i.nick
-            if (search.lower() in i.nick.lower()) and not i.bot
-        ]
-        if not loop:
-            return await ctx.fail(f"**No results.**")
-        stuff = "\r\n".join(
-            [f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)]
-        )
-        await ctx.send_or_reply(
-            f"Found **{len(loop)}** on your search for **{search}**"
-        )
-        p = pagination.MainMenu(
-            pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=800)
-        )
-        try:
-            await p.start(ctx)
-        except menus.MenuError as e:
-            await ctx.send_or_reply(e)
-
-    @find.command(name="id", aliases=["snowflake"], brief="Search for users by id.")
-    async def find_id(self, ctx, *, search: int):
-        """
-        Usage: {0}find id <search>
-        Alias: {0}find snowflake
-        Output:
-            Starts a pagination session
-            showing all users who's IDs
-            contain your search.
-        """
-        loop = [
-            f"{i} | {i} ({i.id})"
-            for i in ctx.guild.members
-            if (str(search) in str(i.id)) and not i.bot
-        ]
-        if not loop:
-            return await ctx.fail(f"**No results.**")
-        stuff = "\r\n".join(
-            [f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)]
-        )
-        await ctx.send_or_reply(
-            f"Found **{len(loop)}** on your search for **{search}**"
-        )
-        p = pagination.MainMenu(
-            pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=800)
-        )
-        try:
-            await p.start(ctx)
-        except menus.MenuError as e:
-            await ctx.send_or_reply(e)
-
-    @find.command(
-        name="hash",
-        aliases=["discriminator", "discrim"],
-        brief="Search for users by discriminator.",
-    )
-    async def find_discrim(self, ctx, *, search: str):
-        """
-        Usage: {0}find hash <search>
-        Aliases:
-            {0}find discrim
-            {0}find discriminator
-        Output:
-            Starts a pagination session
-            showing all users who's hash
-            (discriminator) contain your search
-        """
-        if not len(search) == 4 or not re.compile("^[0-9]*$").search(search):
-            return await ctx.send_or_reply(
-                content="You must provide exactly 4 digits",
-            )
-
-        loop = [f"{i} ({i.id})" for i in ctx.guild.members if search == i.discriminator]
-        if not loop:
-            return await ctx.fail(f"**No results.**")
-        stuff = "\r\n".join(
-            [f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)]
-        )
-        await ctx.send_or_reply(
-            f"Found **{len(loop)}** on your search for **{search}**"
-        )
-        p = pagination.MainMenu(
-            pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=1250)
-        )
-        try:
-            await p.start(ctx)
-        except menus.MenuError as e:
-            await ctx.send_or_reply(e)
-
-    @find.command(
-        aliases=["dups"],
-        name="duplicates",
-        brief="Find users with identical names.",
-    )
-    async def find_duplicates(self, ctx):
-        """
-        Usage: {0}find duplicates
-        Alias: {0}find dups
-        Output:
-            Starts a pagination session
-            showing all users who's nicknames
-            are not unique on the server
-        """
-        name_list = []
-        for member in ctx.guild.members:
-            name_list.append(member.display_name.lower())
-
-        name_list = Counter(name_list)
-        name_list = name_list.most_common()
-
-        loop = []
-        for name_tuple in name_list:
-            if name_tuple[1] > 1:
-                loop.append(
-                    f"Duplicates: [{str(name_tuple[1]).zfill(2)}] {name_tuple[0]}"
-                )
-
-        if not loop:
-            return await ctx.fail(f"**No results.**")
-        stuff = "\r\n".join(
-            [f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)]
-        )
-        await ctx.send_or_reply(
-            f"Found **{len(loop)}** on your search for **duplicates**"
-        )
-        p = pagination.MainMenu(
-            pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=800)
-        )
-        try:
-            await p.start(ctx)
-        except menus.MenuError as e:
-            await ctx.send_or_reply(e)
-
-    def _is_hard_to_mention(self, name):
-        """Determine if a name is hard to mention."""
-        codecs.register_error("newreplace", lambda x: (b" " * (x.end - x.start), x.end))
-
-        encoderes, chars = codecs.getwriter("ascii").encode(name, "newreplace")
-
-        return re.search(br"[^ ][^ ]+", encoderes) is None
-
-    @find.command(
-        name="hardmentions",
-        aliases=["weird", "special", "hardmention"],
-        brief="Find users with hard to mention names.",
-    )
-    async def hardmentions(self, ctx, username: str = None):
-        """
-        Usage: {0}find hardmentions [username]
-        Alias:
-            {0}find weird
-            {0}find special
-            {0}find hardmention
-        Output:
-            Starts a pagination session showing
-            all users who use special characters
-            that make their name hard to mention
-        Notes:
-            Specify a username kwarg, as in
-            -find hardmention username
-            to search for hard to mention
-            usernames instead of nicknames.
-        """
-        if str(username).lower() in "--username":
-            loop = [
-                member
-                for member in ctx.message.guild.members
-                if self._is_hard_to_mention(str(member.name))
-            ]
-        else:
-            loop = [
-                member
-                for member in ctx.message.guild.members
-                if self._is_hard_to_mention(member.display_name)
-            ]
-        if not loop:
-            return await ctx.fail(f"**No results.**")
-        stuff = "\r\n".join(
-            [f"[{str(num).zfill(2)}] {data}" for num, data in enumerate(loop, start=1)]
-        )
-        await ctx.send_or_reply(
-            f"Found **{len(loop)}** on your search for **hardmentions**"
-        )
-        p = pagination.MainMenu(
-            pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=800)
-        )
-        try:
-            await p.start(ctx)
-        except menus.MenuError as e:
-            await ctx.send_or_reply(e)
 
     @decorators.command(
         aliases=["id"],

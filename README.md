@@ -8,8 +8,8 @@ Hello! I'm Snowbot, and I specialize in tracking and moderation.
 I was designed to collect all sorts of data on servers, users,
 messages, emojis, online time, and more! I also come with a fast
 and clean moderation system that offers every opportunity for effective
-server management. Apart from moderation and tracking, I feature 268
-commands across 12 categories that provide awesome utilities!
+server management. Apart from moderation and tracking, I feature 259
+commands across 13 categories that provide awesome utilities!
 Some examples include managing user timezones, role management, and logging.
 ## Categories
 ##### [Admin](#Admin-1)
@@ -21,23 +21,16 @@ Some examples include managing user timezones, role management, and logging.
 ##### [Logging](#Logging-1)
 ##### [Mod](#Mod-1)
 ##### [Music](#Music-1)
+##### [Server](#Server-1)
 ##### [Stats](#Stats-1)
 ##### [Tracking](#Tracking-1)
 ##### [Utility](#Utility-1)
 
 
 ### Admin
-#### Module for server administration. (14 Commands)
+#### Module for server administration. (10 Commands)
 
 ```yaml
-addprefix: Add a custom server prefix.
-
-checkinactive: Count the inactive users.
-
-clearprefix: Clear all custom prefixes.
-
-kickinactive: Kick all inactive server members
-
 kill: Have the bot leave the server.
 
 massascify: Mass nickname users with odd names.
@@ -48,15 +41,15 @@ massdehoist: Dehoist all server users.
 
 masskick: Mass kick users matching a search.
 
+massrole: Manage mass adding/removing roles.
+
 muterole: Setup server muting system.
+
+prefix: Show all server prefixes.
 
 prefixes: Show all server prefixes.
 
-removeprefix: Remove a custom server prefix
-
 reset: Manage stored user data.
-
-role: Manage mass adding/removing roles.
 ```
 
 ### Automod
@@ -85,28 +78,22 @@ warns: Display the server warnlist.
 ```
 
 ### Config
-#### Configure the permission system. (6 Commands)
+#### Configure the permission system. (4 Commands)
 
 ```yaml
 disable: Disable commands for users, roles, and channels.
-
-disabled: Show disabled commands.
 
 enable: Enable commands for users, roles, and channels.
 
 ignore: Ignore channels, roles, and users.
 
-ignored: Show ignored roles, users, and channels.
-
 unignore: Unignore channels, users, and roles.
 ```
 
 ### Files
-#### Module for downloading files. (15 Commands)
+#### Module for downloading files. (13 Commands)
 
 ```yaml
-audit: Get a file of a user's audit actions.
-
 dumpbans: DMs you a file of server bans.
 
 dumpbots: DMs you a file of server bots.
@@ -127,13 +114,11 @@ dumproles: DMs you a file of server roles.
 
 dumpsettings: DMs you a file of server settings.
 
-dumptimezones: DMs you a file of time zones.
-
 dumpusers: DMs you a file of server members.
 
 dumpvoicechannels: DMs you a file of voice channels.
 
-dumpwarns: DMs you a file of server bans.
+dumpwarns: DMs you a file of server warns.
 ```
 
 ### Help
@@ -230,23 +215,23 @@ users: Show users I'm connected to.
 #### Manage the logging system (7 Commands)
 
 ```yaml
-auditcount: Count the audit log entries of a user.
-
 editsnipe: Snipe an edited message.
 
-log: Manage the logging setup.
+find: Find any user using a search.
+
+log: Enable specific logging events.
 
 logchannel: Set your server's logging channel.
 
 snipe: Snipe a deleted message.
 
-unlog: Disable logging events.
+unlog: Disable specific logging events.
 
-unlogchannel: Remove your server's logging channel.
+unlogchannel: Remove the server logging channel.
 ```
 
 ### Mod
-#### Keep your server under control. (22 Commands)
+#### Keep your server under control. (20 Commands)
 
 ```yaml
 addrole: Add multiple roles to a user.
@@ -257,15 +242,11 @@ blind: Hide a channel from a user.
 
 block: Restrict users from sending messages.
 
-cleanup: Clean up bot command usage.
-
 kick: Kick users from the server.
 
 lock: Prevent messages in a channel.
 
 mute: Mute users for a duration.
-
-purge: Remove any type of content.
 
 removerole: Remove multiple roles to a user.
 
@@ -298,7 +279,7 @@ vcpurge: Kick all users from a voice channel.
 #### Module for playing music (24 Commands)
 
 ```yaml
-clear: Remove all queued songs.
+clear: Clear all queued songs.
 
 connect: Joins a voice or stage channel.
 
@@ -306,7 +287,7 @@ current: Displays the currently playing song.
 
 disconnect: Disconnect the bot from a channel.
 
-fastforward: Fast forward a number of seconds
+fastforward: Fast forward the song.
 
 loop: Loop the current song or queue.
 
@@ -314,15 +295,15 @@ move: Move a song in the queue.
 
 pause: Pauses the currently playing song.
 
-play: Play a song from a youtube search.
+play: Play a song from a search or URL.
 
-playnext: Add a song to the beginning of the queue.
+playnext: Add a song to the front of the queue.
 
-position: Show the current position of the song.
+position: Show the position of the song.
 
 previous: Play the previous song.
 
-queue: Display the current song queue.
+queue: Show the song queue.
 
 remove: Remove a song from the queue.
 
@@ -330,9 +311,9 @@ resume: Resumes a currently paused song.
 
 rewind: Rewind a number of seconds
 
-seek: Seek to a position in a song.
+seek: Seek to a position in the song.
 
-shuffle: Shuffle the current song queue.
+shuffle: Shuffle the song queue.
 
 skip: Vote to skip the current song.
 
@@ -344,20 +325,33 @@ unloop: Un-loop the current song or queue.
 
 volume: Set the volume of the player.
 
-youtube: Search for anything on youtube.
+youtube: Search for a youtube video.
+```
+
+### Server
+#### Module for server management (3 Commands)
+
+```yaml
+cleanup: Clean up bot command usage.
+
+emoji: Manage custom server emojis.
+
+purge: Purge any type of content.
 ```
 
 ### Stats
-#### Module for server stats (23 Commands)
+#### Module for server stats (24 Commands)
 
 ```yaml
 admins: Show the server admins.
 
 channelinfo: Get info about a channel.
 
-emoji: Get usage stats on an emoji.
+emojiinfo: Get info about an emoji.
 
 emojistats: Emoji usage tracking.
+
+emojiusage: Get usage stats on an emoji.
 
 emptyroles: Show roles that have no users.
 
@@ -452,7 +446,7 @@ words: Most used words from a user.
 ```
 
 ### Utility
-#### Module for general utilities. (24 Commands)
+#### Module for general utilities. (21 Commands)
 
 ```yaml
 ascify: Convert special characters to ascii.
@@ -475,8 +469,6 @@ embed: Create an embed interactively.
 
 emojipost: Sends all server emojis to your dms.
 
-find: Find any user using a search.
-
 gtoken: Generate a discord token.
 
 nickname: Edit or reset a user's nickname
@@ -491,15 +483,11 @@ raw: Shows the raw content of a message.
 
 reactinfo: Get react info on a message.
 
-replies: Find the first message of a reply thread.
-
 serveravatar: Show the server's icon.
 
 shorten: Shorten URLs to bitly links.
 
 snowflake: Show info on a discord snowflake.
-
-type: Find the type of a discord object.
 
 voiceusers: Show all the users in a vc.
 ```

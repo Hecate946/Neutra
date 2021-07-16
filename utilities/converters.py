@@ -1,4 +1,4 @@
-import enum
+import yarl
 import re
 import typing
 import asyncio
@@ -19,13 +19,20 @@ SNOWFLAKE_REGEX = re.compile(r"([0-9]{15,21})$")
 USER_MENTION_REGEX = re.compile(r"<@!?([0-9]+)>$")
 ROLE_MENTION_REGEX = re.compile(r"<@&([0-9]+)>$")
 
+
+def emoji_name(argument, *, regex=EMOJI_NAME_REGEX):
+    m = regex.match(argument)
+    if m is None:
+        raise commands.BadArgument("Invalid emoji name.")
+    return argument
+
+
 def format_perms(perms):
     perm_list = [
         x.title().replace("_", " ").replace("Tts", "TTS").replace("Guild", "Server")
         for x in perms
     ]
     return f"You are missing the following permission{'' if len(perm_list) == 1 else 's'}: `{', '.join(perm_list)}`"
-
 
 
 async def prettify(ctx, arg):
@@ -138,11 +145,15 @@ class SelfMember(commands.Converter):
         else:
             if await checks.check_permissions(ctx, self.perms):
                 return member
-            raise commands.BadArgument(f"{format_perms(self.perms)} to run this command on other users.")
+            raise commands.BadArgument(
+                f"{format_perms(self.perms)} to run this command on other users."
+            )
+
 
 class SelfUser(commands.Converter):
     def __init__(self, **perms):
         self.perms = perms
+
     async def convert(self, ctx, argument):
         member = await DiscordUser().convert(ctx, argument)
         if member.id == ctx.author.id:
@@ -150,7 +161,9 @@ class SelfUser(commands.Converter):
         else:
             if await checks.check_permissions(ctx, self.perms):
                 return member
-            raise commands.BadArgument(f"{format_perms(self.perms)} to run this command on other users.")
+            raise commands.BadArgument(
+                f"{format_perms(self.perms)} to run this command on other users."
+            )
 
 
 class UniqueMember(commands.Converter):
@@ -1292,3 +1305,29 @@ class ChannelOrRoleOrMemberOption(commands.Converter):
             completed = f"```sml\nVALID OPTIONS:\n{render}```"
             raise commands.BadArgument(f"**Invalid Option.**{completed}")
         return option
+
+
+class EmojiURL:
+    def __init__(self, *, animated, url):
+        self.url = url
+        self.animated = animated
+
+    @classmethod
+    async def convert(cls, ctx, argument):
+        try:
+            partial = await commands.PartialEmojiConverter().convert(ctx, argument)
+        except commands.BadArgument:
+            try:
+                url = yarl.URL(argument)
+                if url.scheme not in ("http", "https"):
+                    raise RuntimeError
+                path = url.path.lower()
+                if not path.endswith((".png", ".jpeg", ".jpg", ".gif")):
+                    raise RuntimeError
+                return cls(animated=url.path.endswith(".gif"), url=url)
+            except Exception:
+                raise commands.BadArgument(
+                    "Not a valid or supported emoji URL."
+                ) from None
+        else:
+            return cls(animated=partial.animated, url=str(partial.url))

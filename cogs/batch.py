@@ -407,7 +407,6 @@ class Batch(commands.Cog):
                 self.status_batch[str(before.status)][after.id] = time.time()
                 self.tracker_batch[before.id] = (time.time(), "updating their status")
 
-
     @commands.Cog.listener()
     @decorators.wait_until_ready()
     @decorators.event_check(lambda s, b, a: not a.bot)

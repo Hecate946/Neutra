@@ -692,7 +692,6 @@ class Botadmin(commands.Cog):
                 help_embed.set_footer(text="{} Extensions Total".format(len(ext_list)))
             await self._send_embed(ctx, help_embed, to_pm)
 
-
     @decorators.command(
         rest_is_raw=True,
         aliases=["say"],

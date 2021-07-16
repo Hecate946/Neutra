@@ -76,7 +76,10 @@ class Config(commands.Cog):
             return False  # User is ignored.
 
         if any(
-            (role_id in self.ignored[ctx.guild.id] for role_id in [r.id for r in ctx.author.roles])
+            (
+                role_id in self.ignored[ctx.guild.id]
+                for role_id in [r.id for r in ctx.author.roles]
+            )
         ):
             return False  # Role is ignored.
 
@@ -716,7 +719,7 @@ class Config(commands.Cog):
                 value = f'{title}\nhttps://hastebin.com/{js["key"]}.txt'
                 await ctx.success(value)
 
-    @decorators.command(brief="Show ignored roles, users, and channels.")
+    @decorators.command(brief="Show ignored roles, users, and channels.", hidden=True)
     @checks.guild_only()
     @checks.bot_has_perms(external_emojis=True)
     @checks.has_perms(manage_guild=True)
@@ -731,7 +734,7 @@ class Config(commands.Cog):
         """
         await ctx.invoke(self.ignore_list, dm=dm)
 
-    @decorators.command(brief="Show disabled commands.")
+    @decorators.command(brief="Show disabled commands.", hidden=True)
     @checks.guild_only()
     @checks.bot_has_perms(external_emojis=True)
     @checks.has_perms(manage_guild=True)

@@ -849,11 +849,10 @@ class Admin(commands.Cog):
 
     @decorators.group(
         name="massrole",
-        aliases=["role", "multirole"],
+        aliases=["multirole"],
         brief="Manage mass adding/removing roles.",
         implemented="2021-05-16 15:06:06.479013",
         updated="2021-05-31 05:13:52.253369",
-        case_insensitive=True,
         examples="""
                 {0}role add all @Helper
                 {0}massrole remove @Helper Mod
@@ -1086,7 +1085,6 @@ class Admin(commands.Cog):
         invoke_without_command=True,
         case_insensitive=True,
         brief="Show all server prefixes.",
-        hidden=True,
     )
     async def prefix(self, ctx):
         """
@@ -1094,7 +1092,7 @@ class Admin(commands.Cog):
         """
         await ctx.invoke(self.prefixes)
 
-    @prefix.command(name="add", ignore_extra=False, hidden=True)
+    @prefix.command(name="add", ignore_extra=False, brief="Add a server prefix.")
     @checks.guild_only()
     @checks.has_perms(manage_guild=True)
     @checks.cooldown()
@@ -1102,7 +1100,10 @@ class Admin(commands.Cog):
         await ctx.invoke(self.addprefix, prefix)
 
     @prefix.command(
-        name="remove", aliases=["delete", "rm", "rem"], ignore_extra=False, hidden=True
+        name="remove",
+        aliases=["delete", "rm", "rem"],
+        ignore_extra=False,
+        brief="Remove a server prefix.",
     )
     @checks.guild_only()
     @checks.has_perms(manage_guild=True)
@@ -1110,7 +1111,7 @@ class Admin(commands.Cog):
     async def prefix_remove(self, ctx, prefix: converters.Prefix):
         await ctx.invoke(self.removeprefix, prefix)
 
-    @prefix.command(name="clear", hidden=True)
+    @prefix.command(name="clear", brief="Clear all server prefixes.")
     @checks.guild_only()
     @checks.has_perms(manage_guild=True)
     async def prefix_clear(self, ctx, prefix: converters.Prefix = None):
@@ -1162,6 +1163,7 @@ class Admin(commands.Cog):
         implemented="2021-05-03 09:14:59.219515",
         updated="2021-05-05 19:23:39.306805",
         ignore_extra=False,
+        hidden=True,
     )
     @checks.guild_only()
     @checks.has_perms(manage_guild=True)
@@ -1205,6 +1207,7 @@ class Admin(commands.Cog):
         implemented="2021-05-03 09:14:59.219515",
         updated="2021-05-05 19:23:39.306805",
         ignore_extra=False,
+        hidden=True,
     )
     @checks.guild_only()
     @checks.has_perms(manage_guild=True)
@@ -1262,9 +1265,9 @@ class Admin(commands.Cog):
     @decorators.command(
         aliases=["clearprefixes", "resetprefix", "resetprefixes"],
         brief="Clear all custom prefixes.",
-        permissions=["manage_guild"],
         implemented="2021-05-03 09:14:59.219515",
         updated="2021-05-05 19:23:39.306805",
+        hidden=True,
     )
     @checks.guild_only()
     @checks.has_perms(manage_guild=True)

@@ -125,17 +125,54 @@ class Stats(commands.Cog):
         await ctx.send_or_reply(embed=em)
 
     @decorators.command(
-        aliases=["emojiusage", "emote", "emoteusage"],
+        aliases=["ei", "emoteinfo"],
+        brief="Get info about an emoji.",
+        implemented="2021-03-25 01:42:04.359878",
+        updated="2021-05-06 17:33:15.040085",
+        examples="""
+                {0}channelinfo
+                {0}channelinfo 805638877762420789
+                {0}channelinfo general
+                {0}ci
+                {0}ci 805638877762420789
+                {0}ci general
+                """,
+    )
+    @checks.guild_only()
+    @checks.bot_has_perms(embed_links=True)
+    @checks.cooldown()
+    async def emojiinfo(self, ctx, *, emoji: discord.Emoji):
+        """
+        Usage: {0}emojiinfo [emoji]
+        Aliases: {0}ei, {0}emoteinfo
+        Output:
+            Specific info on a given channel
+        Notes:
+            If no channel is specified,
+            current channel will be used.
+        """
+        em = discord.Embed(color=self.bot.constants.embed)
+        em.add_field(
+            name="Emoji", value="{0.name} ({0.id})".format(emoji), inline=False
+        )
+        em.add_field(
+            name="Server",
+            value="{0.guild.name} ({0.guild.id})".format(emoji),
+            inline=False,
+        )
+        em.add_field(name="Type", value="{}".format(type(emoji).__name__), inline=False)
+        em.add_field(
+            name="Created", value=utils.format_time(emoji.created_at), inline=False
+        )
+        em.set_thumbnail(url=emoji.url)
+        await ctx.send_or_reply(embed=em)
+
+    @decorators.command(
+        aliases=["emoteusage"],
         brief="Get usage stats on an emoji.",
         implemented="2021-03-23 05:05:29.999518",
         updated="2021-05-06 18:24:09.933406",
         examples="""
-                {0}emoji pepe
-                {0}emoji :pepe:
-                {0}emoji <:pepe:779433733400166420>
-                {0}emote pepe
-                {0}emote :pepe:
-                {0}emote <:pepe:779433733400166420>
                 {0}emojiusage pepe
                 {0}emojiusage :pepe:
                 {0}emojiusage <:pepe:779433733400166420>
@@ -148,11 +185,10 @@ class Stats(commands.Cog):
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.has_perms(view_audit_log=True)
     @checks.cooldown()
-    async def emoji(self, ctx, emoji: converters.GuildEmojiConverter):
+    async def emojiusage(self, ctx, emoji: converters.GuildEmojiConverter):
         """
-        Usage: {0}emoji <custom emoji>
-        Aliases:
-            {0}emote, {0}emojiusage, {0}emoteusage
+        Usage: {0}emojiusage <custom emoji>
+        Aliases: 0}emojiusage, {0}emoteusage
         Output: Usage stats on the passed emoji
         """
         await ctx.trigger_typing()

@@ -813,7 +813,9 @@ class Automod(commands.Cog):
             match = self.bot.dregex.search(message.content)
             if match:  # Message containg an invite
                 try:
-                    invite = await self.bot.fetch_invite(match.group(0), with_counts=False, with_expiration=False)
+                    invite = await self.bot.fetch_invite(
+                        match.group(0), with_counts=False, with_expiration=False
+                    )
                 except discord.NotFound:
                     pass
                 except discord.HTTPException:
@@ -826,7 +828,9 @@ class Automod(commands.Cog):
                     except Exception:  # We tried...
                         pass
                 else:
-                    if invite.guild.id != message.guild.id: # We allow invites for the current server.
+                    if (
+                        invite.guild.id != message.guild.id
+                    ):  # We allow invites for the current server.
                         try:
                             await message.delete()
                             await message.channel.send(
@@ -834,7 +838,7 @@ class Automod(commands.Cog):
                                 delete_after=7,
                             )
                         except Exception:  # We tried...
-                            pass        
+                            pass
 
         bad_words = self.bot.server_settings[message.guild.id]["profanities"]
         if bad_words:
