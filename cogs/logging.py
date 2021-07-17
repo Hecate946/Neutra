@@ -457,7 +457,7 @@ class Logging(commands.Cog):
                     """  # Delete what we have in the DB
             await self.bot.cxn.execute(query, ctx.guild.id)
 
-            args = [False] * 10
+            args = [False] * 13
             query = """
                     INSERT INTO logs
                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
