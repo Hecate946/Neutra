@@ -3,7 +3,7 @@ import os
 import sys
 import copy
 import time
-import psutil
+import subprocess
 import typing
 import discord
 import asyncio
@@ -705,6 +705,21 @@ class Manager(commands.Cog):
                     await p.start(ctx)
                 except menus.MenuError as e:
                     await ctx.send_or_reply(e)
+
+
+    async def run_process(self, command):
+        try:
+            process = await asyncio.create_subprocess_shell(
+                command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
+            result = await process.communicate()
+        except NotImplementedError:
+            process = subprocess.Popen(
+                command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
+            result = await self.bot.loop.run_in_executor(None, process.communicate)
+
+        return [output.decode() for output in result]
 
 
 class PerformanceMocker:
