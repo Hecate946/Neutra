@@ -178,103 +178,9 @@ class Botconfig(commands.Cog):
         await ctx.success(f"Status now set as `{activity}`")
 
     @decorators.group(
-        case_insensitive=True,
-        aliases=["to-do"],
-        invoke_without_command=True,
-        brief="Manage the bot's todo list.",
-    )
-    async def todo(self, ctx):
-        """
-        Usage: {0}todo <method>
-        Alias: {0}to-do
-        Methods:
-            no subcommand: shows the todo list
-            add: Adds an entry to the todo list
-            remove|rm|rem: Removes an entry from the todo list
-        """
-        if ctx.invoked_subcommand is None:
-            try:
-                with open(self.todo) as fp:
-                    data = fp.readlines()
-            except FileNotFoundError:
-                return await ctx.send_or_reply(
-                    f"{self.bot.emote_dict['exclamation']} No current todos."
-                )
-            if data is None or data == "":
-                return await ctx.send_or_reply(
-                    f"{self.bot.emote_dict['exclamation']} No current todos."
-                )
-            msg = ""
-            for index, line in enumerate(data, start=1):
-                msg += f"{index}. {line}\n"
-            p = pagination.MainMenu(
-                pagination.TextPageSource(msg, prefix="```prolog\n")
-            )
-            try:
-                await p.start(ctx)
-            except menus.MenuError as e:
-                await ctx.send_or_reply(e)
-
-    @todo.command()
-    async def add(self, ctx, *, todo: str = None):
-        if todo is None:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.clean_prefix}todo add <todo>`",
-            )
-        with open(self.todo, "a", encoding="utf-8") as fp:
-            fp.write(todo + "\n")
-        await ctx.send_or_reply(
-            f"{self.bot.emote_dict['success']} Successfully added `{todo}` to the todo list."
-        )
-
-    @todo.command(aliases=["rm", "rem"])
-    async def remove(self, ctx, *, index_or_todo: str = None):
-        if index_or_todo is None:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.clean_prefix}todo remove <todo>`",
-            )
-        with open(self.todo, mode="r", encoding="utf-8") as fp:
-            lines = fp.readlines()
-            print(lines)
-        found = False
-        for index, line in enumerate(lines, start=1):
-            if str(index) == index_or_todo:
-                lines.remove(line)
-                found = True
-                break
-            elif line.lower().strip("\n") == index_or_todo.lower():
-                lines.remove(line)
-                found = True
-                break
-        if found is True:
-            with open(self.todo, mode="w", encoding="utf-8") as fp:
-                print(lines)
-                fp.write("".join(lines))
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['success']} Successfully removed todo `{index_or_todo}` from the todo list.",
-            )
-        else:
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['failed']} Could not find todo `{index_or_todo}` in the todo list.",
-            )
-
-    @todo.command()
-    async def clear(self, ctx):
-        try:
-            os.remove(self.todo)
-        except FileNotFoundError:
-            return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['success']} Successfully cleared the todo list.",
-            )
-        await ctx.send_or_reply(
-            f"{self.bot.emote_dict['success']} Successfully cleared the todo list."
-        )
-
-    @decorators.group(
-        case_insensitive=True,
         aliases=["set", "add"],
         invoke_without_command=True,
-        brief="Write to the bot's overview or changelog.",
+        brief="Write to the bot overview or changelog.",
     )
     async def write(self, ctx):
         """
@@ -287,7 +193,7 @@ class Botconfig(commands.Cog):
         if ctx.invoked_subcommand is None:
             return await ctx.usage()
 
-    @write.command()
+    @write.command(brief="Overwrite the bot overview.")
     async def overview(self, ctx, *, overview: str = None):
         if overview is None:
             return await ctx.invoke(self.bot.get_command("overview"))
@@ -305,25 +211,75 @@ class Botconfig(commands.Cog):
                 content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
             )
 
-    @write.command()
-    async def changelog(self, ctx, *, entry: str = None):
-        if entry is None:
-            return await ctx.send_or_reply(
-                content=f"Usage: `{ctx.clean_prefix}write changelog <entry>`",
-            )
-        c = await pagination.Confirmation(
-            f"**{self.bot.emote_dict['exclamation']} This action will post to my changelog. Do you wish to continue?**"
-        ).prompt(ctx)
+    @write.command(brief="Write to the bot changelog.")
+    async def changelog(self, ctx, *, entry: str):
+        c = await ctx.confirm("This action will post to my changelog.")
         if c:
             with open("./data/txts/changelog.txt", "a", encoding="utf-8") as fp:
                 fp.write(f"({discord.utils.utcnow()}) " + entry + "\n")
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['success']} **Successfully posted to the changelog.**",
+            await ctx.success(f"**Successfully posted to the changelog.**")
+
+
+    @write.command(brief="Update the bot readme file.")
+    async def readme(self, ctx):
+        """
+        Usage: {0}readme
+        Alias: {0}md
+        Output: Sends my readme file on github to your DMs
+        Notes:
+            This command updates the readme file
+            to include all the current command descriptions
+            for each registered category.
+        """
+        mess = await ctx.send_or_reply("Writing readme to **README.md**...")
+
+        owner, cmds, cogs = self.bot.public_stats()
+        overview = (
+            open("./data/txts/overview.txt")
+            .read()
+            .format("Snowbot", len(cmds), len(cogs))
+        )
+        premsg = ""
+        premsg += f"# Snowbot Moderation & Stat Tracking Discord Bot\n"
+        # premsg += "![6010fc1cf1ae9c815f9b09168dbb65a7-1](https://user-images.githubusercontent.com/74381783/108671227-f6d3f580-7494-11eb-9a77-9478f5a39684.png)\n"
+        premsg += f"### [Bot Invite Link]({self.bot.oauth})\n"
+        premsg += f"### [Support Server]({self.bot.constants.support})\n"
+        premsg += (
+            "### [DiscordBots.gg](https://discord.bots.gg/bots/810377376269205546)\n"
+        )
+        premsg += "### [Top.gg](https://top.gg/bot/810377376269205546)\n"
+        premsg += "## Overview\n"
+        premsg += overview
+        premsg += "\n## Categories\n"
+        msg = ""
+
+        cog_list = [self.bot.get_cog(cog) for cog in sorted(self.bot.cogs)]
+        for cog in cog_list:
+            if (
+                cog.qualified_name.upper()
+                in self.bot.cog_exceptions + self.bot.hidden_cogs
+            ):
+                continue
+            premsg += f"##### [{cog.qualified_name}](#{cog.qualified_name}-1)\n"
+            cmds = [c for c in cog.get_commands() if not c.hidden]
+
+            msg += "\n\n### {}\n#### {} ({} Commands)\n\n```yaml\n{}\n```" "".format(
+                cog.qualified_name,
+                cog.description,
+                len(cmds),
+                "\n\n".join(
+                    [
+                        f"{cmd.name}: {cmd.brief}"
+                        for cmd in sorted(cmds, key=lambda c: c.name)
+                    ]
+                ),
             )
-        else:
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
-            )
+        final = premsg + msg
+
+        with open("./README.md", "w", encoding="utf-8") as fp:
+            fp.write(final)
+
+        await mess.edit(content=f"{self.bot.emote_dict['success']} Successfully updated the README.md file")
 
     @decorators.command(brief="Blacklist a discord object.")
     async def blacklist(
@@ -431,7 +387,7 @@ class Botconfig(commands.Cog):
             return
 
     @decorators.command(brief="Add a new bot owner.")
-    async def addowner(self, ctx, member: converters.DiscordUser):
+    async def addowner(self, ctx, *, member: converters.DiscordUser):
         """
         Usage: {0}addowner <user>
         Permission: Hecate#3523
@@ -447,7 +403,7 @@ class Botconfig(commands.Cog):
         if ctx.author.id is not self.bot.hecate.id:
             return
         if member.bot:
-            raise commands.BadArgument(f"I cannot be owned by a bot.")
+            raise commands.BadArgument("I cannot be owned by a bot.")
 
         data = utils.load_json("config.json")
         current_owners = data["owners"]
@@ -468,7 +424,7 @@ class Botconfig(commands.Cog):
         aliases=["removeowner", "rmowner"],
         brief="Remove a user from my owner list.",
     )
-    async def remowner(self, ctx, member: converters.DiscordUser):
+    async def remowner(self, ctx, *, member: converters.DiscordUser):
         """
         Usage: {0}remowner <user>
         Aliases: {0}removeowner, -rmowner
@@ -505,7 +461,7 @@ class Botconfig(commands.Cog):
             return
 
     @decorators.command(brief="Add a new bot admin.")
-    async def addadmin(self, ctx, member: converters.DiscordUser):
+    async def addadmin(self, ctx, *, member: converters.DiscordUser):
         """
         Usage: {0}addadmin <user>
         Permission: Hecate#3523
@@ -541,7 +497,7 @@ class Botconfig(commands.Cog):
             return
 
     @decorators.command(aliases=["removeadmin", "rmadmin"], brief="Remove a bot admin.")
-    async def remadmin(self, ctx, member: converters.DiscordUser):
+    async def remadmin(self, ctx, *, member: converters.DiscordUser):
         """
         Usage: {0}remadmin <user>
         Aliases: {0}removeadmin, {0}rmadmin
@@ -577,7 +533,7 @@ class Botconfig(commands.Cog):
             )
             return
 
-    @decorators.command(brief="Toggle locking the bot to owners.")
+    @decorators.command(brief="Owner-lock the bot.")
     async def ownerlock(self, ctx):
         """
         Usage: {0}ownerlock
@@ -601,7 +557,7 @@ class Botconfig(commands.Cog):
                 await ctx.success(f"**Ownerlock Enabled.**")
                 return
 
-    @decorators.command(brief="Toggle locking the bot to owners.")
+    @decorators.command(brief="Admin-lock the bot.")
     async def adminlock(self, ctx):
         """
         Usage: {0}adminlock

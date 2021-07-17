@@ -158,9 +158,9 @@ class Snowbot(commands.AutoShardedBot):
         self.session = aiohttp.ClientSession(loop=self.loop)
         self.socket_events = collections.Counter()
 
-        self.cog_exceptions = ["BOTCONFIG", "BOTADMIN", "MANAGER", "JISHAKU"]
-        self.hidden_cogs = ["TESTING", "BATCH", "SLASH", "TASKS", "HOME"]
-        self.do_not_load = ["TESTING", "TIMES", "CONVERSION"]
+        self.cog_exceptions = ["BOTCONFIG", "BOTADMIN", "MANAGER", "JISHAKU", "DATABASE", "MONITOR"]
+        self.hidden_cogs = ["BATCH", "TASKS", "HOME"]
+        self.do_not_load = ["CONVERSION"]
         self.home_cogs = ["MUSIC"]
 
         self.home_guilds = [
@@ -598,9 +598,9 @@ class Snowbot(commands.AutoShardedBot):
         All event errors and dispatched errors
         will be logged via the error webhook.
         """
-        e = traceback.format_exc()
+        tb = kwargs.get('tb') or traceback.format_exc()
         title = f"**{self.emote_dict['failed']} Error `{discord.utils.utcnow()}`**"
-        description = f"```prolog\n{event.upper()}:\n{kwargs.get('tb') or e}\n```"
+        description = f"```prolog\n{event.upper()}:\n{tb}\n```"
         dfile = None
         arguments = None
         args_str = []
@@ -615,20 +615,21 @@ class Snowbot(commands.AutoShardedBot):
                 arguments = f"```py\n{result}```"
 
         try:
-            await self.error_webhook.send(
-                title + description,
-                file=dfile,
-                username=f"{self.user.name} Monitor",
-                avatar_url=self.constants.avatars["red"],
-            )
             if arguments:
                 await self.error_webhook.send(
                     arguments,
                     username=f"{self.user.name} Monitor",
                     avatar_url=self.constants.avatars["red"],
                 )
+            if dfile:
+                await self.error_webhook.send(
+                    title + description,
+                    file=dfile,
+                    username=f"{self.user.name} Monitor",
+                    avatar_url=self.constants.avatars["red"],
+                )
         except Exception:
-            print(e)
+            print(tb)
 
     async def on_command_error(self, ctx, error):
         """

@@ -134,65 +134,6 @@ class Files(commands.Cog):
         await mess.add_reaction(self.bot.emote_dict["letter"])
 
     @decorators.command(
-        aliases=["dumpguilds", "txtguilds", "txtservers"],
-        brief="DMs you a list of my servers.",
-        hidden=True,
-        implemented="2021-04-09 02:05:49.278468",
-        updated="2021-05-06 15:57:20.290636",
-    )
-    @checks.is_bot_admin()
-    async def dumpservers(self, ctx):
-        """
-        Usage: {0}dumpservers
-        ALiases:
-            {0}dumpguilds, {0]txtguilds, {0}txtservers
-        Permission: Bot Admin
-        Output:
-            DMs you a file with all my servers,
-            their member count, owners, and their IDs
-        Notes:
-            If you have your DMs blocked, the bot
-            will send the file to the channel
-            where the the command was invoked.
-        """
-        timestamp = discord.utils.utcnow().strftime("%Y-%m-%d %H.%M")
-        server_file = "Servers-{}.txt".format(timestamp)
-
-        mess = await ctx.send_or_reply(
-            content="Saving servers to **{}**...".format(server_file),
-        )
-
-        msg = ""
-        for server in self.bot.guilds:
-            msg += "Name:    " + server.name + "\n"
-            msg += "ID:      " + str(server.id) + "\n"
-            msg += "Owner:   " + str(server.owner) + "\n"
-            msg += "Members: " + str(len(server.members)) + "\n"
-            msg += "\n\n"
-
-        data = io.BytesIO(msg.encode("utf-8"))
-
-        await mess.edit(content="Uploading `{}`...".format(server_file))
-        try:
-            await ctx.author.send(file=discord.File(data, filename=server_file))
-        except Exception:
-            await ctx.send_or_reply(
-                file=discord.File(data, filename=server_file),
-            )
-            await mess.edit(
-                content="{} Uploaded `{}`.".format(
-                    self.bot.emote_dict["success"], server_file
-                )
-            )
-            return
-        await mess.edit(
-            content="{} Uploaded `{}`.".format(
-                self.bot.emote_dict["success"], server_file
-            )
-        )
-        await mess.add_reaction(self.bot.emote_dict["letter"])
-
-    @decorators.command(
         aliases=["serversettings", "dumpserversettings"],
         brief="DMs you a file of server settings.",
         implemented="2021-03-29 21:22:04.309922",
@@ -931,9 +872,8 @@ class Files(commands.Cog):
         brief="DMs you my readme file.",
         implemented="2021-04-14 00:48:12.179355",
         updated="2021-05-06 16:30:04.761423",
-        hidden=True,
     )
-    @commands.is_owner()
+    @checks.cooldown()
     async def readme(self, ctx):
         """
         Usage: {0}readme
@@ -945,54 +885,10 @@ class Files(commands.Cog):
             for each registered category.
         """
         mess = await ctx.send_or_reply("Saving readme to **README.md**...")
+        with open("./README.md", "r", encoding="utf-8") as fp:
+            final = fp.read()
 
-        owner, cmds, cogs = self.bot.public_stats()
-        overview = (
-            open("./data/txts/overview.txt")
-            .read()
-            .format("Snowbot", len(cmds), len(cogs))
-        )
-        premsg = ""
-        premsg += f"# Snowbot Moderation & Stat Tracking Discord Bot\n"
-        # premsg += "![6010fc1cf1ae9c815f9b09168dbb65a7-1](https://user-images.githubusercontent.com/74381783/108671227-f6d3f580-7494-11eb-9a77-9478f5a39684.png)\n"
-        premsg += f"### [Bot Invite Link]({self.bot.oauth})\n"
-        premsg += f"### [Support Server]({self.bot.constants.support})\n"
-        premsg += (
-            "### [DiscordBots.gg](https://discord.bots.gg/bots/810377376269205546)\n"
-        )
-        premsg += "### [Top.gg](https://top.gg/bot/810377376269205546)\n"
-        premsg += "## Overview\n"
-        premsg += overview
-        premsg += "\n## Categories\n"
-        msg = ""
-
-        cog_list = [self.bot.get_cog(cog) for cog in sorted(self.bot.cogs)]
-        for cog in cog_list:
-            if (
-                cog.qualified_name.upper()
-                in self.bot.cog_exceptions + self.bot.hidden_cogs
-            ):
-                continue
-            premsg += f"##### [{cog.qualified_name}](#{cog.qualified_name}-1)\n"
-            cmds = [c for c in cog.get_commands() if not c.hidden]
-
-            msg += "\n\n### {}\n#### {} ({} Commands)\n\n```yaml\n{}\n```" "".format(
-                cog.qualified_name,
-                cog.description,
-                len(cmds),
-                "\n\n".join(
-                    [
-                        f"{cmd.name}: {cmd.brief}"
-                        for cmd in sorted(cmds, key=lambda c: c.name)
-                    ]
-                ),
-            )
-        final = premsg + msg
         data = io.BytesIO(final.encode("utf-8"))
-
-        with open("./README.md", "w", encoding="utf-8") as fp:
-            fp.write(final)
-
         await mess.edit(content="Uploading `README.md`...")
         try:
             await ctx.author.send(file=discord.File(data, filename="README.md"))
@@ -1012,3 +908,4 @@ class Files(commands.Cog):
             )
         )
         await mess.add_reaction(self.bot.emote_dict["letter"])
+

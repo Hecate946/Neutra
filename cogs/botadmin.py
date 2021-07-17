@@ -7,8 +7,6 @@ import typing
 import random
 import asyncio
 import datetime
-import objgraph
-import functools
 
 import discord
 from collections import defaultdict
@@ -142,7 +140,65 @@ class Botadmin(commands.Cog):
         )
 
     @decorators.command(
-        brief="Post a gist on github",
+        aliases=["dumpguilds", "txtguilds", "txtservers"],
+        brief="DMs you a list of my servers.",
+        implemented="2021-04-09 02:05:49.278468",
+        updated="2021-05-06 15:57:20.290636",
+    )
+    @checks.is_bot_admin()
+    async def dumpservers(self, ctx):
+        """
+        Usage: {0}dumpservers
+        ALiases:
+            {0}dumpguilds, {0]txtguilds, {0}txtservers
+        Permission: Bot Admin
+        Output:
+            DMs you a file with all my servers,
+            their member count, owners, and their IDs
+        Notes:
+            If you have your DMs blocked, the bot
+            will send the file to the channel
+            where the the command was invoked.
+        """
+        timestamp = discord.utils.utcnow().strftime("%Y-%m-%d %H.%M")
+        server_file = "Servers-{}.txt".format(timestamp)
+
+        mess = await ctx.load(
+            content="Saving servers to **{}**...".format(server_file),
+        )
+
+        msg = ""
+        for server in self.bot.guilds:
+            msg += "Name:    " + server.name + "\n"
+            msg += "ID:      " + str(server.id) + "\n"
+            msg += "Owner:   " + str(server.owner) + "\n"
+            msg += "Members: " + str(len(server.members)) + "\n"
+            msg += "\n\n"
+
+        data = io.BytesIO(msg.encode("utf-8"))
+
+        await mess.edit(content="Uploading `{}`...".format(server_file))
+        try:
+            await ctx.author.send(file=discord.File(data, filename=server_file))
+        except Exception:
+            await ctx.send_or_reply(
+                file=discord.File(data, filename=server_file),
+            )
+            await mess.edit(
+                content="{} Uploaded `{}`.".format(
+                    self.bot.emote_dict["success"], server_file
+                )
+            )
+            return
+        await mess.edit(
+            content="{} Uploaded `{}`.".format(
+                self.bot.emote_dict["success"], server_file
+            )
+        )
+        await mess.add_reaction(self.bot.emote_dict["letter"])
+
+    @decorators.command(
+        brief="Post a gist on github.",
         implemented="2021-05-10 18:58:23.417218",
         updated="2021-05-19 15:53:27.603043",
     )
@@ -730,7 +786,8 @@ class Botadmin(commands.Cog):
         try:
             await msg.delete()
         except Exception as e:
-            ctx.author.fail(e)
+            ctx.author.send(f"{self.bot.emote_dict['failed']} {e}")
+            return
         await ctx.react(self.bot.emote_dict["success"])
 
     @decorators.command(brief="Show shared servers with the bot.")
@@ -1011,24 +1068,6 @@ class Botadmin(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-    @decorators.command(
-        aliases=["objg"],
-        brief="Debug memory leaks.",
-        implemented="2021-05-11 01:47:43.865390",
-        updated="2021-05-11 01:47:43.865390",
-    )
-    async def objgrowth(self, ctx):
-        """
-        Usage: {0}objgrowth
-        Alias: {0}objg
-        Output:
-            Shows detailed object memory usage
-        """
-        stdout = io.StringIO()
-        await ctx.bot.loop.run_in_executor(
-            None, functools.partial(objgraph.show_growth, file=stdout)
-        )
-        await ctx.send_or_reply("```fix\n" + stdout.getvalue() + "```")
 
     async def tabulate_query(self, ctx, query, *args):
         records = await self.bot.cxn.fetch(query, *args)

@@ -107,7 +107,7 @@ class Help(commands.Cog):
         the_cog = sorted(cog.walk_commands(), key=lambda x: x.qualified_name)
         cog_commands = []
         for c in the_cog:
-            if c.hidden and not checks.is_admin(ctx):
+            if c.hidden:
                 continue
             if str(
                 c.qualified_name
@@ -452,14 +452,14 @@ class Help(commands.Cog):
             ########################
 
             if invokercommand.lower() in ["jsk", "jish", "jishaku"]:
-                if not checks.is_owner(ctx):  # Jishaku is owner-only
+                if not checks.is_admin(ctx):  # Jishaku is owner-only
                     return await ctx.send_or_reply(  # Pretend like it doesn't exist
                         f"{self.bot.emote_dict['warn']} No command named `{invokercommand}` found."
                     )
                 return await ctx.send_help("jishaku")
 
             if invokercommand.lower() in ["botconfig", "owner"]:
-                if not checks.is_owner(ctx):
+                if not checks.is_admin(ctx):
                     return await ctx.send_or_reply(
                         f"{self.bot.emote_dict['warn']} No command named `{invokercommand}` found."
                     )
@@ -478,12 +478,32 @@ class Help(commands.Cog):
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )
 
-            if invokercommand.lower() in ["manage", "manager", "master", "heart"]:
-                if not checks.is_owner(ctx):
+            if invokercommand.lower() in ["manage", "manager", "master"]:
+                if not checks.is_admin(ctx):
                     return await ctx.send_or_reply(
                         f"{self.bot.emote_dict['warn']} No command named `{invokercommand}` found."
                     )
                 cog = self.bot.get_cog("Manager")
+                return await self.helper_func(
+                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
+                )
+
+            if invokercommand.lower() in ["monitor", "heart"]:
+                if not checks.is_admin(ctx):
+                    return await ctx.send_or_reply(
+                        f"{self.bot.emote_dict['warn']} No command named `{invokercommand}` found."
+                    )
+                cog = self.bot.get_cog("Monitor")
+                return await self.helper_func(
+                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
+                )
+
+            if invokercommand.lower() in ["database", "db"]:
+                if not checks.is_admin(ctx):
+                    return await ctx.send_or_reply(
+                        f"{self.bot.emote_dict['warn']} No command named `{invokercommand}` found."
+                    )
+                cog = self.bot.get_cog("Database")
                 return await self.helper_func(
                     ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
                 )
@@ -520,10 +540,7 @@ class Help(commands.Cog):
                             str(command.name) == invokercommand.lower()
                             or invokercommand.lower() in command.aliases
                         ):
-                            if (
-                                command.hidden
-                                and ctx.author.id not in self.bot.constants.owners
-                            ):
+                            if command.hidden:
                                 continue
                             if isinstance(command, commands.Group):
                                 await self.send_group_help(

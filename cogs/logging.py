@@ -210,6 +210,8 @@ class Logging(commands.Cog):
                         )
                     except discord.NotFound:  # Raised when users manually delete the webhook.
                         pass
+                    except discord.HTTPException:  # Embed too large
+                        pass  # TODO truncate instead of ignoring size errors.
                     except Exception as e:
                         self.bot.dispatch(
                             "error", "logging_error", tb=utils.traceback_maker(e)
@@ -218,7 +220,7 @@ class Logging(commands.Cog):
                     files.clear()
                     self.tasks[webhook] = objects[10:]
 
-    @dispatch_webhooks.error
+    @dispatch_webhooks.error  # For unhandled errors
     async def logging_error(self, exc):
         self.bot.dispatch("error", "logging_error", tb=utils.traceback_maker(exc))
 

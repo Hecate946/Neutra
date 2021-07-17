@@ -8,7 +8,7 @@ Hello! I'm Snowbot, and I specialize in tracking and moderation.
 I was designed to collect all sorts of data on servers, users,
 messages, emojis, online time, and more! I also come with a fast
 and clean moderation system that offers every opportunity for effective
-server management. Apart from moderation and tracking, I feature 259
+server management. Apart from moderation and tracking, I feature 265
 commands across 13 categories that provide awesome utilities!
 Some examples include managing user timezones, role management, and logging.
 ## Categories
@@ -91,7 +91,7 @@ unignore: Unignore channels, users, and roles.
 ```
 
 ### Files
-#### Module for downloading files. (13 Commands)
+#### Module for downloading files. (14 Commands)
 
 ```yaml
 dumpbans: DMs you a file of server bans.
@@ -119,6 +119,8 @@ dumpusers: DMs you a file of server members.
 dumpvoicechannels: DMs you a file of voice channels.
 
 dumpwarns: DMs you a file of server warns.
+
+readme: DMs you my readme file.
 ```
 
 ### Help
@@ -329,14 +331,16 @@ youtube: Search for a youtube video.
 ```
 
 ### Server
-#### Module for server management (3 Commands)
+#### Module for server management (4 Commands)
 
 ```yaml
 cleanup: Clean up bot command usage.
 
-emoji: Manage custom server emojis.
+emoji: Manage server emojis.
 
 purge: Purge any type of content.
+
+role: Role management commands.
 ```
 
 ### Stats
@@ -446,7 +450,7 @@ words: Most used words from a user.
 ```
 
 ### Utility
-#### Module for general utilities. (21 Commands)
+#### Module for general utilities. (22 Commands)
 
 ```yaml
 ascify: Convert special characters to ascii.
@@ -458,6 +462,8 @@ badges: Show all the badges a user has
 calculate: Calculate a math formula.
 
 charinfo: Show information on a character.
+
+clock: Get the time of any location
 
 color: Show a given color and its values.
 
