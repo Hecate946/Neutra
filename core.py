@@ -615,16 +615,21 @@ class Snowbot(commands.AutoShardedBot):
                 arguments = f"```py\n{result}```"
 
         try:
-            if arguments:
-                await self.error_webhook.send(
-                    arguments,
-                    username=f"{self.user.name} Monitor",
-                    avatar_url=self.constants.avatars["red"],
-                )
             if dfile:
                 await self.error_webhook.send(
                     title + description,
                     file=dfile,
+                    username=f"{self.user.name} Monitor",
+                    avatar_url=self.constants.avatars["red"],
+                )
+            else:
+                await self.error_webhook.send(
+                    title + description,
+                    username=f"{self.user.name} Monitor",
+                    avatar_url=self.constants.avatars["red"],
+                )
+                await self.error_webhook.send(
+                    arguments,
                     username=f"{self.user.name} Monitor",
                     avatar_url=self.constants.avatars["red"],
                 )
