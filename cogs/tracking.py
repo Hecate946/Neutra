@@ -855,7 +855,7 @@ class Tracking(commands.Cog):
                     """
             command_count = await self.bot.cxn.fetchval(query, ctx.guild.id)
             return await ctx.send_or_reply(
-                f"{self.bot.emote_dict['graph']} A total of **{command_count:,}** command{' has' if int(command_count[0]) == 1 else 's have'} been executed on this server.",
+                f"{self.bot.emote_dict['graph']} A total of **{command_count:,}** command{' has' if command_count == 1 else 's have'} been executed on this server.",
             )
         else:
             if user.bot:
@@ -868,7 +868,7 @@ class Tracking(commands.Cog):
                     """
             command_count = await self.bot.cxn.fetchval(query, user.id, ctx.guild.id)
             return await ctx.send_or_reply(
-                f"{self.bot.emote_dict['graph']} User `{user}` has executed **{int(command_count):,}** commands.",
+                f"{self.bot.emote_dict['graph']} User `{user}` has executed **{command_count:,}** command{'' if command_count == 1 else 's'}.",
             )
 
     @decorators.command(
