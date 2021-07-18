@@ -46,7 +46,8 @@ class Logging(commands.Cog):
             "emojis",
             "invites",
             "joins",
-            "leaves" "messages",
+            "leaves",
+            "messages",
             "moderation",
             "nicknames",
             "usernames",
@@ -233,7 +234,6 @@ class Logging(commands.Cog):
         case_insensitive=True,
     )
     @checks.guild_only()
-    @checks.cooldown(2, 30, bucket=commands.BucketType.guild)
     @checks.bot_has_guild_perms(manage_webhooks=True)
     @checks.bot_has_perms(embed_links=True)
     @checks.has_perms(manage_guild=True)
@@ -332,6 +332,10 @@ class Logging(commands.Cog):
         brief="Disable server logging.",
         hidden=True,
     )
+    @checks.cooldown()
+    @checks.bot_has_guild_perms(manage_webhooks=True)
+    @checks.bot_has_perms(embed_links=True)
+    @checks.has_perms(manage_guild=True)
     async def disable(self, ctx):
         """
         Usage: {0}log disable
@@ -358,6 +362,10 @@ class Logging(commands.Cog):
         brief="Setup default logging.",
         hidden=True,
     )
+    @checks.cooldown()
+    @checks.bot_has_guild_perms(manage_webhooks=True)
+    @checks.bot_has_perms(embed_links=True)
+    @checks.has_perms(manage_guild=True)
     async def _channel(self, ctx, *, channel: discord.TextChannel = None):
         """
         Usage: {0}log channel [channel]
