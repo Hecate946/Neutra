@@ -238,7 +238,7 @@ class Help(commands.Cog):
         commands = sorted(commands, key=lambda x: x.qualified_name)
 
         embed = discord.Embed(
-            title=f"Category: `{cog}`",
+            title=f"Category: `{cog.qualified_name}`",
             description=self.desc,
             color=self.bot.constants.embed,
         )
