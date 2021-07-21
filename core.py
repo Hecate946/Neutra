@@ -125,7 +125,6 @@ class Snowbot(commands.AutoShardedBot):
             owner_ids=constants.owners,
             intents=discord.Intents.all(),
         )
-        self.batch_inserts = int()  # Counter for number of inserts.
         self.command_stats = collections.Counter()
         self.constants = constants
         self.cxn = database.postgres
@@ -153,13 +152,11 @@ class Snowbot(commands.AutoShardedBot):
             ":",
             "`",
         ]  # Common prefixes that are valid in DMs
-        # self._is_ready = asyncio.Event()
         self.ready = False
         self.session = aiohttp.ClientSession(loop=self.loop)
         self.socket_events = collections.Counter()
 
-        self.cog_exceptions = ["BOTCONFIG", "BOTADMIN", "MANAGER", "JISHAKU", "DATABASE", "MONITOR"]
-        self.hidden_cogs = ["BATCH", "TASKS", "HOME"]
+        self.admin_cogs = ["BOTCONFIG", "BOTADMIN", "MANAGER", "JISHAKU", "DATABASE", "MONITOR"]
         self.do_not_load = ["CONVERSION"]
         self.home_cogs = ["MUSIC"]
 
@@ -555,6 +552,12 @@ class Snowbot(commands.AutoShardedBot):
                 """
         await self.cxn.executemany(query, ((guild_id, prefix) for prefix in prefixes))
         self.prefixes[guild_id] = prefixes
+
+    def get_cogs(self):
+        """
+        Helper function to return a list of cogs
+        """
+        return [self.get_cog(cog) for cog in self.cogs]
 
     async def get_or_fetch_member(self, guild, member_id):
         """Looks up a member in cache or fetches if not found.

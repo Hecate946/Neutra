@@ -735,7 +735,6 @@ class Info(commands.Cog):
         )
         embed.set_author(name=owner, icon_url=owner.avatar.url)
         await ctx.send_or_reply(embed=embed)
-
     @decorators.command(brief="Display the source code.", aliases=["sourcecode", "src"])
     async def source(self, ctx, *, command: str = None):
         """
@@ -778,30 +777,28 @@ class Info(commands.Cog):
         msg = f"**__My source {'' if command is None else f'for {command}'} is located at:__**\n\n{final_url}"
         await ctx.send_or_reply(msg)
 
-    # @decorators.command(
-    #     brief="Show your support by voting for me!",
-    #     implemented="2021-06-10 07:29:06.990221",
-    #     updated="2021-06-10 07:29:06.990221",
-    # )
-    # async def vote(self, ctx):
-    #     """
-    #     Usage: {0}vote
-    #     Output:
-    #         A link to top.gg where you can
-    #         vote to support me.
-    #     """
-    #     button_row = ActionRow(
-    #         Button(
-    #             style=ButtonStyle.link,
-    #             label="Vote for me!",
-    #             url="https://top.gg/bot/810377376269205546/vote",
-    #         ),
-    #     )
-    #     await ctx.rep_or_ref(
-    #         "Thanks for showing interest in supporting me! Click the button below to vote for me on top.gg.",
-    #         components=[button_row],
-    #     )
-
+    @decorators.command(
+        brief="Show your support by voting for me!",
+        implemented="2021-06-10 07:29:06.990221",
+        updated="2021-06-10 07:29:06.990221",
+    )
+    async def vote(self, ctx):
+        """
+        Usage: {0}vote
+        Output:
+            A link to top.gg where you can
+            vote to support me.
+        """
+        view = discord.ui.View()
+        item = discord.ui.Button(
+            label="Vote for me!",
+            url="https://top.gg/bot/810377376269205546/vote",
+        )
+        view.add_item(item=item)
+        await ctx.rep_or_ref(
+            "Thanks for showing interest in supporting me! Click the button below to vote for me on top.gg.",
+            view=view,
+        )
     @decorators.command(
         aliases=["sup", "assistance", "assist"],
         brief="Join my support server!",
@@ -823,6 +820,7 @@ class Info(commands.Cog):
         updated="2021-05-06 01:30:32.347076",
     )
     @checks.bot_has_perms(embed_links=True)
+    @checks.cooldown()
     async def users(self, ctx):
         """
         Usage: {0}users

@@ -9,6 +9,7 @@ from discord.ext import commands
 
 from utilities import utils
 from utilities import decorators
+from utilities import override
 
 
 def setup(bot):

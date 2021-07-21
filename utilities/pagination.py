@@ -124,10 +124,50 @@ class MainMenu(menus.MenuPages):
             pass
 
 
+class HelpPageSource(menus.ListPageSource):
+    """A page source that requires (field_name, field_value) tuple items."""
+
+    def __init__(self, entries, **kwargs):
+        per_page = kwargs.get("per_page", 12)
+        self.title = kwargs.get("title", discord.Embed.Empty)
+        self.desc = kwargs.get("description", discord.Embed.Empty)
+        self.desc_head = kwargs.get("desc_head", None)
+        self.desc_foot = kwargs.get("desc_foot", None)
+        self.color = kwargs.get("color", constants.embed)
+        super().__init__(entries, per_page=per_page)
+        self.embed = discord.Embed()
+
+    def enforce_limit(self, value, max):
+        if not type(value) is str:
+            return value
+        return (value[: max - 3] + "...") if len(value) > max else value
+
+    async def format_page(self, menu, entries):
+        self.embed.clear_fields()
+        self.embed.description = discord.Embed.Empty
+
+        for key, value in entries:
+            self.embed.add_field(name=key, value=value, inline=False)
+
+        maximum = self.get_max_pages()
+        if maximum > 1:
+            text = (
+                f"Page {menu.current_page + 1}/{maximum} ({len(self.entries)} entries)"
+            )
+            self.embed.set_footer(text=text)
+
+        self.embed.title = self.title
+        self.embed.color = self.color
+        if self.desc_head and self.desc_foot and self.desc is not discord.Embed.Empty:
+            self.embed.description = f"{self.desc_head}\n{self.enforce_limit(self.desc, DESC_LIMIT)}\n{self.desc_foot}"
+        else:
+            self.embed.description = self.enforce_limit(self.desc, DESC_LIMIT)
+        return self.embed
+
+
 class FieldPageSource(menus.ListPageSource):
     """A page source that requires (field_name, field_value) tuple items."""
 
-    # TODO COME BACK TO THIS TOMORROW
     def __init__(self, entries, **kwargs):
         per_page = kwargs.get("per_page", 12)
         self.title = kwargs.get("title", discord.Embed.Empty)

@@ -4,4 +4,4 @@ messages, emojis, online time, and more! I also come with a fast
 and clean moderation system that offers every opportunity for effective
 server management. Apart from moderation and tracking, I feature {1}
 commands across {2} categories that provide awesome utilities!
-Some examples include managing user timezones, role management, and logging.
+Some examples include managing roles and logging server actions.

@@ -194,7 +194,6 @@ class Batch(commands.Cog):
 
     @tasks.loop(seconds=2.0)
     async def bulk_inserter(self):
-        self.bot.batch_inserts += 1
         if self.command_batch:  # Insert all the commands executed.
             query = """
                     INSERT INTO commands (server_id, channel_id,

@@ -584,7 +584,7 @@ class Manager(commands.Cog):
 
         await message.edit(content=f"{self.bot.emote_dict['success']} **Completed.**")
 
-    @decorators.command(hidden=True, brief="Run a command as another user.")
+    @decorators.command(brief="Run a command as another user.")
     async def sudo(
         self,
         ctx,

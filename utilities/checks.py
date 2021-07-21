@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord.ext.commands.flags import F
 
 from settings import constants
 
@@ -21,6 +22,70 @@ def is_admin(ctx):
     ):
         return True
     return
+
+def is_home(ctx):
+    if not ctx.guild:
+        return False
+    if ctx.guild.id not in ctx.bot.home_guilds:
+        return False
+    return True
+
+
+def is_disabled(ctx, command):
+    """
+    Check if a command is disabled for the context
+    """
+    config = ctx.bot.get_cog("Config")
+    if not config:
+        return False
+
+    ignored = config.ignored
+    command_config = config.command_config
+    # Reasons for bypassing
+    if ctx.guild is None:
+        return False  # Do not restrict in DMs.
+
+    if is_admin(ctx):
+        return False  # Contibutors are immune.
+
+    if isinstance(ctx.author, discord.Member):
+        if ctx.author.guild_permissions.manage_guild:
+            return False  # Manage guild is immune.
+
+    # Now check channels, roles, and users.
+    if ctx.channel.id in ignored[ctx.guild.id]:
+        return True  # Channel is ignored.
+
+    if ctx.author.id in ignored[ctx.guild.id]:
+        return True  # User is ignored.
+
+    if any(
+        (
+            role_id in ignored[ctx.guild.id]
+            for role_id in [r.id for r in ctx.author.roles]
+        )
+    ):
+        return True  # Role is ignored.
+
+
+    if str(command) in command_config[ctx.guild.id]:
+        return True  # Disabled for the whole server.
+
+    if str(command) in command_config[ctx.channel.id]:
+        return True  # Disabled for the channel
+
+    if str(command) in command_config[ctx.author.id]:
+        return True  # Disabled for the user
+
+    if any(
+        (
+            str(command) in command_config[role_id]
+            for role_id in ctx.author._roles
+        )
+    ):
+        return True  # Disabled for the role
+
+    return False  # Ok just in case we get here...
 
 
 def is_mod():

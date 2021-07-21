@@ -1,6 +1,7 @@
 import io
 import re
 import copy
+from discord.member import M
 import pytz
 import json
 import math
@@ -814,7 +815,7 @@ class Utility(commands.Cog):
         )
 
     @decorators.command(
-        aliases=["mobile", "web", "desktop"],
+        aliases=["mobile", "web", "desktop", "device"],
         brief="Show a user's discord platform.",
         implemented="2021-03-25 05:56:35.053930",
         updated="2021-05-06 23:25:08.685407",
@@ -827,10 +828,10 @@ class Utility(commands.Cog):
     )
     @checks.guild_only()
     @checks.cooldown()
-    async def platform(self, ctx, *users: converters.DiscordMember):
+    async def platform(self, ctx, *users: converters.DiscordMember(False)):
         """
         Usage:  {0}platform [users]...
-        Alias:  {0}mobile, {0}desktop, {0}web
+        Alias:  {0}mobile, {0}desktop, {0}web, {0}device
         Output:
             Shows which discord platform a user
             is currently on. Can be discord desktop,
@@ -840,8 +841,7 @@ class Utility(commands.Cog):
             when users are offline or if their
             status is invisible.
         """
-        if not len(users):
-            return await ctx.usage()
+        users = users or [ctx.author]
         desktop = []
         mobile = []
         web = []
@@ -858,7 +858,7 @@ class Utility(commands.Cog):
 
         def fmt(lst):
             if len(lst) == 1:
-                fmt = f" `{', '.join(lst)}` is"
+                fmt = f" `{lst[0]}` is"
             else:
                 fmt = f"s `{', '.join(lst)}` are"
             return fmt
@@ -870,13 +870,14 @@ class Utility(commands.Cog):
             msgs.append(f"{em} User{fmt(desktop)} on discord desktop.")
         if mobile:
             em = self.bot.emote_dict["mobile"]
-            msgs.append(f"{em} User{fmt(web)} on discord mobile.")
+            msgs.append(f"{em} User{fmt(mobile)} on discord mobile.")
         if web:
             em = self.bot.emote_dict["search"]
             msgs.append(f"{em} User{fmt(web)} on discord web.")
         if offline:
             em = self.bot.emote_dict["offline"]
             msgs.append(f"{em} User{fmt(offline)} offline.")
+
         await ctx.send_or_reply("\n".join(msgs))
 
     @decorators.command(

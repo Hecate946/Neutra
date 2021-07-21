@@ -7,8 +7,6 @@ from collections import Counter
 from datetime import datetime
 from discord.ext import commands, menus
 
-# from dislash.interactions import ActionRow, ButtonStyle, Button
-
 from utilities import utils
 from utilities import checks
 from utilities import converters
@@ -21,6 +19,96 @@ def setup(bot):
     bot.remove_command("help")
     bot.add_cog(Help(bot))
 
+class Storage(object):
+    """
+    Storage class to cache the needed
+    objects for the help command views.
+    """
+    invite = None  # The bot's invite link
+    support = None  # The support server invite
+    help_embed = None  # The help embed
+    message = None  # The interaction message
+    github = "https://github.com/Hecate946/Snowbot/blob/main/README.md" # "Docs link"
+
+class HelpView(discord.ui.View):
+    def __init__(self, ctx):
+        super().__init__(timeout=60)
+        self.ctx = ctx
+
+        self.add_item(discord.ui.Button(
+            label="Docs",
+            url=Storage.github,
+        ))
+        
+
+    async def interaction_check(self, interaction):
+        if self.ctx.author.id == interaction.user.id:
+            return True
+        else:
+            await interaction.response.send_message("Only the command invoker can use this button.", ephemeral=True)
+
+    async def on_timeout(self):
+        view = discord.ui.View()
+        view.add_item(discord.ui.Button(label="Docs", url=Storage.github))
+        view.add_item(discord.ui.Button(label="Invite", url=Storage.invite))
+        view.add_item(discord.ui.Button(label="Support", url=Storage.support))
+        await Storage.message.edit(embed=Storage.message.embeds[0], view=view)
+        self.stop()
+
+    @discord.ui.button(label='Delete', style=discord.ButtonStyle.red)
+    async def delete(self, button: discord.ui.Button, interaction: discord.Interaction):
+        await interaction.message.delete()
+        self.stop()
+
+    @discord.ui.button(label='Need help?', style=discord.ButtonStyle.green)
+    async def helper(self, button: discord.ui.Button, interaction: discord.Interaction):
+        await interaction.message.edit(embed=Storage.help_embed, view=GoBack(self.ctx))
+        self.stop()
+
+
+class GoBack(discord.ui.View):
+    def __init__(self, ctx):
+        super().__init__(timeout=60)
+        self.ctx = ctx
+
+        self.add_item(discord.ui.Button(
+            label="Docs",
+            url=Storage.github,
+        ))
+        self.add_item(discord.ui.Button(
+            label="Invite",
+            url=Storage.invite,
+        ))
+        self.add_item(discord.ui.Button(
+            label="Support",
+            url=Storage.support,
+        ))
+
+    async def interaction_check(self, interaction):
+        if self.ctx.author.id == interaction.user.id:
+            return True
+        else:
+            await interaction.response.send_message("Only the command invoker can use this button.", ephemeral=True)
+
+    async def on_timeout(self):
+        view = discord.ui.View()
+        view.add_item(discord.ui.Button(label="Docs", url=Storage.github))
+        view.add_item(discord.ui.Button(label="Invite", url=Storage.invite))
+        view.add_item(discord.ui.Button(label="Support", url=Storage.support))
+        await Storage.message.edit(embed=Storage.message.embeds[0], view=view)
+        self.stop()
+
+
+    @discord.ui.button(label='Delete', style=discord.ButtonStyle.red)
+    async def delete(self, button: discord.ui.Button, interaction: discord.Interaction):
+        await interaction.message.delete()
+        self.stop()
+
+    @discord.ui.button(label='Go back', style=discord.ButtonStyle.blurple)
+    async def edit(self, button: discord.ui.Button, interaction: discord.Interaction):
+        await interaction.message.edit(embed=Storage.message.embeds[0], view=HelpView(self.ctx))
+        self.stop()
+
 
 class Help(commands.Cog):
     """
@@ -29,135 +117,174 @@ class Help(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.command_exceptions = []  # pass command names to hide from help command
-        self.view = discord.ui.View()
-        item = discord.ui.Button(
-            label="Need more help?",
-            url=self.bot.constants.support,
+
+        Storage.invite = self.bot.oauth
+        Storage.support = self.bot.constants.support
+        Storage.help_embed = self.get_help_embed
+
+        self.desc = f"**Bot Invite Link:** [https://snowbot.discord.bot]({self.bot.oauth})\n**Support Server:**  [https://discord.gg/snowbot]({self.bot.constants.support})"
+
+
+    @property
+    def get_help_embed(self):
+        help_embed = discord.Embed(
+            description="I'm a multipurpose discord bot that specializes in stat tracking and moderation.",
+            color=self.bot.constants.embed,
         )
-        self.view.add_item(item=item)
+        help_embed.set_author(name="Welcome to my help page.", icon_url=self.bot.user.avatar.url)
+        help_embed.add_field(name="Here's how to understand my help command.", value="Please note that __**you should not type in the brackets when running the commands**__.", inline=False)
+        help_embed.add_field(name="**<argument>**", value="This means that the argument is __**required**__.", inline=False)
+        help_embed.add_field(name="**[argument]**", value="This means that the argument is __**optional**__.", inline=False)
+        help_embed.add_field(name="**[X|Y]**", value="This means that the argument can be __**either X or Y**__.", inline=False)
+        help_embed.add_field(name="**[argument...]**", value="This means that you can pass __**multiple arguments**__ into the command.", inline=False)
+        return help_embed
+
 
     ############################
     ## Get Commands From Cogs ##
     ############################
+    async def attempt_dm(self, ctx, embed, view):
+        try:
+            msg = await ctx.author.send(embed=embed, view=view)
+        except Exception:
+            await ctx.fail(f"I was unable to send you help. Please ensure I have the `Embed Links` permission in this channel or enable your DMs for this server.")
+        else:
+            await ctx.react(self.bot.emote_dict['letter'])
+            return msg
 
-    async def send_help(self, ctx, embed, pm, delete_after):
-        if pm is True:  # We're DMing the user
-            if not ctx.guild:  # They invoked from a DM
-                msg = await ctx.send_or_reply(
-                    embed=embed, delete_after=delete_after, view=self.view
-                )
-                return
-            try:
-                msg = await ctx.author.send(
-                    embed=embed, delete_after=delete_after, view=self.view
-                )
-                try:
-                    await ctx.message.add_reaction(self.bot.emote_dict["letter"])
-                except Exception:  # Probably no perms. Ignore
-                    pass
-            except Exception:  # Couldn't send the message to the user. Send it to the channel.
-                try:
-                    msg = await ctx.send_or_reply(
-                        embed=embed,
-                        delete_after=delete_after,
-                        view=self.view,
-                    )
-                except Exception:
-                    await ctx.fail(
-                        f"I was unable to send you help. Please ensure I have the `Embed Links` permission in this channel or enable your DMs for this server."
-                    )
-                    return
-        else:  # Not trying to DM the user, send to the channel.
-            msg = await ctx.send_or_reply(
-                embed=embed, delete_after=delete_after, view=self.view
-            )
-
-        def reaction_check(m):
+    async def do_reaction(self, message, ctx):
+        def rxn_pred(m):
             if (
-                m.message_id == msg.id  # Same message
+                m.message_id == message.id  # Same message
                 and m.user_id == ctx.author.id  # Only the author
                 and str(m.emoji) == self.bot.emote_dict["trash"]  # Same emoji
             ):
                 return True
             return False
 
-        try:
-            await msg.add_reaction(self.bot.emote_dict["trash"])
-        except discord.Forbidden:
-            return  # Can't react so give up.
+        await message.add_reaction(self.bot.emote_dict["trash"])
 
         try:
             await self.bot.wait_for(
-                "raw_reaction_add", timeout=60.0, check=reaction_check
+                "raw_reaction_add", timeout=60.0, check=rxn_pred
             )
-            await msg.delete()
+            await message.delete()
         except asyncio.TimeoutError:  # Been a minute.
-            try:
-                await msg.clear_reactions()
-            except Exception:  # No perms to clear rxns, delete manually.
-                try:
-                    await msg.remove_reaction(
-                        self.bot.emote_dict["trash"], self.bot.user
-                    )
-                except discord.NotFound:  # Message already deleted
-                    return
-
-    async def helper_func(self, ctx, cog, name, pm, delete_after):
-        the_cog = sorted(cog.walk_commands(), key=lambda x: x.qualified_name)
-        cog_commands = []
-        for c in the_cog:
-            if c.hidden:
-                continue
-            if str(
-                c.qualified_name
-            ).upper() in self.command_exceptions and not checks.is_admin(ctx):
-                await ctx.send_or_reply(
-                    f"{self.bot.emote_dict['warn']} No command named `{name}` found."
-                )
-                continue
-            cog_commands.append(c)
-        if cog_commands:
-            await self.category_embed(
-                ctx,
-                cog=cog.qualified_name,
-                list=cog_commands,
-                pm=pm,
-                delete_after=delete_after,
-            )
-            return
-        else:
-            return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['warn']} No command named `{name}` found.",
+            await message.remove_reaction(
+                self.bot.emote_dict["trash"], self.bot.user
             )
 
-    ##########################
-    ## Build Category Embed ##
-    ##########################
+    async def send_help(self, ctx, embed):
+        if not ctx.guild:  # In DMs, just send the embed
+            msg = await ctx.safe_send(embed=embed, view=HelpView(ctx))
+        else:  # In a server
+            if not ctx.channel.permissions_for(ctx.me).embed_links:  # Can't embed
+                msg = await self.attempt_dm(ctx, embed, view=HelpView(ctx))  # DM them.
+            else:
+                msg = await ctx.send_or_reply(embed=embed, view=HelpView(ctx))
 
-    async def category_embed(self, ctx, cog, list, pm, delete_after):
+        Storage.message = msg
+
+        return
+
+        if msg:
+            if not ctx.channel.permissions_for(ctx.me).add_reactions:  # Cannot add the trash emoji
+                return
+            if not ctx.channel.permissions_for(ctx.me).external_emojis:  # Cannot add the trash emoji
+                return
+
+            await self.do_reaction(msg, ctx)
+
+    async def send_category_help(self, ctx):
+
+        embed = discord.Embed(
+            title=f"{self.bot.user.name}'s Help Command",
+            url="https://discord.gg/947ramn",
+            description=self.desc,
+            color=self.bot.constants.embed,
+        )
+
+        embed.set_footer(
+            text=f'Use "{ctx.clean_prefix}help category" for information on a category.'
+        )
+
+        def pred(cog):
+            if len([c for c in cog.get_commands() if not c.hidden]) == 0:
+                return False
+            return True
+
+        cogs = [cog for cog in self.bot.get_cogs() if pred(cog)]
+        public = ""
+        premium = ""
+        admin = ""
+        for cog in sorted(cogs, key=lambda cog: cog.qualified_name):
+            if cog.qualified_name.upper() in self.bot.admin_cogs:
+                admin += f"\n`{cog.qualified_name}` {cog.description}\n"
+            elif cog.qualified_name.upper() in self.bot.home_cogs:
+                premium += f"\n`{cog.qualified_name}` {cog.description}\n"
+            else:
+                public += f"\n`{cog.qualified_name}` {cog.description}\n"
+
+        embed.add_field(name="**Current Categories**", value=f"** **{public}**\n**", inline=False)
+        if checks.is_home(ctx):
+            embed.add_field(name="**Premium Categories**", value=f"** **{premium}**\n**",inline=False)
+        if checks.is_admin(ctx):
+            embed.add_field(name="**Admin Categories**", value=f"** **{admin}**\n**", inline=False)
+
+        await self.send_help(ctx, embed)
+
+    async def send_cog_help(self, ctx, cog):
+        commands = [c for c in cog.get_commands() if not c.hidden]
+        commands = sorted(commands, key=lambda x: x.qualified_name)
+
         embed = discord.Embed(
             title=f"Category: `{cog}`",
-            description=f"**Bot Invite Link:** [https://snowbot.discord.bot]({self.bot.oauth})\n"
-            f"**Support Server:**  [https://discord.gg/snowbot]({self.bot.constants.support})\n",
+            description=self.desc,
             color=self.bot.constants.embed,
         )
         embed.set_footer(
-            text=f'Use "{await converters.prettify(ctx, ctx.clean_prefix)}help command" for information on a command.\n'
+            text=f'Use "{ctx.clean_prefix}help command" for information on a command.\n'
         )
 
-        msg = ""
-        for i in list:
-            if not i.brief or i.brief == "":
-                i.brief = "No description"
-            line = f"\n`{i.qualified_name}` {i.brief}\n"
-            msg += line
+        value = ""
+        for cmd in commands:
+            cmd.brief = cmd.brief or "No description"
+            if checks.is_disabled(ctx, cmd):
+                value += f"\n[!] ~~`{cmd.qualified_name}` {cmd.brief}~~\n"
+            else:
+                value += f"\n`{cmd.qualified_name}` {cmd.brief}\n"
 
-        embed.add_field(name=f"**{cog} Commands**", value=f"** **{msg}")
-        try:
-            await self.send_help(ctx, embed, pm, delete_after)
-        except discord.Forbidden:
-            pass
+        embed.add_field(name=f"**{cog} Commands**", value=f"** **{value}")
+        await self.send_help(ctx, embed)
+
+
+    async def send_command_help(self, ctx, command, search):
+        _footer = "subcommand" if isinstance(command, commands.Group) else "category"
+        command.help = command.help or "No help available."
+        command.brief = command.brief or "No description available."
+
+        if command.hidden:
+            return await ctx.fail(f"No command named `{search}` found.")
+        if command.cog_name in self.bot.home_cogs and not checks.is_home(ctx):
+            return await ctx.fail(f"No command named `{search}` found.")
+        if command.cog_name in self.bot.admin_cogs and not checks.is_home(ctx):
+            return await ctx.fail(f"No command named `{search}` found.")
+
+        embed = discord.Embed(
+            title=f"Category: `{command.cog_name}`",
+            description=self.desc,
+            color=self.bot.constants.embed,
+        )
+        embed.set_footer(
+            text=f'Use "{ctx.clean_prefix}help {_footer}" for information on a {_footer}.'
+        )
+        embed.add_field(
+            name=f"**Command Name:** `{command.qualified_name.capitalize()}`\n**Description:** `{command.brief}`\n",
+            value=f"** **"
+            f"```yaml\n{command.help.format(ctx.clean_prefix)}```",
+        )
+        return await self.send_help(ctx, embed)
+        
 
     @decorators.command(
         name="help",
@@ -166,116 +293,37 @@ class Help(commands.Cog):
         implemented="2021-02-22 05:04:47.433000",
         updated="2021-05-05 05:08:05.642637",
     )
-    async def _help(self, ctx, *, invokercommand: str = None):
+    async def _help(self, ctx, *, category_or_command: str = None):
         """
         Usage:  {0}help [command/category] [pm = true]
         Output: Show documentation for all my commands.
         """
-        delete_after = None
-        pm = False
 
-        if ctx.guild:
-            if not ctx.channel.permissions_for(ctx.me).embed_links:
-                pm = True
-
-        if invokercommand:
-            trigger = True
+        if category_or_command is None:
+            return await self.send_category_help(ctx, )
         else:
-            trigger = None
-
-        if trigger is None:
 
             ##########################
             ## Manages General Help ##
             ##########################
 
-            embed = discord.Embed(
-                title=f"{self.bot.user.name}'s Help Command",
-                url="https://discord.gg/947ramn",
-                description=f"**Bot Invite Link:** [https://snowbot.discord.bot]({self.bot.oauth})\n"
-                f"**Support Server:**  [https://discord.gg/snowbot]({self.bot.constants.support})",
-                color=self.bot.constants.embed,
-            )
 
-            embed.set_footer(
-                text=f'Use "{await converters.prettify(ctx, ctx.clean_prefix)}help category" for information on a category.'
-            )
-
-            valid_cogs = []
-            msg = ""
-            for cog in sorted(self.bot.cogs):
-                c = self.bot.get_cog(cog)
-                command_list = c.get_commands()
-                if c.qualified_name.upper() in self.bot.cog_exceptions:
-                    continue
-                if (
-                    c.qualified_name.upper() in self.bot.hidden_cogs
-                    or len(command_list) == 0
-                ):
-                    continue
-                valid_cogs.append(c)
-            for c in valid_cogs:
-                if c.qualified_name.upper() in self.bot.home_cogs:
-                    if not ctx.guild or ctx.guild.id in self.bot.home_guilds:
-                        line = f"\n`{c.qualified_name}` {c.description}\n"
-                    else:
-                        line = ""
-                else:
-                    line = f"\n`{c.qualified_name}` {c.description}\n"
-                if ctx.guild:
-                    disabled_comms = self.bot.server_settings[ctx.guild.id][
-                        "disabled_commands"
-                    ]
-                    cog_comms = [
-                        y.qualified_name for y in c.get_commands() if not y.hidden
-                    ]
-                    if all(x in disabled_comms for x in cog_comms):
-                        msg += f"\n[!] `{c.qualified_name}` ~~{c.description}~~\n"
-                    else:
-                        msg += line
-                else:
-                    msg += line
-
-            embed.add_field(name=f"**Current Categories**", value=f"** **{msg}**\n**")
-            if not checks.is_admin(ctx):
-                await self.send_help(ctx, embed, pm, delete_after)
-            else:
-                hidden_cogs = []
-                msg = ""
-                for cog in sorted(self.bot.cogs):
-                    c = self.bot.get_cog(cog)
-                    command_list = c.get_commands()
-                    if c.qualified_name.upper() in self.bot.cog_exceptions:
-                        hidden_cogs.append(c)
-                for c in hidden_cogs:
-                    if c.qualified_name.upper() == "JISHAKU":
-                        continue  # We don't need jishaku showing up in help
-                    line = f"\n`{c.qualified_name}` {c.description}\n"
-                    msg += line
-                embed.add_field(
-                    name=f"**Hidden Categories**", value=f"** **{msg}", inline=False
-                )
-
-                await self.send_help(ctx, embed, pm, delete_after)
-
-        elif trigger is True:
-
-            if invokercommand.lower() in [
+            if category_or_command.lower() in [
                 "category",
                 "command",
                 "group",
                 "subcommand",
             ]:  # Someone took the embed footer too literally.
-                if invokercommand.lower() == "subcommand":
+                if category_or_command.lower() == "subcommand":
                     example = f"{ctx.clean_prefix}help purge until"
-                elif invokercommand.lower() == "group":
+                elif category_or_command.lower() == "group":
                     example = f"{ctx.clean_prefix}help purge"
-                elif invokercommand.lower() == "command":
+                elif category_or_command.lower() == "command":
                     example = f"{ctx.clean_prefix}help userinfo"
                 else:
                     example = f"{ctx.clean_prefix}help info"
                 await ctx.fail(
-                    f"Please specify a valid {invokercommand.lower()} name. Example: `{example}`"
+                    f"Please specify a valid {category_or_command.lower()} name. Example: `{example}`"
                 )
                 return
 
@@ -283,7 +331,7 @@ class Help(commands.Cog):
             ## Manages Cog Help ##
             ######################
 
-            if invokercommand.lower() in [
+            if category_or_command.lower() in [
                 "admin",
                 "administration",
                 "administrator",
@@ -294,11 +342,9 @@ class Help(commands.Cog):
                 "configuration",
             ]:
                 cog = self.bot.get_cog("Admin")
-                return await self.helper_func(
-                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
-                )
+                return await self.send_cog_help(ctx, cog)
 
-            if invokercommand.lower() in [
+            if category_or_command.lower() in [
                 "bot",
                 "bots",
                 "info",
@@ -307,11 +353,9 @@ class Help(commands.Cog):
                 "information",
             ]:
                 cog = self.bot.get_cog("Info")
-                return await self.helper_func(
-                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
-                )
+                return await self.send_cog_help(ctx, cog)
 
-            if invokercommand.lower() in [
+            if category_or_command.lower() in [
                 "help",
                 "helpme",
                 "assist",
@@ -320,11 +364,9 @@ class Help(commands.Cog):
                 "cmds",
             ]:
                 cog = self.bot.get_cog("Help")
-                return await self.helper_func(
-                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
-                )
+                return await self.send_cog_help(ctx, cog)
 
-            if invokercommand.lower() in [
+            if category_or_command.lower() in [
                 "dump",
                 "files",
                 "file",
@@ -333,17 +375,13 @@ class Help(commands.Cog):
                 "dumps",
             ]:
                 cog = self.bot.get_cog("Files")
-                return await self.helper_func(
-                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
-                )
+                return await self.send_cog_help(ctx, cog)
 
-            if invokercommand.lower() in ["logging", "logs"]:
+            if category_or_command.lower() in ["logging", "logs"]:
                 cog = self.bot.get_cog("Logging")
-                return await self.helper_func(
-                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
-                )
+                return await self.send_cog_help(ctx, cog)
 
-            if invokercommand.lower() in [
+            if category_or_command.lower() in [
                 "mod",
                 "moderator",
                 "punishment",
@@ -351,11 +389,9 @@ class Help(commands.Cog):
                 "punish",
             ]:
                 cog = self.bot.get_cog("Mod")
-                return await self.helper_func(
-                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
-                )
+                return await self.send_cog_help(ctx, cog)
 
-            if invokercommand.lower() in [
+            if category_or_command.lower() in [
                 "general",
                 "utility",
                 "utils",
@@ -367,36 +403,28 @@ class Help(commands.Cog):
                 "misc",
             ]:
                 cog = self.bot.get_cog("Utility")
-                return await self.helper_func(
-                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
-                )
+                return await self.send_cog_help(ctx, cog)
 
-            if invokercommand.lower() in ["roles", "serverroles"]:
+            if category_or_command.lower() in ["roles", "serverroles"]:
                 cog = self.bot.get_cog("Roles")
-                return await self.helper_func(
-                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
-                )
+                return await self.send_cog_help(ctx, cog)
 
-            if invokercommand.lower() in [
+            if category_or_command.lower() in [
                 "serverstats",
                 "stats",
                 "statistics",
             ]:
                 cog = self.bot.get_cog("Stats")
-                return await self.helper_func(
-                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
-                )
+                return await self.send_cog_help(ctx, cog)
 
-            if invokercommand.lower() in [
+            if category_or_command.lower() in [
                 "server",
                 "servers",
             ]:
                 cog = self.bot.get_cog("Server")
-                return await self.helper_func(
-                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
-                )
+                return await self.send_cog_help(ctx, cog)
 
-            if invokercommand.lower() in [
+            if category_or_command.lower() in [
                 "track",
                 "users",
                 "tracking",
@@ -404,11 +432,9 @@ class Help(commands.Cog):
                 "user",
             ]:
                 cog = self.bot.get_cog("Tracking")
-                return await self.helper_func(
-                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
-                )
+                return await self.send_cog_help(ctx, cog)
 
-            if invokercommand.lower() in [
+            if category_or_command.lower() in [
                 "conversions",
                 "conversion",
                 "encoding",
@@ -421,11 +447,9 @@ class Help(commands.Cog):
                     return await ctx.fail(
                         f"The conversion category is currently unavailable. Please try again later."
                     )
-                return await self.helper_func(
-                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
-                )
+                return await self.send_cog_help(ctx, cog)
 
-            if invokercommand.lower() in [
+            if category_or_command.lower() in [
                 "automod",
                 "warning",
                 "auto",
@@ -433,228 +457,76 @@ class Help(commands.Cog):
                 "system",
             ]:
                 cog = self.bot.get_cog("Automod")
-                return await self.helper_func(
-                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
-                )
+                return await self.send_cog_help(ctx, cog)
 
-            if invokercommand.lower() in [
+            if category_or_command.lower() in [
                 "conf",
                 "configuration",
                 "config",
             ]:
                 cog = self.bot.get_cog("Config")
-                return await self.helper_func(
-                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
-                )
+                return await self.send_cog_help(ctx, cog)
 
-            ########################
-            ## Botadmin Only Help ##
-            ########################
+            #####################
+            ## Admin Only Help ##
+            #####################
 
-            if invokercommand.lower() in ["jsk", "jish", "jishaku"]:
+            if category_or_command.lower() in ["jsk", "jish", "jishaku"]:
                 if not checks.is_admin(ctx):  # Jishaku is owner-only
-                    return await ctx.send_or_reply(  # Pretend like it doesn't exist
-                        f"{self.bot.emote_dict['warn']} No command named `{invokercommand}` found."
-                    )
+                    return await ctx.fail(f"No command named `{category_or_command}` found.")
                 return await ctx.send_help("jishaku")
 
-            if invokercommand.lower() in ["botconfig", "owner"]:
+            if category_or_command.lower() in ["botconfig", "owner"]:
                 if not checks.is_admin(ctx):
-                    return await ctx.send_or_reply(
-                        f"{self.bot.emote_dict['warn']} No command named `{invokercommand}` found."
-                    )
+                    return await ctx.fail(f"No command named `{category_or_command}` found.")
                 cog = self.bot.get_cog("Botconfig")
-                return await self.helper_func(
-                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
-                )
+                return await self.send_cog_help(ctx, cog)
 
-            if invokercommand.lower() in ["botadmin", "badmin"]:
+            if category_or_command.lower() in ["botadmin", "badmin"]:
                 if not checks.is_admin(ctx):
-                    return await ctx.send_or_reply(
-                        f"{self.bot.emote_dict['warn']} No command named `{invokercommand}` found."
-                    )
+                    return await ctx.fail(f"No command named `{category_or_command}` found.")
                 cog = self.bot.get_cog("Botadmin")
-                return await self.helper_func(
-                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
-                )
+                return await self.send_cog_help(ctx, cog)
 
-            if invokercommand.lower() in ["manage", "manager", "master"]:
+            if category_or_command.lower() in ["manage", "manager", "master"]:
                 if not checks.is_admin(ctx):
-                    return await ctx.send_or_reply(
-                        f"{self.bot.emote_dict['warn']} No command named `{invokercommand}` found."
-                    )
+                    return await ctx.fail(f"No command named `{category_or_command}` found.")
                 cog = self.bot.get_cog("Manager")
-                return await self.helper_func(
-                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
-                )
+                return await self.send_cog_help(ctx, cog)
 
-            if invokercommand.lower() in ["monitor", "heart"]:
+            if category_or_command.lower() in ["monitor", "heart"]:
                 if not checks.is_admin(ctx):
-                    return await ctx.send_or_reply(
-                        f"{self.bot.emote_dict['warn']} No command named `{invokercommand}` found."
-                    )
+                    return await ctx.fail(f"No command named `{category_or_command}` found.")
                 cog = self.bot.get_cog("Monitor")
-                return await self.helper_func(
-                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
-                )
+                return await self.send_cog_help(ctx, cog)
 
-            if invokercommand.lower() in ["database", "db"]:
+            if category_or_command.lower() in ["database", "db"]:
                 if not checks.is_admin(ctx):
-                    return await ctx.send_or_reply(
-                        f"{self.bot.emote_dict['warn']} No command named `{invokercommand}` found."
-                    )
+                    return await ctx.fail(f"No command named `{category_or_command}` found.")
                 cog = self.bot.get_cog("Database")
-                return await self.helper_func(
-                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
-                )
+                return await self.send_cog_help(ctx, cog)
 
-            #################
-            ## Home Guilds ##
-            #################
+            ##################
+            ## Premium help ##
+            ##################
 
-            if invokercommand.lower() in ["music", "player", "audio"]:
+            if category_or_command.lower() in ["music", "player", "audio"]:
                 if ctx.guild.id not in self.bot.home_guilds:
-                    return await ctx.send_or_reply(
-                        f"{self.bot.emote_dict['warn']} No command named `{invokercommand}` found."
-                    )
+                    return await ctx.fail(f"No command named `{category_or_command}` found.")
                 cog = self.bot.get_cog("Music")
-                return await self.helper_func(
-                    ctx, cog=cog, name=invokercommand, pm=pm, delete_after=delete_after
-                )
+                return await self.send_cog_help(ctx, cog)
 
             ##########################
             ## Manages Command Help ##
             ##########################
 
             else:
-                valid_cog = ""
-                valid_commands = ""
-                valid_help = ""
-                valid_brief = ""
-                for cog in sorted(self.bot.cogs):
-                    cog_commands = sorted(
-                        self.bot.get_cog(cog).get_commands(), key=lambda x: x.name
-                    )
-                    for command in cog_commands:
-                        if (
-                            str(command.name) == invokercommand.lower()
-                            or invokercommand.lower() in command.aliases
-                        ):
-                            if command.hidden:
-                                continue
-                            if isinstance(command, commands.Group):
-                                await self.send_group_help(
-                                    ctx, invokercommand, command, None, pm, delete_after
-                                )
-                                return
-                            valid_commands += command.name
-                            valid_help += command.help
-                            if not command.brief:
-                                command.brief = "None"
-                            valid_brief += command.brief
-                            valid_cog += str(command.cog.qualified_name)
-                        else:
-                            args = invokercommand.split()
-                            if len(args) > 1:
-                                if command.name == args[0]:
-                                    if isinstance(command, commands.Group):
-                                        return await self.send_group_help(
-                                            ctx,
-                                            invokercommand,
-                                            command,
-                                            " ".join(args[1:]),
-                                            pm,
-                                            delete_after,
-                                        )
-
-                if valid_commands != "":
-                    help_embed = discord.Embed(
-                        title=f"Category: `{valid_cog.title()}`",
-                        description=f"**Bot Invite Link:** [https://snowbot.discord.bot]({self.bot.oauth})\n"
-                        f"**Support Server:**  [https://discord.gg/snowbot]({self.bot.constants.support})",
-                        color=self.bot.constants.embed,
-                    )
-                    help_embed.set_footer(
-                        text=f'Use "{await converters.prettify(ctx, ctx.clean_prefix)}help category" for information on a category.'
-                    )
-                    help_embed.add_field(
-                        name=f"**Command Name:** `{valid_commands.title()}`\n**Description:** `{valid_brief}`\n",
-                        value=f"** **"
-                        f"```yaml\n{valid_help.format(ctx.clean_prefix)}```",
-                    )
-                    await self.send_help(ctx, help_embed, pm, delete_after)
-                    return
+                command = self.bot.get_command(category_or_command.lower())
+                if not command:
+                    return await ctx.fail(f"No command named `{category_or_command}` found.")
                 else:
-                    await ctx.send_or_reply(
-                        f"{self.bot.emote_dict['warn']} No command named `{invokercommand}` found."
-                    )
+                    return await self.send_command_help(ctx, command, category_or_command)
 
-    async def send_group_help(
-        self, ctx, invokercommand, command, subcommand, pm, delete_after
-    ):
-        if subcommand:
-            if len(subcommand.split()) > 1:
-                subcommand = subcommand.split()[-1]
-            found = False
-            for x in command.walk_commands():
-                if (
-                    x.name.lower() == subcommand.lower()
-                    or subcommand.lower() in x.aliases
-                ):
-                    found = True
-                    if not x.brief or x.brief == "":
-                        brief = "No description"
-                    else:
-                        brief = x.brief
-
-                    if not x.help or x.help == "":
-                        _help = "No help"
-                    else:
-                        _help = x.help.format(ctx.clean_prefix)
-                    help_embed = discord.Embed(
-                        title=f"Category: `{str(command.cog.qualified_name).title()}`",
-                        description=f"**Bot Invite Link:** [https://snowbot.discord.bot]({self.bot.oauth})\n"
-                        f"**Support Server:**  [https://discord.gg/snowbot]({self.bot.constants.support})",
-                        color=self.bot.constants.embed,
-                    )
-                    help_embed.set_footer(
-                        text=f'Use "{await converters.prettify(ctx, ctx.clean_prefix)}help category" for information on a category.'
-                    )
-                    help_embed.add_field(
-                        name=f"**Command Group:** `{command.name.title()}`\n**Subcommand:** `{x.name.title()}`\n**Description:** `{brief}`",
-                        value=f"** **" f"```yaml\n{_help}```",
-                        inline=False,
-                    )
-                    return await self.send_help(ctx, help_embed, pm, delete_after)
-            if not found:
-                await ctx.send_or_reply(
-                    f"{self.bot.emote_dict['warn']} No command named `{invokercommand}` found."
-                )
-                return
-
-        if not command.brief or command.brief == "":
-            brief = "No description"
-        else:
-            brief = command.brief
-        if not command.help or command.help == "":
-            _help = "No help"
-        else:
-            _help = command.help.format(ctx.clean_prefix)
-        help_embed = discord.Embed(
-            title=f"Category: `{str(command.cog.qualified_name).title()}`",
-            description=f"**Bot Invite Link:** [https://snowbot.discord.bot]({self.bot.oauth})\n"
-            f"**Support Server:**  [https://discord.gg/snowbot]({self.bot.constants.support})",
-            color=self.bot.constants.embed,
-        )
-        help_embed.set_footer(
-            text=f'Use "{await converters.prettify(ctx, ctx.clean_prefix)}help {command.name} option" for information on a option.'
-        )
-        help_embed.add_field(
-            name=f"**Command Group:** `{command.name.title()}`\n**Description:** `{brief}`\n",
-            value=f"** **" f"```yaml\n{_help}```",
-            inline=False,
-        )
-        return await self.send_help(ctx, help_embed, pm, delete_after)
 
     @decorators.command(
         brief="Get the short description of a command.",
