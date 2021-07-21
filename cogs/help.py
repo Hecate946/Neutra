@@ -254,7 +254,7 @@ class Help(commands.Cog):
             else:
                 value += f"\n`{cmd.qualified_name}` {cmd.brief}\n"
 
-        embed.add_field(name=f"**{cog} Commands**", value=f"** **{value}")
+        embed.add_field(name=f"**{cog.qualified_name} Commands**", value=f"** **{value}")
         await self.send_help(ctx, embed)
 
 
