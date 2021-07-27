@@ -51,7 +51,7 @@ class Admin(commands.Cog):
     @checks.guild_only()
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(manage_guild=True)
-    @checks.cooldown(2, 30, bucket=commands.BucketType.guild)
+    @checks.cooldown()
     async def muterole(self, ctx, role: converters.DiscordRole = None):
         """
         Usage:      {0}muterole <role>
@@ -126,7 +126,7 @@ class Admin(commands.Cog):
             roles, nicknames, and usernames will be deleted.
         """
         c = await ctx.confirm(
-            f"{self.bot.emote_dict['delete']} **This action will remove me from this server and clear all my collected data. Do you wish to continue?**"
+            f"{self.bot.emote_dict['delete']} This action will remove me from this server and clear all my collected data."
         )
         if c:
             await ctx.guild.leave()
