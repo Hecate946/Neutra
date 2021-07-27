@@ -1,3 +1,4 @@
+import json
 import discord
 
 from better_profanity import profanity
@@ -22,11 +23,11 @@ class Automod(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.emote_dict = bot.emote_dict
 
     ###################
     ## Warn Commands ##
     ###################
+
 
     @decorators.command(
         aliases=["strike"],
@@ -386,16 +387,14 @@ class Automod(commands.Cog):
             Roles with multiple words must
             be encapsulated by quotes.
         """
-        for role in roles:
-            self.bot.server_settings[ctx.guild.id]["autoroles"].append(role.id)
+        autoroles = self.bot.server_settings[ctx.guild.id]["autoroles"]
+        autoroles.extend([role.id for role in roles if role.id not in autoroles])
         query = """
                 UPDATE servers
                 SET autoroles = $1
                 WHERE server_id = $2;
                 """
-        autoroles = ",".join(
-            [str(x) for x in self.bot.server_settings[ctx.guild.id]["autoroles"]]
-        )
+        
         await self.bot.cxn.execute(query, autoroles, ctx.guild.id)
         await ctx.success("Updated autorole settings.")
 
@@ -423,9 +422,6 @@ class Automod(commands.Cog):
                 SET autoroles = $1
                 WHERE server_id = $2;
                 """
-        autoroles = ",".join(
-            [str(x) for x in self.bot.server_settings[ctx.guild.id]["autoroles"]]
-        )
         await self.bot.cxn.execute(query, autoroles, ctx.guild.id)
         await ctx.success("Updated autorole settings.")
 
@@ -448,9 +444,9 @@ class Automod(commands.Cog):
         p = await ctx.confirm("This action will remove all current autoroles.")
         if p:
             self.bot.server_settings[ctx.guild.id]["autoroles"].clear()
-            query = """
+            query = r"""
                     UPDATE servers
-                    SET autoroles = NULL
+                    SET autoroles = '{}'
                     WHERE server_id = $1;
                     """
             await self.bot.cxn.execute(query, ctx.guild.id)
@@ -470,10 +466,9 @@ class Automod(commands.Cog):
         """
         autoroles = self.bot.server_settings[ctx.guild.id]["autoroles"]
 
-        if autoroles == []:
-            return await ctx.send_or_reply(
-                content=f"No autoroles yet, use `{ctx.clean_prefix}autorole add <roles>`",
-            )
+        if not autoroles:
+            await ctx.fail(f"No autoroles yet, use `{ctx.clean_prefix}autorole add <roles>`")
+            return
 
         p = pagination.SimplePages(
             entries=[f"`{ctx.guild.get_role(int(x)).name}`" for x in autoroles],
@@ -548,8 +543,9 @@ class Automod(commands.Cog):
         brief="Manage the server's word filter.",
     )
     @checks.guild_only()
+    @checks.bot_has_perms(manage_messages=True)
     @checks.has_perms(manage_guild=True)
-    @checks.cooldown(bucket=commands.BucketType.guild)
+    @checks.cooldown()
     async def _filter(self, ctx):
         """
         Usage: {0}filter <option>
@@ -559,7 +555,7 @@ class Automod(commands.Cog):
             Adds, removes, clears, or displays the filter.
         Example:
             {0}filter add <badwords>
-        Options:
+        Subcommands:
             add, remove, display, clear
         Notes:
             Words added to the filter list
@@ -571,11 +567,13 @@ class Automod(commands.Cog):
             Example: {0}filter add badword1, badword2
         """
         if ctx.invoked_subcommand is None:
-            help_command = self.bot.get_command("help")
-            await help_command(ctx, invokercommand="filter")
+            await ctx.usage("[subcommand] [words...]")
 
     @_filter.command(name="add", aliases=["+"], brief="Add words to the filter.")
+    @checks.guild_only()
+    @checks.bot_has_perms(manage_messages=True)
     @checks.has_perms(manage_guild=True)
+    @checks.cooldown()
     async def add_words(self, ctx, *, words_to_filter: str):
         """
         Usage: {0}filter add <words>
@@ -601,21 +599,19 @@ class Automod(commands.Cog):
             else:
                 existing.append(word.strip().lower())
 
-        insertion = ",".join(current_filter)
-
         query = """UPDATE servers SET profanities = $1 WHERE server_id = $2;"""
-        await self.bot.cxn.execute(query, insertion, ctx.guild.id)
-
-        if existing:
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['warn']} The word{'' if len(existing) == 1 else 's'} `{', '.join(existing)}` "
-                f"{'was' if len(existing) == 1 else 'were'} already in the word filter.",
-            )
+        await self.bot.cxn.execute(query, current_filter, ctx.guild.id)
 
         if added:
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['success']} The word{'' if len(added) == 1 else 's'} `{', '.join(added)}` "
+            await ctx.sucess(
+                f"The word{'' if len(added) == 1 else 's'} `{', '.join(added)}` "
                 f"{'was' if len(added) == 1 else 'were'} successfully added to the word filter.",
+            )
+
+        if existing:
+            await ctx.fail(
+                f"The word{'' if len(existing) == 1 else 's'} `{', '.join(existing)}` "
+                f"{'was' if len(existing) == 1 else 'were'} already in the word filter.",
             )
 
     @_filter.command(
@@ -623,7 +619,10 @@ class Automod(commands.Cog):
         aliases=["-", "rm", "rem"],
         brief="Removes words from the filter.",
     )
+    @checks.guild_only()
+    @checks.bot_has_perms(manage_messages=True)
     @checks.has_perms(manage_guild=True)
+    @checks.cooldown()
     async def remove_words(self, ctx, *, words: str):
         """
         Usage: {0}filter remove <words>
@@ -648,24 +647,15 @@ class Automod(commands.Cog):
                 not_found.append(word)
                 continue
             else:
-                word_index = word_list.index(word.strip().lower())
-                word_list.pop(word_index)
+                word_list.remove(word.strip().lower())
                 removed.append(word.strip().lower())
-
-        insertion = ",".join(word_list)
 
         query = """
                 UPDATE servers
                 SET profanities = $1
                 WHERE server_id = $2;
                 """
-        await self.bot.cxn.execute(query, insertion, ctx.guild.id)
-
-        if not_found:
-            await ctx.fail(
-                f"The word{'' if len(not_found) == 1 else 's'} `{', '.join(not_found)}` "
-                f"{'was' if len(not_found) == 1 else 'were'} not in the word filter.",
-            )
+        await self.bot.cxn.execute(query, word_list, ctx.guild.id)
 
         if removed:
             await ctx.success(
@@ -673,8 +663,17 @@ class Automod(commands.Cog):
                 f"{'was' if len(removed) == 1 else 'were'} successfully removed from the word filter.",
             )
 
+        if not_found:
+            await ctx.fail(
+                f"The word{'' if len(not_found) == 1 else 's'} `{', '.join(not_found)}` "
+                f"{'was' if len(not_found) == 1 else 'were'} not in the word filter.",
+            )
+
     @_filter.command(brief="Show all filtered words.", aliases=["show"])
+    @checks.guild_only()
+    @checks.bot_has_perms(manage_messages=True)
     @checks.has_perms(manage_guild=True)
+    @checks.cooldown()
     async def display(self, ctx):
         """
         Usage: {0}filter display
@@ -701,7 +700,10 @@ class Automod(commands.Cog):
             await ctx.send_or_reply(e)
 
     @_filter.command(name="clear", brief="Clear all words from the filer.")
+    @checks.guild_only()
+    @checks.bot_has_perms(manage_messages=True)
     @checks.has_perms(manage_guild=True)
+    @checks.cooldown()
     async def _clear(self, ctx):
         """
         Usage: {0}filter clear
@@ -709,15 +711,32 @@ class Automod(commands.Cog):
             Confirmation that the filtered
             word list has been cleared.
         """
-        query = """
+        query = r"""
                 UPDATE servers
-                SET profanities = NULL
+                SET profanities = '{}'
                 WHERE server_id = $1;
                 """
         await self.bot.cxn.execute(query, ctx.guild.id)
         self.bot.server_settings[ctx.guild.id]["profanities"].clear()
 
-        await ctx.success(f"Removed all filtered words.")
+        await ctx.success("Removed all filtered words.")
+
+    @_filter.command(name="default", brief="Use the default word filter.")
+    @checks.guild_only()
+    @checks.bot_has_perms(manage_messages=True)
+    @checks.has_perms(manage_guild=True)
+    @checks.cooldown()
+    async def _default(self, ctx):
+        if await ctx.confirm("This action will clear the current filter and began using the default word filter."):
+            self.bot.server_settings[ctx.guild.id]["profanities"] = self.bot.constants.profanities
+            query = """
+                    UPDATE servers
+                    SET profanities = $1
+                    WHERE server_id = $2
+                    """
+            await self.bot.cxn.execute(query, self.bot.constants.profanities, ctx.guild.id)
+            await ctx.success("Now using the default word filter.")
+
 
     #####################
     ## Event Listeners ##
@@ -732,7 +751,7 @@ class Automod(commands.Cog):
             return
 
         guild = member.guild
-        reassign = self.bot.server_settings[member.guild.id]["reassign"]
+        reassign = self.bot.server_settings[guild.id]["reassign"]
         if reassign:
             query = """
                     SELECT roles
@@ -766,24 +785,18 @@ class Automod(commands.Cog):
         autoroles = self.bot.server_settings[member.guild.id]["autoroles"]
         if autoroles:
             role_objects = [
-                guild.get_role(int(role_id))
+                guild.get_role(role_id)
                 for role_id in autoroles
-                if guild.get_role(int(role_id))
+                if guild.get_role(role_id)
             ]
-            to_assign = (
-                role_objects + member.roles
-            )  # In case they already had roles added
             try:
-                await member.edit(
-                    roles=to_assign, reason="Roles auto-assigned on join."
-                )
+                await member.add_roles(*role_objects, reason="Roles auto-assigned on join.")
             except Exception:  # Try to add them on one by one.
                 for role in role_objects:
-                    if role not in member.roles:
-                        try:
-                            await member.add_roles(role)
-                        except Exception:
-                            continue
+                    try:
+                        await member.add_roles(role, reason="Roles auto-assigned on join.")
+                    except Exception:
+                        continue
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -828,25 +841,19 @@ class Automod(commands.Cog):
 
         bad_words = self.bot.server_settings[message.guild.id]["profanities"]
         if bad_words:
-            vulgar = False
             profanity.load_censor_words(bad_words)
-            for word in bad_words:
-                if (
-                    profanity.contains_profanity(message.content)
-                    or word in message.content
-                ):
-                    try:
-                        await message.delete()
-                        vulgar = True  # Lets try to DM them
-                    except Exception:  # We tried...
-                        pass
-            if vulgar:
+            if profanity.contains_profanity(message.content):
                 try:
-                    await message.author.send(
-                        f"Your message `{message.content}` was removed in **{message.guild.name}** for containing a filtered word."
-                    )
-                except Exception:
+                    await message.delete()
+                except Exception:  # We tried...
                     pass
+                else:
+                    try:
+                        await message.author.send(
+                            f"Your message `{message.content}` was removed in **{message.guild.name}** for containing a filtered word."
+                        )
+                    except Exception:
+                        pass
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -867,16 +874,16 @@ class Automod(commands.Cog):
 
         bad_words = self.bot.server_settings[after.guild.id]["profanities"]
         if bad_words:
-            vulgar = False
             profanity.load_censor_words(bad_words)
-            for word in bad_words:
-                if profanity.contains_profanity(after.content) or word in after.content:
+            if profanity.contains_profanity(after.content):
+                try:
+                    await after.delete()
+                except Exception:  # We tried...
+                    pass
+                else:
                     try:
-                        await after.delete()
-                        vulgar = True  # Lets try to DM them
-                    except Exception:  # We tried...
+                        await after.author.send(
+                            f"Your message `{after.content}` was removed in **{after.guild.name}** for containing a filtered word."
+                        )
+                    except Exception:
                         pass
-            if vulgar:
-                await after.author.send(
-                    f"Your message `{after.content}` was removed in **{after.guild.name}** for containing a filtered word."
-                )

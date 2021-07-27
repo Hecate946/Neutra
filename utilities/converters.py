@@ -155,12 +155,12 @@ class SelfUser(commands.Converter):
         self.perms = perms
 
     async def convert(self, ctx, argument):
-        member = await DiscordUser().convert(ctx, argument)
-        if member.id == ctx.author.id:
-            return member
+        user = await DiscordUser().convert(ctx, argument)
+        if user.id == ctx.author.id or not isinstance(user, discord.Member):
+            return user
         else:
             if await checks.check_permissions(ctx, self.perms):
-                return member
+                return user
             raise commands.BadArgument(
                 f"{format_perms(self.perms)} to run this command on other users."
             )

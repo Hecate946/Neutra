@@ -860,7 +860,7 @@ class Mod(commands.Cog):
 
         await ctx.trigger_typing()
         query = """
-                SELECT (muterole)
+                SELECT muterole
                 FROM servers
                 WHERE server_id = $1;
                 """

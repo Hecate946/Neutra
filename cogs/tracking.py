@@ -146,92 +146,77 @@ class Tracking(commands.Cog):
             Neither you nor the bot must share a server with the passed user.
             Will default to you if no user is passed into the command.
         """
-        if user is None:
-            user = ctx.author
+        user = user or ctx.author
+
+        message = await ctx.load("Collecting User Data...")
+        await ctx.trigger_typing()
+        title_str = f"{self.bot.emote_dict['info']} Information on **{user}** `{user.id}`."
 
         batch = self.bot.get_cog("Batch")
-        if not batch:
-            raise commands.DisabledCommand()
 
-        message = await ctx.load(f"Collecting User Data...")
-        await ctx.trigger_typing()
-        title_str = f"{self.bot.emote_dict['info']} Information on **{user}**"
+        if isinstance(user, discord.Member):  # Member obj, get all data.
+            usernames = await batch.get_names(user)
+            nicknames = await batch.get_nicks(user)
+            joined_at = utils.format_time(user.joined_at)
+            status = self.get_status(user)
+            server_spoke = await batch.get_server_last_spoke(user)
+            server_messages = await batch.get_server_message_count(user)
+            server_commands = await batch.get_server_command_count(user)
+        else:
+            usernames = [str(user)]
+            nicknames = None
+            joined_at = None
+            status = None
+            server_spoke = None
+            server_messages = None
+            server_commands = None
+
+        last_spoke = await batch.get_last_spoke(user)
+        messages_sent = await batch.get_message_count(user)
+        commands_run = await batch.get_command_count(user)
+        last_seen = await batch.get_last_seen(user, raw=True)
 
         msg = ""
-        usernames = await batch.get_names(user)
-        msg += f"ID            : {user.id}\n"
-        msg += f"Username{' ' if len(usernames) == 1 else 's'}     : {', '.join(usernames)}\n"
-        if ctx.guild and isinstance(user, discord.Member):
-            nicknames = await batch.get_nicks(user)
-            msg += f"Nickname{' ' if len(nicknames) == 1 else 's'}     : {', '.join(nicknames)}\n"
-        msg += f"Common Servers: {sum(g.get_member(user.id) is not None for g in ctx.bot.guilds)}\n"
-        msg += f"Created       : {utils.format_time(user.created_at)}\n"
-        if ctx.guild and isinstance(user, discord.Member):
-            msg += f"Joined        : {utils.format_time(user.joined_at)}\n"
-            joined_list = []
-            for mem in ctx.guild.members:
-                joined_list.append({"ID": mem.id, "Joined": mem.joined_at})
-            # sort the users by join date
-            joined_list = sorted(
-                joined_list,
-                key=lambda x: x["Joined"].timestamp()
-                if x["Joined"] is not None
-                else -1,
-            )
-            check_item = {"ID": user.id, "Joined": user.joined_at}
+        msg += f"ID             : {user.id}\n"
+        msg += f"Username{' ' if len(usernames) == 1 else 's'}      : {', '.join(usernames)}\n"
 
-            position = joined_list.index(check_item) + 1
-            pos = "{:,}".format(position)
-            msg += f"Join Position : {pos}/{len(user.guild.members)}\n"
-        last_observed = await batch.last_observed(user)
-        if last_observed["last_seen"]:
-            msg += f"Last Seen     : {last_observed['last_seen']} ago\n"
-        if last_observed["last_spoke"]:
-            msg += f"Last Spoke    : {last_observed['last_spoke']} ago\n"
-        if ctx.guild and isinstance(user, discord.Member):
-            if last_observed["server_last_spoke"]:
-                msg += f"Spoke Here    : {last_observed['server_last_spoke']} ago\n"
-            query = """
-                    SELECT COUNT(*)
-                    FROM commands
-                    WHERE author_id = $1
-                    AND server_id = $2;
-                    """
-            command_count = await self.bot.cxn.fetchval(query, user.id, ctx.guild.id)
-            if not command_count:
-                command_count = 0
+        if nicknames:
+            msg += f"Nickname{' ' if len(nicknames) == 1 else 's'}      : {', '.join(nicknames)}\n"
+        if status:
+            msg += f"Status         : {status}\n"
 
-            msg += f"Commands Run  : {command_count}\n"
+        msg += f"Common Servers : {len(user.mutual_guilds)}\n"
+        msg += f"Created        : {utils.format_time(user.created_at)}\n"
 
-            query = """
-                    SELECT COUNT(*)
-                    FROM messages
-                    WHERE author_id = $1
-                    AND server_id = $2;
-                    """
-            message_count = await self.bot.cxn.fetchval(query, user.id, ctx.guild.id)
-            if not message_count:
-                message_count = 0
+        if joined_at:
+            msg += f"Joined         : {joined_at}\n"
+            # Next get the position that the user joined in. 
+            joined_list = sorted(user.guild.members, key= lambda m: m.joined_at)
+            position = joined_list.index(user) + 1
+            msg += f"Join Position  : {position:,}/{len(user.guild.members)}\n"
 
-            msg += f"Messages Sent : {message_count}\n"
+        if last_seen:
+            msg += f"Last Seen      : {last_seen} ago\n"
+        if last_spoke:
+            msg += f"Last Spoke     : {last_spoke} ago\n"
+        if server_spoke:
+            msg += f"Spoke Here     : {server_spoke} ago\n"
 
-            if user.activities:
-                try:
-                    msg += "Status        : {}\n".format(
-                        "\n".join(self.activity_string(a) for a in user.activities)
-                    )
-                except Exception:
-                    pass
-            msg += f"Roles         : {', '.join([r.name for r in sorted(user.roles, key=lambda r: -r.position) if r.name != '@everyone'])}\n"
+        msg += f"Messages Sent  : {messages_sent}\n"
+        if server_messages:
+            msg += f"Messages Here  : {server_messages}\n"
+
+        msg += f"Commands Run   : {commands_run}\n"
+        if server_commands:
+            msg += f"Commands Here  : {server_commands}\n"
+
+        if isinstance(user, discord.Member):
+            msg += f"Roles          : {', '.join([r.name for r in sorted(user.roles, key=lambda r: -r.position)])}\n"
             perm_list = [Perm[0] for Perm in user.guild_permissions if Perm[1]]
-            msg += f'Permissions   : {", ".join(perm_list).replace("_", " ").replace("guild", "server").title().replace("Tts", "TTS")}'
+            msg += f'Permissions    : {", ".join(perm_list).replace("_", " ").replace("guild", "server").title().replace("Tts", "TTS")}'
 
         await message.edit(content=title_str)
-        t = pagination.MainMenu(
-            pagination.TextPageSource(
-                cleaner.clean_all(msg), prefix="```yaml\n", suffix="```"
-            )
-        )
+        t = pagination.TextPages(cleaner.clean_all(msg), prefix="```yaml\n", suffix="```")
         try:
             await t.start(ctx)
         except menus.MenuError as e:
@@ -278,13 +263,12 @@ class Tracking(commands.Cog):
             Will default to you if no user is passed.
         """
         user = user or ctx.author
-        status = "\n".join(self.activity_string(a) for a in user.activities)
-        if status == "":
-            return await ctx.send_or_reply(
-                content=f"**{user.display_name}** has no current status.",
-            )
-        msg = f"**{user.display_name}'s** Status: {status}\n"
+        status = self.get_status(user)
+        if not status:
+            await ctx.fail(f"**{user}** `{user.id}` has no current status.")
+        msg = f"Status for **{user}** `{user.id}`: {status}"
         await ctx.send_or_reply(msg)
+        
 
     def activity_string(self, activity):
         if isinstance(activity, (discord.Game, discord.Streaming)):
@@ -308,6 +292,13 @@ class Tracking(commands.Cog):
             )
         else:
             return str(activity)
+
+    def get_status(self, user):
+        if user.activities:
+            status = "\n".join(self.activity_string(a) for a in user.activities)
+            if status != "":
+                return status
+            
 
     def format_timedelta(self, td):
         ts = td.total_seconds()
@@ -465,7 +456,7 @@ class Tracking(commands.Cog):
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.has_perms(view_audit_log=True)
     async def usernames(
-        self, ctx, *, user: converters.SelfUser(view_audit_log=True) = None
+        self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None
     ):
         """
         Usage: {0}usernames [user]
@@ -517,7 +508,7 @@ class Tracking(commands.Cog):
     )
     @checks.cooldown(1, 10)
     async def avatars(
-        self, ctx, *, user: converters.SelfUser(view_audit_log=True) = None
+        self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None
     ):
         """
         Usage: {0}avatars [user]
@@ -601,7 +592,7 @@ class Tracking(commands.Cog):
                 """,
     )
     @checks.cooldown()
-    async def seen(self, ctx, *, user: converters.SelfUser(view_audit_log=True) = None):
+    async def seen(self, ctx, *, user: converters.DiscordUser = None):
         """
         Usage: {0}seen [user]
         Aliases:
@@ -622,15 +613,11 @@ class Tracking(commands.Cog):
                 raise commands.BadArgument("I do not track bots.")
 
             tracker = self.bot.get_cog("Batch")
-            data = await tracker.last_observed(user)
+            data = await tracker.get_last_seen(user)
 
-            if not data["last_seen"]:
-                return await ctx.fail(f"I have not seen `{user}`")
-            if data["action"]:
-                msg = f"User `{user}` was last seen {data['action']} **{data['last_seen']}** ago."
-            else:
-                msg = f"User `{user}` was last seen **{data['last_seen']}** ago."
-            await ctx.send_or_reply(msg)
+            if not data:
+                return await ctx.fail(f"I have not seen **{user}** `{user.id}`.")
+            await ctx.send_or_reply(data)
 
     @decorators.command(
         aliases=["lastspoke"],
@@ -650,7 +637,7 @@ class Tracking(commands.Cog):
     )
     @checks.cooldown()
     async def spoke(
-        self, ctx, *, user: converters.SelfUser(view_audit_log=True) = None
+        self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None
     ):
         """
         Usage: {0}spoke [user]
@@ -695,7 +682,7 @@ class Tracking(commands.Cog):
     )
     @checks.cooldown()
     async def spokehere(
-        self, ctx, *, user: converters.SelfUser(view_audit_log=True) = None
+        self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None
     ):
         """
         Usage: {0}spokehere [user]

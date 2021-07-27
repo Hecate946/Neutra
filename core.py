@@ -127,7 +127,7 @@ class Snowbot(commands.AutoShardedBot):
         )
         self.command_stats = collections.Counter()
         self.constants = constants
-        self.cxn = database.postgres
+        self.cxn = database.cxn
         self.exts = [
             x[:-3] for x in sorted(os.listdir("././cogs")) if x.endswith(".py")
         ]

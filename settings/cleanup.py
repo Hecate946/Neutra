@@ -5,7 +5,7 @@ from . import database
 
 log = logging.getLogger("INFO_LOGGER")
 
-conn = database.postgres
+conn = database.cxn
 
 
 async def basic_cleanup(guilds):

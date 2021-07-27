@@ -642,6 +642,32 @@ class Batch(commands.Cog):
             nicknames.extend(results)
         return nicknames
 
+    async def get_last_seen(self, user, *, raw=False):
+        """
+        Get when a user last performed
+        an action across all of discord.
+        """
+        query = """
+                SELECT DISTINCT ON (unix) unix, action
+                FROM tracker
+                WHERE user_id = $1
+                ORDER BY unix DESC;
+                """
+        data = await self.bot.cxn.fetchrow(query, user.id)
+        if not data:
+            return
+        last_seen = utils.time_between(int(data["unix"]), int(time.time()))
+        if raw:
+            return last_seen
+
+        if data["action"]:
+            msg = f"User **{user}** `{user.id}` was last seen {data['action']} **{last_seen}** ago."
+        else:
+            msg = f"User **{user}** `{user.id}` was last seen **{last_seen}** ago."
+
+        return msg
+
+
     async def get_last_spoke(self, user):
         query = """
                 SELECT MAX(unix)
@@ -664,3 +690,60 @@ class Batch(commands.Cog):
         server_spoke = await self.bot.cxn.fetchval(query, user.id, user.guild.id)
         if server_spoke:
             return utils.time_between(int(server_spoke), int(time.time()))
+
+    async def get_message_count(self, user):
+        """
+        Gets the number of messages
+        sent by the user across discord.
+        """
+        query = """
+                SELECT COUNT(*)
+                FROM messages
+                WHERE author_id = $1
+                """
+        return await self.bot.cxn.fetchval(query, user.id)
+
+    async def get_server_message_count(self, user):
+        """
+        Gets the number of messages
+        sent by the user in a server.
+        """
+        if not hasattr(user, "guild"):
+            return 0
+
+        query = """
+                SELECT COUNT(*)
+                FROM messages
+                WHERE author_id = $1
+                AND server_id = $2
+                """
+        return await self.bot.cxn.fetchval(query, user.id, user.guild.id)
+
+    async def get_command_count(self, user):
+        """
+        Gets the number of commands run
+        by the user across discord.
+        """
+        query = """
+                SELECT COUNT(*)
+                FROM commands
+                WHERE author_id = $1
+                """
+        return await self.bot.cxn.fetchval(query, user.id)
+
+    async def get_server_command_count(self, user):
+        """
+        Gets the number of commands
+        run by the user in a server.
+        """
+        if not hasattr(user, "guild"):
+            return 0
+
+        query = """
+                SELECT COUNT(*)
+                FROM commands
+                WHERE author_id = $1
+                AND server_id = $2
+                """
+        return await self.bot.cxn.fetchval(query, user.id, user.guild.id)
+
