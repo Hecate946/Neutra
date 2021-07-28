@@ -1333,7 +1333,7 @@ class Tracking(commands.Cog):
                 ) AS days
                 FROM messages
                 WHERE server_id = $1
-                WHERE author_id = $2
+                AND author_id = $2
                 AND unix > (SELECT EXTRACT(EPOCH FROM NOW()) - $3)
                 ) as data
                 WHERE days IS NOT NULL;
