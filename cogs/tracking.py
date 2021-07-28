@@ -266,6 +266,7 @@ class Tracking(commands.Cog):
         status = self.get_status(user)
         if not status:
             await ctx.fail(f"**{user}** `{user.id}` has no current status.")
+            return
         msg = f"Status for **{user}** `{user.id}`: {status}"
         await ctx.send_or_reply(msg)
         
