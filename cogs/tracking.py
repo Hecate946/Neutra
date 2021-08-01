@@ -1287,18 +1287,14 @@ class Tracking(commands.Cog):
         examples="""
                 {0}clocker
                 {0}clocker Hecate
-                {0}clocker @Hecate 3 days ago
-                {0}clocker 708584008065351681 2m
-                {0}clocker Hecate#3523 one month ago
                 """,
     )
     @checks.cooldown()
     async def clocker(
         self,
         ctx,
+        *, 
         user: typing.Optional[converters.DiscordMember] = None,
-        *,
-        timeframe: humantime.PastTime = None,
     ):
         """
         Usage: {0}clocker [user] [time]
@@ -1322,7 +1318,7 @@ class Tracking(commands.Cog):
                 SELECT COUNT(subquery.days) FROM (SELECT DISTINCT
                 (SELECT EXTRACT(DAY FROM (TO_TIMESTAMP(unix)))::SMALLINT AS days)
                 FROM messages
-                WHERE unix > (SELECT EXTRACT(EPOCH FROM NOW()) - 2678400)
+                WHERE unix > (SELECT EXTRACT(EPOCH FROM NOW()) - 2592000)
                 AND server_id = $1 AND author_id = $2) AS subquery;
                 """ # 2592000 = seconds in 30 days
         days = await self.bot.cxn.fetchval(
@@ -1358,7 +1354,7 @@ class Tracking(commands.Cog):
                 (SELECT EXTRACT(DAY FROM (TO_TIMESTAMP(unix)))::SMALLINT AS days),
                 (SELECT author_id AS user)
                 FROM messages
-                WHERE unix > (SELECT EXTRACT(EPOCH FROM NOW()) - 2678400)
+                WHERE unix > (SELECT EXTRACT(EPOCH FROM NOW()) - 2592000)
                 AND server_id = $1) AS subquery
                 GROUP BY subquery.user
                 ORDER BY days DESC;
