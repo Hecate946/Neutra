@@ -1317,34 +1317,21 @@ class Tracking(commands.Cog):
         else:
             user = ctx.author
         await ctx.trigger_typing()
-        if timeframe:
-            actual_time = (discord.utils.utcnow() - timeframe.dt).total_seconds()
-            the_datetime = timeframe.dt
-        else:
-            actual_time = 604800  # 1 week
-            the_datetime = datetime.utcfromtimestamp(time.time() - actual_time)
 
         query = """
-                SELECT COUNT(DISTINCT(days)) FROM (
-                SELECT EXTRACT(
-                    DAY FROM (
-                        TO_TIMESTAMP(unix)
-                    )
-                ) AS days
+                SELECT COUNT(subquery.days) FROM (SELECT DISTINCT
+                (SELECT EXTRACT(DAY FROM (TO_TIMESTAMP(unix)))::SMALLINT AS days)
                 FROM messages
-                WHERE server_id = $1
-                AND author_id = $2
-                AND unix > (SELECT EXTRACT(EPOCH FROM NOW()) - $3)
-                ) as data
-                WHERE days IS NOT NULL;
-                """
+                WHERE unix > (SELECT EXTRACT(EPOCH FROM NOW()) - 2678400)
+                AND server_id = $1 AND author_id = $2) AS subquery;
+                """ # 2592000 = seconds in 30 days
         days = await self.bot.cxn.fetchval(
-            query, ctx.guild.id, user.id, (actual_time - 86400)
+            query, ctx.guild.id, user.id,
         )
         emote = self.bot.emote_dict["graph"]
-        pluralize = "" if days == 1 else "s"
-        timefmt = humantime.human_timedelta(the_datetime, accuracy=1)
-        msg = f"{emote} User `{user}` has sent a message in this server **{days} day{pluralize} since {timefmt}.**"
+        user = f"**{user}** `{user.id}`"
+        pluralize = f"time{'' if days == 1 else 's'}"
+        msg = f"{emote} User {user} logged into **{ctx.guild.name}** {days} {pluralize} during the past 30 days."
         await ctx.send_or_reply(msg)
 
     @decorators.command(
@@ -1353,47 +1340,37 @@ class Tracking(commands.Cog):
         updated="2021-05-12 15:25:00.152528",
         examples="""
                 {0}clocking
-                {0}clocking 2m
-                {0}clocking 1 month ago
-                {0}clocking 3 weeks ago
                 """,
     )
     @checks.bot_has_perms(attach_files=True)
     @checks.has_perms(manage_guild=True)
-    async def clocking(self, ctx, *, timeframe: humantime.PastTime = None):
+    async def clocking(self, ctx):
         """
-        Usage: {0}clocking [time]
+        Usage: {0}clocking
         Output:
-            Shows all users who have
-            sent a message in the server
-            in the specified time frame
-        Notes:
-            If no time frame is specified,
-            will default to 1 week.
+            Shows the number of days that
+            a user sent at least one message
+            in the server during the past month.
         """
         await ctx.trigger_typing()
-        if timeframe:
-            actual_time = (discord.utils.utcnow() - timeframe.dt).total_seconds()
-            the_datetime = timeframe.dt
-        else:
-            actual_time = 604800  # 1 week
-            the_datetime = datetime.utcfromtimestamp(time.time() - actual_time)
         query = """
-                SELECT DISTINCT author_id AS user,
-                (SELECT EXTRACT(DAY FROM (TO_TIMESTAMP(unix))))::SMALLINT AS days
+                SELECT subquery.user, COUNT(subquery.days) AS days FROM (SELECT DISTINCT
+                (SELECT EXTRACT(DAY FROM (TO_TIMESTAMP(unix)))::SMALLINT AS days),
+                (SELECT author_id AS user)
                 FROM messages
-                WHERE server_id = $1
-                AND unix > (SELECT EXTRACT(EPOCH FROM NOW()) - $2)
+                WHERE unix > (SELECT EXTRACT(EPOCH FROM NOW()) - 2678400)
+                AND server_id = $1) AS subquery
+                GROUP BY subquery.user
                 ORDER BY days DESC;
-                """
-        rows = await self.bot.cxn.fetch(query, ctx.guild.id, (actual_time - 86400))
+                """ # 2592000 = seconds in 30 days
+        rows = await self.bot.cxn.fetch(query, ctx.guild.id)
 
         def pred(snowflake):
             mem = ctx.guild.get_member(snowflake)
             if mem:
                 return str(mem)
 
-        fmt = {pred(record["user"]): record["days"] for record in rows}
+        fmt = {pred(r["user"]): r["days"] for r in rows if pred(r["user"])}
 
         table = formatting.TabularData()
         table.set_columns(["NAME", "DAYS"])
@@ -1402,10 +1379,9 @@ class Tracking(commands.Cog):
 
         completed = f"```sml\n{render}```"
         emote = self.bot.emote_dict["graph"]
-        pluralize = "" if len(fmt) == 1 else "s"
-        timefmt = humantime.human_timedelta(the_datetime, accuracy=1)
-        await ctx.bold(
-            f"{emote} {len(fmt)} user{pluralize} have logged in since {timefmt} in {ctx.guild.name}."
+        pluralize = " has" if len(fmt) == 1 else "s have"
+        await ctx.send_or_reply(
+            f"{emote} {len(fmt)} user{pluralize} logged in to **{ctx.guild.name}** during the past 30 days."
         )
         if len(completed) > 2000:
             fp = io.BytesIO(completed.encode("utf-8"))
