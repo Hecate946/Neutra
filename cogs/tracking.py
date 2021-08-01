@@ -1320,14 +1320,14 @@ class Tracking(commands.Cog):
                 FROM messages
                 WHERE unix > (SELECT EXTRACT(EPOCH FROM NOW()) - 2592000)
                 AND server_id = $1 AND author_id = $2) AS subquery;
-                """ # 2592000 = seconds in 30 days
+                """ # 2592000 = seconds in a month
         days = await self.bot.cxn.fetchval(
             query, ctx.guild.id, user.id,
         )
         emote = self.bot.emote_dict["graph"]
         user = f"**{user}** `{user.id}`"
         pluralize = f"time{'' if days == 1 else 's'}"
-        msg = f"{emote} User {user} logged into **{ctx.guild.name}** {days} {pluralize} during the past 30 days."
+        msg = f"{emote} User {user} logged into **{ctx.guild.name}** {days} {pluralize} during the past month."
         await ctx.send_or_reply(msg)
 
     @decorators.command(
@@ -1358,7 +1358,7 @@ class Tracking(commands.Cog):
                 AND server_id = $1) AS subquery
                 GROUP BY subquery.user
                 ORDER BY days DESC;
-                """ # 2592000 = seconds in 30 days
+                """ # 2592000 = seconds in a month
         rows = await self.bot.cxn.fetch(query, ctx.guild.id)
 
         def pred(snowflake):
@@ -1377,7 +1377,7 @@ class Tracking(commands.Cog):
         emote = self.bot.emote_dict["graph"]
         pluralize = " has" if len(fmt) == 1 else "s have"
         await ctx.send_or_reply(
-            f"{emote} {len(fmt)} user{pluralize} logged in to **{ctx.guild.name}** during the past 30 days."
+            f"{emote} {len(fmt)} user{pluralize} logged in to **{ctx.guild.name}** during the past month."
         )
         if len(completed) > 2000:
             fp = io.BytesIO(completed.encode("utf-8"))
