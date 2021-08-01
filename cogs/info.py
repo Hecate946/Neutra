@@ -163,7 +163,7 @@ class Info(commands.Cog):
         embed.add_field(name="RAM Usage", value=f"{ram_usage:.2f} MB")
 
         await msg.edit(
-            content=f"{self.bot.emote_dict['snowflake']} About **{ctx.bot.user}** | **{await self.get_version()}**",
+            content=f"{self.bot.emote_dict['robot']} About **{ctx.bot.user}** | **{await self.get_version()}**",
             embed=embed,
         )
 
@@ -288,7 +288,7 @@ class Info(commands.Cog):
         """
         Usage:    {0}bugreport <report>
         Aliases:  {0}issuereport, {0}reportbug, {0}reportissue
-        Examples: {0}bugreport Hello! I found a bug with Snowbot
+        Examples: {0}bugreport Hello! I found a bug with this command...
         Output:   Confirmation that your bug report has been sent.
         Notes:
             Do not hesitate to use this command,

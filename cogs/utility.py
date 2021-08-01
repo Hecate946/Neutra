@@ -48,7 +48,7 @@ class Utility(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.geo = geocoders.Nominatim(user_agent="Snowbot")
+        self.geo = geocoders.Nominatim(user_agent="Neutra")
         self.msg_collection = []
         self.uregex = re.compile(
             r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"

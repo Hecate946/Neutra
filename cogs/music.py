@@ -310,7 +310,7 @@ class Song:
             description=f"```fix\n{self.source.title}\n```\n",
             color=constants.embed,
         )
-        embed.description += self.truncate("\n" + self.source.description)
+        #embed.description += self.truncate("\n" + self.source.description)
         embed.add_field(name="Duration", value=self.source.duration)
         embed.add_field(name="Requested by", value=self.requester.mention)
         embed.add_field(
@@ -1014,11 +1014,15 @@ class Music(commands.Cog):
         if not ctx.voice_state.previous:
             return await ctx.fail("No previous song to play.")
         song = ctx.voice_state.previous
+        print(song)
+        print(dir(song))
         ytdlsrc = await YTDLSource.create_source(
-            ctx, song.source.url, loop=self.bot.loop
+            ctx, str(song.source.url), loop=self.bot.loop
         )
         song = Song(ytdlsrc)
-        ctx.voice_state.songs.append_left(song)
+        ctx.voice_state.songs.put_nowait(song)
+        ctx.voice_state.voice.pause()
+        ctx.voice_state.voice.resume()
         await ctx.send_or_reply(
             f"{self.bot.emote_dict['music']} Requeued the previous song: {song.source}"
         )
@@ -1242,7 +1246,10 @@ class Music(commands.Cog):
                 await ctx.fail(f"Request failed: {e}")
             else:
                 song = Song(source)
-                ctx.voice_state.songs.append_left(song)
+                if len(ctx.voice_state.songs) > 0:
+                    ctx.voice_state.songs.append_left(song)
+                else:
+                    ctx.voice_state.songs.put_nowait(song)
                 await ctx.send_or_reply(
                     f"{self.bot.emote_dict['music']} Front Queued {source}"
                 )

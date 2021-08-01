@@ -1205,10 +1205,10 @@ class Stats(commands.Cog):
         implemented="2021-03-11 18:42:18.403948",
         updated="2021-05-06 16:46:39.043980",
         examples="""
-                {0}userinfo Snowbot
+                {0}userinfo Neutra
                 {0}whois 810377376269205546
                 {0}profile Hecate#3523
-                {0}ui @Snowbot
+                {0}ui @Neutra
                 """,
     )
     @checks.guild_only()

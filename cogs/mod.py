@@ -39,7 +39,7 @@ class Mod(commands.Cog):
         implemented="2021-04-22 01:28:27.769502",
         updated="2021-07-04 17:47:31.565880",
         examples="""
-                {0}vcmove Hecate Snowbot #music
+                {0}vcmove Hecate Neutra #music
                 """,
     )
     @checks.guild_only()
@@ -113,7 +113,7 @@ class Mod(commands.Cog):
         implemented="2021-04-22 01:13:53.346822",
         updated="2021-07-04 17:59:53.792869",
         examples="""
-                {0}vckick Snowbot Hecate#3523
+                {0}vckick Neutra Hecate#3523
                 """,
     )
     @checks.guild_only()
