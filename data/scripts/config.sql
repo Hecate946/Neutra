@@ -1,9 +1,3 @@
-CREATE TABLE IF NOT EXISTS settings (
-    disabled_commands TEXT,
-    react BOOLEAN DEFAULT True,
-    admin_allow BOOLEAN DEFAULT True
-);
-
 CREATE TABLE IF NOT EXISTS config (
     client_id BIGINT PRIMARY KEY,
     avatar_saver_webhook_id BIGINT,

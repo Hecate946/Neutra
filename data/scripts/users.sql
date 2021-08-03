@@ -24,10 +24,6 @@ CREATE TABLE IF NOT EXISTS userroles (
     UNIQUE(user_id, server_id)
 );
 
-CREATE TABLE IF NOT EXISTS usertime (
-    user_id BIGINT PRIMARY KEY,
-    timezone VARCHAR(100)
-);
 
 CREATE TABLE IF NOT EXISTS tracker (
     user_id BIGINT PRIMARY KEY,
