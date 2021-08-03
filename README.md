@@ -1,10 +1,10 @@
-# Tester. Moderation & Stat Tracking Discord Bot
-### [Bot Invite Link](https://discord.com/oauth2/authorize?client_id=813275073459912725&scope=bot+applications.commands&permissions=956689622)
-### [Support Server](https://discord.gg/H2qTG4yxqb)
+# Neutra Moderation & Stat Tracking Discord Bot
+### [Bot Invite Link](https://discord.com/oauth2/authorize?client_id=806953546372087818&scope=bot+applications.commands&permissions=956689622)
+### [Support Server](https://discord.gg/​2qTG4yxqb)
 ### [DiscordBots.gg](https://discord.bots.gg/bots/810377376269205546)
 ### [Top.gg](https://top.gg/bot/810377376269205546)
 ## Overview
-Hello! I'm Tester., and I specialize in tracking and moderation.
+Hello! I'm Neutra, and I specialize in tracking and moderation.
 I was designed to collect all sorts of data on servers, users,
 messages, emojis, online time, and more! I also come with a fast
 and clean moderation system that offers every opportunity for effective
