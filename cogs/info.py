@@ -743,7 +743,7 @@ class Info(commands.Cog):
         Notes:
             If no command is specified, shows full repository
         """
-        source_url = "https://github.com/Hecate946/Snowbot"
+        source_url = "https://github.com/Hecate946/Neutra"
         branch = "main"
         if command is None:
             return await ctx.send_or_reply("<" + source_url + ">")
@@ -770,7 +770,7 @@ class Info(commands.Cog):
             location = os.path.relpath(filename).replace("\\", "/")
         else:
             location = module.replace(".", "/") + ".py"
-            source_url = "https://github.com/Hecate946/Snowbot"
+            source_url = "https://github.com/Hecate946/Neutra"
             branch = "main"
 
         final_url = f"<{source_url}/blob/{branch}/{location}#L{firstlineno}-L{firstlineno + len(lines) - 1}>"

@@ -5,13 +5,13 @@ from re import match
 
 def start():
     config = {}
-    msg = "Hello! My name is Snowbot, and I'm a moderation bot made by Hecate#3523\n"
+    msg = "Hello! My name is Neutra, and I'm a moderation bot made by Hecate#3523\n"
     msg += "I'm going to walk you through a few steps to get started.\n"
     msg += "Firstly, we'll be creating a file names config.json that will hold all my secrets.\n"
     msg += "In order to run, I'll need a bot token. Visit this link: https://discord.com/developers/applications\n"
     msg += "then click on 'create an application'\n"
     msg += "Next, you'll need to give me a name.\n"
-    msg += "I'd appreciate if you name me Snowbot... but if you don't I guess I'll get used to it :((\n"
+    msg += "I'd appreciate if you name me Neutra... but if you don't I guess I'll get used to it :((\n"
     msg += "After creating an application, click on the 'bot' tab, and select the copy token option.\n"
     msg += "This token is extremely important, do not share it with anyone for any reason.\n"
     print(msg)
@@ -70,7 +70,7 @@ def start():
     config["bitly"] = None
     config["botlog"] = None
     config["embed"] = int(embed, 16)
-    config["github"] = "https://github.com/Hecate946/Snowbot"
+    config["github"] = "https://github.com/Hecate946/Neutra"
     config["gtoken"] = None
     config["owners"] = [int(owners)]
     config["postgres"] = postgres

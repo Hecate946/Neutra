@@ -69,7 +69,7 @@ class Files(commands.Cog):
 
         # Get and format the help
         for cog in sorted(self.bot.cogs):
-            if cog.upper() in self.bot.cog_exceptions + self.bot.hidden_cogs:
+            if cog.upper() in self.bot.admin_cogs + self.bot.home_cogs:
                 continue
             cog_commands = sorted(
                 self.bot.get_cog(cog).get_commands(), key=lambda x: x.name

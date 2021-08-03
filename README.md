@@ -1,26 +1,26 @@
-# Snowbot Moderation & Stat Tracking Discord Bot
+# Tester. Moderation & Stat Tracking Discord Bot
 ### [Bot Invite Link](https://discord.com/oauth2/authorize?client_id=813275073459912725&scope=bot+applications.commands&permissions=956689622)
 ### [Support Server](https://discord.gg/H2qTG4yxqb)
 ### [DiscordBots.gg](https://discord.bots.gg/bots/810377376269205546)
 ### [Top.gg](https://top.gg/bot/810377376269205546)
 ## Overview
-Hello! I'm Snowbot, and I specialize in tracking and moderation.
+Hello! I'm Tester., and I specialize in tracking and moderation.
 I was designed to collect all sorts of data on servers, users,
 messages, emojis, online time, and more! I also come with a fast
 and clean moderation system that offers every opportunity for effective
-server management. Apart from moderation and tracking, I feature 265
+server management. Apart from moderation and tracking, I feature 268
 commands across 13 categories that provide awesome utilities!
-Some examples include managing user timezones, role management, and logging.
+Some examples include managing roles and logging server actions.
 ## Categories
 ##### [Admin](#Admin-1)
 ##### [Automod](#Automod-1)
 ##### [Config](#Config-1)
 ##### [Files](#Files-1)
 ##### [Help](#Help-1)
+##### [Home](#Home-1)
 ##### [Info](#Info-1)
 ##### [Logging](#Logging-1)
 ##### [Mod](#Mod-1)
-##### [Music](#Music-1)
 ##### [Server](#Server-1)
 ##### [Stats](#Stats-1)
 ##### [Tracking](#Tracking-1)
@@ -28,9 +28,15 @@ Some examples include managing user timezones, role management, and logging.
 
 
 ### Admin
-#### Module for server administration. (10 Commands)
+#### Module for server administration. (18 Commands)
 
 ```yaml
+add: Add roles users with a role.
+
+add: Add a server prefix.
+
+clear: Clear all server prefixes.
+
 kill: Have the bot leave the server.
 
 massascify: Mass nickname users with odd names.
@@ -45,28 +51,56 @@ massrole: Manage mass adding/removing roles.
 
 muterole: Setup server muting system.
 
+my: Reset your global data
+
 prefix: Show all server prefixes.
 
 prefixes: Show all server prefixes.
 
+remove: Add roles users with a role.
+
+remove: Remove a server prefix.
+
 reset: Manage stored user data.
+
+server: Reset server data for a user.
+
+user: Reset server data for a user.
 ```
 
 ### Automod
-#### Manage the automod system. (10 Commands)
+#### Manage the automod system. (19 Commands)
 
 ```yaml
+add: Auto-assign roles on user join.
+
+add: Add words to the filter.
+
 antiinvite: Enable or disable auto-deleting invite links
 
 autorole: Assign roles to new members.
 
+clear: Clear all current autoroles.
+
+clear: Clear all words from the filer.
+
 clearwarns: Clear a user's warnings
+
+default: Use the default word filter.
+
+display: Show all filtered words.
 
 filter: Manage the server's word filter.
 
 listwarns: Show all warnings a user has.
 
 reassign: Reassign roles on user rejoin.
+
+remove: Remove automatic autoroles.
+
+remove: Removes words from the filter.
+
+show: Show all current autoroles.
 
 unwarn: Revoke a warning from a user
 
@@ -78,14 +112,28 @@ warns: Display the server warnlist.
 ```
 
 ### Config
-#### Configure the permission system. (4 Commands)
+#### Configure the permission system. (11 Commands)
 
 ```yaml
+all: Ignore all server users.
+
+all: Unignore all users, roles, and channels
+
+all: Enable all disabled commands
+
+clear: Clear the ignore list.
+
+clear: Clear the disabled command list.
+
 disable: Disable commands for users, roles, and channels.
 
 enable: Enable commands for users, roles, and channels.
 
 ignore: Ignore channels, roles, and users.
+
+list: Show all ignored objects.
+
+list: Show disabled channels, roles, and users.
 
 unignore: Unignore channels, users, and roles.
 ```
@@ -162,8 +210,15 @@ writer: Show who wrote a command.
 writers: Show all people who wrote for me.
 ```
 
+### Home
+#### Server specific cog. (0 Commands)
+
+```yaml
+
+```
+
 ### Info
-#### Module for bot information. (23 Commands)
+#### Module for bot information. (24 Commands)
 
 ```yaml
 about: Display information about the bot.
@@ -211,25 +266,41 @@ uptime: Show the bot's uptime.
 uptimeinfo: Show a graph of uptime stats
 
 users: Show users I'm connected to.
+
+vote: Show your support by voting for me!
 ```
 
 ### Logging
-#### Manage the logging system (7 Commands)
+#### Manage the logging system (14 Commands)
 
 ```yaml
+duplicates: Find users with identical names.
+
 editsnipe: Snipe an edited message.
 
 find: Find any user using a search.
 
+hard: Find users with hard to mention names.
+
+hash: Search for users by discriminator.
+
+id: Search for users by id.
+
 log: Enable specific logging events.
 
 logchannel: Set your server's logging channel.
+
+nicknames: Search for users by nickname.
+
+playing: Search for users by game.
 
 snipe: Snipe a deleted message.
 
 unlog: Disable specific logging events.
 
 unlogchannel: Remove the server logging channel.
+
+username: Search for users by username.
 ```
 
 ### Mod
@@ -277,70 +348,57 @@ vcmove: Move a user from a voice channel.
 vcpurge: Kick all users from a voice channel.
 ```
 
-### Music
-#### Module for playing music (24 Commands)
-
-```yaml
-clear: Clear all queued songs.
-
-connect: Joins a voice or stage channel.
-
-current: Displays the currently playing song.
-
-disconnect: Disconnect the bot from a channel.
-
-fastforward: Fast forward the song.
-
-loop: Loop the current song or queue.
-
-move: Move a song in the queue.
-
-pause: Pauses the currently playing song.
-
-play: Play a song from a search or URL.
-
-playnext: Add a song to the front of the queue.
-
-position: Show the position of the song.
-
-previous: Play the previous song.
-
-queue: Show the song queue.
-
-remove: Remove a song from the queue.
-
-resume: Resumes a currently paused song.
-
-rewind: Rewind a number of seconds
-
-seek: Seek to a position in the song.
-
-shuffle: Shuffle the song queue.
-
-skip: Vote to skip the current song.
-
-stop: Stops playing song and clears the queue.
-
-subtitles: Request subtitles for the song.
-
-unloop: Un-loop the current song or queue.
-
-volume: Set the volume of the player.
-
-youtube: Search for a youtube video.
-```
-
 ### Server
-#### Module for server management (4 Commands)
+#### Module for server management (24 Commands)
 
 ```yaml
+all: Purge all messages.
+
+between: Purge messages between 2 messages.
+
+bots: Purge messages sent by bots.
+
 cleanup: Clean up bot command usage.
+
+contains: Customize purging messages.
+
+create: None
+
+create: Create a server role.
+
+delete: Delete emojis from the server.
+
+delete: Delete a server role.
+
+embeds: Purge messages with embeds.
 
 emoji: Manage server emojis.
 
+emojis: Purge messages with emojis.
+
+files: Purge messages with attachments.
+
+humans: Purge messages sent by humans.
+
+images: Purge messages with images.
+
+invites: Purge messages with invites.
+
+mentions: Purge messages with mentions.
+
 purge: Purge any type of content.
 
+reactions: Purge reactions from messages.
+
 role: Role management commands.
+
+until: Purge messages after a message.
+
+urls: Purge messages with URLs.
+
+user: Purge messages sent by a user.
+
+webhooks: Purge messages sent by wehooks.
 ```
 
 ### Stats

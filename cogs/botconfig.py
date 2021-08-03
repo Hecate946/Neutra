@@ -237,10 +237,10 @@ class Botconfig(commands.Cog):
         overview = (
             open("./data/txts/overview.txt")
             .read()
-            .format("Snowbot", len(cmds), len(cogs))
+            .format(self.bot.user.name, len(cmds), len(cogs))
         )
         premsg = ""
-        premsg += f"# Snowbot Moderation & Stat Tracking Discord Bot\n"
+        premsg += f"# {self.bot.user.name} Moderation & Stat Tracking Discord Bot\n"
         # premsg += "![6010fc1cf1ae9c815f9b09168dbb65a7-1](https://user-images.githubusercontent.com/74381783/108671227-f6d3f580-7494-11eb-9a77-9478f5a39684.png)\n"
         premsg += f"### [Bot Invite Link]({self.bot.oauth})\n"
         premsg += f"### [Support Server]({self.bot.constants.support})\n"
@@ -253,15 +253,9 @@ class Botconfig(commands.Cog):
         premsg += "\n## Categories\n"
         msg = ""
 
-        cog_list = [self.bot.get_cog(cog) for cog in sorted(self.bot.cogs)]
-        for cog in cog_list:
-            if (
-                cog.qualified_name.upper()
-                in self.bot.cog_exceptions + self.bot.hidden_cogs
-            ):
-                continue
+        for cog in cogs:
             premsg += f"##### [{cog.qualified_name}](#{cog.qualified_name}-1)\n"
-            cmds = [c for c in cog.get_commands() if not c.hidden]
+            cmds = [c for c in cog.walk_commands() if not c.hidden]
 
             msg += "\n\n### {}\n#### {} ({} Commands)\n\n```yaml\n{}\n```" "".format(
                 cog.qualified_name,

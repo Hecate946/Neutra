@@ -31,7 +31,7 @@ if not os.path.exists("./data/json"):
     os.mkdir("./data/json")
 
 # Set up our command logger
-command_logger = logging.getLogger("Snowbot")
+command_logger = logging.getLogger("COMMAND_LOGGER")
 command_logger.setLevel(logging.DEBUG)
 command_logger_handler = RotatingFileHandler(
     filename="./data/logs/commands.log",
@@ -112,7 +112,7 @@ def get_prefixes(bot, msg):
 
 
 # Main bot class. Heart of the application
-class Snowbot(commands.AutoShardedBot):
+class Neutra(commands.AutoShardedBot):
     def __init__(self):
         allowed_mentions = discord.AllowedMentions(
             roles=False, everyone=False, users=True, replied_user=True
@@ -245,12 +245,13 @@ class Snowbot(commands.AutoShardedBot):
             x.name
             for x in self.commands
             if not x.hidden
-            and x.cog.qualified_name.upper not in self.hidden_cogs + self.cog_exceptions
+            and x.cog.qualified_name.upper not in self.admin_cogs + self.home_cogs
         ]
         category_list = [
-            x.qualified_name.capitalize()
+            x
             for x in [self.get_cog(cog) for cog in self.cogs]
-            if x.qualified_name.upper() not in self.hidden_cogs + self.cog_exceptions
+            if x.qualified_name.upper() not in self.admin_cogs + self.home_cogs
+            if len([c for c in x.walk_commands()]) > 0
         ]
         return (self.hecate, command_list, category_list)
 
@@ -818,4 +819,4 @@ class Snowbot(commands.AutoShardedBot):
         await self.process_commands(after)
 
 
-bot = Snowbot()
+bot = Neutra()

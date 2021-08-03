@@ -327,8 +327,8 @@ class Utility(commands.Cog):
         examples="""
                 {0}oauth
                 {0}oauth2 810377376269205546 8
-                {0}genoauth Snowbot#7630 359867
-                {0}genbotoauth @Snowbot 34985
+                {0}genoauth Neutra#7630 359867
+                {0}genbotoauth @Neutra 34985
                 """,
     )
     @checks.cooldown()
@@ -779,7 +779,7 @@ class Utility(commands.Cog):
         """
         Usage: {0}avatar [user]
         Aliases: {0}av, {0}pfp, {0}icon
-        Examples: {0}avatar 810377376269205546, {0}avatar Snowbot
+        Examples: {0}avatar 810377376269205546, {0}avatar Neutra
         Output: Shows an enlarged embed of a user's avatar.
         Notes: Will default to you if no user is passed.
         """
@@ -820,10 +820,10 @@ class Utility(commands.Cog):
         implemented="2021-03-25 05:56:35.053930",
         updated="2021-05-06 23:25:08.685407",
         examples="""
-                {0}web @Hecate Snowbot 708584008065351681
-                {0}mobile @Hecate Snowbot 708584008065351681
-                {0}desktop @Hecate Snowbot 708584008065351681
-                {0}platform @Hecate Snowbot 708584008065351681
+                {0}web @Hecate Neutra 708584008065351681
+                {0}mobile @Hecate Neutra 708584008065351681
+                {0}desktop @Hecate Neutra 708584008065351681
+                {0}platform @Hecate Neutra 708584008065351681
                 """,
     )
     @checks.guild_only()
@@ -902,9 +902,9 @@ class Utility(commands.Cog):
         implemented="2021-03-14 04:33:34.557509",
         updated="2021-05-24 16:13:50.890038",
         examples="""
-            {0}nick Snowbot
+            {0}nick Neutra
             {0}setnick @Tester Tester2
-            {0}nickname Snowbot Tester
+            {0}nickname Neutra Tester
             """,
     )
     @commands.guild_only()
@@ -949,19 +949,20 @@ class Utility(commands.Cog):
             await helpers.error_info(ctx, [(str(user), e)])
 
     @decorators.command(
-        aliases=["id"],
+        aliases=["id", "age"],
         brief="Show info on a discord snowflake.",
         implemented="2021-04-05 18:28:55.338390",
         updated="2021-05-07 05:05:13.464282",
         examples="""
                 {0}snowflake 81037737626
                 {0}id 810377376269205546
+                {0}age 81037737626920554
                 """,
     )
     async def snowflake(self, ctx, *, snowflake):
         """
         Usage: {0}snowflake <id>
-        Alias: {0}id
+        Aliases: {0}id, {0}age
         Output:
             The exact date & time that the
             discord snowflake was created
@@ -976,11 +977,12 @@ class Utility(commands.Cog):
             (sid >> 22) + 1420070400000
         ) / 1000  # python uses seconds not milliseconds
         cdate = datetime.utcfromtimestamp(timestamp)
-        msg = "{} Snowflake created {}".format(
+        msg = "{} Snowflake `{}` created **{}**".format(
             self.bot.emote_dict["snowflake"],
+            snowflake,
             cdate.strftime("%A, %B %d, %Y at %H:%M:%S UTC"),
         )
-        return await ctx.send_or_reply(msg)
+        await ctx.send_or_reply(msg)
 
     @decorators.command(
         aliases=["content"],

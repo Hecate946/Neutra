@@ -133,6 +133,9 @@ class Automod(commands.Cog):
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.cooldown()
     async def listwarns(self, ctx, target: converters.DiscordMember = None):
+        """
+        Usage:
+        """
         target = target or ctx.author
 
         query = """

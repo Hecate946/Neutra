@@ -28,7 +28,7 @@ class Storage(object):
     support = None  # The support server invite
     help_embed = None  # The help embed
     message = None  # The interaction message
-    github = "https://github.com/Hecate946/Snowbot/blob/main/README.md" # "Docs link"
+    github = "https://github.com/Hecate946/Neutra/blob/main/README.md" # "Docs link"
 
 class HelpView(discord.ui.View):
     def __init__(self, ctx):
@@ -122,7 +122,7 @@ class Help(commands.Cog):
         Storage.support = self.bot.constants.support
         Storage.help_embed = self.get_help_embed
 
-        self.desc = f"**Bot Invite Link:** [https://snowbot.discord.bot]({self.bot.oauth})\n**Support Server:**  [https://discord.gg/snowbot]({self.bot.constants.support})"
+        self.desc = f"**Bot Invite Link:** [https://neutra.discord.bot]({self.bot.oauth})\n**Support Server:**  [https://discord.gg/neutra]({self.bot.constants.support})"
 
 
     @property

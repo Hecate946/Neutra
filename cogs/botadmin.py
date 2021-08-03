@@ -48,7 +48,7 @@ class Botadmin(commands.Cog):
     ):
         hdrs = {
             "Accept": "application/vnd.github.inertia-preview+json",
-            "User-Agent": "Snowbot Gist Creator",
+            "User-Agent": "Neutra Gist Creator",
             "Authorization": f"token {self.bot.constants.gtoken}",
         }
 

@@ -1,5 +1,5 @@
-# Installing Snowbot
-This guide is for self-hosting Snowbot. If you just want to install the bot without getting the code, go to https://discord.com/oauth2/authorize?client_id=810377376269205546&scope=bot
+# Installing Neutra
+This guide is for self-hosting Neutra. If you just want to install the bot without getting the code, go to https://discord.com/oauth2/authorize?client_id=810377376269205546&scope=bot
 
 ## Step One: Install Ubuntu
 
@@ -12,7 +12,7 @@ sudo apt install git
 
 
 Cd into your preferred directory and clone the repository with 
-git clone https://github.com/Hecate946/Snowbot
+git clone https://github.com/Hecate946/Neutra
 
 
 ## Step Three: Install Postgresql
@@ -42,7 +42,7 @@ CREATE DATABASE <db_name>;
 
 
 For example, 
-CREATE DATABASE Snowbot;
+CREATE DATABASE Neutra;
 
 ## Step Four: Create A Discord Application
 
@@ -56,7 +56,7 @@ Make sure you enable both privileged gateway intents
 
 ## Step Five: Pip Install
 
-To install the libraries for Snowbot, navigate to the bot's folder and run:
+To install the libraries for Neutra, navigate to the bot's folder and run:
 ```yaml 
 pip install -r requirements.txt
 ```
