@@ -621,7 +621,7 @@ class Neutra(commands.AutoShardedBot):
         will be logged via the error webhook.
         """
         tb = kwargs.get("tb") or traceback.format_exc()
-        title = f"**{self.emote_dict['failed']} Error `{discord.utils.utcnow()}`**"
+        title = f"**Error `{discord.utils.utcnow()}`**"
         description = f"```prolog\n{event.upper()}:\n{tb}\n```"
         dfile = None
         arguments = None
