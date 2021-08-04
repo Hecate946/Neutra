@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS config (
     client_id BIGINT PRIMARY KEY,
-    presence TEXT,
-    activity TEXT,
+    presence TEXT DEFAULT "",
+    activity TEXT DEFAULT,
     status TEXT,
     version REAL DEFAULT 1,
     ownerlocked BOOLEAN DEFAULT False,

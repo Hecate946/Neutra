@@ -6,7 +6,6 @@ import discord
 import inspect
 
 from datetime import datetime, timedelta
-from discord import guild
 from discord.ext import commands, menus
 from PIL import Image, ImageDraw, ImageFont
 
@@ -335,7 +334,7 @@ class Tracking(commands.Cog):
         )
 
     @decorators.command(
-        brief="Show the top message senders.",
+        brief="Show top message senders.",
         implemented="2021-04-03 01:56:35.751553",
         updated="2021-05-06 23:36:18.959143",
         examples="""
@@ -490,7 +489,7 @@ class Tracking(commands.Cog):
 
     @decorators.command(
         aliases=["avs", "avatarhistory", "avhistory"],
-        brief="Show a user's past avatars.",
+        brief="Show past user avatars.",
         implemented="2021-03-27 01:14:06.076262",
         updated="2021-05-06 23:50:27.540481",
         examples="""
@@ -569,7 +568,7 @@ class Tracking(commands.Cog):
 
     @decorators.command(
         aliases=["iconhistory"],
-        brief="Show the server's past icons.",
+        brief="Show past server icons.",
         implemented="2021-03-27 01:14:06.076262",
         updated="2021-05-06 23:50:27.540481",
         examples="""
