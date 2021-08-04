@@ -1467,3 +1467,74 @@ class Admin(commands.Cog):
 
             await self.bot.cxn.execute(query, ctx.guild.id)
             await ctx.success(f"Reset all {option[:-1]} data for this server.")
+
+
+    @decorators.command(
+        aliases=["serverlock", "lockserver", "frost"],
+        brief="Lock all server channels.",
+        examples="""
+                {0}freeze
+                {0}serverlock
+                {0}lockserver
+                """
+    )
+    @checks.has_perms(administrator=True)
+    @checks.bot_has_perms(administrator=True)
+    @checks.cooldown(2, 20)
+    async def freeze(self, ctx):
+        """
+        Usage: {0}freeze
+        Aliases: {0}frost, {0}serverlock, {0}serverunlock
+        Permission: Administrator
+        Output:
+            Sets the send_messages permission to false
+            for the @everyone role in all channels.
+        Notes:
+            Use with caution, the previous permissions
+            will be permanently wiped and cannot be restored.
+        """
+        c = await ctx.confirm(f"This action will lock the entire server by removing permissions from the `@everyone` role.")
+        if c:
+            msg = await ctx.load("Freezing the server. This process may take several minutes...")
+            for channel in ctx.guild.text_channels:
+                await channel.set_permissions(ctx.guild.default_role, send_messages=False)
+
+            await msg.edit(content=f"{self.bot.emote_dict['success']} Server frozen.")
+
+    @decorators.command(
+        aliases=["unlockserver", "serverunlock", "melt", "defrost"],
+        brief="Unlock all server channels.",
+        examples="""
+                {0}unfreeze
+                {0}melt
+                {0}defrost
+                {0}serverunlock
+                {0}unlockserver
+                """
+    )
+    @checks.has_perms(administrator=True)
+    @checks.bot_has_perms(administrator=True)
+    @checks.cooldown(2, 20)
+    async def unfreeze(self, ctx):
+        """
+        Usage: {0}unfreeze
+        Aliases: {0}defrost, {0}serverlock, {0}serverunlock, {0}melt
+        Permission: Administrator
+        Output:
+            Resets the send_messages permission to default
+            for the @everyone role in all channels.
+        Notes:
+            Use with caution, the previous permissions
+            will be permanently wiped and cannot be restored.
+        """
+        c = await ctx.confirm(f"This action will unlock the entire server by resetting permissions for the `@everyone` role.")
+        if c:
+            msg = await ctx.load("Unfreezing the server. This process may take several minutes...")
+            for channel in ctx.guild.text_channels:
+                await channel.set_permissions(ctx.guild.default_role, send_messages=None)
+
+            await msg.edit(content=f"{self.bot.emote_dict['success']} Server unfrozen.")
+
+            
+
+

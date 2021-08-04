@@ -446,6 +446,15 @@ class Batch(commands.Cog):
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
+    @decorators.event_check(lambda s, g: g.icon is not None)
+    async def on_guild_join(self, guild):
+        """
+        Here's where we get notified of guild updates.
+        """
+        self.bot.icon_saver.save(guild)
+
+    @commands.Cog.listener()
+    @decorators.wait_until_ready()
     @decorators.event_check(lambda s, m: m.guild and not m.author.bot)
     async def on_message(self, message):
         async with self.batch_lock:
