@@ -494,10 +494,8 @@ class Neutra(commands.AutoShardedBot):
         print(f"{self.user} ({self.user.id})")
         try:
             await self.logging_webhook.send(
-                f"{self.emote_dict['success']} **Information** `{discord.utils.utcnow()}`\n"
+                f"**Information** `{discord.utils.utcnow()}`\n"
                 f"```prolog\nReady: {self.user} [{self.user.id}]```",
-                username=f"{self.user.name} Logger",
-                avatar_url=self.constants.avatars["green"],
             )
         except Exception:
             pass
@@ -771,10 +769,8 @@ class Neutra(commands.AutoShardedBot):
             self.invites[guild.id] = await guild.invites()
         try:
             await self.logging_webhook.send(
-                f"{self.emote_dict['success']} **Information** `{discord.utils.utcnow()}`\n"
+                f"**Information** `{discord.utils.utcnow()}`\n"
                 f"```prolog\nServer join: {guild.name} [{guild.id}]```",
-                username=f"{self.user.name} Logger",
-                avatar_url=self.constants.avatars["green"],
             )
         except Exception:
             pass
@@ -787,10 +783,8 @@ class Neutra(commands.AutoShardedBot):
         await cleanup.destroy_server(guild.id)
         try:
             await self.logging_webhook.send(
-                f"{self.emote_dict['success']} **Information** `{discord.utils.utcnow()}`\n"
+                f"**Information** `{discord.utils.utcnow()}`\n"
                 f"```prolog\nServer remove: {guild.name} [{guild.id}]```",
-                username=f"{self.user.name} Logger",
-                avatar_url=self.constants.avatars["green"],
             )
         except Exception:
             pass
