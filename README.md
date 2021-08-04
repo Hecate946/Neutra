@@ -1,6 +1,6 @@
 # Neutra Moderation & Stat Tracking Discord Bot
 ### [Bot Invite Link](https://discord.com/oauth2/authorize?client_id=806953546372087818&scope=bot+applications.commands&permissions=956689622)
-### [Support Server](https://discord.gg/​2qTG4yxqb)
+### [Support Server](https://discord.gg/H2qTG4yxqb)
 ### [DiscordBots.gg](https://discord.bots.gg/bots/810377376269205546)
 ### [Top.gg](https://top.gg/bot/810377376269205546)
 ## Overview
@@ -8,7 +8,7 @@ Hello! I'm Neutra, and I specialize in tracking and moderation.
 I was designed to collect all sorts of data on servers, users,
 messages, emojis, online time, and more! I also come with a fast
 and clean moderation system that offers every opportunity for effective
-server management. Apart from moderation and tracking, I feature 268
+server management. Apart from moderation and tracking, I feature 269
 commands across 13 categories that provide awesome utilities!
 Some examples include managing roles and logging server actions.
 ## Categories
@@ -23,8 +23,8 @@ Some examples include managing roles and logging server actions.
 ##### [Mod](#Mod-1)
 ##### [Server](#Server-1)
 ##### [Stats](#Stats-1)
-##### [Tracking](#Tracking-1)
 ##### [Utility](#Utility-1)
+##### [Tracking](#Tracking-1)
 
 
 ### Admin
@@ -454,59 +454,6 @@ userinfo: Show information on a user.
 whohas: Show the people who have a role.
 ```
 
-### Tracking
-#### Module for all user stats (24 Commands)
-
-```yaml
-activity: Show the most active server users.
-
-avatars: Show a user's past avatars.
-
-barstatus: Status info in a bar graph.
-
-botusage: Show the top bot users.
-
-characters: Show character usage.
-
-clocker: Show the days a user was active.
-
-clocking: Show all active users.
-
-commandcount: Count the commands run by a user.
-
-commandstats: Bot commands listed by popularity.
-
-invited: See who invited a user.
-
-invites: Count the invites of a user.
-
-messagecount: Count the messages a user sent.
-
-messagestats: Show messaging stats on users.
-
-nicknames: Show a user's past nicknames.
-
-seen: Check when a user was last seen.
-
-spoke: Check when a user last spoke.
-
-spokehere: Check when a user last spoke here.
-
-status: Show a user's discord status.
-
-statusinfo: Status info and online time stats.
-
-top: Show the top message senders.
-
-user: Show information on a user.
-
-usernames: Show a user's past usernames.
-
-word: Usage for a specific word.
-
-words: Most used words from a user.
-```
-
 ### Utility
 #### Module for general utilities. (22 Commands)
 
@@ -554,4 +501,59 @@ shorten: Shorten URLs to bitly links.
 snowflake: Show info on a discord snowflake.
 
 voiceusers: Show all the users in a vc.
+```
+
+### Tracking
+#### Module for all user stats (25 Commands)
+
+```yaml
+activity: Show the most active users.
+
+avatars: Show past user avatars.
+
+barstatus: Status info in a bar graph.
+
+botusage: Show the top bot users.
+
+characters: Show character usage.
+
+clocker: Show days a user was active.
+
+clocking: Show all active users.
+
+commandcount: Count the commands run by a user.
+
+commandstats: Bot commands listed by popularity.
+
+icons: Show past server icons.
+
+invited: See who invited a user.
+
+invites: Count the invites of a user.
+
+messagecount: Count the messages a user sent.
+
+messagestats: Show message stats.
+
+nicknames: Show a user's past nicknames.
+
+seen: Check when a user was last seen.
+
+spoke: Check when a user last spoke.
+
+spokehere: Check when a user last spoke here.
+
+status: Show a user's discord status.
+
+statusinfo: Status info in a piechart.
+
+top: Show top message senders.
+
+user: Show information on a user.
+
+usernames: Show a user's past usernames.
+
+word: Usage for a specific word.
+
+words: Most used words from a user.
 ```
