@@ -6,6 +6,7 @@ import discord
 import inspect
 
 from datetime import datetime, timedelta
+from discord import guild
 from discord.ext import commands, menus
 from PIL import Image, ImageDraw, ImageFont
 
@@ -563,6 +564,72 @@ class Tracking(commands.Cog):
                 embed.title = f"Recorded Avatars for {user}"
                 embed.set_image(url=str(user.avatar.with_size(1024)))
                 await ctx.send_or_reply(embed=embed)
+            else:
+                raise commands.DisabledCommand()
+
+    @decorators.command(
+        aliases=["iconhistory"],
+        brief="Show the server's past icons.",
+        implemented="2021-03-27 01:14:06.076262",
+        updated="2021-05-06 23:50:27.540481",
+        examples="""
+                {0}icons
+                {0}iconhistory
+                """,
+    )
+    @checks.guild_only()
+    @checks.bot_has_perms(
+        add_reactions=True, attach_files=True, embed_links=True, external_emojis=True
+    )
+    @checks.cooldown(1, 10)
+    async def icons(self, ctx):
+        """
+        Usage: {0}icons
+        Alias: {0}iconhistory
+        Output:
+            Shows an embed containing up to
+            the 16 last icons of the server.
+        Permission: View Audit Log
+        """
+        await ctx.trigger_typing()
+
+        query = """
+                SELECT icons.url
+                FROM (SELECT icon, first_seen
+                FROM (SELECT icon, LAG(icon)
+                OVER (order by first_seen desc) AS old_icon, first_seen
+                FROM servericons WHERE servericons.server_id = $1) a
+                WHERE icon != old_icon OR old_icon IS NULL) icns
+                LEFT JOIN icons ON icons.hash = icns.icon
+                ORDER BY icns.first_seen DESC LIMIT 100;
+                """
+
+        urls = await self.bot.cxn.fetch(query, ctx.guild.id)
+
+        async def url_to_bytes(url):
+            if not url:
+                return None
+            bytes_av = await self.bot.get(url, res_method="read")
+            return bytes_av
+
+        avys = await asyncio.gather(*[url_to_bytes(url["url"]) for url in urls])
+        if avys:
+            file = await self.bot.loop.run_in_executor(None, images.quilt, avys)
+            dfile = discord.File(file, "icons.png")
+            embed = discord.Embed(color=self.bot.constants.embed)
+            embed.title = f"Recorded icons for {ctx.guild.name}"
+            embed.set_image(url="attachment://icons.png")
+            await ctx.send_or_reply(embed=embed, file=dfile)
+        else:
+            if self.bot.icon_saver.is_saving:
+                if ctx.guild.icon:
+                    self.bot.icon_saver.save(ctx.guild)
+                    embed = discord.Embed(color=self.bot.constants.embed)
+                    embed.title = f"Recorded icons for {ctx.guild.name}"
+                    embed.set_image(url=str(ctx.guild.icon.with_size(1024)))
+                    await ctx.send_or_reply(embed=embed)
+                else:
+                    await ctx.fail("No icons have been recorded for this server.")
             else:
                 raise commands.DisabledCommand()
 
