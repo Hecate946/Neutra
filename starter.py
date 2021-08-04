@@ -20,8 +20,10 @@ def main(mode):
 
         setup.start()
     elif mode == "tester":
+        tester = True
         token = conf["tester"]
     else:
+        tester = False
         token = conf["token"]
 
     from core import bot
@@ -30,7 +32,7 @@ def main(mode):
     startmsg = f"{block}\n## Running {mode.capitalize()} Mode ## \n{block}"
     click.echo(startmsg)
     # run the application ...
-    bot.run(token=token)
+    bot.run(token=token, tester=tester)
 
 
 if __name__ == "__main__":

@@ -185,7 +185,6 @@ class YTDLSource(discord.PCMVolumeTransformer):
     async def search_source(
         self, ctx, search: str, *, loop: asyncio.BaseEventLoop = None, bot
     ):
-        robot = ctx.guild.me
         self.bot = bot
         channel = ctx.channel
         loop = loop or asyncio.get_event_loop()
@@ -212,7 +211,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         embed = discord.Embed(
             title=f"Search results for:\n**{search}**",
             description="\n".join(lst),
-            color=robot.color,
+            color=self.bot.constants.embed,
             timestamp=discord.utils.utcnow(),
         )
         embed.set_author(

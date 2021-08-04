@@ -76,3 +76,20 @@ CREATE TABLE IF NOT EXISTS invites (
     inviter BIGINT,
     server_id BIGINT
 );
+
+CREATE TABLE IF NOT EXISTS servericons (
+    server_id BIGINT,
+    icon TEXT,
+    first_seen TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS icons (
+    hash TEXT PRIMARY KEY,
+    url TEXT,
+    msgid BIGINT,
+    id bigint,
+    size bigint,
+    height bigint,
+    width bigint,
+    insertion TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
+);

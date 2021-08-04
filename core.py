@@ -16,7 +16,7 @@ from discord.ext import commands, tasks
 from logging.handlers import RotatingFileHandler
 
 from settings import cleanup, database, constants
-from utilities import utils, avatars, override
+from utilities import utils, saver, override
 
 MAX_LOGGING_BYTES = 32 * 1024 * 1024  # 32 MiB
 
@@ -177,8 +177,9 @@ class Neutra(commands.AutoShardedBot):
     def hecate(self):
         return self.get_user(self.owner_ids[0])
 
-    def run(self, token):  # Everything starts from here
+    def run(self, token, *, tester=False):  # Everything starts from here
         self.setup()  # load the cogs
+        self.tester = tester
         try:
             super().run(token, reconnect=True)  # Run the bot
         finally:  # Write up our json files with the stats from the session.
@@ -340,36 +341,40 @@ class Neutra(commands.AutoShardedBot):
         print("Initializing Cache...")
         await self.wait_until_ready()
         print(f"Elapsed time: {str(time.time() - st)[:10]} s")
-        SEPARATOR = "=" * 33
-        print(color(fore="#46648F", text=SEPARATOR))
         st = time.time()
         member_list = [x for x in self.get_all_members()]
-        print(
-            color(
-                fore="#46648F",
-                text=f"Member   iteration : {str(time.time() - st)[:10]} s",
-            )
-        )
         try:
             await database.initialize(self, member_list)
         except Exception as e:
             print(utils.traceback_maker(e))
 
-        try:  # Set up our webhooks
+        if not self.tester:
             await self.setup_webhooks()
-        except Exception as e:
-            print(f"Unable to setup webhooks: {e}")
-            pass
 
         # The rest of the botvars that couldn't be set earlier
         await self.load_globals()
 
     async def setup_webhooks(self):
-        self.avatar_webhook = await self.fetch_webhook(utils.config()["avatars"][1])
-        self.error_webhook = await self.fetch_webhook(utils.config()["errors"][1])
-        self.icon_webhook = await self.fetch_webhook(utils.config()["icons"][1])
-        self.logging_webhook = await self.fetch_webhook(utils.config()["logging"][1])
-        self.testing_webhook = await self.fetch_webhook(utils.config()["testing"][1])
+        try:
+            self.avatar_webhook = await self.fetch_webhook(utils.config()["avatars"][1])
+        except Exception as e:
+            print(f"Unable to set up avatar webhook: {e}")
+        try:
+            self.error_webhook = await self.fetch_webhook(utils.config()["errors"][1])
+        except Exception as e:
+            print(f"Unable to set up error webhook: {e}")
+        try:
+            self.icon_webhook = await self.fetch_webhook(utils.config()["icons"][1])
+        except Exception as e:
+            print(f"Unable to set up icon webhook: {e}")
+        try:
+            self.logging_webhook = await self.fetch_webhook(utils.config()["logging"][1])
+        except Exception as e:
+            print(f"Unable to set up logging webhook: {e}")
+        try:
+            self.testing_webhook = await self.fetch_webhook(utils.config()["testing"][1])
+        except Exception as e:
+            print(f"Unable to set up testing webhook: {e}")
 
     async def load_globals(self):
         """
@@ -469,9 +474,13 @@ class Neutra(commands.AutoShardedBot):
         # Delete all records of servers that kicked the bot
         await cleanup.basic_cleanup(self.guilds)
 
-        self.avatar_saver = avatars.AvatarSaver(
+        self.avatar_saver = saver.AvatarSaver(
             self.avatar_webhook, self.cxn, self.session, self.loop
         )  # Start saving avatars.
+
+        self.avatar_saver = saver.IconSaver(
+            self.icon_webhook, self.cxn, self.session, self.loop
+        )  # Start saving icons.
 
         # load all initial extensions
         try:

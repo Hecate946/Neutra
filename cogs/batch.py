@@ -367,6 +367,11 @@ class Batch(commands.Cog):
             return True
 
     @staticmethod
+    async def icon_changed(before, after):
+        if before.icon != after.icon:
+            return True
+
+    @staticmethod
     async def username_changed(before, after):
         if before.discriminator != after.discriminator:
             return True
@@ -428,6 +433,16 @@ class Batch(commands.Cog):
                     }
                 )
                 self.tracker_batch[before.id] = (time.time(), "updating their username")
+
+    @commands.Cog.listener()
+    @decorators.wait_until_ready()
+    @decorators.event_check(lambda s, b, a: a.icon is not None)
+    async def on_guild_update(self, before, after):
+        """
+        Here's where we get notified of guild updates.
+        """
+        if await self.icon_changed(before, after):
+            self.bot.icon_saver.save(after)
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
