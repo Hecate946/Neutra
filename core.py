@@ -18,6 +18,8 @@ from logging.handlers import RotatingFileHandler
 from settings import cleanup, database, constants
 from utilities import utils, saver, override
 
+from utilities import deprecate
+
 MAX_LOGGING_BYTES = 32 * 1024 * 1024  # 32 MiB
 
 # Set up our data folders
@@ -144,13 +146,14 @@ class Neutra(commands.AutoShardedBot):
             "$",
             "&",
             "%",
-            "*" "-",
+            "*",
+            "-",
             "+",
             "=",
-            "," "?",
+            ",",
+            "?",
             ";",
             ":",
-            "`",
         ]  # Common prefixes that are valid in DMs
         self.ready = False
         self.session = aiohttp.ClientSession(loop=self.loop)
@@ -269,6 +272,10 @@ class Neutra(commands.AutoShardedBot):
             return
         if message.author.bot:
             return
+        
+        if await deprecate.check(ctx):
+            return
+
         if str(message.author.id) in self.blacklist:
             try:
                 await message.add_reaction(self.emote_dict["failed"])
@@ -387,10 +394,7 @@ class Neutra(commands.AutoShardedBot):
         except Exception as e:
             print(f"Unable to set up testing webhook: {e}")
 
-    async def load_globals(self):
-        """
-        Sets up the remaining botvars
-        """
+    def genoauth(self, user_id):
         # The permissions needed to use all commands.
         perms = discord.Permissions.none()
         perms.add_reactions = True
@@ -409,12 +413,20 @@ class Neutra(commands.AutoShardedBot):
         perms.read_messages = True
         perms.send_messages = True
         perms.view_audit_log = True
+        
+        url = discord.utils.oauth_url(
+            client_id=user_id,
+            permissions=perms,
+            scopes=("bot", "applications.commands"),
+        )
+        return url
+
+    async def load_globals(self):
+        """
+        Sets up the remaining botvars
+        """
         if not hasattr(self, "oauth"):
-            self.oauth = discord.utils.oauth_url(
-                client_id=self.user.id,
-                permissions=perms,
-                scopes=("bot", "applications.commands"),
-            )
+            self.oauth = self.genoauth(self.user.id)
 
         if not hasattr(self, "uptime"):
             self.uptime = discord.utils.utcnow()
