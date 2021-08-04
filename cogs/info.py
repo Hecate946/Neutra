@@ -735,6 +735,7 @@ class Info(commands.Cog):
         )
         embed.set_author(name=owner, icon_url=owner.avatar.url)
         await ctx.send_or_reply(embed=embed)
+
     @decorators.command(brief="Display the source code.", aliases=["sourcecode", "src"])
     async def source(self, ctx, *, command: str = None):
         """
@@ -799,6 +800,7 @@ class Info(commands.Cog):
             "Thanks for showing interest in supporting me! Click the button below to vote for me on top.gg.",
             view=view,
         )
+
     @decorators.command(
         aliases=["sup", "assistance", "assist"],
         brief="Join my support server!",

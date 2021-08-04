@@ -13,7 +13,9 @@ from utilities import utils
 log = logging.getLogger("INFO_LOGGER")
 
 scripts = [x[:-4] for x in sorted(os.listdir("./data/scripts")) if x.endswith(".sql")]
-cxn = asyncio.get_event_loop().run_until_complete(asyncpg.create_pool(constants.postgres))
+cxn = asyncio.get_event_loop().run_until_complete(
+    asyncpg.create_pool(constants.postgres)
+)
 
 prefixes = dict()
 settings = defaultdict(dict)
@@ -62,7 +64,10 @@ async def update_server(server, member_list):
             INSERT INTO userstatus (user_id)
             VALUES ($1) ON CONFLICT DO NOTHING;
             """
-    await cxn.executemany(query, ((m.id,) for m in member_list),)
+    await cxn.executemany(
+        query,
+        ((m.id,) for m in member_list),
+    )
 
     log.info(f"Server {server.name} Updated [{server.id}] Time: {time.time() - st}")
 
@@ -74,13 +79,19 @@ async def update_db(guilds, member_list):
             ON CONFLICT DO NOTHING;
             """
     st = time.time()
-    await cxn.executemany(query, ((s.id,) for s in guilds),)
+    await cxn.executemany(
+        query,
+        ((s.id,) for s in guilds),
+    )
 
     query = """
             INSERT INTO userstatus (user_id)
             VALUES ($1) ON CONFLICT DO NOTHING;
             """
-    await cxn.executemany(query, ((m.id,) for m in member_list),)
+    await cxn.executemany(
+        query,
+        ((m.id,) for m in member_list),
+    )
     log.info(f"Database Update: {time.time() - st}")
 
 
@@ -100,9 +111,7 @@ async def load_settings():
     records = await cxn.fetch(query)
     if records:
         for record in records:
-            settings[record["server_id"]].update(
-                json.loads(record["settings"])
-            )
+            settings[record["server_id"]].update(json.loads(record["settings"]))
 
 
 async def fix_server(server):

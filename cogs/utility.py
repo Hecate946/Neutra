@@ -845,7 +845,9 @@ class Utility(commands.Cog):
         statuses = []
 
         if str(user.status) == "offline":
-            await ctx.send_or_reply(f"{self.bot.emote_dict['offline']} User `{user}` is offline.")
+            await ctx.send_or_reply(
+                f"{self.bot.emote_dict['offline']} User `{user}` is offline."
+            )
             return
 
         if str(user.desktop_status) != "offline":
@@ -854,7 +856,6 @@ class Utility(commands.Cog):
             statuses.append("mobile")
         if str(user.web_status) != "offline":  # Member is on web :(((
             statuses.append("web")
-
 
         def word_fmt(statuses):
             statuses = ["discord " + status for status in statuses]
@@ -865,9 +866,10 @@ class Utility(commands.Cog):
             else:
                 return f"{statuses[0]}"
 
-        emoji_fmt = ' '.join(self.bot.emote_dict[key] for key in statuses)
-        await ctx.send_or_reply(f"{emoji_fmt} User `{user}` is on {word_fmt(statuses)}.")
-
+        emoji_fmt = " ".join(self.bot.emote_dict[key] for key in statuses)
+        await ctx.send_or_reply(
+            f"{emoji_fmt} User `{user}` is on {word_fmt(statuses)}."
+        )
 
     @decorators.command(
         aliases=["sav", "savatar"],

@@ -156,7 +156,14 @@ class Neutra(commands.AutoShardedBot):
         self.session = aiohttp.ClientSession(loop=self.loop)
         self.socket_events = collections.Counter()
 
-        self.admin_cogs = ["BOTCONFIG", "BOTADMIN", "MANAGER", "JISHAKU", "DATABASE", "MONITOR"]
+        self.admin_cogs = [
+            "BOTCONFIG",
+            "BOTADMIN",
+            "MANAGER",
+            "JISHAKU",
+            "DATABASE",
+            "MONITOR",
+        ]
         self.do_not_load = ["CONVERSION"]
         self.home_cogs = ["MUSIC"]
 
@@ -368,11 +375,15 @@ class Neutra(commands.AutoShardedBot):
         except Exception as e:
             print(f"Unable to set up icon webhook: {e}")
         try:
-            self.logging_webhook = await self.fetch_webhook(utils.config()["logging"][1])
+            self.logging_webhook = await self.fetch_webhook(
+                utils.config()["logging"][1]
+            )
         except Exception as e:
             print(f"Unable to set up logging webhook: {e}")
         try:
-            self.testing_webhook = await self.fetch_webhook(utils.config()["testing"][1])
+            self.testing_webhook = await self.fetch_webhook(
+                utils.config()["testing"][1]
+            )
         except Exception as e:
             print(f"Unable to set up testing webhook: {e}")
 
@@ -609,7 +620,7 @@ class Neutra(commands.AutoShardedBot):
         All event errors and dispatched errors
         will be logged via the error webhook.
         """
-        tb = kwargs.get('tb') or traceback.format_exc()
+        tb = kwargs.get("tb") or traceback.format_exc()
         title = f"**{self.emote_dict['failed']} Error `{discord.utils.utcnow()}`**"
         description = f"```prolog\n{event.upper()}:\n{tb}\n```"
         dfile = None
@@ -630,19 +641,13 @@ class Neutra(commands.AutoShardedBot):
                 await self.error_webhook.send(
                     title + description,
                     file=dfile,
-                    username=f"{self.user.name} Monitor",
-                    avatar_url=self.constants.avatars["red"],
                 )
             else:
                 await self.error_webhook.send(
                     title + description,
-                    username=f"{self.user.name} Monitor",
-                    avatar_url=self.constants.avatars["red"],
                 )
                 await self.error_webhook.send(
                     arguments,
-                    username=f"{self.user.name} Monitor",
-                    avatar_url=self.constants.avatars["red"],
                 )
         except Exception:
             print(tb)

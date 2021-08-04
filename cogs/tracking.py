@@ -150,7 +150,9 @@ class Tracking(commands.Cog):
 
         message = await ctx.load("Collecting User Data...")
         await ctx.trigger_typing()
-        title_str = f"{self.bot.emote_dict['info']} Information on **{user}** `{user.id}`."
+        title_str = (
+            f"{self.bot.emote_dict['info']} Information on **{user}** `{user.id}`."
+        )
 
         batch = self.bot.get_cog("Batch")
 
@@ -190,8 +192,8 @@ class Tracking(commands.Cog):
 
         if joined_at:
             msg += f"Joined         : {joined_at}\n"
-            # Next get the position that the user joined in. 
-            joined_list = sorted(user.guild.members, key= lambda m: m.joined_at)
+            # Next get the position that the user joined in.
+            joined_list = sorted(user.guild.members, key=lambda m: m.joined_at)
             position = joined_list.index(user) + 1
             msg += f"Join Position  : {position:,}/{len(user.guild.members)}\n"
 
@@ -216,7 +218,9 @@ class Tracking(commands.Cog):
             msg += f'Permissions    : {", ".join(perm_list).replace("_", " ").replace("guild", "server").title().replace("Tts", "TTS")}'
 
         await message.edit(content=title_str)
-        t = pagination.TextPages(cleaner.clean_all(msg), prefix="```yaml\n", suffix="```")
+        t = pagination.TextPages(
+            cleaner.clean_all(msg), prefix="```yaml\n", suffix="```"
+        )
         try:
             await t.start(ctx)
         except menus.MenuError as e:
@@ -269,7 +273,6 @@ class Tracking(commands.Cog):
             return
         msg = f"Status for **{user}** `{user.id}`: {status}"
         await ctx.send_or_reply(msg)
-        
 
     def activity_string(self, activity):
         if isinstance(activity, (discord.Game, discord.Streaming)):
@@ -299,7 +302,6 @@ class Tracking(commands.Cog):
             status = "\n".join(self.activity_string(a) for a in user.activities)
             if status != "":
                 return status
-            
 
     def format_timedelta(self, td):
         ts = td.total_seconds()
@@ -1293,7 +1295,7 @@ class Tracking(commands.Cog):
     async def clocker(
         self,
         ctx,
-        *, 
+        *,
         user: typing.Optional[converters.DiscordMember] = None,
     ):
         """
@@ -1320,9 +1322,11 @@ class Tracking(commands.Cog):
                 FROM messages
                 WHERE unix > (SELECT EXTRACT(EPOCH FROM NOW()) - 2592000)
                 AND server_id = $1 AND author_id = $2) AS subquery;
-                """ # 2592000 = seconds in a month
+                """  # 2592000 = seconds in a month
         days = await self.bot.cxn.fetchval(
-            query, ctx.guild.id, user.id,
+            query,
+            ctx.guild.id,
+            user.id,
         )
         emote = self.bot.emote_dict["graph"]
         user = f"**{user}** `{user.id}`"
@@ -1358,7 +1362,7 @@ class Tracking(commands.Cog):
                 AND server_id = $1) AS subquery
                 GROUP BY subquery.user
                 ORDER BY days DESC;
-                """ # 2592000 = seconds in a month
+                """  # 2592000 = seconds in a month
         rows = await self.bot.cxn.fetch(query, ctx.guild.id)
 
         def pred(snowflake):

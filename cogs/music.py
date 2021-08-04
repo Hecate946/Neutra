@@ -309,7 +309,7 @@ class Song:
             description=f"```fix\n{self.source.title}\n```\n",
             color=constants.embed,
         )
-        #embed.description += self.truncate("\n" + self.source.description)
+        # embed.description += self.truncate("\n" + self.source.description)
         embed.add_field(name="Duration", value=self.source.duration)
         embed.add_field(name="Requested by", value=self.requester.mention)
         embed.add_field(
@@ -936,10 +936,10 @@ class Music(commands.Cog):
             return await ctx.fail(
                 f"Seek time must be less than the length of the song. `{song.source.raw_duration} seconds`"
             )
-        
+
         ffmpeg_options = {
             "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
-            "options": f"-vn -ss {position}"  # This seeks to the specified timestamp
+            "options": f"-vn -ss {position}",  # This seeks to the specified timestamp
         }
         ctx.voice_state.voice.pause()  # Pause the audio before seeking
         now = discord.FFmpegPCMAudio(song.source.stream_url, **ffmpeg_options)
@@ -968,7 +968,7 @@ class Music(commands.Cog):
             )
         ffmpeg_options = {
             "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
-            "options": f"-vn -ss {position}"  # This seeks to the specified timestamp
+            "options": f"-vn -ss {position}",  # This seeks to the specified timestamp
         }
         ctx.voice_state.voice.pause()  # Pause the audio before seeking
         now = discord.FFmpegPCMAudio(song.source.stream_url, **ffmpeg_options)
@@ -996,7 +996,7 @@ class Music(commands.Cog):
             )
         ffmpeg_options = {
             "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
-            "options": f"-vn -ss {position}"  # This seeks to the specified timestamp
+            "options": f"-vn -ss {position}",  # This seeks to the specified timestamp
         }
         ctx.voice_state.voice.pause()  # Pause the audio before seeking
         now = discord.FFmpegPCMAudio(song.source.stream_url, **ffmpeg_options)

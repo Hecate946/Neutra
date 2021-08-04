@@ -676,7 +676,6 @@ class Batch(commands.Cog):
 
         return msg
 
-
     async def get_last_spoke(self, user):
         query = """
                 SELECT MAX(unix)
@@ -755,4 +754,3 @@ class Batch(commands.Cog):
                 AND server_id = $2
                 """
         return await self.bot.cxn.fetchval(query, user.id, user.guild.id)
-

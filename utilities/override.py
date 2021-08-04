@@ -123,6 +123,7 @@ class BotContext(commands.Context):
     #         + f" **Logged to `{filename}`**```prolog\n{log_format}{content}```"
     #     )
 
+
 class BotCog(commands.Cog):
     def __init__(self, *args, **kwargs):
         self.hidden = kwargs.pop("hidden", False)
@@ -185,4 +186,3 @@ class CustomCooldown:
         if retry_after:
             raise commands.CommandOnCooldown(bucket, retry_after, self.type)
         return True
-

@@ -1068,7 +1068,6 @@ class Botadmin(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-
     async def tabulate_query(self, ctx, query, *args):
         records = await self.bot.cxn.fetch(query, *args)
 

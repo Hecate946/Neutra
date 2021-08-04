@@ -219,7 +219,6 @@ class Botconfig(commands.Cog):
                 fp.write(f"({discord.utils.utcnow()}) " + entry + "\n")
             await ctx.success(f"**Successfully posted to the changelog.**")
 
-
     @write.command(brief="Update the bot readme file.")
     async def readme(self, ctx):
         """
@@ -273,7 +272,9 @@ class Botconfig(commands.Cog):
         with open("./README.md", "w", encoding="utf-8") as fp:
             fp.write(final)
 
-        await mess.edit(content=f"{self.bot.emote_dict['success']} Successfully updated the README.md file")
+        await mess.edit(
+            content=f"{self.bot.emote_dict['success']} Successfully updated the README.md file"
+        )
 
     @decorators.command(brief="Blacklist a discord object.")
     async def blacklist(

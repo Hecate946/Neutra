@@ -420,7 +420,6 @@ class Manager(commands.Cog):
     ## Shell Commands ##
     ####################
 
-
     # https://github.com/Rapptz/RoboDanny
     @decorators.command(
         aliases=["shell", "bash"],
@@ -705,7 +704,6 @@ class Manager(commands.Cog):
                     await p.start(ctx)
                 except menus.MenuError as e:
                     await ctx.send_or_reply(e)
-
 
     async def run_process(self, command):
         try:

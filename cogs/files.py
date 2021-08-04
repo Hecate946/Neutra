@@ -908,4 +908,3 @@ class Files(commands.Cog):
             )
         )
         await mess.add_reaction(self.bot.emote_dict["letter"])
-

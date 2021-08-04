@@ -15,6 +15,7 @@ from utilities import checks
 from utilities import decorators
 from utilities import pagination
 
+
 def setup(bot):
     bot.add_cog(Monitor(bot))
 
@@ -23,6 +24,7 @@ class Monitor(commands.Cog):
     """
     Module for monitoring bot status.
     """
+
     def __init__(self, bot):
         self.bot = bot
         self.process = psutil.Process()
@@ -49,7 +51,6 @@ class Monitor(commands.Cog):
             None, functools.partial(objgraph.show_growth, file=stdout)
         )
         await ctx.send_or_reply("```fix\n" + stdout.getvalue() + "```")
-
 
     @decorators.group(
         case_insensitive=True,
@@ -118,7 +119,9 @@ class Monitor(commands.Cog):
             with open(self.todo, mode="w", encoding="utf-8") as fp:
                 print(lines)
                 fp.write("".join(lines))
-            await ctx.success(f"Successfully removed todo `{index_or_todo}` from the todo list.")
+            await ctx.success(
+                f"Successfully removed todo `{index_or_todo}` from the todo list."
+            )
         else:
             await ctx.fail(f"Could not find todo `{index_or_todo}` in the todo list.")
 
@@ -377,7 +380,7 @@ class Monitor(commands.Cog):
                 os.remove("./data/pm2/" + filename)
                 break
         await ctx.success(f"Cleared the pm2 {msg} log.")
-    
+
     @decorators.command(brief="Show bot threadinfo.")
     async def threadinfo(self, ctx):
         """

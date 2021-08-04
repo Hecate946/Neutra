@@ -28,7 +28,6 @@ class Automod(commands.Cog):
     ## Warn Commands ##
     ###################
 
-
     @decorators.command(
         aliases=["strike"],
         brief="Warn users with an optional reason.",
@@ -397,7 +396,7 @@ class Automod(commands.Cog):
                 SET autoroles = $1
                 WHERE server_id = $2;
                 """
-        
+
         await self.bot.cxn.execute(query, autoroles, ctx.guild.id)
         await ctx.success("Updated autorole settings.")
 
@@ -470,7 +469,9 @@ class Automod(commands.Cog):
         autoroles = self.bot.server_settings[ctx.guild.id]["autoroles"]
 
         if not autoroles:
-            await ctx.fail(f"No autoroles yet, use `{ctx.clean_prefix}autorole add <roles>`")
+            await ctx.fail(
+                f"No autoroles yet, use `{ctx.clean_prefix}autorole add <roles>`"
+            )
             return
 
         p = pagination.SimplePages(
@@ -730,16 +731,21 @@ class Automod(commands.Cog):
     @checks.has_perms(manage_guild=True)
     @checks.cooldown()
     async def _default(self, ctx):
-        if await ctx.confirm("This action will clear the current filter and began using the default word filter."):
-            self.bot.server_settings[ctx.guild.id]["profanities"] = self.bot.constants.profanities
+        if await ctx.confirm(
+            "This action will clear the current filter and began using the default word filter."
+        ):
+            self.bot.server_settings[ctx.guild.id][
+                "profanities"
+            ] = self.bot.constants.profanities
             query = """
                     UPDATE servers
                     SET profanities = $1
                     WHERE server_id = $2
                     """
-            await self.bot.cxn.execute(query, self.bot.constants.profanities, ctx.guild.id)
+            await self.bot.cxn.execute(
+                query, self.bot.constants.profanities, ctx.guild.id
+            )
             await ctx.success("Now using the default word filter.")
-
 
     #####################
     ## Event Listeners ##
@@ -793,11 +799,15 @@ class Automod(commands.Cog):
                 if guild.get_role(role_id)
             ]
             try:
-                await member.add_roles(*role_objects, reason="Roles auto-assigned on join.")
+                await member.add_roles(
+                    *role_objects, reason="Roles auto-assigned on join."
+                )
             except Exception:  # Try to add them on one by one.
                 for role in role_objects:
                     try:
-                        await member.add_roles(role, reason="Roles auto-assigned on join.")
+                        await member.add_roles(
+                            role, reason="Roles auto-assigned on join."
+                        )
                     except Exception:
                         continue
 

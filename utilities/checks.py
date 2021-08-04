@@ -23,6 +23,7 @@ def is_admin(ctx):
         return True
     return
 
+
 def is_home(ctx):
     if not ctx.guild:
         return False
@@ -67,7 +68,6 @@ def is_disabled(ctx, command):
     ):
         return True  # Role is ignored.
 
-
     if str(command) in command_config[ctx.guild.id]:
         return True  # Disabled for the whole server.
 
@@ -77,12 +77,7 @@ def is_disabled(ctx, command):
     if str(command) in command_config[ctx.author.id]:
         return True  # Disabled for the user
 
-    if any(
-        (
-            str(command) in command_config[role_id]
-            for role_id in ctx.author._roles
-        )
-    ):
+    if any((str(command) in command_config[role_id] for role_id in ctx.author._roles)):
         return True  # Disabled for the role
 
     return False  # Ok just in case we get here...
@@ -264,7 +259,7 @@ async def nick_priv(ctx, member):
         return "I cannot rename users with superior permissions."
     if ctx.me.top_role.position == member.top_role.position and member.id != ctx.me.id:
         return "I cannot rename users with equal permissions."
-    
+
     # Check if user bypasses
     if ctx.author.id == ctx.guild.owner.id:
         return  # Owner bypasses

@@ -15,6 +15,7 @@ from utilities import converters
 from utilities import pagination
 from utilities import formatting
 
+
 def setup(bot):
     bot.add_cog(Database(bot))
 
@@ -23,6 +24,7 @@ class Database(commands.Cog):
     """
     Module for handling the database
     """
+
     def __init__(self, bot):
         self.bot = bot
 
