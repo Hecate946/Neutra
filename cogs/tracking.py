@@ -1136,7 +1136,7 @@ class Tracking(commands.Cog):
             ctx.handled = True
 
     @decorators.command(
-        brief="Show the most active server users.",
+        brief="Show the most active users.",
         invoke_without_command=True,
         case_insensitive=True,
         implemented="2021-03-13 04:47:25.624232",
@@ -1200,7 +1200,7 @@ class Tracking(commands.Cog):
 
     @decorators.command(
         aliases=["ms", "mstats", "messagestatistics"],
-        brief="Show messaging stats on users.",
+        brief="Show message stats.",
         invoke_without_command=True,
         case_insensitive=True,
         implemented="2021-03-13 04:47:25.624232",
@@ -1349,7 +1349,7 @@ class Tracking(commands.Cog):
         await ctx.send_or_reply(embed=e)
 
     @decorators.command(
-        brief="Show the days a user was active.",
+        brief="Show days a user was active.",
         implemented="2021-05-12 07:46:53.635661",
         updated="2021-05-12 15:25:00.152528",
         examples="""
@@ -1457,7 +1457,7 @@ class Tracking(commands.Cog):
 
     @decorators.command(
         aliases=["piestatus", "ps"],
-        brief="Status info and online time stats.",
+        brief="Status info in a piechart.",
         implemented="2021-04-29 22:10:20.348498",
         updated="2021-05-07 04:15:46.972946",
         examples="""
