@@ -478,7 +478,7 @@ class Neutra(commands.AutoShardedBot):
             self.avatar_webhook, self.cxn, self.session, self.loop
         )  # Start saving avatars.
 
-        self.avatar_saver = saver.IconSaver(
+        self.icon_saver = saver.IconSaver(
             self.icon_webhook, self.cxn, self.session, self.loop
         )  # Start saving icons.
 

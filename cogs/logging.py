@@ -618,7 +618,7 @@ class Logging(commands.Cog):
             embed.set_image(url=after.icon.url)
             await self.send_webhook(webhook, embed=embed)
 
-        if before.banner.url != after.banner.url:
+        if before.banner != after.banner:
             embed = discord.Embed(
                 description=f"**Author:**  `{str(audit.user)}`\n"
                 "**New banner below**",
