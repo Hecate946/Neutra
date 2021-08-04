@@ -937,11 +937,13 @@ class Music(commands.Cog):
             return await ctx.fail(
                 f"Seek time must be less than the length of the song. `{song.source.raw_duration} seconds`"
             )
-        ffmpeg_options = f"-vn -ss {position}"  # This seeks to the specified timestamp
+        
+        ffmpeg_options = {
+            "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
+            "options": f"-vn -ss {position}"  # This seeks to the specified timestamp
+        }
         ctx.voice_state.voice.pause()  # Pause the audio before seeking
-        now = discord.FFmpegPCMAudio(
-            song.source.stream_url, before_options=ffmpeg_options
-        )
+        now = discord.FFmpegPCMAudio(song.source.stream_url, **ffmpeg_options)
         ctx.voice_state.voice.play(now, after=ctx.voice_state.play_next_song)
         ctx.voice_state.current.source.position = position
 
@@ -965,14 +967,14 @@ class Music(commands.Cog):
             return await ctx.fail(
                 f"You cannot fast forward past the end of the song. `Current position: {song.source.position}/{song.source.raw_duration} seconds`"
             )
-        ffmpeg_options = f"-vn -ss {position}"  # This seeks to the specified timestamp
+        ffmpeg_options = {
+            "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
+            "options": f"-vn -ss {position}"  # This seeks to the specified timestamp
+        }
         ctx.voice_state.voice.pause()  # Pause the audio before seeking
-        now = discord.FFmpegPCMAudio(
-            song.source.stream_url, before_options=ffmpeg_options
-        )
+        now = discord.FFmpegPCMAudio(song.source.stream_url, **ffmpeg_options)
         ctx.voice_state.voice.play(now, after=ctx.voice_state.play_next_song)
         ctx.voice_state.current.source.position = position
-
         await ctx.success(f"Fast forwarded to second `{position}`")
 
     @decorators.command(
@@ -993,11 +995,12 @@ class Music(commands.Cog):
             return await ctx.fail(
                 f"You cannot rewind past the beginning of the song. `Current position: {song.source.position}/{song.source.raw_duration} seconds`"
             )
-        ffmpeg_options = f"-vn -ss {position}"  # This seeks to the specified timestamp
+        ffmpeg_options = {
+            "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
+            "options": f"-vn -ss {position}"  # This seeks to the specified timestamp
+        }
         ctx.voice_state.voice.pause()  # Pause the audio before seeking
-        now = discord.FFmpegPCMAudio(
-            song.source.stream_url, before_options=ffmpeg_options
-        )
+        now = discord.FFmpegPCMAudio(song.source.stream_url, **ffmpeg_options)
         ctx.voice_state.voice.play(now, after=ctx.voice_state.play_next_song)
         ctx.voice_state.current.source.position = position
 
@@ -1014,8 +1017,6 @@ class Music(commands.Cog):
         if not ctx.voice_state.previous:
             return await ctx.fail("No previous song to play.")
         song = ctx.voice_state.previous
-        print(song)
-        print(dir(song))
         ytdlsrc = await YTDLSource.create_source(
             ctx, str(song.source.url), loop=self.bot.loop
         )
