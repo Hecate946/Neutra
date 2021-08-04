@@ -604,7 +604,7 @@ class Logging(commands.Cog):
 
             await self.send_webhook(webhook, embed=embed)
 
-        if before.icon.url != after.icon.url:
+        if before.icon != after.icon:
             embed = discord.Embed(
                 description=f"**Author:**  `{str(audit.user)}`\n" "**New icon below**",
                 color=self.bot.constants.embed,
