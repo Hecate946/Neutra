@@ -506,9 +506,7 @@ class Tracking(commands.Cog):
                 """,
     )
     @checks.guild_only()
-    @checks.bot_has_perms(
-        add_reactions=True, attach_files=True, embed_links=True, external_emojis=True
-    )
+    @checks.bot_has_perms(attach_files=True, embed_links=True)
     @checks.cooldown(1, 10)
     async def avatars(
         self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None
@@ -577,9 +575,7 @@ class Tracking(commands.Cog):
                 """,
     )
     @checks.guild_only()
-    @checks.bot_has_perms(
-        add_reactions=True, attach_files=True, embed_links=True, external_emojis=True
-    )
+    @checks.bot_has_perms(attach_files=True, embed_links=True)
     @checks.cooldown(1, 10)
     async def icons(self, ctx):
         """

@@ -145,36 +145,64 @@ def has_perms(*, check=all, **perms):  # Decorator to check if a user has perms
     return commands.check(pred)
 
 
-def bot_has_perms(*, check=all, **perms):  # Decorator to check if the bot has perms
+# def bot_has_perms(*, check=all, **perms):  # Decorator to check if the bot has perms
+
+#     invalid = set(perms) - set(discord.Permissions.VALID_FLAGS)
+#     if invalid:
+#         raise TypeError(f"Invalid permission(s): {', '.join(invalid)}")
+
+#     async def pred(ctx):
+#         result = await check_bot_permissions(ctx, perms, check=check)
+#         if (
+#             result is False
+#         ):  # We know its a guild because permissions failed in check_bot_permissions()
+#             guild_perms = [x[0] for x in ctx.guild.me.guild_permissions if x[1] is True]
+#             channel_perms = [
+#                 x[0] for x in ctx.channel.permissions_for(ctx.guild.me) if x[1] is True
+#             ]
+#             botperms = guild_perms + channel_perms
+#             perms_needed = []
+#             for x in perms:
+#                 if not x in botperms:  # Only complain about the perms we don't have
+#                     perms_needed.append(x)
+
+#             perm_list = [
+#                 x.title().replace("_", " ").replace("Tts", "TTS") for x in perms_needed
+#             ]
+#             raise commands.BadArgument(
+#                 message=f"I require the following permission{'' if len(perm_list) == 1 else 's'}: `{', '.join(perm_list)}`"
+#             )
+#         return result
+
+#     return commands.check(pred)
+
+def bot_has_perms(**perms):
+    """Similar to :func:`.has_permissions` except checks if the bot itself has
+    the permissions listed.
+    This check raises a special exception, :exc:`.BotMissingPermissions`
+    that is inherited from :exc:`.CheckFailure`.
+    """
 
     invalid = set(perms) - set(discord.Permissions.VALID_FLAGS)
     if invalid:
         raise TypeError(f"Invalid permission(s): {', '.join(invalid)}")
 
-    async def pred(ctx):
-        result = await check_bot_permissions(ctx, perms, check=check)
-        if (
-            result is False
-        ):  # We know its a guild because permissions failed in check_bot_permissions()
-            guild_perms = [x[0] for x in ctx.guild.me.guild_permissions if x[1] is True]
-            channel_perms = [
-                x[0] for x in ctx.channel.permissions_for(ctx.guild.me) if x[1] is True
-            ]
-            botperms = guild_perms + channel_perms
-            perms_needed = []
-            for x in perms:
-                if not x in botperms:  # Only complain about the perms we don't have
-                    perms_needed.append(x)
+    def predicate(ctx):
+        guild = ctx.guild
+        me = guild.me if guild is not None else ctx.bot.user
+        permissions = ctx.channel.permissions_for(me)
 
-            perm_list = [
-                x.title().replace("_", " ").replace("Tts", "TTS") for x in perms_needed
-            ]
-            raise commands.BadArgument(
-                message=f"I require the following permission{'' if len(perm_list) == 1 else 's'}: `{', '.join(perm_list)}`"
-            )
-        return result
+        missing = [perm for perm, value in perms.items() if getattr(permissions, perm) != value]
 
-    return commands.check(pred)
+        if not missing:
+            return True
+
+        perm_list = [x.title().replace("_", " ").replace("Guild", "Server").replace("Tts", "TTS") for x in missing]
+        raise commands.BadArgument(
+            f"I require the following permission{'' if len(perm_list) == 1 else 's'}: `{', '.join(perm_list)}`"
+        )
+
+    return commands.check(predicate)
 
 
 def is_bot_admin():  # Decorator for bot admin commands
