@@ -174,6 +174,8 @@ class Neutra(commands.AutoShardedBot):
             805638877762420786,
             776345386482270209,
             740734113086177433,
+
+            743299744301973514 # Renatuu's server
         ]  # My servers that have "premium" features.
 
         # Webhooks for monitering and data saving.
