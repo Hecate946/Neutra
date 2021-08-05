@@ -248,7 +248,7 @@ async def role_priv(ctx, role):
     if ctx.author.top_role.position == role.position:
         return f"Role `{role.name}` is your highest role."
     if ctx.author.top_role.position < role.position:
-        return f"Role `{role.name}` is above highest role."
+        return f"Role `{role.name}` is above your highest role."
 
 
 async def nick_priv(ctx, member):

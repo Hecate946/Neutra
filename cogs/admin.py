@@ -1481,7 +1481,7 @@ class Admin(commands.Cog):
     @checks.has_perms(administrator=True)
     @checks.bot_has_perms(administrator=True)
     @checks.cooldown(2, 20)
-    async def freeze(self, ctx):
+    async def freeze(self, ctx, *, role: converters.UniqueRole = None):
         """
         Usage: {0}freeze
         Aliases: {0}frost, {0}serverlock, {0}serverunlock
@@ -1493,11 +1493,12 @@ class Admin(commands.Cog):
             Use with caution, the previous permissions
             will be permanently wiped and cannot be restored.
         """
-        c = await ctx.confirm(f"This action will lock the entire server by removing permissions from the `@everyone` role.")
+        role = role or ctx.guild.default_role
+        c = await ctx.confirm(f"This action will lock the entire server by removing permissions from the `@{role.name if role.name  != '@everyone' else 'everyone'}` role.")
         if c:
             msg = await ctx.load("Freezing the server. This process may take several minutes...")
             for channel in ctx.guild.text_channels:
-                await channel.set_permissions(ctx.guild.default_role, send_messages=False)
+                await channel.set_permissions(role, send_messages=False)
 
             await msg.edit(content=f"{self.bot.emote_dict['success']} Server frozen.")
 
@@ -1515,9 +1516,9 @@ class Admin(commands.Cog):
     @checks.has_perms(administrator=True)
     @checks.bot_has_perms(administrator=True)
     @checks.cooldown(2, 20)
-    async def unfreeze(self, ctx):
+    async def unfreeze(self, ctx, *, role: converters.UniqueRole = None):
         """
-        Usage: {0}unfreeze
+        Usage: {0}unfreeze [role]
         Aliases: {0}defrost, {0}serverlock, {0}serverunlock, {0}melt
         Permission: Administrator
         Output:
@@ -1527,11 +1528,12 @@ class Admin(commands.Cog):
             Use with caution, the previous permissions
             will be permanently wiped and cannot be restored.
         """
-        c = await ctx.confirm(f"This action will unlock the entire server by resetting permissions for the `@everyone` role.")
+        role = role or ctx.guild.default_role
+        c = await ctx.confirm(f"This action will unlock the entire server by resetting permissions for the `@{role.name if role.name  != '@everyone' else 'everyone'}` role.")
         if c:
             msg = await ctx.load("Unfreezing the server. This process may take several minutes...")
             for channel in ctx.guild.text_channels:
-                await channel.set_permissions(ctx.guild.default_role, send_messages=None)
+                await channel.set_permissions(role, send_messages=None)
 
             await msg.edit(content=f"{self.bot.emote_dict['success']} Server unfrozen.")
 
