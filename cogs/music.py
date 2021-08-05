@@ -1100,7 +1100,8 @@ class Music(commands.Cog):
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )
-    @checks.bot_has_perms(embed_links=True, connect=True, speak=True)
+    @checks.bot_has_perms(embed_links=True)
+    @checks.bot_has_guild_perms(connect=True, speak=True)
     @checks.cooldown()
     async def _play(self, ctx, *, search: str = None):
         """
@@ -1237,7 +1238,8 @@ class Music(commands.Cog):
         implemented="2021-06-21 23:09:55.015228",
         updated="2021-06-21 23:09:55.015228",
     )
-    @checks.bot_has_perms(embed_links=True, connect=True, speak=True)
+    @checks.bot_has_perms(embed_links=True)
+    @checks.bot_has_guild_perms(connect=True, speak=True)
     @checks.cooldown()
     async def _playnext(self, ctx, *, search: str = None):
         """
@@ -1283,7 +1285,8 @@ class Music(commands.Cog):
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )
-    @checks.bot_has_perms(embed_links=True, connect=True, speak=True)
+    @checks.bot_has_perms(embed_links=True)
+    @checks.bot_has_guild_perms(connect=True, speak=True)
     @checks.cooldown()
     async def _youtube(self, ctx, *, search: str):
         """
