@@ -645,6 +645,8 @@ class Music(commands.Cog):
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )
+    @checks.bot_has_perms(embed_links=True, attach_files=True)
+    @checks.cooldown()
     async def _current(self, ctx):
         """
         Usage: {0}now
@@ -662,6 +664,7 @@ class Music(commands.Cog):
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )
+    @checks.cooldown()
     async def _pause(self, ctx):
         """
         Usage: {0}pause
@@ -682,6 +685,7 @@ class Music(commands.Cog):
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )
+    @checks.cooldown()
     async def _resume(self, ctx):
         """
         Usage: {0}resume
@@ -704,6 +708,7 @@ class Music(commands.Cog):
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )
+    @checks.cooldown()
     async def _stop(self, ctx):
         """
         {0}Usage: {0}stop
@@ -724,6 +729,7 @@ class Music(commands.Cog):
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )
+    @checks.cooldown()
     async def _skip(self, ctx):
         """
         Usage: {0}skip
@@ -771,7 +777,8 @@ class Music(commands.Cog):
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )
-    @checks.bot_has_perms(add_reactions=True, external_emojis=True)
+    @checks.cooldown()
+    @checks.bot_has_perms(add_reactions=True, external_emojis=True, embed_links=True)
     async def _queue(self, ctx):
         """
         Usage: {0}queue
@@ -805,6 +812,7 @@ class Music(commands.Cog):
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )
+    @checks.cooldown()
     async def _clear(self, ctx):
         """
         Usage: {0}clear
@@ -823,6 +831,7 @@ class Music(commands.Cog):
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )
+    @checks.cooldown()
     async def _shuffle(self, ctx):
         """
         Usage: {0}shuffle
@@ -841,6 +850,7 @@ class Music(commands.Cog):
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )
+    @checks.cooldown()
     async def _remove(self, ctx, index: int):
         """
         Usage: {0}remove [index]
@@ -864,6 +874,7 @@ class Music(commands.Cog):
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-22 17:48:57.021225",
     )
+    @checks.cooldown()
     async def _unloop(self, ctx):
         """
         Usage: {0}unloop
@@ -884,6 +895,7 @@ class Music(commands.Cog):
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )
+    @checks.cooldown()
     async def _loop(self, ctx, option: converters.SingleOrQueue = "single"):
         """
         Usage: {0}loop [option]
@@ -918,6 +930,7 @@ class Music(commands.Cog):
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )
+    @checks.cooldown()
     async def _seek(self, ctx, position: int = 0):
         """
         Usage: {0}seek [time]
@@ -955,6 +968,7 @@ class Music(commands.Cog):
         implemented="2021-06-22 01:55:36.152071",
         updated="2021-06-22 01:55:36.152071",
     )
+    @checks.cooldown()
     async def _fastforward(self, ctx, seconds: int = 0):
         if not ctx.voice_state.is_playing:
             return await ctx.fail("Nothing is currently being played.")
@@ -983,6 +997,7 @@ class Music(commands.Cog):
         implemented="2021-06-22 01:55:36.152071",
         updated="2021-06-22 01:55:36.152071",
     )
+    @checks.cooldown()
     async def _rewind(self, ctx, seconds: int = 0):
         if not ctx.voice_state.is_playing:
             return await ctx.fail("Nothing is currently being played.")
@@ -1012,6 +1027,7 @@ class Music(commands.Cog):
         implemented="2021-06-22 19:55:33.279989",
         updated="2021-06-22 19:55:33.279989",
     )
+    @checks.cooldown()
     async def _previous(self, ctx):
         if not ctx.voice_state.previous:
             return await ctx.fail("No previous song to play.")
@@ -1034,6 +1050,7 @@ class Music(commands.Cog):
         implemented="2021-07-01 04:12:22.192236",
         updated="2021-07-01 04:12:22.192236",
     )
+    @checks.cooldown()
     async def _move(self, ctx, index: int, position: int):
         total = len(ctx.voice_state.songs)
         if total == 0:
@@ -1061,6 +1078,7 @@ class Music(commands.Cog):
         implemented="2021-06-21 23:09:55.015228",
         updated="2021-06-21 23:09:55.015228",
     )
+    @checks.cooldown()
     async def _position(self, ctx):
         """
         Usage: {0}position
@@ -1082,6 +1100,8 @@ class Music(commands.Cog):
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )
+    @checks.bot_has_perms(embed_links=True, connect=True, speak=True)
+    @checks.cooldown()
     async def _play(self, ctx, *, search: str = None):
         """
         Usage: {0}play <search>
@@ -1217,6 +1237,8 @@ class Music(commands.Cog):
         implemented="2021-06-21 23:09:55.015228",
         updated="2021-06-21 23:09:55.015228",
     )
+    @checks.bot_has_perms(embed_links=True, connect=True, speak=True)
+    @checks.cooldown()
     async def _playnext(self, ctx, *, search: str = None):
         """
         Usage: {0}play <search>
@@ -1261,6 +1283,8 @@ class Music(commands.Cog):
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )
+    @checks.bot_has_perms(embed_links=True, connect=True, speak=True)
+    @checks.cooldown()
     async def _youtube(self, ctx, *, search: str):
         """
         Usage: {0}youtube <search>
@@ -1302,6 +1326,7 @@ class Music(commands.Cog):
         implemented="2021-06-23 06:48:27.194755",
         updated="2021-06-23 06:48:27.194755",
     )
+    @checks.cooldown()
     async def _subtitle(self, ctx):
         if not ctx.voice_state.current:
             return await ctx.fail("No song is currently being played.")
