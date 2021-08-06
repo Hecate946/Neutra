@@ -1,4 +1,7 @@
-# Neutra Moderation & Stat Tracking Discord Bot
+<a href="https://discord.gg/H2qTG4yxqb">
+  <img align="left" alt="Discord" width="22px" src="https://raw.githubusercontent.com/peterthehan/peterthehan/master/assets/discord.svg" />
+</a>
+# Neutra Moderation & Stat Tracking Discord Bot 
 ### [Bot Invite Link](https://discord.com/oauth2/authorize?client_id=806953546372087818&scope=bot+applications.commands&permissions=956689622)
 ### [Support Server](https://discord.gg/H2qTG4yxqb)
 ### [DiscordBots.gg](https://discord.bots.gg/bots/806953546372087818)
