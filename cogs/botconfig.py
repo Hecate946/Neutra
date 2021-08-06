@@ -255,7 +255,7 @@ class Botconfig(commands.Cog):
         for cog in cogs:
             premsg += f"##### [{cog.qualified_name}](#{cog.qualified_name}-1)\n"
             cmds = [c for c in cog.get_commands() if not c.hidden]
-            if not cmds:
+            if len(cmds) == 0:
                 continue
 
             msg += "\n\n### {}\n#### {} ({} Commands)\n\n```yaml\n{}\n```" "".format(
