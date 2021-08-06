@@ -254,7 +254,7 @@ class Botconfig(commands.Cog):
 
         for cog in cogs:
             premsg += f"##### [{cog.qualified_name}](#{cog.qualified_name}-1)\n"
-            cmds = [c for c in cog.walk_commands() if not c.hidden]
+            cmds = [c for c in cog.get_commands() if not c.hidden]
 
             msg += "\n\n### {}\n#### {} ({} Commands)\n\n```yaml\n{}\n```" "".format(
                 cog.qualified_name,
@@ -262,8 +262,8 @@ class Botconfig(commands.Cog):
                 len(cmds),
                 "\n\n".join(
                     [
-                        f"{cmd.name}: {cmd.brief}"
-                        for cmd in sorted(cmds, key=lambda c: c.name)
+                        f"{cmd.qualified_name}: {cmd.brief}"
+                        for cmd in sorted(cmds, key=lambda c: c.qualified_name)
                     ]
                 ),
             )
