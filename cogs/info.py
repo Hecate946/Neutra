@@ -988,7 +988,7 @@ class Info(commands.Cog):
             classes = 0
             chars = 0
             imports = 0
-            exclude = set([".testervenv", ".git", "__pycache__", ".vscode"])
+            exclude = set([".testervenv", ".venv", ".git", "__pycache__", ".vscode"])
             for path, subdirs, files in os.walk("."):
                 [subdirs.remove(d) for d in list(subdirs) if d in exclude]
                 for name in files:

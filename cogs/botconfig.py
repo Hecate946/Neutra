@@ -244,9 +244,9 @@ class Botconfig(commands.Cog):
         premsg += f"### [Bot Invite Link]({self.bot.oauth})\n"
         premsg += f"### [Support Server]({self.bot.constants.support})\n"
         premsg += (
-            "### [DiscordBots.gg](https://discord.bots.gg/bots/810377376269205546)\n"
+            "### [DiscordBots.gg](https://discord.bots.gg/bots/806953546372087818)\n"
         )
-        premsg += "### [Top.gg](https://top.gg/bot/810377376269205546)\n"
+        premsg += "### [Top.gg](https://top.gg/bot/806953546372087818)\n"
         premsg += "## Overview\n"
         premsg += overview
         premsg += "\n## Categories\n"
