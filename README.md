@@ -8,7 +8,7 @@ Hello! I'm Neutra, and I specialize in tracking and moderation.
 I was designed to collect all sorts of data on servers, users,
 messages, emojis, online time, and more! I also come with a fast
 and clean moderation system that offers every opportunity for effective
-server management. Apart from moderation and tracking, I feature 269
+server management. Apart from moderation and tracking, I feature 271
 commands across 13 categories that provide awesome utilities!
 Some examples include managing roles and logging server actions.
 ## Categories
@@ -23,19 +23,15 @@ Some examples include managing roles and logging server actions.
 ##### [Mod](#Mod-1)
 ##### [Server](#Server-1)
 ##### [Stats](#Stats-1)
-##### [Utility](#Utility-1)
 ##### [Tracking](#Tracking-1)
+##### [Utility](#Utility-1)
 
 
 ### Admin
-#### Module for server administration. (18 Commands)
+#### Module for server administration. (12 Commands)
 
 ```yaml
-add: Add roles users with a role.
-
-add: Add a server prefix.
-
-clear: Clear all server prefixes.
+freeze: Lock all server channels.
 
 kill: Have the bot leave the server.
 
@@ -51,56 +47,30 @@ massrole: Manage mass adding/removing roles.
 
 muterole: Setup server muting system.
 
-my: Reset your global data
-
 prefix: Show all server prefixes.
 
 prefixes: Show all server prefixes.
 
-remove: Add roles users with a role.
-
-remove: Remove a server prefix.
-
 reset: Manage stored user data.
 
-server: Reset server data for a user.
-
-user: Reset server data for a user.
+unfreeze: Unlock all server channels.
 ```
 
 ### Automod
-#### Manage the automod system. (19 Commands)
+#### Manage the automod system. (10 Commands)
 
 ```yaml
-add: Auto-assign roles on user join.
-
-add: Add words to the filter.
-
 antiinvite: Enable or disable auto-deleting invite links
 
 autorole: Assign roles to new members.
 
-clear: Clear all current autoroles.
-
-clear: Clear all words from the filer.
-
 clearwarns: Clear a user's warnings
-
-default: Use the default word filter.
-
-display: Show all filtered words.
 
 filter: Manage the server's word filter.
 
 listwarns: Show all warnings a user has.
 
 reassign: Reassign roles on user rejoin.
-
-remove: Remove automatic autoroles.
-
-remove: Removes words from the filter.
-
-show: Show all current autoroles.
 
 unwarn: Revoke a warning from a user
 
@@ -112,28 +82,14 @@ warns: Display the server warnlist.
 ```
 
 ### Config
-#### Configure the permission system. (11 Commands)
+#### Configure the permission system. (4 Commands)
 
 ```yaml
-all: Ignore all server users.
-
-all: Unignore all users, roles, and channels
-
-all: Enable all disabled commands
-
-clear: Clear the ignore list.
-
-clear: Clear the disabled command list.
-
 disable: Disable commands for users, roles, and channels.
 
 enable: Enable commands for users, roles, and channels.
 
 ignore: Ignore channels, roles, and users.
-
-list: Show all ignored objects.
-
-list: Show disabled channels, roles, and users.
 
 unignore: Unignore channels, users, and roles.
 ```
@@ -271,36 +227,22 @@ vote: Show your support by voting for me!
 ```
 
 ### Logging
-#### Manage the logging system (14 Commands)
+#### Manage the logging system (7 Commands)
 
 ```yaml
-duplicates: Find users with identical names.
-
 editsnipe: Snipe an edited message.
 
 find: Find any user using a search.
 
-hard: Find users with hard to mention names.
-
-hash: Search for users by discriminator.
-
-id: Search for users by id.
-
 log: Enable specific logging events.
 
 logchannel: Set your server's logging channel.
-
-nicknames: Search for users by nickname.
-
-playing: Search for users by game.
 
 snipe: Snipe a deleted message.
 
 unlog: Disable specific logging events.
 
 unlogchannel: Remove the server logging channel.
-
-username: Search for users by username.
 ```
 
 ### Mod
@@ -349,56 +291,16 @@ vcpurge: Kick all users from a voice channel.
 ```
 
 ### Server
-#### Module for server management (24 Commands)
+#### Module for server management (4 Commands)
 
 ```yaml
-all: Purge all messages.
-
-between: Purge messages between 2 messages.
-
-bots: Purge messages sent by bots.
-
 cleanup: Clean up bot command usage.
-
-contains: Customize purging messages.
-
-create: None
-
-create: Create a server role.
-
-delete: Delete emojis from the server.
-
-delete: Delete a server role.
-
-embeds: Purge messages with embeds.
 
 emoji: Manage server emojis.
 
-emojis: Purge messages with emojis.
-
-files: Purge messages with attachments.
-
-humans: Purge messages sent by humans.
-
-images: Purge messages with images.
-
-invites: Purge messages with invites.
-
-mentions: Purge messages with mentions.
-
 purge: Purge any type of content.
 
-reactions: Purge reactions from messages.
-
 role: Role management commands.
-
-until: Purge messages after a message.
-
-urls: Purge messages with URLs.
-
-user: Purge messages sent by a user.
-
-webhooks: Purge messages sent by wehooks.
 ```
 
 ### Stats
@@ -454,55 +356,6 @@ userinfo: Show information on a user.
 whohas: Show the people who have a role.
 ```
 
-### Utility
-#### Module for general utilities. (22 Commands)
-
-```yaml
-ascify: Convert special characters to ascii.
-
-avatar: Show a user's avatar.
-
-badges: Show all the badges a user has
-
-calculate: Calculate a math formula.
-
-charinfo: Show information on a character.
-
-clock: Get the time of any location
-
-color: Show a given color and its values.
-
-defaultavatar: Show a user's default avatar.
-
-dehoist: Dehoist a specified user.
-
-embed: Create an embed interactively.
-
-emojipost: Sends all server emojis to your dms.
-
-gtoken: Generate a discord token.
-
-nickname: Edit or reset a user's nickname
-
-oauth: Generate a bot invite link.
-
-platform: Show a user's discord platform.
-
-ptoken: Decode a discord token.
-
-raw: Shows the raw content of a message.
-
-reactinfo: Get react info on a message.
-
-serveravatar: Show the server's icon.
-
-shorten: Shorten URLs to bitly links.
-
-snowflake: Show info on a discord snowflake.
-
-voiceusers: Show all the users in a vc.
-```
-
 ### Tracking
 #### Module for all user stats (25 Commands)
 
@@ -556,4 +409,53 @@ usernames: Show a user's past usernames.
 word: Usage for a specific word.
 
 words: Most used words from a user.
+```
+
+### Utility
+#### Module for general utilities. (22 Commands)
+
+```yaml
+ascify: Convert special characters to ascii.
+
+avatar: Show a user's avatar.
+
+badges: Show all the badges a user has
+
+calculate: Calculate a math formula.
+
+charinfo: Show information on a character.
+
+clock: Get the time of any location
+
+color: Show a given color and its values.
+
+defaultavatar: Show a user's default avatar.
+
+dehoist: Dehoist a specified user.
+
+embed: Create an embed interactively.
+
+emojipost: Sends all server emojis to your dms.
+
+gtoken: Generate a discord token.
+
+nickname: Edit or reset a user's nickname
+
+oauth: Generate a bot invite link.
+
+platform: Show a user's discord platform.
+
+ptoken: Decode a discord token.
+
+raw: Shows the raw content of a message.
+
+reactinfo: Get react info on a message.
+
+serveravatar: Show the server's icon.
+
+shorten: Shorten URLs to bitly links.
+
+snowflake: Show info on a discord snowflake.
+
+voiceusers: Show all the users in a vc.
 ```
