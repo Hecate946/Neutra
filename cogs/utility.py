@@ -750,10 +750,10 @@ class Utility(commands.Cog):
         await ctx.success(msg)
 
     # Helper function to format and send the given image url.
-    async def do_avatar(self, ctx, name, url, default=False, server=False):
+    async def do_avatar(self, ctx, name, url, default=False, option="avatar"):
         embed = discord.Embed(
-            title=f"**{name}'s {'default' if default else ''} {'icon' if server else 'avatar'}.**",
-            description=f"Links to `{name}'s` avatar:  "
+            title=f"**{name}'s {'default' if default else ''} {option}.**",
+            description=f"Links to `{name}'s` {option}:  "
             f"[webp]({(str(url))}) | "
             f'[png]({(str(url).replace("webp", "png"))}) | '
             f'[jpeg]({(str(url).replace("webp", "jpg"))})  ',
@@ -783,9 +783,33 @@ class Utility(commands.Cog):
         Output: Shows an enlarged embed of a user's avatar.
         Notes: Will default to you if no user is passed.
         """
-        if user is None:
-            user = ctx.author
+        user = user or ctx.author
         await self.do_avatar(ctx, user.display_name, url=user.avatar.url)
+
+    @decorators.command(
+        brief="Show a user's banner.",
+        examples="""
+                {0}banner
+                {0}banner @Hecate
+                {0}banner Hecate#3523
+                {0}banner 708584008065351681
+                """,
+    )
+    @checks.cooldown()
+    async def banner(self, ctx, *, user: converters.DiscordUser = None):
+        """
+        Usage: {0}avatar [user]
+        Aliases: {0}av, {0}pfp, {0}icon
+        Examples: {0}avatar 810377376269205546, {0}avatar Neutra
+        Output: Shows an enlarged embed of a user's avatar.
+        Notes: Will default to you if no user is passed.
+        """
+        user = user or ctx.author
+        user = await self.bot.fetch_user(user.id)
+        if not user.banner:
+            await ctx.fail(f"User **{user}** `{user.id}` has no banner.")
+            return
+        await self.do_avatar(ctx, str(user), user.banner.url, option="banner")
 
     @decorators.command(
         aliases=["dav", "dpfp", "davatar"],
@@ -894,9 +918,11 @@ class Utility(commands.Cog):
             Will default to the current server
             if no server is passed.
         """
-        if server is None:
-            server = ctx.guild
-        await self.do_avatar(ctx, server, server.icon.url, server=True)
+        server = server or ctx.guild
+        if not server.icon:
+            await ctx.fail(f"Server **{server.name}** has no icon.")
+            return
+        await self.do_avatar(ctx, server, server.icon.url, option="icon")
 
     @decorators.command(
         aliases=["nick", "setnick"],
