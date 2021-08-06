@@ -1,8 +1,8 @@
 # Neutra Moderation & Stat Tracking Discord Bot
 ### [Bot Invite Link](https://discord.com/oauth2/authorize?client_id=806953546372087818&scope=bot+applications.commands&permissions=956689622)
 ### [Support Server](https://discord.gg/H2qTG4yxqb)
-### [DiscordBots.gg](https://discord.bots.gg/bots/810377376269205546)
-### [Top.gg](https://top.gg/bot/810377376269205546)
+### [DiscordBots.gg](https://discord.bots.gg/bots/806953546372087818)
+### [Top.gg](https://top.gg/bot/806953546372087818)
 ## Overview
 Hello! I'm Neutra, and I specialize in tracking and moderation.
 I was designed to collect all sorts of data on servers, users,
@@ -18,13 +18,13 @@ Some examples include managing roles and logging server actions.
 ##### [Files](#Files-1)
 ##### [Help](#Help-1)
 ##### [Home](#Home-1)
-##### [Info](#Info-1)
 ##### [Logging](#Logging-1)
 ##### [Mod](#Mod-1)
 ##### [Server](#Server-1)
 ##### [Stats](#Stats-1)
 ##### [Tracking](#Tracking-1)
 ##### [Utility](#Utility-1)
+##### [Info](#Info-1)
 
 
 ### Admin
@@ -164,59 +164,6 @@ where: Show where a command can be run.
 writer: Show who wrote a command.
 
 writers: Show all people who wrote for me.
-```
-
-### Info
-#### Module for bot information. (24 Commands)
-
-```yaml
-about: Display information about the bot.
-
-avgping: View the average message latency.
-
-botadmins: Show the bot's admins.
-
-botowners: Show the bot's owners.
-
-bugreport: Send a bugreport to the developer.
-
-changelog: Show my changelog.
-
-cogs: List all my cogs in an embed.
-
-hostinfo: Show the bot's host environment.
-
-invite: Invite me to your server!
-
-lines: Show sourcecode statistics.
-
-neofetch: Run the neofetch command.
-
-overview: Show some info on the bot's purpose.
-
-ping: Test the bot's response latency.
-
-privacy: View the privacy policy.
-
-replytime: Show reply latencies.
-
-sharedservers: Show servers shared with the bot.
-
-socket: Show global bot socket stats.
-
-source: Display the source code.
-
-suggest: Send a suggestion to the developer.
-
-support: Join my support server!
-
-uptime: Show the bot's uptime.
-
-uptimeinfo: Show a graph of uptime stats
-
-users: Show users I'm connected to.
-
-vote: Show your support by voting for me!
 ```
 
 ### Logging
@@ -451,4 +398,57 @@ shorten: Shorten URLs to bitly links.
 snowflake: Show info on a discord snowflake.
 
 voiceusers: Show all the users in a vc.
+```
+
+### Info
+#### Module for bot information. (24 Commands)
+
+```yaml
+about: Display information about the bot.
+
+avgping: View the average message latency.
+
+botadmins: Show the bot's admins.
+
+botowners: Show the bot's owners.
+
+bugreport: Send a bugreport to the developer.
+
+changelog: Show my changelog.
+
+cogs: List all my cogs in an embed.
+
+hostinfo: Show the bot's host environment.
+
+invite: Invite me to your server!
+
+lines: Show sourcecode statistics.
+
+neofetch: Run the neofetch command.
+
+overview: Show some info on the bot's purpose.
+
+ping: Test the bot's response latency.
+
+privacy: View the privacy policy.
+
+replytime: Show reply latencies.
+
+sharedservers: Show servers shared with the bot.
+
+socket: Show global bot socket stats.
+
+source: Display the source code.
+
+suggest: Send a suggestion to the developer.
+
+support: Join my support server!
+
+uptime: Show the bot's uptime.
+
+uptimeinfo: Show a graph of uptime stats
+
+users: Show users I'm connected to.
+
+vote: Show your support by voting for me!
 ```
