@@ -166,13 +166,6 @@ writer: Show who wrote a command.
 writers: Show all people who wrote for me.
 ```
 
-### Home
-#### Server specific cog. (0 Commands)
-
-```yaml
-
-```
-
 ### Info
 #### Module for bot information. (24 Commands)
 
