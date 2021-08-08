@@ -19,6 +19,7 @@ CREATED_MESSAGE = "https://cdn.discordapp.com/attachments/846597178918436885/846
 UPDATED_MESSAGE = "https://cdn.discordapp.com/attachments/846597178918436885/846841668639653939/messageupdate.png"
 DELETED_MESSAGE = "https://cdn.discordapp.com/attachments/846597178918436885/846841722994163722/messagedelete.png"
 
+CDN_POOP = "https://cdn.discordapp.com/attachments/846597178918436885/873793100613582878/poop.png"
 
 def setup(bot):
     bot.add_cog(Logging(bot))
@@ -234,7 +235,7 @@ class Logging(commands.Cog):
         case_insensitive=True,
     )
     @checks.guild_only()
-    @checks.bot_has_guild_perms(manage_webhooks=True)
+    @checks.bot_has_guild_perms(manage_webhooks=True, view_audit_log=True)
     @checks.bot_has_perms(embed_links=True)
     @checks.has_perms(manage_guild=True)
     async def _log(self, ctx, event: converters.LoggingEvent = None):
@@ -333,7 +334,7 @@ class Logging(commands.Cog):
         hidden=True,
     )
     @checks.cooldown()
-    @checks.bot_has_guild_perms(manage_webhooks=True)
+    @checks.bot_has_guild_perms(manage_webhooks=True, view_audit_log=True)
     @checks.bot_has_perms(embed_links=True)
     @checks.has_perms(manage_guild=True)
     async def disable(self, ctx):
@@ -363,7 +364,7 @@ class Logging(commands.Cog):
         hidden=True,
     )
     @checks.cooldown()
-    @checks.bot_has_guild_perms(manage_webhooks=True)
+    @checks.bot_has_guild_perms(manage_webhooks=True, view_audit_log=True)
     @checks.bot_has_perms(embed_links=True)
     @checks.has_perms(manage_guild=True)
     async def _channel(self, ctx, *, channel: discord.TextChannel = None):
@@ -437,7 +438,7 @@ class Logging(commands.Cog):
     )
     @checks.guild_only()
     @checks.cooldown(2, 30, bucket=commands.BucketType.guild)
-    @checks.bot_has_guild_perms(manage_webhooks=True)
+    @checks.bot_has_guild_perms(manage_webhooks=True, view_audit_log=True)
     @checks.has_perms(manage_guild=True)
     async def unlog(self, ctx, event: converters.LoggingEvent):
         """
@@ -605,18 +606,32 @@ class Logging(commands.Cog):
             await self.send_webhook(webhook, embed=embed)
 
         if before.icon != after.icon:
-            embed = discord.Embed(
-                description=f"**Author:**  `{str(audit.user)}`\n" "**New icon below**",
-                color=self.bot.constants.embed,
-            )
+            if after.icon:
+                embed = discord.Embed(
+                    description=f"**Author:**  `{str(audit.user)}`\n" "**New icon below**",
+                    color=self.bot.constants.embed,
+                )
 
-            embed.set_author(
-                name="Server Icon Updated",
-                icon_url=UPDATED_MESSAGE,
-            )
+                embed.set_author(
+                    name="Server Icon Updated",
+                    icon_url=UPDATED_MESSAGE,
+                )
 
-            embed.set_image(url=after.icon.url)
-            await self.send_webhook(webhook, embed=embed)
+                embed.set_image(url=after.icon.url)
+                await self.send_webhook(webhook, embed=embed)
+            else:
+                embed = discord.Embed(
+                    description=f"**Author:**  `{str(audit.user)}`\n",
+                    color=self.bot.constants.embed,
+                )
+
+                embed.set_author(
+                    name="Server Icon Removed",
+                    icon_url=DELETED_MESSAGE,
+                )
+
+                embed.set_image(url=CDN_POOP)
+                await self.send_webhook(webhook, embed=embed)
 
         if before.banner != after.banner:
             embed = discord.Embed(

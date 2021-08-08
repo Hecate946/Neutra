@@ -1351,7 +1351,7 @@ class Music(commands.Cog):
             return await ctx.fail("Subtitles not available.")
 
     async def ensure_voice_state(self, ctx):
-        if not ctx.voice_state.voice:
+        if not ctx.me.voice:
             if not hasattr(ctx.author.voice, "channel"):
                 raise commands.BadArgument("You must be connected to a voice channel")
 
