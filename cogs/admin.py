@@ -1469,73 +1469,73 @@ class Admin(commands.Cog):
             await ctx.success(f"Reset all {option[:-1]} data for this server.")
 
 
-    @decorators.command(
-        aliases=["serverlock", "lockserver", "frost"],
-        brief="Lock all server channels.",
-        examples="""
-                {0}freeze
-                {0}serverlock
-                {0}lockserver
-                """
-    )
-    @checks.has_perms(administrator=True)
-    @checks.bot_has_perms(administrator=True)
-    @checks.cooldown(2, 20)
-    async def freeze(self, ctx, *, role: converters.UniqueRole = None):
-        """
-        Usage: {0}freeze
-        Aliases: {0}frost, {0}serverlock, {0}serverunlock
-        Permission: Administrator
-        Output:
-            Sets the send_messages permission to false
-            for the @everyone role in all channels.
-        Notes:
-            Use with caution, the previous permissions
-            will be permanently wiped and cannot be restored.
-        """
-        role = role or ctx.guild.default_role
-        c = await ctx.confirm(f"This action will lock the entire server by removing permissions from the `@{role.name if role.name  != '@everyone' else 'everyone'}` role.")
-        if c:
-            msg = await ctx.load("Freezing the server. This process may take several minutes...")
-            for channel in ctx.guild.text_channels:
-                await channel.set_permissions(role, send_messages=False)
+    # @decorators.command(
+    #     aliases=["serverlock", "lockserver", "frost"],
+    #     brief="Lock all server channels.",
+    #     examples="""
+    #             {0}freeze
+    #             {0}serverlock
+    #             {0}lockserver
+    #             """
+    # )
+    # @checks.has_perms(administrator=True)
+    # @checks.bot_has_perms(administrator=True)
+    # @checks.cooldown(2, 20)
+    # async def freeze(self, ctx, *, role: converters.UniqueRole = None):
+    #     """
+    #     Usage: {0}freeze
+    #     Aliases: {0}frost, {0}serverlock, {0}serverunlock
+    #     Permission: Administrator
+    #     Output:
+    #         Sets the send_messages permission to false
+    #         for the @everyone role in all channels.
+    #     Notes:
+    #         Use with caution, the previous permissions
+    #         will be permanently wiped and cannot be restored.
+    #     """
+    #     role = role or ctx.guild.default_role
+    #     c = await ctx.confirm(f"This action will lock the entire server by removing permissions from the `@{role.name if role.name  != '@everyone' else 'everyone'}` role.")
+    #     if c:
+    #         msg = await ctx.load("Freezing the server. This process may take several minutes...")
+    #         for channel in ctx.guild.text_channels:
+    #             await channel.set_permissions(role, send_messages=False)
 
-            await msg.edit(content=f"{self.bot.emote_dict['success']} Server frozen.")
+    #         await msg.edit(content=f"{self.bot.emote_dict['success']} Server frozen.")
 
-    @decorators.command(
-        aliases=["unlockserver", "serverunlock", "melt", "defrost"],
-        brief="Unlock all server channels.",
-        examples="""
-                {0}unfreeze
-                {0}melt
-                {0}defrost
-                {0}serverunlock
-                {0}unlockserver
-                """
-    )
-    @checks.has_perms(administrator=True)
-    @checks.bot_has_perms(administrator=True)
-    @checks.cooldown(2, 20)
-    async def unfreeze(self, ctx, *, role: converters.UniqueRole = None):
-        """
-        Usage: {0}unfreeze [role]
-        Aliases: {0}defrost, {0}serverlock, {0}serverunlock, {0}melt
-        Permission: Administrator
-        Output:
-            Resets the send_messages permission to default
-            for the @everyone role in all channels.
-        Notes:
-            Use with caution, the previous permissions
-            will be permanently wiped and cannot be restored.
-        """
-        role = role or ctx.guild.default_role
-        c = await ctx.confirm(f"This action will unlock the entire server by resetting permissions for the `@{role.name if role.name  != '@everyone' else 'everyone'}` role.")
-        if c:
-            msg = await ctx.load("Unfreezing the server. This process may take several minutes...")
-            for channel in ctx.guild.text_channels:
-                await channel.set_permissions(role, send_messages=None)
+    # @decorators.command(
+    #     aliases=["unlockserver", "serverunlock", "melt", "defrost"],
+    #     brief="Unlock all server channels.",
+    #     examples="""
+    #             {0}unfreeze
+    #             {0}melt
+    #             {0}defrost
+    #             {0}serverunlock
+    #             {0}unlockserver
+    #             """
+    # )
+    # @checks.has_perms(administrator=True)
+    # @checks.bot_has_perms(administrator=True)
+    # @checks.cooldown(2, 20)
+    # async def unfreeze(self, ctx, *, role: converters.UniqueRole = None):
+    #     """
+    #     Usage: {0}unfreeze [role]
+    #     Aliases: {0}defrost, {0}serverlock, {0}serverunlock, {0}melt
+    #     Permission: Administrator
+    #     Output:
+    #         Resets the send_messages permission to default
+    #         for the @everyone role in all channels.
+    #     Notes:
+    #         Use with caution, the previous permissions
+    #         will be permanently wiped and cannot be restored.
+    #     """
+    #     role = role or ctx.guild.default_role
+    #     c = await ctx.confirm(f"This action will unlock the entire server by resetting permissions for the `@{role.name if role.name  != '@everyone' else 'everyone'}` role.")
+    #     if c:
+    #         msg = await ctx.load("Unfreezing the server. This process may take several minutes...")
+    #         for channel in ctx.guild.text_channels:
+    #             await channel.set_permissions(role, send_messages=None)
 
-            await msg.edit(content=f"{self.bot.emote_dict['success']} Server unfrozen.")
+    #         await msg.edit(content=f"{self.bot.emote_dict['success']} Server unfrozen.")
 
             
 
