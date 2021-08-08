@@ -1,5 +1,5 @@
 # Installing Neutra
-This guide is for self-hosting Neutra. If you just want to install the bot without getting the code, go to https://discord.com/oauth2/authorize?client_id=810377376269205546&scope=bot
+This guide is for self-hosting Neutra. If you just want to install the bot without getting the code, go to https://discord.com/oauth2/authorize?client_id=806953546372087818&scope=bot
 
 ## Step One: Install Ubuntu
 

@@ -793,7 +793,7 @@ class Info(commands.Cog):
         view = discord.ui.View()
         item = discord.ui.Button(
             label="Vote for me!",
-            url="https://top.gg/bot/810377376269205546/vote",
+            url="https://top.gg/bot/806953546372087818/vote",
         )
         view.add_item(item=item)
         await ctx.rep_or_ref(

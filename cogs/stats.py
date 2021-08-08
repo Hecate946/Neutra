@@ -1191,7 +1191,7 @@ class Stats(commands.Cog):
         updated="2021-05-06 16:46:39.043980",
         examples="""
                 {0}userinfo Neutra
-                {0}whois 810377376269205546
+                {0}whois 806953546372087818
                 {0}profile Hecate#3523
                 {0}ui @Neutra
                 """,

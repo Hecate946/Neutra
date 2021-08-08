@@ -326,7 +326,7 @@ class Utility(commands.Cog):
         updated="2021-05-05 17:59:12.441533",
         examples="""
                 {0}oauth
-                {0}oauth2 810377376269205546 8
+                {0}oauth2 806953546372087818 8
                 {0}genoauth Neutra#7630 359867
                 {0}genbotoauth @Neutra 34985
                 """,
@@ -779,7 +779,7 @@ class Utility(commands.Cog):
         """
         Usage: {0}avatar [user]
         Aliases: {0}av, {0}pfp, {0}icon
-        Examples: {0}avatar 810377376269205546, {0}avatar Neutra
+        Examples: {0}avatar 806953546372087818, {0}avatar Neutra
         Output: Shows an enlarged embed of a user's avatar.
         Notes: Will default to you if no user is passed.
         """
@@ -818,7 +818,7 @@ class Utility(commands.Cog):
         updated="2021-05-07 05:21:05.999642",
         examples="""
                 {0}dav
-                {0}dpfp 810377376269205546
+                {0}dpfp 806953546372087818
                 {0}davatar Hecate
                 {0}defaultavatar @Hecate
                 """,
@@ -902,7 +902,7 @@ class Utility(commands.Cog):
         updated="2021-05-07 05:21:05.999642",
         examples="""
                 {0}dav
-                {0}dpfp 810377376269205546
+                {0}dpfp 806953546372087818
                 {0}davatar Hecate
                 {0}defaultavatar @Hecate
                 """,
@@ -982,9 +982,9 @@ class Utility(commands.Cog):
         implemented="2021-04-05 18:28:55.338390",
         updated="2021-05-07 05:05:13.464282",
         examples="""
-                {0}snowflake 81037737626
-                {0}id 810377376269205546
-                {0}age 81037737626920554
+                {0}snowflake 806953546372087818
+                {0}id 806953546372087818
+                {0}age 806953546372087818
                 """,
     )
     async def snowflake(self, ctx, *, snowflake):
