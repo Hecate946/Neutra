@@ -192,20 +192,19 @@ class Stats(commands.Cog):
         Output: Usage stats on the passed emoji
         """
         await ctx.trigger_typing()
-        eregex = re.compile(r"<a?:.+?:{emoji.id}>")
-        query = f"""
-                SELECT author_id, string_agg(content, '') AS emojis
-                FROM messages
-                WHERE content ~ '<a?:.+?:{emoji.id}>'
-                GROUP BY author_id;
+        query = """
+                SELECT author_id, total
+                FROM emojidata
+                WHERE server_id = $1
+                AND emoji_id = $2
+                ORDER BY total DESC;
                 """
 
-        emoji_usage = await self.bot.cxn.fetch(query)
-        matches = {
-            record["author_id"]: len(eregex.findall(record["emojis"]))
-            for record in emoji_usage
-        }
-
+        records = await self.bot.cxn.fetch(query, ctx.guild.id, emoji.id)
+        if not records:
+            await ctx.fail("This emoji has no recorded emoji usage stats.")
+            return
+            
         def pred(snowflake):
             mem = ctx.guild.get_member(snowflake)
             if mem:
@@ -213,16 +212,13 @@ class Stats(commands.Cog):
 
         p = pagination.SimplePages(
             entries=[
-                "`{}`: Uses: {}".format(pred(user), count)
-                for user, count in sorted(
-                    matches.items(), key=lambda x: x[1], reverse=True
-                )
-                if pred(user)
+                f"`{pred(record['author_id'])}`: Uses: {record['total']}"
+                for record in records if pred(record["author_id"]) is not None
             ],
             per_page=15,
         )
 
-        p.embed.title = f"{emoji} (Total Uses: {sum(matches.values()):,})"
+        p.embed.title = f"{emoji} (Total Uses: {sum([r['total'] for r in records]):,})"
         try:
             await p.start(ctx)
         except menus.MenuError as e:
@@ -249,7 +245,7 @@ class Stats(commands.Cog):
     @checks.guild_only()
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.has_perms(view_audit_log=True)
-    async def emojistats(self, ctx, user: converters.DiscordMember = None):
+    async def emojistats(self, ctx, *, user: converters.DiscordMember = None):
         """
         Usage: {0}emojistats [user]
         Alias: {0}estats
@@ -260,79 +256,68 @@ class Stats(commands.Cog):
             Specify an optional user to narrow
             statistics to be exclusive to the user.
         """
-        async with ctx.channel.typing():
-            msg = await ctx.load("Collecting Emoji Statistics...")
-            if user is None:
-                query = """
-                        SELECT (emoji_id, total)
-                        FROM emojistats
-                        WHERE server_id = $1
-                        ORDER BY total DESC;
-                        """
+        await ctx.trigger_typing()
 
-                emoji_list = []
-                result = await self.bot.cxn.fetch(query, ctx.guild.id)
-                for x in result:
-                    try:
-                        emoji = self.bot.get_emoji(int(x[0][0]))
-                        if emoji is None:
-                            continue
-                        emoji_list.append((emoji, x[0][1]))
+        def pred(emoji_id):
+            emoji = self.bot.get_emoji(emoji_id)
+            if emoji:
+                return emoji
+                
+        if user is None:
+            query = """
+                    SELECT emoji_id, total
+                    FROM emojidata
+                    WHERE server_id = $1
+                    ORDER BY total DESC;
+                    """
 
-                    except Exception as e:
-                        print(e)
-                        continue
+            records = await self.bot.cxn.fetch(query, ctx.guild.id)
+            if not records:
+                await ctx.fail("This server has no recorded emoji usage stats.")
+                return
 
-                p = pagination.SimplePages(
-                    entries=["{}: Uses: {}".format(e[0], e[1]) for e in emoji_list],
-                    per_page=15,
-                )
-                p.embed.title = f"Server Emoji Usage"
-                await msg.delete()
-                try:
-                    await p.start(ctx)
-                except menus.MenuError as e:
-                    await ctx.send_or_reply(e)
-            else:
-                if user.bot:
-                    return await ctx.fail("I do not track bots.")
-                query = """
-                        SELECT (content)
-                        FROM messages
-                        WHERE content ~ '<a?:.+?:([0-9]{15,21})>'
-                        AND author_id = $1
-                        AND server_id = $2
-                        """
+            p = pagination.SimplePages(
+                entries=[
+                    f"{pred(r['emoji_id'])}: Uses: {r['total']}"
+                    for r in records if pred(r['emoji_id'])],
+                per_page=15,
+            )
+            p.embed.title = f"Server Emoji Usage (Total: {sum([r['total'] for r in records]):,})"
+            try:
+                await p.start(ctx)
+            except menus.MenuError as e:
+                await ctx.send_or_reply(e)
+        else:
+            if user.bot:
+                await ctx.fail("I do not track bots.")
+                return
 
-                emoji_list = []
-                result = await self.bot.cxn.fetch(query, user.id, ctx.guild.id)
-                if not result:
-                    return await ctx.fail(
-                        f"`{user}` has no recorded emoji usage stats."
-                    )
+            query = """
+                    SELECT emoji_id, total
+                    FROM emojidata
+                    WHERE author_id = $1
+                    AND server_id = $2
+                    ORDER BY total DESC;
+                    """
 
-                matches = re.compile(r"<a?:.+?:[0-9]{15,21}>").findall(str(result))
-                total_uses = len(matches)
-                for x in matches:
-                    emoji = self.bot.get_emoji(int(x.split(":")[2].strip(">")))
-                    if not emoji:
-                        continue
-                    emoji_list.append(emoji)
+            records = await self.bot.cxn.fetch(query, user.id, ctx.guild.id)
+            if not records:
+                await ctx.fail(f"**{user}** `{user.id}` has no recorded emoji usage stats.")
+                return
 
-                emojis = Counter(emoji_list).most_common()
-
-                p = pagination.SimplePages(
-                    entries=["{}: Uses: {}".format(e[0], e[1]) for e in emojis],
-                    per_page=15,
-                )
-                p.embed.title = (
-                    f"{user.display_name}'s Emoji Usage (Total: {total_uses:,})"
-                )
-                await msg.delete()
-                try:
-                    await p.start(ctx)
-                except menus.MenuError as e:
-                    await ctx.send_or_reply(e)
+            p = pagination.SimplePages(
+                entries=[
+                    f"{pred(r['emoji_id'])}: Uses: {r['total']}"
+                    for r in records if pred(r['emoji_id'])],
+                per_page=15,
+            )
+            p.embed.title = (
+                f"{user.display_name}'s Emoji Usage (Total: {sum([r['total'] for r in records]):,})"
+            )
+            try:
+                await p.start(ctx)
+            except menus.MenuError as e:
+                await ctx.send_or_reply(e)
 
     @decorators.command(
         brief="Show roles that have no users.",

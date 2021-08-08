@@ -30,7 +30,8 @@ class Batch(commands.Cog):
         # Data holders
         self.command_batch = []
         self.edited_batch = []
-        self.emoji_batch = defaultdict(Counter)
+        #self.emoji_batch = defaultdict(Counter)
+        self.emote_batch = defaultdict(dict)
         self.invite_batch = []
         self.message_batch = []
         self.nicknames_batch = []
@@ -222,25 +223,44 @@ class Batch(commands.Cog):
                 self.command_batch.clear()
 
         # Emoji usage tracking
-        if self.emoji_batch:
+        if self.emote_batch:
+            # query = """
+            #         INSERT INTO emojistats (server_id, emoji_id, total)
+            #         SELECT x.server_id, x.emoji_id, x.added
+            #         FROM JSONB_TO_RECORDSET($1::JSONB)
+            #         AS x(server_id BIGINT, emoji_id BIGINT, added INT)
+            #         ON CONFLICT (server_id, emoji_id) DO UPDATE
+            #         SET total = emojistats.total + EXCLUDED.total;
+            #         """
             query = """
-                    INSERT INTO emojistats (server_id, emoji_id, total)
-                    SELECT x.server_id, x.emoji_id, x.added
+                    INSERT INTO emojidata (server_id, author_id, emoji_id, total)
+                    SELECT x.server_id, x.author_id, x.emoji_id, x.added
                     FROM JSONB_TO_RECORDSET($1::JSONB)
-                    AS x(server_id BIGINT, emoji_id BIGINT, added INT)
-                    ON CONFLICT (server_id, emoji_id) DO UPDATE
-                    SET total = emojistats.total + EXCLUDED.total;
+                    AS x(server_id BIGINT, author_id BIGINT, emoji_id BIGINT, added INT)
+                    ON CONFLICT (server_id, author_id, emoji_id) DO UPDATE
+                    SET total = emojidata.total + EXCLUDED.total;
                     """
             async with self.batch_lock:
+                # data = json.dumps(
+                #     [
+                #         {"server_id": server_id, "emoji_id": emoji_id, "added": count}
+                #         for server_id, data in self.emoji_batch.items()
+                #         for emoji_id, count in data.items()
+                #     ]
+                # )
+                # await self.bot.cxn.execute(query, data)
+                # self.emoji_batch.clear()
+
                 data = json.dumps(
                     [
-                        {"server_id": server_id, "emoji_id": emoji_id, "added": count}
-                        for server_id, data in self.emoji_batch.items()
-                        for emoji_id, count in data.items()
+                        {"server_id": server_id, "author_id": author_id, "emoji_id": emoji_id, "added": count}
+                        for server_id, data in self.emote_batch.items()
+                        for author_id, stats in data.items()
+                        for emoji_id, count in stats.items()
                     ]
                 )
                 await self.bot.cxn.execute(query, data)
-                self.emoji_batch.clear()
+                self.emote_batch.clear()
 
         if self.tracker_batch:  # Track user last seen times
             query = """
@@ -474,7 +494,10 @@ class Batch(commands.Cog):
         matches = EMOJI_REGEX.findall(message.content)
         if matches:
             async with self.batch_lock:
-                self.emoji_batch[message.guild.id].update(map(int, matches))
+                counter = Counter(map(int, matches))
+                self.emote_batch[message.guild.id].update({message.author.id: counter})
+
+                #self.emoji_batch[message.guild.id].update(map(int, matches))
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()

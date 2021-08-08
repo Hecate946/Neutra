@@ -1,10 +1,19 @@
-CREATE TABLE IF NOT EXISTS emojistats (
+-- CREATE TABLE IF NOT EXISTS emojistats (
+--     index BIGSERIAL PRIMARY KEY,
+--     server_id BIGINT,
+--     emoji_id BIGINT,
+--     total BIGINT DEFAULT 0 NOT NULL
+-- );
+-- CREATE UNIQUE INDEX IF NOT EXISTS emojistats_idx ON emojistats(server_id, emoji_id);
+
+CREATE TABLE IF NOT EXISTS emojidata (
     index BIGSERIAL PRIMARY KEY,
     server_id BIGINT,
+    author_id BIGINT,
     emoji_id BIGINT,
     total BIGINT DEFAULT 0 NOT NULL
 );
-CREATE UNIQUE INDEX IF NOT EXISTS emojistats_idx ON emojistats(server_id, emoji_id);
+CREATE UNIQUE INDEX IF NOT EXISTS emojidata_idx ON emojidata(server_id, author_id, emoji_id);
 
 CREATE TABLE IF NOT EXISTS messages (
     index BIGSERIAL PRIMARY KEY,
