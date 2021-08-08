@@ -486,7 +486,7 @@ class Mod(commands.Cog):
                 """,
     )
     @checks.guild_only()
-    @checks.bot_has_guild_perms(manage_channels=True, manage_roles=True)
+    @checks.bot_has_guild_perms(manage_roles=True)
     @checks.has_perms(administrator=True)
     @checks.cooldown()
     async def lock(
@@ -600,7 +600,7 @@ class Mod(commands.Cog):
                 """,
     )
     @checks.guild_only()
-    @checks.bot_has_guild_perms(manage_channels=True, manage_roles=True)
+    @checks.bot_has_guild_perms(manage_roles=True)
     @checks.has_perms(administrator=True)
     async def unlock(self, ctx, *, channel: discord.TextChannel = None):
         channel = channel or ctx.channel
