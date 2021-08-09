@@ -137,7 +137,9 @@ class Help(commands.Cog):
         Storage.support = self.bot.constants.support
         Storage.help_embed = self.get_help_embed
 
-        self.desc = f"**Bot Invite Link:** [https://neutra.discord.bot]({self.bot.oauth})\n**Support Server:**  [https://discord.gg/neutra]({self.bot.constants.support})"
+        self.desc = f"**Bot Invite Link:** [https://neutra.discord.bot]({self.bot.oauth})\n"
+        self.desc += f"**Support Server:**  [https://discord.gg/neutra]({self.bot.constants.support})\n"
+        self.desc += f"**Voting Link:**  [https://top.gg/bot/neutra/vote](https://top.gg/bot/806953546372087818/vote)"
 
     @property
     def get_help_embed(self):
@@ -279,7 +281,7 @@ class Help(commands.Cog):
         await self.send_help(ctx, embed)
 
     async def send_cog_help(self, ctx, cog):
-        commands = [c for c in cog.get_commands() if not c.hidden]
+        commands = [c for c in cog.walk_commands() if not c.hidden]
         commands = sorted(commands, key=lambda x: x.qualified_name)
 
         embed = discord.Embed(
@@ -510,6 +512,14 @@ class Help(commands.Cog):
                 "config",
             ]:
                 cog = self.bot.get_cog("Config")
+                return await self.send_cog_help(ctx, cog)
+
+            if category_or_command.lower() in [
+                "tasks",
+                "reminders",
+                "timers",
+            ]:
+                cog = self.bot.get_cog("Tasks")
                 return await self.send_cog_help(ctx, cog)
 
             #####################

@@ -6,11 +6,14 @@ import asyncio
 import asyncpg
 import discord
 import datetime
+import textwrap
 
 from datetime import timedelta
-from discord.ext import commands
+from discord.ext import commands, menus
 
 from utilities import humantime
+from utilities import formatting
+from utilities import pagination
 
 
 class Timer:
@@ -218,3 +221,158 @@ class Tasks(commands.Cog):
                 self._task.cancel()
                 self._task = self.bot.loop.create_task(self.dispatch_timers())
         return timer
+
+
+    @commands.group(aliases=['timer', 'remind'], usage='<when>', invoke_without_command=True, brief="Set a reminder for yourself.")
+    async def reminder(self, ctx, *, when: humantime.UserFriendlyTime(commands.clean_content, default='\u2026')):
+        """
+        Usage: {0}remind <when>
+        Aliases: {0}reminder, {0}timer
+        Output: Reminds you after a specified amount of time.
+        The input can be any direct date (e.g. YYYY-MM-DD) or a human
+        readable offset.
+        Examples:
+            - "next thursday at 3pm do something funny"
+            - "do the dishes tomorrow"
+            - "in 3 days do the thing"
+            - "2d unmute someone"
+        Times are in UTC.
+        """
+        if not when.dt:
+            return await ctx.fail("Invalid time. Try specifying when you want to be reminded.")
+        timer = await self.create_timer(when.dt.replace(tzinfo=None), 'reminder', ctx.author.id,
+                                                             ctx.channel.id,
+                                                             when.arg,
+                                                             connection=self.bot.cxn,
+                                                             created=ctx.message.created_at.replace(tzinfo=None),
+                                                             message_id=ctx.message.id)
+
+        delta = humantime.human_timedelta(when.dt, source=timer.created_at)
+        await ctx.reply(f"I will remind you about: `{when.arg}` in {delta}.")
+
+    @reminder.command(name='list', aliases=["show"], brief="Show all your current reminders.")
+    async def reminder_list(self, ctx):
+        """
+        Usage: {0}remind list
+        Alias: {0}remind show
+        Output: Shows all your pendind reminders
+        """
+        query = """
+                SELECT id, expires, extra #>> '{args,2}'
+                FROM tasks
+                WHERE event = 'reminder'
+                AND extra #>> '{args,0}' = $1
+                ORDER BY expires;
+                """
+
+        records = await self.bot.cxn.fetch(query, str(ctx.author.id))
+
+        if not records:
+            return await ctx.fail('No current reminders.')
+
+        p = pagination.MainMenu(pagination.FieldPageSource(
+            entries=[
+                (
+                        f"**Reminder ID:** {index}",
+                        f"**Expires:** {humantime.format_relative(expires)}\n"
+                        f"**About:** {textwrap.shorten(message, width=512)}",
+                )
+                    for index, expires, message in records
+            ],
+            title="Reminders",
+            description=f'{len(records)} reminder{"s" if len(records) > 1 else ""}'
+        ))
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send(e)
+
+    @reminder.command(name='delete', aliases=['remove', 'cancel'], brief="Delete a reminder.")
+    async def reminder_delete(self, ctx, *, id: int):
+        """
+        Usage: {0}remind delete [reminder ID]
+        Aliases: {0}remind remove, {0}remind cancel
+        Output: Deletes a reminder by its ID.
+        Notes:
+            To get a reminder ID, use `{0}reminder list`
+        """
+
+        query = """
+                DELETE FROM tasks
+                WHERE id=$1
+                AND event = 'reminder'
+                AND extra #>> '{args,0}' = $2;
+                """
+
+        status = await self.bot.cxn.execute(query, id, str(ctx.author.id))
+        if status == 'DELETE 0':
+            return await ctx.fail('Could not delete any reminders with that ID.')
+
+        # if the current timer is being deleted
+        if self._current_timer and self._current_timer.id == id:
+            # cancel the task and re-run it
+            self._task.cancel()
+            self._task = self.bot.loop.create_task(self.dispatch_timers())
+
+        await ctx.success('Successfully deleted reminder.')
+
+    @reminder.command(name='clear', brief="Clear all your current reminders.")
+    async def reminder_clear(self, ctx):
+        """
+        Usage: {0}remind clear
+        Output: Clears all reminders you have set.
+        """
+
+        # For UX purposes this has to be two queries.
+
+        query = """
+                SELECT COUNT(*)
+                FROM tasks
+                WHERE event = 'reminder'
+                AND extra #>> '{args,0}' = $1;
+                """
+
+        author_id = str(ctx.author.id)
+        total = await self.bot.cxn.fetchrow(query, author_id)
+        total = total[0]
+        if total == 0:
+            await ctx.fail('You do not have any reminders to delete.')
+            return
+
+        confirm = await ctx.confirm(f'This action will delete {formatting.plural(total):reminder}?')
+        if confirm:
+            query = """DELETE FROM tasks WHERE event = 'reminder' AND extra #>> '{args,0}' = $1;"""
+            await self.bot.cxn.execute(query, author_id)
+            await ctx.success(f'Successfully deleted {formatting.plural(total):reminder}.')
+
+    @commands.Cog.listener()
+    async def on_reminder_timer_complete(self, timer):
+        author_id, channel_id, message = timer.args
+
+        try:
+            channel = self.bot.get_channel(channel_id) or (await self.bot.fetch_channel(channel_id))
+        except (discord.HTTPException, discord.NotFound):
+            return
+
+        try:
+            author = self.bot.get_user(author_id) or (await self.bot.fetch_user(author_id))
+        except (discord.HTTPException, discord.NotFound):
+            return
+
+        guild_id = channel.guild.id if isinstance(channel, (discord.TextChannel, discord.Thread)) else '@me'
+        message_id = timer.kwargs.get('message_id')
+        msg = f'Hello {author.mention}, {timer.human_delta}, you wanted me to remind you about: `{message}`'
+
+        view = None
+        if message_id:
+            url = f'https://discord.com/channels/{guild_id}/{channel.id}/{message_id}'
+            view = discord.ui.View()
+            view.add_item(discord.ui.Button(label="Click here to view your reminder.", url=url))
+
+        try:
+            await author.send(msg, view=view)
+        except Exception:
+            try:
+                await channel.send(message, view=view)
+            except Exception:
+                return
