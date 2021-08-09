@@ -1441,6 +1441,7 @@ class Admin(commands.Cog):
             invites
             messages
             nicknames
+            emojis
         Notes:
             Once removed, the data cannot be
             recovered. Use with caution.
@@ -1462,6 +1463,11 @@ class Admin(commands.Cog):
             elif option == "nicknames":
                 query = """
                         DELETE FROM usernicks
+                        WHERE server_id = $1;
+                        """
+            elif option == "emojis":
+                query = """
+                        DELETE FROM emojidata
                         WHERE server_id = $1;
                         """
 

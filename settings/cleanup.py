@@ -48,7 +48,7 @@ async def purge_discrepancies(guilds):
     await find_discrepancy(query, guilds)
     print(f"{query.split()[-1]}_query")
 
-    query = "SELECT server_id FROM emojistats"
+    query = "SELECT server_id FROM emojidata"
     await find_discrepancy(query, guilds)
     print(f"{query.split()[-1]}_query")
 
@@ -80,7 +80,7 @@ async def destroy_server(guild_id):
     query = "DELETE FROM invites WHERE server_id = $1"
     await conn.execute(query, guild_id)
 
-    query = "DELETE FROM emojistats WHERE server_id = $1"
+    query = "DELETE FROM emojidata WHERE server_id = $1"
     await conn.execute(query, guild_id)
 
     query = "DELETE FROM messages WHERE server_id = $1"

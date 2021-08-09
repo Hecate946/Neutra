@@ -1237,6 +1237,7 @@ class LoggingEvent(commands.Converter):
 class ServerDataOption(commands.Converter):
     async def convert(self, ctx, argument):
         types = {
+            "emojis": "Delete all recorded emoji data for the server.",
             "invites": "Delete all invite data recorded for a user on this server.",
             "messages": "Delete all message data recorded for a user on this server.",
             "nicknames": "Delete all recorded nicknames for a user on this server.",
