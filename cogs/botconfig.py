@@ -26,7 +26,6 @@ class Botconfig(commands.Cog):
         self.bot = bot
         self.is_adminlocked = False
         self.is_ownerlocked = False
-        self.todo = "./data/txts/todo.txt"
 
     # this cog is owner only
     async def cog_check(self, ctx):

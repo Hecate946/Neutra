@@ -28,6 +28,7 @@ class Monitor(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.process = psutil.Process()
+        self.todo_list = "./data/txts/todo.txt"
 
     # Admin only cog.
     async def cog_check(self, ctx):
@@ -69,7 +70,7 @@ class Monitor(commands.Cog):
         """
         if ctx.invoked_subcommand is None:
             try:
-                with open(self.todo) as fp:
+                with open(self.todo_list) as fp:
                     data = fp.readlines()
             except FileNotFoundError:
                 return await ctx.send_or_reply(
@@ -96,13 +97,13 @@ class Monitor(commands.Cog):
             return await ctx.send_or_reply(
                 content=f"Usage: `{ctx.clean_prefix}todo add <todo>`",
             )
-        with open(self.todo, "a", encoding="utf-8") as fp:
+        with open(self.todo_list, "a", encoding="utf-8") as fp:
             fp.write(todo + "\n")
         await ctx.success(f"Successfully added `{todo}` to the todo list.")
 
     @todo.command(aliases=["rm", "rem"], brief="Remove a todo entry.")
     async def remove(self, ctx, *, index_or_todo: str = None):
-        with open(self.todo, mode="r", encoding="utf-8") as fp:
+        with open(self.todo_list, mode="r", encoding="utf-8") as fp:
             lines = fp.readlines()
             print(lines)
         found = False
@@ -116,7 +117,7 @@ class Monitor(commands.Cog):
                 found = True
                 break
         if found is True:
-            with open(self.todo, mode="w", encoding="utf-8") as fp:
+            with open(self.todo_list, mode="w", encoding="utf-8") as fp:
                 print(lines)
                 fp.write("".join(lines))
             await ctx.success(
@@ -128,7 +129,7 @@ class Monitor(commands.Cog):
     @todo.command(brief="Clear the todo list.")
     async def clear(self, ctx):
         try:
-            os.remove(self.todo)
+            os.remove(self.todo_list)
         except FileNotFoundError:
             return await ctx.success("Successfully cleared the todo list.")
         await ctx.success("Successfully cleared the todo list.")
