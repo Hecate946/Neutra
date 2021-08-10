@@ -30,7 +30,7 @@ class Batch(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         # Data holders
-        self.activity_batch = {}
+        self.activity_batch = defaultdict(dict)
         self.command_batch = []
         self.edited_batch = []
         #self.emoji_batch = defaultdict(Counter)
@@ -199,16 +199,33 @@ class Batch(commands.Cog):
     @tasks.loop(seconds=2.0)
     async def bulk_inserter(self):
         if self.activity_batch:
-            query = """
-                    INSERT INTO activities (user_id, activity, insertion)
-                    VALUES ($1, $2, $3);
-                    """
-            async with self.batch_lock:
-                await self.bot.cxn.executemany(query, (
-                        (user_id, activity, timestamp)
+            # query = """
+            #         INSERT INTO activities (user_id, activity, insertion)
+            #         VALUES ($1, $2, $3);
+            #         """
+            # async with self.batch_lock:
+            #     await self.bot.cxn.executemany(query, (
+            #             (user_id, activity, timestamp)
+            #             for user_id, data in self.activity_batch.items()
+            #             for activity, timestamp in data.items()
+            #         ))
+            #     self.activity_batch.clear()
+
+                query = """
+                        INSERT INTO activities (user_id, activity, insertion)
+                        SELECT x.user_id, x.activity, x.insertion
+                        FROM JSONB_TO_RECORDSET($1::JSONB)
+                        AS x(user_id BIGINT, activity TEXT, insertion TIMESTAMP)
+                        """
+
+                data = json.dumps(
+                    [
+                        {"user_id": user_id, "activity": activity, "insertion": str(timestamp)}
                         for user_id, data in self.activity_batch.items()
                         for activity, timestamp in data.items()
-                    ))
+                    ]
+                )
+                await self.bot.cxn.execute(query, data)
                 self.activity_batch.clear()
 
         if self.command_batch:  # Insert all the commands executed.
@@ -455,7 +472,7 @@ class Batch(commands.Cog):
         if await self.activity_changed(before, after):
             async with self.batch_lock:
                 self.tracker_batch[before.id] = (time.time(), "updating their custom status")
-                self.activity_batch[before.id] = {str(before.activity): datetime.utcnow()}
+                self.activity_batch[before.id].update({str(before.activity): datetime.utcnow()})
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
