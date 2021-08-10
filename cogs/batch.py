@@ -2,9 +2,11 @@ import re
 import json
 import time
 import asyncio
+import discord
 import logging
 
 from collections import Counter, defaultdict
+from datetime import datetime
 from discord.ext import commands, tasks
 
 from utilities import utils
@@ -28,6 +30,7 @@ class Batch(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         # Data holders
+        self.activity_batch = {}
         self.command_batch = []
         self.edited_batch = []
         #self.emoji_batch = defaultdict(Counter)
@@ -147,7 +150,7 @@ class Batch(commands.Cog):
     async def loop_error(self, exc):
         self.bot.dispatch("error", "loop_error", tb=utils.traceback_maker(exc))
 
-    @tasks.loop(seconds=0.2)
+    @tasks.loop(seconds=0.5)
     async def message_inserter(self):
         """
         Main bulk message inserter
@@ -195,6 +198,19 @@ class Batch(commands.Cog):
 
     @tasks.loop(seconds=2.0)
     async def bulk_inserter(self):
+        if self.activity_batch:
+            query = """
+                    INSERT INTO activities (user_id, activity, insertion)
+                    VALUES ($1, $2, $3);
+                    """
+            async with self.batch_lock:
+                await self.bot.cxn.executemany(query, (
+                        (user_id, activity, timestamp)
+                        for user_id, data in self.activity_batch.items()
+                        for activity, timestamp in data.items()
+                    ))
+                self.activity_batch.clear()
+
         if self.command_batch:  # Insert all the commands executed.
             query = """
                     INSERT INTO commands (server_id, channel_id,
@@ -375,11 +391,16 @@ class Batch(commands.Cog):
         if before.status != after.status:
             return True
 
-        try:
-            if before.activity != after.activity:
-                return True
-        except KeyError:
-            pass
+    @staticmethod
+    async def activity_changed(before, after):
+        if not before.activity:
+            return
+        if before.activity == after.activity:
+            return
+        if before.activity.type is not discord.ActivityType.custom:
+            return
+
+        return True
 
     @staticmethod
     async def avatar_changed(before, after):
@@ -430,6 +451,11 @@ class Batch(commands.Cog):
             async with self.batch_lock:
                 self.status_batch[str(before.status)][after.id] = time.time()
                 self.tracker_batch[before.id] = (time.time(), "updating their status")
+        
+        if await self.activity_changed(before, after):
+            async with self.batch_lock:
+                self.tracker_batch[before.id] = (time.time(), "updating their custom status")
+                self.activity_batch[before.id] = {str(before.activity): datetime.utcnow()}
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -786,3 +812,22 @@ class Batch(commands.Cog):
                 AND server_id = $2
                 """
         return await self.bot.cxn.fetchval(query, user.id, user.guild.id)
+
+    async def get_activities(self, user):
+        """
+        Gets all recorded activities for a user
+        """
+        query = """
+                SELECT ARRAY(
+                    SELECT activity
+                    FROM activities
+                    WHERE user_id = $1
+                    ORDER BY insertion DESC
+                ) as activity_list
+                """
+        record = await self.bot.cxn.fetchval(query, user.id)
+
+        if user.activity and user.activity.type is discord.ActivityType.custom:
+            return [str(user.activity)] + record
+        return record
+        

@@ -4,8 +4,8 @@ import re
 import sys
 import json
 import time
+import topgg
 import aiohttp
-import asyncio
 import discord
 import logging
 import traceback
@@ -842,3 +842,28 @@ class Neutra(commands.AutoShardedBot):
 
 
 bot = Neutra()
+bot.topgg_client = topgg.DBLClient(bot, utils.config()["topgg"], autopost=True, session=bot.session)
+
+# bot.topgg_webhook = topgg.WebhookManager(bot).dbl_webhook("/dblwebhook", utils.config()["topgg"])
+# bot.topgg_webhook.run(5000)  # this method can be awaited as well
+
+
+@bot.event
+async def on_autopost_success():
+    print(f'Posted server count ({bot.topgg_client.guild_count})')
+
+# @bot.event
+# async def on_dbl_vote(data):
+#     """An event that is called whenever someone votes for the bot on Top.gg."""
+#     if data["type"] == "test":
+#         # this is roughly equivalent to
+#         # return await on_dbl_test(data) in this case
+#         return bot.dispatch('dbl_test', data)
+
+#     print(f"Received a vote:\n{data}")
+
+# @bot.event
+# async def on_dbl_test(data):
+#     """An event that is called whenever someone tests the webhook system for your bot on Top.gg."""
+#     print(f"Received a test vote:\n{data}")
+

@@ -160,7 +160,7 @@ class Tracking(commands.Cog):
             usernames = await batch.get_names(user)
             nicknames = await batch.get_nicks(user)
             joined_at = utils.format_time(user.joined_at)
-            status = self.get_status(user)
+            status = utils.get_status(user)
             server_spoke = await batch.get_server_last_spoke(user)
             server_messages = await batch.get_server_message_count(user)
             server_commands = await batch.get_server_command_count(user)
@@ -226,86 +226,33 @@ class Tracking(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-    @decorators.command(
-        aliases=["game", "presence", "playing"],
-        brief="Show a user's discord status.",
-        implemented="2021-03-22 16:31:55.693675",
-        updated="2021-05-06 23:31:16.992062",
-        examples="""
-                {0}game
-                {0}game Hecate
-                {0}game @Hecate
-                {0}game Hecate#3523
-                {0}game 708584008065351681
-                {0}status
-                {0}status Hecate
-                {0}status @Hecate
-                {0}status Hecate#3523
-                {0}status 708584008065351681
-                {0}playing
-                {0}playing Hecate
-                {0}playing @Hecate
-                {0}playing Hecate#3523
-                {0}playing 708584008065351681
-                {0}presence
-                {0}presence Hecate
-                {0}presence @Hecate
-                {0}presence Hecate#3523
-                {0}presence 708584008065351681
-                """,
-    )
-    @checks.guild_only()
+    @decorators.command(aliases=['activities'], brief="Show all recorded statuses")
+    @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.cooldown()
-    async def status(self, ctx, *, user: converters.DiscordMember = None):
+    async def statuses(self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None):
         """
-        Usage: {0}status [user]
-        Aliases:
-            {0}game, {0}playing, {0}activity, {0}presence
+        Usage: {0}statuses [user]
+        Alias: {0}activities
+        Permission: View Audit Log
         Output:
-            Shows a user's current activity (if exists).
+            Shows an embed of all the passed user's
+            statuses (past and present).
         Notes:
-            Will default to you if no user is passed.
+            Will default to yourself if no user is passed
         """
         user = user or ctx.author
-        status = self.get_status(user)
-        if not status:
-            await ctx.fail(f"**{user}** `{user.id}` has no current status.")
-            return
-        msg = f"Status for **{user}** `{user.id}`: {status}"
-        await ctx.send_or_reply(msg)
+        batch = self.bot.get_cog("Batch")
+        if not batch:
+            raise commands.DisabledCommand()
+        await ctx.trigger_typing()
+        statuses = await batch.get_activities(user)
 
-    def activity_string(self, activity):
-        if isinstance(activity, (discord.Game, discord.Streaming)):
-            return str(activity)
-        elif isinstance(activity, discord.Activity):
-            ret = activity.name
-            if activity.details:
-                ret += " ({})".format(activity.details)
-            if activity.state:
-                ret += " - {}".format(activity.state)
-            return ret
-        elif isinstance(activity, discord.Spotify):
-            elapsed = discord.utils.utcnow() - activity.start
-            return "{}: {} by {} from {} [{}/{}]".format(
-                activity.name,
-                activity.title or "Unknown Song",
-                activity.artist or "Unknown Artist",
-                activity.album or "Unknown Album",
-                self.format_timedelta(elapsed),
-                self.format_timedelta(activity.duration),
-            )
-        else:
-            return str(activity)
-
-    def get_status(self, user):
-        if user.activities:
-            status = "\n".join(self.activity_string(a) for a in user.activities)
-            if status != "":
-                return status
-
-    def format_timedelta(self, td):
-        ts = td.total_seconds()
-        return "{:02d}:{:06.3f}".format(int(ts // 60), ts % 60)
+        p = pagination.SimplePages([f"**{x}**" for x in statuses], per_page=15)
+        p.embed.title = f"{user}'s Recorded Statuses"
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send_or_reply(e)
 
     @decorators.command(aliases=["mc"], brief="Count the messages a user sent.")
     @checks.guild_only()

@@ -7,6 +7,15 @@ CREATE TABLE IF NOT EXISTS usernames (
 CREATE INDEX IF NOT EXISTS usernames_idx ON usernames(user_id, username);
 
 
+CREATE TABLE IF NOT EXISTS activities (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT,
+    activity TEXT,
+    insertion TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
+);
+CREATE INDEX IF NOT EXISTS activities_idx ON activities(user_id, activity);
+
+
 CREATE TABLE IF NOT EXISTS usernicks (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT,
@@ -23,7 +32,6 @@ CREATE TABLE IF NOT EXISTS userroles (
     roles TEXT,
     UNIQUE(user_id, server_id)
 );
-
 
 CREATE TABLE IF NOT EXISTS tracker (
     user_id BIGINT PRIMARY KEY,

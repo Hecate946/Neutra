@@ -548,3 +548,33 @@ class CachedHistoryIterator(HistoryIterator):
                 self.limit -= 1
                 self.before = discord.Object(id=msg.id)
                 await self.messages.put(msg)
+
+
+def activity_string(activity):
+    if isinstance(activity, (discord.Game, discord.Streaming)):
+        return str(activity)
+    elif isinstance(activity, discord.Activity):
+        ret = activity.name
+        if activity.details:
+            ret += " ({})".format(activity.details)
+        if activity.state:
+            ret += " - {}".format(activity.state)
+        return ret
+    elif isinstance(activity, discord.Spotify):
+        elapsed = discord.utils.utcnow() - activity.start
+        return "{}: {} by {} from {} [{}/{}]".format(
+            activity.name,
+            activity.title or "Unknown Song",
+            activity.artist or "Unknown Artist",
+            activity.album or "Unknown Album",
+            format_timedelta(elapsed),
+            format_timedelta(activity.duration),
+        )
+    else:
+        return str(activity)
+
+def get_status(user):
+    if user.activities:
+        status = "\n".join(activity_string(a) for a in user.activities)
+        if status != "":
+            return status

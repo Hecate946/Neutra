@@ -1,6 +1,7 @@
 import io
 import re
 import copy
+from discord.embeds import E
 from discord.member import M
 import pytz
 import json
@@ -750,17 +751,20 @@ class Utility(commands.Cog):
         await ctx.success(msg)
 
     # Helper function to format and send the given image url.
-    async def do_avatar(self, ctx, name, url, default=False, option="avatar"):
+    async def do_avatar(self, ctx, name, url, default=False, *, option="avatar", file=None):
         embed = discord.Embed(
             title=f"**{name}'s {'default' if default else ''} {option}.**",
-            description=f"Links to `{name}'s` {option}:  "
+            description="" if file else f"Links to `{name}'s` {option}:  "
             f"[webp]({(str(url))}) | "
             f'[png]({(str(url).replace("webp", "png"))}) | '
             f'[jpeg]({(str(url).replace("webp", "jpg"))})  ',
             color=self.bot.constants.embed,
         )
         embed.set_image(url=url)
-        await ctx.send_or_reply(embed=embed)
+        if file:
+            await ctx.send_or_reply(embed=embed, file=file)
+        else:
+            await ctx.send_or_reply(embed=embed)
 
     @decorators.command(
         aliases=["av", "pfp", "icon"],
@@ -806,8 +810,19 @@ class Utility(commands.Cog):
         """
         user = user or ctx.author
         user = await self.bot.fetch_user(user.id)
-        if not user.banner:
+        if not user.banner and not user.accent_color:
             await ctx.fail(f"User **{user}** `{user.id}` has no banner.")
+            return
+        if not user.banner:
+            image = Image.new(
+                mode="RGB", size=(600, 240), color=self._hex_int_to_tuple(user.accent_color.value)
+            )
+            buffer = io.BytesIO()
+            image.save(buffer, "png")  # 'save' function for PIL
+            buffer.seek(0)
+            file = discord.File(fp=buffer, filename="banner.png")
+            url="attachment://banner.png"
+            await self.do_avatar(ctx, str(user), url, option="banner", file=file)
             return
         await self.do_avatar(ctx, str(user), user.banner.url, option="banner")
 
@@ -894,6 +909,54 @@ class Utility(commands.Cog):
         await ctx.send_or_reply(
             f"{emoji_fmt} User `{user}` is on {word_fmt(statuses)}."
         )
+
+    @decorators.command(
+        aliases=["game", "presence", "playing"],
+        brief="Show a user's discord status.",
+        implemented="2021-03-22 16:31:55.693675",
+        updated="2021-05-06 23:31:16.992062",
+        examples="""
+                {0}game
+                {0}game Hecate
+                {0}game @Hecate
+                {0}game Hecate#3523
+                {0}game 708584008065351681
+                {0}status
+                {0}status Hecate
+                {0}status @Hecate
+                {0}status Hecate#3523
+                {0}status 708584008065351681
+                {0}playing
+                {0}playing Hecate
+                {0}playing @Hecate
+                {0}playing Hecate#3523
+                {0}playing 708584008065351681
+                {0}presence
+                {0}presence Hecate
+                {0}presence @Hecate
+                {0}presence Hecate#3523
+                {0}presence 708584008065351681
+                """,
+    )
+    @checks.guild_only()
+    @checks.cooldown()
+    async def status(self, ctx, *, user: converters.DiscordMember = None):
+        """
+        Usage: {0}status [user]
+        Aliases:
+            {0}game, {0}playing, {0}activity, {0}presence
+        Output:
+            Shows a user's current activity (if exists).
+        Notes:
+            Will default to you if no user is passed.
+        """
+        user = user or ctx.author
+        status = utils.get_status(user)
+        if not status:
+            await ctx.fail(f"**{user}** `{user.id}` has no current status.")
+            return
+        msg = f"Status for **{user}** `{user.id}`: {status}"
+        await ctx.send_or_reply(msg)
 
     @decorators.command(
         aliases=["sav", "savatar"],
