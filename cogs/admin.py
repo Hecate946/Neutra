@@ -284,6 +284,60 @@ class Admin(commands.Cog):
                 msg += f"\n{self.bot.emote_dict['failed']} Failed to ascify {len(failed)} user{'' if len(failed) == 1 else 's'}."
             await message.edit(content=msg)
 
+    @decorators.command(brief="Reset all server nicknames.", aliases=["massrenickname"])
+    @checks.guild_only()
+    @checks.bot_has_perms(manage_nicknames=True)
+    @checks.has_perms(manage_guild=True)
+    @checks.cooldown(2, 30, bucket=commands.BucketType.guild)
+    async def massrenick(self, ctx):
+        """
+        Usage: {0}massrenick
+        Alias: {0}massrenickname
+        Permission: Manage Server
+        Output:
+            The bot will attempt to edit the
+            nicknames of all users to their
+            default username.
+        Notes:
+            May take several minutes on larger servers
+        """
+
+        c = await ctx.confirm(
+            "This command will attempt to reset the nickname for all users in this server."
+        )
+        if c:
+            renick = [m for m in ctx.guild.members if m.nick]
+
+            if len(renick) == 0:
+                await ctx.success("No users to re-nickname.")
+                return
+
+            message = await ctx.load(
+                f"Re-nicknaming {len(renick)} user{'' if len(renick) == 1 else 's'}..."
+            )
+
+            self.start_working(ctx.guild, "massrenick")
+
+            edited = 0
+            failed = 0
+            for user in renick:
+                try:
+                    await user.edit(
+                        nick=None, reason="Nickname changed by massrenick command."
+                    )
+                    edited += 1
+                except Exception:
+                    failed += 1
+
+            self.stop_working(ctx.guild)
+
+            msg = ""
+            if edited > 0:
+                msg += f"{self.bot.emote_dict['success']} Re-nicknamed {edited} user{'' if edited == 1 else 's'}."
+            if failed > 0:
+                msg += f"\n{self.bot.emote_dict['failed']} Failed to Re-nickname {failed} user{'' if failed == 1 else 's'}."
+            await message.edit(content=msg)
+
     @decorators.command(
         aliases=["multiban"],
         brief="Massban users matching a search.",
