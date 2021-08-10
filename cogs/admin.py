@@ -301,17 +301,14 @@ class Admin(commands.Cog):
         Notes:
             May take several minutes on larger servers
         """
-
+        renick = [m for m in ctx.guild.members if m.nick]
+        if len(renick) == 0:
+            await ctx.success("No users to re-nickname.")
+            return
         c = await ctx.confirm(
-            "This command will attempt to reset the nickname for all users in this server."
+            f"This command will attempt to reset the nickname for {len(renick)} user{'' if len(renick) == 1 else 's'}."
         )
         if c:
-            renick = [m for m in ctx.guild.members if m.nick]
-
-            if len(renick) == 0:
-                await ctx.success("No users to re-nickname.")
-                return
-
             message = await ctx.load(
                 f"Re-nicknaming {len(renick)} user{'' if len(renick) == 1 else 's'}..."
             )
