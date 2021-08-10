@@ -404,15 +404,17 @@ class Batch(commands.Cog):
 
     # Helper functions to detect changes
     @staticmethod
-    async def status_changed(before, after):
+    def status_changed(before, after):
         if before.status != after.status:
             return True
 
     @staticmethod
-    async def activity_changed(before, after):
+    def activity_changed(before, after):
         if not before.activity:
             return
-        if before.activity == after.activity:
+        if str(after.status) == "offline":
+            return
+        if str(before.activity) == str(after.activity):
             return
         if before.activity.type is not discord.ActivityType.custom:
             return
@@ -420,29 +422,29 @@ class Batch(commands.Cog):
         return True
 
     @staticmethod
-    async def avatar_changed(before, after):
+    def avatar_changed(before, after):
         if before.avatar.url != after.avatar.url:
             return True
 
     @staticmethod
-    async def icon_changed(before, after):
+    def icon_changed(before, after):
         if before.icon != after.icon:
             return True
 
     @staticmethod
-    async def username_changed(before, after):
+    def username_changed(before, after):
         if before.discriminator != after.discriminator:
             return True
         if before.name != after.name:
             return True
 
     @staticmethod
-    async def nickname_changed(before, after):
+    def nickname_changed(before, after):
         if before.display_name != after.display_name:
             return True
 
     @staticmethod
-    async def roles_changed(before, after):
+    def roles_changed(before, after):
         if before.roles != after.roles:
             return True
 
@@ -450,7 +452,7 @@ class Batch(commands.Cog):
     @decorators.wait_until_ready()
     @decorators.event_check(lambda s, b, a: not a.bot)
     async def on_member_update(self, before, after):
-        if await self.nickname_changed(before, after):
+        if self.nickname_changed(before, after):
             async with self.batch_lock:
                 self.nicknames_batch.append(
                     {
@@ -464,12 +466,12 @@ class Batch(commands.Cog):
     @decorators.wait_until_ready()
     @decorators.event_check(lambda s, b, a: not a.bot)
     async def on_presence_update(self, before, after):
-        if await self.status_changed(before, after):
+        if self.status_changed(before, after):
             async with self.batch_lock:
                 self.status_batch[str(before.status)][after.id] = time.time()
                 self.tracker_batch[before.id] = (time.time(), "updating their status")
         
-        if await self.activity_changed(before, after):
+        if self.activity_changed(before, after):
             async with self.batch_lock:
                 self.tracker_batch[before.id] = (time.time(), "updating their custom status")
                 self.activity_batch[before.id].update({str(before.activity): datetime.utcnow()})
@@ -482,12 +484,12 @@ class Batch(commands.Cog):
         Here's where we get notified of avatar,
         username, and discriminator changes.
         """
-        if await self.avatar_changed(before, after):
+        if self.avatar_changed(before, after):
             async with self.batch_lock:
                 self.tracker_batch[before.id] = (time.time(), "updating their avatar")
                 self.bot.avatar_saver.save(after)
 
-        if await self.username_changed(before, after):
+        if self.username_changed(before, after):
             async with self.batch_lock:
                 self.usernames_batch.append(
                     {
@@ -504,7 +506,7 @@ class Batch(commands.Cog):
         """
         Here's where we get notified of guild updates.
         """
-        if await self.icon_changed(before, after):
+        if self.icon_changed(before, after):
             self.bot.icon_saver.save(after)
 
     @commands.Cog.listener()
