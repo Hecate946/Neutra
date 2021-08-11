@@ -32,8 +32,8 @@ avatars = {
 emotes = {
     "loading": "<​a:loading:875108637549408297>",
     "help": "<:help:866884635664187424>",
-    "success": "<​:checkmark:875108614904373289>",
-    "failed": "<​:failed:875108613201485845>",
+    "success": "<:checkmark:875108614904373289>",
+    "failed": "<:failed:875140082598817873>",
     "warn": "<​:warn:875108597208600637>",
     "error": "<​:error:875108644633579571>",
     "announce": "<​:announce:875108641420750878>",
