@@ -1370,3 +1370,55 @@ class Music(commands.Cog):
                 else:
                     await ctx.guild.voice_client.disconnect(force=True)
                     ctx.voice_state.voice = await channel.connect(timeout=None)
+
+
+    @commands.Cog.listener()
+    @decorators.event_check(lambda s, b, a: a.activities)
+    async def on_presence_update(self, before, after):
+        for activity in after.activities:
+            if type(activity) is discord.activity.Spotify:
+                if activity not in before.activities:
+                    print(activity.track_id)
+                    
+
+
+
+
+    @decorators.command()
+    async def spotify(self, ctx, *, user: converters.DiscordMember = None):
+
+        for x in self.bot.get_all_members():
+            for y in x.activities:
+                if type(y) is discord.activity.Spotify:
+                    user = x
+                    break
+        status = None
+        for activity in user.activities:
+            if type(activity) is discord.activity.Spotify:
+                status = activity
+                break
+ 
+        if not status:
+            await ctx.fail("No current spotify status found.")
+            return
+ 
+        e = discord.Embed(color=self.bot.constants.embed)
+        e.title = f"{user.display_name}'s Spotify Track Information"
+        e.description = f"```fix\n{status.title}```"
+        e.add_field(name="Artist", value=status.artist)
+        e.add_field(name="Album", value=status.album)
+        e.add_field(name="Duration", value=parse_duration(int(status.duration.total_seconds())))
+        e.add_field(name="Song URL", value=status.track_url, inline=False)
+        e.set_thumbnail(url=status.album_cover_url)
+        track = await self.spotify.get_track(status.track_id)
+        artist_id = track["artists"][0]["id"]
+        album_id = track["album"]["id"]
+        print(status.track_id)
+        print(artist_id)
+        print(album_id)
+        import json
+        with open("track.json", "w") as fp:
+            json.dump(track, fp, indent=2)
+        await ctx.send(embed=e)
+
+
