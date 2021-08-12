@@ -593,7 +593,7 @@ class Server(commands.Cog):
                     created = await asyncio.wait_for(coro, timeout=10.0)
                 except asyncio.TimeoutError:
                     return await ctx.fail(
-                        "Rate limit reached. Please retry again later."
+                        "Rate limit reached. Please try again later."
                     )
                 except discord.HTTPException as e:
                     return await ctx.fail(f"Failed to create emoji: {e}")

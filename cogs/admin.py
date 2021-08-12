@@ -228,34 +228,38 @@ class Admin(commands.Cog):
     @checks.bot_has_perms(manage_nicknames=True)
     @checks.has_perms(manage_guild=True)
     @checks.cooldown(2, 30, bucket=commands.BucketType.guild)
-    async def massascify(self, ctx):
+    async def massascify(self, ctx, *, role: converters.UniqueRole = None):
         """
-        Usage: {0}massascify
+        Usage: {0}massascify [role]
         Permission: Manage Server
         Output:
             The bot will attempt to edit the
             nicknames of all users with
             special characters in their names.
         Notes:
+            Specify a role to only ascify the users
+            who have that role.
             May take several minutes on larger servers
         """
+        if role:
+            to_check = role.members
+        else:
+            to_check = ctx.guild.members
 
+        odd_names = []
+        for user in to_check:
+            current_name = copy.copy(user.display_name)
+            ascified = unidecode(user.display_name)
+            if current_name != ascified:
+                odd_names.append(user)
+
+        if len(odd_names) == 0:
+            await ctx.success("No users to ascify.")
+            return
         c = await ctx.confirm(
-            "This command will attempt to nickname all users with special symbols in their names."
+            f"This command will attempt to re-nickname {len(odd_names)} user{'' if len(odd_names) == 1 else 's'} with special symbols in their names."
         )
         if c:
-            odd_names = []
-            for user in ctx.guild.members:
-                current_name = copy.copy(user.display_name)
-                ascified = unidecode(user.display_name)
-                if current_name != ascified:
-                    odd_names.append(user)
-
-            if len(odd_names) == 0:
-                await ctx.send_or_reply(
-                    content=f"{self.bot.emote_dict['exclamation']} No users to ascify.",
-                )
-                return
 
             message = await ctx.load(
                 f"Ascifying {len(odd_names)} user{'' if len(odd_names) == 1 else 's'}..."
@@ -263,25 +267,25 @@ class Admin(commands.Cog):
 
             self.start_working(ctx.guild, "massascify")
 
-            edited = []
-            failed = []
+            edited = 0
+            failed = 0
             for user in odd_names:
                 try:
                     ascified = unidecode(user.display_name)
                     await user.edit(
                         nick=ascified, reason="Nickname changed by massascify command."
                     )
-                    edited.append(str(user))
+                    edited += 1
                 except Exception:
-                    failed.append(str(user))
+                    failed += 1
 
             self.stop_working(ctx.guild)
 
             msg = ""
             if edited:
-                msg += f"{self.bot.emote_dict['success']} Ascified {len(edited)} user{'' if len(edited) == 1 else 's'}."
+                msg += f"{self.bot.emote_dict['success']} Ascified {edited} user{'' if edited == 1 else 's'}."
             if failed:
-                msg += f"\n{self.bot.emote_dict['failed']} Failed to ascify {len(failed)} user{'' if len(failed) == 1 else 's'}."
+                msg += f"\n{self.bot.emote_dict['failed']} Failed to ascify {failed} user{'' if failed == 1 else 's'}."
             await message.edit(content=msg)
 
     @decorators.command(brief="Reset all server nicknames.", aliases=["massrenickname"])
@@ -289,9 +293,9 @@ class Admin(commands.Cog):
     @checks.bot_has_perms(manage_nicknames=True)
     @checks.has_perms(manage_guild=True)
     @checks.cooldown(2, 30, bucket=commands.BucketType.guild)
-    async def massrenick(self, ctx):
+    async def massrenick(self, ctx, *, role: converters.UniqueRole = None):
         """
-        Usage: {0}massrenick
+        Usage: {0}massrenick [role]
         Alias: {0}massrenickname
         Permission: Manage Server
         Output:
@@ -299,9 +303,14 @@ class Admin(commands.Cog):
             nicknames of all users to their
             default username.
         Notes:
-            May take several minutes on larger servers
+            Specify an optional role to renickname only
+            the users with that role. This command may
+            take several minutes on larger servers.
         """
-        renick = [m for m in ctx.guild.members if m.nick]
+        if role:
+            renick = [m for m in role.members if m.nick]
+        else:
+            renick = [m for m in ctx.guild.members if m.nick]
         if len(renick) == 0:
             await ctx.success("No users to re-nickname.")
             return
@@ -332,7 +341,7 @@ class Admin(commands.Cog):
             if edited > 0:
                 msg += f"{self.bot.emote_dict['success']} Re-nicknamed {edited} user{'' if edited == 1 else 's'}."
             if failed > 0:
-                msg += f"\n{self.bot.emote_dict['failed']} Failed to Re-nickname {failed} user{'' if failed == 1 else 's'}."
+                msg += f"\n{self.bot.emote_dict['failed']} Failed to re-nickname {failed} user{'' if failed == 1 else 's'}."
             await message.edit(content=msg)
 
     @decorators.command(
