@@ -607,7 +607,7 @@ class Automod(commands.Cog):
         await self.bot.cxn.execute(query, current_filter, ctx.guild.id)
 
         if added:
-            await ctx.sucess(
+            await ctx.success(
                 f"The word{'' if len(added) == 1 else 's'} `{', '.join(added)}` "
                 f"{'was' if len(added) == 1 else 'were'} successfully added to the word filter.",
             )
