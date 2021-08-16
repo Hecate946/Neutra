@@ -469,7 +469,8 @@ class Batch(commands.Cog):
         if self.status_changed(before, after):
             async with self.batch_lock:
                 self.status_batch[str(before.status)][after.id] = time.time()
-                status_txt = f"updating their status: `{before.status}` ➔ `{after.status}`"
+                convert = lambda member: self.bot.emote_dict.get(str(member.status), None)
+                status_txt = f"updating their status : `{convert(before)}` -> `{convert(after)}`"
                 self.tracker_batch[before.id] = (time.time(), status_txt)
         
         if self.activity_changed(before, after):
