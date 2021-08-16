@@ -28,6 +28,9 @@ class Spotify:
         )
         return {"Authorization": "Basic %s" % auth_header.decode("ascii")}
 
+    async def get_tracks(self, track_ids):
+        return [await self.get_track(track_id) for track_id in track_ids]
+
     async def get_track(self, uri):
         """Get a track's info from its URI"""
         return await self.make_spotify_req(self.API_BASE + "tracks/{0}".format(uri))
