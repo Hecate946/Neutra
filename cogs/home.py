@@ -11,7 +11,8 @@ from utilities import decorators
 HOME = 805638877762420786  # Support Server
 WELCOME = 847612677013766164  # Welcome channel
 GENERAL = 805638877762420789  # Chatting channel
-SUPPORT = 848648976349921350  # Support channel
+TESTING = 871900448955727902  # Testing channel
+ANNOUNCE = 852361774871216150  # Announcement channel
 
 
 def setup(bot):
@@ -34,6 +35,10 @@ class Home(commands.Cog):
     def welcomer(self):
         return self.bot.get_channel(WELCOME)
 
+    @property
+    def booster(self):
+        return self.bot.get_channel(TESTING)
+
     #####################
     ## Event Listeners ##
     #####################
@@ -54,8 +59,9 @@ class Home(commands.Cog):
         embed = discord.Embed(
             title=f"WELCOME TO {member.guild.name.upper()}!",
             description=f"> Click [here]({self.bot.oauth}) to invite {self.bot.user.mention}\n"
-            f"> Click [here](https://discord.com/channels/{HOME}/{GENERAL}) to start chatting\n"
-            f"> Click [here](https://discord.com/channels/{HOME}/{SUPPORT}) for bot support\n",
+            f"> Click [here](https://discord.com/channels/{HOME}/{ANNOUNCE}) for announcements.\n"
+            f"> Click [here](https://discord.com/channels/{HOME}/{GENERAL}) to start chatting.\n"
+            f"> Click [here](https://discord.com/channels/{HOME}/{TESTING}) to run commands.\n",
             timestamp=discord.utils.utcnow(),
             color=self.bot.constants.embed,
             url=self.bot.oauth,
@@ -66,7 +72,7 @@ class Home(commands.Cog):
         await self.welcomer.send(f"{member.mention}", file=dfile, embed=embed)
 
     def create_welcome_image(self, bytes_avatar, member):
-        banner = pillow.Image.open("./data/assets/banner.png")
+        banner = pillow.Image.open("./data/assets/banner.png").resize((725, 225))
         blue = pillow.Image.open("./data/assets/blue.png")
         mask = pillow.Image.open("./data/assets/avatar_mask.png")
 
@@ -78,14 +84,62 @@ class Home(commands.Cog):
             avatar = avatar.resize((128, 128))
             composite = pillow.Image.composite(avatar, mask, mask)
         blue.paste(im=composite, box=(0, 0), mask=composite)
-        banner.paste(im=blue, box=(30, 30), mask=blue.split()[3])
+        banner.paste(im=blue, box=(40, 45), mask=blue.split()[3])
 
         text = "{}\nWelcome to {}".format(str(member), member.guild.name)
         draw = pillow.ImageDraw.Draw(banner)
         font = pillow.ImageFont.truetype(
-            "./data/assets/FreeSansBold.ttf", 30, encoding="utf-8"
+            "./data/assets/FreeSansBold.ttf", 40, encoding="utf-8"
         )
-        draw.text((170, 56), text, (211, 211, 211), font=font)
+        draw.text((190, 60), text, (211, 211, 211), font=font)
+        buffer = io.BytesIO()
+        banner.save(buffer, "png")  # 'save' function for PIL
+        buffer.seek(0)
+        return buffer
+
+    async def thank_booster(self, member):
+        byteav = await member.avatar.with_size(128).read()
+        buffer = await self.bot.loop.run_in_executor(
+            None, self.create_booster_image, byteav, member
+        )
+        dfile = discord.File(fp=buffer, filename="booster.png")
+
+        embed = discord.Embed(
+            title=f"Thank you for boosting!",
+            # description=f"> Click [here]({self.bot.oauth}) to invite {self.bot.user.mention}\n"
+            # f"> Click [here](https://discord.com/channels/{HOME}/{ANNOUNCE}) for announcements.\n"
+            # f"> Click [here](https://discord.com/channels/{HOME}/{GENERAL}) to start chatting.\n"
+            # f"> Click [here](https://discord.com/channels/{HOME}/{TESTING}) to run commands.\n",
+            timestamp=discord.utils.utcnow(),
+            color=self.bot.constants.embed,
+            url=self.bot.oauth,
+        )
+        embed.set_thumbnail(url=member.guild.icon.url)
+        embed.set_image(url="attachment://booster.png")
+        embed.set_footer(text=f"Server Boosts: {member.guild.premium_subscription_count} ")
+        await self.booster.send(f"{member.mention}", file=dfile, embed=embed)
+
+    def create_booster_image(self, bytes_avatar, member):
+        banner = pillow.Image.open("./data/assets/roo.png") #.resize((725, 225))
+        blue = pillow.Image.open("./data/assets/blue.png")
+        mask = pillow.Image.open("./data/assets/avatar_mask.png")
+
+        avatar = pillow.Image.open(io.BytesIO(bytes_avatar))
+
+        try:
+            composite = pillow.Image.composite(avatar, mask, mask)
+        except ValueError:  # Sometimes the avatar isn't resized properly
+            avatar = avatar.resize((128, 128))
+            composite = pillow.Image.composite(avatar, mask, mask)
+        blue.paste(im=composite, box=(0, 0), mask=composite)
+        banner.paste(im=blue, box=(40, 45), mask=blue.split()[3])
+
+        # text = "{}\nWelcome to {}".format(str(member), member.guild.name)
+        # draw = pillow.ImageDraw.Draw(banner)
+        # font = pillow.ImageFont.truetype(
+        #     "./data/assets/FreeSansBold.ttf", 40, encoding="utf-8"
+        # )
+        # draw.text((190, 60), text, (211, 211, 211), font=font)
         buffer = io.BytesIO()
         banner.save(buffer, "png")  # 'save' function for PIL
         buffer.seek(0)
@@ -98,3 +152,11 @@ class Home(commands.Cog):
     async def _welcome(self, ctx, user: converters.DiscordMember = None):
         user = user or ctx.author
         await self.welcome(user)
+
+    @decorators.command(hidden=True, brief="Test the boost", name="booster")
+    @decorators.is_home(HOME)
+    @checks.has_perms(manage_guild=True)
+    @checks.bot_has_perms(embed_links=True, attach_files=True)
+    async def _booster(self, ctx, user: converters.DiscordMember = None):
+        user = user or ctx.author
+        await self.thank_booster(user)
