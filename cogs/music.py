@@ -24,33 +24,6 @@ from utilities import pagination
 youtube_dl.utils.bug_reports_message = lambda: ""
 
 
-def parse_duration(duration: int):
-    """
-    Helper function to get visually pleasing
-    timestamps from position of song in seconds.
-    """
-    if duration > 0:
-        minutes, seconds = divmod(duration, 60)
-        hours, minutes = divmod(minutes, 60)
-        days, hours = divmod(hours, 24)
-
-        duration = []
-        if days > 0:
-            duration.append("{}".format(str(days).zfill(2)))
-        if hours > 0:
-            duration.append("{}".format(str(hours).zfill(2)))
-        if minutes > 0:
-            duration.append("{}".format(str(minutes).zfill(2)))
-        duration.append("{}".format(str(seconds).zfill(2)))
-
-        value = ":".join(duration)
-
-    elif duration == 0:
-        value = "LIVE"
-
-    return value
-
-
 class VoiceError(Exception):
     pass
 
@@ -104,7 +77,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         self.thumbnail = data.get("thumbnail")
         self.description = data.get("description")
         self.raw_duration = data.get("duration")
-        self.duration = parse_duration(int(data.get("duration")))
+        self.duration = utils.parse_duration(int(data.get("duration")))
         self.tags = data.get("tags")
         self.url = data.get("webpage_url")
         self.views = data.get("view_count")
@@ -328,7 +301,7 @@ class Song:
 
         percent = self.source.position / self.source.raw_duration
         embed.set_footer(
-            text=f"Current Position: {parse_duration(int(self.source.position))} ({percent:.2%} completed)"
+            text=f"Current Position: {utils.parse_duration(int(self.source.position))} ({percent:.2%} completed)"
         )
         dfile, fname = images.get_progress_bar(percent)
         embed.set_image(url=f"attachment://{fname}")
@@ -1370,55 +1343,3 @@ class Music(commands.Cog):
                 else:
                     await ctx.guild.voice_client.disconnect(force=True)
                     ctx.voice_state.voice = await channel.connect(timeout=None)
-
-
-    @commands.Cog.listener()
-    @decorators.event_check(lambda s, b, a: a.activities)
-    async def on_presence_update(self, before, after):
-        for activity in after.activities:
-            if type(activity) is discord.activity.Spotify:
-                if activity not in before.activities:
-                    print(activity.track_id)
-                    
-
-
-
-
-    @decorators.command()
-    async def spotify(self, ctx, *, user: converters.DiscordMember = None):
-
-        for x in self.bot.get_all_members():
-            for y in x.activities:
-                if type(y) is discord.activity.Spotify:
-                    user = x
-                    break
-        status = None
-        for activity in user.activities:
-            if type(activity) is discord.activity.Spotify:
-                status = activity
-                break
- 
-        if not status:
-            await ctx.fail("No current spotify status found.")
-            return
- 
-        e = discord.Embed(color=self.bot.constants.embed)
-        e.title = f"{user.display_name}'s Spotify Track Information"
-        e.description = f"```fix\n{status.title}```"
-        e.add_field(name="Artist", value=status.artist)
-        e.add_field(name="Album", value=status.album)
-        e.add_field(name="Duration", value=parse_duration(int(status.duration.total_seconds())))
-        e.add_field(name="Song URL", value=status.track_url, inline=False)
-        e.set_thumbnail(url=status.album_cover_url)
-        track = await self.spotify.get_track(status.track_id)
-        artist_id = track["artists"][0]["id"]
-        album_id = track["album"]["id"]
-        print(status.track_id)
-        print(artist_id)
-        print(album_id)
-        import json
-        with open("track.json", "w") as fp:
-            json.dump(track, fp, indent=2)
-        await ctx.send(embed=e)
-
-

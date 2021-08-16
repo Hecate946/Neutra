@@ -231,7 +231,6 @@ class Botadmin(commands.Cog):
         aliases=["pm", "dm"],
         brief="DM any user the bot knows.",
     )
-    @commands.is_owner()
     async def _message(self, ctx, user: converters.DiscordUser, *, message: str):
         """
         Usage:       {0}message <user> <message>
@@ -293,8 +292,8 @@ class Botadmin(commands.Cog):
     )
     async def listservers(self, ctx):
         """
-        Usage: -listservers
-        Alias: -servers, -serverlist
+        Usage: {0}listservers
+        Alias: {0}servers, {0}serverlist
         Output: Lists the servers I'm connected to.
         """
         our_list = []
@@ -331,7 +330,7 @@ class Botadmin(commands.Cog):
     @decorators.command(brief="Show most member servers.")
     async def topservers(self, ctx):
         """
-        Usage: -topservers
+        Usage: {0}topservers
         Output: The servers with the most memebers
         """
         our_list = []
@@ -367,7 +366,7 @@ class Botadmin(commands.Cog):
     @decorators.command(brief="Show least member servers.")
     async def bottomservers(self, ctx):
         """
-        Usage: -bottomservers
+        Usage: {0}bottomservers
         Output: The servers with the least memebers
         """
         our_list = []
@@ -403,7 +402,7 @@ class Botadmin(commands.Cog):
     @decorators.command(brief="Show first joined servers.")
     async def firstservers(self, ctx):
         """
-        Usage: -firstservers
+        Usage: {0}firstservers
         Output: Lists the first servers I joined
         """
         our_list = []
@@ -498,7 +497,7 @@ class Botadmin(commands.Cog):
     @decorators.command(brief="Show commands in the cache.")
     async def cachedcommands(self, ctx, limit=20):
         """
-        Usage: -cachedcommands
+        Usage: {0}cachedcommands
         Output:
             Show the commands in the bot's cache
         """
@@ -610,8 +609,8 @@ class Botadmin(commands.Cog):
     @decorators.command(brief="Show info on an extension.", aliases=["ext"])
     async def extension(self, ctx, *, extension=None):
         """
-        Usage: -extension <extension>
-        Alias: -ext
+        Usage: {0}extension <extension>
+        Alias: {0}ext
         Outputs the cogs attatched to the passed extension.
         """
         if extension is None:
@@ -667,8 +666,8 @@ class Botadmin(commands.Cog):
     @decorators.command(brief="List all extensions and cogs.", aliases=["exts"])
     async def extensions(self, ctx):
         """
-        Usage: -extensions
-        Alias: -exts
+        Usage: {0}extensions
+        Alias: {0}exts
         Output: Lists all extensions and their corresponding cogs.
         """
         # Build the embed

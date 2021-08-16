@@ -1620,7 +1620,7 @@ class Utility(commands.Cog):
 
     async def do_cleanup(self, ctx):
         if ctx.guild:
-            if ctx.guild.me.permissions_in(ctx.channel).manage_messages:
+            if ctx.channel.permissions_for(ctx.me).manage_messages:
                 p = await pagination.Confirmation(
                     f"Do you want me to clean all messages from the embed session and leave only the resulting embed?"
                 ).prompt(ctx)

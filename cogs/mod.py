@@ -910,7 +910,13 @@ class Mod(commands.Cog):
                     connection=self.bot.cxn,
                     created=ctx.message.created_at.replace(tzinfo=None),
                 )
-                await user.edit(roles=[muterole], reason=reason)
+                if user.premium_since:
+                    await user.edit(roles=[muterole, ctx.guild.premium_subscriber_role], reason=reason)
+                else:
+                    await user.edit(roles=[muterole], reason=reason)
+                # to_remove = (role for role in user.roles if role != ctx.guild.premium_subscriber_role and role != ctx.guild.default_role)
+                # await user.remove_roles(*to_remove, reason=reason)
+                # await user.add_roles(muterole, reason=reason)
                 muted.append(str(user))
                 if reason:
                     embed = discord.Embed(color=self.bot.constants.embed)

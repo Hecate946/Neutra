@@ -1159,7 +1159,7 @@ class Tracking(commands.Cog):
     @checks.guild_only()
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.cooldown()
-    async def messagestats(self, ctx, *, since: humantime.PastTime = None):
+    async def messagestats(self, ctx, channel: typing.Optional[discord.TextChannel], *, since: humantime.PastTime = None):
         """
         Usage: {0}activity [since]
         Permission: Manage Messages
@@ -1181,20 +1181,31 @@ class Tracking(commands.Cog):
         seconds_ago = (discord.utils.utcnow() - since).total_seconds()
         diff = time.time() - seconds_ago
 
-        query = """
+        if channel:
+            condition = "AND channel_id = $3"
+            args = (ctx.guild.id, diff, channel.id)
+            title_fmt = channel.mention
+        else:
+            condition = ""
+            args = (ctx.guild.id, diff)
+            title_fmt = f"**{ctx.guild.name}**"
+
+        query = f"""
                 SELECT COUNT(*) as c, author_id as author
                 FROM messages
                 WHERE server_id = $1
                 AND unix > $2
+                {condition}
                 GROUP BY author_id
                 ORDER BY c DESC
                 LIMIT 100;
                 """
-        records = await self.bot.cxn.fetch(query, ctx.guild.id, diff)
+        records = await self.bot.cxn.fetch(query, *args)
         if not records:
-            return await ctx.fail(
-                f"No messate statistics available for that time period."
+            await ctx.fail(
+                f"No messate statistics available in {title_fmt} for that time period."
             )
+            return
 
         def pred(snowflake):
             mem = ctx.guild.get_member(snowflake)
@@ -1219,7 +1230,7 @@ class Tracking(commands.Cog):
         pages = pagination.MainMenu(
             pagination.LinePageSource(msg, prefix="```autohotkey", lines=20)
         )
-        title = f"{self.bot.emote_dict['graph']} Message leaderboard for **{ctx.guild.name}** since **{utils.short_time(since)}**"
+        title = f"{self.bot.emote_dict['graph']} Message leaderboard for {title_fmt} since **{utils.short_time(since)}**"
 
         await ctx.send_or_reply(title)
         try:

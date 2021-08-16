@@ -450,7 +450,7 @@ class Server(commands.Cog):
             {0}purge until 810377376269
             {0}prune after 810377376269
         """
-        if not message:
+        if message is None:
             message = await converters.DiscordMessage().convert(ctx)
         await self.do_removal(ctx, 100, None, after=message.id)
 
