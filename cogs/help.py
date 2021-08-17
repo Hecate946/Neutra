@@ -929,7 +929,10 @@ class Help(commands.Cog):
         """
         checks = []
         for x in command.checks:
-            checks.append(str(x.__qualname__).split(".")[0])
+            if hasattr(x, "__qualname__"):
+                print(x.__qualname__)
+                print(type(x.__qualname__))
+                checks.append(str(x.__qualname__).split(".")[0])
         if "dm_only" in checks:
             msg = f"The command `{command}` can only be run in direct messages."
         elif "guild_only" in checks:
@@ -938,6 +941,21 @@ class Help(commands.Cog):
             msg = (
                 f"The command `{command}` can be run in servers and in direct messages."
             )
+        await ctx.success(msg)
+
+    @decorators.command(brief="Show the cooldown for a command.")
+    async def cooldown(self, ctx, command: converters.DiscordCommand):
+        """
+        Usage: {0}cooldown <command>
+        Output:
+            Show the cooldown for a command.
+        """
+        cooldown = None
+        for x in command.checks:
+            if hasattr(x, "cooldown"):
+                rate, per = x.cooldown
+                cooldown = f"{rate} command{'' if rate == 1 else 's'} every {per} second{'' if rate == 1 else 's'}."
+        msg = cooldown or f"The command `{command}` has no cooldown."
         await ctx.success(msg)
 
     @decorators.command(

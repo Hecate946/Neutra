@@ -824,6 +824,7 @@ class Mod(commands.Cog):
     @commands.guild_only()
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(kick_members=True)
+    @checks.cooldown()
     async def mute(
         self,
         ctx,

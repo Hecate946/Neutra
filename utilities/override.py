@@ -1,6 +1,7 @@
 import typing
 import discord
 from discord.ext import commands
+from discord.raw_models import RawMessageDeleteEvent
 
 from utilities import pagination
 
@@ -160,11 +161,13 @@ class CustomCooldown:
         rate: int = 3,
         per: float = 10.0,
         *,
-        alter_rate: int = 0.0,
-        alter_per: float = 0,
+        alter_rate: int = 0,
+        alter_per: float = 0.0,
         bucket: commands.BucketType = commands.BucketType.user,
         bypass: list = [],
     ):
+        self.cooldown = (rate, per)
+
         self.type = bucket
         self.bypass = bypass
         self.default_mapping = commands.CooldownMapping.from_cooldown(rate, per, bucket)
