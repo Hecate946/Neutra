@@ -889,7 +889,8 @@ class Neutra(commands.AutoShardedBot):
     # Update stats on all sites listing Discord bots
     async def update_all_listing_stats(self):
         for site in self.listing_sites:
-            await self.update_listing_stats(site)
+            r = await self.update_listing_stats(site)
+            print(r)
 
 
 bot = Neutra()
