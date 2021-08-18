@@ -190,7 +190,6 @@ class Neutra(commands.AutoShardedBot):
     def run(self, token, *, tester=False):  # Everything starts from here
         self.setup()  # load the cogs
         self.tester = tester
-        self.token = token
         try:
             super().run(token, reconnect=True)  # Run the bot
         finally:  # Write up our json files with the stats from the session.
@@ -460,13 +459,6 @@ class Neutra(commands.AutoShardedBot):
                     "data": {"server_count": len(self.guilds)},
                     "guild_count_name": "server_count",
                 },
-                # "discordbotlist.com": {
-                #     "name": "Discord Bot List",
-                #     "token": f"Bot",
-                #     "url": f"https://discordbotlist.com/api/bots/{self.user.id}/stats",
-                #     "data": {"guilds": len(self.guilds)},
-                #     "guild_count_name": "guilds",
-                # },
             }
 
         await self.finalize_startup()
@@ -868,27 +860,24 @@ class Neutra(commands.AutoShardedBot):
     async def update_listing_stats(self, site):
         if self.tester is True:
             return
+
         site = self.listing_sites.get(site)
-        if not site:
-            # TODO: Print/log error
-            return "Site not found"
         token = site["token"]
-        if not token:
-            # TODO: Print/log error
-            return "Site token not found"
         url = site["url"]
+
         headers = {"authorization": token, "content-type": "application/json"}
         site["data"][site["guild_count_name"]] = len(self.guilds)
-        # TODO: Add users and voice_connections for discordbotlist.com
         data = json.dumps(site["data"])
+
         async with self.session.post(url, headers=headers, data=data) as resp:
-            if resp.status == 204:
-                return "204 No Content"
-            return await resp.text()
+            if resp.status != 200:
+                return await resp.text()
 
     # Update stats on all sites listing Discord bots
     async def update_all_listing_stats(self):
         for site in self.listing_sites:
-            await self.update_listing_stats(site)
+            resp = await self.update_listing_stats(site)
+            if resp: 
+                print(resp)
 
 bot = Neutra()
