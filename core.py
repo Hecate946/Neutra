@@ -18,8 +18,6 @@ from logging.handlers import RotatingFileHandler
 from settings import cleanup, database, constants
 from utilities import utils, saver, override
 
-from utilities import deprecate
-
 MAX_LOGGING_BYTES = 32 * 1024 * 1024  # 32 MiB
 
 # Set up our data folders
@@ -174,9 +172,8 @@ class Neutra(commands.AutoShardedBot):
             805638877762420786,
             776345386482270209,
             740734113086177433,
-
-            743299744301973514, # Renatuu's server
-            863965026439004170 # Refrux's server
+            743299744301973514,  # Renatuu's server
+            863965026439004170,  # Refrux's server
         ]  # My servers that have "premium" features.
 
         # Webhooks for monitering and data saving.
@@ -193,6 +190,7 @@ class Neutra(commands.AutoShardedBot):
     def run(self, token, *, tester=False):  # Everything starts from here
         self.setup()  # load the cogs
         self.tester = tester
+        self.token = token
         try:
             super().run(token, reconnect=True)  # Run the bot
         finally:  # Write up our json files with the stats from the session.
@@ -274,9 +272,6 @@ class Neutra(commands.AutoShardedBot):
         if ctx.command is None:
             return
         if message.author.bot:
-            return
-        
-        if await deprecate.check(ctx):
             return
 
         if str(message.author.id) in self.blacklist:
@@ -365,7 +360,7 @@ class Neutra(commands.AutoShardedBot):
         except Exception as e:
             print(utils.traceback_maker(e))
 
-        if not self.tester:
+        if self.tester is False:
             await self.setup_webhooks()
 
         # The rest of the botvars that couldn't be set earlier
@@ -416,7 +411,7 @@ class Neutra(commands.AutoShardedBot):
         perms.read_messages = True
         perms.send_messages = True
         perms.view_audit_log = True
-        
+
         url = discord.utils.oauth_url(
             client_id=user_id,
             permissions=perms,
@@ -448,6 +443,30 @@ class Neutra(commands.AutoShardedBot):
                 guild.id: await guild.invites()
                 for guild in self.guilds
                 if guild.me.guild_permissions.manage_guild
+            }
+        if not hasattr(self, "listing_sites"):
+            self.listing_sites = {
+                "discord.bots.gg": {
+                    "name": "Discord Bots",
+                    "token": utils.config().get("dbotsgg"),
+                    "url": f"https://discord.bots.gg/api/v1/bots/{806953546372087818}/stats",
+                    "data": {"guildCount": len(self.guilds)},
+                    "guild_count_name": "guildCount",
+                },
+                "discordbots.org": {
+                    "name": "Discord Bot List",
+                    "token": utils.config().get("topgg"),
+                    "url": f"https://discordbots.org/api/bots/{806953546372087818}/stats",
+                    "data": {"server_count": len(self.guilds)},
+                    "guild_count_name": "server_count",
+                },
+                "discordbotlist.com": {
+                    "name": "Discord Bot List",
+                    "token": f"Bot eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0IjoxLCJpZCI6IjM2NTk3NTY1NTYwODc0NTk4NSIsImlhdCI6MTU5MDI3NjEwOH0.UESu-Jm9kA_FCpRPSMjVwMGYJmLPxg44g_I7eDz5ZmQ",
+                    "url": f"https://discordbotlist.com/api/bots/{806953546372087818}/stats",
+                    "data": {"guilds": len(self.guilds)},
+                    "guild_count_name": "guilds",
+                },
             }
 
         await self.finalize_startup()
@@ -499,6 +518,7 @@ class Neutra(commands.AutoShardedBot):
     async def finalize_startup(self):
         # Delete all records of servers that kicked the bot
         await cleanup.basic_cleanup(self.guilds)
+        await self.update_all_listing_stats()
 
         self.avatar_saver = saver.AvatarSaver(
             self.avatar_webhook, self.cxn, self.session, self.loop
@@ -783,6 +803,7 @@ class Neutra(commands.AutoShardedBot):
         if self.ready is False:
             return
 
+        await self.update_all_listing_stats()
         await database.update_server(guild, guild.members)
         await database.fix_server(guild.id)
         if guild.me.guild_permissions.manage_guild:
@@ -800,6 +821,8 @@ class Neutra(commands.AutoShardedBot):
             return  # Wait until ready
         # This happens when the bot gets kicked from a server.
         # No need to waste any space storing their info anymore.
+
+        await self.update_all_listing_stats()
         await cleanup.destroy_server(guild.id)
         try:
             await self.logging_webhook.send(
@@ -841,30 +864,32 @@ class Neutra(commands.AutoShardedBot):
             return  # We do not allow edit command invocations after 10s.
         await self.process_commands(after)
 
+    # Update stats on sites listing Discord bots
+    async def update_listing_stats(self, site):
+        if self.tester is True:
+            return
+        site = self.listing_sites.get(site)
+        if not site:
+            # TODO: Print/log error
+            return "Site not found"
+        token = site["token"]
+        if not token:
+            # TODO: Print/log error
+            return "Site token not found"
+        url = site["url"]
+        headers = {"authorization": token, "content-type": "application/json"}
+        site["data"][site["guild_count_name"]] = len(self.guilds)
+        # TODO: Add users and voice_connections for discordbotlist.com
+        data = json.dumps(site["data"])
+        async with self.session.post(url, headers=headers, data=data) as resp:
+            if resp.status == 204:
+                return "204 No Content"
+            return await resp.text()
+
+    # Update stats on all sites listing Discord bots
+    async def update_all_listing_stats(self):
+        for site in self.listing_sites:
+            await self.update_listing_stats(site)
+
 
 bot = Neutra()
-bot.topgg_client = topgg.DBLClient(bot, utils.config()["topgg"], autopost=True, session=bot.session)
-
-# bot.topgg_webhook = topgg.WebhookManager(bot).dbl_webhook("/dblwebhook", utils.config()["topgg"])
-# bot.topgg_webhook.run(5000)  # this method can be awaited as well
-
-
-@bot.event
-async def on_autopost_success():
-    print(f'Posted server count ({bot.topgg_client.guild_count})')
-
-# @bot.event
-# async def on_dbl_vote(data):
-#     """An event that is called whenever someone votes for the bot on Top.gg."""
-#     if data["type"] == "test":
-#         # this is roughly equivalent to
-#         # return await on_dbl_test(data) in this case
-#         return bot.dispatch('dbl_test', data)
-
-#     print(f"Received a vote:\n{data}")
-
-# @bot.event
-# async def on_dbl_test(data):
-#     """An event that is called whenever someone tests the webhook system for your bot on Top.gg."""
-#     print(f"Received a test vote:\n{data}")
-

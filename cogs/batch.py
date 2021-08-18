@@ -33,7 +33,7 @@ class Batch(commands.Cog):
         self.activity_batch = defaultdict(dict)
         self.command_batch = []
         self.edited_batch = []
-        #self.emoji_batch = defaultdict(Counter)
+        # self.emoji_batch = defaultdict(Counter)
         self.emote_batch = defaultdict(dict)
         self.invite_batch = []
         self.message_batch = []
@@ -211,22 +211,26 @@ class Batch(commands.Cog):
             #         ))
             #     self.activity_batch.clear()
 
-                query = """
+            query = """
                         INSERT INTO activities (user_id, activity, insertion)
                         SELECT x.user_id, x.activity, x.insertion
                         FROM JSONB_TO_RECORDSET($1::JSONB)
                         AS x(user_id BIGINT, activity TEXT, insertion TIMESTAMP)
                         """
 
-                data = json.dumps(
-                    [
-                        {"user_id": user_id, "activity": activity, "insertion": str(timestamp)}
-                        for user_id, data in self.activity_batch.items()
-                        for activity, timestamp in data.items()
-                    ]
-                )
-                await self.bot.cxn.execute(query, data)
-                self.activity_batch.clear()
+            data = json.dumps(
+                [
+                    {
+                        "user_id": user_id,
+                        "activity": activity,
+                        "insertion": str(timestamp),
+                    }
+                    for user_id, data in self.activity_batch.items()
+                    for activity, timestamp in data.items()
+                ]
+            )
+            await self.bot.cxn.execute(query, data)
+            self.activity_batch.clear()
 
         if self.command_batch:  # Insert all the commands executed.
             query = """
@@ -286,7 +290,12 @@ class Batch(commands.Cog):
 
                 data = json.dumps(
                     [
-                        {"server_id": server_id, "author_id": author_id, "emoji_id": emoji_id, "added": count}
+                        {
+                            "server_id": server_id,
+                            "author_id": author_id,
+                            "emoji_id": emoji_id,
+                            "added": count,
+                        }
                         for server_id, data in self.emote_batch.items()
                         for author_id, stats in data.items()
                         for emoji_id, count in stats.items()
@@ -469,13 +478,20 @@ class Batch(commands.Cog):
         if self.status_changed(before, after):
             async with self.batch_lock:
                 self.status_batch[str(before.status)][after.id] = time.time()
-                status_txt = f"updating their status: `{before.status}` ➔ `{after.status}`"
+                status_txt = (
+                    f"updating their status: `{before.status}` ➔ `{after.status}`"
+                )
                 self.tracker_batch[before.id] = (time.time(), status_txt)
-        
+
         if self.activity_changed(before, after):
             async with self.batch_lock:
-                self.tracker_batch[before.id] = (time.time(), "updating their custom status")
-                self.activity_batch[before.id].update({str(before.activity): datetime.utcnow()})
+                self.tracker_batch[before.id] = (
+                    time.time(),
+                    "updating their custom status",
+                )
+                self.activity_batch[before.id].update(
+                    {str(before.activity): datetime.utcnow()}
+                )
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -543,7 +559,7 @@ class Batch(commands.Cog):
                 counter = Counter(map(int, matches))
                 self.emote_batch[message.guild.id].update({message.author.id: counter})
 
-                #self.emoji_batch[message.guild.id].update(map(int, matches))
+                # self.emoji_batch[message.guild.id].update(map(int, matches))
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -850,4 +866,3 @@ class Batch(commands.Cog):
         if user.activity and user.activity.type is discord.ActivityType.custom:
             return [str(user.activity)] + record
         return record
-        

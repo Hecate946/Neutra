@@ -21,6 +21,7 @@ DELETED_MESSAGE = "https://cdn.discordapp.com/attachments/846597178918436885/846
 
 CDN_POOP = "https://cdn.discordapp.com/attachments/846597178918436885/873793100613582878/poop.png"
 
+
 def setup(bot):
     bot.add_cog(Logging(bot))
 
@@ -608,7 +609,8 @@ class Logging(commands.Cog):
         if before.icon != after.icon:
             if after.icon:
                 embed = discord.Embed(
-                    description=f"**Author:**  `{str(audit.user)}`\n" "**New icon below**",
+                    description=f"**Author:**  `{str(audit.user)}`\n"
+                    "**New icon below**",
                     color=self.bot.constants.embed,
                 )
 

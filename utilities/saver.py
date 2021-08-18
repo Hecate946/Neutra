@@ -64,7 +64,9 @@ class AvatarSaver:
             await self.pool.execute(query, data)
             self.pending.clear()
 
-    async def downloader(self):  # Taken and modified from https://github.com/CuteFwan/Koishi
+    async def downloader(
+        self,
+    ):  # Taken and modified from https://github.com/CuteFwan/Koishi
         async def url_to_bytes(hash, url):
             if isinstance(url, tuple):
                 retries = url[1] - 1
@@ -132,7 +134,9 @@ class AvatarSaver:
         except asyncio.CancelledError:
             log.warning("avatar downloading task cancelled")
 
-    async def batch_post_avatars(self):  # Taken and modified from https://github.com/CuteFwan/Koishi
+    async def batch_post_avatars(
+        self,
+    ):  # Taken and modified from https://github.com/CuteFwan/Koishi
         log.info("started avatar posting task")
         try:
             while True:

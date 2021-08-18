@@ -1534,7 +1534,6 @@ class Admin(commands.Cog):
             await self.bot.cxn.execute(query, ctx.guild.id)
             await ctx.success(f"Reset all {option[:-1]} data for this server.")
 
-
     # @decorators.command(
     #     aliases=["serverlock", "lockserver", "frost"],
     #     brief="Lock all server channels.",
@@ -1602,7 +1601,3 @@ class Admin(commands.Cog):
     #             await channel.set_permissions(role, send_messages=None)
 
     #         await msg.edit(content=f"{self.bot.emote_dict['success']} Server unfrozen.")
-
-            
-
-

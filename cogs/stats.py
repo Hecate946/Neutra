@@ -204,7 +204,7 @@ class Stats(commands.Cog):
         if not records:
             await ctx.fail("This emoji has no recorded emoji usage stats.")
             return
-            
+
         def pred(snowflake):
             mem = ctx.guild.get_member(snowflake)
             if mem:
@@ -213,7 +213,8 @@ class Stats(commands.Cog):
         p = pagination.SimplePages(
             entries=[
                 f"`{pred(record['author_id'])}`: Uses: {record['total']}"
-                for record in records if pred(record["author_id"]) is not None
+                for record in records
+                if pred(record["author_id"]) is not None
             ],
             per_page=15,
         )
@@ -262,7 +263,7 @@ class Stats(commands.Cog):
             emoji = self.bot.get_emoji(emoji_id)
             if emoji:
                 return emoji
-                
+
         if user is None:
             query = """
                     SELECT emoji_id, total
@@ -279,10 +280,14 @@ class Stats(commands.Cog):
             p = pagination.SimplePages(
                 entries=[
                     f"{pred(r['emoji_id'])}: Uses: {r['total']}"
-                    for r in records if pred(r['emoji_id'])],
+                    for r in records
+                    if pred(r["emoji_id"])
+                ],
                 per_page=15,
             )
-            p.embed.title = f"Server Emoji Usage (Total: {sum([r['total'] for r in records]):,})"
+            p.embed.title = (
+                f"Server Emoji Usage (Total: {sum([r['total'] for r in records]):,})"
+            )
             try:
                 await p.start(ctx)
             except menus.MenuError as e:
@@ -302,18 +307,20 @@ class Stats(commands.Cog):
 
             records = await self.bot.cxn.fetch(query, user.id, ctx.guild.id)
             if not records:
-                await ctx.fail(f"**{user}** `{user.id}` has no recorded emoji usage stats.")
+                await ctx.fail(
+                    f"**{user}** `{user.id}` has no recorded emoji usage stats."
+                )
                 return
 
             p = pagination.SimplePages(
                 entries=[
                     f"{pred(r['emoji_id'])}: Uses: {r['total']}"
-                    for r in records if pred(r['emoji_id'])],
+                    for r in records
+                    if pred(r["emoji_id"])
+                ],
                 per_page=15,
             )
-            p.embed.title = (
-                f"{user.display_name}'s Emoji Usage (Total: {sum([r['total'] for r in records]):,})"
-            )
+            p.embed.title = f"{user.display_name}'s Emoji Usage (Total: {sum([r['total'] for r in records]):,})"
             try:
                 await p.start(ctx)
             except menus.MenuError as e:

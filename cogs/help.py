@@ -137,7 +137,9 @@ class Help(commands.Cog):
         Storage.support = self.bot.constants.support
         Storage.help_embed = self.get_help_embed
 
-        self.desc = f"**Bot Invite Link:** [https://neutra.discord.bot]({self.bot.oauth})\n"
+        self.desc = (
+            f"**Bot Invite Link:** [https://neutra.discord.bot]({self.bot.oauth})\n"
+        )
         self.desc += f"**Support Server:**  [https://discord.gg/neutra]({self.bot.constants.support})\n"
         self.desc += f"**Voting Link:**  [https://top.gg/bot/neutra/vote](https://top.gg/bot/806953546372087818/vote)"
 

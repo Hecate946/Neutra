@@ -176,6 +176,7 @@ def has_perms(*, check=all, **perms):  # Decorator to check if a user has perms
 
 #     return commands.check(pred)
 
+
 def bot_has_perms(**perms):
     """Similar to :func:`.has_permissions` except checks if the bot itself has
     the permissions listed.
@@ -192,12 +193,17 @@ def bot_has_perms(**perms):
         me = guild.me if guild is not None else ctx.bot.user
         permissions = ctx.channel.permissions_for(me)
 
-        missing = [perm for perm, value in perms.items() if getattr(permissions, perm) != value]
+        missing = [
+            perm for perm, value in perms.items() if getattr(permissions, perm) != value
+        ]
 
         if not missing:
             return True
 
-        perm_list = [x.title().replace("_", " ").replace("Guild", "Server").replace("Tts", "TTS") for x in missing]
+        perm_list = [
+            x.title().replace("_", " ").replace("Guild", "Server").replace("Tts", "TTS")
+            for x in missing
+        ]
         raise commands.BadArgument(
             f"I require the following permission{'' if len(perm_list) == 1 else 's'}: `{', '.join(perm_list)}`"
         )

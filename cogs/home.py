@@ -116,11 +116,13 @@ class Home(commands.Cog):
         )
         embed.set_thumbnail(url=member.guild.icon.url)
         embed.set_image(url="attachment://booster.png")
-        embed.set_footer(text=f"Server Boosts: {member.guild.premium_subscription_count} ")
+        embed.set_footer(
+            text=f"Server Boosts: {member.guild.premium_subscription_count} "
+        )
         await self.booster.send(f"{member.mention}", file=dfile, embed=embed)
 
     def create_booster_image(self, bytes_avatar, member):
-        banner = pillow.Image.open("./data/assets/roo.png") #.resize((725, 225))
+        banner = pillow.Image.open("./data/assets/roo.png")  # .resize((725, 225))
         blue = pillow.Image.open("./data/assets/blue.png")
         mask = pillow.Image.open("./data/assets/avatar_mask.png")
 

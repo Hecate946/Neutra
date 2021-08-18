@@ -226,10 +226,12 @@ class Tracking(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
-    @decorators.command(aliases=['activities'], brief="Show all recorded statuses")
+    @decorators.command(aliases=["activities"], brief="Show all recorded statuses")
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.cooldown()
-    async def statuses(self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None):
+    async def statuses(
+        self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None
+    ):
         """
         Usage: {0}statuses [user]
         Alias: {0}activities
@@ -1159,7 +1161,13 @@ class Tracking(commands.Cog):
     @checks.guild_only()
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.cooldown()
-    async def messagestats(self, ctx, channel: typing.Optional[discord.TextChannel], *, since: humantime.PastTime = None):
+    async def messagestats(
+        self,
+        ctx,
+        channel: typing.Optional[discord.TextChannel],
+        *,
+        since: humantime.PastTime = None,
+    ):
         """
         Usage: {0}activity [since]
         Permission: Manage Messages

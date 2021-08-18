@@ -364,13 +364,15 @@ def human_timedelta(dt, *, source=None, accuracy=3, brief=False, suffix=True):
         else:
             return " ".join(output) + suffix
 
+
 def format_dt(dt, style=None):
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=datetime.timezone.utc)
 
     if style is None:
-        return f'<t:{int(dt.timestamp())}>'
-    return f'<t:{int(dt.timestamp())}:{style}>'
+        return f"<t:{int(dt.timestamp())}>"
+    return f"<t:{int(dt.timestamp())}:{style}>"
+
 
 def format_relative(dt):
-    return format_dt(dt, 'R')
+    return format_dt(dt, "R")

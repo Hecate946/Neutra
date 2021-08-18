@@ -912,7 +912,10 @@ class Mod(commands.Cog):
                     created=ctx.message.created_at.replace(tzinfo=None),
                 )
                 if user.premium_since:
-                    await user.edit(roles=[muterole, ctx.guild.premium_subscriber_role], reason=reason)
+                    await user.edit(
+                        roles=[muterole, ctx.guild.premium_subscriber_role],
+                        reason=reason,
+                    )
                 else:
                     await user.edit(roles=[muterole], reason=reason)
                 # to_remove = (role for role in user.roles if role != ctx.guild.premium_subscriber_role and role != ctx.guild.default_role)

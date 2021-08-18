@@ -573,12 +573,12 @@ def activity_string(activity):
     else:
         return str(activity)
 
+
 def get_status(user):
     if user.activities:
         status = "\n".join(activity_string(a) for a in user.activities)
         if status != "":
             return status
-
 
 
 def parse_duration(duration: int):

@@ -751,10 +751,14 @@ class Utility(commands.Cog):
         await ctx.success(msg)
 
     # Helper function to format and send the given image url.
-    async def do_avatar(self, ctx, name, url, default=False, *, option="avatar", file=None):
+    async def do_avatar(
+        self, ctx, name, url, default=False, *, option="avatar", file=None
+    ):
         embed = discord.Embed(
             title=f"**{name}'s {'default' if default else ''} {option}.**",
-            description="" if file else f"Links to `{name}'s` {option}:  "
+            description=""
+            if file
+            else f"Links to `{name}'s` {option}:  "
             f"[webp]({(str(url))}) | "
             f'[png]({(str(url).replace("webp", "png"))}) | '
             f'[jpeg]({(str(url).replace("webp", "jpg"))})  ',
@@ -815,13 +819,15 @@ class Utility(commands.Cog):
             return
         if not user.banner:
             image = Image.new(
-                mode="RGB", size=(600, 240), color=self._hex_int_to_tuple(user.accent_color.value)
+                mode="RGB",
+                size=(600, 240),
+                color=self._hex_int_to_tuple(user.accent_color.value),
             )
             buffer = io.BytesIO()
             image.save(buffer, "png")  # 'save' function for PIL
             buffer.seek(0)
             file = discord.File(fp=buffer, filename="banner.png")
-            url="attachment://banner.png"
+            url = "attachment://banner.png"
             await self.do_avatar(ctx, str(user), url, option="banner", file=file)
             return
         await self.do_avatar(ctx, str(user), user.banner.url, option="banner")

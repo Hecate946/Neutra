@@ -29,25 +29,25 @@ class MainMenu(menus.MenuPages):
         EmojiB = namedtuple("EmojiB", "emoji position explain")
         def_dict_emoji = {
             "\N{BLACK LEFT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}\ufe0f": EmojiB(
-                constants.emotes['backward2'],
+                constants.emotes["backward2"],
                 menus.First(0),
                 "Goes to the first page.",
             ),
             "\N{BLACK LEFT-POINTING TRIANGLE}\ufe0f": EmojiB(
-                constants.emotes['backward'],
+                constants.emotes["backward"],
                 menus.First(1),
                 "Goes to the previous page.",
             ),
             "\N{BLACK RIGHT-POINTING TRIANGLE}\ufe0f": EmojiB(
-                constants.emotes['forward'], menus.Last(0), "Goes to the next page."
+                constants.emotes["forward"], menus.Last(0), "Goes to the next page."
             ),
             "\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}\ufe0f": EmojiB(
-                constants.emotes['forward2'],
+                constants.emotes["forward2"],
                 menus.Last(1),
                 "Goes to the last page.",
             ),
             "\N{BLACK SQUARE FOR STOP}\ufe0f": EmojiB(
-                constants.emotes['trash'], menus.Last(4), "Remove this message."
+                constants.emotes["trash"], menus.Last(4), "Remove this message."
             ),
         }
         self.dict_emoji = def_dict_emoji
@@ -73,7 +73,7 @@ class MainMenu(menus.MenuPages):
         except discord.HTTPException:
             pass
 
-    @menus.button(constants.emotes['info'], position=menus.Last(5))
+    @menus.button(constants.emotes["info"], position=menus.Last(5))
     async def show_help(self, payload):
         """`shows this message`"""
         embed = discord.Embed(title="Menu Help", color=constants.embed)
@@ -93,7 +93,7 @@ class MainMenu(menus.MenuPages):
 
         self.bot.loop.create_task(go_back_to_current_page())
 
-    @menus.button(constants.emotes['1234button'], position=menus.Last(3))
+    @menus.button(constants.emotes["1234button"], position=menus.Last(3))
     async def numbered_page(self, payload):
         """`type a page number to jump to`"""
         channel = self.message.channel

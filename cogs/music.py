@@ -479,8 +479,8 @@ class Music(commands.Cog):
         self.bot = bot
         self.voice_states = {}
 
-        self.spotify_client_id = utils.config()["spotify_client_id"]
-        self.spotify_client_secret = utils.config()["spotify_client_secret"]
+        self.spotify_client_id = utils.config().get("spotify_client_id")
+        self.spotify_client_secret = utils.config().get("spotify_client_secret")
         self.spotify = None
 
         if self.spotify_client_id and self.spotify_client_secret:
