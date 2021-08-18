@@ -449,24 +449,24 @@ class Neutra(commands.AutoShardedBot):
                 "discord.bots.gg": {
                     "name": "Discord Bots",
                     "token": utils.config().get("dbotsgg"),
-                    "url": f"https://discord.bots.gg/api/v1/bots/{806953546372087818}/stats",
+                    "url": f"https://discord.bots.gg/api/v1/bots/{self.user.id}/stats",
                     "data": {"guildCount": len(self.guilds)},
                     "guild_count_name": "guildCount",
                 },
                 "discordbots.org": {
                     "name": "Discord Bot List",
                     "token": utils.config().get("topgg"),
-                    "url": f"https://discordbots.org/api/bots/{806953546372087818}/stats",
+                    "url": f"https://discordbots.org/api/bots/{self.user.id}/stats",
                     "data": {"server_count": len(self.guilds)},
                     "guild_count_name": "server_count",
                 },
-                "discordbotlist.com": {
-                    "name": "Discord Bot List",
-                    "token": f"Bot eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0IjoxLCJpZCI6IjM2NTk3NTY1NTYwODc0NTk4NSIsImlhdCI6MTU5MDI3NjEwOH0.UESu-Jm9kA_FCpRPSMjVwMGYJmLPxg44g_I7eDz5ZmQ",
-                    "url": f"https://discordbotlist.com/api/bots/{806953546372087818}/stats",
-                    "data": {"guilds": len(self.guilds)},
-                    "guild_count_name": "guilds",
-                },
+                # "discordbotlist.com": {
+                #     "name": "Discord Bot List",
+                #     "token": f"Bot",
+                #     "url": f"https://discordbotlist.com/api/bots/{self.user.id}/stats",
+                #     "data": {"guilds": len(self.guilds)},
+                #     "guild_count_name": "guilds",
+                # },
             }
 
         await self.finalize_startup()
