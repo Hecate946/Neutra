@@ -603,6 +603,11 @@ class Mod(commands.Cog):
     @checks.bot_has_guild_perms(manage_roles=True)
     @checks.has_perms(administrator=True)
     async def unlock(self, ctx, *, channel: discord.TextChannel = None):
+        """
+        Usage: {0}unlock [channel]
+        Aliases: {0}unlockchannel, {0}unlockdown
+        Output: Unlocks a previously locked channel.
+        """
         channel = channel or ctx.channel
 
         await ctx.trigger_typing()

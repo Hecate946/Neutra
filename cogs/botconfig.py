@@ -335,8 +335,12 @@ class Botconfig(commands.Cog):
 
     @decorators.command(brief="Show blacklisted objects.")
     async def blacklisted(self, ctx):
+        """
+        Usage: {0}blacklisted
+        Output: Shows which users are blacklisted globally.
+        """
         if not self.bot.blacklist:
-            return await ctx.success(f"No objects are blacklisted.")
+            return await ctx.success("No objects are blacklisted.")
         p = pagination.TextPages(json.dumps(self.bot.blacklist), prefix="```json")
         try:
             await p.start(ctx)

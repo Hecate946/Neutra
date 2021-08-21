@@ -943,6 +943,12 @@ class Music(commands.Cog):
     )
     @checks.cooldown()
     async def _fastforward(self, ctx, seconds: int = 0):
+        """
+        Usage: {0}fastforward [seconds]
+        Alias: {0}ff
+        Output:
+            Fast forward a certain number of seconds in a song.
+        """
         if not ctx.voice_state.is_playing:
             return await ctx.fail("Nothing is currently being played.")
         song = ctx.voice_state.current
@@ -972,6 +978,12 @@ class Music(commands.Cog):
     )
     @checks.cooldown()
     async def _rewind(self, ctx, seconds: int = 0):
+        """
+        Usage: {0}rewind [seconds]
+        Alias: {0}rw
+        Output:
+            Rewind a certain number of seconds in a song.
+        """
         if not ctx.voice_state.is_playing:
             return await ctx.fail("Nothing is currently being played.")
         song = ctx.voice_state.current
@@ -994,14 +1006,20 @@ class Music(commands.Cog):
         await ctx.success(f"Rewinded to second `{position}`")
 
     @decorators.command(
-        aliases=["last", "back"],
-        name="previous",
+        aliases=["last", "back", "previous"],
+        name="replay",
         brief="Play the previous song.",
         implemented="2021-06-22 19:55:33.279989",
         updated="2021-06-22 19:55:33.279989",
     )
     @checks.cooldown()
-    async def _previous(self, ctx):
+    async def _replay(self, ctx):
+        """
+        Usage: {0}replay [seconds]
+        Alias: {0}last, {0}back, {0}previous
+        Output:
+            Replay the last song to be played.
+        """
         if not ctx.voice_state.previous:
             return await ctx.fail("No previous song to play.")
         song = ctx.voice_state.previous
@@ -1025,6 +1043,12 @@ class Music(commands.Cog):
     )
     @checks.cooldown()
     async def _move(self, ctx, index: int, position: int):
+        """
+        Usage: {0}move <index> <position>
+        Alias: {0}switch, {0}relocate
+        Output:
+            Move a song to a new position in the queue.
+        """
         total = len(ctx.voice_state.songs)
         if total == 0:
             return await ctx.fail("The queue is currently empty.")
@@ -1304,6 +1328,13 @@ class Music(commands.Cog):
     )
     @checks.cooldown()
     async def _subtitle(self, ctx):
+        """
+        Usage: {0}subtitles
+        Alias: {0}lyrics
+        Output:
+            Attemps to generate subtitles for the current track.
+            May not be available.
+        """
         if not ctx.voice_state.current:
             return await ctx.fail("No song is currently being played.")
         if not ctx.voice_state.is_playing:

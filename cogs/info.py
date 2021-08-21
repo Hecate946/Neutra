@@ -356,8 +356,14 @@ class Info(commands.Cog):
                 await ctx.react(self.bot.emote_dict["letter"])
             await ctx.success("Your bug report has been sent.")
 
-    @decorators.command(aliases=['updates'])
+    @decorators.command(aliases=['updates'], brief="Show github commit history.")
     async def github(self, ctx):
+        """
+        Usage: {0}github
+        Alias: {0}updates
+        Output:
+            Shows an embed of the last 5 github commits
+        """
         process = subprocess.Popen(
             ["git", "log", "--format=[`%h`](https://github.com/Hecate946/Neutra/commit/%H) %s", "-n", "5"], shell=False, stdout=subprocess.PIPE
         )
@@ -391,7 +397,7 @@ class Info(commands.Cog):
             f"**{self.bot.emote_dict['github']} {self.bot.user.name}'s Changelog**"
         )
         p = pagination.MainMenu(
-            pagination.TextPageSource(changelog, prefix="```prolog")
+            pagination.TextPageSource(changelog.replace("\n", ""), prefix="```prolog")
         )
         try:
             await p.start(ctx)
