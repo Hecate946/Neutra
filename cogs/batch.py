@@ -514,7 +514,7 @@ class Batch(commands.Cog):
                         "name": str(before).replace("\u0000", ""),
                     }
                 )
-                self.tracker_batch[before.id] = (time.time(), "updating their username")
+                self.tracker_batch[before.id] = (time.time(), f"updating their username: `{before}` ➔ `{after}`")
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -539,6 +539,7 @@ class Batch(commands.Cog):
     @decorators.wait_until_ready()
     @decorators.event_check(lambda s, m: m.guild and not m.author.bot)
     async def on_message(self, message):
+        self.bot.message_stats[message.guild.id] += 1
         async with self.batch_lock:
             self.message_batch.append(
                 {
@@ -667,6 +668,39 @@ class Batch(commands.Cog):
         if not member.guild.me.guild_permissions.manage_guild:
             return
         self.bot.invites[member.guild.id] = await member.guild.invites()
+
+    '''
+    @commands.Cog.listener()
+    @decorators.wait_until_ready()
+    async def on_loaded_extension(self, name):
+        query = """
+                UPDATE config
+                SET load_count = reload_count + 1
+                WHERE client_id = $1;
+                """
+        await self.bot.cxn.execute(query, self.bot.user.id)
+
+    @commands.Cog.listener()
+    @decorators.wait_until_ready()
+    async def on_unloaded_extension(self, name):
+        query = """
+                UPDATE config
+                SET unload_count = reload_count + 1
+                WHERE client_id = $1;
+                """
+        await self.bot.cxn.execute(query, self.bot.user.id)
+
+    @commands.Cog.listener()
+    @decorators.wait_until_ready()
+    async def on_reloaded_extension(self, name):
+        query = """
+                UPDATE config
+                SET reload_count = reload_count + 1
+                WHERE client_id = $1;
+                """
+        await self.bot.cxn.execute(query, self.bot.user.id)
+    '''
+
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
