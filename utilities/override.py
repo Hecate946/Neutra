@@ -11,8 +11,13 @@ class BotContext(commands.Context):
         super().__init__(**kwargs)
         self.handled = False
 
-    async def fail(self, content=None, **kwargs):
-        return await self.send_or_reply(
+    async def fail(self, content=None, refer=True, **kwargs):
+        if refer:
+            return await self.send_or_reply(
+                self.bot.emote_dict["failed"] + " " + (content if content else ""),
+                **kwargs,
+            )
+        return await self.send(
             self.bot.emote_dict["failed"] + " " + (content if content else ""), **kwargs
         )
 

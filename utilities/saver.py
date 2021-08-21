@@ -7,6 +7,7 @@ import discord
 import logging
 
 from collections import defaultdict
+from utilities import utils
 from yarl import URL
 
 from utilities import images
@@ -29,9 +30,11 @@ class AvatarSaver:
         self.is_saving = False
 
         if not self.wh:
-            print("Avatar saving unavailable. Invalid Webhook.")
+            print(utils.prefix_log("Avatar saving unavailable. Invalid Webhook."))
         elif not self.pool:
-            print("Avatar saving unavailable. Invalid Connection Pool.")
+            print(
+                utils.prefix_log("Avatar saving unavailable. Invalid Connection Pool.")
+            )
         else:
             self.loop.create_task(self.batch_post_avatars())
             self.loop.create_task(self.inserter())
@@ -247,9 +250,9 @@ class IconSaver:
         self.is_saving = False
 
         if not self.wh:
-            print("Icon saving unavailable. Invalid Webhook.")
+            print(utils.prefix_log("Icon saving unavailable. Invalid Webhook."))
         elif not self.pool:
-            print("Icon saving unavailable. Invalid Connection Pool.")
+            print(utils.prefix_log("Icon saving unavailable. Invalid Connection Pool."))
         else:
             self.loop.create_task(self.batch_post_icons())
             self.loop.create_task(self.inserter())

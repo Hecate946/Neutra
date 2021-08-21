@@ -14,6 +14,7 @@ import statistics
 import subprocess
 import collections
 
+from importlib import metadata
 from datetime import datetime
 from discord import __version__ as dv
 from discord.ext import commands, menus
@@ -88,10 +89,61 @@ class Info(commands.Cog):
     ##############
 
     @decorators.command(
-        aliases=["info", "bot", "botstats", "botinfo", "ab"],
+        aliases=["statistics", "info", "bot", "botstats", "botinfo"],
+        brief="Display the bot's discord info.",
+        examples="""
+                {0}bot
+                {0}botinfo
+                {0}botstats
+                {0}info
+                """,
+    )
+    @checks.bot_has_perms(embed_links=True)
+    @checks.cooldown()  # Cooldown default (3, 10)
+    async def stats(self, ctx):
+        """
+        Usage: {0}about
+        Aliases: {0}info, {0}bot, {0}botstats, {0}botinfo, {0}statistics
+        Output: Version info and bot stats
+        """
+        msg = await ctx.load("Collecting Bot Statistics...")
+
+        total_members = sum(1 for x in self.bot.get_all_members())
+        uptime = utils.timeago(discord.utils.utcnow() - self.bot.uptime)
+
+        voice_channels = 0
+        text_channels = 0
+        stage_channels = 0
+
+        for guild in self.bot.guilds:
+            stage_channels += len(guild.stage_channels)
+            text_channels += len(guild.text_channels)
+            voice_channels += len(guild.voice_channels)
+
+        embed = discord.Embed(color=self.bot.constants.embed)
+        embed.set_thumbnail(url=self.bot.user.avatar.url)
+
+        embed.add_field(name="Last Boot", value=str(uptime).capitalize())
+        embed.add_field(name="Developer", value=str(self.bot.hecate))
+        embed.add_field(name="Server Count", value=f"{len(self.bot.guilds):,}")
+        embed.add_field(name="Text Channels", value=f"{text_channels:,}")
+        embed.add_field(name="Voice Channels", value=f"{voice_channels:,}")
+        embed.add_field(name="Stage Channels", value=f"{stage_channels:,}")
+        embed.add_field(name="Member Count", value=f"{total_members:,}")
+        embed.add_field(name="Total Messages", value=f"{await self.total_global_messages():,}")
+        embed.add_field(name="Session Messages", value=f"{sum(self.bot.message_stats.values()):,}")
+        embed.add_field(name="Command Count", value=len(self.bot.commands))
+        embed.add_field(name="Total Commands", value=f"{await self.total_global_commands():,}")
+        embed.add_field(name="Session Commands", value=f"{sum(self.bot.command_stats.values()):,}")
+
+        await msg.edit(
+            content=f"{self.bot.emote_dict['robot']} Stats For **{ctx.bot.user}** | **{await self.get_version()}**",
+            embed=embed,
+        )
+
+    @decorators.command(
+        aliases=["ab", "aboutme"],
         brief="Display information about the bot.",
-        implemented="2021-03-15 22:27:29.973811",
-        updated="2021-05-06 00:06:19.096095",
         examples="""
                 {0}about
                 {0}bot
@@ -108,59 +160,41 @@ class Info(commands.Cog):
         Aliases: {0}info, {0}bot, {0}botstats, {0}botinfo, {0}ab
         Output: Version info and bot stats
         """
-        msg = await ctx.load("Collecting Bot Info...")
-        total_members = sum(1 for x in self.bot.get_all_members())
-        voice_channels = []
-        text_channels = []
-        for guild in self.bot.guilds:
-            voice_channels.extend(guild.voice_channels)
-            text_channels.extend(guild.text_channels)
+        msg = await ctx.load("Collecting Bot Information...")
 
-        text = len(text_channels)
-        voice = len(voice_channels)
+        query = "select (runtime, reboot_count) from config where client_id = $1"
+        runtime, reboots = await self.bot.cxn.fetchval(query, self.bot.user.id)
+        uptime = time.time() - self.bot.statustime
+
+        total_uptime = utils.time_between(0, int(runtime + uptime), verbose=False)
+        current_uptime = utils.time_between(0, int(uptime), verbose=False)
+        created = utils.timeago(discord.utils.utcnow() - self.bot.user.created_at)
+
+        commit_hash_proc = subprocess.Popen(
+            ["git", "rev-parse", "--short", "HEAD"], shell=False, stdout=subprocess.PIPE
+        )
+        commit_count_proc = subprocess.Popen(
+            ["git", "rev-list", "--count", "HEAD"], shell=False, stdout=subprocess.PIPE
+        )
+        git_head_hash = commit_hash_proc.communicate()[0].strip()
+        git_commits = commit_count_proc.communicate()[0].strip()
 
         ram_usage = self.process.memory_full_info().rss / 1024 ** 2
 
-        embed = discord.Embed(colour=self.bot.constants.embed)
+        embed = discord.Embed(color=self.bot.constants.embed)
         embed.set_thumbnail(url=self.bot.user.avatar.url)
-        embed.add_field(
-            name="Last Boot",
-            value=str(
-                utils.timeago(discord.utils.utcnow() - self.bot.uptime)
-            ).capitalize(),
-        )
-        embed.add_field(
-            name=f"Developer{'' if len(self.bot.constants.owners) == 1 else 's'}",
-            value=",\n ".join(
-                [str(self.bot.get_user(x)) for x in self.bot.constants.owners]
-            ),
-        )
-        embed.add_field(
-            name="Python Version", value=f"{platform.python_version()}", inline=True
-        )
-        embed.add_field(name="Library", value="Discord.py", inline=True)
-        embed.add_field(name="API Version", value=f"{dv}", inline=True)
-        embed.add_field(
-            name="Command Count",
-            value=len([x.name for x in self.bot.commands if not x.hidden]),
-        )
-        embed.add_field(
-            name="Server Count", value=f"{len(ctx.bot.guilds):,}", inline=True
-        )
-        embed.add_field(
-            name="Channel Count",
-            value=f"""{self.bot.emote_dict['textchannel']} {text:,}\t\t{self.bot.emote_dict['voicechannel']} {voice:,}""",
-        )
-        embed.add_field(name="Member Count", value=f"{total_members:,}", inline=True)
-        embed.add_field(
-            name="Commands Run",
-            value=f"{await self.total_global_commands():,}",
-        )
-        embed.add_field(
-            name="Messages Seen",
-            value=f"{await self.total_global_messages():,}",
-        )
+        embed.add_field(name="Session Uptime", value=current_uptime)
+        embed.add_field(name="Total Runtime", value=total_uptime)
+        embed.add_field(name="Created", value=str(created).capitalize())
+        embed.add_field(name="Python Version", value=platform.python_version())
+        embed.add_field(name="Discord Library", value="Discord.py")
+        embed.add_field(name="Library Version", value=dv)
+        embed.add_field(name="Commit Hash", value=f"{git_head_hash.decode('utf-8')}")
+        embed.add_field(name="Commit Count", value=f"{git_commits.decode('utf-8')}")
+        embed.add_field(name="Reboot Count", value=f"{reboots}")
         embed.add_field(name="RAM Usage", value=f"{ram_usage:.2f} MB")
+        embed.add_field(name="CPU Usage", value=f"{psutil.cpu_percent(1)}%")
+        embed.add_field(name="Developer", value=str(self.bot.hecate))
 
         await msg.edit(
             content=f"{self.bot.emote_dict['robot']} About **{ctx.bot.user}** | **{await self.get_version()}**",
@@ -322,14 +356,26 @@ class Info(commands.Cog):
                 await ctx.react(self.bot.emote_dict["letter"])
             await ctx.success("Your bug report has been sent.")
 
+    @decorators.command(aliases=['updates'])
+    async def github(self, ctx):
+        process = subprocess.Popen(
+            ["git", "log", "--format=[`%h`](https://github.com/Hecate946/Neutra/commit/%H) %s", "-n", "5"], shell=False, stdout=subprocess.PIPE
+        )
+        commits = process.communicate()[0].strip().decode("utf-8")
+
+        embed = discord.Embed(color=self.bot.constants.embed)
+        embed.title = "Lastest Github Commits"
+        embed.url = "https://github.com/Hecate946/Neutra"
+        embed.description = commits
+        await ctx.send_or_reply(embed=embed)
+
+
     @decorators.command(
-        aliases=["updates"],
         brief="Show my changelog.",
         implemented="2021-04-18 04:38:20.652565",
         updated="2021-06-24 17:41:39.374116",
         examples="""
                 {0}changelog
-                {0}updates
                  """,
     )
     @checks.cooldown(3, 20)
@@ -337,7 +383,6 @@ class Info(commands.Cog):
     async def changelog(self, ctx):
         """
         Usage: {0}changelog
-        Alias: {0}updates
         Output: My changelog
         """
         with open("./data/txts/changelog.txt", "r", encoding="utf-8") as fp:
