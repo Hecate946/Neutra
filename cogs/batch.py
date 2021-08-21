@@ -514,7 +514,7 @@ class Batch(commands.Cog):
                         "name": str(before).replace("\u0000", ""),
                     }
                 )
-                self.tracker_batch[before.id] = (time.time(), "updating their username")
+                self.tracker_batch[before.id] = (time.time(), f"updating their username : `{before}` ➔ `{after}`")
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -551,7 +551,9 @@ class Batch(commands.Cog):
                     "server_id": message.guild.id,
                 }
             )
-            self.tracker_batch[message.author.id] = (time.time(), "sending a message")
+            self.tracker_batch[message.author.id] = (
+                time.time(), f"sending a message : At `#{message.channel} ({message.channel.id})`"
+            )
 
         matches = EMOJI_REGEX.findall(message.content)
         if matches:
@@ -566,7 +568,7 @@ class Batch(commands.Cog):
     @decorators.event_check(lambda s, c, u, w: not u.bot)
     async def on_typing(self, channel, user, when):
         async with self.batch_lock:
-            self.tracker_batch[user.id] = (time.time(), "typing")
+            self.tracker_batch[user.id] = (time.time(), f"typing : At `#{channel.name} ({channel.id})`")
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -582,7 +584,7 @@ class Batch(commands.Cog):
         if message.author.bot:
             return
         async with self.batch_lock:
-            self.tracker_batch[message.author.id] = (time.time(), "editing a message")
+            self.tracker_batch[message.author.id] = (time.time(), "editing a message : " + message.jump_url)
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -594,14 +596,19 @@ class Batch(commands.Cog):
         if user.bot:
             return
         async with self.batch_lock:
-            self.tracker_batch[payload.user_id] = (time.time(), "reacting to a message")
+            self.tracker_batch[payload.user_id] = (
+                time.time(), f"reacting to a message : https://discord.com/channels/{payload.guild_id}/"
+                             f"{payload.channel_id}/{payload.message_id} "
+            )
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
     @decorators.event_check(lambda s, m, b, a: not m.bot)
     async def on_voice_state_update(self, member, before, after):
         async with self.batch_lock:
-            self.tracker_batch[member.id] = (time.time(), "changing their voice state")
+            self.tracker_batch[member.id] = (
+                time.time(), f"changing their voice state : \n```prolog\n{before}```➔```prolog\n{after}```"
+            )
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -625,7 +632,7 @@ class Batch(commands.Cog):
     @decorators.event_check(lambda s, m: not m.bot)
     async def on_member_join(self, member):
         async with self.batch_lock:
-            self.tracker_batch[member.id] = (time.time(), "joining a server")
+            self.tracker_batch[member.id] = (time.time(), f"joining a server : `{member.guild} ({member.guild.id})`")
 
         await asyncio.sleep(2)  # API rest.
 
@@ -660,7 +667,7 @@ class Batch(commands.Cog):
     @decorators.event_check(lambda s, m: not m.bot)
     async def on_member_remove(self, member):
         async with self.batch_lock:
-            self.tracker_batch[member.id] = (time.time(), "leaving a server")
+            self.tracker_batch[member.id] = (time.time(), f"leaving a server : `{member.guild} ({member.guild.id})`")
             roles = ",".join([str(x.id) for x in member.roles if x.name != "@everyone"])
             self.roles_batch[member.guild.id].update({member.id: roles})
 
