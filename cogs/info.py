@@ -14,7 +14,6 @@ import statistics
 import subprocess
 import collections
 
-from importlib import metadata
 from datetime import datetime
 from discord import __version__ as dv
 from discord.ext import commands, menus
@@ -356,7 +355,7 @@ class Info(commands.Cog):
                 await ctx.react(self.bot.emote_dict["letter"])
             await ctx.success("Your bug report has been sent.")
 
-    @decorators.command(aliases=['updates'], brief="Show github commit history.")
+    @decorators.command(aliases=['updates'], brief="Github commit history.")
     async def github(self, ctx):
         """
         Usage: {0}github
@@ -406,7 +405,7 @@ class Info(commands.Cog):
 
     @decorators.command(
         aliases=["listcogs"],
-        brief="List all my cogs in an embed.",
+        brief="List all current cogs.",
         implemented="2021-05-05 19:01:15.387930",
         updated="2021-05-05 19:01:15.387930",
         examples="""
@@ -437,7 +436,7 @@ class Info(commands.Cog):
 
     @decorators.command(
         aliases=["vps"],
-        brief="Show the bot's host environment.",
+        brief="Show the host environment.",
         implemented="2021-03-14 17:21:40.041524",
         updated="2021-06-24 17:51:56.480886",
         examples="""
@@ -579,7 +578,7 @@ class Info(commands.Cog):
 
     @decorators.command(
         aliases=["socketstats"],
-        brief="Show global bot socket stats.",
+        brief="Show bot socket stats.",
         implemented="2021-03-18 17:55:01.726405",
         updated="2021-05-07 18:00:54.076428",
         examples="""
