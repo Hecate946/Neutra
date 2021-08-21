@@ -4,14 +4,12 @@ import re
 import sys
 import json
 import time
-import topgg
 import aiohttp
 import discord
 import logging
 import traceback
 import collections
 
-from colr import color
 from discord.ext import commands, tasks
 from logging.handlers import RotatingFileHandler
 
@@ -125,7 +123,10 @@ class Neutra(commands.AutoShardedBot):
             owner_ids=constants.owners,
             intents=discord.Intents.all(),
         )
+        self.developer_id = 708584008065351681
+
         self.command_stats = collections.Counter()
+        self.message_stats = collections.Counter()
         self.constants = constants
         self.cxn = database.cxn
         self.exts = [
@@ -185,7 +186,7 @@ class Neutra(commands.AutoShardedBot):
 
     @property
     def hecate(self):
-        return self.get_user(self.owner_ids[0])
+        return self.get_user(self.developer_id)
 
     def run(self, token, *, tester=False):  # Everything starts from here
         self.setup()  # load the cogs
@@ -195,7 +196,7 @@ class Neutra(commands.AutoShardedBot):
         finally:  # Write up our json files with the stats from the session.
             try:
                 self.status_loop.stop()  # Stop the loop gracefully
-                print(color(text="\nKilled", fore="FF0000"))
+                print("\n" + utils.prefix_log("Killed"))
                 with open("./data/json/blacklist.json", "w", encoding="utf-8") as fp:
                     json.dump(
                         self.blacklist, fp, indent=2
@@ -220,12 +221,26 @@ class Neutra(commands.AutoShardedBot):
         if not hasattr(self, "blacklist"):
             self.blacklist = blacklist
 
+    def load_extension(self, name, *, package=None):
+        self.dispatch("loaded_extension", name)
+        return super().load_extension(name, package=package)
+
+    def unload_extension(self, name, *, package=None):
+        self.dispatch("unloaded_extension", name)
+        return super().load_extension(name, package=package)
+
+    def load_extension(self, name, *, package=None):
+        self.dispatch("reloaded_extension", name)
+        return super().load_extension(name, package=package)
+
     async def close(self):  # Shutdown the bot cleanly
         try:
             runtime = time.time() - self.starttime
             query = """
-                    UPDATE config SET last_run = $1,
-                    runtime = runtime + $1
+                    UPDATE config
+                    SET last_run = $1,
+                    runtime = runtime + $1,
+                    reboot_count = reboot_count + 1
                     WHERE client_id = $2;
                     """
             await self.cxn.execute(query, runtime, self.user.id)
@@ -349,9 +364,9 @@ class Neutra(commands.AutoShardedBot):
     @status_loop.before_loop
     async def before_status_loop(self):
         st = time.time()
-        print("Initializing Cache...")
+        print(utils.prefix_log("Initializing Cache..."))
         await self.wait_until_ready()
-        print(f"Elapsed time: {str(time.time() - st)[:10]} s")
+        print(utils.prefix_log(f"Elapsed time: {str(time.time() - st)[:10]} s"))
         st = time.time()
         member_list = [x for x in self.get_all_members()]
         try:
@@ -529,7 +544,7 @@ class Neutra(commands.AutoShardedBot):
             print(utils.traceback_maker(e))
             self.dispatch("error", "extension_error", tb=utils.traceback_maker(e))
 
-        print(f"{self.user} ({self.user.id})")
+        print(utils.prefix_log(f"{self.user} ({self.user.id})"))
         try:
             await self.logging_webhook.send(
                 f"**Information** `{discord.utils.utcnow()}`\n"
@@ -637,6 +652,24 @@ class Neutra(commands.AutoShardedBot):
             return None
         return members[0]
 
+    async def get_or_fetch_user(self, user_id):
+        """
+        Looks up a user in cache or fetches if not found.
+        Parameters
+        -----------
+        user_id: int
+        Returns
+        ---------
+        Optional[discord.User]
+            The user or None if not found.
+        """
+
+        member = self.get_user(user_id)
+        if member is not None:
+            return member
+
+        return await self.fetch_user(user_id)
+
     async def on_ready(self):
         # from discord_slash import utils
         # await utils.manage_commands.remove_all_commands_in(bot.user.id, bot.token, 740734113086177433)
@@ -677,7 +710,7 @@ class Neutra(commands.AutoShardedBot):
                     arguments,
                 )
         except Exception:
-            print(tb)
+            print(tb, file=sys.stderr)
 
     async def on_command_error(self, ctx, error):
         """
@@ -742,17 +775,10 @@ class Neutra(commands.AutoShardedBot):
 
         elif isinstance(error, commands.CommandInvokeError):
             if "or fewer" in str(error):  # Message was too long to send
-                return await ctx.fail(f"Result was greater than the character limit.")
+                return await ctx.fail("Result was greater than the character limit.")
             err = utils.traceback_maker(error.original, advance=True)
-            self.dispatch("error", "command_error", vars(ctx), tb=err)
             # Then we don't really know what this error is. Log it.
-            print(
-                color(
-                    fore="FF0000",
-                    text=f"\nCommand {ctx.command.qualified_name} raised the error: {error.original.__class__.__name__}: {error.original}",
-                ),
-                file=sys.stderr,
-            )
+            self.dispatch("error", "command_error", vars(ctx), tb=err)
             if ctx.guild is None:
                 destination = "Private Message"
             else:
@@ -774,8 +800,8 @@ class Neutra(commands.AutoShardedBot):
             # We can always check ./pm2 logs for the full error later if necessary
             err = utils.traceback_maker(error, advance=True)
             self.dispatch("error", "command_error", vars(ctx), tb=err)
-            print(color(fore="FF0000", text="Error"))
-            print(error)
+            # print(color(fore="FF0000", text="Error"))
+            # print(error)
             if ctx.guild is None:
                 destination = "Private Message"
             else:
@@ -877,7 +903,8 @@ class Neutra(commands.AutoShardedBot):
     async def update_all_listing_stats(self):
         for site in self.listing_sites:
             resp = await self.update_listing_stats(site)
-            if resp: 
+            if resp:
                 print(resp)
+
 
 bot = Neutra()

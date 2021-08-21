@@ -542,7 +542,7 @@ class Manager(commands.Cog):
         print(separator)
         await ctx.success("Console cleared.")
 
-    @decorators.command(aliases=["github"], brief="Run github commands.")
+    @decorators.command(brief="Run github commands.")
     async def git(self, ctx, *, subcommand):
         """
         Usage: {0}git <command>

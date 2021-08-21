@@ -10,11 +10,11 @@ import gc
 
 import aiohttp
 import discord
-from discord.ext import menus
 import humanize
 import pytz
 import timeago as timesince
 
+from colorama import Fore, Style
 from discord.iterators import HistoryIterator
 
 
@@ -23,6 +23,10 @@ from discord.iterators import HistoryIterator
 URL_REGEX = (
     r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
 )
+
+
+def prefix_log(message, title="Neutra"):
+    return f"{Fore.LIGHTCYAN_EX}[{Fore.LIGHTMAGENTA_EX}{title}{Fore.LIGHTCYAN_EX}]{Style.RESET_ALL} {message}"
 
 
 def config(filename: str = "config"):
@@ -109,7 +113,7 @@ def get_months(timeBetween, year, month, reverse):
     return timeBetween, months
 
 
-def time_between(first, last, reverse=False):
+def time_between(first, last, reverse=False, *, verbose=True):
     # A helper function to make a readable string between two times
     timeBetween = int(last - first)
     now = datetime.now()
@@ -144,16 +148,20 @@ def time_between(first, last, reverse=False):
         msg += "1 second, " if seconds == 1 else "{:,} seconds, ".format(seconds)
 
     if msg == "":
-        return "0 seconds"
+        val = "0 seconds"
     else:
         try:
             msg_args = msg[:-2].split(" ")
             msg_args[-3] = msg_args[-3][:-1]
             msg_args[-2] = "and " + msg_args[-2]
             msg = " ".join(msg_args)
-            return msg
+            val = msg
         except IndexError:
-            return msg[:-2]
+            val = msg[:-2]
+
+    if not verbose:
+        return val.split(",")[0].split("and")[0].strip()
+    return val
 
 
 def responsible(target, reason):

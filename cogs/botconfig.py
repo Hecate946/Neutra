@@ -396,7 +396,7 @@ class Botconfig(commands.Cog):
             root privileges. To reflect changes instantly, use the
             {0}botvars command
         """
-        if ctx.author.id is not self.bot.hecate.id:
+        if ctx.author.id is not self.bot.developer_id:
             return
         if member.bot:
             raise commands.BadArgument("I cannot be owned by a bot.")
@@ -432,7 +432,7 @@ class Botconfig(commands.Cog):
             To reflect changes instantly, use the
             {0}botvars command
         """
-        if ctx.author.id is not self.bot.hecate.id:
+        if ctx.author.id is not self.bot.developer_id:
             return
 
         data = utils.load_json("config.json")
@@ -470,7 +470,7 @@ class Botconfig(commands.Cog):
             s complete server list, member list, etc.
             To reflect changes instantly, use {0}botvars.
         """
-        if ctx.author.id is not self.bot.hecate.id:
+        if ctx.author.id is not self.bot.developer_id:
             return
 
         if member.bot:
@@ -505,7 +505,7 @@ class Botconfig(commands.Cog):
             To reflect changes instantly, use the
             {0}botvars command
         """
-        if ctx.author.id is not self.bot.hecate.id:
+        if ctx.author.id is not self.bot.developer_id:
             return
 
         data = utils.load_json("config.json")
