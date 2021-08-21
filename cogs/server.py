@@ -119,13 +119,15 @@ class Server(commands.Cog):
         try:
             deleted = await coro
         except discord.Forbidden:
-            return await ctx.fail("I do not have permissions to delete messages.")
+            return await ctx.fail(
+                "I do not have permissions to delete messages.", refer=False
+            )
         except discord.HTTPException as e:
-            return await ctx.fail(f"Error: {e} (try a smaller search?)")
+            return await ctx.fail(f"Error: {e} (try a smaller search?)", refer=False)
 
         deleted = len(deleted)
         if message is True:
-            msg = await ctx.send_or_reply(
+            msg = await ctx.send(
                 f"{self.bot.emote_dict['trash']} Deleted {deleted} message{'' if deleted == 1 else 's'}",
             )
             await asyncio.sleep(5)
