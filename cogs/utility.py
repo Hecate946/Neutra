@@ -754,14 +754,15 @@ class Utility(commands.Cog):
     async def do_avatar(
         self, ctx, name, url, default=False, *, option="avatar", file=None
     ):
+        url = url.replace("cdn", "images", 1).replace("com", "net", 1)
         embed = discord.Embed(
             title=f"**{name}'s {'default' if default else ''} {option}.**",
             description=""
             if file
             else f"Links to `{name}'s` {option}:  "
             f"[webp]({(str(url))}) | "
-            f'[png]({(str(url).replace("webp", "png"))}) | '
-            f'[jpeg]({(str(url).replace("webp", "jpg"))})  ',
+            f'[png]({(str(url).replace("webp", "png", 1))}) | '
+            f'[jpeg]({(str(url).replace("webp", "jpg", 1))})  ',
             color=self.bot.constants.embed,
         )
         embed.set_image(url=url)
