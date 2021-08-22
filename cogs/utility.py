@@ -760,9 +760,9 @@ class Utility(commands.Cog):
             description=""
             if file
             else f"Links to `{name}'s` {option}:  "
-            f"[webp]({(str(url))}) | "
-            f'[png]({(str(url).replace("webp", "png", 1))}) | '
-            f'[jpeg]({(str(url).replace("webp", "jpg", 1))})  ',
+            f"[png]({url}) | "
+            f"[jpeg]({url.replace('png', 'jpg', 1)})  "
+            f"[webp]({url.replace('png', 'webp', 1)}) | ",
             color=self.bot.constants.embed,
         )
         embed.set_image(url=url)
