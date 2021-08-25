@@ -227,11 +227,11 @@ class Neutra(commands.AutoShardedBot):
 
     def unload_extension(self, name, *, package=None):
         self.dispatch("unloaded_extension", name)
-        return super().load_extension(name, package=package)
+        return super().unload_extension(name, package=package)
 
     def reload_extension(self, name, *, package=None):
         self.dispatch("reloaded_extension", name)
-        return super().load_extension(name, package=package)
+        return super().reload_extension(name, package=package)
 
     async def close(self):  # Shutdown the bot cleanly
         try:

@@ -1,8 +1,6 @@
 import io
 import re
 import copy
-from discord.embeds import E
-from discord.member import M
 import pytz
 import json
 import math
@@ -28,6 +26,7 @@ from utilities import utils
 from utilities import checks
 from utilities import cleaner
 from utilities import helpers
+from utilities import humantime
 from utilities import converters
 from utilities import decorators
 from utilities import formatting
@@ -358,6 +357,52 @@ class Utility(commands.Cog):
             perms = discord.Permissions(permissions=permissions)
             oauth_url = discord.utils.oauth_url(bot.id, permissions=perms)
         await ctx.rep_or_ref("<" + oauth_url + ">")
+
+    @decorators.command(
+        aliases=["geninvite", "generateinvite", "generateinv"],
+        brief="Generate a server invite link.",
+        examples="""
+                {0}geninv
+                {0}geninvite 847612677013766164
+                {0}generateinv #welcome 3
+                {0}generateinvite #general 2
+                """,
+    )
+    @checks.cooldown()
+    async def geninv(
+        self,
+        ctx,
+        channel: typing.Optional[converters.DiscordChannel] = None,
+        uses: int = 0,
+        *, 
+        expires: humantime.FutureTime = None
+    ):
+        """
+        Usage: {0}geninvite [bot] [permissions]
+        Aliases:
+            {0}geninv
+            {0}generateinv
+            {0}generateinvite
+        Output:
+            Generates a server invite link
+            with your specified channel, uses
+            and expiration date.
+        Notes:
+            Will create a permanent invite link
+            with unlimited uses if no channel, uses,
+            or expiration date is specified.
+        """
+        channel = channel or ctx.channel
+        if expires:
+            if not expires.dt:
+                await ctx.fail("Invalid expiration. Try e.g. 2 days, or until tomorrow.")
+                return
+            max_age = (expires.dt - discord.utils.utcnow()).total_seconds()
+        else:
+            max_age = 0
+
+        invite = await channel.create_invite(reason="Invite created by command.", max_age=max_age, max_uses=uses)
+        await ctx.reply(invite)
 
     @decorators.command(  # For anyone looking here, these tokens are not valid.
         aliases=["pt", "parsetoken"],
@@ -1113,42 +1158,6 @@ class Utility(commands.Cog):
             await p.start(ctx)
         except menus.MenuError as e:
             await ctx.send_or_reply(str(e))
-
-    @decorators.command(
-        aliases=["epost"],
-        brief="Sends all server emojis to your dms.",
-        implemented="2021-05-10 20:14:33.223405",
-        updated="2021-05-10 20:14:33.223405",
-    )
-    @checks.has_perms(manage_emojis=True)
-    @checks.cooldown()
-    async def emojipost(self, ctx, dm: converters.Flag = None):
-        """
-        Usage: {0}emojipost [nodm]
-        Alias: {0}epost
-        Output:
-            Sends a formatted list of
-            emojis and their IDs.
-            Specify the nodm bool argument
-            to avoid the bot from DMing you.
-        """
-        emojis = sorted(
-            [e for e in ctx.guild.emojis if len(e.roles) == 0 and e.available],
-            key=lambda e: e.name.lower(),
-        )
-        paginator = commands.Paginator(suffix="", prefix="")
-
-        for emoji in emojis:
-            paginator.add_line(f"{emoji} ➔ `{emoji}`")
-
-        for page in paginator.pages:
-            if dm:
-                try:
-                    await ctx.author.send(page)
-                except Exception:
-                    await ctx.send_or_reply(page)
-            else:
-                await ctx.send_or_reply(page)
 
     @decorators.command(
         aliases=["bitly"],
