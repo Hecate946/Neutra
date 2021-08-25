@@ -53,11 +53,10 @@ class Info(commands.Cog):
         self.message_latencies.append((now, now - message.created_at))
 
     @commands.Cog.listener()  # Update our socket counters
-    async def on_socket_response(self, msg: dict):
+    async def on_socket_event_type(self, event_type):
         """When a websocket event is received, increase our counters."""
-        if event_type := msg.get("t"):
-            self.socket_event_total += 1
-            self.bot.socket_events[event_type] += 1
+        self.socket_event_total += 1
+        self.bot.socket_events[event_type] += 1
 
     #############
     ## Helpers ##
