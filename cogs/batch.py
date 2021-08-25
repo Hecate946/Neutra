@@ -29,11 +29,13 @@ class Batch(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        
+        # Removed for now at least
+        # self.activity_batch = defaultdict(dict)
+        
         # Data holders
-        self.activity_batch = defaultdict(dict)
         self.command_batch = []
         self.edited_batch = []
-        # self.emoji_batch = defaultdict(Counter)
         self.emote_batch = defaultdict(dict)
         self.invite_batch = []
         self.message_batch = []
@@ -41,7 +43,7 @@ class Batch(commands.Cog):
         self.roles_batch = defaultdict(dict)
         self.snipe_batch = []
         self.status_batch = defaultdict(dict)
-        self.tracker_batch = {}
+        self.tracking_batch = defaultdict(dict)
         self.usernames_batch = []
 
         self.batch_lock = asyncio.Lock(loop=bot.loop)
@@ -198,39 +200,27 @@ class Batch(commands.Cog):
 
     @tasks.loop(seconds=2.0)
     async def bulk_inserter(self):
-        if self.activity_batch:
-            # query = """
-            #         INSERT INTO activities (user_id, activity, insertion)
-            #         VALUES ($1, $2, $3);
-            #         """
-            # async with self.batch_lock:
-            #     await self.bot.cxn.executemany(query, (
-            #             (user_id, activity, timestamp)
-            #             for user_id, data in self.activity_batch.items()
-            #             for activity, timestamp in data.items()
-            #         ))
-            #     self.activity_batch.clear()
+        # if self.activity_batch:
+        #     query = """
+        #                 INSERT INTO activities (user_id, activity, insertion)
+        #                 SELECT x.user_id, x.activity, x.insertion
+        #                 FROM JSONB_TO_RECORDSET($1::JSONB)
+        #                 AS x(user_id BIGINT, activity TEXT, insertion TIMESTAMP)
+        #                 """
 
-            query = """
-                        INSERT INTO activities (user_id, activity, insertion)
-                        SELECT x.user_id, x.activity, x.insertion
-                        FROM JSONB_TO_RECORDSET($1::JSONB)
-                        AS x(user_id BIGINT, activity TEXT, insertion TIMESTAMP)
-                        """
-
-            data = json.dumps(
-                [
-                    {
-                        "user_id": user_id,
-                        "activity": activity,
-                        "insertion": str(timestamp),
-                    }
-                    for user_id, data in self.activity_batch.items()
-                    for activity, timestamp in data.items()
-                ]
-            )
-            await self.bot.cxn.execute(query, data)
-            self.activity_batch.clear()
+        #     data = json.dumps(
+        #         [
+        #             {
+        #                 "user_id": user_id,
+        #                 "activity": activity,
+        #                 "insertion": str(timestamp),
+        #             }
+        #             for user_id, data in self.activity_batch.items()
+        #             for activity, timestamp in data.items()
+        #         ]
+        #     )
+        #     await self.bot.cxn.execute(query, data)
+        #     self.activity_batch.clear()
 
         if self.command_batch:  # Insert all the commands executed.
             query = """
@@ -261,14 +251,6 @@ class Batch(commands.Cog):
 
         # Emoji usage tracking
         if self.emote_batch:
-            # query = """
-            #         INSERT INTO emojistats (server_id, emoji_id, total)
-            #         SELECT x.server_id, x.emoji_id, x.added
-            #         FROM JSONB_TO_RECORDSET($1::JSONB)
-            #         AS x(server_id BIGINT, emoji_id BIGINT, added INT)
-            #         ON CONFLICT (server_id, emoji_id) DO UPDATE
-            #         SET total = emojistats.total + EXCLUDED.total;
-            #         """
             query = """
                     INSERT INTO emojidata (server_id, author_id, emoji_id, total)
                     SELECT x.server_id, x.author_id, x.emoji_id, x.added
@@ -278,16 +260,6 @@ class Batch(commands.Cog):
                     SET total = emojidata.total + EXCLUDED.total;
                     """
             async with self.batch_lock:
-                # data = json.dumps(
-                #     [
-                #         {"server_id": server_id, "emoji_id": emoji_id, "added": count}
-                #         for server_id, data in self.emoji_batch.items()
-                #         for emoji_id, count in data.items()
-                #     ]
-                # )
-                # await self.bot.cxn.execute(query, data)
-                # self.emoji_batch.clear()
-
                 data = json.dumps(
                     [
                         {
@@ -304,7 +276,7 @@ class Batch(commands.Cog):
                 await self.bot.cxn.execute(query, data)
                 self.emote_batch.clear()
 
-        if self.tracker_batch:  # Track user last seen times
+        if self.tracking_batch:  # Track user last seen times
             query = """
                     INSERT INTO tracker (user_id, unix, action)
                     VALUES ($1, $2, $3)
@@ -312,15 +284,16 @@ class Batch(commands.Cog):
                     DO UPDATE SET unix = $2, action = $3
                     WHERE tracker.user_id = $1;
                     """
-            async with self.batch_lock:
+            async with self.batch_lock:                
                 await self.bot.cxn.executemany(
                     query,
                     (
-                        (entry[0], entry[1][0], entry[1][1])
-                        for entry in self.tracker_batch.items()
+                        (user_id, timestamp, description)
+                        for user_id, data in self.tracking_batch.items()
+                        for timestamp, description in data.items()
                     ),
                 )
-                self.tracker_batch.clear()
+                self.tracking_batch.clear()
 
         if self.usernames_batch:  # Save usernames
             query = """
@@ -481,17 +454,16 @@ class Batch(commands.Cog):
                 status_txt = (
                     f"updating their status: `{before.status}` ➔ `{after.status}`"
                 )
-                self.tracker_batch[before.id] = (time.time(), status_txt)
+                self.tracking_batch[before.id] = {time.time(): status_txt}
 
         if self.activity_changed(before, after):
+            action = "updating their custom status"
             async with self.batch_lock:
-                self.tracker_batch[before.id] = (
-                    time.time(),
-                    "updating their custom status",
-                )
-                self.activity_batch[before.id].update(
-                    {str(before.activity): datetime.utcnow()}
-                )
+                self.tracking_batch[before.id] = {time.time(): action}
+
+                # self.activity_batch[before.id].update(
+                #     {str(before.activity): datetime.utcnow()}
+                # )
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -503,7 +475,7 @@ class Batch(commands.Cog):
         """
         if self.avatar_changed(before, after):
             async with self.batch_lock:
-                self.tracker_batch[before.id] = (time.time(), "updating their avatar")
+                self.tracking_batch[before.id] = {time.time(): "updating their avatar"}
                 self.bot.avatar_saver.save(after)
 
         if self.username_changed(before, after):
@@ -514,7 +486,7 @@ class Batch(commands.Cog):
                         "name": str(before).replace("\u0000", ""),
                     }
                 )
-                self.tracker_batch[before.id] = (time.time(), f"updating their username: `{before}` ➔ `{after}`")
+                self.tracking_batch[before.id] = {time.time(): f"updating their username: `{before}` ➔ `{after}`"}
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -552,7 +524,7 @@ class Batch(commands.Cog):
                     "server_id": message.guild.id,
                 }
             )
-            self.tracker_batch[message.author.id] = (time.time(), "sending a message")
+            self.tracking_batch[message.author.id] = {time.time(): "sending a message"}
 
         matches = EMOJI_REGEX.findall(message.content)
         if matches:
@@ -567,7 +539,7 @@ class Batch(commands.Cog):
     @decorators.event_check(lambda s, c, u, w: not u.bot)
     async def on_typing(self, channel, user, when):
         async with self.batch_lock:
-            self.tracker_batch[user.id] = (time.time(), "typing")
+            self.tracking_batch[user.id] = {time.time(): "typing"}
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -583,7 +555,7 @@ class Batch(commands.Cog):
         if message.author.bot:
             return
         async with self.batch_lock:
-            self.tracker_batch[message.author.id] = (time.time(), "editing a message")
+            self.tracking_batch[message.author.id] = {time.time(): "editing a message"}
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -595,21 +567,21 @@ class Batch(commands.Cog):
         if user.bot:
             return
         async with self.batch_lock:
-            self.tracker_batch[payload.user_id] = (time.time(), "reacting to a message")
+            self.tracking_batch[payload.user_id] = {time.time(): "reacting to a message"}
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
     @decorators.event_check(lambda s, m, b, a: not m.bot)
     async def on_voice_state_update(self, member, before, after):
         async with self.batch_lock:
-            self.tracker_batch[member.id] = (time.time(), "changing their voice state")
+            self.tracking_batch[member.id] = {time.time(): "changing their voice state"}
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
     @decorators.event_check(lambda s, i: i.inviter and not i.inviter.bot)
     async def on_invite_create(self, invite):
         async with self.batch_lock:
-            self.tracker_batch[invite.inviter.id] = (time.time(), "creating an invite")
+            self.tracking_batch[invite.inviter.id] = {time.time(): "creating an invite"}
         if not invite.guild.me.guild_permissions.manage_guild:
             return
         self.bot.invites[invite.guild.id] = await invite.guild.invites()
@@ -626,7 +598,7 @@ class Batch(commands.Cog):
     @decorators.event_check(lambda s, m: not m.bot)
     async def on_member_join(self, member):
         async with self.batch_lock:
-            self.tracker_batch[member.id] = (time.time(), "joining a server")
+            self.tracking_batch[member.id] = {time.time(): "joining a server"}
 
         await asyncio.sleep(2)  # API rest.
 
@@ -661,7 +633,7 @@ class Batch(commands.Cog):
     @decorators.event_check(lambda s, m: not m.bot)
     async def on_member_remove(self, member):
         async with self.batch_lock:
-            self.tracker_batch[member.id] = (time.time(), "leaving a server")
+            self.tracking_batch[member.id] = {time.time(): "leaving a server"}
             roles = ",".join([str(x.id) for x in member.roles if x.name != "@everyone"])
             self.roles_batch[member.guild.id].update({member.id: roles})
 

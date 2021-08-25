@@ -226,6 +226,8 @@ class Tracking(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
 
+    # Deprecated
+    '''
     @decorators.command(aliases=["activities"], brief="Show all recorded statuses")
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.cooldown()
@@ -255,6 +257,7 @@ class Tracking(commands.Cog):
             await p.start(ctx)
         except menus.MenuError as e:
             await ctx.send_or_reply(e)
+    '''
 
     @decorators.command(aliases=["mc"], brief="Count the messages a user sent.")
     @checks.guild_only()

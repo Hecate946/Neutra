@@ -6,14 +6,14 @@ CREATE TABLE IF NOT EXISTS usernames (
 );
 CREATE INDEX IF NOT EXISTS usernames_idx ON usernames(user_id, username);
 
-
-CREATE TABLE IF NOT EXISTS activities (
-    id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT,
-    activity TEXT,
-    insertion TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
-);
-CREATE INDEX IF NOT EXISTS activities_idx ON activities(user_id, activity);
+-- Deprecated
+-- CREATE TABLE IF NOT EXISTS activities (
+--     id BIGSERIAL PRIMARY KEY,
+--     user_id BIGINT,
+--     activity TEXT,
+--     insertion TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
+-- );
+-- CREATE INDEX IF NOT EXISTS activities_idx ON activities(user_id, activity);
 
 
 CREATE TABLE IF NOT EXISTS usernicks (
@@ -65,11 +65,12 @@ CREATE TABLE IF NOT EXISTS useravatars (
     first_seen TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS spotify (
-    id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT,
-    album_id TEXT,
-    artist_id TEXT,
-    track_id TEXT,
-    insertion TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
-);
+-- Deprecated
+-- CREATE TABLE IF NOT EXISTS spotify (
+--     id BIGSERIAL PRIMARY KEY,
+--     user_id BIGINT,
+--     album_id TEXT,
+--     artist_id TEXT,
+--     track_id TEXT,
+--     insertion TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
+-- );
