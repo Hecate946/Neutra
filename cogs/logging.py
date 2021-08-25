@@ -962,7 +962,7 @@ class Logging(commands.Cog):
 
                 await self.send_webhook(webhook, embed=embed)
 
-            elif before.avatar.url != after.avatar.url:
+            elif before.avatar != after.avatar:
 
                 webhook = self.get_webhook(guild, "avatars")
                 if not webhook:

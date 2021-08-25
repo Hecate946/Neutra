@@ -405,7 +405,7 @@ class Batch(commands.Cog):
 
     @staticmethod
     def avatar_changed(before, after):
-        if before.avatar.url != after.avatar.url:
+        if before.avatar != after.avatar:
             return True
 
     @staticmethod
