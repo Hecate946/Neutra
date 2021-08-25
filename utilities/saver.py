@@ -51,7 +51,8 @@ class AvatarSaver:
                     "first_seen": str(discord.utils.utcnow()),
                 }
             )
-            self.avatars[avatar_name] = user.avatar.url
+            avatar = str(user.avatar) if user.avatar else user.default_avatar.url
+            self.avatars[avatar_name] = avatar
 
     async def inserter(self):
         while True:

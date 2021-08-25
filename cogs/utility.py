@@ -513,8 +513,11 @@ class Utility(commands.Cog):
             f"**Token created:** `{time_rn}`\n"
             f"**Generated token:** `{complete}`\n",
         )
+
+        avatar = str(user.avatar) if user.avatar else user.default_avatar.url
+
         embed.color = self.bot.constants.embed
-        embed.set_thumbnail(url=user.avatar.url)
+        embed.set_thumbnail(url=avatar)
         await ctx.send_or_reply(embed=embed)
 
     @decorators.command(

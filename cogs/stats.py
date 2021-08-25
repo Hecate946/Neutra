@@ -453,9 +453,10 @@ class Stats(commands.Cog):
             Will default to youself if no member is passed.
         """
         user = user or ctx.author
+        avatar = str(user.avatar) if user.avatar else user.default_avatar.url
 
         embed = discord.Embed(colour=user.top_role.colour.value)
-        embed.set_thumbnail(url=user.avatar.url)
+        embed.set_thumbnail(url=avatar)
         embed.description = (
             f"**{user}** joined **{ctx.guild.name}**\n{utils.date(user.joined_at)}"
         )
@@ -1264,9 +1265,11 @@ class Stats(commands.Cog):
         else:
             emoji = self.bot.emote_dict["user"]
 
+        avatar = str(user.avatar) if user.avatar else user.default_avatar.url
+
         embed = discord.Embed(color=self.bot.constants.embed)
-        embed.set_author(name=f"{user}", icon_url=user.avatar.url)
-        embed.set_thumbnail(url=user.avatar.url)
+        embed.set_author(name=f"{user}", icon_url=avatar)
+        embed.set_thumbnail(url=avatar)
         embed.set_footer(
             text=f"User ID: {user.id} | Created on {user.created_at.__format__('%m/%d/%Y')}"
         )
