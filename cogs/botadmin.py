@@ -825,6 +825,42 @@ class Botadmin(commands.Cog):
             await ctx.send_or_reply(e)
 
     @decorators.command(
+        aliases=["epost"],
+        brief="Sends all server emojis to your dms.",
+        implemented="2021-05-10 20:14:33.223405",
+        updated="2021-05-10 20:14:33.223405",
+    )
+    @checks.has_perms(manage_emojis=True)
+    @checks.cooldown()
+    async def emojipost(self, ctx, dm: converters.Flag = None):
+        """
+        Usage: {0}emojipost [nodm]
+        Alias: {0}epost
+        Output:
+            Sends a formatted list of
+            emojis and their IDs.
+            Specify the nodm bool argument
+            to avoid the bot from DMing you.
+        """
+        emojis = sorted(
+            [e for e in ctx.guild.emojis if len(e.roles) == 0 and e.available],
+            key=lambda e: e.name.lower(),
+        )
+        paginator = commands.Paginator(suffix="", prefix="")
+
+        for emoji in emojis:
+            paginator.add_line(f"{emoji} ➔ `{emoji}`")
+
+        for page in paginator.pages:
+            if dm:
+                try:
+                    await ctx.author.send(page)
+                except Exception:
+                    await ctx.send_or_reply(page)
+            else:
+                await ctx.send_or_reply(page)
+
+    @decorators.command(
         aliases=["guildinfo", "gi"],
         brief="Get stats on a bot server.",
         implemented="2021-03-17 22:48:40.720122",
