@@ -974,8 +974,8 @@ class Logging(commands.Cog):
                     colour=self.bot.constants.embed,
                     timestamp=discord.utils.utcnow(),
                 )
-
-                embed.set_image(url=after.avatar.url)
+                avatar = str(after.avatar) if after.avatar else after.default_avatar.url
+                embed.set_image(url=avatar)
                 embed.set_author(name=f"Avatar Change")
                 embed.set_footer(text=f"User ID: {after.id}")
                 await self.send_webhook(webhook, embed=embed)
