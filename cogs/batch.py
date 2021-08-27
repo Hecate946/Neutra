@@ -29,10 +29,10 @@ class Batch(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        
+
         # Removed for now at least
         # self.activity_batch = defaultdict(dict)
-        
+
         # Data holders
         self.command_batch = []
         self.edited_batch = []
@@ -284,7 +284,7 @@ class Batch(commands.Cog):
                     DO UPDATE SET unix = $2, action = $3
                     WHERE tracker.user_id = $1;
                     """
-            async with self.batch_lock:                
+            async with self.batch_lock:
                 await self.bot.cxn.executemany(
                     query,
                     (
@@ -486,7 +486,9 @@ class Batch(commands.Cog):
                         "name": str(before).replace("\u0000", ""),
                     }
                 )
-                self.tracking_batch[before.id] = {time.time(): f"updating their username: `{before}` ➔ `{after}`"}
+                self.tracking_batch[before.id] = {
+                    time.time(): f"updating their username: `{before}` ➔ `{after}`"
+                }
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -567,7 +569,9 @@ class Batch(commands.Cog):
         if user.bot:
             return
         async with self.batch_lock:
-            self.tracking_batch[payload.user_id] = {time.time(): "reacting to a message"}
+            self.tracking_batch[payload.user_id] = {
+                time.time(): "reacting to a message"
+            }
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -672,7 +676,6 @@ class Batch(commands.Cog):
                 """
         await self.bot.cxn.execute(query, self.bot.user.id)
     '''
-
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()

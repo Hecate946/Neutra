@@ -21,6 +21,7 @@ from utilities import pagination
 def setup(bot):
     bot.add_cog(Admin(bot))
 
+
 class Admin(commands.Cog):
     """
     Module for server administration.
@@ -70,18 +71,36 @@ class Admin(commands.Cog):
 
         embed.title = "Muterole Configuration Menu"
         embed.description = f"This command will {'create a new role named `muted`' if not role else f'edit the role {role.mention}'} "
-        embed.description += "by overwriting permissions for every channel in this server."
-        embed.add_field(name="Block", value="By selecting the blue button, muted users will not be able to send messages in any channel.", inline=False)
-        embed.add_field(name="Blind", value="By selecting the gray button, muted users will not be able to read messages in any channel.", inline=False)
-        embed.add_field(name="Cancel", value="To cancel this process, press the red button. This menu will expire after one minute.", inline=False)
+        embed.description += (
+            "by overwriting permissions for every channel in this server."
+        )
+        embed.add_field(
+            name="Block",
+            value="By selecting the blue button, muted users will not be able to send messages in any channel.",
+            inline=False,
+        )
+        embed.add_field(
+            name="Blind",
+            value="By selecting the gray button, muted users will not be able to read messages in any channel.",
+            inline=False,
+        )
+        embed.add_field(
+            name="Cancel",
+            value="To cancel this process, press the red button. This menu will expire after one minute.",
+            inline=False,
+        )
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
 
         msg = await ctx.send(embed=embed, view=view)
-        
+
         await view.wait()
 
         if not view.overwrites:
-            await msg.edit(f"{self.bot.emote_dict['exclamation']} **Cancelled.**", embed=None, view=None)
+            await msg.edit(
+                f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
+                embed=None,
+                view=None,
+            )
             return
 
         if role is None:
@@ -97,7 +116,7 @@ class Admin(commands.Cog):
                 await channel.set_permissions(role, **view.overwrites)
             except Exception:
                 continue
-     
+
         await msg.edit(
             content=f"{self.bot.emote_dict['success']} **Saved `@{role.name}` as this server's mute role.**",
             embed=None,

@@ -128,11 +128,19 @@ class Info(commands.Cog):
         embed.add_field(name="Voice Channels", value=f"{voice_channels:,}")
         embed.add_field(name="Stage Channels", value=f"{stage_channels:,}")
         embed.add_field(name="Member Count", value=f"{total_members:,}")
-        embed.add_field(name="Total Messages", value=f"{await self.total_global_messages():,}")
-        embed.add_field(name="Session Messages", value=f"{sum(self.bot.message_stats.values()):,}")
+        embed.add_field(
+            name="Total Messages", value=f"{await self.total_global_messages():,}"
+        )
+        embed.add_field(
+            name="Session Messages", value=f"{sum(self.bot.message_stats.values()):,}"
+        )
         embed.add_field(name="Command Count", value=len(self.bot.commands))
-        embed.add_field(name="Total Commands", value=f"{await self.total_global_commands():,}")
-        embed.add_field(name="Session Commands", value=f"{sum(self.bot.command_stats.values()):,}")
+        embed.add_field(
+            name="Total Commands", value=f"{await self.total_global_commands():,}"
+        )
+        embed.add_field(
+            name="Session Commands", value=f"{sum(self.bot.command_stats.values()):,}"
+        )
 
         await msg.edit(
             content=f"{self.bot.emote_dict['robot']} Stats For **{ctx.bot.user}** | **{await self.get_version()}**",
@@ -354,7 +362,7 @@ class Info(commands.Cog):
                 await ctx.react(self.bot.emote_dict["letter"])
             await ctx.success("Your bug report has been sent.")
 
-    @decorators.command(aliases=['updates'], brief="Github commit history.")
+    @decorators.command(aliases=["updates"], brief="Github commit history.")
     async def github(self, ctx):
         """
         Usage: {0}github
@@ -363,7 +371,15 @@ class Info(commands.Cog):
             Shows an embed of the last 5 github commits
         """
         process = subprocess.Popen(
-            ["git", "log", "--format=[`%h`](https://github.com/Hecate946/Neutra/commit/%H) %s", "-n", "5"], shell=False, stdout=subprocess.PIPE
+            [
+                "git",
+                "log",
+                "--format=[`%h`](https://github.com/Hecate946/Neutra/commit/%H) %s",
+                "-n",
+                "5",
+            ],
+            shell=False,
+            stdout=subprocess.PIPE,
         )
         commits = process.communicate()[0].strip().decode("utf-8")
 
@@ -372,7 +388,6 @@ class Info(commands.Cog):
         embed.url = "https://github.com/Hecate946/Neutra"
         embed.description = commits
         await ctx.send_or_reply(embed=embed)
-
 
     @decorators.command(
         brief="Show my changelog.",

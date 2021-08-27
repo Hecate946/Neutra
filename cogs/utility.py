@@ -374,8 +374,8 @@ class Utility(commands.Cog):
         ctx,
         channel: typing.Optional[converters.DiscordChannel] = None,
         uses: int = 0,
-        *, 
-        expires: humantime.FutureTime = None
+        *,
+        expires: humantime.FutureTime = None,
     ):
         """
         Usage: {0}geninvite [bot] [permissions]
@@ -395,13 +395,17 @@ class Utility(commands.Cog):
         channel = channel or ctx.channel
         if expires:
             if not expires.dt:
-                await ctx.fail("Invalid expiration. Try e.g. 2 days, or until tomorrow.")
+                await ctx.fail(
+                    "Invalid expiration. Try e.g. 2 days, or until tomorrow."
+                )
                 return
             max_age = (expires.dt - discord.utils.utcnow()).total_seconds()
         else:
             max_age = 0
 
-        invite = await channel.create_invite(reason="Invite created by command.", max_age=max_age, max_uses=uses)
+        invite = await channel.create_invite(
+            reason="Invite created by command.", max_age=max_age, max_uses=uses
+        )
         await ctx.reply(invite)
 
     @decorators.command(  # For anyone looking here, these tokens are not valid.
