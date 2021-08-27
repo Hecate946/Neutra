@@ -924,8 +924,8 @@ class Music(commands.Cog):
             )
 
         ffmpeg_options = {
-            "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
-            "options": f"-vn -ss {position}",  # This seeks to the specified timestamp
+            "before_options": f"-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -ss {position}",
+            "options": "-vn",  # This seeks to the specified timestamp
         }
         ctx.voice_state.voice.pause()  # Pause the audio before seeking
         now = discord.FFmpegPCMAudio(song.source.stream_url, **ffmpeg_options)
@@ -960,8 +960,8 @@ class Music(commands.Cog):
                 f"You cannot fast forward past the end of the song. `Current position: {song.source.position}/{song.source.raw_duration} seconds`"
             )
         ffmpeg_options = {
-            "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
-            "options": f"-vn -ss {position}",  # This seeks to the specified timestamp
+            "before_options": f"-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -ss {position}",
+            "options": "-vn",  # This seeks to the specified timestamp
         }
         ctx.voice_state.voice.pause()  # Pause the audio before seeking
         now = discord.FFmpegPCMAudio(song.source.stream_url, **ffmpeg_options)
@@ -995,8 +995,8 @@ class Music(commands.Cog):
                 f"You cannot rewind past the beginning of the song. `Current position: {song.source.position}/{song.source.raw_duration} seconds`"
             )
         ffmpeg_options = {
-            "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
-            "options": f"-vn -ss {position}",  # This seeks to the specified timestamp
+            "before_options": f"-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -ss {position}",
+            "options": "-vn",  # This seeks to the specified timestamp
         }
         ctx.voice_state.voice.pause()  # Pause the audio before seeking
         now = discord.FFmpegPCMAudio(song.source.stream_url, **ffmpeg_options)
