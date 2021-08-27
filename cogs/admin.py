@@ -2,7 +2,6 @@ import io
 import re
 import copy
 import shlex
-import typing
 import discord
 
 from datetime import timedelta
@@ -11,6 +10,7 @@ from collections import defaultdict
 from unidecode import unidecode
 
 from utilities import utils
+from utilities import views
 from utilities import checks
 from utilities import helpers
 from utilities import converters
@@ -20,7 +20,6 @@ from utilities import pagination
 
 def setup(bot):
     bot.add_cog(Admin(bot))
-
 
 class Admin(commands.Cog):
     """
@@ -52,7 +51,7 @@ class Admin(commands.Cog):
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(manage_guild=True)
     @checks.cooldown()
-    async def muterole(self, ctx, role: converters.DiscordRole = None):
+    async def muterole(self, ctx, *, role: converters.UniqueRole = None):
         """
         Usage:      {0}muterole <role>
         Alias:      {0}setmuterole
@@ -66,42 +65,43 @@ class Admin(commands.Cog):
             channel will have the Send Messages permission set
             to false for the muted role.
         """
-        msg = await ctx.load(
-            "Creating mute system. This process may take several minutes..."
-        )
+        view = views.MuteRoleView(ctx)
+        embed = discord.Embed(color=self.bot.constants.embed)
+
+        embed.title = "Muterole Configuration Menu"
+        embed.description = f"This command will {'create a new role named `muted`' if not role else f'edit the role {role.mention}'} "
+        embed.description += "by overwriting permissions for every channel in this server."
+        embed.add_field(name="Block", value="By selecting the blue button, muted users will not be able to send messages in any channel.", inline=False)
+        embed.add_field(name="Blind", value="By selecting the gray button, muted users will not be able to read messages in any channel.", inline=False)
+        embed.add_field(name="Cancel", value="To cancel this process, press the red button. This menu will expire after one minute.", inline=False)
+        embed.set_thumbnail(url=self.bot.user.display_avatar.url)
+
+        msg = await ctx.send(embed=embed, view=view)
+        
+        await view.wait()
+
+        if not view.overwrites:
+            await msg.edit(f"{self.bot.emote_dict['exclamation']} **Cancelled.**", embed=None, view=None)
+            return
+
         if role is None:
             role = await ctx.guild.create_role(
-                name="Muted", reason="For the server muting system"
-            )
-        try:
-            if ctx.guild.me.top_role.position < role.position:
-                await msg.edit(
-                    content=f"{self.bot.emote_dict['failed']} The muted role is above my highest role."
-                )
-                return
-            if ctx.author.top_role.position < role.position:
-                if ctx.author.id != ctx.guild.owner.id:
-                    await msg.edit(
-                        content=f"{self.bot.emote_dict['failed']} The muted role is above your highest role."
-                    )
-            query = """UPDATE servers SET muterole = $1 WHERE server_id = $2"""
-            await self.bot.cxn.execute(query, role.id, ctx.guild.id)
-        except Exception as e:
-            return await msg.edit(content=e)
-        channels = []
-        for channel in ctx.guild.text_channels:
-            try:
-                await channel.set_permissions(role, send_messages=False)
-            except discord.Forbidden:
-                channels.append(channel.name)
-                continue
-        if channels:
-            return await msg.edit(
-                content=f"{self.bot.emote_dict['failed']} I do not have permission to edit channel{'' if len(channels) == 1 else 's'}:`{', '.join(channels)}`"
+                name="Muted", reason="For the server muting system."
             )
 
+        query = """UPDATE servers SET muterole = $1 WHERE server_id = $2"""
+        await self.bot.cxn.execute(query, role.id, ctx.guild.id)
+
+        for channel in ctx.guild.text_channels:
+            try:
+                await channel.set_permissions(role, **view.overwrites)
+            except Exception:
+                continue
+     
         await msg.edit(
-            content=f"{self.bot.emote_dict['success']} Saved `{role.name}` as this server's mute role."
+            content=f"{self.bot.emote_dict['success']} **Saved `@{role.name}` as this server's mute role.**",
+            embed=None,
+            view=None,
         )
 
     @decorators.command(
@@ -1174,8 +1174,8 @@ class Admin(commands.Cog):
     @prefix.command(name="clear", brief="Clear all server prefixes.")
     @checks.guild_only()
     @checks.has_perms(manage_guild=True)
-    async def prefix_clear(self, ctx, prefix: converters.Prefix = None):
-        await ctx.invoke(self.clearprefix, prefix)
+    async def prefix_clear(self, ctx):
+        await ctx.invoke(self.clearprefix)
 
     @decorators.command(
         aliases=[
