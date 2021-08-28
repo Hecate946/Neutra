@@ -358,6 +358,7 @@ class VoiceState:
         self._loop = False
         self._queue_loop = False
         self._volume = 0.5
+        self._speed = 1
         self.skip_votes = set()
 
         self.audio_player = bot.loop.create_task(self.audio_player_task())
@@ -405,6 +406,7 @@ class VoiceState:
                 # we're not looping a single song
                 self.current = await self.songs.get()
                 self.current.source.volume = self._volume
+                self.current.source.speed = self._speed
 
                 self.voice.play(self.current.source, after=self.play_next_song)
                 await self.current.source.channel.send(
@@ -443,7 +445,7 @@ class VoiceState:
         of the song while it's being played.
         """
         while self.voice.is_playing():
-            self.current.source.position += 1
+            self.current.source.position += self.current.source.speed
             await asyncio.sleep(1)
 
     def play_next_song(self, error=None):
@@ -586,6 +588,7 @@ class Music(commands.Cog):
         del self.voice_states[ctx.guild.id]
 
     @decorators.command(
+        aliases=["vol"],
         name="volume",
         brief="Set the volume of the player.",
         implemented="2021-06-15 06:50:53.661786",
@@ -1004,6 +1007,47 @@ class Music(commands.Cog):
         ctx.voice_state.current.source.position = position
 
         await ctx.success(f"Rewinded to second `{position}`")
+
+    @decorators.command(
+        aliases=["tempo"],
+        name="speed",
+        brief="Change the speed of a song.",
+    )
+    @checks.cooldown()
+    async def _speed(self, ctx, multiplier: float = None):
+        """
+        Usage: {0}speed [multiplier]
+        Alias: {0}tempo
+        Output:
+            Speed up or slow down the current song.
+        """
+        if not ctx.voice_state.is_playing:
+            return await ctx.fail("Nothing is currently being played.")
+
+        song = ctx.voice_state.current
+
+        if multiplier is None:
+            await ctx.send(
+                f"{self.bot.emote_dict['music']} The speed is currently {song.source.speed}"
+            )
+
+        if multiplier < 0.25 or multiplier > 2:
+            await ctx.fail(f"Speed multiplier must be between `0.25` and `2.0`")
+            return
+
+        position = song.source.position
+        ffmpeg_options = {
+            "before_options": f"-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -ss {position}",
+            "options": f'-vn -filter:a "atempo={multiplier}"',  # This speeds up the audio
+            # possible to speed up even further using multiple filters: -filter:a "atempo=2,atempo=2"
+            # add this flag for higher than default quality: -ab 320k
+        }
+        song.source.speed = multiplier
+        ctx.voice_state.voice.pause()  # Pause the audio before seeking
+        now = discord.FFmpegPCMAudio(song.source.stream_url, **ffmpeg_options)
+        ctx.voice_state.voice.play(now, after=ctx.voice_state.play_next_song)
+
+        await ctx.success(f"Audio is now playing at `{multiplier}x`")
 
     @decorators.command(
         aliases=["last", "back", "previous"],
