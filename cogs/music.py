@@ -1020,6 +1020,8 @@ class Music(commands.Cog):
         Alias: {0}tempo
         Output:
             Speed up or slow down the current song.
+        Notes:
+            The speed multiplier must be between 0.5 and 2.0
         """
         if not ctx.voice_state.is_playing:
             return await ctx.fail("Nothing is currently being played.")
