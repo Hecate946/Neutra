@@ -1031,8 +1031,8 @@ class Music(commands.Cog):
                 f"{self.bot.emote_dict['music']} The speed is currently {song.source.speed}"
             )
 
-        if multiplier < 0.25 or multiplier > 2:
-            await ctx.fail(f"Speed multiplier must be between `0.25` and `2.0`")
+        if multiplier < 0.5 or multiplier > 2:
+            await ctx.fail(f"Speed multiplier must be between `0.5` and `2.0`")
             return
 
         position = song.source.position
