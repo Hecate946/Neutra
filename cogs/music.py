@@ -23,6 +23,8 @@ from utilities import pagination
 # Silence useless bug reports messages
 youtube_dl.utils.bug_reports_message = lambda: ""
 
+FFMPEG_OPTION_BASE = "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"
+
 
 class VoiceError(Exception):
     pass
@@ -52,7 +54,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         "writeautomaticsub": True,
     }
     FFMPEG_OPTIONS = {
-        "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
+        "before_options": FFMPEG_OPTION_BASE,
         "options": "-vn",
     }
 
@@ -308,7 +310,6 @@ class Song:
 
         return (embed, dfile)
 
-
 class SongQueue(asyncio.Queue):
     def __getitem__(self, item):
         if isinstance(item, slice):
@@ -393,6 +394,37 @@ class VoiceState:
     @property
     def is_playing(self):
         return self.voice and self.current
+
+    async def connect(self, ctx, channel, *, timeout=60):
+        try:
+            self.voice = await channel.connect(timeout=timeout)
+        except discord.ClientException:
+            if hasattr(ctx.guild.me.voice, "channel"):
+                if ctx.guild.me.voice.channel == channel:
+                    raise commands.BadArgument(f"Already in channel {channel.mention}")
+                else:
+                    await ctx.guild.voice_client.disconnect(force=True)
+                    self.voice = await channel.connect(timeout=timeout)
+            else:
+                await ctx.guild.voice_client.disconnect(force=True)
+                self.voice = await channel.connect(timeout=timeout)
+
+    def alter_audio(self, *, position: int = None, speed: float = None):
+        position = position or self.current.source.position
+        speed = speed or self.current.source.speed
+
+        ffmpeg_options = {
+            "before_options": f"{FFMPEG_OPTION_BASE} -ss {position}", # This alters the track position
+            "options": f'-vn -filter:a "atempo={speed}"',  # This alters the track speed
+            # possible to speed up even further using multiple filters: -filter:a "atempo=2,atempo=2"
+            # add this flag for higher than default quality: -ab 320k
+        }
+
+        self.voice.pause()  # Pause the audio before seeking
+        now = discord.FFmpegPCMAudio(self.current.source.stream_url, **ffmpeg_options)
+        self.voice.play(now, after=self.play_next_song)
+        self.current.source.position = position
+        self.current.source.speed = speed
 
     async def audio_player_task(self):
         while True:
@@ -505,7 +537,7 @@ class Music(commands.Cog):
         if hasattr(ctx.guild.me.voice, "channel"):
             channel = ctx.guild.me.voice.channel
             await ctx.guild.voice_client.disconnect(force=True)
-            ctx.voice_state.voice = await channel.connect()
+            ctx.voice_state.voice = await channel.connect(timeout=60)
 
     def cog_unload(self):
         for state in self.voice_states.values():
@@ -524,8 +556,6 @@ class Music(commands.Cog):
         name="connect",
         aliases=["join"],
         brief="Joins a voice or stage channel.",
-        implemented="2021-06-15 06:50:53.661786",
-        updated="2021-06-15 06:50:53.661786",
     )
     async def _connect(
         self,
@@ -548,26 +578,44 @@ class Music(commands.Cog):
                 return await ctx.usage()
             else:
                 channel = ctx.author.voice.channel
-        try:
-            ctx.voice_state.voice = await channel.connect(timeout=None)
-        except discord.ClientException:
-            if hasattr(ctx.guild.me.voice, "channel"):
-                if ctx.guild.me.voice.channel == channel:
-                    return await ctx.fail(f"Already in channel {channel.mention}")
-                else:
-                    await ctx.guild.voice_client.disconnect(force=True)
-                    ctx.voice_state.voice = await channel.connect(timeout=None)
-            else:
-                await ctx.guild.voice_client.disconnect(force=True)
-                ctx.voice_state.voice = await channel.connect(timeout=None)
+        
+        await ctx.voice_state.connect(ctx, channel)
         await ctx.success(f"Connected to {channel.mention}")
+
+    @decorators.command(
+        name="247",
+        aliases=["24/7"],
+        brief="Joins a channel indefinitely.",
+    )
+    async def _247(
+        self,
+        ctx,
+        *,
+        channel: typing.Union[discord.VoiceChannel, discord.StageChannel] = None,
+    ):
+        """
+        Usage: {0}connect [channel]
+        Alias: {0}join
+        Output:
+            Joins a specified channel
+        Notes:
+            If you do not specify a channel,
+            the bot will join your current
+            channel. (If possible)
+        """
+        if channel is None:
+            if not hasattr(ctx.author.voice, "channel"):
+                return await ctx.usage()
+            else:
+                channel = ctx.author.voice.channel
+        
+        await ctx.voice_state.connect(ctx, channel, timeout=None)
+        await ctx.success(f"Connected to {channel.mention} indefinitely.")
 
     @decorators.command(
         name="disconnect",
         aliases=["dc", "leave"],
         brief="Disconnect the bot from a channel.",
-        implemented="2021-06-15 06:50:53.661786",
-        updated="2021-06-15 06:50:53.661786",
     )
     async def _disconnect(self, ctx):
         """
@@ -636,9 +684,7 @@ class Music(commands.Cog):
 
     @decorators.command(
         name="pause",
-        brief="Pauses the currently playing song.",
-        implemented="2021-06-15 06:50:53.661786",
-        updated="2021-06-15 06:50:53.661786",
+        brief="Pauses the current track.",
     )
     @checks.cooldown()
     async def _pause(self, ctx):
@@ -657,9 +703,7 @@ class Music(commands.Cog):
 
     @decorators.command(
         name="resume",
-        brief="Resumes a currently paused song.",
-        implemented="2021-06-15 06:50:53.661786",
-        updated="2021-06-15 06:50:53.661786",
+        brief="Resumes the current track.",
     )
     @checks.cooldown()
     async def _resume(self, ctx):
@@ -680,9 +724,7 @@ class Music(commands.Cog):
 
     @decorators.command(
         name="stop",
-        brief="Stops playing song and clears the queue.",
-        implemented="2021-06-15 06:50:53.661786",
-        updated="2021-06-15 06:50:53.661786",
+        brief="Stops track and clears the queue.",
     )
     @checks.cooldown()
     async def _stop(self, ctx):
@@ -701,9 +743,7 @@ class Music(commands.Cog):
     @decorators.command(
         name="skip",
         aliases=["s", "fs", "vs"],
-        brief="Vote to skip the current song.",
-        implemented="2021-06-15 06:50:53.661786",
-        updated="2021-06-15 06:50:53.661786",
+        brief="Vote to skip the track.",
     )
     @checks.cooldown()
     async def _skip(self, ctx):
@@ -749,9 +789,7 @@ class Music(commands.Cog):
     @decorators.command(
         aliases=["q"],
         name="queue",
-        brief="Show the song queue.",
-        implemented="2021-06-15 06:50:53.661786",
-        updated="2021-06-15 06:50:53.661786",
+        brief="Show the track queue.",
     )
     @checks.cooldown()
     @checks.bot_has_perms(add_reactions=True, external_emojis=True, embed_links=True)
@@ -784,9 +822,7 @@ class Music(commands.Cog):
     @decorators.command(
         name="clear",
         aliases=["c"],
-        brief="Clear all queued songs.",
-        implemented="2021-06-15 06:50:53.661786",
-        updated="2021-06-15 06:50:53.661786",
+        brief="Clear the queue.",
     )
     @checks.cooldown()
     async def _clear(self, ctx):
@@ -803,9 +839,7 @@ class Music(commands.Cog):
 
     @decorators.command(
         name="shuffle",
-        brief="Shuffle the song queue.",
-        implemented="2021-06-15 06:50:53.661786",
-        updated="2021-06-15 06:50:53.661786",
+        brief="Shuffle the queue.",
     )
     @checks.cooldown()
     async def _shuffle(self, ctx):
@@ -813,18 +847,19 @@ class Music(commands.Cog):
         Usage: {0}shuffle
         Output: Shuffles the queue.
         """
-        if len(ctx.voice_state.songs) == 0:
-            return await ctx.fail("The queue is currently empty.")
+        vs = ctx.voice_state
 
-        ctx.voice_state.songs.shuffle()
+        if len(vs.songs) == 0:
+            await ctx.fail("The queue is currently empty.")
+            return
+
+        vs.songs.shuffle()
         await ctx.send_or_reply(f"{self.bot.emote_dict['shuffle']} Shuffled the queue.")
 
     @decorators.command(
         aliases=["pop"],
         name="remove",
-        brief="Remove a song from the queue.",
-        implemented="2021-06-15 06:50:53.661786",
-        updated="2021-06-15 06:50:53.661786",
+        brief="Remove a tracj from the queue.",
     )
     @checks.cooldown()
     async def _remove(self, ctx, index: int):
@@ -834,19 +869,24 @@ class Music(commands.Cog):
         Output:
             Removes a song from the queue at a given index.
         """
+        vs = ctx.voice_state
 
-        if len(ctx.voice_state.songs) == 0:
-            return await ctx.send_or_reply("The queue is already empty")
+        if len(vs.songs) == 0:
+            await ctx.fail("The queue is already empty")
+            return
+
         try:
-            ctx.voice_state.songs.remove(index - 1)
+            vs.songs.remove(index - 1)
         except Exception:
-            return await ctx.fail("Invalid index.")
-        await ctx.success(f"Removed item {index} from the queue.")
+            await ctx.fail("Invalid index.")
+            return
+
+        await ctx.success(f"Removed item `{index}` from the queue.")
 
     @decorators.command(
         aliases=["deloop"],
         name="unloop",
-        brief="Un-loop the current song or queue.",
+        brief="Un-loop the track or queue.",
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-22 17:48:57.021225",
     )
@@ -858,16 +898,18 @@ class Music(commands.Cog):
         Output:
             Stops looping the current song or queue
         """
-        if not ctx.voice_state.is_playing:
-            return await ctx.fail("Nothing is currently being played.")
+        vs = ctx.voice_state
 
-        ctx.voice_state.loop = False
-        ctx.voice_state.queue_loop = False
+        if not vs.is_playing:
+            await ctx.fail("Nothing is currently being played.")
+
+        vs.loop = False
+        vs.queue_loop = False
         await ctx.message.add_reaction(self.bot.emote_dict["success"])
 
     @decorators.command(
         name="loop",
-        brief="Loop the current song or queue.",
+        brief="Loop the track or queue.",
         implemented="2021-06-15 06:50:53.661786",
         updated="2021-06-15 06:50:53.661786",
     )
@@ -902,9 +944,7 @@ class Music(commands.Cog):
     @decorators.command(
         aliases=["jump"],
         name="seek",
-        brief="Seek to a position in the song.",
-        implemented="2021-06-15 06:50:53.661786",
-        updated="2021-06-15 06:50:53.661786",
+        brief="Seek to a position in the track.",
     )
     @checks.cooldown()
     async def _seek(self, ctx, position: int = 0):
@@ -916,33 +956,29 @@ class Music(commands.Cog):
         Notes:
             The position must be given in seconds.
         """
-        if not ctx.voice_state.is_playing:
-            return await ctx.fail("Nothing is currently being played.")
-        song = ctx.voice_state.current
-        if position < 0:
-            return await ctx.fail("Seek time cannot be negative.")
-        if position > song.source.raw_duration:
-            return await ctx.fail(
-                f"Seek time must be less than the length of the song. `{song.source.raw_duration} seconds`"
-            )
+        vs = ctx.voice_state
+        src = vs.current.source
 
-        ffmpeg_options = {
-            "before_options": f"-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -ss {position}",
-            "options": "-vn",  # This seeks to the specified timestamp
-        }
-        ctx.voice_state.voice.pause()  # Pause the audio before seeking
-        now = discord.FFmpegPCMAudio(song.source.stream_url, **ffmpeg_options)
-        ctx.voice_state.voice.play(now, after=ctx.voice_state.play_next_song)
-        ctx.voice_state.current.source.position = position
+        if not vs.is_playing:  # Raise error if no current track.
+            await ctx.fail("Nothing is currently being played.")
+            return
+
+        if position < 0:
+            await ctx.fail("Seek time cannot be negative.")
+            return
+
+        if position > src.raw_duration:
+            track_dur = f"Track duration: `{src.raw_duration} seconds`"
+            await ctx.fail(f"You cannot seek past the end of the track. {track_dur}")
+
+        vs.alter_audio(position=position)
 
         await ctx.success(f"{ctx.invoked_with.capitalize()}ed to second `{position}`")
 
     @decorators.command(
         aliases=["ff", "ffw"],
         name="fastforward",
-        brief="Fast forward the song.",
-        implemented="2021-06-22 01:55:36.152071",
-        updated="2021-06-22 01:55:36.152071",
+        brief="Fast forward the track.",
     )
     @checks.cooldown()
     async def _fastforward(self, ctx, seconds: int = 0):
@@ -952,32 +988,31 @@ class Music(commands.Cog):
         Output:
             Fast forward a certain number of seconds in a song.
         """
-        if not ctx.voice_state.is_playing:
-            return await ctx.fail("Nothing is currently being played.")
-        song = ctx.voice_state.current
+        vs = ctx.voice_state
+        src = vs.current.source
+
+        if not vs.is_playing:
+            await ctx.fail("Nothing is currently being played.")
+            return
+ 
         if seconds < 0:
-            return await ctx.invoke(self._rewind, seconds)
-        position = seconds + song.source.position
-        if position > song.source.raw_duration:
-            return await ctx.fail(
-                f"You cannot fast forward past the end of the song. `Current position: {song.source.position}/{song.source.raw_duration} seconds`"
-            )
-        ffmpeg_options = {
-            "before_options": f"-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -ss {position}",
-            "options": "-vn",  # This seeks to the specified timestamp
-        }
-        ctx.voice_state.voice.pause()  # Pause the audio before seeking
-        now = discord.FFmpegPCMAudio(song.source.stream_url, **ffmpeg_options)
-        ctx.voice_state.voice.play(now, after=ctx.voice_state.play_next_song)
-        ctx.voice_state.current.source.position = position
+            await ctx.invoke(self._rewind, abs(seconds))
+            return
+
+        position = seconds + src.position
+
+        if position > src.raw_duration:
+            current_pos = f"`Current position: {src.position}/{src.raw_duration} seconds`"
+            await ctx.fail(f"You cannot fast forward past the end of the song. {current_pos}")
+            return
+
+        vs.alter_audio(position=position)
         await ctx.success(f"Fast forwarded to second `{position}`")
 
     @decorators.command(
-        aliases=["fb", "fbw", "rw", "fastback", "fastbackwards"],
+        aliases=["rw"],
         name="rewind",
         brief="Rewind a number of seconds",
-        implemented="2021-06-22 01:55:36.152071",
-        updated="2021-06-22 01:55:36.152071",
     )
     @checks.cooldown()
     async def _rewind(self, ctx, seconds: int = 0):
@@ -987,31 +1022,32 @@ class Music(commands.Cog):
         Output:
             Rewind a certain number of seconds in a song.
         """
-        if not ctx.voice_state.is_playing:
-            return await ctx.fail("Nothing is currently being played.")
-        song = ctx.voice_state.current
+        vs = ctx.voice_state
+        src = vs.current.source
+
+        if not vs.is_playing:
+            await ctx.fail("Nothing is currently being played.")
+            return
+
         if seconds < 0:
-            seconds = abs(seconds)
-        position = song.source.position - seconds
+            await ctx.invoke(self._fastforward, abs(seconds))
+            return
+
+        position = src.position - seconds
+
         if position < 0:
-            return await ctx.fail(
-                f"You cannot rewind past the beginning of the song. `Current position: {song.source.position}/{song.source.raw_duration} seconds`"
-            )
-        ffmpeg_options = {
-            "before_options": f"-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -ss {position}",
-            "options": "-vn",  # This seeks to the specified timestamp
-        }
-        ctx.voice_state.voice.pause()  # Pause the audio before seeking
-        now = discord.FFmpegPCMAudio(song.source.stream_url, **ffmpeg_options)
-        ctx.voice_state.voice.play(now, after=ctx.voice_state.play_next_song)
-        ctx.voice_state.current.source.position = position
+            current_pos = f"`Current position: {src.position}/{src.raw_duration} seconds`"
+            await ctx.fail(f"You cannot rewind past the beginning of the song. {current_pos}")
+            return
+
+        vs.alter_audio(position=position)
 
         await ctx.success(f"Rewinded to second `{position}`")
 
     @decorators.command(
         aliases=["tempo"],
         name="speed",
-        brief="Change the speed of a song.",
+        brief="Alter the speed of the track.",
     )
     @checks.cooldown()
     async def _speed(self, ctx, multiplier: float = None):
@@ -1023,40 +1059,30 @@ class Music(commands.Cog):
         Notes:
             The speed multiplier must be between 0.5 and 2.0
         """
-        if not ctx.voice_state.is_playing:
-            return await ctx.fail("Nothing is currently being played.")
-
-        song = ctx.voice_state.current
-
-        if multiplier is None:
-            await ctx.send(
-                f"{self.bot.emote_dict['music']} The speed is currently {song.source.speed}"
-            )
-
-        if multiplier < 0.5 or multiplier > 2:
-            await ctx.fail(f"Speed multiplier must be between `0.5` and `2.0`")
+        vs = ctx.voice_state
+        src = vs.current.source
+        
+        if not vs.is_playing:
+            await ctx.fail("Nothing is currently being played.")
             return
 
-        position = song.source.position
-        ffmpeg_options = {
-            "before_options": f"-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -ss {position}",
-            "options": f'-vn -filter:a "atempo={multiplier}"',  # This speeds up the audio
-            # possible to speed up even further using multiple filters: -filter:a "atempo=2,atempo=2"
-            # add this flag for higher than default quality: -ab 320k
-        }
-        song.source.speed = multiplier
-        ctx.voice_state.voice.pause()  # Pause the audio before seeking
-        now = discord.FFmpegPCMAudio(song.source.stream_url, **ffmpeg_options)
-        ctx.voice_state.voice.play(now, after=ctx.voice_state.play_next_song)
+        if multiplier is None:  # Output the current speed
+            emoji = self.bot.emote_dict['music']
+            await ctx.send(f"{emoji} The speed multiplier is currently `{src.speed}x`")
+            return
+
+        if multiplier < 0.5 or multiplier > 5:
+            await ctx.fail(f"Speed multiplier must be between `0.5` and `5.0`")
+            return
+
+        vs.alter_audio(speed=multiplier)
 
         await ctx.success(f"Audio is now playing at `{multiplier}x`")
 
     @decorators.command(
         aliases=["last", "back", "previous"],
         name="replay",
-        brief="Play the previous song.",
-        implemented="2021-06-22 19:55:33.279989",
-        updated="2021-06-22 19:55:33.279989",
+        brief="Play the previous track.",
     )
     @checks.cooldown()
     async def _replay(self, ctx):
@@ -1066,26 +1092,24 @@ class Music(commands.Cog):
         Output:
             Replay the last song to be played.
         """
-        if not ctx.voice_state.previous:
-            return await ctx.fail("No previous song to play.")
-        song = ctx.voice_state.previous
-        ytdlsrc = await YTDLSource.create_source(
-            ctx, str(song.source.url), loop=self.bot.loop
-        )
+        vs = ctx.voice_state
+        src = vs.previous.source
+
+        if not vs.previous:
+            await ctx.fail("No previous song to play.")
+            return
+
+        ytdlsrc = await YTDLSource.create_source(ctx, src.url, loop=self.bot.loop)
         song = Song(ytdlsrc)
-        ctx.voice_state.songs.put_nowait(song)
-        ctx.voice_state.voice.pause()
-        ctx.voice_state.voice.resume()
-        await ctx.send_or_reply(
-            f"{self.bot.emote_dict['music']} Requeued the previous song: {song.source}"
-        )
+        vs.songs.put_nowait(song)
+
+        emoji = self.bot.emote_dict['music']
+        await ctx.send_or_reply(f"{emoji} Requeued the previous song: {song.source}")
 
     @decorators.command(
         aliases=["relocate", "switch"],
         name="move",
         brief="Move a song in the queue.",
-        implemented="2021-07-01 04:12:22.192236",
-        updated="2021-07-01 04:12:22.192236",
     )
     @checks.cooldown()
     async def _move(self, ctx, index: int, position: int):
@@ -1129,19 +1153,21 @@ class Music(commands.Cog):
         Output:
             Shows the current position of the song
         """
-        if not ctx.voice_state.is_playing:
-            return await ctx.fail("Nothing is currently being played.")
-        dur = ctx.voice_state.current.source.duration
-        pos = ctx.voice_state.current.source.position
-        raw = ctx.voice_state.current.source.raw_duration
+        vs = ctx.voice_state
+
+        if not vs.is_playing:
+            await ctx.fail("Nothing is currently being played.")
+            return
+
+        dur = vs.current.source.duration
+        pos = vs.current.source.position
+        raw = vs.current.source.raw_duration
         await ctx.success(f"Current position: {dur} `({pos}/{raw}) seconds`")
 
     @decorators.command(
         name="play",
         brief="Play a song from a search or URL.",
         aliases=["p"],
-        implemented="2021-06-15 06:50:53.661786",
-        updated="2021-06-15 06:50:53.661786",
     )
     @checks.bot_has_perms(embed_links=True)
     @checks.bot_has_guild_perms(connect=True, speak=True)
@@ -1278,8 +1304,6 @@ class Music(commands.Cog):
         name="playnext",
         brief="Add a song to the front of the queue.",
         aliases=["pn"],
-        implemented="2021-06-21 23:09:55.015228",
-        updated="2021-06-21 23:09:55.015228",
     )
     @checks.bot_has_perms(embed_links=True)
     @checks.bot_has_guild_perms(connect=True, speak=True)
@@ -1406,17 +1430,4 @@ class Music(commands.Cog):
                 raise commands.BadArgument("You must be connected to a voice channel")
 
             channel = ctx.author.voice.channel
-            try:
-                ctx.voice_state.voice = await channel.connect(timeout=None)
-            except discord.ClientException:
-                if hasattr(ctx.guild.me.voice, "channel"):
-                    if ctx.guild.me.voice.channel == channel:
-                        raise commands.BadArgument(
-                            f"Already in channel {channel.mention}"
-                        )
-                    else:
-                        await ctx.guild.voice_client.disconnect(force=True)
-                        ctx.voice_state.voice = await channel.connect(timeout=None)
-                else:
-                    await ctx.guild.voice_client.disconnect(force=True)
-                    ctx.voice_state.voice = await channel.connect(timeout=None)
+            await ctx.voice_state.connect(ctx, channel)
