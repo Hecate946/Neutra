@@ -4,7 +4,6 @@ import typing
 import random
 import asyncio
 import discord
-import aiofiles
 import functools
 import itertools
 from discord.errors import ClientException
