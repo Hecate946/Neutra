@@ -170,11 +170,12 @@ class Neutra(commands.AutoShardedBot):
         self.home_cogs = ["MUSIC"]
 
         self.home_guilds = [
-            805638877762420786,
-            776345386482270209,
-            740734113086177433,
+            805638877762420786,  # Support server
+            776345386482270209,  # Ajabs server
+            740734113086177433,  # HamFam server
             743299744301973514,  # Renatuu's server
-            863965026439004170,  # Refrux's server
+            110373943822540800,  # Dbots.gg server
+            336642139381301249,  # Discord.py server
         ]  # My servers that have "premium" features.
 
         # Webhooks for monitering and data saving.
@@ -536,13 +537,13 @@ class Neutra(commands.AutoShardedBot):
         )  # Start saving icons.
 
         # load all initial extensions
-        try:
-            for cog in self.exts:
-                if cog.upper() not in self.do_not_load:
+        for cog in self.exts:
+            if cog.upper() not in self.do_not_load:
+                try:
                     self.load_extension(f"cogs.{cog}")
-        except Exception as e:
-            print(utils.traceback_maker(e))
-            self.dispatch("error", "extension_error", tb=utils.traceback_maker(e))
+                except Exception as e:
+                    self.dispatch("error", "extension_error", tb=utils.traceback_maker(e))
+                    continue
 
         print(utils.prefix_log(f"{self.user} ({self.user.id})"))
         try:
