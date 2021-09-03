@@ -100,7 +100,7 @@ def get_time_unit(stat):
     return stat, word
 
 
-def get_progress_bar(ratio, *, fname="progress", length=800, width=80):
+def get_progress_bar(ratio, length=800, width=80):
     bar_length = ratio * length
     a = 0
     b = -1
@@ -131,8 +131,7 @@ def get_progress_bar(ratio, *, fname="progress", length=800, width=80):
     buffer = io.BytesIO()
     shell.save(buffer, "png")  # 'save' function for PIL
     buffer.seek(0)
-    dfile = discord.File(fp=buffer, filename=f"{fname}.png")
-    return (dfile, f"{fname}.png")
+    return buffer
 
 
 def resize_to_limit(data, limit):

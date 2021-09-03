@@ -587,30 +587,3 @@ def get_status(user):
         status = "\n".join(activity_string(a) for a in user.activities)
         if status != "":
             return status
-
-
-def parse_duration(duration: int):
-    """
-    Helper function to get visually pleasing
-    timestamps from position of song in seconds.
-    """
-    if duration > 0:
-        minutes, seconds = divmod(duration, 60)
-        hours, minutes = divmod(minutes, 60)
-        days, hours = divmod(hours, 24)
-
-        duration = []
-        if days > 0:
-            duration.append("{}".format(str(days).zfill(2)))
-        if hours > 0:
-            duration.append("{}".format(str(hours).zfill(2)))
-        if minutes > 0:
-            duration.append("{}".format(str(minutes).zfill(2)))
-        duration.append("{}".format(str(seconds).zfill(2)))
-
-        value = ":".join(duration)
-
-    elif duration == 0:
-        value = "LIVE"
-
-    return value

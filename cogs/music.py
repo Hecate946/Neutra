@@ -1,16 +1,17 @@
-import io
-import random
 import re
+import math
 import typing
+import random
 import asyncio
 import discord
+import aiofiles
 import functools
 import itertools
+from discord.errors import ClientException
 import youtube_dl
 
 from discord.ext import commands, menus
 
-from settings import constants
 from utilities import utils
 from utilities import checks
 from utilities import images
@@ -23,53 +24,270 @@ from utilities import pagination
 # Silence useless bug reports messages
 youtube_dl.utils.bug_reports_message = lambda: ""
 
+#  Option base to avoid pull errors
 FFMPEG_OPTION_BASE = "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"
 
+# YTDL options for creating sources
+YTDL_OPTIONS = {
+    "format": "bestaudio/best",
+    "extractaudio": True,
+    "audioformat": "mp3",
+    "outtmpl": "%(extractor)s-%(id)s-%(title)s.%(ext)s",
+    "restrictfilenames": True,
+    "noplaylist": True,
+    "flatplaylist": False,
+    "nocheckcertificate": True,
+    "ignoreerrors": True,
+    "logtostderr": False,
+    "quiet": True,
+    "no_warnings": True,
+    "default_search": "ytsearch",
+    "source_address": "0.0.0.0",
+    "subtitleslangs": ["en"],
+    "writesubtitles": True,
+    "writeautomaticsub": True,
+}
 
-class VoiceError(Exception):
-    pass
+# YTDL info extractor class
+YOUTUBE_DL = youtube_dl.YoutubeDL(YTDL_OPTIONS)
 
 
-class YTDLError(Exception):
-    pass
+class AudioUtils:
+    """
+    Utility class that houses information
+    and spotify-related helper functions.
+    """
+
+    def spotify(bot):
+        """
+        Create utiliites.spotify.Spotify() instance
+        from credentials found in ./config.json
+        """
+        spotify_client_id = utils.config().get("spotify_client_id")
+        spotify_client_secret = utils.config().get("spotify_client_secret")
+
+        if spotify_client_id and spotify_client_secret:
+            return spotify.Spotify(
+                client_id=spotify_client_id,
+                client_secret=spotify_client_secret,
+                aiosession=bot.session,
+                loop=bot.loop,
+            )
+
+    def parse_duration(duration: int):
+        """
+        Helper function to get visually pleasing
+        timestamps from position of song in seconds.
+        """
+        if duration > 0:
+            minutes, seconds = divmod(duration, 60)
+            hours, minutes = divmod(minutes, 60)
+            days, hours = divmod(hours, 24)
+
+            duration = []
+            if days > 0:
+                duration.append("{}".format(str(days).zfill(2)))
+            if hours > 0:
+                duration.append("{}".format(str(hours).zfill(2)))
+            if minutes > 0:
+                duration.append("{}".format(str(minutes).zfill(2)))
+            duration.append("{}".format(str(seconds).zfill(2)))
+
+            value = ":".join(duration)
+
+        elif duration == 0:
+            value = "LIVE"
+
+        return value
+
+    async def create_embed(ctx, source):
+        """
+        Create an embed showing details of the current song
+        Will change format depending on the channel perms.
+        """
+        MUSIC = ctx.bot.constants.emotes["music"]
+        LIKE = ctx.bot.constants.emotes["like"]
+        DISLIKE = ctx.bot.constants.emotes["dislike"]
+
+        block = None
+        embed = None
+        file = None
+
+        ytdl = source.ytdl
+
+        if ctx.channel.permissions_for(ctx.me).embed_links:
+            embed = discord.Embed(color=ctx.bot.constants.embed)
+            embed.title = "Now Playing"
+            embed.description = f"```fix\n{ytdl.title}\n```"
+
+            embed.add_field(name="Duration", value=ytdl.duration)
+            embed.add_field(name="Requester", value=ytdl.requester.mention)
+            embed.add_field(
+                name="Uploader", value=f"[{ytdl.uploader}]({ytdl.uploader_url})"
+            )
+            embed.add_field(name="Link", value=f"[Click]({ytdl.url})")
+            embed.add_field(name="Likes", value=f"{LIKE} {ytdl.likes:,}")
+            embed.add_field(name="Dislikes", value=f"{DISLIKE} {ytdl.dislikes:,}")
+            embed.set_thumbnail(url=ytdl.thumbnail)
+
+            if source.position > 1:  # Set a footer showing track position.
+                percent = source.position / ytdl.raw_duration
+                position = AudioUtils.parse_duration(int(source.position))
+
+                embed.set_footer(
+                    text=f"Current Position: {position} ({percent:.2%} completed)"
+                )
+
+                if ctx.channel.permissions_for(ctx.me).attach_files:
+                    # Try to make a progress bar if bot has perms.
+                    progress = await ctx.bot.loop.run_in_executor(
+                        None, images.get_progress_bar, percent
+                    )
+                    embed.set_image(url=f"attachment://progress.png")
+                    file = discord.File(progress, filename="progress.png")
+
+        else:  # No embed perms, send as codeblock
+            block = f"{MUSIC} **Now Playing**: *{ytdl.title}*```yaml\n"
+            block += f"Duration : {ytdl.duration}\n"
+            block += f"Requester: {ytdl.requester.display_name}\n"
+            block += f"Uploader : {ytdl.uploader}\n"
+            block += f"Link     : {ytdl.url}\n"
+            block += f"Likes    : {ytdl.likes:,}\n"
+            block += f"Dislikes : {ytdl.dislikes:,}\n```"
+
+        return await ctx.send(content=block, embed=embed, file=file)
+
+    async def read_url(url, session):
+        """
+        Read discord urls and return bytes
+        if media type is playable and valid.
+        """
+        async with session.get(url) as r:
+            if r.status != 200:
+                raise commands.BadArgument("Unable to download discord media URL.")
+            try:
+                assert r.headers["content-type"] in ["video/mp4", "audio/mpeg"]
+            except AssertionError:
+                raise exceptions.InvalidMediaType
+
+    def put_spotify_tracks(ctx, tracks):
+        """
+        Get a list of QueueEntry from spotify tracks. 
+        """
+        return [
+            QueueEntry(
+                ctx,
+                track["name"],
+                track["name"] + " " + track["artists"][0]["name"],
+                uploader=track["artists"][0]["name"],
+                link=track["external_urls"]["spotify"],
+            )
+            for track in tracks
+        ]
+
+    def put_spotify_playlist(ctx, playlist):
+        """
+        Get entries of the tracks
+        from a spotify playlist.
+        """
+        return [
+            QueueEntry(
+                ctx,
+                item["track"]["name"],
+                item["track"]["name"] + " " + item["track"]["artists"][0]["name"],
+                link=item["track"]["external_urls"]["spotify"],
+            )
+            for item in playlist
+        ]
+
+    def reformat_uri(search):
+        linksRegex = "((http(s)*:[/][/]|www.)([a-z]|[A-Z]|[0-9]|[/.]|[~])*)"
+        pattern = re.compile(linksRegex)
+        matchUrl = pattern.match(search)
+        song_url = search if matchUrl else search.replace("/", "%2F")
+
+        playlist_regex = r"watch\?v=.+&(list=[^&]+)"
+        matches = re.search(playlist_regex, song_url)
+        groups = matches.groups() if matches is not None else []
+        if len(groups) > 1:
+            song_url = "https://www.youtube.com/playlist?" + groups[0]
+
+        if "open.spotify.com" in song_url:
+            sub_regex = r"(http[s]?:\/\/)?(open.spotify.com)\/"
+            song_url = "spotify:" + re.sub(sub_regex, "", song_url)
+            song_url = song_url.replace("/", ":")
+            # remove session id (and other query stuff)
+            song_url = re.sub("\?.*", "", song_url)
+
+        return song_url
+
+class AudioSource(discord.PCMVolumeTransformer):
+    """
+    Takes a ytdl source and player settings
+    and returns a FFmpegPCMAudio source.
+    """
+
+    def __init__(self, ytdl, speed, pitch, volume, position=0):
+        self.position = position  # Position of track
+        self.ytdl = ytdl
+        # Use two atempo filters in case speed/pitch < 0.5
+        speed_filter = (
+            f"atempo={math.sqrt(speed/pitch)},atempo={math.sqrt(speed/pitch)}"
+        )
+        pitch_filter = (
+            f",asetrate={48000*pitch}" if pitch != 1 else ""
+        )  # 48000hz normally.
+
+        ffmpeg_options = {
+            "before_options": FFMPEG_OPTION_BASE + f" -ss {position}",
+            "options": f'-vn -filter:a "{speed_filter}{pitch_filter}"',
+        }
+        self.original = discord.FFmpegPCMAudio(ytdl.stream_url, **ffmpeg_options)
+        super().__init__(self.original, volume=volume)
 
 
-class YTDLSource(discord.PCMVolumeTransformer):
-    YTDL_OPTIONS = {
-        "format": "bestaudio/best",
-        "extractaudio": True,
-        "audioformat": "mp3",
-        "outtmpl": "%(extractor)s-%(id)s-%(title)s.%(ext)s",
-        "restrictfilenames": True,
-        "noplaylist": True,
-        "nocheckcertificate": True,
-        "ignoreerrors": True,
-        "logtostderr": False,
-        "quiet": True,
-        "no_warnings": True,
-        "default_search": "ytsearch",
-        "source_address": "0.0.0.0",
-        "subtitleslangs": ["en"],
-        "writesubtitles": True,
-        "writeautomaticsub": True,
-    }
-    FFMPEG_OPTIONS = {
-        "before_options": FFMPEG_OPTION_BASE,
-        "options": "-vn",
-    }
+class QueueEntry:
+    """
+    QueueEntry object for enqueueing tracks.
+    All TrackQueue objects are type QueueEntry
+    """
 
-    ytdl = youtube_dl.YoutubeDL(YTDL_OPTIONS)
-
-    def __init__(
-        self, ctx, source: discord.FFmpegPCMAudio, *, data: dict, volume: float = 0.5
-    ):
-        super().__init__(source, volume)
+    def __init__(self, ctx, title, url, *, data=None, uploader=None, link=None):
         self.ctx = ctx
+        self.title = title
+        self.url = url
 
+        self.data = data
+        self.uploader = uploader
+        self.link = link
+
+    def __str__(self):
+        if self.uploader:
+            return f"**{self.title}** by **{self.uploader}**"
+        return f"**{self.title}**"
+
+    @property
+    def hyperlink(self):
+        return f"**[{self.title}]({self.link or self.url})**"
+
+    @property
+    def has_data(self):
+        if self.data:
+            return True
+        return False
+
+
+class YTDLSource:
+    """
+    @classmethod functions create a YTDLSource object with video data
+    @staticmethod functions return queueable QueueEntry objects
+    """
+
+    def __init__(self, ctx, data):
+        self.ctx = ctx
         self.requester = ctx.author
         self.channel = ctx.channel
         self.data = data
-
         self.id = data.get("id")
         self.uploader = data.get("uploader")
         self.uploader_url = data.get("uploader_url")
@@ -79,7 +297,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         self.thumbnail = data.get("thumbnail")
         self.description = data.get("description")
         self.raw_duration = data.get("duration")
-        self.duration = utils.parse_duration(int(data.get("duration")))
+        self.duration = AudioUtils.parse_duration(int(data.get("duration")))
         self.tags = data.get("tags")
         self.url = data.get("webpage_url")
         self.views = data.get("view_count")
@@ -87,87 +305,146 @@ class YTDLSource(discord.PCMVolumeTransformer):
         self.dislikes = data.get("dislike_count")
         self.stream_url = data.get("url")
 
-        ctx.bot.loop.create_task(self.get_subtitles())
-
-        self.subtitles = None
-
     def __str__(self):
         return "**{0.title}** by **{0.uploader}**".format(self)
 
-    async def get_subtitles(self):
-        data = self.data.get("subtitles")
-        if not data:
-            data = self.data.get("requested_subtitles")
-
-        if data:
-            url = "https://www.youtube.com/api/timedtext?lang=en&v=" + self.id
-            text = await self.ctx.bot.get(url, res_method="read")
-            clean_text = re.sub(r"(?=<).*?(?<=>)", "", string=text.decode("utf-8"))
-            self.subtitles = clean_text.strip("\n").replace("♪♪", "♪\n♪")
-
-    @classmethod
-    async def create_source(
-        cls, ctx, search: str, *, loop: asyncio.BaseEventLoop = None
-    ):
+    @staticmethod
+    async def get_song(ctx, search, *, loop=None):
+        """
+        Get the song url and title from a search query.
+        If the search query is a youtube video url,
+        Basic video data will be quickly returned.
+        Otherwise, the webpage will be processed.
+        A QueueEntry will be returned with the data
+        parameter including the full webpage data.
+        """
         loop = loop or asyncio.get_event_loop()
 
         partial = functools.partial(
-            cls.ytdl.extract_info, search, download=False, process=False
+            YOUTUBE_DL.extract_info, search, download=False, process=False
         )
-        data = await loop.run_in_executor(None, partial)
+        info = await loop.run_in_executor(None, partial)
 
-        if data is None:
-            raise YTDLError("Couldn't find anything that matches `{}`".format(search))
+        if info is None:
+            raise exceptions.YTDLError(f"No matches found for `{search}`")
 
-        if "entries" not in data:
-            process_info = data
-        else:
-            process_info = None
-            for entry in data["entries"]:
-                if entry:
-                    process_info = entry
-                    break
+        data = None
+        url = info.get("webpage_url")
+        title = info.get("title")
+        uploader = info.get("uploader")
 
-            if process_info is None:
-                raise YTDLError(
-                    "Couldn't find anything that matches `{}`".format(search)
-                )
+        if not title:  # Was probably not a url
+            partial = functools.partial(
+                YOUTUBE_DL.extract_info, info["webpage_url"], download=False
+            )
+            info = await loop.run_in_executor(None, partial)
 
-        webpage_url = process_info["webpage_url"]
-        partial = functools.partial(cls.ytdl.extract_info, webpage_url, download=False)
+            if info is None:
+                raise exceptions.YTDLError(f"Unable to fetch `{info['webpage_url']}`")
+
+            if "entries" not in info:
+                data = info
+            else:
+                data = None
+                while data is None:
+                    try:
+                        data = info["entries"].pop(0)
+                    except IndexError:
+                        raise exceptions.YTDLError(
+                            f"Unable to retrieve matches for `{info['webpage_url']}`"
+                        )
+
+            url = data.get("webpage_url")
+            title = data.get("title")
+            uploader = info.get("uploader")
+
+            if title is None or url is None:
+                raise exceptions.YTDLError(f"Unable to fetch `{search}`")
+
+        return QueueEntry(ctx, title, url, data=data, uploader=uploader)
+
+    @staticmethod
+    async def get_playlist_tracks(ctx, search, *, loop=None):
+        """
+        Takes a youtube playlist url and returns a list of
+        QueueEntry(track) for each track in the playlist.
+        """
+        loop = loop or asyncio.get_event_loop()
+
+        partial = functools.partial(
+            YOUTUBE_DL.extract_info, search, download=False, process=False
+        )
+        info = await loop.run_in_executor(None, partial)
+
+        if info is None:
+            raise exceptions.YTDLError(f"No matches found for `{search}`")
+
+        if "entries" not in info:
+            raise exceptions.YTDLError("Invalid youtube playlist.")
+
+        title = info.get("title")
+        uploader = info.get("uploader")
+
+        playlist = f"**{title}** by **{uploader}**" if uploader else f"**{title}**"
+
+        def pred(entry):
+            if entry.get("title") and entry.get("url"):
+                return True
+
+        def format_url(url_code):
+            return "https://www.youtube.com/watch?v=" + url_code
+
+        return ([
+            QueueEntry(
+                ctx,
+                entry["title"],
+                format_url(entry["url"]),
+                uploader=entry.get("uploader"),
+            )
+            for entry in info["entries"]
+            if pred(entry) is True
+        ], playlist)
+
+    @classmethod
+    async def get_source(cls, ctx, url, *, loop=None):
+        """
+        Takes a search query and returns the first result.
+        """
+        loop = loop or asyncio.get_event_loop()
+
+        partial = functools.partial(YOUTUBE_DL.extract_info, url, download=False)
         processed_info = await loop.run_in_executor(None, partial)
 
         if processed_info is None:
-            raise YTDLError("Couldn't fetch `{}`".format(webpage_url))
+            raise exceptions.YTDLError(f"Unable to fetch `{url}`")
 
         if "entries" not in processed_info:
-            info = processed_info
+            data = processed_info
         else:
-            info = None
-            while info is None:
+            data = None
+            while data is None:
                 try:
-                    info = processed_info["entries"].pop(0)
+                    data = processed_info["entries"].pop(0)
                 except IndexError:
-                    raise YTDLError(
-                        "Couldn't retrieve any matches for `{}`".format(webpage_url)
+                    raise exceptions.YTDLError(
+                        f"Unable to retrieve matches for `{url}`"
                     )
 
-        return cls(
-            ctx, discord.FFmpegPCMAudio(info["url"], **cls.FFMPEG_OPTIONS), data=info
-        )
+        return cls(ctx, data)
 
-    @classmethod
-    async def search_source(
-        self, ctx, search: str, *, loop: asyncio.BaseEventLoop = None, bot
-    ):
-        self.bot = bot
-        channel = ctx.channel
+    @staticmethod
+    async def search_source(ctx, search: str, *, loop=None):
+        """
+        Takes a search query and returns a selection session
+        with up to ten youtube videos to choose from.
+        If a selection is made, QueueEntry is returned.
+        """
         loop = loop or asyncio.get_event_loop()
 
-        self.search_query = "%s%s:%s" % ("ytsearch", 10, "".join(search))
+        search_query = "%s%s:%s" % ("ytsearch", 10, "".join(search))
 
         partial = functools.partial(
-            self.ytdl.extract_info, self.search_query, download=False, process=False
+            YOUTUBE_DL.extract_info, search_query, download=False, process=False
         )
         info = await loop.run_in_executor(None, partial)
 
@@ -186,7 +463,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         embed = discord.Embed(
             title=f"Search results for:\n**{search}**",
             description="\n".join(lst),
-            color=self.bot.constants.embed,
+            color=ctx.bot.constants.embed,
             timestamp=discord.utils.utcnow(),
         )
         embed.set_author(
@@ -195,19 +472,18 @@ class YTDLSource(discord.PCMVolumeTransformer):
             icon_url=f"{ctx.author.avatar.url}",
         )
 
-        # em = discord.Embed.from_dict(self.search)
-        await ctx.send_or_reply(embed=embed, delete_after=45.0)
+        await ctx.send(embed=embed, delete_after=30.0)
 
         def check(msg):
             return (
                 msg.content.isdigit() == True
-                and msg.channel == channel
+                and msg.channel == ctx.channel
                 or msg.content == "cancel"
                 or msg.content == "Cancel"
             )
 
         try:
-            m = await self.bot.wait_for("message", check=check, timeout=45.0)
+            m = await ctx.bot.wait_for("message", check=check, timeout=30.0)
 
         except asyncio.TimeoutError:
             rtrn = "timeout"
@@ -218,17 +494,19 @@ class YTDLSource(discord.PCMVolumeTransformer):
                 if 0 < sel <= 10:
                     for key, value in info.items():
                         if key == "entries":
-                            """data = value[sel - 1]"""
                             VId = e_list[sel - 1]["id"]
                             VUrl = "https://www.youtube.com/watch?v=%s" % (VId)
                             partial = functools.partial(
-                                self.ytdl.extract_info, VUrl, download=False
+                                YOUTUBE_DL.extract_info, VUrl, download=False
                             )
                             data = await loop.run_in_executor(None, partial)
-                    rtrn = self(
+
+                    rtrn = QueueEntry(
                         ctx,
-                        discord.FFmpegPCMAudio(data["url"], **self.FFMPEG_OPTIONS),
+                        data["title"],
+                        data["webpage_url"],
                         data=data,
+                        uploader=data["uploader"],
                     )
                 else:
                     rtrn = "sel_invalid"
@@ -236,81 +514,16 @@ class YTDLSource(discord.PCMVolumeTransformer):
                 rtrn = "cancel"
             else:
                 rtrn = "sel_invalid"
-
         return rtrn
 
 
-class Song:
-    __slots__ = ("source", "requester")
+class TrackQueue(asyncio.Queue):
+    """
+    Queue for all tracks to be played.
+    All items within the queue will be of type QueueEntry.
+    Supports both asyncio.Queue and collections.deque operations.
+    """
 
-    def __init__(self, source: YTDLSource):
-        self.source = source
-        self.requester = source.requester
-        if not hasattr(self.source, "position"):
-            self.source.position = 0
-
-    def create_embed(self):
-        embed = discord.Embed(
-            title="Now playing",
-            description=f"```fix\n{self.source.title}\n```",
-            color=constants.embed,
-        )
-        embed.add_field(name="Duration", value=self.source.duration)
-        embed.add_field(name="Requested by", value=self.requester.mention)
-        embed.add_field(
-            name="Uploader",
-            value=f"[{self.source.uploader}]({self.source.uploader_url})",
-        )
-        embed.add_field(name="URL", value=f"[Click]({self.source.url})")
-        embed.add_field(
-            name="Likes", value=f'{constants.emotes["like"]} {self.source.likes:,}'
-        )
-        embed.add_field(
-            name="Dislikes",
-            value=f'{constants.emotes["dislike"]} {self.source.dislikes:,}',
-        )
-        embed.set_thumbnail(url=self.source.thumbnail)
-
-        return embed
-
-    def truncate(self, string, max_chars=2000):
-        if len(string) > max_chars:
-            return string[: max_chars - 3] + "..."
-        return string
-
-    def current_embed(self):
-        embed = discord.Embed(
-            title="Now playing",
-            description=f"```fix\n{self.source.title}\n```\n",
-            color=constants.embed,
-        )
-        # embed.description += self.truncate("\n" + self.source.description)
-        embed.add_field(name="Duration", value=self.source.duration)
-        embed.add_field(name="Requested by", value=self.requester.mention)
-        embed.add_field(
-            name="Uploader",
-            value=f"[{self.source.uploader}]({self.source.uploader_url})",
-        )
-        embed.add_field(name="URL", value=f"[Click]({self.source.url})")
-        embed.add_field(
-            name="Likes", value=f'{constants.emotes["like"]} {self.source.likes:,}'
-        )
-        embed.add_field(
-            name="Dislikes",
-            value=f'{constants.emotes["dislike"]} {self.source.dislikes:,}',
-        )
-        embed.set_thumbnail(url=self.source.thumbnail)
-
-        percent = self.source.position / self.source.raw_duration
-        embed.set_footer(
-            text=f"Current Position: {utils.parse_duration(int(self.source.position))} ({percent:.2%} completed)"
-        )
-        dfile, fname = images.get_progress_bar(percent)
-        embed.set_image(url=f"attachment://{fname}")
-
-        return (embed, dfile)
-
-class SongQueue(asyncio.Queue):
     def __getitem__(self, item):
         if isinstance(item, slice):
             return list(itertools.islice(self._queue, item.start, item.stop, item.step))
@@ -338,29 +551,61 @@ class SongQueue(asyncio.Queue):
         return song
 
     def insert(self, index: int, item):
-        self._queue.insert(index, item)
+        if len(self) == 0:
+            self.put_nowait(item)
+        else:
+            self._queue.insert(index, item)
 
     def append_left(self, item):
-        self._queue.appendleft(item)
+        if len(self) == 0:
+            self.put_nowait(item)
+        else:
+            self._queue.appendleft(item)
+
+    def extend(self, items):
+        if len(self) == 0:
+            self.put_nowait(items.pop(0))
+            self._queue.extend(items)
+        else:
+            self._queue.extend(items)
+        
+    def extend_left(self, items):
+        if len(self) == 0:
+            last_item = items.pop()
+            self._queue.extend(items)
+            self.put_nowait(last_item)
+        else:
+            items.reverse()
+            self._queue.extendleft(items)
 
 
 class VoiceState:
+    """
+    Responsible for audio playing and manipulation.
+    Guilds receive a cached instance in ctx.voice_state.
+    """
+
     def __init__(self, bot, ctx):
         self.bot = bot
         self._ctx = ctx
 
-        self.current = None  # Current song
-        self.previous = None  # Previous song
-        self.voice = None
-        self.next = asyncio.Event()
-        self.songs = SongQueue()
-        self.exists = True
+        self.source = None  # Audio source.
+        self.entry = None  # The QueueEntry track.
+        self.current = None  # Current track.
+        self.previous = None  # Previous track.
+        self.voice = None  # Guild voice client.
 
-        self._loop = False
-        self._queue_loop = False
-        self._volume = 0.5
-        self._speed = 1
-        self.skip_votes = set()
+        self._volume = 0.5  # Volume default.
+        self._speed = 1  # Speed default.
+        self._pitch = 1  # Pitch default.
+
+        self.track_is_looped = False  # Single track is looped.
+        self.queue_is_looped = False  # Entire queue is looped.
+
+        self.skip_votes = set()  # Stored skip votes.
+
+        self.tracks = TrackQueue()
+        self.next = asyncio.Event()
 
         self.audio_player = bot.loop.create_task(self.audio_player_task())
 
@@ -368,32 +613,47 @@ class VoiceState:
         self.audio_player.cancel()
 
     @property
-    def loop(self):
-        return self._loop
-
-    @loop.setter
-    def loop(self, value: bool):
-        self._loop = value
+    def is_playing(self):
+        return self.voice and self.current
 
     @property
-    def queue_loop(self):
-        return self._queue_loop
+    def validate(self):
+        if self.is_playing:
+            return self
+        raise exceptions.InactivePlayer
 
-    @queue_loop.setter
-    def queue_loop(self, value: bool):
-        self._queue_loop = value
+    @property
+    def pitch(self):
+        return self._pitch
+
+    @property
+    def speed(self):
+        return self._speed
 
     @property
     def volume(self):
         return self._volume
 
+    @pitch.setter
+    def pitch(self, value: float):
+        if not 0.5 <= value <= 2.0:
+            raise commands.BadArgument("Pitch must be between `0.5` and `2.0`")
+        self._pitch = value
+        self.alter_audio()
+
+    @speed.setter
+    def speed(self, value: float):
+        if not 0.5 <= value <= 2.0:
+            raise commands.BadArgument("Speed must be between `0.5` and `2.0`")
+        self._speed = value
+        self.alter_audio()
+
     @volume.setter
     def volume(self, value: float):
+        if not 0.0 <= value <= 100.0:
+            raise commands.BadArgument("Volume must be between `0.0` and `100.0`")
         self._volume = value
-
-    @property
-    def is_playing(self):
-        return self.voice and self.current
+        self.source.volume = value
 
     async def connect(self, ctx, channel, *, timeout=60):
         try:
@@ -409,78 +669,84 @@ class VoiceState:
                 await ctx.guild.voice_client.disconnect(force=True)
                 self.voice = await channel.connect(timeout=timeout)
 
-    def alter_audio(self, *, position: int = None, speed: float = None):
-        position = position or self.current.source.position
-        speed = speed or self.current.source.speed
+    async def reset_voice_client(self):
+        if hasattr(self._ctx.guild.me.voice, "channel"):
+            channel = self._ctx.guild.me.voice.channel
+            await self._ctx.guild.voice_client.disconnect(force=True)
+            self.voice = await channel.connect(timeout=60)
 
-        ffmpeg_options = {
-            "before_options": f"{FFMPEG_OPTION_BASE} -ss {position}", # This alters the track position
-            "options": f'-vn -filter:a "atempo={speed}"',  # This alters the track speed
-            # possible to speed up even further using multiple filters: -filter:a "atempo=2,atempo=2"
-            # add this flag for higher than default quality: -ab 320k
-        }
+    async def play_from_file(self, file):
+        await file.save("./track.mp3")
+        await self.play_local_file()
 
-        self.voice.pause()  # Pause the audio before seeking
-        now = discord.FFmpegPCMAudio(self.current.source.stream_url, **ffmpeg_options)
-        self.voice.play(now, after=self.play_next_song)
-        self.current.source.position = position
-        self.current.source.speed = speed
+    async def play_local_file(self, fname="track.mp3"):
+        now = discord.FFmpegPCMAudio(fname)
+        self.voice.play(now, after=self.play_next_track)
+
+    def alter_audio(self, *, position=None, speed=None, pitch=None):
+        position = position or self.source.position
+        speed = speed or self.speed
+        pitch = pitch or self.pitch
+
+        self.voice.pause()  # Pause the audio before altering
+        self.source = AudioSource(self.current, speed, pitch, self.volume, position)
+        self.voice.play(self.source, after=self.play_next_track)
+
+    async def get_next_track(self):
+        self.entry = await self.tracks.get()
+        if self.entry.has_data:
+            current = YTDLSource(self.entry.ctx, self.entry.data)
+        else:
+            current = await YTDLSource.get_source(self.entry.ctx, self.entry.url)
+        return current
+
+    def requeue(self, source: YTDLSource):
+        self.entry.data = source.data
+        self.tracks.put_nowait(self.entry)
+
+    def replay(self, source: YTDLSource):
+        self.entry.data = source.data
+        self.tracks.append_left(self.entry)
 
     async def audio_player_task(self):
         while True:
             self.next.clear()
-            self.now = None
 
             if self.voice is None:
-                await Music(self.bot).get_voice_client(self._ctx)
+                await self.reset_voice_client()
 
-            if not self.loop and not self.queue_loop:
-                # we're not looping a single song
-                self.current = await self.songs.get()
-                self.current.source.volume = self._volume
-                self.current.source.speed = self._speed
+            if self.track_is_looped:  # Single song is looped.
+                self.current = self.previous
 
-                self.voice.play(self.current.source, after=self.play_next_song)
-                await self.current.source.channel.send(
-                    embed=self.current.create_embed()
-                )
-                await self.bot.loop.create_task(self.increase_position())
+            elif self.queue_is_looped:  # Entire queue is looped
+                self.requeue(self.previous)  # Put old track back in the queue.
+                self.current = (
+                    await self.get_next_track()
+                )  # Get the song from the queue
 
-            elif self.loop:  # Single song is looped.
-                self.now = discord.FFmpegPCMAudio(
-                    self.current.source.stream_url, **YTDLSource.FFMPEG_OPTIONS
-                )
-                self.voice.play(self.now, after=self.play_next_song)
+            else:  # Not looping track or queue.
+                self.current = await self.get_next_track()
 
-                await self.current.source.channel.send(
-                    embed=self.current.create_embed()
-                )
-                await self.bot.loop.create_task(self.increase_position())
+            self.source = AudioSource(self.current, self.speed, self.pitch, self.volume)
+            self.voice.play(self.source, after=self.play_next_track)
+            await AudioUtils.create_embed(self._ctx, self.source)
 
-            elif self.queue_loop:  # Entire queue is looped
-                self.current = await self.songs.get()  # Get the song from the queue
-                self.current.source.volume = self._volume  # Establish the volume
-                self.songs.put_nowait(
-                    self.current
-                )  #  Put the song back into the end of the queue.
-                self.now = discord.FFmpegPCMAudio(  # Play the song
-                    self.current.source.stream_url, **YTDLSource.FFMPEG_OPTIONS
-                )
-                self.voice.play(self.now, after=self.play_next_song)
-
-            await self.next.wait()
-            self.previous = self.current
+            self.bot.loop.create_task(self.increase_position())
+            await self.next.wait()  # Wait until the track finishes
+            self.previous = self.current  # Store previous track
+            self.current = None
+            self.source = None
 
     async def increase_position(self):
         """
         Helper function to increase the position
         of the song while it's being played.
         """
-        while self.voice.is_playing():
-            self.current.source.position += self.current.source.speed
+        while self.source:
+            self.source.position += self.speed
             await asyncio.sleep(1)
 
-    def play_next_song(self, error=None):
+    def play_next_track(self, error=None):
         if error:
             raise error
 
@@ -493,7 +759,7 @@ class VoiceState:
             self.voice.stop()
 
     async def stop(self):
-        self.songs.clear()
+        self.tracks.clear()
 
         if self.voice:
             await self.voice.disconnect()
@@ -512,32 +778,15 @@ class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.voice_states = {}
-
-        self.spotify_client_id = utils.config().get("spotify_client_id")
-        self.spotify_client_secret = utils.config().get("spotify_client_secret")
-        self.spotify = None
-
-        if self.spotify_client_id and self.spotify_client_secret:
-            self.spotify = spotify.Spotify(
-                self.spotify_client_id,
-                self.spotify_client_secret,
-                aiosession=self.bot.session,
-                loop=self.bot.loop,
-            )
+        self.spotify = AudioUtils.spotify(bot)
 
     def get_voice_state(self, ctx):
         state = self.voice_states.get(ctx.guild.id)
-        if not state or not state.exists:
+        if not state:
             state = VoiceState(self.bot, ctx)
             self.voice_states[ctx.guild.id] = state
 
         return state
-
-    async def get_voice_client(self, ctx):
-        if hasattr(ctx.guild.me.voice, "channel"):
-            channel = ctx.guild.me.voice.channel
-            await ctx.guild.voice_client.disconnect(force=True)
-            ctx.voice_state.voice = await channel.connect(timeout=60)
 
     def cog_unload(self):
         for state in self.voice_states.values():
@@ -551,6 +800,15 @@ class Music(commands.Cog):
 
     async def cog_before_invoke(self, ctx):
         ctx.voice_state = self.get_voice_state(ctx)
+
+    async def ensure_voice_state(self, ctx):
+        if not ctx.me.voice:
+            if not hasattr(ctx.author.voice, "channel"):
+                raise commands.BadArgument("You must be connected to a voice channel")
+
+            channel = ctx.author.voice.channel
+            await ctx.voice_state.connect(ctx, channel)
+        return ctx.voice_state
 
     @decorators.command(
         name="connect",
@@ -578,7 +836,7 @@ class Music(commands.Cog):
                 return await ctx.usage()
             else:
                 channel = ctx.author.voice.channel
-        
+
         await ctx.voice_state.connect(ctx, channel)
         await ctx.success(f"Connected to {channel.mention}")
 
@@ -608,7 +866,7 @@ class Music(commands.Cog):
                 return await ctx.usage()
             else:
                 channel = ctx.author.voice.channel
-        
+
         await ctx.voice_state.connect(ctx, channel, timeout=None)
         await ctx.success(f"Connected to {channel.mention} indefinitely.")
 
@@ -639,37 +897,30 @@ class Music(commands.Cog):
         aliases=["vol"],
         name="volume",
         brief="Set the volume of the player.",
-        implemented="2021-06-15 06:50:53.661786",
-        updated="2021-06-15 06:50:53.661786",
     )
-    @checks.has_perms(manage_guild=True)
     async def _volume(self, ctx, volume: int = None):
-        """Sets the volume of the player for the current song."""
-        if not ctx.voice_state.is_playing:
-            return await ctx.fail("Nothing is currently being played.")
+        """
+        Sets the volume of the player for the current song.
+        """
+        player = ctx.voice_state.validate
+        emoji = self.bot.emote_dict["volume"]
 
         if volume is None:  # Output what we have
-            v = ctx.voice_state.current.source.volume
-            return await ctx.send_or_reply(
-                f"{self.bot.emote_dict['volume']} Volume of the player is currently {v * 100}%"
+            await ctx.send_or_reply(
+                f"{emoji} Volume of the player is currently {player.volume:.0%}"
             )
+            return
 
-        if volume < 0 or volume > 100:
-            return await ctx.fail("Volume percentage must be between 0 and 100")
-
-        ctx.voice_state.current.source.volume = volume / 100
+        player.volume = volume / 100
         await ctx.send_or_reply(
-            f"{self.bot.emote_dict['volume']} Volume of the player set to {volume}%"
+            f"{emoji} Volume of the player set to {player.volume:.0%}"
         )
 
     @decorators.command(
         name="current",
         brief="Displays the currently playing song.",
         aliases=["now", "np", "nowplaying"],
-        implemented="2021-06-15 06:50:53.661786",
-        updated="2021-06-15 06:50:53.661786",
     )
-    @checks.bot_has_perms(embed_links=True, attach_files=True)
     @checks.cooldown()
     async def _current(self, ctx):
         """
@@ -677,10 +928,8 @@ class Music(commands.Cog):
         Aliases: {0}now {0}np
         Output: Displays the currently playing song.
         """
-        if not ctx.voice_state.is_playing:
-            return await ctx.fail("Nothing is currently being played.")
-        embed, file = ctx.voice_state.current.current_embed()
-        await ctx.send_or_reply(embed=embed, file=file)
+        player = ctx.voice_state.validate
+        await AudioUtils.create_embed(ctx, player.source)
 
     @decorators.command(
         name="pause",
@@ -692,14 +941,14 @@ class Music(commands.Cog):
         Usage: {0}pause
         Output: Pauses the currently playing song.
         """
-        if not ctx.voice_state.is_playing:
-            return await ctx.fail("Nothing is currently being played.")
+        player = ctx.voice_state.validate
 
-        if ctx.voice_state.voice.is_paused():
-            return await ctx.fail("The player is already paused.")
+        if player.voice.is_paused():
+            await ctx.fail("The player is already paused.")
+            return
 
-        ctx.voice_state.voice.pause()
-        await ctx.message.add_reaction(self.bot.emote_dict["pause"])
+        player.voice.pause()
+        await ctx.react(self.bot.emote_dict["pause"])
 
     @decorators.command(
         name="resume",
@@ -710,17 +959,16 @@ class Music(commands.Cog):
         """
         Usage: {0}resume
         Output:
-            Resumes a currently paused song.
+            Resumes playback paused by the {0}pause command.
         """
-        if not ctx.voice_state.is_playing:
-            return await ctx.fail("Nothing is currently being played.")
+        player = ctx.voice_state.validate
 
-        if ctx.voice_state.voice.is_paused():
-            ctx.voice_state.voice.resume()
-            await ctx.message.add_reaction(self.bot.emote_dict["play"])
+        if not player.voice.is_paused():
+            await ctx.fail("The player is not paused.")
+            return
 
-        else:
-            return await ctx.fail("The player is not paused.")
+        player.voice.resume()
+        await ctx.react(self.bot.emote_dict["play"])
 
     @decorators.command(
         name="stop",
@@ -733,12 +981,11 @@ class Music(commands.Cog):
         Output:
             Stops playing song and clears the queue.
         """
-
-        ctx.voice_state.songs.clear()
-
+        ctx.voice_state.tracks.clear()
         if ctx.voice_state.is_playing:
             ctx.voice_state.voice.stop()
-            await ctx.message.add_reaction(self.bot.emote_dict["stop"])
+
+        await ctx.react(self.bot.emote_dict["stop"])
 
     @decorators.command(
         name="skip",
@@ -757,34 +1004,35 @@ class Music(commands.Cog):
             Otherwise half the listeners neet to vote skip
             for the song to be skipped.
         """
-        if not ctx.voice_state.is_playing:
-            return await ctx.fail("Nothing is currently being played.")
+        player = ctx.voice_state.validate
+        emoji = self.bot.emote_dict["skip"]
 
-        required_voters = (len(ctx.voice_state.voice.channel.members) - 1) // 2
         voter = ctx.author
-        if voter == ctx.voice_state.current.requester:
-            await ctx.message.add_reaction(self.bot.emote_dict["skip"])
-            ctx.voice_state.skip()
+        if voter == player.current.requester:
+            player.skip()  # Song requester can skip.
+            await ctx.react(emoji)
 
-        elif checks.is_admin(ctx) or voter.guild_permissions.manage_guild:
-            await ctx.message.add_reaction(self.bot.emote_dict["skip"])
-            ctx.voice_state.skip()
+        elif voter.guild_permissions.manage_guild:
+            player.skip()  # Server mods can skip.
+            await ctx.react(emoji)
 
-        elif voter.id not in ctx.voice_state.skip_votes:
-            ctx.voice_state.skip_votes.add(voter.id)
-            total_votes = len(ctx.voice_state.skip_votes)
+        elif voter.id not in player.skip_votes:
+            player.skip_votes.add(voter.id)
+            total_votes = len(player.skip_votes)
 
-            if total_votes >= required_voters:
-                await ctx.message.add_reaction(self.bot.emote_dict["skip"])
-                ctx.voice_state.skip()
+            listeners = player.voice.channel.members
+            valid_voters = [user for user in listeners if not user.bot]
+            required_votes = valid_voters + 1 // 2  # Require majority
+
+            if total_votes >= required_votes:
+                player.skip()
+                await ctx.react(emoji)
             else:
                 await ctx.success(
-                    "Skip vote added, currently at `{}/{}`".format(
-                        total_votes, required_voters
-                    )
+                    f"Skip vote added, currently at `{total_votes}/{required_votes}`"
                 )
         else:
-            await ctx.fail("You have already voted to skip this song.")
+            await ctx.fail("You have already voted to skip this track.")
 
     @decorators.command(
         aliases=["q"],
@@ -799,18 +1047,15 @@ class Music(commands.Cog):
         Alias: {0}q
         Output:
             Starts a pagination session showing
-            all the songs in the current queue.
+            all the tracks in the current queue.
         Notes:
             Each page contains 10 queue elements.
         """
+        if len(ctx.voice_state.tracks) == 0:
+            await ctx.fail("The queue is currently empty.")
+            return
 
-        if len(ctx.voice_state.songs) == 0:
-            return await ctx.fail("The queue is currently empty.")
-
-        entries = [
-            f"[**{song.source.title}**]({song.source.url})"
-            for song in ctx.voice_state.songs
-        ]
+        entries = [track.hyperlink for track in ctx.voice_state.tracks]
         p = pagination.SimplePages(entries, per_page=10, index=True)
         p.embed.title = "Current Queue"
 
@@ -830,12 +1075,12 @@ class Music(commands.Cog):
         Usage: {0}clear
         Alias: {0}c
         Output:
-            Removes all queued songs
+            Removes all queued tracks
         """
-        if len(ctx.voice_state.songs) == 0:
+        if len(ctx.voice_state.tracks) == 0:
             return await ctx.fail("The queue is already empty")
-        ctx.voice_state.songs.clear()
-        await ctx.success("Cleared all songs from the queue.")
+        ctx.voice_state.tracks.clear()
+        await ctx.success("Cleared all tracks from the queue.")
 
     @decorators.command(
         name="shuffle",
@@ -849,17 +1094,17 @@ class Music(commands.Cog):
         """
         vs = ctx.voice_state
 
-        if len(vs.songs) == 0:
+        if len(vs.tracks) == 0:
             await ctx.fail("The queue is currently empty.")
             return
 
-        vs.songs.shuffle()
+        vs.tracks.shuffle()
         await ctx.send_or_reply(f"{self.bot.emote_dict['shuffle']} Shuffled the queue.")
 
     @decorators.command(
         aliases=["pop"],
         name="remove",
-        brief="Remove a tracj from the queue.",
+        brief="Remove a track from the queue.",
     )
     @checks.cooldown()
     async def _remove(self, ctx, index: int):
@@ -871,12 +1116,12 @@ class Music(commands.Cog):
         """
         vs = ctx.voice_state
 
-        if len(vs.songs) == 0:
+        if len(vs.tracks) == 0:
             await ctx.fail("The queue is already empty")
             return
 
         try:
-            vs.songs.remove(index - 1)
+            vs.tracks.remove(index - 1)
         except Exception:
             await ctx.fail("Invalid index.")
             return
@@ -887,8 +1132,6 @@ class Music(commands.Cog):
         aliases=["deloop"],
         name="unloop",
         brief="Un-loop the track or queue.",
-        implemented="2021-06-15 06:50:53.661786",
-        updated="2021-06-22 17:48:57.021225",
     )
     @checks.cooldown()
     async def _unloop(self, ctx):
@@ -898,20 +1141,17 @@ class Music(commands.Cog):
         Output:
             Stops looping the current song or queue
         """
-        vs = ctx.voice_state
+        player = ctx.voice_state.validate
 
-        if not vs.is_playing:
-            await ctx.fail("Nothing is currently being played.")
+        player.track_is_looped = False
+        player.queue_is_looped = False
 
-        vs.loop = False
-        vs.queue_loop = False
-        await ctx.message.add_reaction(self.bot.emote_dict["success"])
+        await ctx.react(self.bot.emote_dict["success"])
 
     @decorators.command(
+        aliases=["repeat"],
         name="loop",
         brief="Loop the track or queue.",
-        implemented="2021-06-15 06:50:53.661786",
-        updated="2021-06-15 06:50:53.661786",
     )
     @checks.cooldown()
     async def _loop(self, ctx, option: converters.SingleOrQueue = "single"):
@@ -919,27 +1159,18 @@ class Music(commands.Cog):
         Usage: {0}loop [option]
         Output: Loops the currently playing song.
         """
-        if not ctx.voice_state.is_playing:
-            return await ctx.fail("Nothing is currently being played.")
+        player = ctx.voice_state.validate
 
         if option == "single":
-            if ctx.voice_state.loop:
-                return await ctx.fail("Already looping this song.")
-
-            ctx.voice_state.loop = True
-            await ctx.message.add_reaction(self.bot.emote_dict["loop"])
-            await ctx.success("The current song is now looped.")
+            setting = "already" if player.track_is_looped else "now"
+            player.track_is_looped = True
+            await ctx.success(f"The current track is {setting} looped.")
         else:
-            if ctx.voice_state.queue_loop:
-                return await ctx.fail("Already looping this queue.")
-
-            ctx.voice_state.queue_loop = True
-            ctx.voice_state.loop = False  # In case we were looping a single song.
-            ctx.voice_state.songs.put_nowait(
-                ctx.voice_state.current
-            )  # Put back the current song.
-            await ctx.message.add_reaction(self.bot.emote_dict["loop"])
-            await ctx.success("The current queue is now looped.")
+            setting = "already" if player.queue_is_looped else "now"
+            player.queue_is_looped = True
+            player.track_is_looped = False  # In case we were looping a single track.
+            await ctx.success(f"The current queue is {setting} looped.")
+        await ctx.react(self.bot.emote_dict["loop"])
 
     @decorators.command(
         aliases=["jump"],
@@ -956,23 +1187,18 @@ class Music(commands.Cog):
         Notes:
             The position must be given in seconds.
         """
-        vs = ctx.voice_state
-        src = vs.current.source
-
-        if not vs.is_playing:  # Raise error if no current track.
-            await ctx.fail("Nothing is currently being played.")
-            return
+        player = ctx.voice_state.validate
 
         if position < 0:
             await ctx.fail("Seek time cannot be negative.")
             return
 
-        if position > src.raw_duration:
-            track_dur = f"Track duration: `{src.raw_duration} seconds`"
+        if position > player.current.raw_duration:
+            track_dur = f"Track duration: `{player.current.raw_duration} seconds`"
             await ctx.fail(f"You cannot seek past the end of the track. {track_dur}")
+            return
 
-        vs.alter_audio(position=position)
-
+        player.alter_audio(position=position)
         await ctx.success(f"{ctx.invoked_with.capitalize()}ed to second `{position}`")
 
     @decorators.command(
@@ -988,25 +1214,26 @@ class Music(commands.Cog):
         Output:
             Fast forward a certain number of seconds in a song.
         """
-        vs = ctx.voice_state
-        src = vs.current.source
+        player = ctx.voice_state.validate
+        src = player.current
+        current_position = player.source.position
 
-        if not vs.is_playing:
-            await ctx.fail("Nothing is currently being played.")
-            return
- 
         if seconds < 0:
             await ctx.invoke(self._rewind, abs(seconds))
             return
 
-        position = seconds + src.position
+        position = seconds + current_position
 
         if position > src.raw_duration:
-            current_pos = f"`Current position: {src.position}/{src.raw_duration} seconds`"
-            await ctx.fail(f"You cannot fast forward past the end of the song. {current_pos}")
+            current_pos = (
+                f"`Current position: {current_position}/{src.raw_duration} seconds`"
+            )
+            await ctx.fail(
+                f"You cannot fast forward past the end of the song. {current_pos}"
+            )
             return
 
-        vs.alter_audio(position=position)
+        player.alter_audio(position=position)
         await ctx.success(f"Fast forwarded to second `{position}`")
 
     @decorators.command(
@@ -1022,26 +1249,24 @@ class Music(commands.Cog):
         Output:
             Rewind a certain number of seconds in a song.
         """
-        vs = ctx.voice_state
-        src = vs.current.source
-
-        if not vs.is_playing:
-            await ctx.fail("Nothing is currently being played.")
-            return
+        player = ctx.voice_state.validate
+        current_position = player.source.position
 
         if seconds < 0:
             await ctx.invoke(self._fastforward, abs(seconds))
             return
 
-        position = src.position - seconds
+        position = current_position - seconds
 
         if position < 0:
-            current_pos = f"`Current position: {src.position}/{src.raw_duration} seconds`"
-            await ctx.fail(f"You cannot rewind past the beginning of the song. {current_pos}")
+            ratio = f"{current_position}/{player.current.raw_duration}"
+            current_pos = f"`Current position: {ratio} seconds`"
+            await ctx.fail(
+                f"You cannot rewind past the beginning of the track. {current_pos}"
+            )
             return
 
-        vs.alter_audio(position=position)
-
+        player.alter_audio(position=position)
         await ctx.success(f"Rewinded to second `{position}`")
 
     @decorators.command(
@@ -1050,34 +1275,47 @@ class Music(commands.Cog):
         brief="Alter the speed of the track.",
     )
     @checks.cooldown()
-    async def _speed(self, ctx, multiplier: float = None):
+    async def _speed(self, ctx, speed: float = None):
         """
-        Usage: {0}speed [multiplier]
+        Usage: {0}speed [speed]
         Alias: {0}tempo
         Output:
             Speed up or slow down the current song.
         Notes:
-            The speed multiplier must be between 0.5 and 2.0
+            The speed must be between 0.5 and 2.0
         """
-        vs = ctx.voice_state
-        src = vs.current.source
-        
-        if not vs.is_playing:
-            await ctx.fail("Nothing is currently being played.")
+        player = ctx.voice_state.validate
+        emoji = self.bot.emote_dict["music"]
+
+        if speed is None:  # Output the current speed
+            await ctx.send(f"{emoji} The audio speed is currently `{player.speed}x`")
             return
 
-        if multiplier is None:  # Output the current speed
-            emoji = self.bot.emote_dict['music']
-            await ctx.send(f"{emoji} The speed multiplier is currently `{src.speed}x`")
+        player.speed = speed
+        await ctx.send_or_reply(f"{emoji} Audio is now playing at `{speed}x`")
+
+    @decorators.command(
+        name="pitch",
+        brief="Alter the pitch of the player.",
+    )
+    @checks.cooldown()
+    async def _pitch(self, ctx, pitch: float = None):
+        """
+        Usage: {0}subtitles
+        Alias: {0}lyrics
+        Output:
+            Attemps to generate subtitles for the current track.
+            May not be available.
+        """
+        player = ctx.voice_state.validate
+        emoji = self.bot.emote_dict["music"]
+
+        if pitch is None:  # Output the current speed
+            await ctx.send(f"{emoji} The audio pitch is currently `{player.pitch}`")
             return
 
-        if multiplier < 0.5 or multiplier > 5:
-            await ctx.fail(f"Speed multiplier must be between `0.5` and `5.0`")
-            return
-
-        vs.alter_audio(speed=multiplier)
-
-        await ctx.success(f"Audio is now playing at `{multiplier}x`")
+        player.pitch = pitch
+        await ctx.send_or_reply(f"{emoji} Audio pitch set to `{player.pitch}`")
 
     @decorators.command(
         aliases=["last", "back", "previous"],
@@ -1092,19 +1330,15 @@ class Music(commands.Cog):
         Output:
             Replay the last song to be played.
         """
-        vs = ctx.voice_state
-        src = vs.previous.source
-
-        if not vs.previous:
+        previous = ctx.voice_state.previous
+        if not previous:
             await ctx.fail("No previous song to play.")
             return
 
-        ytdlsrc = await YTDLSource.create_source(ctx, src.url, loop=self.bot.loop)
-        song = Song(ytdlsrc)
-        vs.songs.put_nowait(song)
+        ctx.voice_state.replay(previous)
 
-        emoji = self.bot.emote_dict['music']
-        await ctx.send_or_reply(f"{emoji} Requeued the previous song: {song.source}")
+        emoji = self.bot.emote_dict["music"]
+        await ctx.send_or_reply(f"{emoji} Requeued the previous song: {previous}")
 
     @decorators.command(
         aliases=["relocate", "switch"],
@@ -1119,7 +1353,7 @@ class Music(commands.Cog):
         Output:
             Move a song to a new position in the queue.
         """
-        total = len(ctx.voice_state.songs)
+        total = len(ctx.voice_state.tracks)
         if total == 0:
             return await ctx.fail("The queue is currently empty.")
         elif index > total or index < 1:
@@ -1130,9 +1364,9 @@ class Music(commands.Cog):
             await ctx.success("Song queue remains unchanged.")
             return
 
-        song = ctx.voice_state.songs.pop(index - 1)
+        song = ctx.voice_state.tracks.pop(index - 1)
 
-        ctx.voice_state.songs.insert(position - 1, song)
+        ctx.voice_state.tracks.insert(position - 1, song)
 
         await ctx.success(
             f"Moved song #{index} to the {utils.number_format(position)} position in the queue."
@@ -1142,8 +1376,6 @@ class Music(commands.Cog):
         aliases=["pos"],
         name="position",
         brief="Show the position of the song.",
-        implemented="2021-06-21 23:09:55.015228",
-        updated="2021-06-21 23:09:55.015228",
     )
     @checks.cooldown()
     async def _position(self, ctx):
@@ -1153,204 +1385,21 @@ class Music(commands.Cog):
         Output:
             Shows the current position of the song
         """
-        vs = ctx.voice_state
+        player = ctx.voice_state.validate
 
-        if not vs.is_playing:
+        if not player.is_playing:
             await ctx.fail("Nothing is currently being played.")
             return
 
-        dur = vs.current.source.duration
-        pos = vs.current.source.position
-        raw = vs.current.source.raw_duration
+        dur = player.current.duration
+        raw = player.current.raw_duration
+        pos = player.source.position
         await ctx.success(f"Current position: {dur} `({pos}/{raw}) seconds`")
 
     @decorators.command(
-        name="play",
-        brief="Play a song from a search or URL.",
-        aliases=["p"],
-    )
-    @checks.bot_has_perms(embed_links=True)
-    @checks.bot_has_guild_perms(connect=True, speak=True)
-    @checks.cooldown()
-    async def _play(self, ctx, *, search: str = None):
-        """
-        Usage: {0}play <search>
-        Alias: {0}p
-        Output:
-            Plays a song from your selection.
-        Notes:
-            If there are songs in the queue,
-            this will be queued until the
-            other songs finished playing.
-            This command automatically searches from
-            various sites if no URL is provided.
-            A list of these sites can be found here:
-            https://rg3.github.io/youtube-dl/supportedsites.html
-        """
-        await ctx.trigger_typing()
-        await self.ensure_voice_state(ctx)
-
-        if search is None:
-            if ctx.voice_state.is_playing and ctx.voice_state.voice.is_paused():
-                ctx.voice_state.voice.resume()
-                await ctx.message.add_reaction(self.bot.emote_dict["play"])
-                await ctx.success("Resumed the player")
-            else:
-                return await ctx.usage()
-
-        else:
-            linksRegex = "((http(s)*:[/][/]|www.)([a-z]|[A-Z]|[0-9]|[/.]|[~])*)"
-            pattern = re.compile(linksRegex)
-            matchUrl = pattern.match(search)
-            song_url = search.replace("/", "%2F") if matchUrl is None else search
-
-            # Rewrite YouTube playlist URLs if the wrong URL type is given
-            playlistRegex = r"watch\?v=.+&(list=[^&]+)"
-            matches = re.search(playlistRegex, song_url)
-            groups = matches.groups() if matches is not None else []
-            song_url = (
-                "https://www.youtube.com/playlist?" + groups[0]
-                if len(groups) > 0
-                else song_url
-            )
-
-            if self.spotify:
-                if "open.spotify.com" in song_url:
-                    song_url = "spotify:" + re.sub(
-                        "(http[s]?:\/\/)?(open.spotify.com)\/", "", song_url
-                    ).replace("/", ":")
-                    # remove session id (and other query stuff)
-                    song_url = re.sub("\?.*", "", song_url)
-                if song_url.startswith("spotify:"):
-                    parts = song_url.split(":")
-                    try:
-                        if "track" in parts:
-                            res = await self.spotify.get_track(parts[-1])
-                            song_url = res["artists"][0]["name"] + " " + res["name"]
-
-                        elif "album" in parts:
-                            res = await self.spotify.get_album(parts[-1])
-                            song_urls = [
-                                i["name"] + " " + i["artists"][0]["name"]
-                                for i in res["tracks"]["items"]
-                            ]
-                            await self.enqueue_songs(ctx, song_urls)
-                            return
-
-                        elif "artist" in parts:
-                            res = await self.spotify.get_artist(parts[-1])
-                            song_urls = [
-                                i["name"] + " " + i["artists"][0]["name"]
-                                for i in res["tracks"]
-                            ]
-                            await self.enqueue_songs(ctx, song_urls)
-                            return
-
-                        elif "playlist" in parts:
-                            res = []
-                            r = await self.spotify.get_playlist_tracks(parts[-1])
-                            while True:
-                                res.extend(r["items"])
-                                if r["next"] is not None:
-                                    r = await self.spotify.make_spotify_req(r["next"])
-                                    continue
-                                else:
-                                    break
-
-                            song_urls = [
-                                i["track"]["name"]
-                                + " "
-                                + i["track"]["artists"][0]["name"]
-                                for i in res
-                            ]
-                            await self.enqueue_songs(ctx, song_urls)
-                            return
-
-                        else:
-                            return await ctx.fail("Invalid Spotify URI.")
-                    except exceptions.SpotifyError as e:
-                        return await ctx.fail("Invalid Spotify URI.")
-                try:
-                    source = await YTDLSource.create_source(
-                        ctx, song_url, loop=self.bot.loop
-                    )
-                except YTDLError as e:
-                    await ctx.fail(f"Request failed: {e}")
-                else:
-                    song = Song(source)
-                    ctx.voice_state.songs.put_nowait(song)
-                    await ctx.send_or_reply(
-                        f"{self.bot.emote_dict['music']} Queued {source}"
-                    )
-
-    async def enqueue_songs(self, ctx, songs):
-        msg = await ctx.load(f"Enqueueing {len(songs)} tracks...")
-        queued = 0
-        for song in songs:
-            try:
-                source = await YTDLSource.create_source(ctx, song, loop=self.bot.loop)
-            except YTDLError:
-                continue
-            else:
-                song = Song(source)
-                ctx.voice_state.songs.put_nowait(song)
-                queued += 1
-
-        await msg.edit(
-            content=f"**{self.bot.emote_dict['music']} Queued {queued} tracks.**"
-        )
-
-    @decorators.command(
-        name="playnext",
-        brief="Add a song to the front of the queue.",
-        aliases=["pn"],
-    )
-    @checks.bot_has_perms(embed_links=True)
-    @checks.bot_has_guild_perms(connect=True, speak=True)
-    @checks.cooldown()
-    async def _playnext(self, ctx, *, search: str = None):
-        """
-        Usage: {0}play <search>
-        Alias: {0}p
-        Output:
-            Plays a song from your selection.
-        Notes:
-            If there are songs in the queue,
-            this will be queued before
-            all other songs in the queue.
-        """
-        await ctx.trigger_typing()
-        await self.ensure_voice_state(ctx)
-
-        if search is None:
-            if ctx.voice_state.is_playing and ctx.voice_state.voice.is_paused():
-                ctx.voice_state.voice.resume()
-                await ctx.message.add_reaction(self.bot.emote_dict["play"])
-                await ctx.success("Resumed the player")
-            else:
-                return await ctx.usage()
-
-        else:
-            try:
-                source = await YTDLSource.create_source(ctx, search, loop=self.bot.loop)
-            except YTDLError as e:
-                await ctx.fail(f"Request failed: {e}")
-            else:
-                song = Song(source)
-                if len(ctx.voice_state.songs) > 0:
-                    ctx.voice_state.songs.append_left(song)
-                else:
-                    ctx.voice_state.songs.put_nowait(song)
-                await ctx.send_or_reply(
-                    f"{self.bot.emote_dict['music']} Front Queued {source}"
-                )
-
-    @decorators.command(
         name="youtube",
-        aliases=["yt"],
+        aliases=["yt", "ytsearch"],
         brief="Search for a youtube video.",
-        implemented="2021-06-15 06:50:53.661786",
-        updated="2021-06-15 06:50:53.661786",
     )
     @checks.bot_has_perms(embed_links=True)
     @checks.bot_has_guild_perms(connect=True, speak=True)
@@ -1358,7 +1407,7 @@ class Music(commands.Cog):
     async def _youtube(self, ctx, *, search: str):
         """
         Usage: {0}youtube <search>
-        Alias: {0}yt
+        Alias: {0}yt, {0}ytsearch
         Output:
             Searches youtube and returns an embed
             of the first 10 results collected.
@@ -1368,12 +1417,14 @@ class Music(commands.Cog):
             Each title in the list can be clicked as a link.
         """
         await ctx.trigger_typing()
-        await self.ensure_voice_state(ctx)
+        player = await self.ensure_voice_state(ctx)
         try:
             source = await YTDLSource.search_source(
-                ctx, search, loop=self.bot.loop, bot=self.bot
+                ctx,
+                search,
+                loop=self.bot.loop,
             )
-        except YTDLError as e:
+        except exceptions.YTDLError as e:
             await ctx.fail(f"Request failed: {e}")
         else:
             if source == "sel_invalid":
@@ -1383,51 +1434,258 @@ class Music(commands.Cog):
             elif source == "timeout":
                 await ctx.fail("Timer expired")
             else:
-                song = Song(source)
-                await ctx.voice_state.songs.put(song)
+                player.tracks.put_nowait(source)
                 await ctx.send_or_reply(
                     f"{self.bot.emote_dict['music']} Queued {source}"
                 )
 
     @decorators.command(
-        name="subtitles",
-        aliases=["lyrics"],
-        brief="Request subtitles for the song.",
-        implemented="2021-06-23 06:48:27.194755",
-        updated="2021-06-23 06:48:27.194755",
+        name="playnext",
+        brief="Add a song to the front of the queue.",
+        aliases=["pn"],
     )
+    @checks.bot_has_guild_perms(connect=True, speak=True)
     @checks.cooldown()
-    async def _subtitle(self, ctx):
+    async def _playnext(self, ctx, *, search: str = None):
         """
-        Usage: {0}subtitles
-        Alias: {0}lyrics
+        Usage: {0}play <search>
+        Alias: {0}p
         Output:
-            Attemps to generate subtitles for the current track.
-            May not be available.
+            Plays a song from your selection.
+        Notes:
+            If there are tracks in the queue,
+            this will be queued before
+            all other tracks in the queue.
         """
-        if not ctx.voice_state.current:
-            return await ctx.fail("No song is currently being played.")
-        if not ctx.voice_state.is_playing:
-            return await ctx.fail("No song is currently being played.")
+        await ctx.trigger_typing()
+        player = await self.ensure_voice_state(ctx)
+        MUSIC = self.bot.emote_dict['music']
 
-        subtitles = ctx.voice_state.current.source.subtitles
-        if subtitles:
-            print(subtitles)
-            if len(subtitles) > 2048:
-                data = io.BytesIO(subtitles.encode("utf-8"))
-                file = discord.File(data, filename="subtitles.txt")
-                await ctx.send_or_reply(file=file)
+        if search is None:
+            # No search, check for resume command.
+
+            if player.is_playing and player.voice.is_paused():
+                # Player has likely been paused.
+                ctx.voice_state.voice.resume()  # Resume playback,
+                await ctx.message.add_reaction(self.bot.emote_dict["play"])
+                await ctx.success("Resumed the player")
+                return
             else:
-                embed = discord.Embed(title="Subtitles", color=self.bot.constants.embed)
-                embed.description = subtitles
-                await ctx.send_or_reply(embed=embed)
+                await ctx.usage()
+                return
+
+        song_url = AudioUtils.reformat_uri(search)
+
+        if song_url.startswith("spotify:"):
+            if not self.spotify:
+                raise exceptions.FeatureNotSupported(
+                    "Spotify support is currently unavailable."
+                )
+            parts = song_url.split(":")
+            try:
+                if "track" in parts:
+                    res = await self.spotify.get_track(parts[-1])
+                    song_url = res["artists"][0]["name"] + " " + res["name"]
+
+                elif "album" in parts:
+                    res = await self.spotify.get_album(parts[-1])
+                    tracks = AudioUtils.put_spotify_tracks(
+                        ctx, res["tracks"]["items"]
+                    )
+                    player.tracks.extend_left(tracks)
+                    await ctx.send_or_reply(f"{MUSIC} Front Queued {len(tracks)} spotify tracks.")
+                    return
+
+                elif "artist" in parts:
+                    res = await self.spotify.get_artist(parts[-1])
+                    tracks = AudioUtils.put_spotify_tracks(ctx, res["tracks"])
+                    player.tracks.extend_left(tracks)
+                    await ctx.send_or_reply(f"{MUSIC} Front Queued {len(tracks)} spotify tracks.")
+                    return
+
+                elif "playlist" in parts:
+                    res = []
+                    r = await self.spotify.get_playlist_tracks(parts[-1])
+                    while True:
+                        res.extend(r["items"])
+                        if r["next"] is not None:
+                            r = await self.spotify.make_spotify_req(r["next"])
+                            continue
+                        else:
+                            break
+
+                    tracks = AudioUtils.put_spotify_playlist(ctx, res)
+                    player.tracks.extend_left(tracks)
+                    await ctx.send_or_reply(f"{MUSIC} Front Queued {len(tracks)} spotify tracks.")
+                    return
+
+                else:
+                    await ctx.fail("Invalid Spotify URI.")
+                    return
+            except exceptions.SpotifyError as e:
+                await ctx.fail("Invalid Spotify URI.")
+                return
+
+        if "youtube.com/playlist" in song_url:
+            try:
+                tracks, playlist = await YTDLSource.get_playlist_tracks(
+                    ctx, song_url, loop=self.bot.loop
+                )
+            except exceptions.YTDLError as e:
+                await ctx.fail(f"Request failed: {e}")
+            else:
+                player.tracks.extend_left(tracks)
+                await ctx.send_or_reply(f"{MUSIC} Front Queued Playlist: {playlist} `({len(tracks)} tracks)`")
+
+            return
+        try:
+            track = await YTDLSource.get_song(ctx, song_url, loop=self.bot.loop)
+        except exceptions.YTDLError as e:
+            await ctx.fail(f"Request failed: {e}")
         else:
-            return await ctx.fail("Subtitles not available.")
+            player.tracks.append_left(track)
+            await ctx.send_or_reply(f"{MUSIC} Front Queued {track}")
 
-    async def ensure_voice_state(self, ctx):
-        if not ctx.me.voice:
-            if not hasattr(ctx.author.voice, "channel"):
-                raise commands.BadArgument("You must be connected to a voice channel")
+    @decorators.command(
+        name="play",
+        brief="Play a song from a search or URL.",
+        aliases=["p"],
+    )
+    @checks.bot_has_guild_perms(connect=True, speak=True)
+    @checks.cooldown()
+    async def _play(self, ctx, *, search: str = None):
+        """
+        Usage: {0}play <search>
+        Alias: {0}p
+        Output:
+            Plays a song from your search.
+        Notes:
+            If there are tracks in the queue,
+            this will be queued until the
+            other tracks finished playing.
+            This command automatically searches
+            youtube if no url is provided.
+            Accepts spotify and youtube urls.
+        """
+        await ctx.trigger_typing()
+        player = await self.ensure_voice_state(ctx)
+        MUSIC = self.bot.emote_dict['music']
 
-            channel = ctx.author.voice.channel
-            await ctx.voice_state.connect(ctx, channel)
+        if search is None:
+            # No search, check for resume command.
+
+            if player.is_playing and player.voice.is_paused():
+                # Player has likely been paused.
+                ctx.voice_state.voice.resume()  # Resume playback,
+                await ctx.message.add_reaction(self.bot.emote_dict["play"])
+                await ctx.success("Resumed the player")
+                return
+            else:
+                await ctx.usage()
+                return
+
+        song_url = AudioUtils.reformat_uri(search)
+
+        if song_url.startswith("spotify:"):
+            if not self.spotify:
+                raise exceptions.FeatureNotSupported(
+                    "Spotify support is currently unavailable."
+                )
+            parts = song_url.split(":")
+            try:
+                if "track" in parts:
+                    res = await self.spotify.get_track(parts[-1])
+                    song_url = res["artists"][0]["name"] + " " + res["name"]
+
+                elif "album" in parts:
+                    res = await self.spotify.get_album(parts[-1])
+                    tracks = AudioUtils.put_spotify_tracks(
+                        ctx, res["tracks"]["items"]
+                    )
+                    player.tracks.extend(tracks)
+                    await ctx.send_or_reply(f"{MUSIC} Queued {len(tracks)} spotify tracks.")
+                    return
+
+                elif "artist" in parts:
+                    res = await self.spotify.get_artist(parts[-1])
+                    tracks = AudioUtils.put_spotify_tracks(ctx, res["tracks"])
+                    player.tracks.extend(tracks)
+                    await ctx.send_or_reply(f"{MUSIC} Queued {len(tracks)} spotify tracks.")
+                    return
+
+                elif "playlist" in parts:
+                    res = []
+                    r = await self.spotify.get_playlist_tracks(parts[-1])
+                    while True:
+                        res.extend(r["items"])
+                        if r["next"] is not None:
+                            r = await self.spotify.make_spotify_req(r["next"])
+                            continue
+                        else:
+                            break
+
+                    tracks = AudioUtils.put_spotify_playlist(ctx, res)
+                    player.tracks.extend(tracks)
+                    await ctx.send_or_reply(f"{MUSIC} Queued {len(tracks)} spotify tracks.")
+                    return
+
+                else:
+                    await ctx.fail("Invalid Spotify URI.")
+                    return
+            except exceptions.SpotifyError as e:
+                await ctx.fail("Invalid Spotify URI.")
+                return
+
+        if "youtube.com/playlist" in song_url:
+            try:
+                tracks, playlist = await YTDLSource.get_playlist_tracks(
+                    ctx, song_url, loop=self.bot.loop
+                )
+            except exceptions.YTDLError as e:
+                await ctx.fail(f"Request failed: {e}")
+            else:
+                player.tracks.extend(tracks)
+                await ctx.send_or_reply(f"{MUSIC} Queued Playlist: {playlist} `({len(tracks)} tracks)`")
+
+            return
+        try:
+            track = await YTDLSource.get_song(ctx, song_url, loop=self.bot.loop)
+        except exceptions.YTDLError as e:
+            await ctx.fail(f"Request failed: {e}")
+        else:
+            player.tracks.put_nowait(track)
+            await ctx.send_or_reply(f"{MUSIC} Queued {track}")
+
+
+    @decorators.command(
+        brief="Play a discord file or url.",
+        name="playfile",
+        hidden=True
+    )
+    @checks.bot_has_guild_perms(connect=True, speak=True)
+    async def _playfile(self, ctx, media_url = None):
+        await ctx.trigger_typing()
+        player = await self.ensure_voice_state(ctx)  # Initialize voice client.
+        MUSIC = self.bot.emote_dict['music']  # Music emoji
+
+        if len(ctx.message.attachments) > 0:  # User passed an attachment.
+            file = ctx.message.attachments[0]
+            if file.content_type not in ["audio/mpeg", "video/mp4"]:
+                raise exceptions.InvalidMediaType  # Must be audio or video
+            try:
+                await player.play_from_file(file)
+            except ClientException as e:
+                raise commands.BadArgument(str(e))
+            await ctx.send_or_reply(f"{MUSIC} Playing **{file.filename}**")
+
+        else:  # Check for url regex
+            regex = r"(https://|http://)?(cdn\.|media\.)discord(app)?\.(com|net)/attachments/[0-9]{17,19}/[0-9]{17,19}/(?P<filename>.{1,256})\.(?P<mime>[0-9a-zA-Z]{2,4})(\?size=[0-9]{1,4})?"
+            pattern = re.compile(regex)
+            match = pattern.match(media_url)
+            if not match:  # We have a discord url.
+                await ctx.fail(f"Invalid discord media url.")
+                return
+
+            await AudioUtils.read_url(match.group(0), self.bot.session)  # Get url bytes
+            await player.play_local_file(match.group(0))
+            await ctx.send_or_reply(f"{MUSIC} Playing `{match.group(0)}`")

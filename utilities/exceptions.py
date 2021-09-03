@@ -34,5 +34,45 @@ class WebhookLimit(commands.BadArgument):
         super().__init__(message=msg, *args)
 
 
+class InactivePlayer(commands.BadArgument):
+    """
+    Custom exception to raise when
+    the music player is not active.
+    """
+
+    def __init__(self, *args):
+        msg = "No track is currently being played."
+        super().__init__(message=msg, *args)
+
+
+class FeatureNotSupported(commands.BadArgument):
+    """
+    Custom exception to raise when the user
+    uses on a not yet implemented music feature.
+    """
+
+    def __init__(self, message=None, *args):
+        msg = "Feature is currently not supported."
+        super().__init__(message=message or msg, *args)
+
+class InvalidMediaType(commands.BadArgument):
+    """
+    Custom exception to raise when the
+    file media type cannot be played.
+    """
+
+    def __init__(self, message=None, *args):
+        msg = "Invalid media type. Media type must be either audio or video."
+        super().__init__(message=message or msg, *args)
+
+
 class SpotifyError(Exception):
+    pass
+
+
+class VoiceError(Exception):
+    pass
+
+
+class YTDLError(Exception):
     pass
