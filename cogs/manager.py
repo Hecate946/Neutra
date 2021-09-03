@@ -446,7 +446,6 @@ class Manager(commands.Cog):
             await ctx.send_or_reply(str(e))
 
     @decorators.command(
-        aliases=["repeat"],
         brief="Repeat a command.",
         writer=80088516616269824,
     )
