@@ -176,6 +176,7 @@ class Neutra(commands.AutoShardedBot):
             743299744301973514,  # Renatuu's server
             110373943822540800,  # Dbots.gg server
             336642139381301249,  # Discord.py server
+            824510213909512192,  # mwthecool's server
         ]  # My servers that have "premium" features.
 
         # Webhooks for monitering and data saving.
