@@ -55,6 +55,7 @@ class FeatureNotSupported(commands.BadArgument):
         msg = "Feature is currently not supported."
         super().__init__(message=message or msg, *args)
 
+
 class InvalidMediaType(commands.BadArgument):
     """
     Custom exception to raise when the

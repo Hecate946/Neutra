@@ -542,7 +542,9 @@ class Neutra(commands.AutoShardedBot):
                 try:
                     self.load_extension(f"cogs.{cog}")
                 except Exception as e:
-                    self.dispatch("error", "extension_error", tb=utils.traceback_maker(e))
+                    self.dispatch(
+                        "error", "extension_error", tb=utils.traceback_maker(e)
+                    )
                     continue
 
         print(utils.prefix_log(f"{self.user} ({self.user.id})"))

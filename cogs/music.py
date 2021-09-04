@@ -1,3 +1,4 @@
+import io
 import re
 import math
 import typing
@@ -6,7 +7,6 @@ import asyncio
 import discord
 import functools
 import itertools
-from discord.errors import ClientException
 import youtube_dl
 
 from discord.ext import commands, menus
@@ -171,7 +171,7 @@ class AudioUtils:
 
     def put_spotify_tracks(ctx, tracks):
         """
-        Get a list of QueueEntry from spotify tracks. 
+        Get a list of QueueEntry from spotify tracks.
         """
         return [
             QueueEntry(
@@ -219,6 +219,7 @@ class AudioUtils:
             song_url = re.sub("\?.*", "", song_url)
 
         return song_url
+
 
 class AudioSource(discord.PCMVolumeTransformer):
     """
@@ -307,6 +308,33 @@ class YTDLSource:
     def __str__(self):
         return "**{0.title}** by **{0.uploader}**".format(self)
 
+    @classmethod
+    async def get_source(cls, ctx, url, *, loop=None):
+        """
+        Takes a search query and returns the first result.
+        """
+        loop = loop or asyncio.get_event_loop()
+
+        partial = functools.partial(YOUTUBE_DL.extract_info, url, download=False)
+        processed_info = await loop.run_in_executor(None, partial)
+
+        if processed_info is None:
+            raise exceptions.YTDLError(f"Unable to fetch `{url}`")
+
+        if "entries" not in processed_info:
+            data = processed_info
+        else:
+            data = None
+            while data is None:
+                try:
+                    data = processed_info["entries"].pop(0)
+                except IndexError:
+                    raise exceptions.YTDLError(
+                        f"Unable to retrieve matches for `{url}`"
+                    )
+
+        return cls(ctx, data)
+
     @staticmethod
     async def get_song(ctx, search, *, loop=None):
         """
@@ -393,43 +421,19 @@ class YTDLSource:
         def format_url(url_code):
             return "https://www.youtube.com/watch?v=" + url_code
 
-        return ([
-            QueueEntry(
-                ctx,
-                entry["title"],
-                format_url(entry["url"]),
-                uploader=entry.get("uploader"),
-            )
-            for entry in info["entries"]
-            if pred(entry) is True
-        ], playlist)
-
-    @classmethod
-    async def get_source(cls, ctx, url, *, loop=None):
-        """
-        Takes a search query and returns the first result.
-        """
-        loop = loop or asyncio.get_event_loop()
-
-        partial = functools.partial(YOUTUBE_DL.extract_info, url, download=False)
-        processed_info = await loop.run_in_executor(None, partial)
-
-        if processed_info is None:
-            raise exceptions.YTDLError(f"Unable to fetch `{url}`")
-
-        if "entries" not in processed_info:
-            data = processed_info
-        else:
-            data = None
-            while data is None:
-                try:
-                    data = processed_info["entries"].pop(0)
-                except IndexError:
-                    raise exceptions.YTDLError(
-                        f"Unable to retrieve matches for `{url}`"
-                    )
-
-        return cls(ctx, data)
+        return (
+            [
+                QueueEntry(
+                    ctx,
+                    entry["title"],
+                    format_url(entry["url"]),
+                    uploader=entry.get("uploader"),
+                )
+                for entry in info["entries"]
+                if pred(entry) is True
+            ],
+            playlist,
+        )
 
     @staticmethod
     async def search_source(ctx, search: str, *, loop=None):
@@ -567,7 +571,7 @@ class TrackQueue(asyncio.Queue):
             self._queue.extend(items)
         else:
             self._queue.extend(items)
-        
+
     def extend_left(self, items):
         if len(self) == 0:
             last_item = items.pop()
@@ -576,6 +580,9 @@ class TrackQueue(asyncio.Queue):
         else:
             items.reverse()
             self._queue.extendleft(items)
+
+    def reverse(self, items):
+        self._queue.reverse()
 
 
 class VoiceState:
@@ -728,7 +735,7 @@ class VoiceState:
 
             self.source = AudioSource(self.current, self.speed, self.pitch, self.volume)
             self.voice.play(self.source, after=self.play_next_track)
-            await AudioUtils.create_embed(self._ctx, self.source)
+            await AudioUtils.create_embed(self.current.ctx, self.source)
 
             self.bot.loop.create_task(self.increase_position())
             await self.next.wait()  # Wait until the track finishes
@@ -812,7 +819,7 @@ class Music(commands.Cog):
     @decorators.command(
         name="connect",
         aliases=["join"],
-        brief="Joins a voice or stage channel.",
+        brief="Joins a voice channel.",
     )
     async def _connect(
         self,
@@ -872,7 +879,7 @@ class Music(commands.Cog):
     @decorators.command(
         name="disconnect",
         aliases=["dc", "leave"],
-        brief="Disconnect the bot from a channel.",
+        brief="Disconnect from a channel.",
     )
     async def _disconnect(self, ctx):
         """
@@ -917,7 +924,7 @@ class Music(commands.Cog):
 
     @decorators.command(
         name="current",
-        brief="Displays the currently playing song.",
+        brief="Displays current track info.",
         aliases=["now", "np", "nowplaying"],
     )
     @checks.cooldown()
@@ -989,7 +996,7 @@ class Music(commands.Cog):
     @decorators.command(
         name="skip",
         aliases=["s", "fs", "vs"],
-        brief="Vote to skip the track.",
+        brief="Skip the current track.",
     )
     @checks.cooldown()
     async def _skip(self, ctx):
@@ -1011,7 +1018,7 @@ class Music(commands.Cog):
             player.skip()  # Song requester can skip.
             await ctx.react(emoji)
 
-        elif voter.guild_permissions.manage_guild:
+        elif voter.guild_permissions.move_members:
             player.skip()  # Server mods can skip.
             await ctx.react(emoji)
 
@@ -1033,14 +1040,14 @@ class Music(commands.Cog):
         else:
             await ctx.fail("You have already voted to skip this track.")
 
-    @decorators.command(
-        aliases=["q"],
-        name="queue",
-        brief="Show the track queue.",
-    )
-    @checks.cooldown()
+    ######################
+    ## Queue Management ##
+    ######################
+
+    @decorators.command(name="queue", aliases=["q"], brief="Show the track queue.")
     @checks.bot_has_perms(add_reactions=True, external_emojis=True, embed_links=True)
-    async def _queue(self, ctx):
+    @checks.cooldown()
+    async def _queue(self, ctx, *, search=None):
         """
         Usage: {0}queue
         Alias: {0}q
@@ -1050,6 +1057,9 @@ class Music(commands.Cog):
         Notes:
             Each page contains 10 queue elements.
         """
+        if search:
+            return await ctx.invoke(self._play, search=search)
+
         if len(ctx.voice_state.tracks) == 0:
             await ctx.fail("The queue is currently empty.")
             return
@@ -1063,11 +1073,7 @@ class Music(commands.Cog):
         except menus.MenuError as e:
             await ctx.send(e)
 
-    @decorators.command(
-        name="clear",
-        aliases=["c"],
-        brief="Clear the queue.",
-    )
+    @decorators.command(name="clear", aliases=["c"], brief="Clear the queue.")
     @checks.cooldown()
     async def _clear(self, ctx):
         """
@@ -1081,10 +1087,7 @@ class Music(commands.Cog):
         ctx.voice_state.tracks.clear()
         await ctx.success("Cleared all tracks from the queue.")
 
-    @decorators.command(
-        name="shuffle",
-        brief="Shuffle the queue.",
-    )
+    @decorators.command(name="shuffle", brief="Shuffle the queue.")
     @checks.cooldown()
     async def _shuffle(self, ctx):
         """
@@ -1100,10 +1103,24 @@ class Music(commands.Cog):
         vs.tracks.shuffle()
         await ctx.send_or_reply(f"{self.bot.emote_dict['shuffle']} Shuffled the queue.")
 
+    @decorators.command(name="reverse", brief="Reverse the queue.")
+    @checks.cooldown()
+    async def _reverse(self, ctx):
+        """
+        Usage: {0}reverse
+        Output: Reverses the queue.
+        """
+        queue = ctx.voice_state.tracks
+
+        if len(queue) == 0:
+            await ctx.fail("The queue is currently empty.")
+            return
+
+        queue.reverse()
+        await ctx.send_or_reply(f"{self.bot.emote_dict['redo']} Reversed the queue.")
+
     @decorators.command(
-        aliases=["pop"],
-        name="remove",
-        brief="Remove a track from the queue.",
+        name="remove", aliases=["pop"], brief="Remove a track from the queue."
     )
     @checks.cooldown()
     async def _remove(self, ctx, index: int):
@@ -1113,14 +1130,14 @@ class Music(commands.Cog):
         Output:
             Removes a song from the queue at a given index.
         """
-        vs = ctx.voice_state
+        queue = ctx.voice_state.tracks
 
-        if len(vs.tracks) == 0:
+        if len(queue) == 0:
             await ctx.fail("The queue is already empty")
             return
 
         try:
-            vs.tracks.remove(index - 1)
+            queue.remove(index - 1)
         except Exception:
             await ctx.fail("Invalid index.")
             return
@@ -1238,7 +1255,7 @@ class Music(commands.Cog):
     @decorators.command(
         aliases=["rw"],
         name="rewind",
-        brief="Rewind a number of seconds",
+        brief="Rewind the track.",
     )
     @checks.cooldown()
     async def _rewind(self, ctx, seconds: int = 0):
@@ -1271,7 +1288,7 @@ class Music(commands.Cog):
     @decorators.command(
         aliases=["tempo"],
         name="speed",
-        brief="Alter the speed of the track.",
+        brief="Alter the speed of the player.",
     )
     @checks.cooldown()
     async def _speed(self, ctx, speed: float = None):
@@ -1440,7 +1457,7 @@ class Music(commands.Cog):
 
     @decorators.command(
         name="playnext",
-        brief="Add a song to the front of the queue.",
+        brief="Front queue the track.",
         aliases=["pn"],
     )
     @checks.bot_has_guild_perms(connect=True, speak=True)
@@ -1458,7 +1475,7 @@ class Music(commands.Cog):
         """
         await ctx.trigger_typing()
         player = await self.ensure_voice_state(ctx)
-        MUSIC = self.bot.emote_dict['music']
+        MUSIC = self.bot.emote_dict["music"]
 
         if search is None:
             # No search, check for resume command.
@@ -1488,18 +1505,20 @@ class Music(commands.Cog):
 
                 elif "album" in parts:
                     res = await self.spotify.get_album(parts[-1])
-                    tracks = AudioUtils.put_spotify_tracks(
-                        ctx, res["tracks"]["items"]
-                    )
+                    tracks = AudioUtils.put_spotify_tracks(ctx, res["tracks"]["items"])
                     player.tracks.extend_left(tracks)
-                    await ctx.send_or_reply(f"{MUSIC} Front Queued {len(tracks)} spotify tracks.")
+                    await ctx.send_or_reply(
+                        f"{MUSIC} Front Queued {len(tracks)} spotify tracks."
+                    )
                     return
 
                 elif "artist" in parts:
                     res = await self.spotify.get_artist(parts[-1])
                     tracks = AudioUtils.put_spotify_tracks(ctx, res["tracks"])
                     player.tracks.extend_left(tracks)
-                    await ctx.send_or_reply(f"{MUSIC} Front Queued {len(tracks)} spotify tracks.")
+                    await ctx.send_or_reply(
+                        f"{MUSIC} Front Queued {len(tracks)} spotify tracks."
+                    )
                     return
 
                 elif "playlist" in parts:
@@ -1515,7 +1534,9 @@ class Music(commands.Cog):
 
                     tracks = AudioUtils.put_spotify_playlist(ctx, res)
                     player.tracks.extend_left(tracks)
-                    await ctx.send_or_reply(f"{MUSIC} Front Queued {len(tracks)} spotify tracks.")
+                    await ctx.send_or_reply(
+                        f"{MUSIC} Front Queued {len(tracks)} spotify tracks."
+                    )
                     return
 
                 else:
@@ -1534,7 +1555,9 @@ class Music(commands.Cog):
                 await ctx.fail(f"Request failed: {e}")
             else:
                 player.tracks.extend_left(tracks)
-                await ctx.send_or_reply(f"{MUSIC} Front Queued Playlist: {playlist} `({len(tracks)} tracks)`")
+                await ctx.send_or_reply(
+                    f"{MUSIC} Front Queued Playlist: {playlist} `({len(tracks)} tracks)`"
+                )
 
             return
         try:
@@ -1568,7 +1591,7 @@ class Music(commands.Cog):
         """
         await ctx.trigger_typing()
         player = await self.ensure_voice_state(ctx)
-        MUSIC = self.bot.emote_dict['music']
+        MUSIC = self.bot.emote_dict["music"]
 
         if search is None:
             # No search, check for resume command.
@@ -1598,18 +1621,20 @@ class Music(commands.Cog):
 
                 elif "album" in parts:
                     res = await self.spotify.get_album(parts[-1])
-                    tracks = AudioUtils.put_spotify_tracks(
-                        ctx, res["tracks"]["items"]
-                    )
+                    tracks = AudioUtils.put_spotify_tracks(ctx, res["tracks"]["items"])
                     player.tracks.extend(tracks)
-                    await ctx.send_or_reply(f"{MUSIC} Queued {len(tracks)} spotify tracks.")
+                    await ctx.send_or_reply(
+                        f"{MUSIC} Queued {len(tracks)} spotify tracks."
+                    )
                     return
 
                 elif "artist" in parts:
                     res = await self.spotify.get_artist(parts[-1])
                     tracks = AudioUtils.put_spotify_tracks(ctx, res["tracks"])
                     player.tracks.extend(tracks)
-                    await ctx.send_or_reply(f"{MUSIC} Queued {len(tracks)} spotify tracks.")
+                    await ctx.send_or_reply(
+                        f"{MUSIC} Queued {len(tracks)} spotify tracks."
+                    )
                     return
 
                 elif "playlist" in parts:
@@ -1625,7 +1650,9 @@ class Music(commands.Cog):
 
                     tracks = AudioUtils.put_spotify_playlist(ctx, res)
                     player.tracks.extend(tracks)
-                    await ctx.send_or_reply(f"{MUSIC} Queued {len(tracks)} spotify tracks.")
+                    await ctx.send_or_reply(
+                        f"{MUSIC} Queued {len(tracks)} spotify tracks."
+                    )
                     return
 
                 else:
@@ -1644,7 +1671,9 @@ class Music(commands.Cog):
                 await ctx.fail(f"Request failed: {e}")
             else:
                 player.tracks.extend(tracks)
-                await ctx.send_or_reply(f"{MUSIC} Queued Playlist: {playlist} `({len(tracks)} tracks)`")
+                await ctx.send_or_reply(
+                    f"{MUSIC} Queued Playlist: {playlist} `({len(tracks)} tracks)`"
+                )
 
             return
         try:
@@ -1655,17 +1684,14 @@ class Music(commands.Cog):
             player.tracks.put_nowait(track)
             await ctx.send_or_reply(f"{MUSIC} Queued {track}")
 
-
     @decorators.command(
-        brief="Play a discord file or url.",
-        name="playfile",
-        hidden=True
+        brief="Play a discord file or url.", name="playfile", hidden=True
     )
     @checks.bot_has_guild_perms(connect=True, speak=True)
-    async def _playfile(self, ctx, media_url = None):
+    async def _playfile(self, ctx, media_url=None):
         await ctx.trigger_typing()
         player = await self.ensure_voice_state(ctx)  # Initialize voice client.
-        MUSIC = self.bot.emote_dict['music']  # Music emoji
+        MUSIC = self.bot.emote_dict["music"]  # Music emoji
 
         if len(ctx.message.attachments) > 0:  # User passed an attachment.
             file = ctx.message.attachments[0]
@@ -1673,7 +1699,7 @@ class Music(commands.Cog):
                 raise exceptions.InvalidMediaType  # Must be audio or video
             try:
                 await player.play_from_file(file)
-            except ClientException as e:
+            except discord.ClientException as e:
                 raise commands.BadArgument(str(e))
             await ctx.send_or_reply(f"{MUSIC} Playing **{file.filename}**")
 
