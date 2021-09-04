@@ -11,3 +11,4 @@
 (2021-05-06 16:31:39.001011+00:00) Rename help.py to commands.py, add multiple command info helper commands
 (2021-05-11 05:54:00.829567+00:00) Add audit log searching commands.
 
+(2021-08-21 05:28:21.124744+00:00) Add github commit history command.
