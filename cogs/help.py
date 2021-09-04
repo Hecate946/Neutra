@@ -256,13 +256,13 @@ class Help(commands.Cog):
 
         cogs = [cog for cog in self.bot.get_cogs() if pred(cog)]
         public = ""
-        premium = ""
+        beta = ""
         admin = ""
         for cog in sorted(cogs, key=lambda cog: cog.qualified_name):
             if cog.qualified_name.upper() in self.bot.admin_cogs:
                 admin += f"\n`{cog.qualified_name}` {cog.description}\n"
             elif cog.qualified_name.upper() in self.bot.home_cogs:
-                premium += f"\n`{cog.qualified_name}` {cog.description}\n"
+                beta += f"\n`{cog.qualified_name}` {cog.description}\n"
             else:
                 public += f"\n`{cog.qualified_name}` {cog.description}\n"
 
@@ -271,8 +271,8 @@ class Help(commands.Cog):
         )
         if checks.is_home(ctx):
             embed.add_field(
-                name="**Premium Categories**",
-                value=f"** **{premium}**\n**",
+                name="**Beta Categories**",
+                value=f"** **{beta}**\n**",
                 inline=False,
             )
         if checks.is_admin(ctx):
@@ -575,9 +575,9 @@ class Help(commands.Cog):
                 cog = self.bot.get_cog("Database")
                 return await self.send_cog_help(ctx, cog)
 
-            ##################
-            ## Premium help ##
-            ##################
+            ###############
+            ## Beta help ##
+            ###############
 
             if category_or_command.lower() in ["music", "player", "audio"]:
                 if ctx.guild.id not in self.bot.home_guilds:

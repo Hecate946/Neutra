@@ -177,7 +177,7 @@ class Neutra(commands.AutoShardedBot):
             110373943822540800,  # Dbots.gg server
             336642139381301249,  # Discord.py server
             824510213909512192,  # mwthecool's server
-        ]  # My servers that have "premium" features.
+        ]  # My servers that have "beta" features.
 
         # Webhooks for monitering and data saving.
         self.avatar_webhook = None
