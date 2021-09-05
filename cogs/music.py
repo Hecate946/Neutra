@@ -1,3 +1,4 @@
+from collections import deque
 import io
 import re
 import math
@@ -194,7 +195,7 @@ class AudioUtils:
                 ctx,
                 item["track"]["name"],
                 item["track"]["name"] + " " + item["track"]["artists"][0]["name"],
-                link=item["track"]["external_urls"]["spotify"],
+                link=item["track"]["external_urls"].get("spotify"),
             )
             for item in playlist
         ]
@@ -244,7 +245,6 @@ class AudioSource(discord.PCMVolumeTransformer):
         }
         self.original = discord.FFmpegPCMAudio(ytdl.stream_url, **ffmpeg_options)
         super().__init__(self.original, volume=volume)
-
 
 class QueueEntry:
     """
@@ -519,7 +519,6 @@ class YTDLSource:
                 rtrn = "sel_invalid"
         return rtrn
 
-
 class TrackQueue(asyncio.Queue):
     """
     Queue for all tracks to be played.
@@ -581,8 +580,20 @@ class TrackQueue(asyncio.Queue):
             items.reverse()
             self._queue.extendleft(items)
 
-    def reverse(self, items):
+    def reverse(self):
         self._queue.reverse()
+
+    def clear_range(self, start, end):
+        queue = list(self._queue)
+        del queue[start-1:end]
+        self._queue = deque(queue)
+
+    def shuffle_range(self, start, end):
+        queue = list(self._queue)
+        to_shuffle = queue[start-1:end]
+        random.shuffle(to_shuffle)
+        queue[start-1:end] = to_shuffle
+        self._queue = deque(queue)
 
 
 class VoiceState:
@@ -1028,7 +1039,7 @@ class Music(commands.Cog):
 
             listeners = player.voice.channel.members
             valid_voters = [user for user in listeners if not user.bot]
-            required_votes = valid_voters + 1 // 2  # Require majority
+            required_votes = len(valid_voters) + 1 // 2  # Require majority
 
             if total_votes >= required_votes:
                 player.skip()
@@ -1075,33 +1086,62 @@ class Music(commands.Cog):
 
     @decorators.command(name="clear", aliases=["c"], brief="Clear the queue.")
     @checks.cooldown()
-    async def _clear(self, ctx):
+    async def _clear(self, ctx, range_begin: int = None, range_end: int = None):
         """
         Usage: {0}clear
         Alias: {0}c
         Output:
             Removes all queued tracks
         """
-        if len(ctx.voice_state.tracks) == 0:
+        queue = ctx.voice_state.tracks
+        if len(queue) == 0:
             return await ctx.fail("The queue is already empty")
-        ctx.voice_state.tracks.clear()
-        await ctx.success("Cleared all tracks from the queue.")
+        if range_begin and not range_end:
+            await ctx.usage()
+            return
+        if not range_begin and not range_end:
+            queue.clear()
+            await ctx.success("Cleared all tracks from the queue.")
+        else:
+            if not 1 <= range_begin <= len(queue) - 1:
+                await ctx.fail("Invalid range beginning")
+                return
+            if not range_begin < range_end <= len(queue):
+                await ctx.fail("Invalid range end")
+                return
+
+            queue.clear_range(range_begin, range_end)
+            await ctx.success(f"Cleared tracks in range from {range_begin} to {range_end}")
+
 
     @decorators.command(name="shuffle", brief="Shuffle the queue.")
     @checks.cooldown()
-    async def _shuffle(self, ctx):
+    async def _shuffle(self, ctx, range_begin: int = None, range_end: int = None):
         """
         Usage: {0}shuffle
         Output: Shuffles the queue.
         """
-        vs = ctx.voice_state
+        queue = ctx.voice_state.tracks
 
-        if len(vs.tracks) == 0:
+        if len(queue) == 0:
             await ctx.fail("The queue is currently empty.")
             return
+        if range_begin and not range_end:
+            await ctx.usage()
+            return
+        if not range_begin and not range_end:
+            queue.shuffle()
+            await ctx.send_or_reply(f"{self.bot.emote_dict['shuffle']} Shuffled the queue.")
+        else:
+            if not 1 <= range_begin <= len(queue) - 1:
+                await ctx.fail("Invalid range beginning")
+                return
+            if not range_begin < range_end <= len(queue):
+                await ctx.fail("Invalid range end")
+                return
 
-        vs.tracks.shuffle()
-        await ctx.send_or_reply(f"{self.bot.emote_dict['shuffle']} Shuffled the queue.")
+            queue.shuffle_range(range_begin, range_end)
+            await ctx.send_or_reply(f"{self.bot.emote_dict['shuffle']} Shuffled tracks in range from {range_begin} to {range_end}")
 
     @decorators.command(name="reverse", brief="Reverse the queue.")
     @checks.cooldown()
@@ -1508,7 +1548,7 @@ class Music(commands.Cog):
                     tracks = AudioUtils.put_spotify_tracks(ctx, res["tracks"]["items"])
                     player.tracks.extend_left(tracks)
                     await ctx.send_or_reply(
-                        f"{MUSIC} Front Queued {len(tracks)} spotify tracks."
+                        f"{MUSIC} Front Queued {len(res['tracks']['items'])} spotify tracks."
                     )
                     return
 
@@ -1517,17 +1557,19 @@ class Music(commands.Cog):
                     tracks = AudioUtils.put_spotify_tracks(ctx, res["tracks"])
                     player.tracks.extend_left(tracks)
                     await ctx.send_or_reply(
-                        f"{MUSIC} Front Queued {len(tracks)} spotify tracks."
+                        f"{MUSIC} Front Queued {len(res['tracks'])} spotify tracks."
                     )
                     return
 
                 elif "playlist" in parts:
                     res = []
                     r = await self.spotify.get_playlist_tracks(parts[-1])
-                    while True:
+                    iterations = 0
+                    while iterations < 5:  # Max playlist length 500
                         res.extend(r["items"])
                         if r["next"] is not None:
                             r = await self.spotify.make_spotify_req(r["next"])
+                            iterations += 1
                             continue
                         else:
                             break
@@ -1535,7 +1577,7 @@ class Music(commands.Cog):
                     tracks = AudioUtils.put_spotify_playlist(ctx, res)
                     player.tracks.extend_left(tracks)
                     await ctx.send_or_reply(
-                        f"{MUSIC} Front Queued {len(tracks)} spotify tracks."
+                        f"{MUSIC} Front Queued {len(res)} spotify tracks."
                     )
                     return
 
@@ -1556,7 +1598,7 @@ class Music(commands.Cog):
             else:
                 player.tracks.extend_left(tracks)
                 await ctx.send_or_reply(
-                    f"{MUSIC} Front Queued Playlist: {playlist} `({len(tracks)} tracks)`"
+                    f"{MUSIC} Front Queued Playlist: {playlist} `({len(tracks) + 1} tracks)`"
                 )
 
             return
@@ -1624,7 +1666,7 @@ class Music(commands.Cog):
                     tracks = AudioUtils.put_spotify_tracks(ctx, res["tracks"]["items"])
                     player.tracks.extend(tracks)
                     await ctx.send_or_reply(
-                        f"{MUSIC} Queued {len(tracks)} spotify tracks."
+                        f"{MUSIC} Queued {len(res['tracks']['items'])} spotify tracks."
                     )
                     return
 
@@ -1633,25 +1675,28 @@ class Music(commands.Cog):
                     tracks = AudioUtils.put_spotify_tracks(ctx, res["tracks"])
                     player.tracks.extend(tracks)
                     await ctx.send_or_reply(
-                        f"{MUSIC} Queued {len(tracks)} spotify tracks."
+                        f"{MUSIC} Queued {len(res['tracks'])} spotify tracks."
                     )
                     return
 
                 elif "playlist" in parts:
                     res = []
                     r = await self.spotify.get_playlist_tracks(parts[-1])
-                    while True:
+                    iterations = 0
+                    while iterations < 5:  # Max playlist length 500
                         res.extend(r["items"])
                         if r["next"] is not None:
                             r = await self.spotify.make_spotify_req(r["next"])
+                            iterations += 1
                             continue
                         else:
                             break
 
+
                     tracks = AudioUtils.put_spotify_playlist(ctx, res)
                     player.tracks.extend(tracks)
                     await ctx.send_or_reply(
-                        f"{MUSIC} Queued {len(tracks)} spotify tracks."
+                        f"{MUSIC} Queued {len(res)} spotify tracks."
                     )
                     return
 
@@ -1672,7 +1717,7 @@ class Music(commands.Cog):
             else:
                 player.tracks.extend(tracks)
                 await ctx.send_or_reply(
-                    f"{MUSIC} Queued Playlist: {playlist} `({len(tracks)} tracks)`"
+                    f"{MUSIC} Queued Playlist: {playlist} `({len(tracks) + 1} tracks)`"
                 )
 
             return
