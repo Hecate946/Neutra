@@ -8,19 +8,25 @@ Hello! I'm Neutra, and I specialize in tracking and moderation.
 I was designed to collect all sorts of data on servers, users,
 messages, emojis, online time, and more! I also come with a fast
 and clean moderation system that offers every opportunity for effective
-server management. Apart from moderation and tracking, I feature 279
-commands across 14 categories that provide awesome utilities!
+server management. Apart from moderation and tracking, I feature 283
+commands across 20 categories that provide awesome utilities!
 Some examples include managing roles and logging server actions.
 ## Categories
 ##### [Admin](#Admin-1)
 ##### [Automod](#Automod-1)
+##### [Botadmin](#Botadmin-1)
+##### [Botconfig](#Botconfig-1)
 ##### [Config](#Config-1)
+##### [Database](#Database-1)
 ##### [Files](#Files-1)
 ##### [Help](#Help-1)
 ##### [Home](#Home-1)
 ##### [Info](#Info-1)
 ##### [Logging](#Logging-1)
+##### [Manager](#Manager-1)
 ##### [Mod](#Mod-1)
+##### [Monitor](#Monitor-1)
+##### [Music](#Music-1)
 ##### [Server](#Server-1)
 ##### [Stats](#Stats-1)
 ##### [Tasks](#Tasks-1)
@@ -80,6 +86,86 @@ warncount: Count the warnings a user has.
 warns: Display the server warnlist.
 ```
 
+### Botadmin
+#### Bot admin only stats cog. (21 Commands)
+
+```yaml
+bottomservers: Show least member servers.
+
+cachedcommands: Show commands in the cache.
+
+command_history: Show command history.
+
+debug: Send a file showing incomplete commands.
+
+del: Delete a message.
+
+dumpservers: DMs you a list of my servers.
+
+echo: Echo a message.
+
+emojipost: Sends all server emojis to your dms.
+
+extension: Show info on an extension.
+
+extensions: List all extensions and cogs.
+
+firstservers: Show first joined servers.
+
+gist: Post a gist on github.
+
+guild: Get stats on a bot server.
+
+inv: Create a server invite.
+
+listservers: Lists the servers I'm connected to.
+
+members: Show members for a server.
+
+message: DM any user the bot knows.
+
+nickscan: List all bot nicknames.
+
+recentservers: Show latest joined servers.
+
+sss: Show shared servers with the bot.
+
+topservers: Show most member servers.
+```
+
+### Botconfig
+#### Owner only configuration cog. (14 Commands)
+
+```yaml
+addadmin: Add a new bot admin.
+
+addowner: Add a new bot owner.
+
+adminlock: Admin-lock the bot.
+
+blacklist: Blacklist a discord object.
+
+blacklisted: Show blacklisted objects.
+
+change: Change the bot's specifications.
+
+config: Change a config.json value.
+
+leaveserver: Have the bot leave a server.
+
+ownerlock: Owner-lock the bot.
+
+remadmin: Remove a bot admin.
+
+remowner: Remove a user from my owner list.
+
+toggle: Toggle disabling a command.
+
+unblacklist: Unblacklist discord objects.
+
+write: Write to the bot overview or changelog.
+```
+
 ### Config
 #### Configure the permission system. (4 Commands)
 
@@ -91,6 +177,23 @@ enable: Enable commands for users, roles, and channels.
 ignore: Ignore channels, roles, and users.
 
 unignore: Unignore channels, users, and roles.
+```
+
+### Database
+#### Module for handling the database (6 Commands)
+
+```yaml
+database: Show the database schema.
+
+discard: Discard the data on a server.
+
+postgres: Show info on the database.
+
+sql: Run sql and get results in rst fmt.
+
+table: Show info on a db table.
+
+update: Update the database.
 ```
 
 ### Files
@@ -243,6 +346,47 @@ unlog: Disable specific logging events.
 unlogchannel: Remove the server logging channel.
 ```
 
+### Manager
+#### Manage bot processes and cogs. (18 Commands)
+
+```yaml
+botvars: Reload the bot variables.
+
+cleartrace: Clear the console.
+
+do: Repeat a command.
+
+elapse: Time a command response.
+
+eval: Evaluate python code.
+
+git: Run github commands.
+
+load: Load an extension.
+
+ras: Reload all settings modules.
+
+rau: Reload all utilities modules.
+
+reboot: Cleanly reboot the bot.
+
+refresh: A faster way of rebooting.
+
+reload: Reload an extension.
+
+reloadall: Reload all extensions.
+
+reloadsetting: Reload a utilities module.
+
+reloadutil: Reload a utilities module.
+
+sh: Run shell commands.
+
+sudo: Run a command as another user.
+
+unload: Unload an extension.
+```
+
 ### Mod
 #### Keep your server under control. (20 Commands)
 
@@ -286,6 +430,90 @@ vckick: Kick users from a voice channel.
 vcmove: Move a user from a voice channel.
 
 vcpurge: Kick all users from a voice channel.
+```
+
+### Monitor
+#### Module for monitoring bot status. (6 Commands)
+
+```yaml
+bothealth: Show bot health.
+
+logger: View logging files.
+
+objgrowth: Debug memory leaks.
+
+pm2: View pm2 files.
+
+threadinfo: Show bot threadinfo.
+
+todo: Manage the bot's todo list.
+```
+
+### Music
+#### Module for playing music (31 Commands)
+
+```yaml
+247: Enable 247 mode.
+
+clear: Clear the queue.
+
+current: Show track info.
+
+dedupe: Remove duplicate tracks.
+
+dequeue: Clear absent user enqueues.
+
+fastforward: Fast forward the track.
+
+join: Joins a channel.
+
+jump: Jump to a track.
+
+leave: Leaves a channel.
+
+loop: Loop the track or queue.
+
+move: Move a song in the queue.
+
+pause: Pause the track.
+
+pitch: Alter the pitch of the player.
+
+play: Play a track from a search.
+
+playnext: Front queue a track.
+
+position: Show the track position.
+
+queue: Show the track queue.
+
+remove: Remove a track.
+
+replay: Play the previous track.
+
+resume: Resume the track.
+
+reverse: Reverse the queue.
+
+rewind: Rewind the track.
+
+seek: Seek to a position in the track.
+
+shuffle: Shuffle the queue.
+
+skip: Skip the track.
+
+skipto: Skip to a track.
+
+speed: Alter the speed of the player.
+
+stop: Stop track and clear the queue.
+
+volume: Set the volume of the player.
+
+weed: Clear absent user enqueues.
+
+youtube: Get results from a search.
 ```
 
 ### Server
