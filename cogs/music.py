@@ -725,6 +725,11 @@ class VoiceState:
         self.entry.data = source.data
         self.tracks.append_left(self.entry)
 
+    def jump(self, entry):
+        self.entry = entry
+        self.tracks.append_left(self.entry)
+        self.skip()
+
     async def audio_player_task(self):
         while True:
             self.next.clear()
@@ -911,13 +916,18 @@ class Music(commands.Cog):
         del self.voice_states[ctx.guild.id]
 
     @decorators.command(
-        aliases=["vol"],
+        aliases=["vol", "sound"],
         name="volume",
         brief="Set the volume of the player.",
     )
     async def _volume(self, ctx, volume: int = None):
         """
-        Sets the volume of the player for the current song.
+        Usage: {0}volume [volume]
+        Alias: {0}vol, {0}sound
+        Output: Changes the volume of the player.
+        Notes:
+            Will show current volume if
+            no new volume is specified.
         """
         player = ctx.voice_state.validate
         emoji = self.bot.emote_dict["volume"]
@@ -944,19 +954,29 @@ class Music(commands.Cog):
         Usage: {0}now
         Aliases: {0}now {0}np
         Output: Displays the currently playing song.
+        Notes:
+            Will fall back to sending a codeblock
+            if the bot does not have the Embed Links
+            permission. A progress bar will be included
+            if the bot has the Attach Files permission.
         """
         player = ctx.voice_state.validate
         await AudioUtils.create_embed(ctx, player.source)
 
     @decorators.command(
         name="pause",
+        aliases=["halt"],
         brief="Pauses the current track.",
     )
     @checks.cooldown()
     async def _pause(self, ctx):
         """
         Usage: {0}pause
-        Output: Pauses the currently playing song.
+        Alias: {0}halt
+        Output: Pauses the current track.
+        Notes:
+            To resume playback, use the {0}resume command
+            or invoke the {0}play command with no arguments.
         """
         player = ctx.voice_state.validate
 
@@ -969,12 +989,14 @@ class Music(commands.Cog):
 
     @decorators.command(
         name="resume",
+        aliases=["unpause"],
         brief="Resumes the current track.",
     )
     @checks.cooldown()
     async def _resume(self, ctx):
         """
         Usage: {0}resume
+        Alias: {0}unpause
         Output:
             Resumes playback paused by the {0}pause command.
         """
@@ -1006,14 +1028,16 @@ class Music(commands.Cog):
 
     @decorators.command(
         name="skip",
-        aliases=["s", "fs", "vs"],
+        aliases=["s", "fs", "vs", "voteskip", "forceskip", "next"],
         brief="Skip the current track.",
     )
     @checks.cooldown()
     async def _skip(self, ctx):
         """
         Usage: {0}skip
-        Aliases: {0}s, {0}fs, {0}vs
+        Aliases:
+            {0}s, {0}fs, {0}vs, {0}next
+            {0}voteskip, {0}forceskip
         Output: Vote to skip a song.
         Notes:
             The song requester and those with the
@@ -1051,6 +1075,45 @@ class Music(commands.Cog):
         else:
             await ctx.fail("You have already voted to skip this track.")
 
+    @decorators.command(
+        name="jump",
+        brief="Jump to a queued track.",
+    )
+    @checks.cooldown()
+    async def _jump(self, ctx, index: int):
+        """
+        Usage: {0}skip
+        Output:
+            Skips the current track and plays
+            the selected track in the queue.
+        Notes:
+            All other tracks in the queue will
+            remain in their respective positions.
+        """
+        player = ctx.voice_state.validate
+        queue = player.tracks
+
+        if len(queue) == 0:
+            await ctx.fail("The queue is currently empty.")
+
+        try:
+            selection = queue.pop(index - 1)
+        except IndexError:
+            await ctx.fail("Invalid track index provided.")
+            return
+        else:
+            if ctx.author == player.current.requester:
+                player.jump(selection)  # Song requester can jump
+
+            elif ctx.author.guild_permissions.move_members:
+                player.jump(selection)  # Server DJs can jump
+            
+            else:
+                await ctx.fail("You must be either the track requester or a server DJ to use this command.")
+                return
+
+        await ctx.success(f"Jumped to track #{index}: {selection}")
+
     ######################
     ## Queue Management ##
     ######################
@@ -1067,6 +1130,8 @@ class Music(commands.Cog):
             all the tracks in the current queue.
         Notes:
             Each page contains 10 queue elements.
+            Will invoke the play command if a search
+            is specified.
         """
         if search:
             return await ctx.invoke(self._play, search=search)
@@ -1091,7 +1156,11 @@ class Music(commands.Cog):
         Usage: {0}clear
         Alias: {0}c
         Output:
-            Removes all queued tracks
+            Removes all queued tracks.
+        Notes:
+            Specify a range, e.g. {0}clear 3 10
+            to remove only the tracks between
+            position 3 and 10 in the queue.
         """
         queue = ctx.voice_state.tracks
         if len(queue) == 0:
@@ -1120,6 +1189,10 @@ class Music(commands.Cog):
         """
         Usage: {0}shuffle
         Output: Shuffles the queue.
+        Notes:
+            Specify a range, e.g. {0}shuffle 3 10
+            to shuffle only the tracks between
+            position 3 and 10 in the queue.
         """
         queue = ctx.voice_state.tracks
 
@@ -1214,6 +1287,10 @@ class Music(commands.Cog):
         """
         Usage: {0}loop [option]
         Output: Loops the currently playing song.
+        Notes:
+            Use {0}loop queue to loop the entire queue.
+            Use {0}loop single to loop only the current track.
+            Will loop the current track if neither is specified.
         """
         player = ctx.voice_state.validate
 
@@ -1229,7 +1306,6 @@ class Music(commands.Cog):
         await ctx.react(self.bot.emote_dict["loop"])
 
     @decorators.command(
-        aliases=["jump"],
         name="seek",
         brief="Seek to a position in the track.",
     )
@@ -1237,7 +1313,6 @@ class Music(commands.Cog):
     async def _seek(self, ctx, position: int = 0):
         """
         Usage: {0}seek [time]
-        Alias: {0}jump
         Output:
             Seeks to a certain position in the track
         Notes:
@@ -1336,9 +1411,11 @@ class Music(commands.Cog):
         Usage: {0}speed [speed]
         Alias: {0}tempo
         Output:
-            Speed up or slow down the current song.
+            Speed up or slow down the player.
         Notes:
-            The speed must be between 0.5 and 2.0
+            The speed must be between 0.5 and 2.0.
+            Will output the current speed if no
+            new speed is explicitly specified.
         """
         player = ctx.voice_state.validate
         emoji = self.bot.emote_dict["music"]
@@ -1357,11 +1434,13 @@ class Music(commands.Cog):
     @checks.cooldown()
     async def _pitch(self, ctx, pitch: float = None):
         """
-        Usage: {0}subtitles
-        Alias: {0}lyrics
+        Usage: {0}pitch [pitch]
         Output:
-            Attemps to generate subtitles for the current track.
-            May not be available.
+            Alter the pitch of the player.
+        Notes:
+            The pitch must be between 0.5 and 2.0.
+            Will output the current pitch if no
+            new speed is explicitly specified.
         """
         player = ctx.voice_state.validate
         emoji = self.bot.emote_dict["music"]
@@ -1384,7 +1463,8 @@ class Music(commands.Cog):
         Usage: {0}replay [seconds]
         Alias: {0}last, {0}back, {0}previous
         Output:
-            Replay the last song to be played.
+            Add the previous song to the
+            beginning of the track queue.
         """
         previous = ctx.voice_state.previous
         if not previous:
@@ -1439,7 +1519,7 @@ class Music(commands.Cog):
         Usage: {0}position
         Alias: {0}pos
         Output:
-            Shows the current position of the song
+            Shows the current position of the song.
         """
         player = ctx.voice_state.validate
 
@@ -1498,20 +1578,23 @@ class Music(commands.Cog):
     @decorators.command(
         name="playnext",
         brief="Front queue the track.",
-        aliases=["pn"],
+        aliases=["pn", "frontqueue"],
     )
     @checks.bot_has_guild_perms(connect=True, speak=True)
     @checks.cooldown()
     async def _playnext(self, ctx, *, search: str = None):
         """
-        Usage: {0}play <search>
-        Alias: {0}p
+        Usage: {0}playnext <search>
+        Alias: {0}frontqueue, {0}pn
         Output:
-            Plays a song from your selection.
+            Plays a track from your selection.
         Notes:
             If there are tracks in the queue,
             this will be queued before
             all other tracks in the queue.
+            If the track you select is a playlist,
+            all tracks in the playlist will be placed
+            ahead of the previously queued tracks.
         """
         await ctx.trigger_typing()
         player = await self.ensure_voice_state(ctx)
@@ -1613,16 +1696,16 @@ class Music(commands.Cog):
     @decorators.command(
         name="play",
         brief="Play a song from a search or URL.",
-        aliases=["p"],
+        aliases=["p", "enqueue"],
     )
     @checks.bot_has_guild_perms(connect=True, speak=True)
     @checks.cooldown()
     async def _play(self, ctx, *, search: str = None):
         """
         Usage: {0}play <search>
-        Alias: {0}p
+        Alias: {0}p, {0}enqueue
         Output:
-            Plays a song from your search.
+            Plays a track from your search.
         Notes:
             If there are tracks in the queue,
             this will be queued until the
