@@ -273,12 +273,12 @@ class Neutra(commands.AutoShardedBot):
             x.name
             for x in self.commands
             if not x.hidden
-            and x.cog.qualified_name.upper not in self.admin_cogs + self.home_cogs
+            # and x.cog.qualified_name.upper not in self.admin_cogs + self.home_cogs
         ]
         category_list = [
             x
             for x in [self.get_cog(cog) for cog in self.cogs]
-            if x.qualified_name.upper() not in self.admin_cogs + self.home_cogs
+            # if x.qualified_name.upper() not in self.admin_cogs + self.home_cogs
             if len([c for c in x.walk_commands()]) > 0
         ]
         return (self.hecate, command_list, category_list)

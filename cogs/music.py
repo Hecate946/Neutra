@@ -252,10 +252,11 @@ class QueueEntry:
     All TrackQueue objects are type QueueEntry
     """
 
-    def __init__(self, ctx, title, url, *, data=None, uploader=None, link=None):
+    def __init__(self, ctx, title, search, *, data=None, uploader=None, link=None):
         self.ctx = ctx
+        self.requester = ctx.author
         self.title = title
-        self.url = url
+        self.search = search
 
         self.data = data
         self.uploader = uploader
@@ -266,9 +267,15 @@ class QueueEntry:
             return f"**{self.title}** by **{self.uploader}**"
         return f"**{self.title}**"
 
+    def __eq__(self, other):
+        return self.search == other.search and self.title == other.title
+
+    def __hash__(self):
+        return hash((self.search, self.title))
+
     @property
     def hyperlink(self):
-        return f"**[{self.title}]({self.link or self.url})**"
+        return f"**[{self.title}]({self.link or self.search})**"
 
     @property
     def has_data(self):
@@ -364,26 +371,26 @@ class YTDLSource:
             partial = functools.partial(
                 YOUTUBE_DL.extract_info, info["webpage_url"], download=False
             )
-            info = await loop.run_in_executor(None, partial)
+            processed_info = await loop.run_in_executor(None, partial)
 
-            if info is None:
+            if processed_info is None:
                 raise exceptions.YTDLError(f"Unable to fetch `{info['webpage_url']}`")
 
-            if "entries" not in info:
-                data = info
+            if "entries" not in processed_info:
+                data = processed_info
             else:
                 data = None
                 while data is None:
                     try:
-                        data = info["entries"].pop(0)
+                        data = processed_info["entries"].pop(0)
                     except IndexError:
                         raise exceptions.YTDLError(
-                            f"Unable to retrieve matches for `{info['webpage_url']}`"
+                            f"Unable to retrieve matches for `{processed_info['webpage_url']}`"
                         )
 
             url = data.get("webpage_url")
             title = data.get("title")
-            uploader = info.get("uploader")
+            uploader = data.get("uploader")
 
             if title is None or url is None:
                 raise exceptions.YTDLError(f"Unable to fetch `{search}`")
@@ -528,7 +535,7 @@ class TrackQueue(asyncio.Queue):
 
     def __getitem__(self, item):
         if isinstance(item, slice):
-            return list(itertools.islice(self._queue, item.start, item.stop, item.step))
+            return deque(itertools.islice(self._queue, item.start, item.stop, item.step))
         else:
             return self._queue[item]
 
@@ -582,6 +589,24 @@ class TrackQueue(asyncio.Queue):
 
     def reverse(self):
         self._queue.reverse()
+
+    def skipto(self, position):
+        entry = self._queue[position]
+        self._queue = self[position+1:]
+        return entry
+
+    def deduplicate(self):
+        self._queue = deque(set(self))
+
+    def leave_cleanup(self, users):
+        for entry in list(self._queue):
+            if entry.requester not in users:
+                self._queue.remove(entry)
+
+    def dequeue(self, user):
+        for entry in list(self._queue):
+            if entry.requester == user:
+                self._queue.remove(entry)
 
     def clear_range(self, start, end):
         queue = list(self._queue)
@@ -714,7 +739,7 @@ class VoiceState:
         if self.entry.has_data:
             current = YTDLSource(self.entry.ctx, self.entry.data)
         else:
-            current = await YTDLSource.get_source(self.entry.ctx, self.entry.url)
+            current = await YTDLSource.get_source(self.entry.ctx, self.entry.search)
         return current
 
     def requeue(self, source: YTDLSource):
@@ -724,11 +749,6 @@ class VoiceState:
     def replay(self, source: YTDLSource):
         self.entry.data = source.data
         self.tracks.append_left(self.entry)
-
-    def jump(self, entry):
-        self.entry = entry
-        self.tracks.append_left(self.entry)
-        self.skip()
 
     async def audio_player_task(self):
         while True:
@@ -833,19 +853,19 @@ class Music(commands.Cog):
         return ctx.voice_state
 
     @decorators.command(
-        name="connect",
-        aliases=["join"],
-        brief="Joins a voice channel.",
+        name="join",
+        aliases=["connect"],
+        brief="Joins a channel.",
     )
-    async def _connect(
+    async def _join(
         self,
         ctx,
         *,
         channel: typing.Union[discord.VoiceChannel, discord.StageChannel] = None,
     ):
         """
-        Usage: {0}connect [channel]
-        Alias: {0}join
+        Usage: {0}join [channel]
+        Alias: {0}connect
         Output:
             Joins a specified channel
         Notes:
@@ -865,7 +885,7 @@ class Music(commands.Cog):
     @decorators.command(
         name="247",
         aliases=["24/7"],
-        brief="Joins a channel indefinitely.",
+        brief="Enable 247 mode.",
     )
     async def _247(
         self,
@@ -893,14 +913,14 @@ class Music(commands.Cog):
         await ctx.success(f"Connected to {channel.mention} indefinitely.")
 
     @decorators.command(
-        name="disconnect",
-        aliases=["dc", "leave"],
-        brief="Disconnect from a channel.",
+        name="leave",
+        aliases=["dc", "disconnect"],
+        brief="Leaves a channel.",
     )
-    async def _disconnect(self, ctx):
+    async def _leave(self, ctx):
         """
-        Usage: {0}disconnect
-        Alias: {0}dc, {0}leave
+        Usage: {0}leave
+        Alias: {0}dc, {0}disconnect
         Output:
             Clears the queue and leaves the voice channel.
         """
@@ -945,7 +965,7 @@ class Music(commands.Cog):
 
     @decorators.command(
         name="current",
-        brief="Displays current track info.",
+        brief="Show track info.",
         aliases=["now", "np", "nowplaying"],
     )
     @checks.cooldown()
@@ -966,7 +986,7 @@ class Music(commands.Cog):
     @decorators.command(
         name="pause",
         aliases=["halt"],
-        brief="Pauses the current track.",
+        brief="Pause the track.",
     )
     @checks.cooldown()
     async def _pause(self, ctx):
@@ -990,7 +1010,7 @@ class Music(commands.Cog):
     @decorators.command(
         name="resume",
         aliases=["unpause"],
-        brief="Resumes the current track.",
+        brief="Resume the track.",
     )
     @checks.cooldown()
     async def _resume(self, ctx):
@@ -1011,7 +1031,7 @@ class Music(commands.Cog):
 
     @decorators.command(
         name="stop",
-        brief="Stops track and clears the queue.",
+        brief="Stop track and clear the queue.",
     )
     @checks.cooldown()
     async def _stop(self, ctx):
@@ -1029,7 +1049,7 @@ class Music(commands.Cog):
     @decorators.command(
         name="skip",
         aliases=["s", "fs", "vs", "voteskip", "forceskip", "next"],
-        brief="Skip the current track.",
+        brief="Skip the track.",
     )
     @checks.cooldown()
     async def _skip(self, ctx):
@@ -1076,13 +1096,45 @@ class Music(commands.Cog):
             await ctx.fail("You have already voted to skip this track.")
 
     @decorators.command(
-        name="jump",
-        brief="Jump to a queued track.",
+        name="skipto",
+        brief="Skip to a track.",
     )
+    @checks.cooldown()
+    async def _skipto(self, ctx, index: int):
+        """
+        Usage: {0}skipto [index]
+        Output:
+            Skips the current track and plays
+            the selected track in the queue.
+        Notes:
+            Tracks before the selected song
+            will be removed from the queue.
+        """
+        player = ctx.voice_state.validate
+        queue = player.tracks
+
+        if len(queue) == 0:
+            await ctx.fail("The queue is currently empty.")
+
+        try:
+            selection = queue.skipto(index-1)
+        except IndexError:
+            await ctx.fail("Invalid track index provided.")
+            return
+        
+        queue.append_left(selection)
+        player.skip()
+        await ctx.success(f"Skipped to track #{index}: {selection}")
+
+    @decorators.command(
+        name="jump",
+        brief="Jump to a track.",
+    )
+    @checks.has_guild_permissions(move_members=True)
     @checks.cooldown()
     async def _jump(self, ctx, index: int):
         """
-        Usage: {0}skip
+        Usage: {0}jump [index]
         Output:
             Skips the current track and plays
             the selected track in the queue.
@@ -1103,15 +1155,16 @@ class Music(commands.Cog):
             return
         else:
             if ctx.author == player.current.requester:
-                player.jump(selection)  # Song requester can jump
+                queue.append_left(selection)  # Song requester can jump
 
             elif ctx.author.guild_permissions.move_members:
-                player.jump(selection)  # Server DJs can jump
+                queue.append_left(selection)  # Server DJs can jump
             
             else:
                 await ctx.fail("You must be either the track requester or a server DJ to use this command.")
                 return
 
+        player.skip()
         await ctx.success(f"Jumped to track #{index}: {selection}")
 
     ######################
@@ -1233,7 +1286,7 @@ class Music(commands.Cog):
         await ctx.send_or_reply(f"{self.bot.emote_dict['redo']} Reversed the queue.")
 
     @decorators.command(
-        name="remove", aliases=["pop"], brief="Remove a track from the queue."
+        name="remove", aliases=["pop"], brief="Remove a track."
     )
     @checks.cooldown()
     async def _remove(self, ctx, index: int):
@@ -1261,6 +1314,7 @@ class Music(commands.Cog):
         aliases=["deloop"],
         name="unloop",
         brief="Un-loop the track or queue.",
+        hidden=True
     )
     @checks.cooldown()
     async def _unloop(self, ctx):
@@ -1283,26 +1337,30 @@ class Music(commands.Cog):
         brief="Loop the track or queue.",
     )
     @checks.cooldown()
-    async def _loop(self, ctx, option: converters.SingleOrQueue = "single"):
+    async def _loop(self, ctx, option: converters.TrackOrQueue = "track"):
         """
         Usage: {0}loop [option]
         Output: Loops the currently playing song.
         Notes:
             Use {0}loop queue to loop the entire queue.
-            Use {0}loop single to loop only the current track.
+            Use {0}loop track to loop only the current track.
+            Use {0}loop off to stop looping the track or queue.
             Will loop the current track if neither is specified.
+            Use {0}unloop can also be used to stop looping settings.
         """
         player = ctx.voice_state.validate
 
-        if option == "single":
+        if option == "track":
             setting = "already" if player.track_is_looped else "now"
             player.track_is_looped = True
             await ctx.success(f"The current track is {setting} looped.")
-        else:
+        elif option == "queue":
             setting = "already" if player.queue_is_looped else "now"
             player.queue_is_looped = True
-            player.track_is_looped = False  # In case we were looping a single track.
+            player.track_is_looped = False  # In case we were looping a track.
             await ctx.success(f"The current queue is {setting} looped.")
+        elif option == "off":
+            return await ctx.invoke(self._unloop)
         await ctx.react(self.bot.emote_dict["loop"])
 
     @decorators.command(
@@ -1509,9 +1567,79 @@ class Music(commands.Cog):
         )
 
     @decorators.command(
+        aliases=["uniquify", "dd", "deduplicate"],
+        name="dedupe",
+        brief="Remove duplicate tracks.",
+    )
+    @checks.cooldown()
+    async def _dedupe(self, ctx):
+        """
+        Usage: {0}dedupe
+        Alias: {0}dd, {0}uniquify, {deduplicate}
+        Output:
+            Remove all duplicate tracks in the queue.
+        """
+        queue = ctx.voice_state.tracks
+        if len(queue) == 0:
+            await ctx.fail("The queue is currently empty.")
+            return
+
+        queue.deduplicate()
+        await ctx.success("Removed all duplicate tracks from the queue")
+
+    @decorators.command(
+        aliases=["lc", "leavecleanup", "cull"],
+        name="weed",
+        brief="Clear absent user enqueues.",
+    )
+    @checks.has_guild_permissions(move_members=True)
+    @checks.cooldown()
+    async def _weed(self, ctx):
+        """
+        Usage: {0}weed
+        Alias: {0}lc, {0}leavechannel, {0}cull
+        Output:
+            Remove all tracks enqueued by users
+            who have left the music channel.
+        """
+        channel = ctx.voice_state.voice.channel
+        queue = ctx.voice_state.tracks
+        if not channel:
+            await ctx.fail("Not currently playing music.")
+            return
+        if len(queue) == 0:
+            await ctx.fail("The queue is currently empty.")
+            return
+
+        queue.leave_cleanup(channel.members)
+        await ctx.success(f"Removed all tracks enqueued by users no longer in {channel.mention}")
+
+    @decorators.command(
+        aliases=["dq", "detrack"],
+        name="dequeue",
+        brief="Clear absent user enqueues.",
+    )
+    @checks.has_guild_permissions(move_members=True)
+    @checks.cooldown()
+    async def _dequeue(self, ctx, *, user: converters.DiscordMember):
+        """
+        Usage: {0}dequeue [user]
+        Alias: {0}detrack, {0}dq
+        Output:
+            Remove all tracks queued by a specific user.
+        """
+        queue = ctx.voice_state.tracks
+        if len(queue) == 0:
+            await ctx.fail("The queue is currently empty.")
+            return
+
+        queue.dequeue(user)
+        await ctx.success(f"Removed all tracks enqueued by **{user}** `{user.id}`")
+
+    @decorators.command(
         aliases=["pos"],
         name="position",
-        brief="Show the position of the song.",
+        brief="Show the track position.",
     )
     @checks.cooldown()
     async def _position(self, ctx):
@@ -1535,7 +1663,7 @@ class Music(commands.Cog):
     @decorators.command(
         name="youtube",
         aliases=["yt", "ytsearch"],
-        brief="Search for a youtube video.",
+        brief="Get results from a search.",
     )
     @checks.bot_has_perms(embed_links=True)
     @checks.bot_has_guild_perms(connect=True, speak=True)
@@ -1577,7 +1705,7 @@ class Music(commands.Cog):
 
     @decorators.command(
         name="playnext",
-        brief="Front queue the track.",
+        brief="Front queue a track.",
         aliases=["pn", "frontqueue"],
     )
     @checks.bot_has_guild_perms(connect=True, speak=True)
@@ -1695,7 +1823,7 @@ class Music(commands.Cog):
 
     @decorators.command(
         name="play",
-        brief="Play a song from a search or URL.",
+        brief="Play a track from a search.",
         aliases=["p", "enqueue"],
     )
     @checks.bot_has_guild_perms(connect=True, speak=True)

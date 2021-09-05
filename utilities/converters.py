@@ -1084,16 +1084,19 @@ class BotActivity(commands.Converter):
         return activity
 
 
-class SingleOrQueue(commands.Converter):
+class TrackOrQueue(commands.Converter):
     async def convert(self, ctx, argument):
         queue_options = ["playlist", "queue", "songs", "all", "q"]
         single_options = ["current", "single", "track", "song", "one"]
+        cancel_options = ["cancel", "off", "disable", "remove", "end"]
         if argument.lower() in queue_options:
             option = "queue"
         elif argument.lower() in single_options:
-            option = "single"
+            option = "track"
+        elif argument.lower() in cancel_options:
+            option = "off"
         else:
-            headers = ["LOOP QUEUE", "LOOP SONG"]
+            headers = ["LOOP QUEUE", "LOOP TRACK", "LOOP OFF"]
             rows = tuple(zip(queue_options, single_options))
             table = formatting.TabularData()
             table.set_columns(headers)

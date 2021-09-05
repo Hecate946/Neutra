@@ -94,7 +94,7 @@ class Manager(commands.Cog):
         await ctx.success("**Reloaded all botvars.**")
 
     @decorators.command(
-        aliases=["lc", "loadcog"],
+        aliases=["loadcog"],
         brief="Load an extension.",
         implemented="2021-03-19 21:57:05.162549",
         updated="2021-05-11 02:51:30.992778",
