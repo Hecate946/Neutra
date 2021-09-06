@@ -1,10 +1,12 @@
 from collections import deque
 import io
+import json
 import re
 import math
 import typing
 import random
 import asyncio
+import asyncpg
 import discord
 import functools
 import itertools
@@ -73,6 +75,16 @@ class AudioUtils:
                 aiosession=bot.session,
                 loop=bot.loop,
             )
+
+    def json_entry(entry):
+        """Returns a json representation of QueueEntry."""
+        json_entry = {
+            "title": entry.title,
+            "search": entry.search,
+            "uploader": entry.uploader,
+            "link": entry.link,
+        }
+        return json_entry
 
     def parse_duration(duration: int):
         """
@@ -810,11 +822,12 @@ class VoiceState:
 
 def setup(bot):
     bot.add_cog(Music(bot))
+    bot.add_cog(Queue(bot))
 
 
 class Music(commands.Cog):
     """
-    Module for playing music
+    Module for playing music.
     """
 
     def __init__(self, bot):
@@ -1096,221 +1109,6 @@ class Music(commands.Cog):
             await ctx.fail("You have already voted to skip this track.")
 
     @decorators.command(
-        name="skipto",
-        brief="Skip to a track.",
-    )
-    @checks.cooldown()
-    async def _skipto(self, ctx, index: int):
-        """
-        Usage: {0}skipto [index]
-        Output:
-            Skips the current track and plays
-            the selected track in the queue.
-        Notes:
-            Tracks before the selected song
-            will be removed from the queue.
-        """
-        player = ctx.voice_state.validate
-        queue = player.tracks
-
-        if len(queue) == 0:
-            await ctx.fail("The queue is currently empty.")
-
-        try:
-            selection = queue.skipto(index-1)
-        except IndexError:
-            await ctx.fail("Invalid track index provided.")
-            return
-        
-        queue.append_left(selection)
-        player.skip()
-        await ctx.success(f"Skipped to track #{index}: {selection}")
-
-    @decorators.command(
-        name="jump",
-        brief="Jump to a track.",
-    )
-    @checks.has_guild_permissions(move_members=True)
-    @checks.cooldown()
-    async def _jump(self, ctx, index: int):
-        """
-        Usage: {0}jump [index]
-        Output:
-            Skips the current track and plays
-            the selected track in the queue.
-        Notes:
-            All other tracks in the queue will
-            remain in their respective positions.
-        """
-        player = ctx.voice_state.validate
-        queue = player.tracks
-
-        if len(queue) == 0:
-            await ctx.fail("The queue is currently empty.")
-
-        try:
-            selection = queue.pop(index - 1)
-        except IndexError:
-            await ctx.fail("Invalid track index provided.")
-            return
-        else:
-            if ctx.author == player.current.requester:
-                queue.append_left(selection)  # Song requester can jump
-
-            elif ctx.author.guild_permissions.move_members:
-                queue.append_left(selection)  # Server DJs can jump
-            
-            else:
-                await ctx.fail("You must be either the track requester or a server DJ to use this command.")
-                return
-
-        player.skip()
-        await ctx.success(f"Jumped to track #{index}: {selection}")
-
-    ######################
-    ## Queue Management ##
-    ######################
-
-    @decorators.command(name="queue", aliases=["q"], brief="Show the track queue.")
-    @checks.bot_has_perms(add_reactions=True, external_emojis=True, embed_links=True)
-    @checks.cooldown()
-    async def _queue(self, ctx, *, search=None):
-        """
-        Usage: {0}queue
-        Alias: {0}q
-        Output:
-            Starts a pagination session showing
-            all the tracks in the current queue.
-        Notes:
-            Each page contains 10 queue elements.
-            Will invoke the play command if a search
-            is specified.
-        """
-        if search:
-            return await ctx.invoke(self._play, search=search)
-
-        if len(ctx.voice_state.tracks) == 0:
-            await ctx.fail("The queue is currently empty.")
-            return
-
-        entries = [track.hyperlink for track in ctx.voice_state.tracks]
-        p = pagination.SimplePages(entries, per_page=10, index=True)
-        p.embed.title = "Current Queue"
-
-        try:
-            await p.start(ctx)
-        except menus.MenuError as e:
-            await ctx.send(e)
-
-    @decorators.command(name="clear", aliases=["c"], brief="Clear the queue.")
-    @checks.cooldown()
-    async def _clear(self, ctx, range_begin: int = None, range_end: int = None):
-        """
-        Usage: {0}clear
-        Alias: {0}c
-        Output:
-            Removes all queued tracks.
-        Notes:
-            Specify a range, e.g. {0}clear 3 10
-            to remove only the tracks between
-            position 3 and 10 in the queue.
-        """
-        queue = ctx.voice_state.tracks
-        if len(queue) == 0:
-            return await ctx.fail("The queue is already empty")
-        if range_begin and not range_end:
-            await ctx.usage()
-            return
-        if not range_begin and not range_end:
-            queue.clear()
-            await ctx.success("Cleared all tracks from the queue.")
-        else:
-            if not 1 <= range_begin <= len(queue) - 1:
-                await ctx.fail("Invalid range beginning")
-                return
-            if not range_begin < range_end <= len(queue):
-                await ctx.fail("Invalid range end")
-                return
-
-            queue.clear_range(range_begin, range_end)
-            await ctx.success(f"Cleared tracks in range from {range_begin} to {range_end}")
-
-
-    @decorators.command(name="shuffle", brief="Shuffle the queue.")
-    @checks.cooldown()
-    async def _shuffle(self, ctx, range_begin: int = None, range_end: int = None):
-        """
-        Usage: {0}shuffle
-        Output: Shuffles the queue.
-        Notes:
-            Specify a range, e.g. {0}shuffle 3 10
-            to shuffle only the tracks between
-            position 3 and 10 in the queue.
-        """
-        queue = ctx.voice_state.tracks
-
-        if len(queue) == 0:
-            await ctx.fail("The queue is currently empty.")
-            return
-        if range_begin and not range_end:
-            await ctx.usage()
-            return
-        if not range_begin and not range_end:
-            queue.shuffle()
-            await ctx.send_or_reply(f"{self.bot.emote_dict['shuffle']} Shuffled the queue.")
-        else:
-            if not 1 <= range_begin <= len(queue) - 1:
-                await ctx.fail("Invalid range beginning")
-                return
-            if not range_begin < range_end <= len(queue):
-                await ctx.fail("Invalid range end")
-                return
-
-            queue.shuffle_range(range_begin, range_end)
-            await ctx.send_or_reply(f"{self.bot.emote_dict['shuffle']} Shuffled tracks in range from {range_begin} to {range_end}")
-
-    @decorators.command(name="reverse", brief="Reverse the queue.")
-    @checks.cooldown()
-    async def _reverse(self, ctx):
-        """
-        Usage: {0}reverse
-        Output: Reverses the queue.
-        """
-        queue = ctx.voice_state.tracks
-
-        if len(queue) == 0:
-            await ctx.fail("The queue is currently empty.")
-            return
-
-        queue.reverse()
-        await ctx.send_or_reply(f"{self.bot.emote_dict['redo']} Reversed the queue.")
-
-    @decorators.command(
-        name="remove", aliases=["pop"], brief="Remove a track."
-    )
-    @checks.cooldown()
-    async def _remove(self, ctx, index: int):
-        """
-        Usage: {0}remove [index]
-        Alias: {0}pop
-        Output:
-            Removes a song from the queue at a given index.
-        """
-        queue = ctx.voice_state.tracks
-
-        if len(queue) == 0:
-            await ctx.fail("The queue is already empty")
-            return
-
-        try:
-            queue.remove(index - 1)
-        except Exception:
-            await ctx.fail("Invalid index.")
-            return
-
-        await ctx.success(f"Removed item `{index}` from the queue.")
-
-    @decorators.command(
         aliases=["deloop"],
         name="unloop",
         brief="Un-loop the track or queue.",
@@ -1534,107 +1332,6 @@ class Music(commands.Cog):
         emoji = self.bot.emote_dict["music"]
         await ctx.send_or_reply(f"{emoji} Requeued the previous song: {previous}")
 
-    @decorators.command(
-        aliases=["relocate", "switch"],
-        name="move",
-        brief="Move a song in the queue.",
-    )
-    @checks.cooldown()
-    async def _move(self, ctx, index: int, position: int):
-        """
-        Usage: {0}move <index> <position>
-        Alias: {0}switch, {0}relocate
-        Output:
-            Move a song to a new position in the queue.
-        """
-        total = len(ctx.voice_state.tracks)
-        if total == 0:
-            return await ctx.fail("The queue is currently empty.")
-        elif index > total or index < 1:
-            return await ctx.fail("Invalid index.")
-        elif position > total or position < 1:
-            return await ctx.fail("Invalid position.")
-        elif index == position:
-            await ctx.success("Song queue remains unchanged.")
-            return
-
-        song = ctx.voice_state.tracks.pop(index - 1)
-
-        ctx.voice_state.tracks.insert(position - 1, song)
-
-        await ctx.success(
-            f"Moved song #{index} to the {utils.number_format(position)} position in the queue."
-        )
-
-    @decorators.command(
-        aliases=["uniquify", "dd", "deduplicate"],
-        name="dedupe",
-        brief="Remove duplicate tracks.",
-    )
-    @checks.cooldown()
-    async def _dedupe(self, ctx):
-        """
-        Usage: {0}dedupe
-        Alias: {0}dd, {0}uniquify, {deduplicate}
-        Output:
-            Remove all duplicate tracks in the queue.
-        """
-        queue = ctx.voice_state.tracks
-        if len(queue) == 0:
-            await ctx.fail("The queue is currently empty.")
-            return
-
-        queue.deduplicate()
-        await ctx.success("Removed all duplicate tracks from the queue")
-
-    @decorators.command(
-        aliases=["lc", "leavecleanup", "cull"],
-        name="weed",
-        brief="Clear absent user enqueues.",
-    )
-    @checks.has_guild_permissions(move_members=True)
-    @checks.cooldown()
-    async def _weed(self, ctx):
-        """
-        Usage: {0}weed
-        Alias: {0}lc, {0}leavechannel, {0}cull
-        Output:
-            Remove all tracks enqueued by users
-            who have left the music channel.
-        """
-        channel = ctx.voice_state.voice.channel
-        queue = ctx.voice_state.tracks
-        if not channel:
-            await ctx.fail("Not currently playing music.")
-            return
-        if len(queue) == 0:
-            await ctx.fail("The queue is currently empty.")
-            return
-
-        queue.leave_cleanup(channel.members)
-        await ctx.success(f"Removed all tracks enqueued by users no longer in {channel.mention}")
-
-    @decorators.command(
-        aliases=["dq", "detrack"],
-        name="dequeue",
-        brief="Clear absent user enqueues.",
-    )
-    @checks.has_guild_permissions(move_members=True)
-    @checks.cooldown()
-    async def _dequeue(self, ctx, *, user: converters.DiscordMember):
-        """
-        Usage: {0}dequeue [user]
-        Alias: {0}detrack, {0}dq
-        Output:
-            Remove all tracks queued by a specific user.
-        """
-        queue = ctx.voice_state.tracks
-        if len(queue) == 0:
-            await ctx.fail("The queue is currently empty.")
-            return
-
-        queue.dequeue(user)
-        await ctx.success(f"Removed all tracks enqueued by **{user}** `{user.id}`")
 
     @decorators.command(
         aliases=["pos"],
@@ -1939,6 +1636,7 @@ class Music(commands.Cog):
         else:
             player.tracks.put_nowait(track)
             await ctx.send_or_reply(f"{MUSIC} Queued {track}")
+        
 
     @decorators.command(
         brief="Play a discord file or url.", name="playfile", hidden=True
@@ -1970,3 +1668,475 @@ class Music(commands.Cog):
             await AudioUtils.read_url(match.group(0), self.bot.session)  # Get url bytes
             await player.play_local_file(match.group(0))
             await ctx.send_or_reply(f"{MUSIC} Playing `{match.group(0)}`")
+
+class Queue(commands.Cog):
+    """
+    Module for managing the queue.
+    """
+
+    def __init__(self, bot):
+        self.bot = bot
+
+    async def cog_check(self, ctx):
+        if not ctx.guild:
+            return
+        if ctx.guild.id in self.bot.home_guilds:
+            return True
+
+    async def cog_before_invoke(self, ctx):
+        music = self.bot.get_cog("Music")
+        ctx.voice_state = music.get_voice_state(ctx)
+
+
+    @decorators.command(
+        name="skipto",
+        brief="Skip to a track in the queue.",
+    )
+    @checks.cooldown()
+    async def _skipto(self, ctx, index: int):
+        """
+        Usage: {0}skipto [index]
+        Output:
+            Skips the current track and plays
+            the selected track in the queue.
+        Notes:
+            Tracks before the selected song
+            will be removed from the queue.
+        """
+        player = ctx.voice_state.validate
+        queue = player.tracks
+
+        if len(queue) == 0:
+            await ctx.fail("The queue is currently empty.")
+
+        try:
+            selection = queue.skipto(index-1)
+        except IndexError:
+            await ctx.fail("Invalid track index provided.")
+            return
+        
+        queue.append_left(selection)
+        player.skip()
+        await ctx.success(f"Skipped to track #{index}: {selection}")
+
+    @decorators.command(
+        name="jump",
+        brief="Jump to a track in the queue.",
+    )
+    @checks.has_guild_permissions(move_members=True)
+    @checks.cooldown()
+    async def _jump(self, ctx, index: int):
+        """
+        Usage: {0}jump [index]
+        Output:
+            Skips the current track and plays
+            the selected track in the queue.
+        Notes:
+            All other tracks in the queue will
+            remain in their respective positions.
+        """
+        player = ctx.voice_state.validate
+        queue = player.tracks
+
+        if len(queue) == 0:
+            await ctx.fail("The queue is currently empty.")
+
+        try:
+            selection = queue.pop(index - 1)
+        except IndexError:
+            await ctx.fail("Invalid track index provided.")
+            return
+        else:
+            if ctx.author == player.current.requester:
+                queue.append_left(selection)  # Song requester can jump
+
+            elif ctx.author.guild_permissions.move_members:
+                queue.append_left(selection)  # Server DJs can jump
+            
+            else:
+                await ctx.fail("You must be either the track requester or a server DJ to use this command.")
+                return
+
+        player.skip()
+        await ctx.success(f"Jumped to track #{index}: {selection}")
+
+    ######################
+    ## Queue Management ##
+    ######################
+
+    @decorators.command(name="track", aliases=["q", "queue"], brief="Show the track queue.")
+    @checks.bot_has_perms(add_reactions=True, external_emojis=True, embed_links=True)
+    @checks.cooldown()
+    async def _tracks(self, ctx, *, search=None):
+        """
+        Usage: {0}tracks
+        Alias: {0}q, {0}queue
+        Output:
+            Starts a pagination session showing
+            all the tracks in the current queue.
+        Notes:
+            Each page contains 10 queue elements.
+            Will invoke the play command if a search
+            is specified.
+        """
+        if search:
+            return await ctx.invoke(self._play, search=search)
+
+        if len(ctx.voice_state.tracks) == 0:
+            await ctx.fail("The queue is currently empty.")
+            return
+
+        entries = [track.hyperlink for track in ctx.voice_state.tracks]
+        p = pagination.SimplePages(entries, per_page=10, index=True)
+        p.embed.title = "Current Queue"
+
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send(e)
+
+    @decorators.command(name="clear", aliases=["c"], brief="Clear the queue.")
+    @checks.cooldown()
+    async def _clear(self, ctx, range_begin: int = None, range_end: int = None):
+        """
+        Usage: {0}clear
+        Alias: {0}c
+        Output:
+            Removes all queued tracks.
+        Notes:
+            Specify a range, e.g. {0}clear 3 10
+            to remove only the tracks between
+            position 3 and 10 in the queue.
+        """
+        queue = ctx.voice_state.tracks
+        if len(queue) == 0:
+            return await ctx.fail("The queue is already empty")
+        if range_begin and not range_end:
+            await ctx.usage()
+            return
+        if not range_begin and not range_end:
+            queue.clear()
+            await ctx.success("Cleared all tracks from the queue.")
+        else:
+            if not 1 <= range_begin <= len(queue) - 1:
+                await ctx.fail("Invalid range beginning")
+                return
+            if not range_begin < range_end <= len(queue):
+                await ctx.fail("Invalid range end")
+                return
+
+            queue.clear_range(range_begin, range_end)
+            await ctx.success(f"Cleared tracks in range from {range_begin} to {range_end}")
+
+
+    @decorators.command(name="shuffle", brief="Shuffle the queue.")
+    @checks.cooldown()
+    async def _shuffle(self, ctx, range_begin: int = None, range_end: int = None):
+        """
+        Usage: {0}shuffle
+        Output: Shuffles the queue.
+        Notes:
+            Specify a range, e.g. {0}shuffle 3 10
+            to shuffle only the tracks between
+            position 3 and 10 in the queue.
+        """
+        queue = ctx.voice_state.tracks
+
+        if len(queue) == 0:
+            await ctx.fail("The queue is currently empty.")
+            return
+        if range_begin and not range_end:
+            await ctx.usage()
+            return
+        if not range_begin and not range_end:
+            queue.shuffle()
+            await ctx.send_or_reply(f"{self.bot.emote_dict['shuffle']} Shuffled the queue.")
+        else:
+            if not 1 <= range_begin <= len(queue) - 1:
+                await ctx.fail("Invalid range beginning")
+                return
+            if not range_begin < range_end <= len(queue):
+                await ctx.fail("Invalid range end")
+                return
+
+            queue.shuffle_range(range_begin, range_end)
+            await ctx.send_or_reply(f"{self.bot.emote_dict['shuffle']} Shuffled tracks in range from {range_begin} to {range_end}")
+
+    @decorators.command(name="reverse", brief="Reverse the queue.")
+    @checks.cooldown()
+    async def _reverse(self, ctx):
+        """
+        Usage: {0}reverse
+        Output: Reverses the queue.
+        """
+        queue = ctx.voice_state.tracks
+
+        if len(queue) == 0:
+            await ctx.fail("The queue is currently empty.")
+            return
+
+        queue.reverse()
+        await ctx.send_or_reply(f"{self.bot.emote_dict['redo']} Reversed the queue.")
+
+    @decorators.command(
+        name="remove", aliases=["pop"], brief="Remove a track from the queue."
+    )
+    @checks.cooldown()
+    async def _remove(self, ctx, index: int):
+        """
+        Usage: {0}remove [index]
+        Alias: {0}pop
+        Output:
+            Removes a song from the queue at a given index.
+        """
+        queue = ctx.voice_state.tracks
+
+        if len(queue) == 0:
+            await ctx.fail("The queue is already empty")
+            return
+
+        try:
+            queue.remove(index - 1)
+        except Exception:
+            await ctx.fail("Invalid index.")
+            return
+
+        await ctx.success(f"Removed item `{index}` from the queue.")
+
+    @decorators.command(
+        aliases=["relocate", "switch"],
+        name="move",
+        brief="Move a song in the queue.",
+    )
+    @checks.cooldown()
+    async def _move(self, ctx, index: int, position: int):
+        """
+        Usage: {0}move <index> <position>
+        Alias: {0}switch, {0}relocate
+        Output:
+            Move a song to a new position in the queue.
+        """
+        total = len(ctx.voice_state.tracks)
+        if total == 0:
+            return await ctx.fail("The queue is currently empty.")
+        elif index > total or index < 1:
+            return await ctx.fail("Invalid index.")
+        elif position > total or position < 1:
+            return await ctx.fail("Invalid position.")
+        elif index == position:
+            await ctx.success("Song queue remains unchanged.")
+            return
+
+        song = ctx.voice_state.tracks.pop(index - 1)
+
+        ctx.voice_state.tracks.insert(position - 1, song)
+
+        await ctx.success(
+            f"Moved song #{index} to the {utils.number_format(position)} position in the queue."
+        )
+
+    @decorators.command(
+        aliases=["uniquify", "dd", "deduplicate"],
+        name="dedupe",
+        brief="Remove duplicate tracks.",
+    )
+    @checks.cooldown()
+    async def _dedupe(self, ctx):
+        """
+        Usage: {0}dedupe
+        Alias: {0}dd, {0}uniquify, {deduplicate}
+        Output:
+            Remove all duplicate tracks in the queue.
+        """
+        queue = ctx.voice_state.tracks
+        if len(queue) == 0:
+            await ctx.fail("The queue is currently empty.")
+            return
+
+        queue.deduplicate()
+        await ctx.success("Removed all duplicate tracks from the queue")
+
+    @decorators.command(
+        aliases=["lc", "leavecleanup", "cull"],
+        name="weed",
+        brief="Clear absent user enqueues.",
+    )
+    @checks.has_guild_permissions(move_members=True)
+    @checks.cooldown()
+    async def _weed(self, ctx):
+        """
+        Usage: {0}weed
+        Alias: {0}lc, {0}leavechannel, {0}cull
+        Output:
+            Remove all tracks enqueued by users
+            who have left the music channel.
+        """
+        channel = ctx.voice_state.voice.channel
+        queue = ctx.voice_state.tracks
+        if not channel:
+            await ctx.fail("Not currently playing music.")
+            return
+        if len(queue) == 0:
+            await ctx.fail("The queue is currently empty.")
+            return
+
+        queue.leave_cleanup(channel.members)
+        await ctx.success(f"Removed all tracks enqueued by users no longer in {channel.mention}")
+
+    @decorators.command(
+        aliases=["dq", "detrack"],
+        name="dequeue",
+        brief="Clear absent user enqueues.",
+    )
+    @checks.has_guild_permissions(move_members=True)
+    @checks.cooldown()
+    async def _dequeue(self, ctx, *, user: converters.DiscordMember):
+        """
+        Usage: {0}dequeue [user]
+        Alias: {0}detrack, {0}dq
+        Output:
+            Remove all tracks queued by a specific user.
+        """
+        queue = ctx.voice_state.tracks
+        if len(queue) == 0:
+            await ctx.fail("The queue is currently empty.")
+            return
+
+        queue.dequeue(user)
+        await ctx.success(f"Removed all tracks enqueued by **{user}** `{user.id}`")
+
+    @decorators.command(
+        name="savequeue",
+        brief="Save the current queue."
+    )
+    async def _savequeue(self, ctx, *, name: str):
+        """
+        Usage: {0}savequeue [queue name]
+        Output:
+            Saves the current queue with a given name.
+        Notes:
+            This command will attach the current queue
+            and the provided name to your ID. You will
+            be the only person able to playback this queue
+            at a later time.
+        """
+        player = ctx.voice_state.validate
+        queue = ctx.voice_state.tracks
+        if len(queue) == 0:
+            await ctx.fail("The queue is currently empty.")
+            return
+
+        queue = [player.entry] + list(queue)
+        
+        queue = json.dumps([AudioUtils.json_entry(entry) for entry in queue])
+        query = """
+                INSERT INTO queues (owner_id, name, queue)
+                VALUES ($1, $2, $3::JSONB)
+                """
+        try:
+            await self.bot.cxn.execute(query, ctx.author.id, name.lower(), queue)
+        except asyncpg.exceptions.UniqueViolationError:
+            await ctx.fail("You already have a saved queue with that name. Please try again with a different name")
+            return
+        await ctx.success(f"Saved the current queue with name: **{name}**")
+
+    @decorators.command(
+        aliases=['unsavequeue'],
+        name="deletequeue",
+        brief="Delete a saved queue."
+    )
+    @checks.cooldown()
+    async def _deletequeue(self, ctx, *, name: str):
+        """
+        Usage: {0}deletequeue [queue name]
+        Aliases: {0}unsavequeue
+        Output:
+            Deletes a saved queue by name.
+        Notes:
+            Save playable queues by using
+            the {0}savequeue command.
+        """
+        query = """
+                DELETE FROM queues
+                WHERE owner_id = $1
+                AND name = $2
+                """
+        r = await self.bot.cxn.execute(query, ctx.author.id, name.lower())
+        if r == "DELETE 0":
+            await ctx.fail(f"You have no saved queue with name: **{name}**")
+            return
+
+    @decorators.command(brief="Show queues saved by a user.", name="queues", aliases=["myqueues", "savedqueues", "userqueues"])
+    @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
+    @checks.cooldown()
+    async def _queues(self, ctx, *, user: converters.DiscordMember = None):
+        """
+        Usage: {0}queues [user]
+        Aliases: {0}myqueues, {0}savedqueues, {0}userqueues
+        Output:
+            Shows all saved queues of a user
+            in a pagination session.
+        Notes:
+            Save playable queues by using
+            the {0}savequeue command.
+        """
+        user = user or ctx.author
+        query = """
+                SELECT name, JSONB_ARRAY_LENGTH(queue) AS len
+                FROM queues
+                WHERE owner_id = $1
+                ORDER BY insertion DESC;
+                """
+        queues = await self.bot.cxn.fetch(query, ctx.author.id)
+        if not queues:
+            await ctx.fail(f"User **{user}** `{user.id}` has no saved queues.")
+            return
+        p = pagination.SimplePages(
+            entries=[f"**{queue['name'].capitalize()}**: `{queue['len']} tracks`" for queue in queues],
+            per_page=10,
+            index=True
+        )
+        p.embed.title = f"{user.display_name}'s Saved Queues"
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send(e)
+
+    @decorators.command(name="playqueue", aliases=["loadqueue"], brief="Enqueue a saved queue.")
+    async def _playqueue(self, ctx, *, name: str):
+        """
+        Usage: {0}playqueue [queue name]
+        Alias: {0}loadqueue
+        Output:
+            Enqueues all tracks in the saved queue by
+            adding them to the end or the current queue.
+        Notes:
+            Save playable queues by using
+            the {0}savequeue command.
+        """
+        await ctx.trigger_typing()
+        music = self.bot.get_cog("Music")
+        player = await music.ensure_voice_state(ctx)
+        query = """
+                SELECT name, queue
+                FROM queues
+                WHERE owner_id = $1
+                AND name = $2
+                """
+        saved_queue = await self.bot.cxn.fetchrow(query, ctx.author.id, name.lower())
+        if not saved_queue:
+            await ctx.fail("You do not have a saved queue with that name")
+
+        queue = json.loads(saved_queue["queue"])
+
+        player.tracks.extend([
+            QueueEntry(
+                ctx,
+                track.get('title'),
+                track.get('search'),
+                uploader=track.get('uploader'),
+                link=track.get('link')
+            ) for track in queue
+        ])
+
+        await ctx.send(f"Enqueued saved playlist: {saved_queue['name']} `({len(queue)} tracks)`")

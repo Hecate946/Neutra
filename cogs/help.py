@@ -587,6 +587,14 @@ class Help(commands.Cog):
                 cog = self.bot.get_cog("Music")
                 return await self.send_cog_help(ctx, cog)
 
+            if category_or_command.lower() in ["queue"]:
+                if ctx.guild.id not in self.bot.home_guilds:
+                    return await ctx.fail(
+                        f"No command named `{category_or_command}` found."
+                    )
+                cog = self.bot.get_cog("Queue")
+                return await self.send_cog_help(ctx, cog)
+
             ##########################
             ## Manages Command Help ##
             ##########################

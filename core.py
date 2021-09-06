@@ -167,13 +167,14 @@ class Neutra(commands.AutoShardedBot):
             "MONITOR",
         ]
         self.do_not_load = ["CONVERSION"]
-        self.home_cogs = ["MUSIC"]
+        self.home_cogs = ["MUSIC", "QUEUE"]
 
         self.home_guilds = [
             805638877762420786,  # Support server
             776345386482270209,  # Ajabs server
             740734113086177433,  # HamFam server
-            743299744301973514,  # Renatuu's server
+            743299744301973514,  # Renatuu's old server
+            880581552650723378,  # Renatuu's new server
             110373943822540800,  # Dbots.gg server
             336642139381301249,  # Discord.py server
             824510213909512192,  # mwthecool's server

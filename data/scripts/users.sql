@@ -74,3 +74,10 @@ CREATE TABLE IF NOT EXISTS useravatars (
 --     track_id TEXT,
 --     insertion TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
 -- );
+CREATE TABLE IF NOT EXISTS queues (
+    id BIGSERIAL PRIMARY KEY,
+    owner_id BIGINT,
+    name TEXT,
+    queue JSONB DEFAULT '{}'::JSONB,
+    insertion TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
+);
