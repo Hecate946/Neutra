@@ -372,7 +372,7 @@ class Batch(commands.Cog):
                     "author": ctx.author.id,
                     "timestamp": str(ctx.message.created_at.utcnow()),
                     "prefix": ctx.prefix,
-                    "command": ctx.command.qualified_name,
+                    "command": ctx.command.name,
                     "failed": ctx.command_failed,
                     "content": ctx.message.clean_content.replace("\u0000", ""),
                 }
