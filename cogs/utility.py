@@ -1785,10 +1785,12 @@ class Utility(commands.Cog):
             + [r for s in self.bot.guilds for r in s.roles]
             + [m for m in self.bot.get_all_members()]
             + [c for c in self.bot.get_all_channels()]
+            + [m for m in self.bot.cached_messages]
         )
-        obj = ""
+
         obj = discord.utils.get(look_at, id=id)
-        result = f"```py\n{repr(obj)}```" if obj else "Could not find the ID through `guilds`、`channels`、`users`、`roles`、`emojis`"
+        result = f"```py\n{repr(obj)}```" if obj else "Could not find the ID through " \
+                                                      "`guilds`、`channels`、`users`、`roles`、`emojis`、`cached messages` "
         await ctx.send(result)
 
 
