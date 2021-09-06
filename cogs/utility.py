@@ -1767,6 +1767,29 @@ class Utility(commands.Cog):
         hex_string = hex_string.replace("0x", "").replace("0X", "")
         hex_string = re.sub(r"[^0-9A-Fa-f]+", "", hex_string)
         return hex_string
+    
+    @decorators.command(
+        brief="Returns the repr of an discord object by ID if found.",
+        implemented="2021-09-06 03:00:38.087947",
+        updated="2021-09-06 03:00:38.087947",
+        examples="""
+            {0}whatis 708584008065351681
+            {0}whatis 871900448955727902
+            {0}whatis 805638877762420786
+            """,
+    )
+    async def whatis(self, ctx, id: int):
+        look_at = (
+            self.bot.guilds
+            + self.bot.emojis
+            + [r for s in self.bot.guilds for r in s.roles]
+            + [m for m in self.bot.get_all_members()]
+            + [c for c in self.bot.get_all_channels()]
+        )
+        obj = ""
+        obj = discord.utils.get(look_at, id=id)
+        result = f"```py\n{repr(obj)}```" if obj else "Could not find the ID through `guilds`、`channels`、`users`、`roles`、`emojis`"
+        await ctx.send(result)
 
 
 class NumericStringParser(object):
