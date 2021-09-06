@@ -43,6 +43,7 @@ class Batch(commands.Cog):
         self.roles_batch = defaultdict(dict)
         self.snipe_batch = []
         self.status_batch = defaultdict(dict)
+        self.status_full_batch = defaultdict(dict)
         self.tracking_batch = defaultdict(dict)
         self.usernames_batch = []
 
@@ -221,6 +222,29 @@ class Batch(commands.Cog):
         #     )
         #     await self.bot.cxn.execute(query, data)
         #     self.activity_batch.clear()
+        
+        if self.status_full_batch:    # User online/offline timeline tracking
+            query = """
+                    INSERT INTO userstatus_full (user_id, status, insertion)
+                    SELECT x.user_id, x.status, x.insertion
+                    FROM JSONB_TO_RECORDSET($1::JSONB)
+                    AS x(user_id BIGINT, status TEXT, insertion TIMESTAMP)
+                    """
+
+            data = json.dumps(
+                [
+                    {
+                        "user_id": user_id,
+                        "status": status,
+                        "insertion": str(timestamp),
+                    }
+                    for user_id, data in self.status_full_batch.items()
+                    for status, timestamp in data.items()
+                ]
+            )
+            async with self.batch_lock:
+                await self.bot.cxn.execute(query, data)
+                self.status_full_batch.clear()
 
         if self.command_batch:  # Insert all the commands executed.
             query = """
@@ -451,10 +475,12 @@ class Batch(commands.Cog):
         if self.status_changed(before, after):
             async with self.batch_lock:
                 self.status_batch[str(before.status)][after.id] = time.time()
+                after_status = 'mobile' if after.is_on_mobile() else str(after.status)
                 status_txt = (
-                    f"updating their status: `{before.status}` ➔ `{after.status}`"
+                    f"updating their status: `{before.status}` ➔ `{after_status}`"
                 )
                 self.tracking_batch[before.id] = {time.time(): status_txt}
+                self.status_full_batch[before.id].update({after_status: datetime.utcnow()})
 
         if self.activity_changed(before, after):
             action = "updating their custom status"
