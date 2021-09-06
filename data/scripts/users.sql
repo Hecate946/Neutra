@@ -48,6 +48,14 @@ CREATE TABLE IF NOT EXISTS userstatus (
     starttime DOUBLE PRECISION DEFAULT EXTRACT(EPOCH FROM NOW())
 );
 
+CREATE TABLE IF NOT EXISTS userstatus_full (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT,
+    status TEXT,
+    insertion TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
+);
+CREATE INDEX IF NOT EXISTS userstatus_full_idx ON userstatus_full(user_id, status);
+
 CREATE TABLE IF NOT EXISTS avatars (
     hash TEXT PRIMARY KEY,
     url TEXT,
