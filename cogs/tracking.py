@@ -581,7 +581,7 @@ class Tracking(commands.Cog):
                 raise commands.DisabledCommand()
 
     @decorators.command(
-        aliases=["lastseen", "track", "tracker", "observed"],
+        aliases=["lastseen", "tracker", "observed"],
         brief="Check when a user was last seen.",
         implemented="2021-03-12 00:02:48.206914",
         updated="2021-05-06 23:52:15.847160",
