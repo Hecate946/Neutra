@@ -842,8 +842,8 @@ class YTDLSource:
         )
         embed.set_author(
             name=f"{ctx.author.name}",
-            url=f"{ctx.author.avatar.url}",
-            icon_url=f"{ctx.author.avatar.url}",
+            url=f"{ctx.author.display_avatar.url}",
+            icon_url=f"{ctx.author.display_avatar.url}",
         )
 
         await ctx.send(embed=embed, delete_after=30.0)

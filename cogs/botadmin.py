@@ -12,13 +12,13 @@ import discord
 from collections import defaultdict
 from discord.ext import commands, menus
 
+from utilities import utils
 from utilities import checks
 from utilities import helpers
 from utilities import converters
 from utilities import decorators
 from utilities import formatting
 from utilities import pagination
-
 
 def setup(bot):
     bot.add_cog(Botadmin(bot))
@@ -1017,7 +1017,7 @@ class Botadmin(commands.Cog):
             )  # Add the disabled if any
 
         server_embed.set_thumbnail(
-            url=guild.icon.url if len(guild.icon.url) else ctx.author.default_avatar.url
+            url=utils.get_icon(guild)
         )
         server_embed.set_footer(text="Server ID: {}".format(guild.id))
         # Let's send all the embeds we need finishing off with extra emojis as
@@ -1036,11 +1036,7 @@ class Botadmin(commands.Cog):
                 await ctx.send_or_reply(embed=server_embed)
                 server_embed = discord.Embed(color=self.bot.constants.embed)
                 server_embed.title = guild.name
-                server_embed.set_thumbnail(
-                    url=guild.icon.url
-                    if len(guild.icon.url)
-                    else ctx.author.default_avatar.url
-                )
+                server_embed.set_thumbnail(url=utils.get_icon(guild))
                 server_embed.set_footer(text="Server ID: {}".format(guild.id))
                 server_embed.description = "Continued Emojis:"
                 server_embed.add_field(name=name, value=e, inline=False)

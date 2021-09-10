@@ -150,7 +150,7 @@ class Help(commands.Cog):
             color=self.bot.constants.embed,
         )
         help_embed.set_author(
-            name="Welcome to my help page.", icon_url=self.bot.user.avatar.url
+            name="Welcome to my help page.", icon_url=self.bot.user.display_avatar.url
         )
         help_embed.add_field(
             name="Here's how to understand my help command.",

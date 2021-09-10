@@ -20,9 +20,8 @@ from discord.iterators import HistoryIterator
 
 # Some funcs and ideas from corpbot.py and discord_bot.py
 
-URL_REGEX = (
-    r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
-)
+URL_REGEX = r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
+DISCORD_FAILURE = "https://cdn.discordapp.com/attachments/846597178918436885/873793100613582878/poop.png"
 
 
 def prefix_log(message, title="Neutra"):
@@ -507,6 +506,12 @@ def cleanup_code(content):
     # remove `foo`
     return content.strip("` \n")
 
+
+def get_icon(guild):
+    """Return cdn poop image if no icon"""
+    if not guild.icon:
+        guild.icon = DISCORD_FAILURE
+    return guild.icon
 
 class CachedHistoryIterator(HistoryIterator):
     """HistoryIterator, but we hit the cache first."""

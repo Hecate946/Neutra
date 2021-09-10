@@ -197,7 +197,7 @@ class Utility(commands.Cog):
             badges.append(self.bot.emote_dict["nitro"])
             badges.append(self.bot.emote_dict["boost"])
         else:
-            if user.avatar.is_animated():
+            if user.display_avatar.is_animated():
                 badges.append(self.bot.emote_dict["nitro"])
         if not badges:
             return await ctx.fail(f"User `{user}` has no badges.")
@@ -460,7 +460,7 @@ class Utility(commands.Cog):
             f"**Token Created:** `{timestamp}`",
         )
         embed.color = self.bot.constants.embed
-        embed.set_thumbnail(url=user.avatar.url)
+        embed.set_thumbnail(url=user.display_avatar.url)
         await ctx.send_or_reply(embed=embed)
 
     @decorators.command(
@@ -518,7 +518,7 @@ class Utility(commands.Cog):
             f"**Generated token:** `{complete}`\n",
         )
 
-        avatar = str(user.avatar) if user.avatar else user.default_avatar.url
+        avatar = user.display_avatar.url
 
         embed.color = self.bot.constants.embed
         embed.set_thumbnail(url=avatar)
@@ -806,7 +806,7 @@ class Utility(commands.Cog):
     async def do_avatar(
         self, ctx, name, url, default=False, *, option="avatar", file=None
     ):
-        url = url.replace("cdn", "images", 1).replace("com", "net", 1)
+        # url = url.replace("cdn", "images", 1).replace("com", "net", 1)
         embed = discord.Embed(
             title=f"**{name}'s {'default' if default else ''} {option}.**",
             description=""
@@ -845,7 +845,7 @@ class Utility(commands.Cog):
         Notes: Will default to you if no user is passed.
         """
         user = user or ctx.author
-        await self.do_avatar(ctx, user.display_name, url=user.avatar.url)
+        await self.do_avatar(ctx, user.display_name, url=user.display_avatar.url)
 
     @decorators.command(
         brief="Show a user's banner.",

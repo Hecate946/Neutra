@@ -633,7 +633,7 @@ class Embed:
                 em.set_author(
                     name=self._truncate_string(name, self.auth_max),
                     # Ignore the url here
-                    icon_url=self.author.avatar.url,
+                    icon_url=self.author.display_avatar.url,
                 )
             elif type(self.author) is dict:
                 if any(item in self.author for item in ["name", "url", "icon"]):

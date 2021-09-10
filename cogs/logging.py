@@ -14,12 +14,10 @@ from utilities import decorators
 from utilities import exceptions
 from utilities import pagination
 
-
+DISCORD_FAILURE = "https://cdn.discordapp.com/attachments/846597178918436885/873793100613582878/poop.png"
 CREATED_MESSAGE = "https://cdn.discordapp.com/attachments/846597178918436885/846841649542725632/messagecreate.png"
 UPDATED_MESSAGE = "https://cdn.discordapp.com/attachments/846597178918436885/846841668639653939/messageupdate.png"
 DELETED_MESSAGE = "https://cdn.discordapp.com/attachments/846597178918436885/846841722994163722/messagedelete.png"
-
-CDN_POOP = "https://cdn.discordapp.com/attachments/846597178918436885/873793100613582878/poop.png"
 
 
 def setup(bot):
@@ -209,7 +207,7 @@ class Logging(commands.Cog):
                             embeds=embeds,
                             files=files,
                             username=f"{self.bot.user.name}-logger",
-                            avatar_url=self.bot.user.avatar.url,
+                            avatar_url=self.bot.user.display_avatar.url,
                         )
                     except discord.NotFound:  # Raised when users manually delete the webhook.
                         pass
@@ -632,7 +630,7 @@ class Logging(commands.Cog):
                     icon_url=DELETED_MESSAGE,
                 )
 
-                embed.set_image(url=CDN_POOP)
+                embed.set_image(url=DISCORD_FAILURE)
                 await self.send_webhook(webhook, embed=embed)
 
         if before.banner != after.banner:
@@ -974,7 +972,7 @@ class Logging(commands.Cog):
                     colour=self.bot.constants.embed,
                     timestamp=discord.utils.utcnow(),
                 )
-                avatar = str(after.avatar) if after.avatar else after.default_avatar.url
+                avatar = after.display_avatar.url
                 embed.set_image(url=avatar)
                 embed.set_author(name=f"Avatar Change")
                 embed.set_footer(text=f"User ID: {after.id}")

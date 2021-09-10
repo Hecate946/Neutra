@@ -511,7 +511,7 @@ class Tracking(commands.Cog):
                 self.bot.avatar_saver.save(user)
                 embed = discord.Embed(color=self.bot.constants.embed)
                 embed.title = f"Recorded Avatars for {user}"
-                embed.set_image(url=str(user.avatar.with_size(1024)))
+                embed.set_image(url=str(user.display_avatar.with_size(1024)))
                 await ctx.send_or_reply(embed=embed)
             else:
                 raise commands.DisabledCommand()

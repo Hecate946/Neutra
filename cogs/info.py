@@ -119,7 +119,7 @@ class Info(commands.Cog):
             voice_channels += len(guild.voice_channels)
 
         embed = discord.Embed(color=self.bot.constants.embed)
-        embed.set_thumbnail(url=self.bot.user.avatar.url)
+        embed.set_thumbnail(url=self.bot.user.display_avatar.url)
 
         embed.add_field(name="Last Boot", value=str(uptime).capitalize())
         embed.add_field(name="Developer", value=str(self.bot.hecate))
@@ -188,7 +188,7 @@ class Info(commands.Cog):
         ram_usage = self.process.memory_full_info().rss / 1024 ** 2
 
         embed = discord.Embed(color=self.bot.constants.embed)
-        embed.set_thumbnail(url=self.bot.user.avatar.url)
+        embed.set_thumbnail(url=self.bot.user.display_avatar.url)
         embed.add_field(name="Session Uptime", value=current_uptime)
         embed.add_field(name="Total Runtime", value=total_uptime)
         embed.add_field(name="Created", value=str(created).capitalize())
@@ -797,7 +797,7 @@ class Info(commands.Cog):
             ),
             color=self.bot.constants.embed,
         )
-        embed.set_author(name=owner, icon_url=owner.avatar.url)
+        embed.set_author(name=owner, icon_url=owner.display_avatar.url)
         await ctx.send_or_reply(embed=embed)
 
     @decorators.command(brief="Display the source code.", aliases=["sourcecode", "src"])

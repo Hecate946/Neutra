@@ -455,7 +455,7 @@ class Stats(commands.Cog):
             Will default to youself if no member is passed.
         """
         user = user or ctx.author
-        avatar = str(user.avatar) if user.avatar else user.default_avatar.url
+        avatar = user.display_avatar.url
 
         embed = discord.Embed(colour=user.top_role.colour.value)
         embed.set_thumbnail(url=avatar)
@@ -997,9 +997,9 @@ class Stats(commands.Cog):
         created = f"Created on {role.created_at.__format__('%m/%d/%Y')}"
 
         embed = discord.Embed(color=self.bot.constants.embed)
-        embed.set_author(name=role.name, icon_url=ctx.guild.icon.url)
+        embed.set_author(name=role.name, icon_url=utils.get_icon(ctx.guild))
         embed.set_footer(text=f"Role ID: {role.id} | {created}")
-        embed.set_thumbnail(url=ctx.guild.icon.url)
+        embed.set_thumbnail(url=utils.get_icon(ctx.guild))
         embed.add_field(name="Mention", value=role.mention)
         embed.add_field(name="Users", value=users)
         embed.add_field(name="Hoisted", value=role.hoist)
@@ -1108,8 +1108,8 @@ class Stats(commands.Cog):
             region = str(server.region).title()
 
         em = discord.Embed(color=self.bot.constants.embed)
-        em.set_thumbnail(url=server.icon.url)
-        em.set_author(name=server.name, icon_url=server.icon.url)
+        em.set_thumbnail(url=utils.get_icon(server))
+        em.set_author(name=server.name, icon_url=utils.get_icon(server))
         em.set_footer(
             text=f"Server ID: {server.id} | Created on {server.created_at.__format__('%m/%d/%Y')}"
         )
@@ -1267,7 +1267,7 @@ class Stats(commands.Cog):
         else:
             emoji = self.bot.emote_dict["user"]
 
-        avatar = str(user.avatar) if user.avatar else user.default_avatar.url
+        avatar = user.display_avatar.url
 
         embed = discord.Embed(color=self.bot.constants.embed)
         embed.set_author(name=f"{user}", icon_url=avatar)

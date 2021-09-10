@@ -43,7 +43,7 @@ class AvatarSaver:
 
     def save(self, user):
         if self.is_saving:
-            avatar_name = user.avatar.key if user.avatar else user.default_avatar.key
+            avatar_name = user.display_avatar.key
             self.pending.append(
                 {
                     "user_id": user.id,
@@ -51,7 +51,7 @@ class AvatarSaver:
                     "first_seen": str(discord.utils.utcnow()),
                 }
             )
-            avatar = str(user.avatar) if user.avatar else user.default_avatar.url
+            avatar = user.display_avatar.url
             self.avatars[avatar_name] = avatar
 
     async def inserter(self):

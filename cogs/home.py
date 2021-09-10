@@ -4,6 +4,7 @@ import PIL as pillow
 
 from discord.ext import commands
 
+from utilities import utils
 from utilities import checks
 from utilities import converters
 from utilities import decorators
@@ -50,7 +51,7 @@ class Home(commands.Cog):
         await self.welcome(member)
 
     async def welcome(self, member):
-        byteav = await member.avatar.with_size(128).read()
+        byteav = await member.display_avatar.with_size(128).read()
         buffer = await self.bot.loop.run_in_executor(
             None, self.create_welcome_image, byteav, member
         )
@@ -66,7 +67,7 @@ class Home(commands.Cog):
             color=self.bot.constants.embed,
             url=self.bot.oauth,
         )
-        embed.set_thumbnail(url=member.guild.icon.url)
+        embed.set_thumbnail(url=utils.get_icon(member.guild))
         embed.set_image(url="attachment://welcome.png")
         embed.set_footer(text=f"Server Population: {member.guild.member_count} ")
         await self.welcomer.send(f"{member.mention}", file=dfile, embed=embed)
@@ -98,7 +99,7 @@ class Home(commands.Cog):
         return buffer
 
     async def thank_booster(self, member):
-        byteav = await member.avatar.with_size(128).read()
+        byteav = await member.display_avatar.with_size(128).read()
         buffer = await self.bot.loop.run_in_executor(
             None, self.create_booster_image, byteav, member
         )
@@ -114,7 +115,7 @@ class Home(commands.Cog):
             color=self.bot.constants.embed,
             url=self.bot.oauth,
         )
-        embed.set_thumbnail(url=member.guild.icon.url)
+        embed.set_thumbnail(url=utils.get_icon(member.guild))
         embed.set_image(url="attachment://booster.png")
         embed.set_footer(
             text=f"Server Boosts: {member.guild.premium_subscription_count} "
