@@ -212,6 +212,7 @@ class Help(commands.Cog):
             await message.remove_reaction(self.bot.emote_dict["trash"], self.bot.user)
 
     async def send_help(self, ctx, embed):
+        s = embed.to_dict()
         if not ctx.guild:  # In DMs, just send the embed
             msg = await ctx.safe_send(embed=embed, view=HelpView(ctx))
         else:  # In a server
@@ -261,20 +262,19 @@ class Help(commands.Cog):
         for cog in sorted(cogs, key=lambda cog: cog.qualified_name):
             if cog.qualified_name.upper() in self.bot.admin_cogs:
                 admin += f"\n`{cog.qualified_name}` {cog.description}\n"
-            elif cog.qualified_name.upper() in self.bot.home_cogs:
+            elif cog.qualified_name.upper() in self.bot.music_cogs:
                 beta += f"\n`{cog.qualified_name}` {cog.description}\n"
             else:
                 public += f"\n`{cog.qualified_name}` {cog.description}\n"
 
         embed.add_field(
-            name="**Current Categories**", value=f"** **{public}**\n**", inline=False
+            name="**General Categories**", value=f"** **{public}**\n**", inline=False
         )
-        if checks.is_home(ctx):
-            embed.add_field(
-                name="**Beta Categories**",
-                value=f"** **{beta}**\n**",
-                inline=False,
-            )
+        embed.add_field(
+            name="**Music Categories**",
+            value=f"** **{beta}**\n**",
+            inline=False,
+        )
         if checks.is_admin(ctx):
             embed.add_field(
                 name="**Admin Categories**", value=f"** **{admin}**\n**", inline=False
@@ -315,9 +315,9 @@ class Help(commands.Cog):
 
         if command.hidden:
             return await ctx.fail(f"No command named `{search}` found.")
-        if command.cog_name in self.bot.home_cogs and not checks.is_home(ctx):
-            return await ctx.fail(f"No command named `{search}` found.")
-        if command.cog_name in self.bot.admin_cogs and not checks.is_home(ctx):
+        # if command.cog_name in self.bot.music_cogs and not checks.is_home(ctx):
+        #     return await ctx.fail(f"No command named `{search}` found.")
+        if command.cog_name in self.bot.admin_cogs and not checks.is_admin(ctx):
             return await ctx.fail(f"No command named `{search}` found.")
 
         embed = discord.Embed(
@@ -579,20 +579,20 @@ class Help(commands.Cog):
             ## Beta help ##
             ###############
 
-            if category_or_command.lower() in ["music", "player", "audio"]:
-                if ctx.guild.id not in self.bot.home_guilds:
-                    return await ctx.fail(
-                        f"No command named `{category_or_command}` found."
-                    )
-                cog = self.bot.get_cog("Music")
+            if category_or_command.lower() in ["music", "player"]:
+                cog = self.bot.get_cog("Player")
                 return await self.send_cog_help(ctx, cog)
 
             if category_or_command.lower() in ["queue"]:
-                if ctx.guild.id not in self.bot.home_guilds:
-                    return await ctx.fail(
-                        f"No command named `{category_or_command}` found."
-                    )
                 cog = self.bot.get_cog("Queue")
+                return await self.send_cog_help(ctx, cog)
+
+            if category_or_command.lower() in ["voice"]:
+                cog = self.bot.get_cog("Voice")
+                return await self.send_cog_help(ctx, cog)
+
+            if category_or_command.lower() in ["audio"]:
+                cog = self.bot.get_cog("Audio")
                 return await self.send_cog_help(ctx, cog)
 
             ##########################
@@ -940,8 +940,6 @@ class Help(commands.Cog):
         checks = []
         for x in command.checks:
             if hasattr(x, "__qualname__"):
-                print(x.__qualname__)
-                print(type(x.__qualname__))
                 checks.append(str(x.__qualname__).split(".")[0])
         if "dm_only" in checks:
             msg = f"The command `{command}` can only be run in direct messages."

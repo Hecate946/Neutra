@@ -1767,18 +1767,26 @@ class Utility(commands.Cog):
         hex_string = hex_string.replace("0x", "").replace("0X", "")
         hex_string = re.sub(r"[^0-9A-Fa-f]+", "", hex_string)
         return hex_string
-    
+
     @decorators.command(
-        brief="Returns the repr of an discord object by ID if found.",
+        brief="Get the type of a discord object.",
+        aliases=["type", "typeof", "findtype"],
         implemented="2021-09-06 03:00:38.087947",
-        updated="2021-09-06 03:00:38.087947",
+        updated="2021-09-06 07:08:03.425566",
+        writer=346877537026179072,
         examples="""
             {0}whatis 708584008065351681
-            {0}whatis 871900448955727902
-            {0}whatis 805638877762420786
+            {0}typeof 871900448955727902
+            {0}findtype 805638877762420786
             """,
     )
     async def whatis(self, ctx, id: int):
+        """
+        Usage: {0}whatis [id]
+        Aliases: {0}findtype, {0}type, {0}typeof
+        Output:
+            Searches for the type of the specified discord ID
+        """
         look_at = (
             self.bot.guilds
             + self.bot.emojis
@@ -1789,9 +1797,13 @@ class Utility(commands.Cog):
         )
 
         obj = discord.utils.get(look_at, id=id)
-        result = f"```py\n{repr(obj)}```" if obj else "Could not find the ID through " \
-                                                      "`guilds`、`channels`、`users`、`roles`、`emojis`、`cached messages` "
-        await ctx.send(result)
+        result = (
+            f"```py\n{type(obj)}```"
+            if obj
+            else "Could not find the ID through "
+            "`guilds`、`channels`、`users`、`roles`、`emojis`、`cached messages` "
+        )
+        await ctx.send_or_reply(result)
 
 
 class NumericStringParser(object):

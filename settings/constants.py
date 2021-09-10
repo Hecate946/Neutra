@@ -20,15 +20,18 @@ except KeyError as e:
           Add this key or the bot might not function properly.
           """
     )
-avatars = {
-    "red": "https://cdn.discordapp.com/attachments/846597178918436885/847339918216658984/red.png",
-    "orange": "https://cdn.discordapp.com/attachments/846597178918436885/847342151238811648/orange.png",
-    "yellow": "https://cdn.discordapp.com/attachments/846597178918436885/847341423945711637/yellow.png",
-    "green": "https://cdn.discordapp.com/attachments/846597178918436885/847528287739314176/green.png",
-    "blue": "https://cdn.discordapp.com/attachments/846597178918436885/847339750042239007/blue.png",
-    "purple": "https://cdn.discordapp.com/attachments/846597178918436885/847340695823450117/purple.png",
-    "black": "https://cdn.discordapp.com/attachments/846597178918436885/847339605555675176/black.png",
-}
+
+
+class Colors(object):
+    GREEN = (46, 204, 113)
+    YELLOW = (255, 228, 0)
+    RED = (237, 41, 57)
+    GRAY = (97, 109, 126)
+    BLUE = (10, 24, 34)
+    WHITE = (255, 255, 255)
+    PINK = (255, 196, 235)
+
+
 emotes = {
     "loading": "<a:loading:875108637549408297>",
     "help": "<:help:866884635664187424>",

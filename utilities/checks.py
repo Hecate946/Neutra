@@ -27,6 +27,7 @@ def is_admin(ctx):
 def is_home(ctx):
     if not ctx.guild:
         return False
+
     if ctx.guild.id not in ctx.bot.home_guilds:
         return False
     return True

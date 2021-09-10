@@ -27,6 +27,12 @@ class BotContext(commands.Context):
             **kwargs,
         )
 
+    async def music(self, content=None, **kwargs):
+        return await self.send_or_reply(
+            self.bot.emote_dict["music"] + " " + (content if content else ""),
+            **kwargs,
+        )
+
     async def send_or_reply(self, content=None, **kwargs):
         if not self.channel.permissions_for(self.me).send_messages:
             return

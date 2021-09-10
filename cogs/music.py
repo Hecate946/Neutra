@@ -1,27 +1,64 @@
-from collections import deque
+"""
+Hello! This is the heart and soul of the Neutra's music module.
+It contains four total cogs, the first for the player, the second
+for the queue, third for voice management, and last for effects.
+Also included are custom music checks, audio-specific utilities,
+custom exceptions, a spotify api getter class, a guild-specific
+VoiceState class, a custom TrackQueue that contains QueueEntry's,
+and finally, Two audio source classes, YTDLSource, for creating
+a playable audio source from youtube, and AudioSource, that plays
+the audio and is responsible for managing volume, speed, and pitch.
+This module is entirely separate from the remainder of the client,
+and can be removed with relative ease merely by deleting this file.
+"""
+
+import re
 import io
 import json
-import re
 import math
+import time
+import base64
 import typing
 import random
+import aiohttp
 import asyncio
 import asyncpg
 import discord
+import logging
 import functools
 import itertools
+import traceback
+from discord.ui.button import B
 import youtube_dl
 
 from discord.ext import commands, menus
+from logging.handlers import RotatingFileHandler
+from collections import deque
+from PIL import Image
 
-from utilities import utils
 from utilities import checks
-from utilities import images
-from utilities import spotify
+from utilities import helpers
 from utilities import converters
 from utilities import decorators
-from utilities import exceptions
 from utilities import pagination
+
+# Set up our music-specific logger.
+log = logging.getLogger("MUSIC_LOGGER")
+log.setLevel(logging.INFO)
+handler = RotatingFileHandler(
+    filename="./data/logs/music.log",
+    encoding="utf-8",
+    mode="w",
+    maxBytes=30 * 1024 * 1024,
+    backupCount=5,
+)
+log.addHandler(handler)
+formatter = logging.Formatter(
+    fmt="{asctime}: [{levelname}] {name} || {message}",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    style="{",
+)
+handler.setFormatter(formatter)
 
 # Silence useless bug reports messages
 youtube_dl.utils.bug_reports_message = lambda: ""
@@ -54,37 +91,190 @@ YTDL_OPTIONS = {
 YOUTUBE_DL = youtube_dl.YoutubeDL(YTDL_OPTIONS)
 
 
-class AudioUtils:
+class exceptions:
+    class InactivePlayer(commands.BadArgument):
+        """
+        Custom exception to raise when
+        the music player is not active.
+        """
+
+        def __init__(self, *args):
+            msg = "No track is currently being played."
+            super().__init__(message=msg, *args)
+
+    class FeatureNotSupported(commands.BadArgument):
+        """
+        Custom exception to raise when the user
+        uses on a not yet implemented music feature.
+        """
+
+        def __init__(self, message=None, *args):
+            msg = "Feature is currently not supported."
+            super().__init__(message=message or msg, *args)
+
+    class InvalidMediaType(commands.BadArgument):
+        """
+        Custom exception to raise when the
+        file media type cannot be played.
+        """
+
+        def __init__(self, message=None, *args):
+            msg = "Invalid media type. Media type must be either audio or video."
+            super().__init__(message=message or msg, *args)
+
+    class IsBound(commands.BadArgument):
+        """
+        Custom exception to raise when the
+        bot is bound to a specific text channel.
+        """
+
+        def __init__(self, channel, *args):
+            msg = f"Music commands cannot be used outside of {channel.mention}."
+            super().__init__(message=msg, *args)
+
+    class SpotifyError(Exception):
+        pass
+
+    class VoiceError(Exception):
+        pass
+
+    class YTDLError(Exception):
+        pass
+
+
+class Spotify:
+    # https://github.com/Just-Some-Bots/MusicBot
+    OAUTH_TOKEN_URL = "https://accounts.spotify.com/api/token"
+    API_BASE = "https://api.spotify.com/v1/"
+
+    def __init__(self, client_id, client_secret, aiosession=None, loop=None):
+        self.client_id = client_id
+        self.client_secret = client_secret
+        self.aiosession = aiosession if aiosession else aiohttp.ClientSession()
+        self.loop = loop if loop else asyncio.get_event_loop()
+
+        self.token = None
+
+        self.loop.create_task(self.get_token())  # validate token
+
+    def _make_token_auth(self, client_id, client_secret):
+        auth_header = base64.b64encode(
+            (client_id + ":" + client_secret).encode("ascii")
+        )
+        return {"Authorization": "Basic %s" % auth_header.decode("ascii")}
+
+    async def get_tracks(self, track_ids):
+        return [await self.get_track(track_id) for track_id in track_ids]
+
+    async def get_track(self, uri):
+        """Get a track's info from its URI"""
+        return await self.make_spotify_req(self.API_BASE + "tracks/{0}".format(uri))
+
+    async def get_album(self, uri):
+        """Get an album's info from its URI"""
+        return await self.make_spotify_req(self.API_BASE + "albums/{0}".format(uri))
+
+    async def get_artist(self, uri):
+        """Get an artist's info from its URI"""
+        return await self.make_spotify_req(
+            self.API_BASE + "artists/{0}/top-tracks?market=US".format(uri)
+        )
+
+    async def get_playlist(self, user, uri):
+        """Get a playlist's info from its URI"""
+        return await self.make_spotify_req(
+            self.API_BASE + "users/{0}/playlists/{1}{2}".format(user, uri)
+        )
+
+    async def get_playlist_tracks(self, uri):
+        """Get a list of a playlist's tracks"""
+        return await self.make_spotify_req(
+            self.API_BASE + "playlists/{0}/tracks".format(uri)
+        )
+
+    async def make_spotify_req(self, url):
+        """Proxy method for making a Spotify req using the correct Auth headers"""
+        token = await self.get_token()
+        return await self.make_get(
+            url, headers={"Authorization": "Bearer {0}".format(token)}
+        )
+
+    async def make_get(self, url, headers=None):
+        """Makes a GET request and returns the results"""
+        async with self.aiosession.get(url, headers=headers) as r:
+            if r.status != 200:
+                raise exceptions.SpotifyError(
+                    "Issue making GET request to {0}: [{1.status}] {2}".format(
+                        url, r, await r.json()
+                    )
+                )
+            return await r.json()
+
+    async def make_post(self, url, payload, headers=None):
+        """Makes a POST request and returns the results"""
+        async with self.aiosession.post(url, data=payload, headers=headers) as r:
+            if r.status != 200:
+                raise exceptions.SpotifyError(
+                    "Issue making POST request to {0}: [{1.status}] {2}".format(
+                        url, r, await r.json()
+                    )
+                )
+            return await r.json()
+
+    async def get_token(self):
+        """Gets the token or creates a new one if expired"""
+        if self.token and not await self.check_token(self.token):
+            return self.token["access_token"]
+
+        token = await self.request_token()
+        if token is None:
+            raise exceptions.SpotifyError(
+                "Requested a token from Spotify, did not end up getting one"
+            )
+        token["expires_at"] = int(time.time()) + token["expires_in"]
+        self.token = token
+        return self.token["access_token"]
+
+    async def check_token(self, token):
+        """Checks a token is valid"""
+        now = int(time.time())
+        return token["expires_at"] - now < 60
+
+    async def request_token(self):
+        """Obtains a token from Spotify and returns it"""
+        payload = {"grant_type": "client_credentials"}
+        headers = self._make_token_auth(self.client_id, self.client_secret)
+        r = await self.make_post(self.OAUTH_TOKEN_URL, payload=payload, headers=headers)
+        return r
+
+
+class MusicUtils:
     """
     Utility class that houses information
     and spotify-related helper functions.
     """
+
+    def get_key(key: str = ""):
+        """ Fetch a key from the config file """
+        with open("config.json", encoding="utf8") as data:
+            config = json.load(data)
+        return config.get(key)
 
     def spotify(bot):
         """
         Create utiliites.spotify.Spotify() instance
         from credentials found in ./config.json
         """
-        spotify_client_id = utils.config().get("spotify_client_id")
-        spotify_client_secret = utils.config().get("spotify_client_secret")
+        client_id = MusicUtils.get_key("spotify_client_id")
+        client_secret = MusicUtils.get_key("spotify_client_secret")
 
-        if spotify_client_id and spotify_client_secret:
-            return spotify.Spotify(
-                client_id=spotify_client_id,
-                client_secret=spotify_client_secret,
+        if client_id and client_secret:
+            return Spotify(
+                client_id=client_id,
+                client_secret=client_secret,
                 aiosession=bot.session,
                 loop=bot.loop,
             )
-
-    def json_entry(entry):
-        """Returns a json representation of QueueEntry."""
-        json_entry = {
-            "title": entry.title,
-            "search": entry.search,
-            "uploader": entry.uploader,
-            "link": entry.link,
-        }
-        return json_entry
 
     def parse_duration(duration: int):
         """
@@ -111,6 +301,64 @@ class AudioUtils:
             value = "LIVE"
 
         return value
+
+    def number_format(number):
+        if str(number).endswith("1") and number != 11:
+            fmt = str(number) + "st"
+        elif str(number).endswith("2") and number != 12:
+            fmt = str(number) + "nd"
+        elif str(number).endswith("3") and number != 13:
+            fmt = str(number) + "rd"
+        else:
+            fmt = str(number) + "th"
+        return fmt
+
+    def json_entry(entry):
+        """ Returns a json representation of QueueEntry. """
+        json_entry = {
+            "title": entry.title,
+            "search": entry.search,
+            "uploader": entry.uploader,
+            "link": entry.link,
+        }
+        return json_entry
+
+    def get_progress_bar(ctx, ratio, length=800, width=80):
+        GRAY = ctx.bot.constants.Colors.GRAY
+        BLUE = ctx.bot.constants.Colors.BLUE
+        bar_length = ratio * length
+        a = 0
+        b = -1
+        c = width / 2
+        w = (width / 2) + 1
+
+        shell = Image.new("RGB", (length, width), color=GRAY)
+        imgsize = (int(bar_length), width)  # The size of the image
+        image = Image.new("RGB", imgsize, color=GRAY)  # Create the image
+
+        innerColor = BLUE  # Color at the center
+        outerColor = [0, 0, 0]  # Color at the edge
+
+        for y in range(imgsize[1]):
+            for x in range(imgsize[0]):
+
+                dist = (a * x + b * y + c) / math.sqrt(a * a + b * b)
+                color_coef = abs(dist) / w
+
+                if abs(dist) < w:
+                    red = outerColor[0] * color_coef + innerColor[0] * (1 - color_coef)
+                    green = outerColor[1] * color_coef + innerColor[1] * (
+                        1 - color_coef
+                    )
+                    blue = outerColor[2] * color_coef + innerColor[2] * (1 - color_coef)
+
+                    image.putpixel((x, y), (int(red), int(green), int(blue)))
+
+        shell.paste(image)
+        buffer = io.BytesIO()
+        shell.save(buffer, "png")  # 'save' function for PIL
+        buffer.seek(0)
+        return buffer
 
     async def create_embed(ctx, source):
         """
@@ -144,7 +392,7 @@ class AudioUtils:
 
             if source.position > 1:  # Set a footer showing track position.
                 percent = source.position / ytdl.raw_duration
-                position = AudioUtils.parse_duration(int(source.position))
+                position = MusicUtils.parse_duration(int(source.position))
 
                 embed.set_footer(
                     text=f"Current Position: {position} ({percent:.2%} completed)"
@@ -153,7 +401,7 @@ class AudioUtils:
                 if ctx.channel.permissions_for(ctx.me).attach_files:
                     # Try to make a progress bar if bot has perms.
                     progress = await ctx.bot.loop.run_in_executor(
-                        None, images.get_progress_bar, percent
+                        None, MusicUtils.get_progress_bar, ctx, percent
                     )
                     embed.set_image(url=f"attachment://progress.png")
                     file = discord.File(progress, filename="progress.png")
@@ -234,29 +482,130 @@ class AudioUtils:
         return song_url
 
 
+class Checks:
+    def is_active(ctx):
+        voice = ctx.voice_state.voice
+        if voice:
+            if voice.channel:
+                if len([m for m in voice.channel.members if not m.bot]) != 0:
+                    return True
+
+    def assert_is_dormant(ctx):
+        if Checks.is_active(ctx):
+            raise commands.BadArgument(
+                f"Bot is currently active in {ctx.voice_state.voice.channel}."
+            )
+
+    def is_alone(ctx):
+        """Checks if the user is alone with the bot in a voice channel"""
+        voice = ctx.voice_state.voice
+        if not voice:
+            return True
+        if not voice.channel:
+            return True
+        channel_members = [m for m in voice.channel.members if not m.bot]
+        if len(channel_members) == 1 and ctx.author in channel_members:
+            return True
+        return False
+
+    def is_dj(ctx):
+        djrole = ctx.voice_state.djrole
+        if djrole and djrole in ctx.author.roles:
+            return True
+        if Checks.is_alone(ctx):
+            return True
+        if ctx.author.guild_permissions.deafen_members:
+            return True
+        if ctx.author.guild_permissions.move_members:
+            return True
+        if ctx.author.guild_permissions.mute_members:
+            return True
+        return False
+
+    def is_requester(ctx):
+        player = ctx.voice_state.validate
+        requester = player.current.requester
+        return requester == ctx.author
+
+    def assert_is_dj(ctx):
+        if not Checks.is_dj(ctx):
+            raise commands.BadArgument(
+                "You must have the `Manage Channels` permission, have a DJ role, or be alone in the voice channel to use this command."
+            )
+
+    def raise_if_bound(ctx):
+        bind = ctx.voice_state.bind
+        if bind:
+            if ctx.channel != bind:
+                raise commands.BadArgument(
+                    f"Music commands cannot be used outside of {bind.mention}."
+                )
+
+    def is_manager(ctx):
+        if ctx.author.guild_permissions.manage_roles:
+            return True
+        if ctx.author.guild_permissions.manage_guild:
+            return True
+        return False
+
+    def assert_is_manager(ctx):
+        if not Checks.is_manager(ctx):
+            raise commands.BadArgument(
+                "You must have the `Manage Roles` or the `Manage Guild` permission to use this command."
+            )
+
+
 class AudioSource(discord.PCMVolumeTransformer):
     """
     Takes a ytdl source and player settings
     and returns a FFmpegPCMAudio source.
     """
 
-    def __init__(self, ytdl, speed, pitch, volume, position=0):
+    def __init__(self, ytdl, volume, position=0, **kwargs):
         self.position = position  # Position of track
         self.ytdl = ytdl
-        # Use two atempo filters in case speed/pitch < 0.5
-        speed_filter = (
-            f"atempo={math.sqrt(speed/pitch)},atempo={math.sqrt(speed/pitch)}"
-        )
-        pitch_filter = (
-            f",asetrate={48000*pitch}" if pitch != 1 else ""
-        )  # 48000hz normally.
 
+        speed = kwargs.get("speed", 1)
+        pitch = kwargs.get("pitch", 1)
+
+        s_filter = f"atempo=sqrt({speed}/{pitch}),atempo=sqrt({speed}/{pitch})"
+        p_filter = f",asetrate=48000*{pitch}" if pitch != 1 else ""
+
+        base = p_filter + s_filter
+
+        filters = {  # Mapping of filters to their names
+            "nightcore": ",asetrate=48000*1.1",
+            "earrape": ",acrusher=.1:1:64:0:log",
+            "echo": ",aecho=0.8:0.9:500|1000:0.2|0.1",
+            "denoise": ",crystalizer=i=-10",
+            "phaser": ",aphaser=type=t:speed=2:decay=0.6",
+            "robot": ",afftfilt=real='hypot(re,im)*sin(0)':imag='hypot(re,im)*cos(0)':win_size=512:overlap=0.75",
+            "tremolo": ",apulsator=mode=sine:hz=3:width=0.1:offset_r=0",
+            "vibrato": ",vibrato=f=10:d=1",
+            "whisper": ",afftfilt=real='hypot(re,im)*cos((random(0)*2-1)*2*3.14)':imag='hypot(re,im)*sin((random(1)*2-1)*2*3.14)':win_size=128:overlap=0.8",
+        }
+
+        effects = "".join([y for x, y in filters.items() if kwargs.get(x)])
         ffmpeg_options = {
             "before_options": FFMPEG_OPTION_BASE + f" -ss {position}",
-            "options": f'-vn -filter:a "{speed_filter}{pitch_filter}"',
+            "options": f'-vn -af:a "{base + effects}"',
         }
+
         self.original = discord.FFmpegPCMAudio(ytdl.stream_url, **ffmpeg_options)
         super().__init__(self.original, volume=volume)
+
+    @classmethod
+    async def save(cls, ytdl, volume, position=0, **kwargs):
+        """Returns a class instance and saves track."""
+        cxn = ytdl.ctx.bot.cxn
+        if cxn:
+            query = """
+                    INSERT INTO tracks (requester_id, title, url, uploader)
+                    VALUES ($1, $2, $3, $4)
+                    """
+            await cxn.execute(query, ytdl.requester.id, ytdl.title, ytdl.url, ytdl.uploader)
+        return cls(ytdl, volume, position, **kwargs)
+
 
 class QueueEntry:
     """
@@ -280,7 +629,10 @@ class QueueEntry:
         return f"**{self.title}**"
 
     def __eq__(self, other):
-        return self.search == other.search and self.title == other.title
+        if isinstance(other, QueueEntry):
+            return self.search == other.search and self.title == other.title
+        else:
+            return self is other
 
     def __hash__(self):
         return hash((self.search, self.title))
@@ -316,7 +668,7 @@ class YTDLSource:
         self.thumbnail = data.get("thumbnail")
         self.description = data.get("description")
         self.raw_duration = data.get("duration")
-        self.duration = AudioUtils.parse_duration(int(data.get("duration")))
+        self.duration = MusicUtils.parse_duration(int(data.get("duration")))
         self.tags = data.get("tags")
         self.url = data.get("webpage_url")
         self.views = data.get("view_count")
@@ -538,6 +890,7 @@ class YTDLSource:
                 rtrn = "sel_invalid"
         return rtrn
 
+
 class TrackQueue(asyncio.Queue):
     """
     Queue for all tracks to be played.
@@ -547,7 +900,9 @@ class TrackQueue(asyncio.Queue):
 
     def __getitem__(self, item):
         if isinstance(item, slice):
-            return deque(itertools.islice(self._queue, item.start, item.stop, item.step))
+            return deque(
+                itertools.islice(self._queue, item.start, item.stop, item.step)
+            )
         else:
             return self._queue[item]
 
@@ -604,7 +959,7 @@ class TrackQueue(asyncio.Queue):
 
     def skipto(self, position):
         entry = self._queue[position]
-        self._queue = self[position+1:]
+        self._queue = self[position + 1 :]
         return entry
 
     def deduplicate(self):
@@ -622,15 +977,54 @@ class TrackQueue(asyncio.Queue):
 
     def clear_range(self, start, end):
         queue = list(self._queue)
-        del queue[start-1:end]
+        del queue[start - 1 : end]
         self._queue = deque(queue)
 
     def shuffle_range(self, start, end):
         queue = list(self._queue)
-        to_shuffle = queue[start-1:end]
+        to_shuffle = queue[start - 1 : end]
         random.shuffle(to_shuffle)
-        queue[start-1:end] = to_shuffle
+        queue[start - 1 : end] = to_shuffle
         self._queue = deque(queue)
+
+    def reverse_range(self, start, end):
+        queue = list(self._queue)
+        to_reverse = queue[start - 1 : end]
+        to_reverse.reverse()
+        queue[start - 1 : end] = to_reverse
+        self._queue = deque(queue)
+
+
+class Effects(dict):
+    def __init__(self, state):
+        self.state = state
+
+    def __getitem__(self, key):
+        return dict.__getitem__(self, key)
+
+    def __setitem__(self, key, value):
+        if key == "speed":
+            if not 0.5 <= value <= 2.0:
+                raise commands.BadArgument("Speed must be between `0.5` and `2.0`")
+        if key == "pitch":
+            if not 0.5 <= value <= 2.0:
+                raise commands.BadArgument("Pitch must be between `0.5` and `2.0`")
+
+        dict.__setitem__(self, key, value)
+        self.state.alter_audio()
+
+    def __delitem__(self, key):
+        dict.__delitem__(self, key)
+        self.state.alter_audio()
+
+    def __iter__(self):
+        return dict.__iter__(self)
+
+    def __len__(self):
+        return dict.__len__(self)
+
+    def __contains__(self, x):
+        return dict.__contains__(self, x)
 
 
 class VoiceState:
@@ -639,7 +1033,7 @@ class VoiceState:
     Guilds receive a cached instance in ctx.voice_state.
     """
 
-    def __init__(self, bot, ctx):
+    def __init__(self, bot, ctx, *, bind=None, djrole=None):
         self.bot = bot
         self._ctx = ctx
 
@@ -650,21 +1044,60 @@ class VoiceState:
         self.voice = None  # Guild voice client.
 
         self._volume = 0.5  # Volume default.
-        self._speed = 1  # Speed default.
-        self._pitch = 1  # Pitch default.
+        self.effects = {}
 
         self.track_is_looped = False  # Single track is looped.
         self.queue_is_looped = False  # Entire queue is looped.
 
         self.skip_votes = set()  # Stored skip votes.
 
+        self.checks = Checks
         self.tracks = TrackQueue()
         self.next = asyncio.Event()
+
+        self.bind = bind
+        self.djrole = djrole
 
         self.audio_player = bot.loop.create_task(self.audio_player_task())
 
     def __del__(self):
         self.audio_player.cancel()
+
+    def __setitem__(self, key, value):
+        if key == "speed":  # Assert valid speed range
+            if not 0.5 <= value <= 2.0:
+                raise commands.BadArgument("Speed must be between `0.5` and `2.0`")
+        if key == "pitch":  # Assert valid pitch range
+            if not 0.5 <= value <= 2.0:
+                raise commands.BadArgument("Pitch must be between `0.5` and `2.0`")
+
+        self.effects.__setitem__(key, value)
+        self.alter_audio()
+
+    def __getitem__(self, key):  # Return false by default
+        if key == "speed":  # Speed = 1 by default
+            return self.effects.get(key, 1)
+        if key == "pitch":  # Pitch = 1 by default
+            return self.effects.get(key, 1)
+
+        # Other effects are False by default
+        return self.effects.get(key, False)
+
+    @classmethod
+    async def create(cls, bot, ctx):
+        bind = None
+        djrole = None
+        query = """
+                SELECT bind, djrole
+                FROM musicconf
+                WHERE server_id = $1
+                """
+        record = await bot.cxn.fetchrow(query, ctx.guild.id)
+        if record:
+            bind = bot.get_channel(record["bind"])
+            djrole = ctx.guild.get_role(record["djrole"])
+
+        return cls(bot, ctx, bind=bind, djrole=djrole)
 
     @property
     def is_playing(self):
@@ -677,30 +1110,8 @@ class VoiceState:
         raise exceptions.InactivePlayer
 
     @property
-    def pitch(self):
-        return self._pitch
-
-    @property
-    def speed(self):
-        return self._speed
-
-    @property
     def volume(self):
         return self._volume
-
-    @pitch.setter
-    def pitch(self, value: float):
-        if not 0.5 <= value <= 2.0:
-            raise commands.BadArgument("Pitch must be between `0.5` and `2.0`")
-        self._pitch = value
-        self.alter_audio()
-
-    @speed.setter
-    def speed(self, value: float):
-        if not 0.5 <= value <= 2.0:
-            raise commands.BadArgument("Speed must be between `0.5` and `2.0`")
-        self._speed = value
-        self.alter_audio()
 
     @volume.setter
     def volume(self, value: float):
@@ -709,25 +1120,32 @@ class VoiceState:
         self._volume = value
         self.source.volume = value
 
-    async def connect(self, ctx, channel, *, timeout=60):
+    async def connect(self, channel, *, timeout=60):
         try:
-            self.voice = await channel.connect(timeout=timeout)
+            self.voice = await channel.connect()
         except discord.ClientException:
-            if hasattr(ctx.guild.me.voice, "channel"):
-                if ctx.guild.me.voice.channel == channel:
-                    raise commands.BadArgument(f"Already in channel {channel.mention}")
-                else:
-                    await ctx.guild.voice_client.disconnect(force=True)
-                    self.voice = await channel.connect(timeout=timeout)
-            else:
-                await ctx.guild.voice_client.disconnect(force=True)
+            if hasattr(channel.guild.me.voice, "channel"):
+                await channel.guild.voice_client.disconnect(force=True)
                 self.voice = await channel.connect(timeout=timeout)
+            else:
+                await channel.guild.voice_client.disconnect(force=True)
+                self.voice = await channel.connect(timeout=timeout)
+
+    async def ensure_voice_state(self, ctx):
+        if not ctx.me.voice:
+            if not hasattr(ctx.author.voice, "channel"):
+                raise commands.BadArgument("You must be connected to a voice channel")
+
+            channel = ctx.author.voice.channel
+            await self.connect(channel)
+        return self
 
     async def reset_voice_client(self):
         if hasattr(self._ctx.guild.me.voice, "channel"):
             channel = self._ctx.guild.me.voice.channel
-            await self._ctx.guild.voice_client.disconnect(force=True)
-            self.voice = await channel.connect(timeout=60)
+            if self._ctx.guild.voice_client:
+                await self._ctx.guild.voice_client.disconnect(force=True)
+            self.voice = await channel.connect(timeout=None)
 
     async def play_from_file(self, file):
         await file.save("./track.mp3")
@@ -737,13 +1155,12 @@ class VoiceState:
         now = discord.FFmpegPCMAudio(fname)
         self.voice.play(now, after=self.play_next_track)
 
-    def alter_audio(self, *, position=None, speed=None, pitch=None):
-        position = position or self.source.position
-        speed = speed or self.speed
-        pitch = pitch or self.pitch
+    def alter_audio(self, *, position=None):
+        if position is None:
+            position = self.source.position
 
         self.voice.pause()  # Pause the audio before altering
-        self.source = AudioSource(self.current, speed, pitch, self.volume, position)
+        self.source = AudioSource(self.current, self.volume, position, **self.effects)
         self.voice.play(self.source, after=self.play_next_track)
 
     async def get_next_track(self):
@@ -763,33 +1180,42 @@ class VoiceState:
         self.tracks.append_left(self.entry)
 
     async def audio_player_task(self):
-        while True:
-            self.next.clear()
+        run = True
+        while run is True:
+            try:
+                self.next.clear()
 
-            if self.voice is None:
-                await self.reset_voice_client()
+                if self.voice is None:
+                    await self.reset_voice_client()
 
-            if self.track_is_looped:  # Single song is looped.
-                self.current = self.previous
+                if self.track_is_looped:  # Single song is looped.
+                    self.current = self.previous
 
-            elif self.queue_is_looped:  # Entire queue is looped
-                self.requeue(self.previous)  # Put old track back in the queue.
-                self.current = (
-                    await self.get_next_track()
-                )  # Get the song from the queue
+                elif self.queue_is_looped:  # Entire queue is looped
+                    self.requeue(self.previous)  # Put old track back in the queue.
+                    self.current = await self.get_next_track()  # Get song from queue
 
-            else:  # Not looping track or queue.
-                self.current = await self.get_next_track()
+                else:  # Not looping track or queue.
+                    self.current = await self.get_next_track()
 
-            self.source = AudioSource(self.current, self.speed, self.pitch, self.volume)
-            self.voice.play(self.source, after=self.play_next_track)
-            await AudioUtils.create_embed(self.current.ctx, self.source)
+                self.source = await AudioSource.save(
+                    self.current,
+                    self.volume,
+                    **self.effects,
+                )
+                self.voice.play(self.source, after=self.play_next_track)
+                await MusicUtils.create_embed(self.current.ctx, self.source)
 
-            self.bot.loop.create_task(self.increase_position())
-            await self.next.wait()  # Wait until the track finishes
-            self.previous = self.current  # Store previous track
-            self.current = None
-            self.source = None
+                self.bot.loop.create_task(self.increase_position())
+                await self.next.wait()  # Wait until the track finishes
+                self.previous = self.current  # Store previous track
+                self.current = None
+                self.source = None
+            except Exception:
+                tb = traceback.format_exc()
+                log.fatal(tb)
+                self.bot.dispatch("error", "MUSIC_ERROR", tb=tb)
+                # run = False
 
     async def increase_position(self):
         """
@@ -797,7 +1223,7 @@ class VoiceState:
         of the song while it's being played.
         """
         while self.source:
-            self.source.position += self.speed
+            self.source.position += self["speed"]
             await asyncio.sleep(1)
 
     def play_next_track(self, error=None):
@@ -820,27 +1246,21 @@ class VoiceState:
             self.voice = None
 
 
-def setup(bot):
-    bot.add_cog(Music(bot))
-    bot.add_cog(Queue(bot))
-
-
-class Music(commands.Cog):
+class Player(commands.Cog):
     """
-    Module for playing music.
+    Module for playing audio.
     """
 
     def __init__(self, bot):
         self.bot = bot
         self.voice_states = {}
-        self.spotify = AudioUtils.spotify(bot)
+        self.spotify = MusicUtils.spotify(bot)
 
-    def get_voice_state(self, ctx):
+    async def get_voice_state(self, ctx):
         state = self.voice_states.get(ctx.guild.id)
         if not state:
-            state = VoiceState(self.bot, ctx)
+            state = await VoiceState.create(self.bot, ctx)
             self.voice_states[ctx.guild.id] = state
-
         return state
 
     def cog_unload(self):
@@ -849,58 +1269,19 @@ class Music(commands.Cog):
 
     async def cog_check(self, ctx):
         if not ctx.guild:
-            return
-        if ctx.guild.id in self.bot.home_guilds:
-            return True
+            raise commands.NoPrivateMessage()
+        return True
 
     async def cog_before_invoke(self, ctx):
-        ctx.voice_state = self.get_voice_state(ctx)
-
-    async def ensure_voice_state(self, ctx):
-        if not ctx.me.voice:
-            if not hasattr(ctx.author.voice, "channel"):
-                raise commands.BadArgument("You must be connected to a voice channel")
-
-            channel = ctx.author.voice.channel
-            await ctx.voice_state.connect(ctx, channel)
-        return ctx.voice_state
+        ctx.voice_state = await self.get_voice_state(ctx)
+        Checks.raise_if_bound(ctx)
 
     @decorators.command(
-        name="join",
-        aliases=["connect"],
-        brief="Joins a channel.",
+        name="connect",
+        aliases=["join"],
+        brief="Connect to a channel.",
     )
-    async def _join(
-        self,
-        ctx,
-        *,
-        channel: typing.Union[discord.VoiceChannel, discord.StageChannel] = None,
-    ):
-        """
-        Usage: {0}join [channel]
-        Alias: {0}connect
-        Output:
-            Joins a specified channel
-        Notes:
-            If you do not specify a channel,
-            the bot will join your current
-            channel. (If possible)
-        """
-        if channel is None:
-            if not hasattr(ctx.author.voice, "channel"):
-                return await ctx.usage()
-            else:
-                channel = ctx.author.voice.channel
-
-        await ctx.voice_state.connect(ctx, channel)
-        await ctx.success(f"Connected to {channel.mention}")
-
-    @decorators.command(
-        name="247",
-        aliases=["24/7"],
-        brief="Enable 247 mode.",
-    )
-    async def _247(
+    async def _connect(
         self,
         ctx,
         *,
@@ -910,11 +1291,15 @@ class Music(commands.Cog):
         Usage: {0}connect [channel]
         Alias: {0}join
         Output:
-            Joins a specified channel
+            Connects to a specified voice
+            or stage channel.
         Notes:
             If you do not specify a channel,
-            the bot will join your current
-            channel. (If possible)
+            the bot will join your current channel.
+            (If it exists)
+            If the bot is currently active in another
+            channel, you must have DJ perms for the
+            command to function properly.
         """
         if channel is None:
             if not hasattr(ctx.author.voice, "channel"):
@@ -922,79 +1307,36 @@ class Music(commands.Cog):
             else:
                 channel = ctx.author.voice.channel
 
-        await ctx.voice_state.connect(ctx, channel, timeout=None)
-        await ctx.success(f"Connected to {channel.mention} indefinitely.")
+        if not Checks.is_dj(ctx):
+            Checks.assert_is_dormant(ctx)
+        await ctx.voice_state.connect(channel)
+        await ctx.success(f"Connected to {channel.mention}")
 
     @decorators.command(
-        name="leave",
-        aliases=["dc", "disconnect"],
-        brief="Leaves a channel.",
+        name="disconnect",
+        aliases=["dc", "leave"],
+        brief="Disconnects from a channel.",
     )
     async def _leave(self, ctx):
         """
         Usage: {0}leave
         Alias: {0}dc, {0}disconnect
         Output:
-            Clears the queue and leaves the voice channel.
+            Clears the queue and leaves
+            the voice or stage channel.
         """
+        if not Checks.is_dj(ctx):
+            Checks.assert_is_dormant(ctx)
         if hasattr(ctx.guild.me.voice, "channel"):
             channel = ctx.guild.me.voice.channel
             await ctx.guild.voice_client.disconnect(force=True)
             await ctx.message.add_reaction(self.bot.emote_dict["wave"])
             await ctx.success(f"Disconnected from {channel.mention}")
         else:
-            if not ctx.voice_state.voice:
-                return await ctx.fail("Not connected to any voice channel.")
+            await ctx.fail("Not connected to any voice channel.")
+            return
         await ctx.voice_state.stop()
         del self.voice_states[ctx.guild.id]
-
-    @decorators.command(
-        aliases=["vol", "sound"],
-        name="volume",
-        brief="Set the volume of the player.",
-    )
-    async def _volume(self, ctx, volume: int = None):
-        """
-        Usage: {0}volume [volume]
-        Alias: {0}vol, {0}sound
-        Output: Changes the volume of the player.
-        Notes:
-            Will show current volume if
-            no new volume is specified.
-        """
-        player = ctx.voice_state.validate
-        emoji = self.bot.emote_dict["volume"]
-
-        if volume is None:  # Output what we have
-            await ctx.send_or_reply(
-                f"{emoji} Volume of the player is currently {player.volume:.0%}"
-            )
-            return
-
-        player.volume = volume / 100
-        await ctx.send_or_reply(
-            f"{emoji} Volume of the player set to {player.volume:.0%}"
-        )
-
-    @decorators.command(
-        name="current",
-        brief="Show track info.",
-        aliases=["now", "np", "nowplaying"],
-    )
-    @checks.cooldown()
-    async def _current(self, ctx):
-        """
-        Usage: {0}now
-        Aliases: {0}now {0}np
-        Output: Displays the currently playing song.
-        Notes:
-            Will fall back to sending a codeblock
-            if the bot does not have the Embed Links
-            permission. A progress bar will be included
-            if the bot has the Attach Files permission.
-        """
-        player = ctx.voice_state.validate
-        await AudioUtils.create_embed(ctx, player.source)
 
     @decorators.command(
         name="pause",
@@ -1012,6 +1354,7 @@ class Music(commands.Cog):
             or invoke the {0}play command with no arguments.
         """
         player = ctx.voice_state.validate
+        Checks.assert_is_dj(ctx)
 
         if player.voice.is_paused():
             await ctx.fail("The player is already paused.")
@@ -1053,6 +1396,7 @@ class Music(commands.Cog):
         Output:
             Stops playing song and clears the queue.
         """
+        Checks.assert_is_dj(ctx)
         ctx.voice_state.tracks.clear()
         if ctx.voice_state.is_playing:
             ctx.voice_state.voice.stop()
@@ -1081,17 +1425,16 @@ class Music(commands.Cog):
         player = ctx.voice_state.validate
         emoji = self.bot.emote_dict["skip"]
 
-        voter = ctx.author
-        if voter == player.current.requester:
+        if Checks.is_requester(ctx):
             player.skip()  # Song requester can skip.
             await ctx.react(emoji)
 
-        elif voter.guild_permissions.move_members:
-            player.skip()  # Server mods can skip.
+        elif Checks.is_dj(ctx):
+            player.skip()  # Server Djs can skip.
             await ctx.react(emoji)
 
-        elif voter.id not in player.skip_votes:
-            player.skip_votes.add(voter.id)
+        elif ctx.author.id not in player.skip_votes:
+            player.skip_votes.add(ctx.author.id)
             total_votes = len(player.skip_votes)
 
             listeners = player.voice.channel.members
@@ -1109,59 +1452,6 @@ class Music(commands.Cog):
             await ctx.fail("You have already voted to skip this track.")
 
     @decorators.command(
-        aliases=["deloop"],
-        name="unloop",
-        brief="Un-loop the track or queue.",
-        hidden=True
-    )
-    @checks.cooldown()
-    async def _unloop(self, ctx):
-        """
-        Usage: {0}unloop
-        Alias: {0}deloop
-        Output:
-            Stops looping the current song or queue
-        """
-        player = ctx.voice_state.validate
-
-        player.track_is_looped = False
-        player.queue_is_looped = False
-
-        await ctx.react(self.bot.emote_dict["success"])
-
-    @decorators.command(
-        aliases=["repeat"],
-        name="loop",
-        brief="Loop the track or queue.",
-    )
-    @checks.cooldown()
-    async def _loop(self, ctx, option: converters.TrackOrQueue = "track"):
-        """
-        Usage: {0}loop [option]
-        Output: Loops the currently playing song.
-        Notes:
-            Use {0}loop queue to loop the entire queue.
-            Use {0}loop track to loop only the current track.
-            Use {0}loop off to stop looping the track or queue.
-            Will loop the current track if neither is specified.
-            Use {0}unloop can also be used to stop looping settings.
-        """
-        player = ctx.voice_state.validate
-
-        if option == "track":
-            setting = "already" if player.track_is_looped else "now"
-            player.track_is_looped = True
-            await ctx.success(f"The current track is {setting} looped.")
-        elif option == "queue":
-            setting = "already" if player.queue_is_looped else "now"
-            player.queue_is_looped = True
-            player.track_is_looped = False  # In case we were looping a track.
-            await ctx.success(f"The current queue is {setting} looped.")
-        elif option == "off":
-            return await ctx.invoke(self._unloop)
-        await ctx.react(self.bot.emote_dict["loop"])
-
-    @decorators.command(
         name="seek",
         brief="Seek to a position in the track.",
     )
@@ -1175,6 +1465,9 @@ class Music(commands.Cog):
             The position must be given in seconds.
         """
         player = ctx.voice_state.validate
+
+        if not Checks.is_requester(ctx):
+            Checks.assert_is_dj(ctx)
 
         if position < 0:
             await ctx.fail("Seek time cannot be negative.")
@@ -1202,6 +1495,10 @@ class Music(commands.Cog):
             Fast forward a certain number of seconds in a song.
         """
         player = ctx.voice_state.validate
+
+        if not Checks.is_requester(ctx):
+            Checks.assert_is_dj(ctx)
+
         src = player.current
         current_position = player.source.position
 
@@ -1237,6 +1534,10 @@ class Music(commands.Cog):
             Rewind a certain number of seconds in a song.
         """
         player = ctx.voice_state.validate
+
+        if not Checks.is_requester(ctx):
+            Checks.assert_is_dj(ctx)
+
         current_position = player.source.position
 
         if seconds < 0:
@@ -1257,81 +1558,47 @@ class Music(commands.Cog):
         await ctx.success(f"Rewinded to second `{position}`")
 
     @decorators.command(
-        aliases=["tempo"],
-        name="speed",
-        brief="Alter the speed of the player.",
+        name="trackinfo",
+        brief="Show track info.",
+        aliases=["now", "np", "nowplaying", "current"],
     )
     @checks.cooldown()
-    async def _speed(self, ctx, speed: float = None):
+    async def _trackinfo(self, ctx):
         """
-        Usage: {0}speed [speed]
-        Alias: {0}tempo
-        Output:
-            Speed up or slow down the player.
+        Usage: {0}trackinfo
+        Aliases: {0}now, {0}np, {0}current, {0}nowplaying
+        Output: Displays the currently playing song.
         Notes:
-            The speed must be between 0.5 and 2.0.
-            Will output the current speed if no
-            new speed is explicitly specified.
+            Will fall back to sending a codeblock
+            if the bot does not have the Embed Links
+            permission. A progress bar will be included
+            if the bot has the Attach Files permission.
         """
         player = ctx.voice_state.validate
-        emoji = self.bot.emote_dict["music"]
-
-        if speed is None:  # Output the current speed
-            await ctx.send(f"{emoji} The audio speed is currently `{player.speed}x`")
-            return
-
-        player.speed = speed
-        await ctx.send_or_reply(f"{emoji} Audio is now playing at `{speed}x`")
+        await MusicUtils.create_embed(ctx, player.source)
 
     @decorators.command(
-        name="pitch",
-        brief="Alter the pitch of the player.",
-    )
-    @checks.cooldown()
-    async def _pitch(self, ctx, pitch: float = None):
-        """
-        Usage: {0}pitch [pitch]
-        Output:
-            Alter the pitch of the player.
-        Notes:
-            The pitch must be between 0.5 and 2.0.
-            Will output the current pitch if no
-            new speed is explicitly specified.
-        """
-        player = ctx.voice_state.validate
-        emoji = self.bot.emote_dict["music"]
-
-        if pitch is None:  # Output the current speed
-            await ctx.send(f"{emoji} The audio pitch is currently `{player.pitch}`")
-            return
-
-        player.pitch = pitch
-        await ctx.send_or_reply(f"{emoji} Audio pitch set to `{player.pitch}`")
-
-    @decorators.command(
-        aliases=["last", "back", "previous"],
+        aliases=["again"],
         name="replay",
         brief="Play the previous track.",
     )
     @checks.cooldown()
     async def _replay(self, ctx):
         """
-        Usage: {0}replay [seconds]
-        Alias: {0}last, {0}back, {0}previous
+        Usage: {0}replay
+        Alias: {0}again
         Output:
             Add the previous song to the
             beginning of the track queue.
         """
         previous = ctx.voice_state.previous
+        Checks.assert_is_dj(ctx)
         if not previous:
             await ctx.fail("No previous song to play.")
             return
 
         ctx.voice_state.replay(previous)
-
-        emoji = self.bot.emote_dict["music"]
-        await ctx.send_or_reply(f"{emoji} Requeued the previous song: {previous}")
-
+        await ctx.music(f"Front queued the previous song: {previous}")
 
     @decorators.command(
         aliases=["pos"],
@@ -1378,7 +1645,7 @@ class Music(commands.Cog):
             Each title in the list can be clicked as a link.
         """
         await ctx.trigger_typing()
-        player = await self.ensure_voice_state(ctx)
+        player = await ctx.voice_state.ensure_voice_state(ctx)
         try:
             source = await YTDLSource.search_source(
                 ctx,
@@ -1396,9 +1663,7 @@ class Music(commands.Cog):
                 await ctx.fail("Timer expired")
             else:
                 player.tracks.put_nowait(source)
-                await ctx.send_or_reply(
-                    f"{self.bot.emote_dict['music']} Queued {source}"
-                )
+                await ctx.music(f"Queued {source}")
 
     @decorators.command(
         name="playnext",
@@ -1422,8 +1687,8 @@ class Music(commands.Cog):
             ahead of the previously queued tracks.
         """
         await ctx.trigger_typing()
-        player = await self.ensure_voice_state(ctx)
-        MUSIC = self.bot.emote_dict["music"]
+        player = await ctx.voice_state.ensure_voice_state(ctx)
+        Checks.assert_is_dj(ctx)
 
         if search is None:
             # No search, check for resume command.
@@ -1438,7 +1703,7 @@ class Music(commands.Cog):
                 await ctx.usage()
                 return
 
-        song_url = AudioUtils.reformat_uri(search)
+        song_url = MusicUtils.reformat_uri(search)
 
         if song_url.startswith("spotify:"):
             if not self.spotify:
@@ -1453,19 +1718,19 @@ class Music(commands.Cog):
 
                 elif "album" in parts:
                     res = await self.spotify.get_album(parts[-1])
-                    tracks = AudioUtils.put_spotify_tracks(ctx, res["tracks"]["items"])
+                    tracks = MusicUtils.put_spotify_tracks(ctx, res["tracks"]["items"])
                     player.tracks.extend_left(tracks)
-                    await ctx.send_or_reply(
-                        f"{MUSIC} Front Queued {len(res['tracks']['items'])} spotify tracks."
+                    await ctx.music(
+                        f"Front Queued {len(res['tracks']['items'])} spotify tracks."
                     )
                     return
 
                 elif "artist" in parts:
                     res = await self.spotify.get_artist(parts[-1])
-                    tracks = AudioUtils.put_spotify_tracks(ctx, res["tracks"])
+                    tracks = MusicUtils.put_spotify_tracks(ctx, res["tracks"])
                     player.tracks.extend_left(tracks)
-                    await ctx.send_or_reply(
-                        f"{MUSIC} Front Queued {len(res['tracks'])} spotify tracks."
+                    await ctx.music(
+                        f"Front Queued {len(res['tracks'])} spotify tracks."
                     )
                     return
 
@@ -1482,11 +1747,9 @@ class Music(commands.Cog):
                         else:
                             break
 
-                    tracks = AudioUtils.put_spotify_playlist(ctx, res)
+                    tracks = MusicUtils.put_spotify_playlist(ctx, res)
                     player.tracks.extend_left(tracks)
-                    await ctx.send_or_reply(
-                        f"{MUSIC} Front Queued {len(res)} spotify tracks."
-                    )
+                    await ctx.music(f"Front Queued {len(res)} spotify tracks.")
                     return
 
                 else:
@@ -1505,8 +1768,8 @@ class Music(commands.Cog):
                 await ctx.fail(f"Request failed: {e}")
             else:
                 player.tracks.extend_left(tracks)
-                await ctx.send_or_reply(
-                    f"{MUSIC} Front Queued Playlist: {playlist} `({len(tracks) + 1} tracks)`"
+                await ctx.music(
+                    f"Front Queued Playlist: {playlist} `({len(tracks) + 1} tracks)`"
                 )
 
             return
@@ -1516,7 +1779,7 @@ class Music(commands.Cog):
             await ctx.fail(f"Request failed: {e}")
         else:
             player.tracks.append_left(track)
-            await ctx.send_or_reply(f"{MUSIC} Front Queued {track}")
+            await ctx.music(f"Front Queued {track}")
 
     @decorators.command(
         name="play",
@@ -1540,8 +1803,7 @@ class Music(commands.Cog):
             Accepts spotify and youtube urls.
         """
         await ctx.trigger_typing()
-        player = await self.ensure_voice_state(ctx)
-        MUSIC = self.bot.emote_dict["music"]
+        player = await ctx.voice_state.ensure_voice_state(ctx)
 
         if search is None:
             # No search, check for resume command.
@@ -1556,7 +1818,7 @@ class Music(commands.Cog):
                 await ctx.usage()
                 return
 
-        song_url = AudioUtils.reformat_uri(search)
+        song_url = MusicUtils.reformat_uri(search)
 
         if song_url.startswith("spotify:"):
             if not self.spotify:
@@ -1571,20 +1833,18 @@ class Music(commands.Cog):
 
                 elif "album" in parts:
                     res = await self.spotify.get_album(parts[-1])
-                    tracks = AudioUtils.put_spotify_tracks(ctx, res["tracks"]["items"])
+                    tracks = MusicUtils.put_spotify_tracks(ctx, res["tracks"]["items"])
                     player.tracks.extend(tracks)
-                    await ctx.send_or_reply(
-                        f"{MUSIC} Queued {len(res['tracks']['items'])} spotify tracks."
+                    await ctx.music(
+                        f"Queued {len(res['tracks']['items'])} spotify tracks."
                     )
                     return
 
                 elif "artist" in parts:
                     res = await self.spotify.get_artist(parts[-1])
-                    tracks = AudioUtils.put_spotify_tracks(ctx, res["tracks"])
+                    tracks = MusicUtils.put_spotify_tracks(ctx, res["tracks"])
                     player.tracks.extend(tracks)
-                    await ctx.send_or_reply(
-                        f"{MUSIC} Queued {len(res['tracks'])} spotify tracks."
-                    )
+                    await ctx.music(f"Queued {len(res['tracks'])} spotify tracks.")
                     return
 
                 elif "playlist" in parts:
@@ -1600,12 +1860,9 @@ class Music(commands.Cog):
                         else:
                             break
 
-
-                    tracks = AudioUtils.put_spotify_playlist(ctx, res)
+                    tracks = MusicUtils.put_spotify_playlist(ctx, res)
                     player.tracks.extend(tracks)
-                    await ctx.send_or_reply(
-                        f"{MUSIC} Queued {len(res)} spotify tracks."
-                    )
+                    await ctx.music(f"Queued {len(res)} spotify tracks.")
                     return
 
                 else:
@@ -1624,8 +1881,8 @@ class Music(commands.Cog):
                 await ctx.fail(f"Request failed: {e}")
             else:
                 player.tracks.extend(tracks)
-                await ctx.send_or_reply(
-                    f"{MUSIC} Queued Playlist: {playlist} `({len(tracks) + 1} tracks)`"
+                await ctx.music(
+                    f"Queued Playlist: {playlist} `({len(tracks) + 1} tracks)`"
                 )
 
             return
@@ -1635,8 +1892,7 @@ class Music(commands.Cog):
             await ctx.fail(f"Request failed: {e}")
         else:
             player.tracks.put_nowait(track)
-            await ctx.send_or_reply(f"{MUSIC} Queued {track}")
-        
+            await ctx.music(f"Queued {track}")
 
     @decorators.command(
         brief="Play a discord file or url.", name="playfile", hidden=True
@@ -1644,8 +1900,7 @@ class Music(commands.Cog):
     @checks.bot_has_guild_perms(connect=True, speak=True)
     async def _playfile(self, ctx, media_url=None):
         await ctx.trigger_typing()
-        player = await self.ensure_voice_state(ctx)  # Initialize voice client.
-        MUSIC = self.bot.emote_dict["music"]  # Music emoji
+        player = await ctx.voice_state.ensure_voice_state(ctx)
 
         if len(ctx.message.attachments) > 0:  # User passed an attachment.
             file = ctx.message.attachments[0]
@@ -1655,7 +1910,7 @@ class Music(commands.Cog):
                 await player.play_from_file(file)
             except discord.ClientException as e:
                 raise commands.BadArgument(str(e))
-            await ctx.send_or_reply(f"{MUSIC} Playing **{file.filename}**")
+            await ctx.music(f"Playing **{file.filename}**")
 
         else:  # Check for url regex
             regex = r"(https://|http://)?(cdn\.|media\.)discord(app)?\.(com|net)/attachments/[0-9]{17,19}/[0-9]{17,19}/(?P<filename>.{1,256})\.(?P<mime>[0-9a-zA-Z]{2,4})(\?size=[0-9]{1,4})?"
@@ -1665,9 +1920,10 @@ class Music(commands.Cog):
                 await ctx.fail(f"Invalid discord media url.")
                 return
 
-            await AudioUtils.read_url(match.group(0), self.bot.session)  # Get url bytes
+            await MusicUtils.read_url(match.group(0), self.bot.session)  # Get url bytes
             await player.play_local_file(match.group(0))
-            await ctx.send_or_reply(f"{MUSIC} Playing `{match.group(0)}`")
+            await ctx.music(f"Playing `{match.group(0)}`")
+
 
 class Queue(commands.Cog):
     """
@@ -1679,14 +1935,35 @@ class Queue(commands.Cog):
 
     async def cog_check(self, ctx):
         if not ctx.guild:
-            return
-        if ctx.guild.id in self.bot.home_guilds:
-            return True
+            raise commands.NoPrivateMessage()
+        return True
 
     async def cog_before_invoke(self, ctx):
-        music = self.bot.get_cog("Music")
-        ctx.voice_state = music.get_voice_state(ctx)
+        audio = self.bot.get_cog("Player")
+        ctx.voice_state = await audio.get_voice_state(ctx)
+        Checks.raise_if_bound(ctx)
 
+    @decorators.command(
+        aliases=["last", "back", "previous"],
+        name="requeue",
+        brief="Queue the previous track.",
+    )
+    @checks.cooldown()
+    async def _requeue(self, ctx):
+        """
+        Usage: {0}requeue
+        Alias: {0}last, {0}back, {0}previous
+        Output:
+            Add the previous song to the
+            end of the track queue.
+        """
+        previous = ctx.voice_state.previous
+        if not previous:
+            await ctx.fail("No previous song to play.")
+            return
+
+        ctx.voice_state.tracks.put_nowait(previous)
+        await ctx.music(f"Requeued the previous song: {previous}")
 
     @decorators.command(
         name="skipto",
@@ -1705,16 +1982,17 @@ class Queue(commands.Cog):
         """
         player = ctx.voice_state.validate
         queue = player.tracks
+        Checks.assert_is_dj(ctx)
 
         if len(queue) == 0:
             await ctx.fail("The queue is currently empty.")
 
         try:
-            selection = queue.skipto(index-1)
+            selection = queue.skipto(index - 1)
         except IndexError:
             await ctx.fail("Invalid track index provided.")
             return
-        
+
         queue.append_left(selection)
         player.skip()
         await ctx.success(f"Skipped to track #{index}: {selection}")
@@ -1737,6 +2015,8 @@ class Queue(commands.Cog):
         """
         player = ctx.voice_state.validate
         queue = player.tracks
+        if not Checks.is_requester(ctx):
+            Checks.assert_is_dj(ctx)
 
         if len(queue) == 0:
             await ctx.fail("The queue is currently empty.")
@@ -1746,25 +2026,70 @@ class Queue(commands.Cog):
         except IndexError:
             await ctx.fail("Invalid track index provided.")
             return
-        else:
-            if ctx.author == player.current.requester:
-                queue.append_left(selection)  # Song requester can jump
-
-            elif ctx.author.guild_permissions.move_members:
-                queue.append_left(selection)  # Server DJs can jump
-            
-            else:
-                await ctx.fail("You must be either the track requester or a server DJ to use this command.")
-                return
-
+        queue.append_left(selection)  # Server DJs can jump
         player.skip()
         await ctx.success(f"Jumped to track #{index}: {selection}")
+
+    @decorators.command(
+        aliases=["repeat"],
+        name="loop",
+        brief="Loop the track or queue.",
+    )
+    @checks.cooldown()
+    async def _loop(self, ctx, option: converters.TrackOrQueue = "track"):
+        """
+        Usage: {0}loop [option]
+        Output: Loops the currently playing song.
+        Notes:
+            Use {0}loop queue to loop the entire queue.
+            Use {0}loop track to loop only the current track.
+            Use {0}loop off to stop looping the track or queue.
+            Will loop the current track if neither is specified.
+            Use {0}unloop can also be used to stop looping settings.
+        """
+        player = ctx.voice_state.validate
+        Checks.assert_is_dj(ctx)
+
+        if option == "track":
+            setting = "already" if player.track_is_looped else "now"
+            player.track_is_looped = True
+            await ctx.success(f"The current track is {setting} looped.")
+        elif option == "queue":
+            setting = "already" if player.queue_is_looped else "now"
+            player.queue_is_looped = True
+            player.track_is_looped = False  # In case we were looping a track.
+            await ctx.success(f"The current queue is {setting} looped.")
+        elif option == "off":
+            return await ctx.invoke(self._unloop)
+        await ctx.react(self.bot.emote_dict["loop"])
+
+    @decorators.command(
+        aliases=["deloop"],
+        name="unloop",
+        brief="Un-loop the track or queue.",
+    )
+    @checks.cooldown()
+    async def _unloop(self, ctx):
+        """
+        Usage: {0}unloop
+        Alias: {0}deloop
+        Output:
+            Stops looping the current song or queue
+        """
+        player = ctx.voice_state.validate
+        Checks.assert_is_dj(ctx)
+        player.track_is_looped = False
+        player.queue_is_looped = False
+
+        await ctx.react(self.bot.emote_dict["success"])
 
     ######################
     ## Queue Management ##
     ######################
 
-    @decorators.command(name="track", aliases=["q", "queue"], brief="Show the track queue.")
+    @decorators.command(
+        name="tracks", aliases=["q", "queue"], brief="Show the track queue."
+    )
     @checks.bot_has_perms(add_reactions=True, external_emojis=True, embed_links=True)
     @checks.cooldown()
     async def _tracks(self, ctx, *, search=None):
@@ -1780,7 +2105,8 @@ class Queue(commands.Cog):
             is specified.
         """
         if search:
-            return await ctx.invoke(self._play, search=search)
+            audio = self.bot.get_cog("Player")
+            return await ctx.invoke(audio._play, search=search)
 
         if len(ctx.voice_state.tracks) == 0:
             await ctx.fail("The queue is currently empty.")
@@ -1795,9 +2121,9 @@ class Queue(commands.Cog):
         except menus.MenuError as e:
             await ctx.send(e)
 
-    @decorators.command(name="clear", aliases=["c"], brief="Clear the queue.")
+    @decorators.group(name="clear", aliases=["c"], brief="Clear the queue.")
     @checks.cooldown()
-    async def _clear(self, ctx, range_begin: int = None, range_end: int = None):
+    async def _clear(self, ctx):
         """
         Usage: {0}clear
         Alias: {0}c
@@ -1808,30 +2134,36 @@ class Queue(commands.Cog):
             to remove only the tracks between
             position 3 and 10 in the queue.
         """
-        queue = ctx.voice_state.tracks
-        if len(queue) == 0:
-            return await ctx.fail("The queue is already empty")
-        if range_begin and not range_end:
-            await ctx.usage()
-            return
-        if not range_begin and not range_end:
+        if ctx.invoked_subcommand is None:
+            queue = ctx.voice_state.tracks
+            Checks.assert_is_dj(ctx)
+            if len(queue) == 0:
+                await ctx.fail("The queue is already empty")
+                return
             queue.clear()
             await ctx.success("Cleared all tracks from the queue.")
-        else:
-            if not 1 <= range_begin <= len(queue) - 1:
-                await ctx.fail("Invalid range beginning")
-                return
-            if not range_begin < range_end <= len(queue):
-                await ctx.fail("Invalid range end")
-                return
 
-            queue.clear_range(range_begin, range_end)
-            await ctx.success(f"Cleared tracks in range from {range_begin} to {range_end}")
+    @_clear.command(name="range", brief="Ckear a range from the queue.")
+    async def _clear_range(self, ctx, start: int, end: int):
+        Checks.assert_is_dj(ctx)
+        queue = ctx.voice_state.tracks
 
+        if len(queue) == 0:
+            await ctx.fail("The queue is currently empty.")
+            return
+        if not 1 <= start <= len(queue) - 1:
+            await ctx.fail("Invalid range start.")
+            return
+        if not start < end <= len(queue):
+            await ctx.fail("Invalid range end.")
+            return
 
-    @decorators.command(name="shuffle", brief="Shuffle the queue.")
+        queue.clear_range(start, end)
+        await ctx.success(f"Cleared tracks in range from {start} to {end}")
+
+    @decorators.group(name="shuffle", brief="Shuffle the queue.")
     @checks.cooldown()
-    async def _shuffle(self, ctx, range_begin: int = None, range_end: int = None):
+    async def _shuffle(self, ctx):
         """
         Usage: {0}shuffle
         Output: Shuffles the queue.
@@ -1840,45 +2172,77 @@ class Queue(commands.Cog):
             to shuffle only the tracks between
             position 3 and 10 in the queue.
         """
+        if ctx.invoked_subcommand is None:
+            Checks.assert_is_dj(ctx)
+            queue = ctx.voice_state.tracks
+
+            if len(queue) == 0:
+                await ctx.fail("The queue is currently empty.")
+                return
+
+            queue.shuffle()
+            await ctx.send_or_reply(
+                f"{self.bot.emote_dict['shuffle']} Shuffled the queue."
+            )
+
+    @_shuffle.command(name="range", brief="Shuffle a range of the queue.")
+    async def _shuffle_range(self, ctx, start: int, end: int):
+        Checks.assert_is_dj(ctx)
         queue = ctx.voice_state.tracks
 
         if len(queue) == 0:
             await ctx.fail("The queue is currently empty.")
             return
-        if range_begin and not range_end:
-            await ctx.usage()
+        if not 1 <= start <= len(queue) - 1:
+            await ctx.fail("Invalid range start.")
             return
-        if not range_begin and not range_end:
-            queue.shuffle()
-            await ctx.send_or_reply(f"{self.bot.emote_dict['shuffle']} Shuffled the queue.")
-        else:
-            if not 1 <= range_begin <= len(queue) - 1:
-                await ctx.fail("Invalid range beginning")
-                return
-            if not range_begin < range_end <= len(queue):
-                await ctx.fail("Invalid range end")
-                return
+        if not start < end <= len(queue):
+            await ctx.fail("Invalid range end.")
+            return
 
-            queue.shuffle_range(range_begin, range_end)
-            await ctx.send_or_reply(f"{self.bot.emote_dict['shuffle']} Shuffled tracks in range from {range_begin} to {range_end}")
+        queue.shuffle_range(start, end)
+        await ctx.send_or_reply(
+            f"{self.bot.emote_dict['shuffle']} Shuffled tracks in range from {start} to {end}"
+        )
 
-    @decorators.command(name="reverse", brief="Reverse the queue.")
+    @decorators.group(name="reverse", brief="Reverse the queue.")
     @checks.cooldown()
     async def _reverse(self, ctx):
         """
         Usage: {0}reverse
         Output: Reverses the queue.
         """
+        if ctx.invoked_subcommand is None:
+            queue = ctx.voice_state.tracks
+
+            if len(queue) == 0:
+                await ctx.fail("The queue is currently empty.")
+                return
+
+            queue.reverse()
+            await ctx.send_or_reply(
+                f"{self.bot.emote_dict['redo']} Reversed the queue."
+            )
+
+    @_reverse.command(name="range", brief="Reverse a range from the queue.")
+    async def _reverse_range(self, ctx, start: int, end: int):
+        Checks.assert_is_dj(ctx)
         queue = ctx.voice_state.tracks
 
         if len(queue) == 0:
             await ctx.fail("The queue is currently empty.")
             return
+        if not 1 <= start <= len(queue) - 1:
+            await ctx.fail("Invalid range start.")
+            return
+        if not start < end <= len(queue):
+            await ctx.fail("Invalid range end.")
+            return
 
-        queue.reverse()
-        await ctx.send_or_reply(f"{self.bot.emote_dict['redo']} Reversed the queue.")
+        queue.reverse_range(start, end)
+        await ctx.success(f"Reversed tracks in range from {start} to {end}")
 
-    @decorators.command(
+    @decorators.group(
         name="remove", aliases=["pop"], brief="Remove a track from the queue."
     )
     @checks.cooldown()
@@ -1889,19 +2253,38 @@ class Queue(commands.Cog):
         Output:
             Removes a song from the queue at a given index.
         """
+        if ctx.invoked_subcommand is None:
+            queue = ctx.voice_state.tracks
+
+            if len(queue) == 0:
+                await ctx.fail("The queue is already empty")
+                return
+
+            try:
+                queue.remove(index - 1)
+            except Exception:
+                await ctx.fail("Invalid index.")
+                return
+
+            await ctx.success(f"Removed item `{index}` from the queue.")
+
+    @_remove.command(name="range", brief="Remove a range from the queue.")
+    async def _remove_range(self, ctx, start: int, end: int):
+        Checks.assert_is_dj(ctx)
         queue = ctx.voice_state.tracks
 
         if len(queue) == 0:
-            await ctx.fail("The queue is already empty")
+            await ctx.fail("The queue is currently empty.")
+            return
+        if not 1 <= start <= len(queue) - 1:
+            await ctx.fail("Invalid range start.")
+            return
+        if not start < end <= len(queue):
+            await ctx.fail("Invalid range end.")
             return
 
-        try:
-            queue.remove(index - 1)
-        except Exception:
-            await ctx.fail("Invalid index.")
-            return
-
-        await ctx.success(f"Removed item `{index}` from the queue.")
+        queue.clear_range(start, end)
+        await ctx.success(f"Removed tracks in range from {start} to {end}")
 
     @decorators.command(
         aliases=["relocate", "switch"],
@@ -1916,6 +2299,7 @@ class Queue(commands.Cog):
         Output:
             Move a song to a new position in the queue.
         """
+        Checks.assert_is_dj(ctx)
         total = len(ctx.voice_state.tracks)
         if total == 0:
             return await ctx.fail("The queue is currently empty.")
@@ -1932,7 +2316,7 @@ class Queue(commands.Cog):
         ctx.voice_state.tracks.insert(position - 1, song)
 
         await ctx.success(
-            f"Moved song #{index} to the {utils.number_format(position)} position in the queue."
+            f"Moved song #{index} to the {MusicUtils.number_format(position)} position in the queue."
         )
 
     @decorators.command(
@@ -1948,6 +2332,7 @@ class Queue(commands.Cog):
         Output:
             Remove all duplicate tracks in the queue.
         """
+        Checks.assert_is_dj(ctx)
         queue = ctx.voice_state.tracks
         if len(queue) == 0:
             await ctx.fail("The queue is currently empty.")
@@ -1961,7 +2346,6 @@ class Queue(commands.Cog):
         name="weed",
         brief="Clear absent user enqueues.",
     )
-    @checks.has_guild_permissions(move_members=True)
     @checks.cooldown()
     async def _weed(self, ctx):
         """
@@ -1971,6 +2355,7 @@ class Queue(commands.Cog):
             Remove all tracks enqueued by users
             who have left the music channel.
         """
+        Checks.assert_is_dj(ctx)
         channel = ctx.voice_state.voice.channel
         queue = ctx.voice_state.tracks
         if not channel:
@@ -1981,14 +2366,15 @@ class Queue(commands.Cog):
             return
 
         queue.leave_cleanup(channel.members)
-        await ctx.success(f"Removed all tracks enqueued by users no longer in {channel.mention}")
+        await ctx.success(
+            f"Removed all tracks enqueued by users no longer in {channel.mention}"
+        )
 
     @decorators.command(
         aliases=["dq", "detrack"],
         name="dequeue",
-        brief="Clear absent user enqueues.",
+        brief="Clear a user's enqueues.",
     )
-    @checks.has_guild_permissions(move_members=True)
     @checks.cooldown()
     async def _dequeue(self, ctx, *, user: converters.DiscordMember):
         """
@@ -1997,6 +2383,7 @@ class Queue(commands.Cog):
         Output:
             Remove all tracks queued by a specific user.
         """
+        Checks.assert_is_dj(ctx)
         queue = ctx.voice_state.tracks
         if len(queue) == 0:
             await ctx.fail("The queue is currently empty.")
@@ -2005,10 +2392,7 @@ class Queue(commands.Cog):
         queue.dequeue(user)
         await ctx.success(f"Removed all tracks enqueued by **{user}** `{user.id}`")
 
-    @decorators.command(
-        name="savequeue",
-        brief="Save the current queue."
-    )
+    @decorators.command(name="savequeue", brief="Save the current queue.")
     async def _savequeue(self, ctx, *, name: str):
         """
         Usage: {0}savequeue [queue name]
@@ -2027,8 +2411,8 @@ class Queue(commands.Cog):
             return
 
         queue = [player.entry] + list(queue)
-        
-        queue = json.dumps([AudioUtils.json_entry(entry) for entry in queue])
+
+        queue = json.dumps([MusicUtils.json_entry(entry) for entry in queue])
         query = """
                 INSERT INTO queues (owner_id, name, queue)
                 VALUES ($1, $2, $3::JSONB)
@@ -2036,14 +2420,14 @@ class Queue(commands.Cog):
         try:
             await self.bot.cxn.execute(query, ctx.author.id, name.lower(), queue)
         except asyncpg.exceptions.UniqueViolationError:
-            await ctx.fail("You already have a saved queue with that name. Please try again with a different name")
+            await ctx.fail(
+                "You already have a saved queue with that name. Please try again with a different name"
+            )
             return
         await ctx.success(f"Saved the current queue with name: **{name}**")
 
     @decorators.command(
-        aliases=['unsavequeue'],
-        name="deletequeue",
-        brief="Delete a saved queue."
+        aliases=["unsavequeue"], name="deletequeue", brief="Delete a saved queue."
     )
     @checks.cooldown()
     async def _deletequeue(self, ctx, *, name: str):
@@ -2065,8 +2449,13 @@ class Queue(commands.Cog):
         if r == "DELETE 0":
             await ctx.fail(f"You have no saved queue with name: **{name}**")
             return
+        await ctx.success(f"Successfully deleted queue: **{name}**")
 
-    @decorators.command(brief="Show queues saved by a user.", name="queues", aliases=["myqueues", "savedqueues", "userqueues"])
+    @decorators.command(
+        brief="Show queues saved by a user.",
+        name="queues",
+        aliases=["myqueues", "savedqueues", "userqueues"],
+    )
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.cooldown()
     async def _queues(self, ctx, *, user: converters.DiscordMember = None):
@@ -2092,9 +2481,12 @@ class Queue(commands.Cog):
             await ctx.fail(f"User **{user}** `{user.id}` has no saved queues.")
             return
         p = pagination.SimplePages(
-            entries=[f"**{queue['name'].capitalize()}**: `{queue['len']} tracks`" for queue in queues],
+            entries=[
+                f"**{queue['name'].capitalize()}**: `{queue['len']} tracks`"
+                for queue in queues
+            ],
             per_page=10,
-            index=True
+            index=True,
         )
         p.embed.title = f"{user.display_name}'s Saved Queues"
         try:
@@ -2102,7 +2494,9 @@ class Queue(commands.Cog):
         except menus.MenuError as e:
             await ctx.send(e)
 
-    @decorators.command(name="playqueue", aliases=["loadqueue"], brief="Enqueue a saved queue.")
+    @decorators.command(
+        name="playqueue", aliases=["loadqueue"], brief="Enqueue a saved queue."
+    )
     async def _playqueue(self, ctx, *, name: str):
         """
         Usage: {0}playqueue [queue name]
@@ -2115,8 +2509,7 @@ class Queue(commands.Cog):
             the {0}savequeue command.
         """
         await ctx.trigger_typing()
-        music = self.bot.get_cog("Music")
-        player = await music.ensure_voice_state(ctx)
+        player = await ctx.voice_state.ensure_voice_state(ctx)
         query = """
                 SELECT name, queue
                 FROM queues
@@ -2126,17 +2519,549 @@ class Queue(commands.Cog):
         saved_queue = await self.bot.cxn.fetchrow(query, ctx.author.id, name.lower())
         if not saved_queue:
             await ctx.fail("You do not have a saved queue with that name")
+            return
 
         queue = json.loads(saved_queue["queue"])
 
-        player.tracks.extend([
-            QueueEntry(
-                ctx,
-                track.get('title'),
-                track.get('search'),
-                uploader=track.get('uploader'),
-                link=track.get('link')
-            ) for track in queue
-        ])
+        player.tracks.extend(
+            [
+                QueueEntry(
+                    ctx,
+                    track.get("title"),
+                    track.get("search"),
+                    uploader=track.get("uploader"),
+                    link=track.get("link"),
+                )
+                for track in queue
+            ]
+        )
 
-        await ctx.send(f"Enqueued saved playlist: {saved_queue['name']} `({len(queue)} tracks)`")
+        await ctx.send(
+            f"Enqueued saved playlist: {saved_queue['name']} `({len(queue)} tracks)`"
+        )
+
+
+class Audio(commands.Cog):
+    """
+    Module for managing the queue.
+    """
+
+    def __init__(self, bot):
+        self.bot = bot
+
+    async def cog_check(self, ctx):
+        if not ctx.guild:
+            raise commands.NoPrivateMessage()
+        return True
+
+    async def cog_before_invoke(self, ctx):
+        audio = self.bot.get_cog("Player")
+        ctx.voice_state = await audio.get_voice_state(ctx)
+        Checks.raise_if_bound(ctx)
+
+    async def set_effect(self, ctx):
+        player = ctx.voice_state.validate
+        Checks.assert_is_dj(ctx)
+
+        name = ctx.command.name
+        ternery = not player[name]
+        player[name] = ternery
+
+        fmt = lambda t: "" if t else "de"
+        await ctx.music(f"{name.title()} effect {fmt(ternery)}activated.")
+
+    @decorators.command(
+        aliases=["tempo"],
+        name="speed",
+        brief="Alter the speed of the player.",
+    )
+    @checks.cooldown()
+    async def _speed(self, ctx, speed: float = None):
+        """
+        Usage: {0}speed [speed]
+        Alias: {0}tempo
+        Output:
+            Speed up or slow down the player.
+        Notes:
+            The speed must be between 0.5 and 2.0.
+            Will output the current speed if no
+            new speed is explicitly specified.
+        """
+        player = ctx.voice_state.validate
+        Checks.assert_is_dj(ctx)
+
+        if speed is None:  # Output the current speed
+            await ctx.music(f"The audio speed is currently `{player['speed']}x`")
+            return
+
+        player["speed"] = speed
+        await ctx.music(f"Audio speed is now `{speed}x`")
+
+    @decorators.command(
+        name="pitch",
+        brief="Alter the pitch of the player.",
+    )
+    @checks.cooldown()
+    async def _pitch(self, ctx, pitch: float = None):
+        """
+        Usage: {0}pitch [pitch]
+        Output:
+            Alter the pitch of the player.
+        Notes:
+            The pitch must be between 0.5 and 2.0.
+            Will output the current pitch if no
+            new pitch is explicitly specified.
+        """
+        player = ctx.voice_state.validate
+        Checks.assert_is_dj(ctx)
+
+        if pitch is None:  # Output the current pitch
+            await ctx.music(f"The audio pitch is currently `{player['pitch']}`")
+            return
+
+        player["pitch"] = pitch
+        await ctx.music(f"Audio pitch is now `{pitch}`")
+
+    @decorators.command(
+        name="nightcore",
+        brief="Toggle the nightcore effect.",
+    )
+    @checks.cooldown()
+    async def _nightcore(self, ctx):
+        """
+        Usage: {0}nightcore
+        Output:
+            Enables the nightcore audio effect.
+        """
+        await self.set_effect(ctx)
+
+    @decorators.command(
+        aliases=["blowout"],
+        name="earrape",
+        brief="Toggle the earrape effect.",
+    )
+    @checks.cooldown()
+    async def _earrape(self, ctx):
+        """
+        Usage: {0}earrape
+        Output:
+            Enables the earrape audio effect.
+        """
+        await self.set_effect(ctx)
+
+    @decorators.command(
+        name="vibrato",
+        brief="Toggle the vibrato effect.",
+    )
+    @checks.cooldown()
+    async def _vibrato(self, ctx):
+        """
+        Usage: {0}vibrato
+        Output:
+            Enables the vibrato audio effect.
+        """
+        await self.set_effect(ctx)
+
+    @decorators.command(
+        name="echo",
+        brief="Toggle the echo effect.",
+    )
+    @checks.cooldown()
+    async def _echo(self, ctx):
+        """
+        Usage: {0}echo
+        Output:
+            Enables the echo audio effect.
+        """
+        await self.set_effect(ctx)
+
+    @decorators.command(
+        name="tremolo",
+        brief="Toggle the tremolo effect.",
+    )
+    @checks.cooldown()
+    async def _tremolo(self, ctx):
+        """
+        Usage: {0}tremolo
+        Output:
+            Enables the tremolo audio effect.
+        """
+        await self.set_effect(ctx)
+
+    @decorators.command(
+        name="denoise",
+        brief="Toggle the denoise effect.",
+    )
+    @checks.cooldown()
+    async def _denoise(self, ctx):
+        """
+        Usage: {0}denoise
+        Output:
+            Toggles the denoise audio effect.
+        """
+        await self.set_effect(ctx)
+
+    @decorators.command(
+        name="robot",
+        brief="Toggle the robot effect.",
+    )
+    @checks.cooldown()
+    async def _robot(self, ctx):
+        """
+        Usage: {0}robot
+        Output:
+            Toggles the robot audio effect.
+        """
+        await self.set_effect(ctx)
+
+    @decorators.command(
+        name="phaser",
+        brief="Toggle the phaser effect.",
+    )
+    @checks.cooldown()
+    async def _phaser(self, ctx):
+        """
+        Usage: {0}phaser
+        Output:
+            Toggles the phaser audio effect.
+        """
+        await self.set_effect(ctx)
+
+    @decorators.command(
+        name="whisper",
+        brief="Toggle the whisper effect.",
+    )
+    @checks.cooldown()
+    async def _whisper(self, ctx):
+        """
+        Usage: {0}whisper
+        Output:
+            Toggles the whisper audio effect.
+        """
+        await self.set_effect(ctx)
+
+    @decorators.group(
+        name="effects",
+        brief="Show audio effects.",
+    )
+    @checks.cooldown()
+    async def _effects(self, ctx):
+        """
+        Usage: {0}effects
+        Output: Shows all available effects
+        """
+        if ctx.invoked_subcommand is None:
+            docstring = "**Available Audio Effects**:```autohotkey\n"
+            docstring += "Speed: 0.5 to 2.0\n"
+            docstring += "Pitch: 0.5 to 2.0\n"
+            docstring += "Nightcore: Toggle\n"
+            docstring += "Earrape: Toggle\n"
+            docstring += "Vibrato: Toggle```"
+            await ctx.send_or_reply(docstring)
+
+    @_effects.command(
+        aliases=["clear"],
+        name="reset",
+        brief="Reset audio effects.",
+    )
+    @checks.cooldown()
+    async def reset_effects(self, ctx):
+        """
+        Usage: {0}effects reset
+        Alias: {0}effects clear
+        Output: Resets all effects to default.
+        """
+        player = ctx.voice_state.validate
+        Checks.assert_is_dj(ctx)
+        player.effects.clear()
+        await ctx.success("Reset all audio effects.")
+
+    @decorators.command(
+        aliases=["vol", "sound"],
+        name="volume",
+        brief="Alter the volume.",
+    )
+    async def _volume(self, ctx, volume: int = None):
+        """
+        Usage: {0}volume [volume]
+        Alias: {0}vol, {0}sound
+        Output: Changes the volume of the player.
+        Notes:
+            Will show current volume if
+            no new volume is specified.
+        """
+        player = ctx.voice_state.validate
+        Checks.assert_is_dj(ctx)
+        emoji = self.bot.emote_dict["volume"]
+
+        if volume is None:  # Output what we have
+            await ctx.send_or_reply(
+                f"{emoji} Volume of the player is currently {player.volume:.0%}"
+            )
+            return
+
+        player.volume = volume / 100
+        await ctx.send_or_reply(
+            f"{emoji} Volume of the player set to {player.volume:.0%}"
+        )
+
+
+class Voice(commands.Cog):
+    """
+    Module for voice permissions.
+    """
+
+    def __init__(self, bot):
+        self.bot = bot
+
+    async def cog_check(self, ctx):
+        if not ctx.guild:
+            raise commands.NoPrivateMessage()
+        return True
+
+    async def cog_before_invoke(self, ctx):
+        audio = self.bot.get_cog("Player")
+        ctx.voice_state = await audio.get_voice_state(ctx)
+
+    @decorators.group(
+        aliases=["dj"],
+        brief="Manage the DJ role.",
+        name="djrole",
+    )
+    @checks.cooldown()
+    async def _djrole(self, ctx):
+        if ctx.invoked_subcommand is None:
+            await ctx.send_help(ctx.command.qualified_name)
+
+    @_djrole.command(
+        aliases=["make"],
+        brief="Create a DJ role.",
+        name="create",
+    )
+    @checks.bot_has_perms(manage_roles=True)
+    @checks.has_perms(manage_roles=True)
+    async def djrole_create(self, ctx, *, role: converters.UniqueRole = None):
+        if role is None:
+            role_color = discord.Color.from_rgb(*self.bot.constants.Colors.PINK)
+            role = await ctx.guild.create_role(
+                name="DJ", color=role_color, reason="For music permission management."
+            )
+
+        query = """
+                INSERT INTO musicconf (server_id, djrole)
+                VALUES ($1, $2)
+                ON CONFLICT (server_id)
+                DO UPDATE SET djrole = $2
+                WHERE muscconf.server_id = $1;
+                """
+        await self.bot.cxn.execute(query, ctx.guild.id, role.id)
+        ctx.voice_state.djrole = role
+        await ctx.success(f"Saved `@{role.name}` as this server's DJ role.")
+
+    @_djrole.command(
+        aliases=["remove"],
+        brief="Delete the DJ role.",
+        name="delete",
+    )
+    @checks.bot_has_perms(manage_roles=True)
+    @checks.has_perms(manage_roles=True)
+    async def djrole_delete(self, ctx):
+        query = """
+                UPDATE musicconf 
+                SET djrole = NULL
+                WHERE server_id = $1;
+                """
+        await self.bot.cxn.execute(query, ctx.guild.id)
+        ctx.voice_state.djrole = None
+        await ctx.success("Removed this server's DJ role.")
+
+    @decorators.command(
+        aliases=["musicchannel"],
+        brief="Bind music commands to a channel.",
+        name="bind",
+    )
+    @checks.has_perms(manage_channels=True)
+    async def _bind(self, ctx, *, channel: discord.TextChannel = None):
+        channel = channel or ctx.channel
+        c = await ctx.confirm(
+            f"This action will prevent all music commands in all channels except {channel.mention}."
+        )
+        if c:
+            query = """
+                    INSERT INTO musicconf (server_id, bind)
+                    VALUES ($1, $2)
+                    ON CONFLICT (server_id)
+                    DO UPDATE SET bind = $2
+                    WHERE musicconf.server_id = $1;
+                    """
+            await self.bot.cxn.execute(query, ctx.guild.id, channel.id)
+            ctx.voice_state.bind = channel
+            await ctx.success(f"Successfully bound to {channel.mention}.")
+
+    @decorators.command(
+        brief="Unbind music commands to a channel.",
+        name="unbind",
+    )
+    @checks.has_perms(manage_channels=True)
+    async def _unbind(self, ctx):
+        query = """
+                UPDATE musicconf
+                SET bind = NULL
+                WHERE server_id = $1
+                """
+        await self.bot.cxn.execute(query, ctx.guild.id)
+        ctx.voice_state.bind = None
+        await ctx.success(f"No longer bound to any channel.")
+
+    ####################
+    ## VOICE COMMANDS ##
+    ####################
+
+    @decorators.command(
+        brief="Move a user from a voice channel.",
+        examples="""
+                {0}vcmove Hecate Neutra #music
+                """,
+    )
+    @checks.guild_only()
+    @checks.bot_has_guild_perms(move_members=True)
+    @checks.has_perms(move_members=True)
+    @checks.cooldown()
+    async def vcmove(
+        self,
+        ctx,
+        targets: commands.Greedy[converters.DiscordMember(False)],
+        *,  # Do not disambiguate when accepting multiple members.
+        channel: typing.Union[discord.VoiceChannel, discord.StageChannel],
+    ):
+        """
+        Usage: {0}vcmove <targets>... <channel>
+        Output: Moves members into a new voice channel
+        Permission: Move Members
+        """
+        if not len(targets):
+            return await ctx.usage()
+
+        vcmoved = []
+        failed = []
+        for target in targets:
+            try:
+                await target.move_to(channel)
+            except discord.HTTPException:
+                failed.append((str(target), e))
+                continue
+            except Exception as e:
+                failed.append((str(target, e)))
+            vcmoved.append(str(target))
+        if vcmoved:
+            await ctx.success(f"VC Moved `{', '.join(vcmoved)}`")
+        if failed:
+            await helpers.error_info(ctx, failed)
+
+    @decorators.command(
+        brief="Kick users from a voice channel.",
+        implemented="2021-04-22 01:13:53.346822",
+        updated="2021-07-04 17:59:53.792869",
+        examples="""
+                {0}vckick Neutra Hecate#3523
+                """,
+    )
+    @checks.guild_only()
+    @checks.has_perms(move_members=True)
+    @checks.bot_has_guild_perms(move_members=True)
+    @checks.cooldown()
+    async def vckick(self, ctx, *targets: converters.DiscordMember(False)):
+        """
+        Usage: {0}vckick <targets>...
+        Output: Kicks passed members from their channel
+        Permission: Move Members
+        """
+        vckicked = []
+        failed = []
+        for target in targets:
+            try:
+                await target.move_to(None)
+            except discord.HTTPException:
+                failed.append((str(target), e))
+                continue
+            except Exception as e:
+                failed.append((str(target, e)))
+            vckicked.append(str(target))
+        if vckicked:
+            await ctx.success(f"VC Kicked `{', '.join(vckicked)}`")
+        if failed:
+            await helpers.error_info(ctx, failed)
+
+    @decorators.command(
+        brief="Kick all users from a voice channel.",
+        implemented="2021-04-22 01:13:53.346822",
+        updated="2021-07-04 17:59:53.792869",
+        examples="""
+                {0}vcpurge #music
+                """,
+    )
+    @checks.guild_only()
+    @checks.bot_has_guild_perms(move_members=True)
+    @checks.has_perms(move_members=True)
+    @checks.cooldown()
+    async def vcpurge(
+        self, ctx, *, channel: typing.Union[discord.VoiceChannel, discord.StageChannel]
+    ):
+        """
+        Usage: {0}vcpurge <voice channel>
+        Output: Kicks all members from the channel
+        Permission: Move Members
+        """
+        if len(channel.members) == 0:
+            return await ctx.fail(f"No users in voice channel {channel.mention}.")
+        failed = []
+        for member in channel.members:
+            try:
+                await member.move_to(None)
+            except Exception as e:
+                failed.append((str(member), e))
+                continue
+        await ctx.success(f"Purged {channel.mention}.")
+        if failed:
+            await helpers.error_info(ctx, failed)
+
+    @decorators.command(
+        brief="Transfer users into a new channel.",
+        examples="""
+                {0}vctransfer #music
+                """,
+    )
+    @checks.bot_has_guild_perms(move_members=True)
+    @checks.has_perms(move_members=True)
+    @checks.cooldown()
+    async def vctransfer(
+        self,
+        ctx,
+        from_channel: typing.Union[discord.VoiceChannel, discord.StageChannel],
+        *,
+        to_channel: typing.Union[discord.VoiceChannel, discord.StageChannel],
+    ):
+        """
+        Usage: {0}vctransfer <voice channel> <voice channel>
+        Output: Transfers all members from one channel to another
+        Permission: Move Members
+        """
+        if len(from_channel.members) == 0:
+            return await ctx.fail(f"No users in voice channel {from_channel.mention}.")
+        failed = []
+        for member in from_channel.members:
+            try:
+                await member.move_to(to_channel)
+            except Exception as e:
+                failed.append((str(member), e))
+                continue
+        await ctx.success(f"Transferred {from_channel.mention}to {to_channel.mention}.")
+        if failed:
+            await helpers.error_info(ctx, failed)
+
+
+def setup(bot):
+    bot.add_cog(Player(bot))
+    bot.add_cog(Queue(bot))
+    bot.add_cog(Audio(bot))
+    bot.add_cog(Voice(bot))

@@ -749,15 +749,13 @@ class Botadmin(commands.Cog):
 
     @decorators.command(
         rest_is_raw=True,
-        aliases=["say"],
-        brief="Echo a message.",
+        brief="Say a message.",
     )
     @checks.bot_has_perms(manage_messages=True)
     @checks.is_bot_admin()
-    async def echo(self, ctx, *, content):
+    async def say(self, ctx, *, content):
         """
-        Usage {0}echo
-        Alias: {0}say
+        Usage: {0}say
         Output:
             Deletes the command invocation
             and resends the exact content.

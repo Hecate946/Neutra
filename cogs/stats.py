@@ -269,6 +269,7 @@ class Stats(commands.Cog):
                     SELECT emoji_id, total
                     FROM emojidata
                     WHERE server_id = $1
+                    GROUP BY emoji_id, total
                     ORDER BY total DESC;
                     """
 
@@ -302,6 +303,7 @@ class Stats(commands.Cog):
                     FROM emojidata
                     WHERE author_id = $1
                     AND server_id = $2
+                    GROUP BY emoji_id, total
                     ORDER BY total DESC;
                     """
 
