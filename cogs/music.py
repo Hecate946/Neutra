@@ -5,9 +5,10 @@ for the queue, third for voice management, and last for effects.
 Also included are custom music checks, audio-specific utilities,
 custom exceptions, a spotify api getter class, a guild-specific
 VoiceState class, a custom TrackQueue that contains QueueEntry's,
-and finally, Two audio source classes, YTDLSource, for creating
-a playable audio source from youtube, and AudioSource, that plays
-the audio and is responsible for managing volume, speed, and pitch.
+Two audio source classes, YTDLSource, for creating a playable audio
+source from youtube, and AudioSource, that plays the audio and is
+responsible for managing volume and other effects. Finally, a group
+Views class for managing the user interface for the effects command.
 This module is entirely separate from the remainder of the client,
 and can be removed with relative ease merely by deleting this file.
 """
@@ -28,7 +29,6 @@ import logging
 import functools
 import itertools
 import traceback
-from discord.ui.button import B
 import youtube_dl
 
 from discord.ext import commands, menus
@@ -323,6 +323,7 @@ class MusicUtils:
         }
         return json_entry
 
+
     def get_progress_bar(ctx, ratio, length=800, width=80):
         GRAY = ctx.bot.constants.Colors.GRAY
         BLUE = ctx.bot.constants.Colors.BLUE
@@ -553,6 +554,212 @@ class Checks:
             raise commands.BadArgument(
                 "You must have the `Manage Roles` or the `Manage Guild` permission to use this command."
             )
+class Views:
+    class Select(discord.ui.Select):
+        def __init__(self, ctx, player):
+            self.ctx = ctx
+            self.player = player
+            self.effects = [
+                "denoise",
+                "earrape",
+                "echo",
+                "nightcore",
+                "phaser",
+                "robot",
+                "tremolo",
+                "vibrato",
+                "whisper",
+            ]
+            super().__init__(placeholder="Audio Effects", options=self.get_options())
+
+        def get_options(self):
+            """Creates a list of SelectOption"""
+            PASS = self.player._ctx.bot.emote_dict['pass']
+            FAIL = self.player._ctx.bot.emote_dict['fail']
+            get_emoji = lambda e: PASS if self.player[e] else FAIL
+            get_desc = lambda e: f"Toggle the {e} audio effect. (Currently {'en' if self.player[e] else 'dis'}abled)"
+
+            return [
+                discord.SelectOption(
+                    label=effect,
+                    description=get_desc(effect),
+                    emoji=get_emoji(effect)
+                ) for effect in self.effects
+            ]
+
+        async def callback(self, interaction: discord.Interaction):
+            selection = interaction.data["values"][0]
+            self.player[selection] = not self.player[selection]
+            await interaction.message.edit(f"{selection.capitalize()} effect {'en' if self.player[selection] else 'dis'}abled.", view=Views.Effects(self.ctx, self.player))
+
+
+    class Effects(discord.ui.View):
+        def __init__(self, ctx, player):
+            self.ctx = ctx
+            self.player = player
+            self.message = None
+            super().__init__(timeout=120)
+
+            self.add_item(Views.Select(ctx, player))
+
+        async def interaction_check(self, interaction):
+            if self.ctx.author.id == interaction.user.id:
+                return True
+            else:
+                await interaction.response.send_message(
+                    "Only the command invoker can use this menu.", ephemeral=True
+                )
+
+        async def on_timeout(self):
+            if self.message:
+                await self.message.delete()
+            self.stop()
+
+        @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red, row=2)
+        async def cancel_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+            await interaction.message.delete()
+            self.stop()
+
+        @discord.ui.button(label="Save", style=discord.ButtonStyle.green, row=2)
+        async def save_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+            await interaction.message.edit("Successfully saved audio effect settings.", view=None)
+            self.stop()
+
+        @discord.ui.button(label="Reset", style=discord.ButtonStyle.blurple, row=2)
+        async def reset_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+            self.player.clear_effects()
+            await interaction.message.edit("Successfully reset effect settings.", view=None)
+            self.stop()
+
+        @discord.ui.button(label="Help", style=discord.ButtonStyle.gray, row=2)
+        async def help_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+            embed = discord.Embed(color=self.ctx.bot.constants.embed)
+            embed.set_author(
+                name="Welcome to the audio effects help page.", icon_url=self.ctx.bot.user.display_avatar.url
+            )
+            embed.description = f"Below are comprehensive instructions on how to use the `{self.ctx.clean_prefix}effects` dropdown menu command. Each effect in the dropdown menu is a toggle switch. This means that if an effect is disabled, it will be enabled when clicked, and vice-versa. The **Main Menu** category below shows how to work the main page, while the **Help Menu** category shows instructions for this page."
+            embed.add_field(name="Main Menu", value="`Cancel` simply deletes the menu.\n`Reset` resets all effects to default.\n`Save` saves the effect settings and stops the menu.\n`Help` shows this help page.")
+            embed.add_field(name="Help Menu", value="`Cancel` simply deletes the menu.\n`Effects` shows all effect outputs.\n`Return` will return to the main menu.")
+            embed.set_footer(text="This menu will expire after 2 minutes of inactivity.")
+            help_view = Views.HelpMenu(self.ctx, self.player)
+            await interaction.message.edit(content=None, embed=embed, view=help_view)
+            help_view.message = self.message
+            self.stop()
+
+    class HelpMenu(discord.ui.View):
+        def __init__(self, ctx, player):
+            self.ctx = ctx
+            self.player = player
+            self.message = None
+            self.effects = {
+                "denoise": "This effect removes harsh sounding audio.",
+                "earrape": "This effect makes audio sound scratchy.",
+                "echo": "This effect makes audio sound with an echo.",
+                "nightcore": "This effect plays audio with a higher pitch and speed.",
+                "phaser": "This effect makes audio sound synthetically generated.",
+                "robot": "This effect makes audio sound like a robot is speaking.",
+                "tremolo": "This effect creates minature breaks in the audio.",
+                "vibrato": "This effect makes the audio dilate for vibrato.",
+                "whisper": "This effect makes audio sound as if it were being whispered.",
+            }
+            super().__init__(timeout=120)
+
+        async def interaction_check(self, interaction):
+            if self.ctx.author.id == interaction.user.id:
+                return True
+            else:
+                await interaction.response.send_message(
+                    "Only the command invoker can use this button.", ephemeral=True
+                )
+
+        async def on_timeout(self):
+            if self.message:
+                await self.message.delete()
+            self.stop()
+
+        @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
+        async def cancel_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+            await interaction.message.delete()
+            self.stop()
+
+        @discord.ui.button(label="Effects", style=discord.ButtonStyle.green)
+        async def effects_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+            embed = discord.Embed(color=self.ctx.bot.constants.embed)
+            embed.title = "Audio Effects"
+            embed.description = "Press the `Cancel` button to delete this message.\nPress the `Return` button to return to the main menu.\nPress the `Help` button for the help menu."
+            embed.set_footer(text="This menu will expire after 2 minutes of inactivity.")
+            for name, description in self.effects.items():
+                embed.add_field(name=name, value=description)
+
+            return_view = Views.Return(self.ctx, self.player)
+            await interaction.message.edit(content=None, embed=embed, view=return_view)
+            return_view.message = self.message
+            self.stop()
+
+        @discord.ui.button(label="Return", style=discord.ButtonStyle.blurple)
+        async def main_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+            effects_view = Views.Effects(self.ctx, self.player)
+            await interaction.message.edit(content=None, embed=None, view=effects_view)
+            effects_view.message = self.message
+            self.stop()
+
+    class Return(discord.ui.View):
+        def __init__(self, ctx, player):
+            self.ctx = ctx
+            self.player = player
+            self.message = None
+            self.effects = {
+                "denoise": "This effect removes harsh sounding audio.",
+                "earrape": "This effect makes audio sound scratchy.",
+                "echo": "This effect makes audio sound with an echo.",
+                "nightcore": "This effect plays audio with a higher pitch and speed.",
+                "phaser": "This effect makes audio sound synthetically generated.",
+                "robot": "This effect makes audio sound like a robot is speaking.",
+                "tremolo": "This effect creates minature breaks in the audio.",
+                "vibrato": "This effect makes the audio dilate for vibrato.",
+                "whisper": "This effect makes audio sound as if it were being whispered.",
+            }
+            super().__init__(timeout=120)
+
+        async def interaction_check(self, interaction):
+            if self.ctx.author.id == interaction.user.id:
+                return True
+            else:
+                await interaction.response.send_message(
+                    "Only the command invoker can use this button.", ephemeral=True
+                )
+
+        async def on_timeout(self):
+            if self.message:
+                await self.message.delete()
+            self.stop()
+
+        @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
+        async def cancel_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+            await interaction.message.delete()
+            self.stop()
+
+        @discord.ui.button(label="Return", style=discord.ButtonStyle.blurple)
+        async def main_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+            effect_view = Views.Effects(self.ctx, self.player)
+            await interaction.message.edit(content="Select an audio effect from the dropdown below.", embed=None, view=effect_view)
+            effect_view.message = self.message
+            self.stop()
+
+        @discord.ui.button(label="Help", style=discord.ButtonStyle.gray)
+        async def help_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+            embed = discord.Embed(color=self.ctx.bot.constants.embed)
+            embed.set_author(
+                name="Welcome to the audio effects help page.", icon_url=self.ctx.bot.user.display_avatar.url
+            )
+            embed.description = f"Below are comprehensive instructions on how to use the `{self.ctx.clean_prefix}effects` dropdown menu command. Each effect in the dropdown menu is a toggle switch. This means that if an effect is disabled, it will be enabled when clicked, and vice-versa. The **Main Menu** category below shows how to work the main page, while the **Help Menu** category shows instructions for this page."
+            embed.add_field(name="Main Menu", value="`Cancel` simply deletes the menu.\n`Reset` resets all effects to default.\n`Save` saves the effect settings and stops the menu.\n`Help` shows this help page.")
+            embed.add_field(name="Help Menu", value="`Cancel` simply deletes the menu.\n`Effects` shows all effect outputs.\n`Return` will return to the main menu.")
+            embed.set_footer(text="This menu will expire after 2 minutes of inactivity.")
+            help_view = Views.HelpMenu(self.ctx, self.player)
+            await interaction.message.edit(content=None, embed=embed, view=help_view)
+            help_view.message = self.message
+            self.stop()
 
 
 class AudioSource(discord.PCMVolumeTransformer):
@@ -576,7 +783,7 @@ class AudioSource(discord.PCMVolumeTransformer):
         filters = {  # Mapping of filters to their names
             "nightcore": ",asetrate=48000*1.1",
             "earrape": ",acrusher=.1:1:64:0:log",
-            "echo": ",aecho=0.8:0.9:500|1000:0.2|0.1",
+            "echo": ",aecho=0.5:0.5:500|50000:1.0|1.0",
             "denoise": ",crystalizer=i=-10",
             "phaser": ",aphaser=type=t:speed=2:decay=0.6",
             "robot": ",afftfilt=real='hypot(re,im)*sin(0)':imag='hypot(re,im)*cos(0)':win_size=512:overlap=0.75",
@@ -994,39 +1201,6 @@ class TrackQueue(asyncio.Queue):
         queue[start - 1 : end] = to_reverse
         self._queue = deque(queue)
 
-
-class Effects(dict):
-    def __init__(self, state):
-        self.state = state
-
-    def __getitem__(self, key):
-        return dict.__getitem__(self, key)
-
-    def __setitem__(self, key, value):
-        if key == "speed":
-            if not 0.5 <= value <= 2.0:
-                raise commands.BadArgument("Speed must be between `0.5` and `2.0`")
-        if key == "pitch":
-            if not 0.5 <= value <= 2.0:
-                raise commands.BadArgument("Pitch must be between `0.5` and `2.0`")
-
-        dict.__setitem__(self, key, value)
-        self.state.alter_audio()
-
-    def __delitem__(self, key):
-        dict.__delitem__(self, key)
-        self.state.alter_audio()
-
-    def __iter__(self):
-        return dict.__iter__(self)
-
-    def __len__(self):
-        return dict.__len__(self)
-
-    def __contains__(self, x):
-        return dict.__contains__(self, x)
-
-
 class VoiceState:
     """
     Responsible for audio playing and manipulation.
@@ -1082,6 +1256,10 @@ class VoiceState:
 
         # Other effects are False by default
         return self.effects.get(key, False)
+
+    def clear_effects(self):
+        self.effects.clear()
+        self.alter_audio()
 
     @classmethod
     async def create(cls, bot, ctx):
@@ -1336,7 +1514,7 @@ class Player(commands.Cog):
             await ctx.fail("Not connected to any voice channel.")
             return
         await ctx.voice_state.stop()
-        del self.voice_states[ctx.guild.id]
+        self.voice_states.delete([ctx.guild.id])
 
     @decorators.command(
         name="pause",
@@ -2750,14 +2928,13 @@ class Audio(commands.Cog):
         Usage: {0}effects
         Output: Shows all available effects
         """
-        if ctx.invoked_subcommand is None:
-            docstring = "**Available Audio Effects**:```autohotkey\n"
-            docstring += "Speed: 0.5 to 2.0\n"
-            docstring += "Pitch: 0.5 to 2.0\n"
-            docstring += "Nightcore: Toggle\n"
-            docstring += "Earrape: Toggle\n"
-            docstring += "Vibrato: Toggle```"
-            await ctx.send_or_reply(docstring)
+        player = ctx.voice_state.validate
+        Checks.assert_is_dj(ctx)
+    
+        view = Views.Effects(ctx, player)
+        msg = await ctx.send("Select an audio effect from the dropdown below.", view=view)
+        view.message = msg
+
 
     @_effects.command(
         aliases=["clear"],
@@ -2773,7 +2950,7 @@ class Audio(commands.Cog):
         """
         player = ctx.voice_state.validate
         Checks.assert_is_dj(ctx)
-        player.effects.clear()
+        player.clear_effects()
         await ctx.success("Reset all audio effects.")
 
     @decorators.command(
