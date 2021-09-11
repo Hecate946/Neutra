@@ -17,6 +17,7 @@ import re
 import io
 import json
 import math
+from subprocess import TimeoutExpired
 import time
 import base64
 import typing
@@ -323,7 +324,6 @@ class MusicUtils:
         }
         return json_entry
 
-
     def get_progress_bar(ctx, ratio, length=800, width=80):
         GRAY = ctx.bot.constants.Colors.GRAY
         BLUE = ctx.bot.constants.Colors.BLUE
@@ -417,6 +417,40 @@ class MusicUtils:
             block += f"Dislikes : {ytdl.dislikes:,}\n```"
 
         return await ctx.send(content=block, embed=embed, file=file)
+
+    async def save_embed(ctx, ytdl):
+        MUSIC = ctx.bot.constants.emotes["music"]
+        LIKE = ctx.bot.constants.emotes["like"]
+        DISLIKE = ctx.bot.constants.emotes["dislike"]
+        embed = discord.Embed(color=ctx.bot.constants.embed)
+        embed.title = "Track Information"
+        embed.description = f"```fix\n{ytdl.title}\n```"
+
+        embed.add_field(name="Duration", value=ytdl.duration)
+        embed.add_field(name="Requester", value=ytdl.requester.mention)
+        embed.add_field(
+            name="Uploader", value=f"[{ytdl.uploader}]({ytdl.uploader_url})"
+        )
+        embed.add_field(name="Link", value=f"[Click]({ytdl.url})")
+        embed.add_field(name="Likes", value=f"{LIKE} {ytdl.likes:,}")
+        embed.add_field(name="Dislikes", value=f"{DISLIKE} {ytdl.dislikes:,}")
+        embed.set_thumbnail(url=ytdl.thumbnail)
+        try:
+            await ctx.author.send(f"Saved {str(ytdl)} to your liked songs", embed=embed)
+        except Exception:
+            if ctx.channel.permissions_for(ctx.me).embed_links:
+                await ctx.send(f"Saved {str(ytdl)} to your liked songs", embed=embed)
+            else:
+                block = f"Saved **{ytdl}** to your liked songs```yaml\n"
+                block += f"Duration : {ytdl.duration}\n"
+                block += f"Requester: {ytdl.requester.display_name}\n"
+                block += f"Uploader : {ytdl.uploader}\n"
+                block += f"Link     : {ytdl.url}\n"
+                block += f"Likes    : {ytdl.likes:,}\n"
+                block += f"Dislikes : {ytdl.dislikes:,}\n```"
+                await ctx.send(block)
+        else:
+            await ctx.success(f"Saved the current track to your liked songs.")
 
     async def read_url(url, session):
         """
@@ -542,6 +576,14 @@ class Checks:
                     f"Music commands cannot be used outside of {bind.mention}."
                 )
 
+    def raise_if_locked(ctx):
+        lock = ctx.voice_state.djlock
+        if lock:
+            if not Checks.is_dj(ctx):
+                raise commands.BadArgument(
+                    "The music module has been locked to DJs only."
+                )
+
     def is_manager(ctx):
         if ctx.author.guild_permissions.manage_roles:
             return True
@@ -554,6 +596,8 @@ class Checks:
             raise commands.BadArgument(
                 "You must have the `Manage Roles` or the `Manage Guild` permission to use this command."
             )
+
+
 class Views:
     class Select(discord.ui.Select):
         def __init__(self, ctx, player):
@@ -574,24 +618,27 @@ class Views:
 
         def get_options(self):
             """Creates a list of SelectOption"""
-            PASS = self.player._ctx.bot.emote_dict['pass']
-            FAIL = self.player._ctx.bot.emote_dict['fail']
+            PASS = self.player._ctx.bot.emote_dict["success"]
+            FAIL = self.player._ctx.bot.emote_dict["failed"]
             get_emoji = lambda e: PASS if self.player[e] else FAIL
-            get_desc = lambda e: f"Toggle the {e} audio effect. (Currently {'en' if self.player[e] else 'dis'}abled)"
+            get_desc = (
+                lambda e: f"Toggle the {e} audio effect. (Currently {'en' if self.player[e] else 'dis'}abled)"
+            )
 
             return [
                 discord.SelectOption(
-                    label=effect,
-                    description=get_desc(effect),
-                    emoji=get_emoji(effect)
-                ) for effect in self.effects
+                    label=effect, description=get_desc(effect), emoji=get_emoji(effect)
+                )
+                for effect in self.effects
             ]
 
         async def callback(self, interaction: discord.Interaction):
             selection = interaction.data["values"][0]
             self.player[selection] = not self.player[selection]
-            await interaction.message.edit(f"{selection.capitalize()} effect {'en' if self.player[selection] else 'dis'}abled.", view=Views.Effects(self.ctx, self.player))
-
+            await interaction.message.edit(
+                f"{selection.capitalize()} effect {'en' if self.player[selection] else 'dis'}abled.",
+                view=Views.Effects(self.ctx, self.player),
+            )
 
     class Effects(discord.ui.View):
         def __init__(self, ctx, player):
@@ -616,31 +663,52 @@ class Views:
             self.stop()
 
         @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red, row=2)
-        async def cancel_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+        async def cancel_button(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
             await interaction.message.delete()
             self.stop()
 
         @discord.ui.button(label="Save", style=discord.ButtonStyle.green, row=2)
-        async def save_button(self, button: discord.ui.Button, interaction: discord.Interaction):
-            await interaction.message.edit("Successfully saved audio effect settings.", view=None)
+        async def save_button(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            await interaction.message.edit(
+                "Successfully saved audio effect settings.", view=None
+            )
             self.stop()
 
         @discord.ui.button(label="Reset", style=discord.ButtonStyle.blurple, row=2)
-        async def reset_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+        async def reset_button(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
             self.player.clear_effects()
-            await interaction.message.edit("Successfully reset effect settings.", view=None)
+            await interaction.message.edit(
+                "Successfully reset effect settings.", view=None
+            )
             self.stop()
 
         @discord.ui.button(label="Help", style=discord.ButtonStyle.gray, row=2)
-        async def help_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+        async def help_button(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
             embed = discord.Embed(color=self.ctx.bot.constants.embed)
             embed.set_author(
-                name="Welcome to the audio effects help page.", icon_url=self.ctx.bot.user.display_avatar.url
+                name="Welcome to the audio effects help page.",
+                icon_url=self.ctx.bot.user.display_avatar.url,
             )
             embed.description = f"Below are comprehensive instructions on how to use the `{self.ctx.clean_prefix}effects` dropdown menu command. Each effect in the dropdown menu is a toggle switch. This means that if an effect is disabled, it will be enabled when clicked, and vice-versa. The **Main Menu** category below shows how to work the main page, while the **Help Menu** category shows instructions for this page."
-            embed.add_field(name="Main Menu", value="`Cancel` simply deletes the menu.\n`Reset` resets all effects to default.\n`Save` saves the effect settings and stops the menu.\n`Help` shows this help page.")
-            embed.add_field(name="Help Menu", value="`Cancel` simply deletes the menu.\n`Effects` shows all effect outputs.\n`Return` will return to the main menu.")
-            embed.set_footer(text="This menu will expire after 2 minutes of inactivity.")
+            embed.add_field(
+                name="Main Menu",
+                value="`Cancel` simply deletes the menu.\n`Reset` resets all effects to default.\n`Save` saves the effect settings and stops the menu.\n`Help` shows this help page.",
+            )
+            embed.add_field(
+                name="Help Menu",
+                value="`Cancel` simply deletes the menu.\n`Effects` shows all effect outputs.\n`Return` will return to the main menu.",
+            )
+            embed.set_footer(
+                text="This menu will expire after 2 minutes of inactivity."
+            )
             help_view = Views.HelpMenu(self.ctx, self.player)
             await interaction.message.edit(content=None, embed=embed, view=help_view)
             help_view.message = self.message
@@ -678,16 +746,22 @@ class Views:
             self.stop()
 
         @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
-        async def cancel_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+        async def cancel_button(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
             await interaction.message.delete()
             self.stop()
 
         @discord.ui.button(label="Effects", style=discord.ButtonStyle.green)
-        async def effects_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+        async def effects_button(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
             embed = discord.Embed(color=self.ctx.bot.constants.embed)
             embed.title = "Audio Effects"
             embed.description = "Press the `Cancel` button to delete this message.\nPress the `Return` button to return to the main menu.\nPress the `Help` button for the help menu."
-            embed.set_footer(text="This menu will expire after 2 minutes of inactivity.")
+            embed.set_footer(
+                text="This menu will expire after 2 minutes of inactivity."
+            )
             for name, description in self.effects.items():
                 embed.add_field(name=name, value=description)
 
@@ -697,7 +771,9 @@ class Views:
             self.stop()
 
         @discord.ui.button(label="Return", style=discord.ButtonStyle.blurple)
-        async def main_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+        async def main_button(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
             effects_view = Views.Effects(self.ctx, self.player)
             await interaction.message.edit(content=None, embed=None, view=effects_view)
             effects_view.message = self.message
@@ -735,27 +811,46 @@ class Views:
             self.stop()
 
         @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
-        async def cancel_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+        async def cancel_button(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
             await interaction.message.delete()
             self.stop()
 
         @discord.ui.button(label="Return", style=discord.ButtonStyle.blurple)
-        async def main_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+        async def main_button(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
             effect_view = Views.Effects(self.ctx, self.player)
-            await interaction.message.edit(content="Select an audio effect from the dropdown below.", embed=None, view=effect_view)
+            await interaction.message.edit(
+                content="Select an audio effect from the dropdown below.",
+                embed=None,
+                view=effect_view,
+            )
             effect_view.message = self.message
             self.stop()
 
         @discord.ui.button(label="Help", style=discord.ButtonStyle.gray)
-        async def help_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+        async def help_button(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
             embed = discord.Embed(color=self.ctx.bot.constants.embed)
             embed.set_author(
-                name="Welcome to the audio effects help page.", icon_url=self.ctx.bot.user.display_avatar.url
+                name="Welcome to the audio effects help page.",
+                icon_url=self.ctx.bot.user.display_avatar.url,
             )
             embed.description = f"Below are comprehensive instructions on how to use the `{self.ctx.clean_prefix}effects` dropdown menu command. Each effect in the dropdown menu is a toggle switch. This means that if an effect is disabled, it will be enabled when clicked, and vice-versa. The **Main Menu** category below shows how to work the main page, while the **Help Menu** category shows instructions for this page."
-            embed.add_field(name="Main Menu", value="`Cancel` simply deletes the menu.\n`Reset` resets all effects to default.\n`Save` saves the effect settings and stops the menu.\n`Help` shows this help page.")
-            embed.add_field(name="Help Menu", value="`Cancel` simply deletes the menu.\n`Effects` shows all effect outputs.\n`Return` will return to the main menu.")
-            embed.set_footer(text="This menu will expire after 2 minutes of inactivity.")
+            embed.add_field(
+                name="Main Menu",
+                value="`Cancel` simply deletes the menu.\n`Reset` resets all effects to default.\n`Save` saves the effect settings and stops the menu.\n`Help` shows this help page.",
+            )
+            embed.add_field(
+                name="Help Menu",
+                value="`Cancel` simply deletes the menu.\n`Effects` shows all effect outputs.\n`Return` will return to the main menu.",
+            )
+            embed.set_footer(
+                text="This menu will expire after 2 minutes of inactivity."
+            )
             help_view = Views.HelpMenu(self.ctx, self.player)
             await interaction.message.edit(content=None, embed=embed, view=help_view)
             help_view.message = self.message
@@ -810,7 +905,9 @@ class AudioSource(discord.PCMVolumeTransformer):
                     INSERT INTO tracks (requester_id, title, url, uploader)
                     VALUES ($1, $2, $3, $4)
                     """
-            await cxn.execute(query, ytdl.requester.id, ytdl.title, ytdl.url, ytdl.uploader)
+            await cxn.execute(
+                query, ytdl.requester.id, ytdl.title, ytdl.url, ytdl.uploader
+            )
         return cls(ytdl, volume, position, **kwargs)
 
 
@@ -1201,13 +1298,14 @@ class TrackQueue(asyncio.Queue):
         queue[start - 1 : end] = to_reverse
         self._queue = deque(queue)
 
+
 class VoiceState:
     """
     Responsible for audio playing and manipulation.
     Guilds receive a cached instance in ctx.voice_state.
     """
 
-    def __init__(self, bot, ctx, *, bind=None, djrole=None):
+    def __init__(self, bot, ctx, *, bind=None, djrole=None, djlock=False):
         self.bot = bot
         self._ctx = ctx
 
@@ -1231,6 +1329,7 @@ class VoiceState:
 
         self.bind = bind
         self.djrole = djrole
+        self.djlock = djlock
 
         self.audio_player = bot.loop.create_task(self.audio_player_task())
 
@@ -1265,8 +1364,9 @@ class VoiceState:
     async def create(cls, bot, ctx):
         bind = None
         djrole = None
+        djlock = False
         query = """
-                SELECT bind, djrole
+                SELECT bind, djrole, djlock
                 FROM musicconf
                 WHERE server_id = $1
                 """
@@ -1274,8 +1374,9 @@ class VoiceState:
         if record:
             bind = bot.get_channel(record["bind"])
             djrole = ctx.guild.get_role(record["djrole"])
+            djlock = ctx.guild.get_role(record["djlock"])
 
-        return cls(bot, ctx, bind=bind, djrole=djrole)
+        return cls(bot, ctx, bind=bind, djrole=djrole, djlock=djlock)
 
     @property
     def is_playing(self):
@@ -1453,6 +1554,7 @@ class Player(commands.Cog):
     async def cog_before_invoke(self, ctx):
         ctx.voice_state = await self.get_voice_state(ctx)
         Checks.raise_if_bound(ctx)
+        Checks.raise_if_locked(ctx)
 
     @decorators.command(
         name="connect",
@@ -1754,6 +1856,38 @@ class Player(commands.Cog):
         """
         player = ctx.voice_state.validate
         await MusicUtils.create_embed(ctx, player.source)
+
+    @decorators.command(
+        name="save",
+        brief="Save a song to your liked songs.",
+        aliases=["like", "favorite"],
+    )
+    @checks.cooldown()
+    async def _save(self, ctx):
+        """
+        Usage: {0}save
+        Aliases: {0}like
+        Output: Sends info and saves the current track
+        Notes:
+            Will attempt to DM you the info and fall
+            back to sending track information to the
+            current channel. Saving songs with this
+            command will add songs to your "Liked Songs"
+            which can be played using the playliked command.
+        """
+        player = ctx.voice_state.validate
+        query = """
+                INSERT INTO saved (requester_id, title, url, uploader)
+                VALUES ($1, $2, $3, $4)
+                """
+        await self.bot.cxn.execute(
+            query,
+            player.current.requester.id,
+            player.current.title,
+            player.current.url,
+            player.current.uploader,
+        )
+        await MusicUtils.save_embed(ctx, player.current)
 
     @decorators.command(
         aliases=["again"],
@@ -2120,6 +2254,7 @@ class Queue(commands.Cog):
         audio = self.bot.get_cog("Player")
         ctx.voice_state = await audio.get_voice_state(ctx)
         Checks.raise_if_bound(ctx)
+        Checks.raise_if_locked(ctx)
 
     @decorators.command(
         aliases=["last", "back", "previous"],
@@ -2681,7 +2816,7 @@ class Queue(commands.Cog):
         Alias: {0}loadqueue
         Output:
             Enqueues all tracks in the saved queue by
-            adding them to the end or the current queue.
+            adding them to the end of the current queue.
         Notes:
             Save playable queues by using
             the {0}savequeue command.
@@ -2718,6 +2853,41 @@ class Queue(commands.Cog):
             f"Enqueued saved playlist: {saved_queue['name']} `({len(queue)} tracks)`"
         )
 
+    @decorators.command(
+        name="playliked", aliases=["playsaved"], brief="Enqueue saved songs."
+    )
+    async def _playliked(self, ctx):
+        """
+        Usage: {0}playliked
+        Alias: {0}playsaved
+        Output:
+            Enqueues all tracks in the your liked songs
+            by adding them to the end of the current queue.
+        Notes:
+            Add to your saved songs by using the {0}save command
+        """
+        await ctx.trigger_typing()
+        player = await ctx.voice_state.ensure_voice_state(ctx)
+        query = """
+                SELECT title, url, uploader
+                FROM saved
+                WHERE requester_id = $1
+                ORDER BY insertion DESC;
+                """
+        records = await self.bot.cxn.fetch(query, ctx.author.id)
+        if not records:
+            await ctx.fail("You have no liked tracks")
+            return
+
+        for record in records:
+            player.tracks.put_nowait(
+                QueueEntry(
+                    ctx, record["title"], record["url"], uploader=record["uploader"]
+                )
+            )
+
+        await ctx.send(f"Enqueued your liked songs `({len(records)} tracks)`")
+
 
 class Audio(commands.Cog):
     """
@@ -2736,6 +2906,7 @@ class Audio(commands.Cog):
         audio = self.bot.get_cog("Player")
         ctx.voice_state = await audio.get_voice_state(ctx)
         Checks.raise_if_bound(ctx)
+        Checks.raise_if_locked(ctx)
 
     async def set_effect(self, ctx):
         player = ctx.voice_state.validate
@@ -2930,11 +3101,12 @@ class Audio(commands.Cog):
         """
         player = ctx.voice_state.validate
         Checks.assert_is_dj(ctx)
-    
-        view = Views.Effects(ctx, player)
-        msg = await ctx.send("Select an audio effect from the dropdown below.", view=view)
-        view.message = msg
 
+        view = Views.Effects(ctx, player)
+        msg = await ctx.send(
+            "Select an audio effect from the dropdown below.", view=view
+        )
+        view.message = msg
 
     @_effects.command(
         aliases=["clear"],
@@ -3001,14 +3173,34 @@ class Voice(commands.Cog):
         ctx.voice_state = await audio.get_voice_state(ctx)
 
     @decorators.group(
-        aliases=["dj"],
         brief="Manage the DJ role.",
         name="djrole",
     )
     @checks.cooldown()
     async def _djrole(self, ctx):
+        """
+        Usage: {0}djrole [option]
+        Alias: {0}dj
+        Output: Manages the server DJ role
+        Options:
+            - create # Creates the server DJ role
+            - delete # Deletes the server DJ role
+        Notes:
+            This role, when added to users,
+            gives users full control over
+            the music module. Note that all
+            users with the Move Members,
+            Mute Members, and Deafen Members
+            permission will always be DJs.
+        """
         if ctx.invoked_subcommand is None:
-            await ctx.send_help(ctx.command.qualified_name)
+            djrole = ctx.voice_state.djrole
+            if djrole:
+                await ctx.send(
+                    f"{self.bot.emote_dict['dj']} The current DJ role is `@{djrole.name}`"
+                )
+            else:
+                await ctx.fail("This server currently has no DJ role.")
 
     @_djrole.command(
         aliases=["make"],
@@ -3018,6 +3210,15 @@ class Voice(commands.Cog):
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(manage_roles=True)
     async def djrole_create(self, ctx, *, role: converters.UniqueRole = None):
+        """
+        Usage: {0}djrole create [role]
+        Alias: {0}djrole make
+        Output: Creates a DJ role
+        Notes:
+            If no role is specified,
+            a new role named DJ will be
+            automatically created by the bot.
+        """
         if role is None:
             role_color = discord.Color.from_rgb(*self.bot.constants.Colors.PINK)
             role = await ctx.guild.create_role(
@@ -3043,6 +3244,12 @@ class Voice(commands.Cog):
     @checks.bot_has_perms(manage_roles=True)
     @checks.has_perms(manage_roles=True)
     async def djrole_delete(self, ctx):
+        """
+        Usage: {0}djrole delete
+        Alias: {0}djrole remove
+        Output:
+            Deletes the server DJ role
+        """
         query = """
                 UPDATE musicconf 
                 SET djrole = NULL
@@ -3050,7 +3257,57 @@ class Voice(commands.Cog):
                 """
         await self.bot.cxn.execute(query, ctx.guild.id)
         ctx.voice_state.djrole = None
-        await ctx.success("Removed this server's DJ role.")
+        await ctx.success("Deleted this server's DJ role.")
+
+    @decorators.command(
+        brief="Show the server djs.",
+        name="djs",
+        examples="""
+                {0}djs
+                """,
+    )
+    @checks.cooldown()
+    async def _djs(self, ctx):
+        """
+        Usage: {0}djs
+        Output:
+            Show all the server music djs
+            and their respective statuses.
+        """
+        message = ""
+        all_status = {
+            "online": {"users": [], "emoji": self.bot.emote_dict["online"]},
+            "idle": {"users": [], "emoji": self.bot.emote_dict["idle"]},
+            "dnd": {"users": [], "emoji": self.bot.emote_dict["dnd"]},
+            "offline": {"users": [], "emoji": self.bot.emote_dict["offline"]},
+        }
+
+        def is_dj(user):
+            djrole = ctx.voice_state.djrole
+            if djrole in user.roles:
+                return True
+            if user.guild_permissions.move_members:
+                return True
+            if user.guild_permissions.mute_members:
+                return True
+            if user.guild_permissions.deafen_members:
+                return True
+            return False
+
+        for user in ctx.guild.members:
+            if not user.bot:
+                if is_dj(user):
+                    all_status[str(user.status)]["users"].append(f"{user}")
+
+        for g in all_status:
+            if all_status[g]["users"]:
+                message += (
+                    f"{all_status[g]['emoji']} `{', '.join(all_status[g]['users'])}`\n"
+                )
+
+        await ctx.send_or_reply(
+            f"{self.bot.emote_dict['dj']} DJs in **{ctx.guild.name}:**\n\n{message}",
+        )
 
     @decorators.command(
         aliases=["musicchannel"],
@@ -3089,6 +3346,54 @@ class Voice(commands.Cog):
         await self.bot.cxn.execute(query, ctx.guild.id)
         ctx.voice_state.bind = None
         await ctx.success(f"No longer bound to any channel.")
+
+    @decorators.command(
+        aliases=["musiclock"],
+        brief="Lock the music module to DJs.",
+        name="djlock",
+    )
+    @checks.has_perms(manage_channels=True)
+    async def _djlock(self, ctx):
+        """
+        Usage: {0}djlock
+        Alias: {0}musiclock
+        Output: Locks the music module to DJs
+        """
+        c = await ctx.confirm(
+            "This will disallow all non-DJs from using the music module."
+        )
+        if c:
+            query = """
+                    INSERT INTO musicconf (server_id, djlock)
+                    VALUES ($1, True)
+                    ON CONFLICT (server_id)
+                    DO UPDATE SET djlock = True
+                    WHERE musicconf.server_id = $1;
+                    """
+            await self.bot.cxn.execute(query, ctx.guild.id)
+            ctx.voice_state.djlock = True
+            await ctx.success(f"Successfully djlocked the music module.")
+
+    @decorators.command(
+        aliases=["musicunlock"],
+        brief="Unlock the music module.",
+        name="djunlock",
+    )
+    @checks.has_perms(manage_channels=True)
+    async def _djunlock(self, ctx):
+        """
+        Usage: {0}djunlock
+        Alias: {0}musicunlock
+        Output: Unlocks the music module to all
+        """
+        query = """
+                UPDATE musicconf
+                SET djlock = False
+                WHERE server_id = $1
+                """
+        await self.bot.cxn.execute(query, ctx.guild.id)
+        ctx.voice_state.djlock = False
+        await ctx.success(f"Successfully djunlocked the music module.")
 
     ####################
     ## VOICE COMMANDS ##

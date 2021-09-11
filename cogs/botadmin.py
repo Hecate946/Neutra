@@ -20,6 +20,7 @@ from utilities import decorators
 from utilities import formatting
 from utilities import pagination
 
+
 def setup(bot):
     bot.add_cog(Botadmin(bot))
 
@@ -1016,9 +1017,7 @@ class Botadmin(commands.Cog):
                 "{:,} unavailable".format(disabledemojis)
             )  # Add the disabled if any
 
-        server_embed.set_thumbnail(
-            url=utils.get_icon(guild)
-        )
+        server_embed.set_thumbnail(url=utils.get_icon(guild))
         server_embed.set_footer(text="Server ID: {}".format(guild.id))
         # Let's send all the embeds we need finishing off with extra emojis as
         # needed
