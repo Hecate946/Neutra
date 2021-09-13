@@ -975,9 +975,9 @@ class YTDLSource:
         self.duration = MusicUtils.parse_duration(int(data.get("duration")))
         self.tags = data.get("tags")
         self.url = data.get("webpage_url")
-        self.views = data.get("view_count")
-        self.likes = data.get("like_count")
-        self.dislikes = data.get("dislike_count")
+        self.views = data.get("view_count", 0)
+        self.likes = data.get("like_count", 0)
+        self.dislikes = data.get("dislike_count", 0)
         self.stream_url = data.get("url")
 
     def __str__(self):
