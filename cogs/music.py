@@ -604,7 +604,7 @@ class Views:
             self.ctx = ctx
             self.player = player
             self.effects = [
-                "denoise",
+                "muffle",
                 "earrape",
                 "echo",
                 "nightcore",
@@ -720,7 +720,7 @@ class Views:
             self.player = player
             self.message = None
             self.effects = {
-                "denoise": "This effect removes harsh sounding audio.",
+                "muffle": "This effect makes the audio sound muffled.",
                 "earrape": "This effect makes audio sound scratchy.",
                 "echo": "This effect makes audio sound with an echo.",
                 "nightcore": "This effect plays audio with a higher pitch and speed.",
@@ -785,7 +785,7 @@ class Views:
             self.player = player
             self.message = None
             self.effects = {
-                "denoise": "This effect removes harsh sounding audio.",
+                "muffle": "This effect makes the audio sound muffled.",
                 "earrape": "This effect makes audio sound scratchy.",
                 "echo": "This effect makes audio sound with an echo.",
                 "nightcore": "This effect plays audio with a higher pitch and speed.",
@@ -879,7 +879,7 @@ class AudioSource(discord.PCMVolumeTransformer):
             "nightcore": ",asetrate=48000*1.1",
             "earrape": ",acrusher=.1:1:64:0:log",
             "echo": ",aecho=0.5:0.5:500|50000:1.0|1.0",
-            "denoise": ",crystalizer=i=-10",
+            "muffle": ",lowpass=f=300",
             "phaser": ",aphaser=type=t:speed=2:decay=0.6",
             "robot": ",afftfilt=real='hypot(re,im)*sin(0)':imag='hypot(re,im)*cos(0)':win_size=512:overlap=0.75",
             "tremolo": ",apulsator=mode=sine:hz=3:width=0.1:offset_r=0",
@@ -1597,7 +1597,7 @@ class Player(commands.Cog):
         aliases=["dc", "leave"],
         brief="Disconnects from a channel.",
     )
-    async def _leave(self, ctx):
+    async def _disconnect(self, ctx):
         """
         Usage: {0}leave
         Alias: {0}dc, {0}disconnect
@@ -1616,7 +1616,7 @@ class Player(commands.Cog):
             await ctx.fail("Not connected to any voice channel.")
             return
         await ctx.voice_state.stop()
-        self.voice_states.delete([ctx.guild.id])
+        del self.voice_states[ctx.guild.id]
 
     @decorators.command(
         name="pause",
@@ -3038,15 +3038,15 @@ class Audio(commands.Cog):
         await self.set_effect(ctx)
 
     @decorators.command(
-        name="denoise",
-        brief="Toggle the denoise effect.",
+        name="muffle",
+        brief="Toggle the muffle effect.",
     )
     @checks.cooldown()
-    async def _denoise(self, ctx):
+    async def _muffle(self, ctx):
         """
-        Usage: {0}denoise
+        Usage: {0}muffle
         Output:
-            Toggles the denoise audio effect.
+            Toggles the muffle audio effect.
         """
         await self.set_effect(ctx)
 
