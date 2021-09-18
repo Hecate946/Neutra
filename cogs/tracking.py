@@ -516,6 +516,74 @@ class Tracking(commands.Cog):
             else:
                 raise commands.DisabledCommand()
 
+    # @decorators.command(
+    #     aliases=["avpages", "avbrowser"],
+    #     brief="Show past user avatars.",
+    #     examples="""
+    #             {0}avs
+    #             {0}avs Hecate
+    #             {0}avs @Hecate
+    #             {0}avs Hecate#3523
+    #             {0}avs 708584008065351681
+    #             {0}avatars
+    #             {0}avatars Hecate
+    #             {0}avatars @Hecate
+    #             {0}avatars Hecate#3523
+    #             {0}avatars 708584008065351681
+    #             """,
+    # )
+    # @checks.guild_only()
+    # @checks.bot_has_perms(attach_files=True, embed_links=True)
+    # @checks.cooldown(1, 10)
+    # async def avatarpages(
+    #     self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None
+    # ):
+    #     """
+    #     Usage: {0}avatars [user]
+    #     Alias: {0}avs, {0}avhistory {0}avatarhistory
+    #     Output:
+    #         Shows an embed containing up to
+    #         the 16 last avatars of a user.
+    #     Permission: View Audit Log
+    #     Notes:
+    #         Will default to you if no user is passed.
+    #     """
+    #     user = user or ctx.author
+    #     if user.bot:
+    #         return await ctx.fail("I do not track bots.")
+
+    #     await ctx.trigger_typing()
+
+    #     query = """
+    #             SELECT ARRAY(
+    #                 SELECT avatars.url
+    #                 FROM (SELECT avatar, first_seen
+    #                 FROM (SELECT avatar, LAG(avatar)
+    #                 OVER (order by first_seen desc) AS old_avatar, first_seen
+    #                 FROM useravatars WHERE useravatars.user_id = $1) a
+    #                 WHERE avatar != old_avatar OR old_avatar IS NULL) avys
+    #                 LEFT JOIN avatars ON avatars.hash = avys.avatar
+    #                 ORDER BY avys.first_seen DESC LIMIT 100
+    #             ) as urls;
+    #             """
+
+    #     urls = await self.bot.cxn.fetchval(query, user.id)
+    #     if urls:
+    #         #urls = [record["url"] for record in urls]
+    #         from utilities import views
+    #         #views.ImageView(ctx, urls)
+    #         await views.ImageView(ctx, urls).start()
+            
+    #     else:
+    #         if self.bot.avatar_saver.is_saving:
+    #             self.bot.avatar_saver.save(user)
+    #             embed = discord.Embed(color=self.bot.constants.embed)
+    #             embed.title = f"Recorded Avatars for {user}"
+    #             embed.set_image(url=str(user.display_avatar.with_size(1024)))
+    #             await ctx.send_or_reply(embed=embed)
+    #         else:
+    #             raise commands.DisabledCommand()
+
     @decorators.command(
         aliases=["iconhistory"],
         brief="Show past server icons.",
@@ -1421,7 +1489,7 @@ class Tracking(commands.Cog):
             await ctx.send_or_reply(completed)
 
     @decorators.command(
-        aliases=["piestatus", "ps"],
+        aliases=["statusinfo", "ps"],
         brief="Status info in a piechart.",
         implemented="2021-04-29 22:10:20.348498",
         updated="2021-05-07 04:15:46.972946",
@@ -1446,7 +1514,7 @@ class Tracking(commands.Cog):
     @checks.guild_only()
     @checks.bot_has_perms(attach_files=True, embed_links=True)
     @checks.cooldown()
-    async def statusinfo(
+    async def piestatus(
         self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None
     ):
         """
