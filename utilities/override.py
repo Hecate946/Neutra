@@ -1,9 +1,6 @@
-import typing
 import discord
 from discord.ext import commands
-from discord.raw_models import RawMessageDeleteEvent
-
-from utilities import pagination
+from utilities import views
 
 
 class BotContext(commands.Context):
@@ -84,13 +81,9 @@ class BotContext(commands.Context):
         content = f"{self.bot.emote_dict['loading']} **{content}**"
         return await self.send_or_reply(content, **kwargs)
 
-    async def confirm(self, content="", **kwargs):
-        content = f"**{content} Do you wish to continue?**"
-        c = await pagination.Confirmation(msg=content).prompt(ctx=self)
-        if c:
-            return True
-        await self.send_or_reply(f"{self.bot.emote_dict['exclamation']} **Cancelled.**")
-        return
+    async def confirm(self, content="", *, suffix: bool = True, **kwargs):
+        content = f"**{content} Do you wish to continue?**" if suffix else content
+        return await views.Confirmation(self, content, **kwargs).prompt()
 
     async def dm(self, content=None, **kwargs):
         try:
@@ -103,45 +96,6 @@ class BotContext(commands.Context):
             return await super().trigger_typing()
         else:
             return
-
-    # async def log(self, _type=None, content=None, **kwargs):
-    #     if _type in ["info", "i", "information"]:
-    #         logger = info_logger
-    #         loglev = info_logger.info
-    #         level = "INFO"
-    #         location = info_logger_handler.baseFilename
-    #     elif _type in ["command", "commands", "cmd", "cmds"]:
-    #         logger = command_logger
-    #         loglev = command_logger.info
-    #         level = "INFO"
-    #         location = command_logger_handler.baseFilename
-    #     elif _type in ["err", "e", "error", "errors"]:
-    #         logger = error_logger
-    #         loglev = error_logger.warning
-    #         level = "WARNING"
-    #         location = error_logger_handler.baseFilename
-    #     elif _type in ["trace", "t", "traceback"]:
-    #         logger = traceback_logger
-    #         loglev = traceback_logger.warning
-    #         level = "WARNING"
-    #         location = traceback_logger_handler.baseFilename
-    #     log_format = "{0}: [{1}] {2} ||".format(
-    #         datetime.now().strftime("%Y-%m-%d %H:%M:%S"), level, logger.name
-    #     )
-    #     filename = "./" + "/".join(location.split("/")[-4:])
-    #     loglev(msg=content)
-    #     return await self.logging_webhook(
-    #         self.bot.emote_dict["log"]
-    #         + f" **Logged to `{filename}`**```prolog\n{log_format}{content}```"
-    #     )
-
-
-class BotCog(commands.Cog):
-    def __init__(self, *args, **kwargs):
-        self.hidden = kwargs.pop("hidden", False)
-        self.is_dev = kwargs.pop("is_dev", False)
-        super().__init__(args, kwargs)
-
 
 class BotCommand(commands.Command):
     def __init__(self, func, **kwargs):

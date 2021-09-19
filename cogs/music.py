@@ -17,7 +17,6 @@ import re
 import io
 import json
 import math
-from subprocess import TimeoutExpired
 import time
 import base64
 import typing
@@ -32,16 +31,16 @@ import itertools
 import traceback
 import youtube_dl
 
-from discord.ext import commands, menus
+from discord.ext import commands
 from logging.handlers import RotatingFileHandler
-from collections import deque
+from collections import deque, defaultdict
 from PIL import Image
 
+from utilities import views
 from utilities import checks
 from utilities import helpers
 from utilities import converters
 from utilities import decorators
-from utilities import pagination
 
 # Set up our music-specific logger.
 log = logging.getLogger("MUSIC_LOGGER")
@@ -65,7 +64,7 @@ handler.setFormatter(formatter)
 youtube_dl.utils.bug_reports_message = lambda: ""
 
 #  Option base to avoid pull errors
-FFMPEG_OPTION_BASE = "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"
+FFMPEG_OPTION_BASE = "-loglevel panic -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"
 
 # YTDL options for creating sources
 YTDL_OPTIONS = {
@@ -314,17 +313,7 @@ class MusicUtils:
             fmt = str(number) + "th"
         return fmt
 
-    def json_entry(entry):
-        """ Returns a json representation of QueueEntry. """
-        json_entry = {
-            "title": entry.title,
-            "search": entry.search,
-            "uploader": entry.uploader,
-            "link": entry.link,
-        }
-        return json_entry
-
-    def get_progress_bar(ctx, ratio, length=800, width=80):
+    def get_image_progress_bar(ctx, ratio, length=800, width=80):
         GRAY = ctx.bot.constants.Colors.GRAY
         BLUE = ctx.bot.constants.Colors.BLUE
         bar_length = ratio * length
@@ -392,20 +381,26 @@ class MusicUtils:
             embed.set_thumbnail(url=ytdl.thumbnail)
 
             if source.position > 1:  # Set a footer showing track position.
-                percent = source.position / ytdl.raw_duration
-                position = MusicUtils.parse_duration(int(source.position))
+                if ytdl.is_live:
+                    footer = "LIVE"
+                    percent = 1
+                else:
+                    percent = source.position / ytdl.raw_duration
+                    position = MusicUtils.parse_duration(int(source.position))
+                    footer = f"{position} ({percent:.2%} completed)"
 
-                embed.set_footer(
-                    text=f"Current Position: {position} ({percent:.2%} completed)"
-                )
+                embed.set_footer(text=f"Current Position: {footer}")
 
                 if ctx.channel.permissions_for(ctx.me).attach_files:
-                    # Try to make a progress bar if bot has perms.
+                    # Try to make a nice image progress bar if bot has perms.
                     progress = await ctx.bot.loop.run_in_executor(
-                        None, MusicUtils.get_progress_bar, ctx, percent
+                        None, MusicUtils.get_image_progress_bar, ctx, percent
                     )
                     embed.set_image(url=f"attachment://progress.png")
                     file = discord.File(progress, filename="progress.png")
+                else:
+                    embed.add_field(name="Progress", value=MusicUtils.get_progress_bar(percent))
+
 
         else:  # No embed perms, send as codeblock
             block = f"{MUSIC} **Now Playing**: *{ytdl.title}*```yaml\n"
@@ -417,6 +412,14 @@ class MusicUtils:
             block += f"Dislikes : {ytdl.dislikes:,}\n```"
 
         return await ctx.send(content=block, embed=embed, file=file)
+
+    def get_progress_bar(percent, decimals = 2, length = 50, fill = '█'):
+        length = length / 2
+        portion = length * percent
+        percent_str = ("{0:." + str(decimals) + "f}").format(percent * 100)
+        bar = fill * int(portion) + '—' * (int((length - portion)))
+        return f"\r│{bar}│{percent_str}%"
+
 
     async def save_embed(ctx, ytdl):
         MUSIC = ctx.bot.constants.emotes["music"]
@@ -473,7 +476,7 @@ class MusicUtils:
             QueueEntry(
                 ctx,
                 track["name"],
-                track["name"] + " " + track["artists"][0]["name"],
+                track["artists"][0]["name"] + " " + track["name"],
                 uploader=track["artists"][0]["name"],
                 link=track["external_urls"]["spotify"],
             )
@@ -604,13 +607,16 @@ class Views:
             self.ctx = ctx
             self.player = player
             self.effects = [
-                "muffle",
+                "backwards",
+                "bass",
                 "earrape",
                 "echo",
+                "muffle",
                 "nightcore",
                 "phaser",
                 "robot",
                 "tremolo",
+                "treble",
                 "vibrato",
                 "whisper",
             ]
@@ -720,12 +726,15 @@ class Views:
             self.player = player
             self.message = None
             self.effects = {
-                "muffle": "This effect makes the audio sound muffled.",
+                "backwards": "This effect plays the song from the end.",
+                "bass": "This effect boosts the bass clef audio.",
                 "earrape": "This effect makes audio sound scratchy.",
                 "echo": "This effect makes audio sound with an echo.",
+                "muffle": "This effect makes the audio sound muffled.",
                 "nightcore": "This effect plays audio with a higher pitch and speed.",
                 "phaser": "This effect makes audio sound synthetically generated.",
                 "robot": "This effect makes audio sound like a robot is speaking.",
+                "treble": "This effect boosts the treble clef audio.",
                 "tremolo": "This effect creates minature breaks in the audio.",
                 "vibrato": "This effect makes the audio dilate for vibrato.",
                 "whisper": "This effect makes audio sound as if it were being whispered.",
@@ -785,12 +794,15 @@ class Views:
             self.player = player
             self.message = None
             self.effects = {
-                "muffle": "This effect makes the audio sound muffled.",
+                "backwards": "This effect plays the song from the end.",
+                "bass": "This effect boosts the bass clef audio.",
                 "earrape": "This effect makes audio sound scratchy.",
                 "echo": "This effect makes audio sound with an echo.",
+                "muffle": "This effect makes the audio sound muffled.",
                 "nightcore": "This effect plays audio with a higher pitch and speed.",
                 "phaser": "This effect makes audio sound synthetically generated.",
                 "robot": "This effect makes audio sound like a robot is speaking.",
+                "treble": "This effect boosts the treble clef audio.",
                 "tremolo": "This effect creates minature breaks in the audio.",
                 "vibrato": "This effect makes the audio dilate for vibrato.",
                 "whisper": "This effect makes audio sound as if it were being whispered.",
@@ -863,8 +875,8 @@ class AudioSource(discord.PCMVolumeTransformer):
     and returns a FFmpegPCMAudio source.
     """
 
-    def __init__(self, ytdl, volume, position=0, **kwargs):
-        self.position = position  # Position of track
+    def __init__(self, ytdl, volume, position: float = 0.0, **kwargs):
+        self.position = position # Position of track
         self.ytdl = ytdl
 
         speed = kwargs.get("speed", 1)
@@ -880,6 +892,9 @@ class AudioSource(discord.PCMVolumeTransformer):
             "earrape": ",acrusher=.1:1:64:0:log",
             "echo": ",aecho=0.5:0.5:500|50000:1.0|1.0",
             "muffle": ",lowpass=f=300",
+            "treble": ",treble=g=15",
+            "bass": ",bass=g=15",
+            "backwards": ",areverse",
             "phaser": ",aphaser=type=t:speed=2:decay=0.6",
             "robot": ",afftfilt=real='hypot(re,im)*sin(0)':imag='hypot(re,im)*cos(0)':win_size=512:overlap=0.75",
             "tremolo": ",apulsator=mode=sine:hz=3:width=0.1:offset_r=0",
@@ -951,6 +966,18 @@ class QueueEntry:
             return True
         return False
 
+    @property
+    def json(self):
+        """ Returns a json representation of QueueEntry. """
+        json_entry = {
+            "title": self.title,
+            "search": self.search,
+            "uploader": self.uploader,
+            "link": self.link,
+        }
+        return json_entry
+
+
 
 class YTDLSource:
     """
@@ -979,6 +1006,16 @@ class YTDLSource:
         self.likes = data.get("like_count", 0)
         self.dislikes = data.get("dislike_count", 0)
         self.stream_url = data.get("url")
+
+    @property
+    def hyperlink(self):
+        return f"**[{self.title}]({self.url})**"
+
+    @property
+    def is_live(self):
+        if self.raw_duration == 0:
+            return True
+        return False
 
     def __str__(self):
         return "**{0.title}** by **{0.uploader}**".format(self)
@@ -1023,7 +1060,7 @@ class YTDLSource:
         loop = loop or asyncio.get_event_loop()
 
         partial = functools.partial(
-            YOUTUBE_DL.extract_info, search, download=False, process=False
+            YOUTUBE_DL.extract_info, search.replace(":", ""), download=False, process=False
         )
         info = await loop.run_in_executor(None, partial)
 
@@ -1298,6 +1335,17 @@ class TrackQueue(asyncio.Queue):
         queue[start - 1 : end] = to_reverse
         self._queue = deque(queue)
 
+class VoiceClient(discord.VoiceClient):
+    def __init__(self, client, channel):
+        super().__init__(client, channel)
+
+    async def on_voice_server_update(self, data) -> None:
+        print(data)
+        #return await super().on_voice_server_update(data)
+
+    async def on_voice_state_update(self, data) -> None:
+        print(data)
+        #return await super().on_voice_state_update(data)
 
 class VoiceState:
     """
@@ -1335,6 +1383,8 @@ class VoiceState:
 
     def __del__(self):
         self.audio_player.cancel()
+        if self.voice:
+            self.voice.cleanup()
 
     def __setitem__(self, key, value):
         if key == "speed":  # Assert valid speed range
@@ -1380,7 +1430,7 @@ class VoiceState:
 
     @property
     def is_playing(self):
-        return self.voice and self.current
+        return self.source and self.voice
 
     @property
     def validate(self):
@@ -1423,6 +1473,7 @@ class VoiceState:
         if hasattr(self._ctx.guild.me.voice, "channel"):
             channel = self._ctx.guild.me.voice.channel
             if self._ctx.guild.voice_client:
+                #self._ctx.guild.voice_client.cleanup()
                 await self._ctx.guild.voice_client.disconnect(force=True)
             self.voice = await channel.connect(timeout=None)
 
@@ -1463,7 +1514,6 @@ class VoiceState:
         while run is True:
             try:
                 self.next.clear()
-
                 if self.voice is None:
                     await self.reset_voice_client()
 
@@ -1482,6 +1532,7 @@ class VoiceState:
                     self.volume,
                     **self.effects,
                 )
+
                 self.voice.play(self.source, after=self.play_next_track)
                 await MusicUtils.create_embed(self.current.ctx, self.source)
 
@@ -1492,6 +1543,7 @@ class VoiceState:
                 self.source = None
             except Exception:
                 tb = traceback.format_exc()
+                print(tb)
                 log.fatal(tb)
                 self.bot.dispatch("error", "MUSIC_ERROR", tb=tb)
                 # run = False
@@ -1501,14 +1553,14 @@ class VoiceState:
         Helper function to increase the position
         of the song while it's being played.
         """
-        while self.source:
+        while self.is_playing and self.voice.is_playing():
             self.source.position += self["speed"]
             await asyncio.sleep(1)
 
     def play_next_track(self, error=None):
         if error:
-            raise error
-
+            log.fatal(error)
+            print("this was raised.")
         self.next.set()
 
     def skip(self):
@@ -1556,6 +1608,14 @@ class Player(commands.Cog):
         Checks.raise_if_bound(ctx)
         Checks.raise_if_locked(ctx)
 
+
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member, before, after):
+        if member.id != self.bot.user.id:
+            return
+        if before.channel and not after.channel:
+            del self.voice_states[member.guild.id]
+
     @decorators.command(
         name="connect",
         aliases=["join"],
@@ -1592,6 +1652,10 @@ class Player(commands.Cog):
         await ctx.voice_state.connect(channel)
         await ctx.success(f"Connected to {channel.mention}")
 
+    @decorators.command()
+    async def j(self, ctx, channel: discord.VoiceChannel):
+        await channel.connect(cls=VoiceClient)
+        
     @decorators.command(
         name="disconnect",
         aliases=["dc", "leave"],
@@ -1745,6 +1809,9 @@ class Player(commands.Cog):
             The position must be given in seconds.
         """
         player = ctx.voice_state.validate
+        if player.current.is_live:
+            await ctx.fail("Unable to seek livestream tracks.")
+            return
 
         if not Checks.is_requester(ctx):
             Checks.assert_is_dj(ctx)
@@ -1775,6 +1842,8 @@ class Player(commands.Cog):
             Fast forward a certain number of seconds in a song.
         """
         player = ctx.voice_state.validate
+        if player.current.is_live:
+            await ctx.fail("Unable to seek livestream tracks.")
 
         if not Checks.is_requester(ctx):
             Checks.assert_is_dj(ctx)
@@ -1814,6 +1883,8 @@ class Player(commands.Cog):
             Rewind a certain number of seconds in a song.
         """
         player = ctx.voice_state.validate
+        if player.current.is_live:
+            await ctx.fail("Unable to seek livestream tracks.")
 
         if not Checks.is_requester(ctx):
             Checks.assert_is_dj(ctx)
@@ -2236,6 +2307,10 @@ class Player(commands.Cog):
             await player.play_local_file(match.group(0))
             await ctx.music(f"Playing `{match.group(0)}`")
 
+    @decorators.command()
+    async def prog(self, ctx):
+        print(MusicUtils.get_progress_bar(2/3))
+
 
 class Queue(commands.Cog):
     """
@@ -2426,13 +2501,41 @@ class Queue(commands.Cog):
             return
 
         entries = [track.hyperlink for track in ctx.voice_state.tracks]
-        p = pagination.SimplePages(entries, per_page=10, index=True)
+        p = views.SimpleView(ctx, entries, per_page=10, index=True)
         p.embed.title = "Current Queue"
+        await p.start()
 
-        try:
-            await p.start(ctx)
-        except menus.MenuError as e:
-            await ctx.send(e)
+    @decorators.command(
+        name="tracks", aliases=["q", "queue"], brief="Show the track queue."
+    )
+    @checks.cooldown()
+    async def _tracks(self, ctx, *, search=None):
+        """
+        Usage: {0}tracks
+        Alias: {0}q, {0}queue
+        Output:
+            Starts a pagination session showing
+            all the tracks in the current queue.
+        Notes:
+            Each page contains 10 queue elements.
+            Will invoke the play command if a search
+            is specified.
+        """
+        if search:
+            audio = self.bot.get_cog("Player")
+            return await ctx.invoke(audio._play, search=search)
+
+        if len(ctx.voice_state.tracks) == 0:
+            await ctx.fail("The queue is currently empty.")
+            return
+
+        entries = [track.hyperlink for track in ctx.voice_state.tracks]
+
+        p = views.SimpleView(ctx, entries, per_page=10, index=True)
+        p.embed.title = "Current Queue"
+        if ctx.voice_state.current:
+            p.embed.add_field(name="Current Track", value=ctx.voice_state.current.hyperlink)
+        await p.start()
 
     @decorators.group(name="clear", aliases=["c"], brief="Clear the queue.")
     @checks.cooldown()
@@ -2725,7 +2828,7 @@ class Queue(commands.Cog):
 
         queue = [player.entry] + list(queue)
 
-        queue = json.dumps([MusicUtils.json_entry(entry) for entry in queue])
+        queue = json.dumps([entry.json for entry in queue])
         query = """
                 INSERT INTO queues (owner_id, name, queue)
                 VALUES ($1, $2, $3::JSONB)
@@ -2793,7 +2896,8 @@ class Queue(commands.Cog):
         if not queues:
             await ctx.fail(f"User **{user}** `{user.id}` has no saved queues.")
             return
-        p = pagination.SimplePages(
+        p = views.SimpleView(
+            ctx,
             entries=[
                 f"**{queue['name'].capitalize()}**: `{queue['len']} tracks`"
                 for queue in queues
@@ -2802,10 +2906,7 @@ class Queue(commands.Cog):
             index=True,
         )
         p.embed.title = f"{user.display_name}'s Saved Queues"
-        try:
-            await p.start(ctx)
-        except menus.MenuError as e:
-            await ctx.send(e)
+        await p.start()
 
     @decorators.command(
         name="playqueue", aliases=["loadqueue"], brief="Enqueue a saved queue."
@@ -3051,6 +3152,45 @@ class Audio(commands.Cog):
         await self.set_effect(ctx)
 
     @decorators.command(
+        name="treble",
+        brief="Toggle the treble effect.",
+    )
+    @checks.cooldown()
+    async def _treble(self, ctx):
+        """
+        Usage: {0}treble
+        Output:
+            Toggles the treble audio effect.
+        """
+        await self.set_effect(ctx)
+
+    @decorators.command(
+        name="bass",
+        brief="Toggle the bass effect.",
+    )
+    @checks.cooldown()
+    async def _bass(self, ctx):
+        """
+        Usage: {0}bass
+        Output:
+            Toggles the bass audio effect.
+        """
+        await self.set_effect(ctx)
+
+    @decorators.command(
+        name="backwards",
+        brief="Toggle the backwards effect.",
+    )
+    @checks.cooldown()
+    async def _backwards(self, ctx):
+        """
+        Usage: {0}backwards
+        Output:
+            Toggles the backwards audio effect.
+        """
+        await self.set_effect(ctx)
+
+    @decorators.command(
         name="robot",
         brief="Toggle the robot effect.",
     )
@@ -3162,6 +3302,7 @@ class Voice(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.batch = defaultdict(dict)
 
     async def cog_check(self, ctx):
         if not ctx.guild:
@@ -3230,7 +3371,7 @@ class Voice(commands.Cog):
                 VALUES ($1, $2)
                 ON CONFLICT (server_id)
                 DO UPDATE SET djrole = $2
-                WHERE muscconf.server_id = $1;
+                WHERE musicconf.server_id = $1;
                 """
         await self.bot.cxn.execute(query, ctx.guild.id, role.id)
         ctx.voice_state.djrole = role

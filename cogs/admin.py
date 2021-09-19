@@ -1309,18 +1309,7 @@ class Admin(commands.Cog):
         if len(current_prefixes) == 0:
             return await ctx.fail("I currently have no prefixes registered.")
         if len(current_prefixes) == 1:
-            c = await pagination.Confirmation(
-                msg=f"{self.bot.emote_dict['exclamation']} **Upon confirmation, I will only respond to `@{ctx.guild.me.display_name}` Do you wish to continue?**"
-            ).prompt(ctx)
-            if c:
-                await self.bot.set_guild_prefixes(ctx.guild, [])
-                await ctx.success(
-                    f"Successfully cleared all prefixes. I will now only respond to <@!{self.bot.user.id}>"
-                )
-            else:
-                await ctx.send_or_reply(f"**Cancelled.**")
-            return
-
+            return await ctx.invoke(self.clearprefix)
         try:
             current_prefixes.remove(prefix)
         except ValueError:
@@ -1367,16 +1356,12 @@ class Admin(commands.Cog):
         current_prefixes = self.bot.get_raw_guild_prefixes(ctx.guild.id)
         if len(current_prefixes) == 0:
             return await ctx.fail("I currently have no prefixes registered.")
-        c = await pagination.Confirmation(
-            msg=f"{self.bot.emote_dict['exclamation']} **Upon confirmation, I will only respond to `@{ctx.guild.me.display_name}` Do you wish to continue?**"
-        ).prompt(ctx)
+        c = await ctx.confirm(f"Upon confirmation, I will only respond to `@{ctx.guild.me.display_name}`")
         if c:
             await self.bot.set_guild_prefixes(ctx.guild, [])
             await ctx.success(
                 f"Successfully cleared all prefixes. I will now only respond to `@{ctx.guild.me.display_name}`"
             )
-        else:
-            await ctx.send_or_reply(f"**Cancelled.**")
 
     @decorators.group(
         name="reset",

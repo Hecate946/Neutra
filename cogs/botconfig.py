@@ -196,18 +196,11 @@ class Botconfig(commands.Cog):
     async def overview(self, ctx, *, overview: str = None):
         if overview is None:
             return await ctx.invoke(self.bot.get_command("overview"))
-        c = await pagination.Confirmation(
-            f"**{self.bot.emote_dict['exclamation']} This action will overwrite my current overview. Do you wish to continue?**"
-        ).prompt(ctx)
-        if c:
+        if await ctx.confirm("This action will overwrite my current overview."):
             with open("./data/txts/overview.txt", "w", encoding="utf-8") as fp:
                 fp.write(overview)
             await ctx.send_or_reply(
                 content=f"{self.bot.emote_dict['success']} **Successfully updated overview.**",
-            )
-        else:
-            await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['exclamation']} **Cancelled.**",
             )
 
     @write.command(brief="Write to the bot changelog.")

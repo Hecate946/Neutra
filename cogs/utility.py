@@ -1642,30 +1642,23 @@ class Utility(commands.Cog):
         await self.do_cleanup(ctx)
 
     async def do_cleanup(self, ctx):
-        if ctx.guild:
-            if ctx.channel.permissions_for(ctx.me).manage_messages:
-                p = await pagination.Confirmation(
-                    f"Do you want me to clean all messages from the embed session and leave only the resulting embed?"
-                ).prompt(ctx)
-                if p:
-                    mess = await ctx.send_or_reply(
-                        f"{self.bot.emote_dict['loading']} Deleting {len(self.msg_collection)} messages..."
-                    )
+        if ctx.guild and ctx.channel.permissions_for(ctx.me).manage_messages:
+            if await ctx.confirm(
+                f"Do you want to delete all messages from the embed session and leave only the resulting embed?",
+                suffix=False):
 
-                    def purge_checker(m):
-                        return m.id in self.msg_collection
+                mess = await ctx.send_or_reply(
+                    f"{self.bot.emote_dict['loading']} Deleting {len(self.msg_collection)} messages..."
+                )
 
-                    deleted = await ctx.channel.purge(limit=200, check=purge_checker)
-                    await mess.edit(
-                        content=f"{self.bot.emote_dict['trash']} Deleted {len(deleted)} messages."
-                    )
-                    self.msg_collection.clear()
-                else:
-                    await ctx.send_or_reply(f"Cancelled.")
-            else:
-                self.msg_collection.clear()
-        else:
-            self.msg_collection.clear()
+                def purge_checker(m):
+                    return m.id in self.msg_collection
+
+                deleted = await ctx.channel.purge(limit=200, check=purge_checker)
+                await mess.edit(
+                    content=f"{self.bot.emote_dict['trash']} Deleted {len(deleted)} messages."
+                )
+        self.msg_collection.clear()
 
     @decorators.command(
         aliases=["math", "calc"],
@@ -1804,7 +1797,6 @@ class Utility(commands.Cog):
             "`guilds`、`channels`、`users`、`roles`、`emojis`、`cached messages` "
         )
         await ctx.send_or_reply(result)
-
 
 class NumericStringParser(object):
     """

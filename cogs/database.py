@@ -44,17 +44,11 @@ class Database(commands.Cog):
             Performs the mass database insertion
             that normally occurs on bot startup
         """
-        c = await pagination.Confirmation(
-            f"**{self.bot.emote_dict['exclamation']} This action will restart my database. Do you wish to continue?**"
-        ).prompt(ctx)
-        if c:
+        if await ctx.confirm("This action will restart my database."):
             from settings.database import initialize
-
             members = [x for x in self.bot.get_all_members()]
             await initialize(self.bot, members)
             await ctx.success("**Updated database**")
-        else:
-            await ctx.bold("Cancelled")
 
     @decorators.command(
         aliases=["drop"],
