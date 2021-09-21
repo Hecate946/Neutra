@@ -573,7 +573,7 @@ class Tracking(commands.Cog):
     #         from utilities import views
     #         #views.ImageView(ctx, urls)
     #         await views.ImageView(ctx, urls).start()
-            
+
     #     else:
     #         if self.bot.avatar_saver.is_saving:
     #             self.bot.avatar_saver.save(user)

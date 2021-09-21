@@ -1645,7 +1645,8 @@ class Utility(commands.Cog):
         if ctx.guild and ctx.channel.permissions_for(ctx.me).manage_messages:
             if await ctx.confirm(
                 f"Do you want to delete all messages from the embed session and leave only the resulting embed?",
-                suffix=False):
+                suffix=False,
+            ):
 
                 mess = await ctx.send_or_reply(
                     f"{self.bot.emote_dict['loading']} Deleting {len(self.msg_collection)} messages..."
@@ -1797,6 +1798,7 @@ class Utility(commands.Cog):
             "`guilds`、`channels`、`users`、`roles`、`emojis`、`cached messages` "
         )
         await ctx.send_or_reply(result)
+
 
 class NumericStringParser(object):
     """

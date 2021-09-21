@@ -46,6 +46,7 @@ class Database(commands.Cog):
         """
         if await ctx.confirm("This action will restart my database."):
             from settings.database import initialize
+
             members = [x for x in self.bot.get_all_members()]
             await initialize(self.bot, members)
             await ctx.success("**Updated database**")

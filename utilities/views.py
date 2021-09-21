@@ -52,6 +52,7 @@ class MuteRoleView(discord.ui.View):
     async def cancel(self, button: discord.ui.Button, interaction: discord.Interaction):
         self.stop()
 
+
 class Confirmation(discord.ui.View):
     def __init__(self, ctx, msg, **kwargs):
         super().__init__(timeout=10.0)
@@ -70,7 +71,6 @@ class Confirmation(discord.ui.View):
         if self.message:
             await self.message.edit("**Confirmation Cancelled.**", view=None)
 
-
     async def interaction_check(self, interaction):
         if self.ctx.author.id == interaction.user.id:
             return True
@@ -79,8 +79,12 @@ class Confirmation(discord.ui.View):
                 "Only the command invoker can use this button.", ephemeral=True
             )
 
-    @discord.ui.button(emoji=constants.emotes["success"], style=discord.ButtonStyle.gray)
-    async def _confirm(self, button: discord.ui.Button, interaction: discord.Interaction):
+    @discord.ui.button(
+        emoji=constants.emotes["success"], style=discord.ButtonStyle.gray
+    )
+    async def _confirm(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
         await interaction.message.delete()
         self.result = True
         self.stop()
@@ -93,7 +97,7 @@ class Confirmation(discord.ui.View):
 
 
 class ButtonPages(discord.ui.View):
-    async def __init__(self, ctx, pages, *, content="", compact=False):
+    async def __init__(self, ctx, pages, *, content="", compact=True):
         super().__init__(timeout=60)
         self.ctx = ctx
         self.pages = pages
@@ -108,7 +112,7 @@ class ButtonPages(discord.ui.View):
         self.fill_items()
 
         self.message = await self.send_message()
-    
+
     def fill_items(self, _help=None):
         if _help:
             self.add_item(self._delete)
@@ -128,10 +132,14 @@ class ButtonPages(discord.ui.View):
     async def send_message(self):
         if isinstance(self.pages[0], discord.Embed):
             if self.max_pages == 1:
-                message = await self.ctx.send(self.content, embed=self.pages[0], view=None)
+                message = await self.ctx.send(
+                    self.content, embed=self.pages[0], view=None
+                )
             else:
                 self.update_view(1)
-                message = await self.ctx.send(self.content, embed=self.pages[0], view=self)
+                message = await self.ctx.send(
+                    self.content, embed=self.pages[0], view=self
+                )
         else:
             if self.max_pages == 1:
                 message = await self.ctx.send(self.content + self.pages[0], view=None)
@@ -154,7 +162,9 @@ class ButtonPages(discord.ui.View):
         except Exception:
             pass
 
-    async def on_error(self, error: Exception, item: discord.ui.Item, interaction: discord.Interaction):
+    async def on_error(
+        self, error: Exception, item: discord.ui.Item, interaction: discord.Interaction
+    ):
         if interaction.response.is_done():
             await interaction.followup.send(str(error), ephemeral=True)
         else:
@@ -174,31 +184,45 @@ class ButtonPages(discord.ui.View):
         else:
             await interaction.message.edit(content=page, view=self)
 
-    @discord.ui.button(emoji=constants.emotes["backward2"], style=discord.ButtonStyle.gray)
+    @discord.ui.button(
+        emoji=constants.emotes["backward2"], style=discord.ButtonStyle.gray
+    )
     async def _first(self, button: discord.ui.Button, interaction: discord.Interaction):
         self.update_view(1)
         await self.show_page(interaction)
 
-    @discord.ui.button(emoji=constants.emotes["backward"], style=discord.ButtonStyle.gray)
+    @discord.ui.button(
+        emoji=constants.emotes["backward"], style=discord.ButtonStyle.gray
+    )
     async def _back(self, button: discord.ui.Button, interaction: discord.Interaction):
         self.update_view(self.page_number - 1)
         await self.show_page(interaction)
 
-    @discord.ui.button(emoji=constants.emotes["forward"], style=discord.ButtonStyle.gray)
+    @discord.ui.button(
+        emoji=constants.emotes["forward"], style=discord.ButtonStyle.gray
+    )
     async def _next(self, button: discord.ui.Button, interaction: discord.Interaction):
         self.update_view(self.page_number + 1)
         await self.show_page(interaction)
 
-    @discord.ui.button(emoji=constants.emotes["forward2"], style=discord.ButtonStyle.gray)
+    @discord.ui.button(
+        emoji=constants.emotes["forward2"], style=discord.ButtonStyle.gray
+    )
     async def _last(self, button: discord.ui.Button, interaction: discord.Interaction):
         self.update_view(self.max_pages)
         await self.show_page(interaction)
 
-    @discord.ui.button(emoji=constants.emotes["1234button"], style=discord.ButtonStyle.grey)
-    async def _select(self, button: discord.ui.Button, interaction: discord.Interaction):
+    @discord.ui.button(
+        emoji=constants.emotes["1234button"], style=discord.ButtonStyle.grey
+    )
+    async def _select(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
         """lets you type a page number to go to"""
         if self.input_lock.locked():
-            await interaction.response.send_message('Already waiting for your response...', ephemeral=True)
+            await interaction.response.send_message(
+                "Already waiting for your response...", ephemeral=True
+            )
             return
 
         if self.message is None:
@@ -207,7 +231,9 @@ class ButtonPages(discord.ui.View):
         async with self.input_lock:
             channel = self.message.channel
             author_id = interaction.user and interaction.user.id
-            await interaction.response.send_message('What page do you want to go to?', ephemeral=True)
+            await interaction.response.send_message(
+                "What page do you want to go to?", ephemeral=True
+            )
 
             def message_check(m):
                 if not m.author.id == author_id:
@@ -217,13 +243,17 @@ class ButtonPages(discord.ui.View):
                 if not m.content.isdigit():
                     return False
                 if not 1 <= int(m.content) <= self.max_pages:
-                    raise IndexError(f"Page number must be between 1 and {self.max_pages}")
+                    raise IndexError(
+                        f"Page number must be between 1 and {self.max_pages}"
+                    )
                 return True
 
             try:
-                msg = await self.ctx.bot.wait_for('message', check=message_check, timeout=30.0)
+                msg = await self.ctx.bot.wait_for(
+                    "message", check=message_check, timeout=30.0
+                )
             except asyncio.TimeoutError:
-                await interaction.followup.send('Selection expired.', ephemeral=True)
+                await interaction.followup.send("Selection expired.", ephemeral=True)
                 await asyncio.sleep(5)
             else:
                 page = int(msg.content)
@@ -234,14 +264,17 @@ class ButtonPages(discord.ui.View):
                 self.update_view(page)
                 await self.show_page(interaction)
 
-
     @discord.ui.button(label="Delete session", style=discord.ButtonStyle.red)
-    async def _delete(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def _delete(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
         await interaction.message.delete()
         self.stop()
 
     @discord.ui.button(label="Compact view", style=discord.ButtonStyle.blurple)
-    async def _compact(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def _compact(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
         self.compact = True
         self.clear_items()
         self.fill_items()
@@ -252,21 +285,49 @@ class ButtonPages(discord.ui.View):
         self.clear_items()
         self.fill_items(_help=True)
         embed = discord.Embed(color=constants.embed)
-        embed.set_author(name="Pagination Help Page", icon_url=self.ctx.bot.user.display_avatar.url)
-        embed.description = "Read below for a description of each button and it's function."
-        embed.add_field(name=constants.emotes['backward2'] + "  Jump to the first page", value="This button shows the first page of the pagination session.", inline=False)
-        embed.add_field(name=constants.emotes['backward'] + "  Show the previous page", value="This button shows the previous page of the pagination session.", inline=False)
-        embed.add_field(name=constants.emotes['1234button'] + "  Input a page number", value="This button shows a page after you input a page number.", inline=False)
-        embed.add_field(name=constants.emotes['forward'] + "  Show the next page", value="This button shows the next page of the pagination session", inline=False)
-        embed.add_field(name=constants.emotes['forward2'] + "  Jump to the last page.", value="This button shows the last page of the pagination session", inline=False)
-        embed.set_footer(text=f"Previously viewing page {self.page_number} of {self.max_pages}")
+        embed.set_author(
+            name="Pagination Help Page", icon_url=self.ctx.bot.user.display_avatar.url
+        )
+        embed.description = (
+            "Read below for a description of each button and it's function."
+        )
+        embed.add_field(
+            name=constants.emotes["backward2"] + "  Jump to the first page",
+            value="This button shows the first page of the pagination session.",
+            inline=False,
+        )
+        embed.add_field(
+            name=constants.emotes["backward"] + "  Show the previous page",
+            value="This button shows the previous page of the pagination session.",
+            inline=False,
+        )
+        embed.add_field(
+            name=constants.emotes["1234button"] + "  Input a page number",
+            value="This button shows a page after you input a page number.",
+            inline=False,
+        )
+        embed.add_field(
+            name=constants.emotes["forward"] + "  Show the next page",
+            value="This button shows the next page of the pagination session",
+            inline=False,
+        )
+        embed.add_field(
+            name=constants.emotes["forward2"] + "  Jump to the last page.",
+            value="This button shows the last page of the pagination session",
+            inline=False,
+        )
+        embed.set_footer(
+            text=f"Previously viewing page {self.page_number} of {self.max_pages}"
+        )
         # embed.add_field(name="Delete session", value="This button ends the pagination session and deletes the message", inline=False)
         # embed.add_field(name="Compact view", value="This button removes the three colored buttons for a more \"compact\" view", inline=False)
         # embed.add_field(name="Need help?", value="This button shows this help page.", inline=False)
         await interaction.message.edit(embed=embed, view=self)
 
     @discord.ui.button(label="Return to main page", style=discord.ButtonStyle.blurple)
-    async def _return(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def _return(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
         self.clear_items()
         self.fill_items()
         if isinstance(self.current_page, discord.Embed):
@@ -289,7 +350,18 @@ class SimpleView(ButtonPages):
         desc_head: Prefix the description with a string
         desc_foot: Suffix the description with a string
     """
-    def __init__(self, ctx, entries, *, per_page: int = 10, index: bool = True, desc_head: str = "", desc_foot: str = "", content=""):
+
+    def __init__(
+        self,
+        ctx,
+        entries,
+        *,
+        per_page: int = 10,
+        index: bool = True,
+        desc_head: str = "",
+        desc_foot: str = "",
+        content="",
+    ):
         self.ctx = ctx
         self.entries = entries
 
@@ -300,7 +372,7 @@ class SimpleView(ButtonPages):
         self.content = content
 
         self.embed = discord.Embed(color=ctx.bot.constants.embed)
-        
+
     async def start(self):
         self.pages = self.create_pages(self.entries, self.per_page)
         await super().__init__(self.ctx, self.pages, content=self.content)
@@ -326,6 +398,7 @@ class SimpleView(ButtonPages):
             embed.set_footer(text=f"Page {count} of {len(embeds)}")
         return embeds
 
+
 class CodeView(ButtonPages):
     """
     Simple button page session that turns
@@ -339,14 +412,24 @@ class CodeView(ButtonPages):
         syntax: The syntax highlighting.
         content: Some content to prefix the text with.
     """
-    def __init__(self, ctx, lines, *, per_page: int = 10, index: bool = True, syntax="", content=""):
+
+    def __init__(
+        self,
+        ctx,
+        lines,
+        *,
+        per_page: int = 10,
+        index: bool = True,
+        syntax="",
+        content="",
+    ):
         self.ctx = ctx
         self.lines = lines
         self.per_page = per_page
         self.index = index
         self.syntax = syntax
         self.content = content
-        
+
     async def start(self):
         self.pages = self.create_pages(self.lines, self.per_page)
         await super().__init__(self.ctx, self.pages, content=self.content)
@@ -365,23 +448,25 @@ class CodeView(ButtonPages):
                     page += f"{index}. {line}\n"
             else:
                 page += "\n".join(lines[:per_page])
-                
+
             del lines[:per_page]
             pages.append(page)
         pages = self.suffix_pages(pages)
 
         return pages
-    
+
     def suffix_pages(self, pages):
         suffixed = []
         for count, page in enumerate(pages, start=1):
             suffix = f"\n\nPage {count} of {len(pages)}```"
             if len(page + suffix) > 2000:
-                page = page[:2000 - 3 - len(suffix)] + "..." + suffix
+                page = page[: 2000 - 3 - len(suffix)] + "..." + suffix
             else:
                 page = page + suffix
             suffixed.append(page)
         return suffixed
+
+
 class ImageView(ButtonPages):
     """
     Button page session that turns a list of image
@@ -393,6 +478,7 @@ class ImageView(ButtonPages):
         thumbnail: Show the images as thumbnails.
         content: Prefix the embed with some content.
     """
+
     def __init__(self, ctx, entries, *, thumbnail=False, content=""):
         self.ctx = ctx
         self.entries = entries
@@ -400,7 +486,7 @@ class ImageView(ButtonPages):
         self.content = content
 
         self.embed = discord.Embed(color=ctx.bot.constants.embed)
-        
+
     async def start(self):
         self.embeds = self.create_embeds(self.entries)
         await super().__init__(self.ctx, self.embeds, content=self.content)

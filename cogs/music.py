@@ -36,6 +36,8 @@ from logging.handlers import RotatingFileHandler
 from collections import deque, defaultdict
 from PIL import Image
 
+from settings import constants
+
 from utilities import views
 from utilities import checks
 from utilities import helpers
@@ -64,7 +66,9 @@ handler.setFormatter(formatter)
 youtube_dl.utils.bug_reports_message = lambda: ""
 
 #  Option base to avoid pull errors
-FFMPEG_OPTION_BASE = "-loglevel panic -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"
+FFMPEG_OPTION_BASE = (
+    "-loglevel panic -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"
+)
 
 # YTDL options for creating sources
 YTDL_OPTIONS = {
@@ -76,7 +80,7 @@ YTDL_OPTIONS = {
     "noplaylist": True,
     "flatplaylist": False,
     "nocheckcertificate": True,
-    "ignoreerrors": True,
+    "ignoreerrors": True,  # TODO change to false and handle download errors
     "logtostderr": False,
     "quiet": True,
     "no_warnings": True,
@@ -350,6 +354,53 @@ class MusicUtils:
         buffer.seek(0)
         return buffer
 
+    def make_embed(ctx, source):
+        MUSIC = ctx.bot.constants.emotes["music"]
+        LIKE = ctx.bot.constants.emotes["like"]
+        DISLIKE = ctx.bot.constants.emotes["dislike"]
+
+        block = None
+        embed = None
+        ytdl = source.ytdl
+        embed = discord.Embed(color=ctx.bot.constants.embed)
+        embed.title = "Now Playing"
+        embed.description = f"```fix\n{ytdl.title}\n```"
+
+        embed.add_field(name="Duration", value=ytdl.duration)
+        embed.add_field(name="Requester", value=ytdl.requester.mention)
+        embed.add_field(
+            name="Uploader", value=f"[{ytdl.uploader}]({ytdl.uploader_url})"
+        )
+        embed.add_field(name="Link", value=f"[Click]({ytdl.url})")
+        embed.add_field(name="Likes", value=f"{LIKE} {ytdl.likes:,}")
+        embed.add_field(name="Dislikes", value=f"{DISLIKE} {ytdl.dislikes:,}")
+        embed.set_thumbnail(url=ytdl.thumbnail)
+
+        if source.position > 1:  # Set a footer showing track position.
+            if ytdl.is_live:
+                footer = "LIVE"
+                percent = 1
+            else:
+                percent = source.position / ytdl.raw_duration
+                position = MusicUtils.parse_duration(int(source.position))
+                footer = f"{position} ({percent:.2%} completed)"
+
+            embed.set_footer(text=f"Current Position: {footer}")
+
+            # if ctx.channel.permissions_for(ctx.me).attach_files:
+            #     # Try to make a nice image progress bar if bot has perms.
+            #     progress = await ctx.bot.loop.run_in_executor(
+            #         None, MusicUtils.get_image_progress_bar, ctx, percent
+            #     )
+            #     embed.set_image(url=f"attachment://progress.png")
+            #     file = discord.File(progress, filename="progress.png")
+            # else:
+            #     embed.add_field(
+            #         name="Progress", value=MusicUtils.get_progress_bar(percent)
+            #     )
+            embed.set_image(url=ctx.bot.constants.progress_bars[round(percent * 100)])
+        return embed
+
     async def create_embed(ctx, source):
         """
         Create an embed showing details of the current song
@@ -361,46 +412,10 @@ class MusicUtils:
 
         block = None
         embed = None
-        file = None
-
         ytdl = source.ytdl
 
         if ctx.channel.permissions_for(ctx.me).embed_links:
-            embed = discord.Embed(color=ctx.bot.constants.embed)
-            embed.title = "Now Playing"
-            embed.description = f"```fix\n{ytdl.title}\n```"
-
-            embed.add_field(name="Duration", value=ytdl.duration)
-            embed.add_field(name="Requester", value=ytdl.requester.mention)
-            embed.add_field(
-                name="Uploader", value=f"[{ytdl.uploader}]({ytdl.uploader_url})"
-            )
-            embed.add_field(name="Link", value=f"[Click]({ytdl.url})")
-            embed.add_field(name="Likes", value=f"{LIKE} {ytdl.likes:,}")
-            embed.add_field(name="Dislikes", value=f"{DISLIKE} {ytdl.dislikes:,}")
-            embed.set_thumbnail(url=ytdl.thumbnail)
-
-            if source.position > 1:  # Set a footer showing track position.
-                if ytdl.is_live:
-                    footer = "LIVE"
-                    percent = 1
-                else:
-                    percent = source.position / ytdl.raw_duration
-                    position = MusicUtils.parse_duration(int(source.position))
-                    footer = f"{position} ({percent:.2%} completed)"
-
-                embed.set_footer(text=f"Current Position: {footer}")
-
-                if ctx.channel.permissions_for(ctx.me).attach_files:
-                    # Try to make a nice image progress bar if bot has perms.
-                    progress = await ctx.bot.loop.run_in_executor(
-                        None, MusicUtils.get_image_progress_bar, ctx, percent
-                    )
-                    embed.set_image(url=f"attachment://progress.png")
-                    file = discord.File(progress, filename="progress.png")
-                else:
-                    embed.add_field(name="Progress", value=MusicUtils.get_progress_bar(percent))
-
+            embed = MusicUtils.make_embed(ctx, source)
 
         else:  # No embed perms, send as codeblock
             block = f"{MUSIC} **Now Playing**: *{ytdl.title}*```yaml\n"
@@ -411,15 +426,14 @@ class MusicUtils:
             block += f"Likes    : {ytdl.likes:,}\n"
             block += f"Dislikes : {ytdl.dislikes:,}\n```"
 
-        return await ctx.send(content=block, embed=embed, file=file)
+        return await ctx.send(content=block, embed=embed)
 
-    def get_progress_bar(percent, decimals = 2, length = 50, fill = '█'):
+    def get_progress_bar(percent, decimals=2, length=50, fill="█"):
         length = length / 2
         portion = length * percent
         percent_str = ("{0:." + str(decimals) + "f}").format(percent * 100)
-        bar = fill * int(portion) + '—' * (int((length - portion)))
+        bar = fill * int(portion) + "—" * (int((length - portion)))
         return f"\r│{bar}│{percent_str}%"
-
 
     async def save_embed(ctx, ytdl):
         MUSIC = ctx.bot.constants.emotes["music"]
@@ -601,274 +615,6 @@ class Checks:
             )
 
 
-class Views:
-    class Select(discord.ui.Select):
-        def __init__(self, ctx, player):
-            self.ctx = ctx
-            self.player = player
-            self.effects = [
-                "backwards",
-                "bass",
-                "earrape",
-                "echo",
-                "muffle",
-                "nightcore",
-                "phaser",
-                "robot",
-                "tremolo",
-                "treble",
-                "vibrato",
-                "whisper",
-            ]
-            super().__init__(placeholder="Audio Effects", options=self.get_options())
-
-        def get_options(self):
-            """Creates a list of SelectOption"""
-            PASS = self.player._ctx.bot.emote_dict["success"]
-            FAIL = self.player._ctx.bot.emote_dict["failed"]
-            get_emoji = lambda e: PASS if self.player[e] else FAIL
-            get_desc = (
-                lambda e: f"Toggle the {e} audio effect. (Currently {'en' if self.player[e] else 'dis'}abled)"
-            )
-
-            return [
-                discord.SelectOption(
-                    label=effect, description=get_desc(effect), emoji=get_emoji(effect)
-                )
-                for effect in self.effects
-            ]
-
-        async def callback(self, interaction: discord.Interaction):
-            selection = interaction.data["values"][0]
-            self.player[selection] = not self.player[selection]
-            await interaction.message.edit(
-                f"{selection.capitalize()} effect {'en' if self.player[selection] else 'dis'}abled.",
-                view=Views.Effects(self.ctx, self.player),
-            )
-
-    class Effects(discord.ui.View):
-        def __init__(self, ctx, player):
-            self.ctx = ctx
-            self.player = player
-            self.message = None
-            super().__init__(timeout=120)
-
-            self.add_item(Views.Select(ctx, player))
-
-        async def interaction_check(self, interaction):
-            if self.ctx.author.id == interaction.user.id:
-                return True
-            else:
-                await interaction.response.send_message(
-                    "Only the command invoker can use this menu.", ephemeral=True
-                )
-
-        async def on_timeout(self):
-            if self.message:
-                await self.message.delete()
-            self.stop()
-
-        @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red, row=2)
-        async def cancel_button(
-            self, button: discord.ui.Button, interaction: discord.Interaction
-        ):
-            await interaction.message.delete()
-            self.stop()
-
-        @discord.ui.button(label="Save", style=discord.ButtonStyle.green, row=2)
-        async def save_button(
-            self, button: discord.ui.Button, interaction: discord.Interaction
-        ):
-            await interaction.message.edit(
-                "Successfully saved audio effect settings.", view=None
-            )
-            self.stop()
-
-        @discord.ui.button(label="Reset", style=discord.ButtonStyle.blurple, row=2)
-        async def reset_button(
-            self, button: discord.ui.Button, interaction: discord.Interaction
-        ):
-            self.player.clear_effects()
-            await interaction.message.edit(
-                "Successfully reset effect settings.", view=None
-            )
-            self.stop()
-
-        @discord.ui.button(label="Help", style=discord.ButtonStyle.gray, row=2)
-        async def help_button(
-            self, button: discord.ui.Button, interaction: discord.Interaction
-        ):
-            embed = discord.Embed(color=self.ctx.bot.constants.embed)
-            embed.set_author(
-                name="Welcome to the audio effects help page.",
-                icon_url=self.ctx.bot.user.display_avatar.url,
-            )
-            embed.description = f"Below are comprehensive instructions on how to use the `{self.ctx.clean_prefix}effects` dropdown menu command. Each effect in the dropdown menu is a toggle switch. This means that if an effect is disabled, it will be enabled when clicked, and vice-versa. The **Main Menu** category below shows how to work the main page, while the **Help Menu** category shows instructions for this page."
-            embed.add_field(
-                name="Main Menu",
-                value="`Cancel` simply deletes the menu.\n`Reset` resets all effects to default.\n`Save` saves the effect settings and stops the menu.\n`Help` shows this help page.",
-            )
-            embed.add_field(
-                name="Help Menu",
-                value="`Cancel` simply deletes the menu.\n`Effects` shows all effect outputs.\n`Return` will return to the main menu.",
-            )
-            embed.set_footer(
-                text="This menu will expire after 2 minutes of inactivity."
-            )
-            help_view = Views.HelpMenu(self.ctx, self.player)
-            await interaction.message.edit(content=None, embed=embed, view=help_view)
-            help_view.message = self.message
-            self.stop()
-
-    class HelpMenu(discord.ui.View):
-        def __init__(self, ctx, player):
-            self.ctx = ctx
-            self.player = player
-            self.message = None
-            self.effects = {
-                "backwards": "This effect plays the song from the end.",
-                "bass": "This effect boosts the bass clef audio.",
-                "earrape": "This effect makes audio sound scratchy.",
-                "echo": "This effect makes audio sound with an echo.",
-                "muffle": "This effect makes the audio sound muffled.",
-                "nightcore": "This effect plays audio with a higher pitch and speed.",
-                "phaser": "This effect makes audio sound synthetically generated.",
-                "robot": "This effect makes audio sound like a robot is speaking.",
-                "treble": "This effect boosts the treble clef audio.",
-                "tremolo": "This effect creates minature breaks in the audio.",
-                "vibrato": "This effect makes the audio dilate for vibrato.",
-                "whisper": "This effect makes audio sound as if it were being whispered.",
-            }
-            super().__init__(timeout=120)
-
-        async def interaction_check(self, interaction):
-            if self.ctx.author.id == interaction.user.id:
-                return True
-            else:
-                await interaction.response.send_message(
-                    "Only the command invoker can use this button.", ephemeral=True
-                )
-
-        async def on_timeout(self):
-            if self.message:
-                await self.message.delete()
-            self.stop()
-
-        @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
-        async def cancel_button(
-            self, button: discord.ui.Button, interaction: discord.Interaction
-        ):
-            await interaction.message.delete()
-            self.stop()
-
-        @discord.ui.button(label="Effects", style=discord.ButtonStyle.green)
-        async def effects_button(
-            self, button: discord.ui.Button, interaction: discord.Interaction
-        ):
-            embed = discord.Embed(color=self.ctx.bot.constants.embed)
-            embed.title = "Audio Effects"
-            embed.description = "Press the `Cancel` button to delete this message.\nPress the `Return` button to return to the main menu.\nPress the `Help` button for the help menu."
-            embed.set_footer(
-                text="This menu will expire after 2 minutes of inactivity."
-            )
-            for name, description in self.effects.items():
-                embed.add_field(name=name, value=description)
-
-            return_view = Views.Return(self.ctx, self.player)
-            await interaction.message.edit(content=None, embed=embed, view=return_view)
-            return_view.message = self.message
-            self.stop()
-
-        @discord.ui.button(label="Return", style=discord.ButtonStyle.blurple)
-        async def main_button(
-            self, button: discord.ui.Button, interaction: discord.Interaction
-        ):
-            effects_view = Views.Effects(self.ctx, self.player)
-            await interaction.message.edit(content=None, embed=None, view=effects_view)
-            effects_view.message = self.message
-            self.stop()
-
-    class Return(discord.ui.View):
-        def __init__(self, ctx, player):
-            self.ctx = ctx
-            self.player = player
-            self.message = None
-            self.effects = {
-                "backwards": "This effect plays the song from the end.",
-                "bass": "This effect boosts the bass clef audio.",
-                "earrape": "This effect makes audio sound scratchy.",
-                "echo": "This effect makes audio sound with an echo.",
-                "muffle": "This effect makes the audio sound muffled.",
-                "nightcore": "This effect plays audio with a higher pitch and speed.",
-                "phaser": "This effect makes audio sound synthetically generated.",
-                "robot": "This effect makes audio sound like a robot is speaking.",
-                "treble": "This effect boosts the treble clef audio.",
-                "tremolo": "This effect creates minature breaks in the audio.",
-                "vibrato": "This effect makes the audio dilate for vibrato.",
-                "whisper": "This effect makes audio sound as if it were being whispered.",
-            }
-            super().__init__(timeout=120)
-
-        async def interaction_check(self, interaction):
-            if self.ctx.author.id == interaction.user.id:
-                return True
-            else:
-                await interaction.response.send_message(
-                    "Only the command invoker can use this button.", ephemeral=True
-                )
-
-        async def on_timeout(self):
-            if self.message:
-                await self.message.delete()
-            self.stop()
-
-        @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
-        async def cancel_button(
-            self, button: discord.ui.Button, interaction: discord.Interaction
-        ):
-            await interaction.message.delete()
-            self.stop()
-
-        @discord.ui.button(label="Return", style=discord.ButtonStyle.blurple)
-        async def main_button(
-            self, button: discord.ui.Button, interaction: discord.Interaction
-        ):
-            effect_view = Views.Effects(self.ctx, self.player)
-            await interaction.message.edit(
-                content="Select an audio effect from the dropdown below.",
-                embed=None,
-                view=effect_view,
-            )
-            effect_view.message = self.message
-            self.stop()
-
-        @discord.ui.button(label="Help", style=discord.ButtonStyle.gray)
-        async def help_button(
-            self, button: discord.ui.Button, interaction: discord.Interaction
-        ):
-            embed = discord.Embed(color=self.ctx.bot.constants.embed)
-            embed.set_author(
-                name="Welcome to the audio effects help page.",
-                icon_url=self.ctx.bot.user.display_avatar.url,
-            )
-            embed.description = f"Below are comprehensive instructions on how to use the `{self.ctx.clean_prefix}effects` dropdown menu command. Each effect in the dropdown menu is a toggle switch. This means that if an effect is disabled, it will be enabled when clicked, and vice-versa. The **Main Menu** category below shows how to work the main page, while the **Help Menu** category shows instructions for this page."
-            embed.add_field(
-                name="Main Menu",
-                value="`Cancel` simply deletes the menu.\n`Reset` resets all effects to default.\n`Save` saves the effect settings and stops the menu.\n`Help` shows this help page.",
-            )
-            embed.add_field(
-                name="Help Menu",
-                value="`Cancel` simply deletes the menu.\n`Effects` shows all effect outputs.\n`Return` will return to the main menu.",
-            )
-            embed.set_footer(
-                text="This menu will expire after 2 minutes of inactivity."
-            )
-            help_view = Views.HelpMenu(self.ctx, self.player)
-            await interaction.message.edit(content=None, embed=embed, view=help_view)
-            help_view.message = self.message
-            self.stop()
-
-
 class AudioSource(discord.PCMVolumeTransformer):
     """
     Takes a ytdl source and player settings
@@ -876,10 +622,10 @@ class AudioSource(discord.PCMVolumeTransformer):
     """
 
     def __init__(self, ytdl, volume, position: float = 0.0, **kwargs):
-        self.position = position # Position of track
+        self.position = position  # Position of track
         self.ytdl = ytdl
 
-        speed = kwargs.get("speed", 1)
+        self.rate = speed = kwargs.get("speed", 1)
         pitch = kwargs.get("pitch", 1)
 
         s_filter = f"atempo=sqrt({speed}/{pitch}),atempo=sqrt({speed}/{pitch})"
@@ -894,7 +640,7 @@ class AudioSource(discord.PCMVolumeTransformer):
             "muffle": ",lowpass=f=300",
             "treble": ",treble=g=15",
             "bass": ",bass=g=15",
-            "backwards": ",areverse",
+            #"backwards": ",areverse",
             "phaser": ",aphaser=type=t:speed=2:decay=0.6",
             "robot": ",afftfilt=real='hypot(re,im)*sin(0)':imag='hypot(re,im)*cos(0)':win_size=512:overlap=0.75",
             "tremolo": ",apulsator=mode=sine:hz=3:width=0.1:offset_r=0",
@@ -978,7 +724,6 @@ class QueueEntry:
         return json_entry
 
 
-
 class YTDLSource:
     """
     @classmethod functions create a YTDLSource object with video data
@@ -1027,7 +772,9 @@ class YTDLSource:
         """
         loop = loop or asyncio.get_event_loop()
 
-        partial = functools.partial(YOUTUBE_DL.extract_info, url, download=False)
+        partial = functools.partial(
+            YOUTUBE_DL.extract_info, url.replace(":", ""), download=False
+        )
         processed_info = await loop.run_in_executor(None, partial)
 
         if processed_info is None:
@@ -1060,7 +807,10 @@ class YTDLSource:
         loop = loop or asyncio.get_event_loop()
 
         partial = functools.partial(
-            YOUTUBE_DL.extract_info, search.replace(":", ""), download=False, process=False
+            YOUTUBE_DL.extract_info,
+            search.replace(":", ""),
+            download=False,
+            process=False,
         )
         info = await loop.run_in_executor(None, partial)
 
@@ -1076,7 +826,15 @@ class YTDLSource:
             partial = functools.partial(
                 YOUTUBE_DL.extract_info, info["webpage_url"], download=False
             )
-            processed_info = await loop.run_in_executor(None, partial)
+            try:
+                processed_info = await loop.run_in_executor(None, partial)
+            except youtube_dl.DownloadError as e:
+                if "This video may be inappropriate for some users." in str(e):
+                    raise exceptions.YTDLError("Unable to play age restricted videos.")
+                else:
+                    raise exceptions.YTDLError(
+                        f"Unable to download `{info['webpage_url']}`"
+                    )
 
             if processed_info is None:
                 raise exceptions.YTDLError(f"Unable to fetch `{info['webpage_url']}`")
@@ -1088,7 +846,8 @@ class YTDLSource:
                 while data is None:
                     try:
                         data = processed_info["entries"].pop(0)
-                    except IndexError:
+                    except IndexError as e:
+                        print(e)
                         raise exceptions.YTDLError(
                             f"Unable to retrieve matches for `{processed_info['webpage_url']}`"
                         )
@@ -1298,9 +1057,9 @@ class TrackQueue(asyncio.Queue):
     def reverse(self):
         self._queue.reverse()
 
-    def skipto(self, position):
-        entry = self._queue[position]
-        self._queue = self[position + 1 :]
+    def skipto(self, place):
+        entry = self._queue[place]
+        self._queue = self[place + 1 :]
         return entry
 
     def deduplicate(self):
@@ -1335,17 +1094,43 @@ class TrackQueue(asyncio.Queue):
         queue[start - 1 : end] = to_reverse
         self._queue = deque(queue)
 
+
 class VoiceClient(discord.VoiceClient):
     def __init__(self, client, channel):
         super().__init__(client, channel)
 
-    async def on_voice_server_update(self, data) -> None:
-        print(data)
-        #return await super().on_voice_server_update(data)
-
     async def on_voice_state_update(self, data) -> None:
-        print(data)
-        #return await super().on_voice_state_update(data)
+        self.session_id = data["session_id"]
+        channel_id = data["channel_id"]
+
+        if not self._handshaking or self._potentially_reconnecting:
+            # If we're done handshaking then we just need to update ourselves
+            # If we're potentially reconnecting due to a 4014, then we need to differentiate
+            # a channel move and an actual force disconnect
+            if channel_id is None:
+                # We're being disconnected so cleanup
+
+                await self.disconnect(force=True)
+                del VOICE_STATES[self.guild.id]
+
+                self.guild.voice_client = None
+            else:
+                guild = self.guild
+                self.channel = channel_id and guild and guild.get_channel(int(channel_id))  # type: ignore
+        else:
+            self._voice_state_complete.set()
+
+    def play(self, source, *, after=None) -> None:
+        print("playing")
+        self.client.loop.create_task(self.increment())
+        print("pos")
+        return super().play(source, after=after)
+
+    async def increment(self):
+        while self.is_playing():
+            self.source.position += self.source.rate
+            await asyncio.sleep(1)
+
 
 class VoiceState:
     """
@@ -1370,6 +1155,7 @@ class VoiceState:
         self.queue_is_looped = False  # Entire queue is looped.
 
         self.skip_votes = set()  # Stored skip votes.
+        self.loop_votes = set()  # Stored loop votes.
 
         self.checks = Checks
         self.tracks = TrackQueue()
@@ -1383,8 +1169,6 @@ class VoiceState:
 
     def __del__(self):
         self.audio_player.cancel()
-        if self.voice:
-            self.voice.cleanup()
 
     def __setitem__(self, key, value):
         if key == "speed":  # Assert valid speed range
@@ -1449,33 +1233,57 @@ class VoiceState:
         self._volume = value
         self.source.volume = value
 
-    async def connect(self, channel, *, timeout=60):
+    async def connect(self, channel, *, timeout=None):
+        print("bye")
         try:
-            self.voice = await channel.connect()
+            print("tried")
+            try:
+                self.voice = await channel.connect(timeout=timeout, cls=VoiceClient)
+            except:
+                traceback.print_exc()
+            print("connected")
         except discord.ClientException:
+            print("except")
             if hasattr(channel.guild.me.voice, "channel"):
                 await channel.guild.voice_client.disconnect(force=True)
-                self.voice = await channel.connect(timeout=timeout)
-            else:
-                await channel.guild.voice_client.disconnect(force=True)
-                self.voice = await channel.connect(timeout=timeout)
+                self.voice = await channel.connect(timeout=timeout, cls=VoiceClient)
+        except Exception:
+            raise
+
+        print("byee")
+        print(self.voice)
 
     async def ensure_voice_state(self, ctx):
+        print("hi")
         if not ctx.me.voice:
             if not hasattr(ctx.author.voice, "channel"):
                 raise commands.BadArgument("You must be connected to a voice channel")
-
             channel = ctx.author.voice.channel
-            await self.connect(channel)
+        else:
+            channel = ctx.me.voice.channel
+        self.voice = await self.get_voice_client(channel)
+        print(self.voice)
         return self
 
-    async def reset_voice_client(self):
-        if hasattr(self._ctx.guild.me.voice, "channel"):
-            channel = self._ctx.guild.me.voice.channel
-            if self._ctx.guild.voice_client:
-                #self._ctx.guild.voice_client.cleanup()
-                await self._ctx.guild.voice_client.disconnect(force=True)
-            self.voice = await channel.connect(timeout=None)
+    async def get_voice_client(self, channel, *, timeout=None):
+        voice = channel.guild.me.voice
+        voice_client = channel.guild.voice_client
+        if hasattr(voice, "channel"):
+            if voice_client:  # Already have everything
+                print("# Already have everything")
+                return voice_client
+            else:  # Create voice client
+                print("# Create voice client")
+                return await voice.channel.connect(timeout=timeout, cls=VoiceClient)
+        else:
+            # if voice_client:  # Clean it up
+            #     print("# Clean it up")
+            #     await voice_client.disconnect(force=True)
+            print("basic connect")
+            try:
+                return await channel.connect(timeout=timeout, cls=VoiceClient)
+            except:
+                raise
 
     async def play_from_file(self, file):
         await file.save("./track.mp3")
@@ -1498,7 +1306,15 @@ class VoiceState:
         if self.entry.has_data:
             current = YTDLSource(self.entry.ctx, self.entry.data)
         else:
-            current = await YTDLSource.get_source(self.entry.ctx, self.entry.search)
+            while True:
+                try:
+                    current = await YTDLSource.get_source(
+                        self.entry.ctx, self.entry.search
+                    )
+                except exceptions.YTDLError:
+                    self.entry = await self.tracks.get()
+                else:
+                    break
         return current
 
     def requeue(self, source: YTDLSource):
@@ -1514,8 +1330,6 @@ class VoiceState:
         while run is True:
             try:
                 self.next.clear()
-                if self.voice is None:
-                    await self.reset_voice_client()
 
                 if self.track_is_looped:  # Single song is looped.
                     self.current = self.previous
@@ -1525,18 +1339,19 @@ class VoiceState:
                     self.current = await self.get_next_track()  # Get song from queue
 
                 else:  # Not looping track or queue.
+                    print("getting next track")
                     self.current = await self.get_next_track()
-
+                print("making audio source")
                 self.source = await AudioSource.save(
                     self.current,
                     self.volume,
                     **self.effects,
                 )
-
+                print("made audio source")
+                print("playing...")
                 self.voice.play(self.source, after=self.play_next_track)
                 await MusicUtils.create_embed(self.current.ctx, self.source)
 
-                self.bot.loop.create_task(self.increase_position())
                 await self.next.wait()  # Wait until the track finishes
                 self.previous = self.current  # Store previous track
                 self.current = None
@@ -1548,16 +1363,8 @@ class VoiceState:
                 self.bot.dispatch("error", "MUSIC_ERROR", tb=tb)
                 # run = False
 
-    async def increase_position(self):
-        """
-        Helper function to increase the position
-        of the song while it's being played.
-        """
-        while self.is_playing and self.voice.is_playing():
-            self.source.position += self["speed"]
-            await asyncio.sleep(1)
-
     def play_next_track(self, error=None):
+        print("called")
         if error:
             log.fatal(error)
             print("this was raised.")
@@ -1569,12 +1376,43 @@ class VoiceState:
         if self.is_playing:
             self.voice.stop()
 
+    def track_loop(self):
+        self.track_is_looped = True
+
+    def queue_loop(self):
+        self.queue_is_looped = True
+        self.track_is_looped = False
+
+    def unloop(self):
+        self.queue_is_looped = False
+        self.track_is_looped = False
+
     async def stop(self):
         self.tracks.clear()
 
         if self.voice:
-            await self.voice.disconnect()
+            await self.voice.disconnect(force=True)
             self.voice = None
+
+
+class VoiceStates(dict):
+    def __init__(self):
+        pass
+
+    async def get_state(self, ctx):
+        state = self.get(ctx.guild.id)
+        if not state:
+            state = await VoiceState.create(ctx.bot, ctx)
+            self[ctx.guild.id] = state
+        return state
+
+    def destroy(self, loop=None):
+        loop = loop or asyncio.get_event_loop()
+        for state in self.values():
+            loop.create_task(state.stop())
+
+
+VOICE_STATES = VoiceStates()
 
 
 class Player(commands.Cog):
@@ -1584,19 +1422,10 @@ class Player(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.voice_states = {}
         self.spotify = MusicUtils.spotify(bot)
 
-    async def get_voice_state(self, ctx):
-        state = self.voice_states.get(ctx.guild.id)
-        if not state:
-            state = await VoiceState.create(self.bot, ctx)
-            self.voice_states[ctx.guild.id] = state
-        return state
-
     def cog_unload(self):
-        for state in self.voice_states.values():
-            self.bot.loop.create_task(state.stop())
+        VOICE_STATES.destroy(loop=self.bot.loop)
 
     async def cog_check(self, ctx):
         if not ctx.guild:
@@ -1604,17 +1433,9 @@ class Player(commands.Cog):
         return True
 
     async def cog_before_invoke(self, ctx):
-        ctx.voice_state = await self.get_voice_state(ctx)
+        ctx.voice_state = await VOICE_STATES.get_state(ctx)
         Checks.raise_if_bound(ctx)
         Checks.raise_if_locked(ctx)
-
-
-    @commands.Cog.listener()
-    async def on_voice_state_update(self, member, before, after):
-        if member.id != self.bot.user.id:
-            return
-        if before.channel and not after.channel:
-            del self.voice_states[member.guild.id]
 
     @decorators.command(
         name="connect",
@@ -1655,7 +1476,7 @@ class Player(commands.Cog):
     @decorators.command()
     async def j(self, ctx, channel: discord.VoiceChannel):
         await channel.connect(cls=VoiceClient)
-        
+
     @decorators.command(
         name="disconnect",
         aliases=["dc", "leave"],
@@ -1678,9 +1499,8 @@ class Player(commands.Cog):
             await ctx.success(f"Disconnected from {channel.mention}")
         else:
             await ctx.fail("Not connected to any voice channel.")
-            return
-        await ctx.voice_state.stop()
-        del self.voice_states[ctx.guild.id]
+
+        del VOICE_STATES[ctx.guild.id]
 
     @decorators.command(
         name="pause",
@@ -1913,6 +1733,7 @@ class Player(commands.Cog):
         brief="Show track info.",
         aliases=["now", "np", "nowplaying", "current"],
     )
+    @checks.bot_has_perms(embed_links=True)
     @checks.cooldown()
     async def _trackinfo(self, ctx):
         """
@@ -1926,7 +1747,7 @@ class Player(commands.Cog):
             if the bot has the Attach Files permission.
         """
         player = ctx.voice_state.validate
-        await MusicUtils.create_embed(ctx, player.source)
+        await Views.TrackView(ctx).start()
 
     @decorators.command(
         name="save",
@@ -2187,7 +2008,6 @@ class Player(commands.Cog):
         """
         await ctx.trigger_typing()
         player = await ctx.voice_state.ensure_voice_state(ctx)
-
         if search is None:
             # No search, check for resume command.
 
@@ -2307,10 +2127,6 @@ class Player(commands.Cog):
             await player.play_local_file(match.group(0))
             await ctx.music(f"Playing `{match.group(0)}`")
 
-    @decorators.command()
-    async def prog(self, ctx):
-        print(MusicUtils.get_progress_bar(2/3))
-
 
 class Queue(commands.Cog):
     """
@@ -2326,8 +2142,7 @@ class Queue(commands.Cog):
         return True
 
     async def cog_before_invoke(self, ctx):
-        audio = self.bot.get_cog("Player")
-        ctx.voice_state = await audio.get_voice_state(ctx)
+        ctx.voice_state = await VOICE_STATES.get_state(ctx)
         Checks.raise_if_bound(ctx)
         Checks.raise_if_locked(ctx)
 
@@ -2436,20 +2251,63 @@ class Queue(commands.Cog):
             Use {0}unloop can also be used to stop looping settings.
         """
         player = ctx.voice_state.validate
-        Checks.assert_is_dj(ctx)
+        emoji = self.bot.emote_dict["loop"]
 
-        if option == "track":
-            setting = "already" if player.track_is_looped else "now"
-            player.track_is_looped = True
-            await ctx.success(f"The current track is {setting} looped.")
-        elif option == "queue":
-            setting = "already" if player.queue_is_looped else "now"
-            player.queue_is_looped = True
-            player.track_is_looped = False  # In case we were looping a track.
-            await ctx.success(f"The current queue is {setting} looped.")
-        elif option == "off":
-            return await ctx.invoke(self._unloop)
-        await ctx.react(self.bot.emote_dict["loop"])
+        if Checks.is_requester(ctx):
+            if option == "track":
+                setting = "already" if player.track_is_looped else "now"
+                player.track_loop()
+                await ctx.success(f"The current track is {setting} looped.")
+                return
+            elif option == "queue":
+                setting = "already" if player.queue_is_looped else "now"
+                player.queue_loop()
+                await ctx.success(f"The current queue is {setting} looped.")
+            elif option == "off":
+                return await ctx.invoke(self._unloop)
+            await ctx.react(emoji)
+
+        elif Checks.is_dj(ctx):
+            if option == "track":
+                setting = "already" if player.track_is_looped else "now"
+                player.track_loop()
+                await ctx.success(f"The current track is {setting} looped.")
+                return
+            elif option == "queue":
+                setting = "already" if player.queue_is_looped else "now"
+                player.queue_loop()
+                await ctx.success(f"The current queue is {setting} looped.")
+            elif option == "off":
+                return await ctx.invoke(self._unloop)
+            await ctx.react(emoji)
+
+        elif ctx.author.id not in player.loop_votes:
+            player.loop_votes.add(ctx.author.id)
+            total_votes = len(player.loop_votes)
+
+            listeners = player.voice.channel.members
+            valid_voters = [user for user in listeners if not user.bot]
+            required_votes = len(valid_voters) + 1 // 2  # Require majority
+
+            if total_votes >= required_votes:
+                if option == "track":
+                    setting = "already" if player.track_is_looped else "now"
+                    player.track_loop()
+                    await ctx.success(f"The current track is {setting} looped.")
+                    return
+                elif option == "queue":
+                    setting = "already" if player.queue_is_looped else "now"
+                    player.queue_loop()
+                    await ctx.success(f"The current queue is {setting} looped.")
+                elif option == "off":
+                    return await ctx.invoke(self._unloop)
+                await ctx.react(emoji)
+            else:
+                await ctx.success(
+                    f"{option.title()} loop vote added, currently at `{total_votes}/{required_votes}`"
+                )
+        else:
+            await ctx.fail(f"You have already voted to loop this {option}.")
 
     @decorators.command(
         aliases=["deloop"],
@@ -2478,36 +2336,7 @@ class Queue(commands.Cog):
     @decorators.command(
         name="tracks", aliases=["q", "queue"], brief="Show the track queue."
     )
-    @checks.bot_has_perms(add_reactions=True, external_emojis=True, embed_links=True)
-    @checks.cooldown()
-    async def _tracks(self, ctx, *, search=None):
-        """
-        Usage: {0}tracks
-        Alias: {0}q, {0}queue
-        Output:
-            Starts a pagination session showing
-            all the tracks in the current queue.
-        Notes:
-            Each page contains 10 queue elements.
-            Will invoke the play command if a search
-            is specified.
-        """
-        if search:
-            audio = self.bot.get_cog("Player")
-            return await ctx.invoke(audio._play, search=search)
-
-        if len(ctx.voice_state.tracks) == 0:
-            await ctx.fail("The queue is currently empty.")
-            return
-
-        entries = [track.hyperlink for track in ctx.voice_state.tracks]
-        p = views.SimpleView(ctx, entries, per_page=10, index=True)
-        p.embed.title = "Current Queue"
-        await p.start()
-
-    @decorators.command(
-        name="tracks", aliases=["q", "queue"], brief="Show the track queue."
-    )
+    @checks.bot_has_perms(embed_links=True)
     @checks.cooldown()
     async def _tracks(self, ctx, *, search=None):
         """
@@ -2531,10 +2360,12 @@ class Queue(commands.Cog):
 
         entries = [track.hyperlink for track in ctx.voice_state.tracks]
 
-        p = views.SimpleView(ctx, entries, per_page=10, index=True)
+        p = Views.QueuePages(ctx, entries, per_page=10, index=True)
         p.embed.title = "Current Queue"
         if ctx.voice_state.current:
-            p.embed.add_field(name="Current Track", value=ctx.voice_state.current.hyperlink)
+            p.embed.add_field(
+                name="Current Track", value=ctx.voice_state.current.hyperlink
+            )
         await p.start()
 
     @decorators.group(name="clear", aliases=["c"], brief="Clear the queue.")
@@ -2892,7 +2723,7 @@ class Queue(commands.Cog):
                 WHERE owner_id = $1
                 ORDER BY insertion DESC;
                 """
-        queues = await self.bot.cxn.fetch(query, ctx.author.id)
+        queues = await self.bot.cxn.fetch(query, user.id)
         if not queues:
             await ctx.fail(f"User **{user}** `{user.id}` has no saved queues.")
             return
@@ -3004,8 +2835,7 @@ class Audio(commands.Cog):
         return True
 
     async def cog_before_invoke(self, ctx):
-        audio = self.bot.get_cog("Player")
-        ctx.voice_state = await audio.get_voice_state(ctx)
+        ctx.voice_state = await VOICE_STATES.get_state(ctx)
         Checks.raise_if_bound(ctx)
         Checks.raise_if_locked(ctx)
 
@@ -3177,18 +3007,19 @@ class Audio(commands.Cog):
         """
         await self.set_effect(ctx)
 
-    @decorators.command(
-        name="backwards",
-        brief="Toggle the backwards effect.",
-    )
-    @checks.cooldown()
-    async def _backwards(self, ctx):
-        """
-        Usage: {0}backwards
-        Output:
-            Toggles the backwards audio effect.
-        """
-        await self.set_effect(ctx)
+    # @decorators.command(
+    #     name="backwards",
+    #     brief="Toggle the backwards effect.",
+    #     disabled=True
+    # )
+    # @checks.cooldown()
+    # async def _backwards(self, ctx):
+    #     """
+    #     Usage: {0}backwards
+    #     Output:
+    #         Toggles the backwards audio effect.
+    #     """
+    #     await self.set_effect(ctx)
 
     @decorators.command(
         name="robot",
@@ -3310,8 +3141,7 @@ class Voice(commands.Cog):
         return True
 
     async def cog_before_invoke(self, ctx):
-        audio = self.bot.get_cog("Player")
-        ctx.voice_state = await audio.get_voice_state(ctx)
+        ctx.voice_state = await VOICE_STATES.get_state(ctx)
 
     @decorators.group(
         brief="Manage the DJ role.",
@@ -3688,3 +3518,1165 @@ def setup(bot):
     bot.add_cog(Queue(bot))
     bot.add_cog(Audio(bot))
     bot.add_cog(Voice(bot))
+
+
+class Views:
+
+    class TrackView(discord.ui.View):
+        def __init__(self, ctx):
+            super().__init__(timeout=120)
+            self.ctx = ctx
+            self.voice_client = ctx.voice_state.voice
+            self.player = ctx.voice_state
+            self.input_lock = asyncio.Lock()
+
+            self.clear_items()
+            self.fill_items()
+
+        async def start(self):
+            embed = MusicUtils.make_embed(self.ctx, self.ctx.voice_state.source)
+            self.message = await self.ctx.send(embed=embed, view=self)
+
+        def fill_items(self, _help=None, ):
+            if _help:
+                self.add_item(self._return)
+                self.add_item(self._delete)
+                return
+
+            self.add_item(self._help)
+            self.add_item(self._rewind)
+            if self.voice_client.is_paused():
+                self.add_item(self._resume)
+            else:
+                self.add_item(self._pause)
+            self.add_item(self._forward)
+            self.add_item(self._trash)
+            if Checks.is_dj(self.ctx):
+                self.add_item(Views.EffectSelect(self.ctx))
+
+
+        async def interaction_check(self, interaction):
+            if self.ctx.author.id == interaction.user.id:
+                return True
+            else:
+                await interaction.response.send_message(
+                    "Only the command invoker can use this button.", ephemeral=True
+                )
+
+        async def on_timeout(self):
+            try:
+                await self.message.edit(view=None)
+            except Exception:
+                pass
+
+        async def on_error(
+            self,
+            error: Exception,
+            item: discord.ui.Item,
+            interaction: discord.Interaction,
+        ):
+            if interaction.response.is_done():
+                await interaction.followup.send(str(error), ephemeral=True)
+            else:
+                await interaction.response.send_message(str(error), ephemeral=True)
+
+
+        @discord.ui.button(
+            emoji=constants.emotes["fastforward"], style=discord.ButtonStyle.gray
+        )
+        async def _forward(self, button: discord.ui.Button, interaction: discord.Interaction):
+            try:
+                Checks.assert_is_dj(self.ctx)
+            except commands.BadArgument as e:
+                await interaction.response.send_message(str(e), ephemeral=True)
+            position = self.ctx.voice_state.source.position
+            to_seek = position + 10
+            if to_seek >= self.ctx.voice_state.source.ytdl.raw_duration:
+                to_seek = self.ctx.voice_state.source.ytdl.raw_duration
+
+            self.player.alter_audio(position=to_seek)
+            embed = MusicUtils.make_embed(self.ctx, self.ctx.voice_state.source)
+            await interaction.message.edit(embed=embed)
+            await interaction.response.send_message("Fast forwarded 10 seconds.")
+
+        @discord.ui.button(
+            emoji=constants.emotes["rewind"], style=discord.ButtonStyle.gray
+        )
+        async def _rewind(self, button: discord.ui.Button, interaction: discord.Interaction):
+            try:
+                Checks.assert_is_dj(self.ctx)
+            except commands.BadArgument as e:
+                await interaction.response.send_message(str(e), ephemeral=True)
+            position = self.ctx.voice_state.source.position
+            print(position)
+            to_seek = position - 10
+            if to_seek <= 0:
+                to_seek = 0
+
+            embed = MusicUtils.make_embed(self.ctx, self.ctx.voice_state.source)
+            await interaction.message.edit(embed=embed)
+            self.player.alter_audio(position=to_seek)
+            await interaction.response.send_message("Rewinded 10 seconds.")
+
+        @discord.ui.button(
+            emoji=constants.emotes["pause"], style=discord.ButtonStyle.gray
+        )
+        async def _pause(self, button: discord.ui.Button, interaction: discord.Interaction):
+            try:
+                Checks.assert_is_dj(self.ctx)
+            except commands.BadArgument as e:
+                await interaction.response.send_message(str(e), ephemeral=True)
+
+            self.voice_client.pause()
+            self.clear_items()
+            self.fill_items()
+            await interaction.message.edit(view=self)
+            await interaction.response.send_message("Paused the player.")
+
+        @discord.ui.button(
+            emoji=constants.emotes["play"], style=discord.ButtonStyle.gray
+        )
+        async def _resume(self, button: discord.ui.Button, interaction: discord.Interaction):
+            try:
+                Checks.assert_is_dj(self.ctx)
+            except commands.BadArgument as e:
+                await interaction.response.send_message(str(e), ephemeral=True)
+
+            self.voice_client.resume()
+            self.clear_items()
+            self.fill_items()
+            await interaction.message.edit(view=self)
+            await interaction.response.send_message("Resumed the player.")
+
+
+        @discord.ui.button(
+            emoji=constants.emotes["download"], style=discord.ButtonStyle.gray
+        )
+        async def _download(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            """Saves the current queue"""
+            if self.input_lock.locked():
+                await interaction.response.send_message(
+                    "Already waiting for your response...", ephemeral=True
+                )
+                return
+
+            if self.message is None:
+                return
+
+            async with self.input_lock:
+                channel = self.message.channel
+                author_id = interaction.user and interaction.user.id
+                await interaction.response.send_message(
+                    "Enter a name to save this queue under.", ephemeral=True
+                )
+
+                def message_check(m):
+                    if not m.author.id == author_id:
+                        return False
+                    if not channel == m.channel:
+                        return False
+                    return True
+
+                try:
+                    msg = await self.ctx.bot.wait_for(
+                        "message", check=message_check, timeout=30.0
+                    )
+                except asyncio.TimeoutError:
+                    await interaction.followup.send(
+                        "Queue saving expired.", ephemeral=True
+                    )
+                    await asyncio.sleep(5)
+                else:
+                    name = msg.content.lower()
+                    queue = [self.ctx.voice_state.entry] + list(
+                        self.ctx.voice_state.tracks
+                    )
+                    queue = json.dumps([entry.json for entry in queue])
+                    query = """
+                            INSERT INTO queues (owner_id, name, queue)
+                            VALUES ($1, $2, $3::JSONB)
+                            """
+                    try:
+                        await self.ctx.bot.cxn.execute(
+                            query, author_id, name.lower(), queue
+                        )
+                    except asyncpg.exceptions.UniqueViolationError:
+                        await interaction.followup.send(
+                            "You already have a saved queue with that name. Please try again with a different name",
+                            ephemeral=True,
+                        )
+                        return
+                    await interaction.followup.send(
+                        f"{constants.emotes['success']} Saved the current queue with name: **{name}**"
+                    )
+                    try:
+                        await msg.delete()
+                    except:
+                        pass
+
+        @discord.ui.button(
+            emoji=constants.emotes["skip"], style=discord.ButtonStyle.gray
+        )
+        async def _skip(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            if Checks.is_requester(self.ctx):
+                self.ctx.voice_state.skip()  # Song requester can skip.
+
+            elif Checks.is_dj(self.ctx):
+                self.ctx.voice_state.skip()  # Server Djs can skip.
+
+            elif self.ctx.author.id not in self.ctx.voice_state.skip_votes:
+                self.ctx.voice_state.skip_votes.add(self.ctx.author.id)
+                total_votes = len(self.ctx.voice_state.skip_votes)
+
+                listeners = self.ctx.voice_state.voice.channel.members
+                valid_voters = [user for user in listeners if not user.bot]
+                required_votes = len(valid_voters) + 1 // 2  # Require majority
+
+                if total_votes >= required_votes:
+                    self.ctx.voice_state.skip()
+                else:
+                    await interaction.response.send_message(
+                        f"{constants.emotes['success']} Skip vote added, currently at `{total_votes}/{required_votes}`"
+                    )
+                    return
+            else:
+                await interaction.response.send_message(
+                    "You have already voted to skip this track.", ephemeral=True
+                )
+                return
+            await interaction.response.send_message(
+                f"{constants.emotes['success']} Skipped the current track."
+            )
+
+        @discord.ui.button(
+            emoji=constants.emotes["previous"], style=discord.ButtonStyle.gray
+        )
+        async def _prev(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            try:
+                Checks.assert_is_dj(self.ctx)
+            except commands.BadArgument as e:
+                await interaction.response.send_message(str(e), ephemeral=True)
+            else:
+                prev = self.ctx.voice_state.previous
+                if not prev:
+                    await interaction.response.send_message(
+                        "No previous song to play.", ephemeral=True
+                    )
+                    return
+
+                self.ctx.voice_state.replay(prev)
+                self.ctx.voice_state.skip()
+
+                await interaction.response.send_message(
+                    f"{constants.emotes['success']} Replaying the previous song."
+                )
+
+        @discord.ui.button(
+            emoji=constants.emotes["help"], style=discord.ButtonStyle.gray
+        )
+        async def _help(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            self.clear_items()
+            self.fill_items(_help=True)
+            embed = discord.Embed(color=constants.embed)
+            embed.set_author(
+                name="Pagination Help Page",
+                icon_url=self.ctx.bot.user.display_avatar.url,
+            )
+            embed.description = (
+                "Read below for a description of each button and it's function."
+            )
+            embed.add_field(
+                name=constants.emotes["backward2"] + "  Jump to the first page",
+                value="This button shows the first page of the pagination session.",
+                inline=False,
+            )
+            embed.add_field(
+                name=constants.emotes["backward"] + "  Show the previous page",
+                value="This button shows the previous page of the pagination session.",
+                inline=False,
+            )
+            embed.add_field(
+                name=constants.emotes["1234button"] + "  Input a page number",
+                value="This button shows a page after you input a page number.",
+                inline=False,
+            )
+            embed.add_field(
+                name=constants.emotes["forward"] + "  Show the next page",
+                value="This button shows the next page of the pagination session",
+                inline=False,
+            )
+            embed.add_field(
+                name=constants.emotes["forward2"] + "  Jump to the last page.",
+                value="This button shows the last page of the pagination session",
+                inline=False,
+            )
+            embed.add_field(
+                name=constants.emotes["help"] + "  Show the help page.",
+                value="This button shows this help page.",
+                inline=False,
+            )
+            embed.add_field(
+                name=constants.emotes["previous"] + "  Play the previous track.",
+                value="This button skips the current track and replays the previous track. (if it exists)",
+                inline=False,
+            )
+            embed.add_field(
+                name=constants.emotes["download"] + "  Save the current queue.",
+                value="This button saves the current queue under a name so that you can listen to it later.",
+                inline=False,
+            )
+            embed.add_field(
+                name=constants.emotes["skip"] + "  Play the next track.",
+                value="This button skips the current track and plays the next track. (If it exists)",
+                inline=False,
+            )
+            embed.add_field(
+                name=constants.emotes["trash"] + "  Delete this session.",
+                value="This button deletes the message and ends the session.",
+                inline=False,
+            )
+            await interaction.message.edit(embed=embed, view=self)
+
+        @discord.ui.button(
+            emoji=constants.emotes["trash"], style=discord.ButtonStyle.gray
+        )
+        async def _trash(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            await interaction.message.delete()
+            self.stop()
+
+        @discord.ui.button(label="Delete this session", style=discord.ButtonStyle.red)
+        async def _delete(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            await interaction.message.delete()
+            self.stop()
+
+        @discord.ui.button(
+            label="Return to main page", style=discord.ButtonStyle.blurple
+        )
+        async def _return(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            self.clear_items()
+            self.fill_items()
+            if isinstance(self.current_page, discord.Embed):
+                await interaction.message.edit(embed=self.current_page, view=self)
+            else:
+                await interaction.message.edit(content=self.current_page, view=self)
+
+    class QueueSource(discord.ui.View):
+        async def __init__(self, ctx, pages, *, content="", compact=True):
+            super().__init__(timeout=120)
+            self.ctx = ctx
+            self.pages = pages
+            self.content = content
+            self.page_number = 1
+            self.max_pages = len(self.pages)
+            self.current_page = pages[0]
+            self.input_lock = asyncio.Lock()
+            self.compact = compact
+
+            self.clear_items()
+            self.fill_items()
+
+            self.message = await self.send_message()
+
+        def fill_items(self, _help=None):
+            if _help:
+                self.add_item(self._return)
+                self.add_item(self._delete)
+                return
+
+            self.add_item(self._first)
+            self.add_item(self._back)
+            self.add_item(self._select)
+            self.add_item(self._next)
+            self.add_item(self._last)
+            self.add_item(self._help)
+            self.add_item(self._prev)
+            self.add_item(self._download)
+            self.add_item(self._skip)
+            self.add_item(self._trash)
+            if Checks.is_dj(self.ctx):
+                self.add_item(Views.QueueSelect(self.ctx))
+
+        async def send_message(self):
+            self.update_view(1)
+            if isinstance(self.pages[0], discord.Embed):
+                message = await self.ctx.send(
+                    self.content, embed=self.pages[0], view=self
+                )
+            else:
+                message = await self.ctx.send(
+                    self.content + self.pages[0], view=self
+                )
+            return message
+
+        async def interaction_check(self, interaction):
+            if self.ctx.author.id == interaction.user.id:
+                return True
+            else:
+                await interaction.response.send_message(
+                    "Only the command invoker can use this button.", ephemeral=True
+                )
+
+        async def on_timeout(self):
+            try:
+                await self.message.edit(view=None)
+            except Exception:
+                pass
+
+        async def on_error(
+            self,
+            error: Exception,
+            item: discord.ui.Item,
+            interaction: discord.Interaction,
+        ):
+            if interaction.response.is_done():
+                await interaction.followup.send(str(error), ephemeral=True)
+            else:
+                await interaction.response.send_message(str(error), ephemeral=True)
+
+        def update_view(self, page_number):
+            self.page_number = page_number
+            self._first.disabled = page_number == 1
+            self._back.disabled = page_number == 1
+            self._next.disabled = page_number == self.max_pages
+            self._last.disabled = page_number == self.max_pages
+            self._select.disabled = self.max_pages == 1
+
+        async def show_page(self, interaction):
+            page = self.current_page = self.pages[self.page_number - 1]
+            if isinstance(page, discord.Embed):
+                await interaction.message.edit(embed=page, view=self)
+            else:
+                await interaction.message.edit(content=page, view=self)
+
+        @discord.ui.button(
+            emoji=constants.emotes["backward2"], style=discord.ButtonStyle.gray
+        )
+        async def _first(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            self.update_view(1)
+            await self.show_page(interaction)
+
+        @discord.ui.button(
+            emoji=constants.emotes["backward"], style=discord.ButtonStyle.gray
+        )
+        async def _back(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            self.update_view(self.page_number - 1)
+            await self.show_page(interaction)
+
+        @discord.ui.button(
+            emoji=constants.emotes["forward"], style=discord.ButtonStyle.gray
+        )
+        async def _next(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            self.update_view(self.page_number + 1)
+            await self.show_page(interaction)
+
+        @discord.ui.button(
+            emoji=constants.emotes["forward2"], style=discord.ButtonStyle.gray
+        )
+        async def _last(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            self.update_view(self.max_pages)
+            await self.show_page(interaction)
+
+        @discord.ui.button(
+            emoji=constants.emotes["1234button"], style=discord.ButtonStyle.grey
+        )
+        async def _select(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            """lets you type a page number to go to"""
+            if self.input_lock.locked():
+                await interaction.response.send_message(
+                    "Already waiting for your response...", ephemeral=True
+                )
+                return
+
+            if self.message is None:
+                return
+
+            async with self.input_lock:
+                channel = self.message.channel
+                author_id = interaction.user and interaction.user.id
+                await interaction.response.send_message(
+                    "What page do you want to go to?", ephemeral=True
+                )
+
+                def message_check(m):
+                    if not m.author.id == author_id:
+                        return False
+                    if not channel == m.channel:
+                        return False
+                    if not m.content.isdigit():
+                        return False
+                    if not 1 <= int(m.content) <= self.max_pages:
+                        raise IndexError(
+                            f"Page number must be between 1 and {self.max_pages}"
+                        )
+                    return True
+
+                try:
+                    msg = await self.ctx.bot.wait_for(
+                        "message", check=message_check, timeout=30.0
+                    )
+                except asyncio.TimeoutError:
+                    await interaction.followup.send(
+                        "Selection expired.", ephemeral=True
+                    )
+                    await asyncio.sleep(5)
+                else:
+                    page = int(msg.content)
+                    try:
+                        await msg.delete()
+                    except:
+                        pass
+                    self.update_view(page)
+                    await self.show_page(interaction)
+
+        @discord.ui.button(
+            emoji=constants.emotes["download"], style=discord.ButtonStyle.gray
+        )
+        async def _download(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            """Saves the current queue"""
+            if self.input_lock.locked():
+                await interaction.response.send_message(
+                    "Already waiting for your response...", ephemeral=True
+                )
+                return
+
+            if self.message is None:
+                return
+
+            async with self.input_lock:
+                channel = self.message.channel
+                author_id = interaction.user and interaction.user.id
+                await interaction.response.send_message(
+                    "Enter a name to save this queue under.", ephemeral=True
+                )
+
+                def message_check(m):
+                    if not m.author.id == author_id:
+                        return False
+                    if not channel == m.channel:
+                        return False
+                    return True
+
+                try:
+                    msg = await self.ctx.bot.wait_for(
+                        "message", check=message_check, timeout=30.0
+                    )
+                except asyncio.TimeoutError:
+                    await interaction.followup.send(
+                        "Queue saving expired.", ephemeral=True
+                    )
+                    await asyncio.sleep(5)
+                else:
+                    name = msg.content.lower()
+                    queue = [self.ctx.voice_state.entry] + list(
+                        self.ctx.voice_state.tracks
+                    )
+                    queue = json.dumps([entry.json for entry in queue])
+                    query = """
+                            INSERT INTO queues (owner_id, name, queue)
+                            VALUES ($1, $2, $3::JSONB)
+                            """
+                    try:
+                        await self.ctx.bot.cxn.execute(
+                            query, author_id, name.lower(), queue
+                        )
+                    except asyncpg.exceptions.UniqueViolationError:
+                        await interaction.followup.send(
+                            "You already have a saved queue with that name. Please try again with a different name",
+                            ephemeral=True,
+                        )
+                        return
+                    await interaction.followup.send(
+                        f"{constants.emotes['success']} Saved the current queue with name: **{name}**"
+                    )
+                    try:
+                        await msg.delete()
+                    except:
+                        pass
+
+        @discord.ui.button(
+            emoji=constants.emotes["skip"], style=discord.ButtonStyle.gray
+        )
+        async def _skip(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            if Checks.is_requester(self.ctx):
+                self.ctx.voice_state.skip()  # Song requester can skip.
+
+            elif Checks.is_dj(self.ctx):
+                self.ctx.voice_state.skip()  # Server Djs can skip.
+
+            elif self.ctx.author.id not in self.ctx.voice_state.skip_votes:
+                self.ctx.voice_state.skip_votes.add(self.ctx.author.id)
+                total_votes = len(self.ctx.voice_state.skip_votes)
+
+                listeners = self.ctx.voice_state.voice.channel.members
+                valid_voters = [user for user in listeners if not user.bot]
+                required_votes = len(valid_voters) + 1 // 2  # Require majority
+
+                if total_votes >= required_votes:
+                    self.ctx.voice_state.skip()
+                else:
+                    await interaction.response.send_message(
+                        f"{constants.emotes['success']} Skip vote added, currently at `{total_votes}/{required_votes}`"
+                    )
+                    return
+            else:
+                await interaction.response.send_message(
+                    "You have already voted to skip this track.", ephemeral=True
+                )
+                return
+            await interaction.response.send_message(
+                f"{constants.emotes['success']} Skipped the current track."
+            )
+
+        @discord.ui.button(
+            emoji=constants.emotes["previous"], style=discord.ButtonStyle.gray
+        )
+        async def _prev(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            try:
+                Checks.assert_is_dj(self.ctx)
+            except commands.BadArgument as e:
+                await interaction.response.send_message(str(e), ephemeral=True)
+            else:
+                prev = self.ctx.voice_state.previous
+                if not prev:
+                    await interaction.response.send_message(
+                        "No previous song to play.", ephemeral=True
+                    )
+                    return
+
+                self.ctx.voice_state.replay(prev)
+                self.ctx.voice_state.skip()
+
+                await interaction.response.send_message(
+                    f"{constants.emotes['success']} Replaying the previous song."
+                )
+
+        @discord.ui.button(
+            emoji=constants.emotes["help"], style=discord.ButtonStyle.gray
+        )
+        async def _help(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            self.clear_items()
+            self.fill_items(_help=True)
+            embed = discord.Embed(color=constants.embed)
+            embed.set_author(
+                name="Pagination Help Page",
+                icon_url=self.ctx.bot.user.display_avatar.url,
+            )
+            embed.description = (
+                "Read below for a description of each button and it's function."
+            )
+            embed.add_field(
+                name=constants.emotes["backward2"] + "  Jump to the first page",
+                value="This button shows the first page of the pagination session.",
+                inline=False,
+            )
+            embed.add_field(
+                name=constants.emotes["backward"] + "  Show the previous page",
+                value="This button shows the previous page of the pagination session.",
+                inline=False,
+            )
+            embed.add_field(
+                name=constants.emotes["1234button"] + "  Input a page number",
+                value="This button shows a page after you input a page number.",
+                inline=False,
+            )
+            embed.add_field(
+                name=constants.emotes["forward"] + "  Show the next page",
+                value="This button shows the next page of the pagination session",
+                inline=False,
+            )
+            embed.add_field(
+                name=constants.emotes["forward2"] + "  Jump to the last page.",
+                value="This button shows the last page of the pagination session",
+                inline=False,
+            )
+            embed.add_field(
+                name=constants.emotes["help"] + "  Show the help page.",
+                value="This button shows this help page.",
+                inline=False,
+            )
+            embed.add_field(
+                name=constants.emotes["previous"] + "  Play the previous track.",
+                value="This button skips the current track and replays the previous track. (if it exists)",
+                inline=False,
+            )
+            embed.add_field(
+                name=constants.emotes["download"] + "  Save the current queue.",
+                value="This button saves the current queue under a name so that you can listen to it later.",
+                inline=False,
+            )
+            embed.add_field(
+                name=constants.emotes["skip"] + "  Play the next track.",
+                value="This button skips the current track and plays the next track. (If it exists)",
+                inline=False,
+            )
+            embed.add_field(
+                name=constants.emotes["trash"] + "  Delete this session.",
+                value="This button deletes the message and ends the session.",
+                inline=False,
+            )
+            embed.set_footer(
+                text=f"Previously viewing page {self.page_number} of {self.max_pages}"
+            )
+            # embed.add_field(name="Delete session", value="This button ends the pagination session and deletes the message", inline=False)
+            # embed.add_field(name="Compact view", value="This button removes the three colored buttons for a more \"compact\" view", inline=False)
+            # embed.add_field(name="Need help?", value="This button shows this help page.", inline=False)
+            await interaction.message.edit(embed=embed, view=self)
+
+        @discord.ui.button(
+            emoji=constants.emotes["trash"], style=discord.ButtonStyle.gray
+        )
+        async def _trash(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            await interaction.message.delete()
+            self.stop()
+
+        @discord.ui.button(label="Delete this session", style=discord.ButtonStyle.red)
+        async def _delete(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            await interaction.message.delete()
+            self.stop()
+
+        @discord.ui.button(
+            label="Return to main page", style=discord.ButtonStyle.blurple
+        )
+        async def _return(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            self.clear_items()
+            self.fill_items()
+            if isinstance(self.current_page, discord.Embed):
+                await interaction.message.edit(embed=self.current_page, view=self)
+            else:
+                await interaction.message.edit(content=self.current_page, view=self)
+
+    class QueuePages(QueueSource):
+        """
+        Simple button page session that turns
+        a list of strings into a pagination session
+        by splitting them up and adding them to the
+        description of an embed.
+        Parameters:
+            ctx: The context of a command
+            entries: The list of strings
+            per_page: How many entries per embed
+            index: Whether or not to prepend numbers to each entry
+            desc_head: Prefix the description with a string
+            desc_foot: Suffix the description with a string
+        """
+
+        def __init__(
+            self,
+            ctx,
+            entries,
+            *,
+            per_page: int = 10,
+            index: bool = True,
+            desc_head: str = "",
+            desc_foot: str = "",
+            content="",
+        ):
+            self.ctx = ctx
+            self.entries = entries
+
+            self.per_page = per_page
+            self.index = index
+            self.desc_head = desc_head
+            self.desc_foot = desc_foot
+            self.content = content
+
+            self.embed = discord.Embed(color=ctx.bot.constants.embed)
+
+        async def start(self):
+            self.pages = self.create_pages(self.entries, self.per_page)
+            await super().__init__(self.ctx, self.pages, content=self.content)
+
+        def create_pages(self, entries, per_page):
+            embeds = []
+            index = 0
+            while entries:
+                embed = self.embed.copy()
+                embed.description = self.desc_head
+                if self.index:
+                    for entry in entries[:per_page]:
+                        index += 1
+                        embed.description += f"{index}. {entry}\n"
+                else:
+                    embed.description += "\n".join(entries[:per_page])
+                embed.description += self.desc_foot
+                del entries[:per_page]
+
+                embeds.append(embed)
+
+            for count, embed in enumerate(embeds, start=1):
+                embed.set_footer(text=f"Page {count} of {len(embeds)}")
+            return embeds
+
+    class QueueSelect(discord.ui.Select):
+        def __init__(self, ctx):
+            self.ctx = ctx
+            self.queue = queue = ctx.voice_state.tracks
+            self.opts = (
+                {  # Mapping of labels, descriptions, functions, and success messages
+                    "Shuffle": (
+                        "Shuffle the queue.",
+                        queue.shuffle,
+                        "Shuffled the queue.",
+                    ),
+                    "Queue Loop": (
+                        "Loop the entire queue.",
+                        ctx.voice_state.queue_loop,
+                        "Looped the queue.",
+                    ),
+                    "Track Loop": (
+                        "Loop the current track.",
+                        ctx.voice_state.track_loop,
+                        "Looped the current track.",
+                    ),
+                    "Unloop": (
+                        "Unloop the queue and/or track.",
+                        ctx.voice_state.unloop,
+                        "Unlooped the track and queue.",
+                    ),
+                    "Reverse": (
+                        "Reverse the queue.",
+                        queue.reverse,
+                        "Reversed the queue.",
+                    ),
+                    "Clear": (
+                        "Remove all tracks from the queue.",
+                        queue.clear,
+                        "Cleared the queue.",
+                    ),
+                    "Dedupe": (
+                        "Remove track duplicates from the queue.",
+                        queue.deduplicate,
+                        "Removed duplicate tracks from the queue.",
+                    ),
+                    "Cleanup": (
+                        "Remove tracks queued by users who left the channel.",
+                        queue.leave_cleanup,
+                        "Removed absent user enqueues.",
+                    ),
+                }
+            )
+            super().__init__(placeholder="Queue Management", options=self.get_options())
+
+        def get_options(self):
+            """Creates a list of SelectOption"""
+            return [
+                discord.SelectOption(label=label, description=items[0])
+                for label, items in sorted(self.opts.items())
+            ]
+
+        async def callback(self, interaction: discord.Interaction):
+            selection = interaction.data["values"][0]
+            if selection == "Cleanup":
+                self.opts[selection][1](self.ctx.voice_state.voice.channel.members)
+            else:
+                self.opts[selection][1]()
+            await interaction.response.send_message(
+                f"{self.ctx.bot.emote_dict['success']} {self.opts[selection][2]}"
+            )
+            await interaction.message.edit(view=self.view)
+
+    class EffectSelect(discord.ui.Select):
+        def __init__(self, ctx):
+            self.ctx = ctx
+            self.player = ctx.voice_state
+            self.effects = [
+                #"backwards",
+                "bass",
+                "earrape",
+                "echo",
+                "muffle",
+                "nightcore",
+                "phaser",
+                "robot",
+                "tremolo",
+                "treble",
+                "vibrato",
+                "whisper",
+            ]
+            super().__init__(placeholder="Audio Effects", options=self.get_options())
+
+        def get_options(self):
+            """Creates a list of SelectOption"""
+            PASS = self.player._ctx.bot.emote_dict["success"]
+            FAIL = self.player._ctx.bot.emote_dict["failed"]
+            get_emoji = lambda e: PASS if self.player[e] else FAIL
+            get_desc = (
+                lambda e: f"Toggle the {e} audio effect. (Currently {'en' if self.player[e] else 'dis'}abled)"
+            )
+
+            return [
+                discord.SelectOption(
+                    label=effect, description=get_desc(effect), emoji=get_emoji(effect)
+                )
+                for effect in self.effects
+            ]
+
+        async def callback(self, interaction: discord.Interaction):
+            selection = interaction.data["values"][0]
+            self.player[selection] = not self.player[selection]
+            self.options.clear()
+            self.options.extend(self.get_options())
+            await interaction.message.edit(
+                f"{selection.capitalize()} effect {'en' if self.player[selection] else 'dis'}abled.",
+                view=self.view,
+            )
+
+    class Effects(discord.ui.View):
+        def __init__(self, ctx, player):
+            self.ctx = ctx
+            self.player = player
+            self.message = None
+            super().__init__(timeout=120)
+
+            self.add_item(Views.EffectSelect(ctx))
+
+        async def interaction_check(self, interaction):
+            if self.ctx.author.id == interaction.user.id:
+                return True
+            else:
+                await interaction.response.send_message(
+                    "Only the command invoker can use this menu.", ephemeral=True
+                )
+
+        async def on_timeout(self):
+            if self.message:
+                await self.message.delete()
+            self.stop()
+
+        @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red, row=2)
+        async def cancel_button(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            await interaction.message.delete()
+            self.stop()
+
+        @discord.ui.button(label="Save", style=discord.ButtonStyle.green, row=2)
+        async def save_button(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            await interaction.message.edit(
+                "Successfully saved audio effect settings.", view=None
+            )
+            self.stop()
+
+        @discord.ui.button(label="Reset", style=discord.ButtonStyle.blurple, row=2)
+        async def reset_button(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            self.player.clear_effects()
+            await interaction.message.edit(
+                "Successfully reset effect settings.", view=None
+            )
+            self.stop()
+
+        @discord.ui.button(label="Help", style=discord.ButtonStyle.gray, row=2)
+        async def help_button(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            embed = discord.Embed(color=self.ctx.bot.constants.embed)
+            embed.set_author(
+                name="Welcome to the audio effects help page.",
+                icon_url=self.ctx.bot.user.display_avatar.url,
+            )
+            embed.description = f"Below are comprehensive instructions on how to use the `{self.ctx.clean_prefix}effects` dropdown menu command. Each effect in the dropdown menu is a toggle switch. This means that if an effect is disabled, it will be enabled when clicked, and vice-versa. The **Main Menu** category below shows how to work the main page, while the **Help Menu** category shows instructions for this page."
+            embed.add_field(
+                name="Main Menu",
+                value="`Cancel` simply deletes the menu.\n`Reset` resets all effects to default.\n`Save` saves the effect settings and stops the menu.\n`Help` shows this help page.",
+            )
+            embed.add_field(
+                name="Help Menu",
+                value="`Cancel` simply deletes the menu.\n`Effects` shows all effect outputs.\n`Return` will return to the main menu.",
+            )
+            embed.set_footer(
+                text="This menu will expire after 2 minutes of inactivity."
+            )
+            help_view = Views.HelpMenu(self.ctx, self.player)
+            await interaction.message.edit(content=None, embed=embed, view=help_view)
+            help_view.message = self.message
+            self.stop()
+
+    class HelpMenu(discord.ui.View):
+        def __init__(self, ctx, player):
+            self.ctx = ctx
+            self.player = player
+            self.message = None
+            self.effects = {
+                #"backwards": "This effect plays the song from the end.",
+                "bass": "This effect boosts the bass clef audio.",
+                "earrape": "This effect makes audio sound scratchy.",
+                "echo": "This effect makes audio sound with an echo.",
+                "muffle": "This effect makes the audio sound muffled.",
+                "nightcore": "This effect plays audio with a higher pitch and speed.",
+                "phaser": "This effect makes audio sound synthetically generated.",
+                "robot": "This effect makes audio sound like a robot is speaking.",
+                "treble": "This effect boosts the treble clef audio.",
+                "tremolo": "This effect creates minature breaks in the audio.",
+                "vibrato": "This effect makes the audio dilate for vibrato.",
+                "whisper": "This effect makes audio sound as if it were being whispered.",
+            }
+            super().__init__(timeout=120)
+
+        async def interaction_check(self, interaction):
+            if self.ctx.author.id == interaction.user.id:
+                return True
+            else:
+                await interaction.response.send_message(
+                    "Only the command invoker can use this button.", ephemeral=True
+                )
+
+        async def on_timeout(self):
+            if self.message:
+                await self.message.delete()
+            self.stop()
+
+        @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
+        async def cancel_button(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            await interaction.message.delete()
+            self.stop()
+
+        @discord.ui.button(label="Effects", style=discord.ButtonStyle.green)
+        async def effects_button(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            embed = discord.Embed(color=self.ctx.bot.constants.embed)
+            embed.title = "Audio Effects"
+            embed.description = "Press the `Cancel` button to delete this message.\nPress the `Return` button to return to the main menu.\nPress the `Help` button for the help menu."
+            embed.set_footer(
+                text="This menu will expire after 2 minutes of inactivity."
+            )
+            for name, description in self.effects.items():
+                embed.add_field(name=name, value=description)
+
+            return_view = Views.Return(self.ctx, self.player)
+            await interaction.message.edit(content=None, embed=embed, view=return_view)
+            return_view.message = self.message
+            self.stop()
+
+        @discord.ui.button(label="Return", style=discord.ButtonStyle.blurple)
+        async def main_button(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            effects_view = Views.Effects(self.ctx, self.player)
+            await interaction.message.edit(content=None, embed=None, view=effects_view)
+            effects_view.message = self.message
+            self.stop()
+
+    class Return(discord.ui.View):
+        def __init__(self, ctx, player):
+            self.ctx = ctx
+            self.player = player
+            self.message = None
+            self.effects = {
+                #"backwards": "This effect plays the song from the end.",
+                "bass": "This effect boosts the bass clef audio.",
+                "earrape": "This effect makes audio sound scratchy.",
+                "echo": "This effect makes audio sound with an echo.",
+                "muffle": "This effect makes the audio sound muffled.",
+                "nightcore": "This effect plays audio with a higher pitch and speed.",
+                "phaser": "This effect makes audio sound synthetically generated.",
+                "robot": "This effect makes audio sound like a robot is speaking.",
+                "treble": "This effect boosts the treble clef audio.",
+                "tremolo": "This effect creates minature breaks in the audio.",
+                "vibrato": "This effect makes the audio dilate for vibrato.",
+                "whisper": "This effect makes audio sound as if it were being whispered.",
+            }
+            super().__init__(timeout=120)
+
+        async def interaction_check(self, interaction):
+            if self.ctx.author.id == interaction.user.id:
+                return True
+            else:
+                await interaction.response.send_message(
+                    "Only the command invoker can use this button.", ephemeral=True
+                )
+
+        async def on_timeout(self):
+            if self.message:
+                await self.message.delete()
+            self.stop()
+
+        @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
+        async def cancel_button(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            await interaction.message.delete()
+            self.stop()
+
+        @discord.ui.button(label="Return", style=discord.ButtonStyle.blurple)
+        async def main_button(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            effect_view = Views.Effects(self.ctx, self.player)
+            await interaction.message.edit(
+                content="Select an audio effect from the dropdown below.",
+                embed=None,
+                view=effect_view,
+            )
+            effect_view.message = self.message
+            self.stop()
+
+        @discord.ui.button(label="Help", style=discord.ButtonStyle.gray)
+        async def help_button(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            embed = discord.Embed(color=self.ctx.bot.constants.embed)
+            embed.set_author(
+                name="Welcome to the audio effects help page.",
+                icon_url=self.ctx.bot.user.display_avatar.url,
+            )
+            embed.description = f"Below are comprehensive instructions on how to use the `{self.ctx.clean_prefix}effects` dropdown menu command. Each effect in the dropdown menu is a toggle switch. This means that if an effect is disabled, it will be enabled when clicked, and vice-versa. The **Main Menu** category below shows how to work the main page, while the **Help Menu** category shows instructions for this page."
+            embed.add_field(
+                name="Main Menu",
+                value="`Cancel` simply deletes the menu.\n`Reset` resets all effects to default.\n`Save` saves the effect settings and stops the menu.\n`Help` shows this help page.",
+            )
+            embed.add_field(
+                name="Help Menu",
+                value="`Cancel` simply deletes the menu.\n`Effects` shows all effect outputs.\n`Return` will return to the main menu.",
+            )
+            embed.set_footer(
+                text="This menu will expire after 2 minutes of inactivity."
+            )
+            help_view = Views.HelpMenu(self.ctx, self.player)
+            await interaction.message.edit(content=None, embed=embed, view=help_view)
+            help_view.message = self.message
+            self.stop()

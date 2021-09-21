@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS queues (
     queue JSONB DEFAULT '{}'::JSONB,
     insertion TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
 );
+CREATE UNIQUE INDEX IF NOT EXISTS queues_idx ON queues(owner_id, name);
 
 -- Automatically saved songs
 CREATE TABLE IF NOT EXISTS tracks (

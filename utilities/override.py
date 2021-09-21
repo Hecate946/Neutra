@@ -97,6 +97,7 @@ class BotContext(commands.Context):
         else:
             return
 
+
 class BotCommand(commands.Command):
     def __init__(self, func, **kwargs):
         super().__init__(func, **kwargs)

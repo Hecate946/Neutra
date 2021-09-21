@@ -119,6 +119,7 @@ class MainMenu(menus.MenuPages):
         except Exception:
             pass
 
+
 class FieldPageSource(menus.ListPageSource):
     """A page source that requires (field_name, field_value) tuple items."""
 
@@ -242,6 +243,7 @@ class SimplePageSource(menus.ListPageSource):
         else:
             menu.embed.description = "\n".join(pages)
         return menu.embed
+
 
 class SimplePages(MainMenu):
     def __init__(self, entries, **kwargs):

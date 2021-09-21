@@ -1356,7 +1356,9 @@ class Admin(commands.Cog):
         current_prefixes = self.bot.get_raw_guild_prefixes(ctx.guild.id)
         if len(current_prefixes) == 0:
             return await ctx.fail("I currently have no prefixes registered.")
-        c = await ctx.confirm(f"Upon confirmation, I will only respond to `@{ctx.guild.me.display_name}`")
+        c = await ctx.confirm(
+            f"Upon confirmation, I will only respond to `@{ctx.guild.me.display_name}`"
+        )
         if c:
             await self.bot.set_guild_prefixes(ctx.guild, [])
             await ctx.success(
