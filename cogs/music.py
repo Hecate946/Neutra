@@ -145,6 +145,9 @@ class exceptions:
     class YTDLError(Exception):
         pass
 
+    class InvalidPosition(Exception):
+        pass
+
 
 class Spotify:
     # https://github.com/Just-Some-Bots/MusicBot
@@ -383,6 +386,8 @@ class MusicUtils:
             else:
                 percent = source.position / ytdl.raw_duration
                 position = MusicUtils.parse_duration(int(source.position))
+                if percent > 1:
+                    percent = 1
                 footer = f"{position} ({percent:.2%} completed)"
 
             embed.set_footer(text=f"Current Position: {footer}")
@@ -613,64 +618,6 @@ class Checks:
             raise commands.BadArgument(
                 "You must have the `Manage Roles` or the `Manage Guild` permission to use this command."
             )
-
-
-class AudioSource(discord.PCMVolumeTransformer):
-    """
-    Takes a ytdl source and player settings
-    and returns a FFmpegPCMAudio source.
-    """
-
-    def __init__(self, ytdl, volume, position: float = 0.0, **kwargs):
-        self.position = position  # Position of track
-        self.ytdl = ytdl
-
-        self.rate = speed = kwargs.get("speed", 1)
-        pitch = kwargs.get("pitch", 1)
-
-        s_filter = f"atempo=sqrt({speed}/{pitch}),atempo=sqrt({speed}/{pitch})"
-        p_filter = f",asetrate=48000*{pitch}" if pitch != 1 else ""
-
-        base = p_filter + s_filter
-
-        filters = {  # Mapping of filters to their names
-            "nightcore": ",asetrate=48000*1.1",
-            "earrape": ",acrusher=.1:1:64:0:log",
-            "echo": ",aecho=0.5:0.5:500|50000:1.0|1.0",
-            "muffle": ",lowpass=f=300",
-            "treble": ",treble=g=15",
-            "bass": ",bass=g=15",
-            #"backwards": ",areverse",
-            "phaser": ",aphaser=type=t:speed=2:decay=0.6",
-            "robot": ",afftfilt=real='hypot(re,im)*sin(0)':imag='hypot(re,im)*cos(0)':win_size=512:overlap=0.75",
-            "tremolo": ",apulsator=mode=sine:hz=3:width=0.1:offset_r=0",
-            "vibrato": ",vibrato=f=10:d=1",
-            "whisper": ",afftfilt=real='hypot(re,im)*cos((random(0)*2-1)*2*3.14)':imag='hypot(re,im)*sin((random(1)*2-1)*2*3.14)':win_size=128:overlap=0.8",
-        }
-
-        effects = "".join([y for x, y in filters.items() if kwargs.get(x)])
-        ffmpeg_options = {
-            "before_options": FFMPEG_OPTION_BASE + f" -ss {position}",
-            "options": f'-vn -af:a "{base + effects}"',
-        }
-
-        self.original = discord.FFmpegPCMAudio(ytdl.stream_url, **ffmpeg_options)
-        super().__init__(self.original, volume=volume)
-
-    @classmethod
-    async def save(cls, ytdl, volume, position=0, **kwargs):
-        """Returns a class instance and saves track."""
-        cxn = ytdl.ctx.bot.cxn
-        if cxn:
-            query = """
-                    INSERT INTO tracks (requester_id, title, url, uploader)
-                    VALUES ($1, $2, $3, $4)
-                    """
-            await cxn.execute(
-                query, ytdl.requester.id, ytdl.title, ytdl.url, ytdl.uploader
-            )
-        return cls(ytdl, volume, position, **kwargs)
-
 
 class QueueEntry:
     """
@@ -1110,8 +1057,9 @@ class VoiceClient(discord.VoiceClient):
             if channel_id is None:
                 # We're being disconnected so cleanup
 
-                await self.disconnect(force=True)
+                await VOICE_STATES[self.guild.id].stop()
                 del VOICE_STATES[self.guild.id]
+                await self.disconnect(force=True)
 
                 self.guild.voice_client = None
             else:
@@ -1120,17 +1068,61 @@ class VoiceClient(discord.VoiceClient):
         else:
             self._voice_state_complete.set()
 
-    def play(self, source, *, after=None) -> None:
-        print("playing")
-        self.client.loop.create_task(self.increment())
-        print("pos")
-        return super().play(source, after=after)
+class AudioSource(discord.PCMVolumeTransformer, VoiceClient):
+    """
+    Takes a ytdl source and player settings
+    and returns a FFmpegPCMAudio source.
+    """
+    def __init__(self, ytdl, volume, position: float = 0.0, **kwargs):
+        self.ytdl = ytdl
+        self.position = position
+        self.rate = speed = kwargs.get("speed", 1)
+        pitch = kwargs.get("pitch", 1)
 
-    async def increment(self):
-        while self.is_playing():
-            self.source.position += self.source.rate
-            await asyncio.sleep(1)
+        s_filter = f"atempo=sqrt({speed}/{pitch}),atempo=sqrt({speed}/{pitch})"
+        p_filter = f",asetrate=48000*{pitch}" if pitch != 1 else ""
 
+        base = s_filter  + p_filter
+
+        filters = {  # Mapping of filters to their names
+            "nightcore": ",asetrate=48000*1.1",
+            "earrape": ",acrusher=.1:1:64:0:log",
+            "echo": ",aecho=0.5:0.5:500|50000:1.0|1.0",
+            "muffle": ",lowpass=f=300",
+            "treble": ",treble=g=15",
+            "bass": ",bass=g=15",
+            #"backwards": ",areverse",
+            "phaser": ",aphaser=type=t:speed=2:decay=0.6",
+            "robot": ",afftfilt=real='hypot(re,im)*sin(0)':imag='hypot(re,im)*cos(0)':win_size=512:overlap=0.75",
+            "tremolo": ",apulsator=mode=sine:hz=3:width=0.1:offset_r=0",
+            "vibrato": ",vibrato=f=10:d=1",
+            "whisper": ",afftfilt=real='hypot(re,im)*cos((random(0)*2-1)*2*3.14)':imag='hypot(re,im)*sin((random(1)*2-1)*2*3.14)':win_size=128:overlap=0.8",
+        }
+
+        effects = "".join([y for x, y in filters.items() if kwargs.get(x)])
+        print(base)
+        print(effects)
+        ffmpeg_options = {
+            "before_options": FFMPEG_OPTION_BASE + f" -ss {position}",
+            "options": f'-vn -af:a "{base + effects}"',
+        }
+
+        self.original = discord.FFmpegPCMAudio(ytdl.stream_url, **ffmpeg_options)
+        super().__init__(self.original, volume=volume)
+
+    @classmethod
+    async def save(cls, ytdl, volume, position=0, **kwargs):
+        """Returns a class instance and saves track."""
+        cxn = ytdl.ctx.bot.cxn
+        if cxn:
+            query = """
+                    INSERT INTO tracks (requester_id, title, url, uploader)
+                    VALUES ($1, $2, $3, $4)
+                    """
+            await cxn.execute(
+                query, ytdl.requester.id, ytdl.title, ytdl.url, ytdl.uploader
+            )
+        return cls(ytdl, volume, position, **kwargs)
 
 class VoiceState:
     """
@@ -1155,9 +1147,7 @@ class VoiceState:
         self.queue_is_looped = False  # Entire queue is looped.
 
         self.skip_votes = set()  # Stored skip votes.
-        self.loop_votes = set()  # Stored loop votes.
 
-        self.checks = Checks
         self.tracks = TrackQueue()
         self.next = asyncio.Event()
 
@@ -1166,9 +1156,11 @@ class VoiceState:
         self.djlock = djlock
 
         self.audio_player = bot.loop.create_task(self.audio_player_task())
+        self.incrementer = bot.loop.create_task(self.increment_position())
 
     def __del__(self):
         self.audio_player.cancel()
+        self.incrementer.cancel()
 
     def __setitem__(self, key, value):
         if key == "speed":  # Assert valid speed range
@@ -1276,9 +1268,6 @@ class VoiceState:
                 print("# Create voice client")
                 return await voice.channel.connect(timeout=timeout, cls=VoiceClient)
         else:
-            # if voice_client:  # Clean it up
-            #     print("# Clean it up")
-            #     await voice_client.disconnect(force=True)
             print("basic connect")
             try:
                 return await channel.connect(timeout=timeout, cls=VoiceClient)
@@ -1363,8 +1352,25 @@ class VoiceState:
                 self.bot.dispatch("error", "MUSIC_ERROR", tb=tb)
                 # run = False
 
+    async def increment_position(self):
+        """Keeps track of the position in the song"""
+
+        def condition():
+            if not self.voice:
+                return False
+            if not self.voice.is_playing():
+                return False
+            if not self.source:
+                return False
+            return True
+
+        while True:
+            if condition():
+                self.source.position += self.source.rate
+            await asyncio.sleep(1.0)
+
+
     def play_next_track(self, error=None):
-        print("called")
         if error:
             log.fatal(error)
             print("this was raised.")
@@ -1473,10 +1479,6 @@ class Player(commands.Cog):
         await ctx.voice_state.connect(channel)
         await ctx.success(f"Connected to {channel.mention}")
 
-    @decorators.command()
-    async def j(self, ctx, channel: discord.VoiceChannel):
-        await channel.connect(cls=VoiceClient)
-
     @decorators.command(
         name="disconnect",
         aliases=["dc", "leave"],
@@ -1494,12 +1496,15 @@ class Player(commands.Cog):
             Checks.assert_is_dormant(ctx)
         if hasattr(ctx.guild.me.voice, "channel"):
             channel = ctx.guild.me.voice.channel
+            await ctx.voice_state.stop()
+            del VOICE_STATES[ctx.guild.id]
             await ctx.guild.voice_client.disconnect(force=True)
             await ctx.message.add_reaction(self.bot.emote_dict["wave"])
             await ctx.success(f"Disconnected from {channel.mention}")
         else:
             await ctx.fail("Not connected to any voice channel.")
 
+        await ctx.voice_state.stop()
         del VOICE_STATES[ctx.guild.id]
 
     @decorators.command(
@@ -2251,63 +2256,20 @@ class Queue(commands.Cog):
             Use {0}unloop can also be used to stop looping settings.
         """
         player = ctx.voice_state.validate
-        emoji = self.bot.emote_dict["loop"]
+        Checks.assert_is_dj(ctx)
 
-        if Checks.is_requester(ctx):
-            if option == "track":
-                setting = "already" if player.track_is_looped else "now"
-                player.track_loop()
-                await ctx.success(f"The current track is {setting} looped.")
-                return
-            elif option == "queue":
-                setting = "already" if player.queue_is_looped else "now"
-                player.queue_loop()
-                await ctx.success(f"The current queue is {setting} looped.")
-            elif option == "off":
-                return await ctx.invoke(self._unloop)
-            await ctx.react(emoji)
-
-        elif Checks.is_dj(ctx):
-            if option == "track":
-                setting = "already" if player.track_is_looped else "now"
-                player.track_loop()
-                await ctx.success(f"The current track is {setting} looped.")
-                return
-            elif option == "queue":
-                setting = "already" if player.queue_is_looped else "now"
-                player.queue_loop()
-                await ctx.success(f"The current queue is {setting} looped.")
-            elif option == "off":
-                return await ctx.invoke(self._unloop)
-            await ctx.react(emoji)
-
-        elif ctx.author.id not in player.loop_votes:
-            player.loop_votes.add(ctx.author.id)
-            total_votes = len(player.loop_votes)
-
-            listeners = player.voice.channel.members
-            valid_voters = [user for user in listeners if not user.bot]
-            required_votes = len(valid_voters) + 1 // 2  # Require majority
-
-            if total_votes >= required_votes:
-                if option == "track":
-                    setting = "already" if player.track_is_looped else "now"
-                    player.track_loop()
-                    await ctx.success(f"The current track is {setting} looped.")
-                    return
-                elif option == "queue":
-                    setting = "already" if player.queue_is_looped else "now"
-                    player.queue_loop()
-                    await ctx.success(f"The current queue is {setting} looped.")
-                elif option == "off":
-                    return await ctx.invoke(self._unloop)
-                await ctx.react(emoji)
-            else:
-                await ctx.success(
-                    f"{option.title()} loop vote added, currently at `{total_votes}/{required_votes}`"
-                )
-        else:
-            await ctx.fail(f"You have already voted to loop this {option}.")
+        if option == "track":
+            setting = "already" if player.track_is_looped else "now"
+            player.track_is_looped = True
+            await ctx.success(f"The current track is {setting} looped.")
+        elif option == "queue":
+            setting = "already" if player.queue_is_looped else "now"
+            player.queue_is_looped = True
+            player.track_is_looped = False  # In case we were looping a track.
+            await ctx.success(f"The current queue is {setting} looped.")
+        elif option == "off":
+            return await ctx.invoke(self._unloop)
+        await ctx.react(self.bot.emote_dict["loop"])
 
     @decorators.command(
         aliases=["deloop"],
@@ -3597,7 +3559,7 @@ class Views:
             self.player.alter_audio(position=to_seek)
             embed = MusicUtils.make_embed(self.ctx, self.ctx.voice_state.source)
             await interaction.message.edit(embed=embed)
-            await interaction.response.send_message("Fast forwarded 10 seconds.")
+            await interaction.response.send_message("Fast forwarded 10 seconds.", ephemeral=True)
 
         @discord.ui.button(
             emoji=constants.emotes["rewind"], style=discord.ButtonStyle.gray
@@ -3616,7 +3578,7 @@ class Views:
             embed = MusicUtils.make_embed(self.ctx, self.ctx.voice_state.source)
             await interaction.message.edit(embed=embed)
             self.player.alter_audio(position=to_seek)
-            await interaction.response.send_message("Rewinded 10 seconds.")
+            await interaction.response.send_message("Rewinded 10 seconds.", ephemeral=True)
 
         @discord.ui.button(
             emoji=constants.emotes["pause"], style=discord.ButtonStyle.gray
@@ -3631,7 +3593,7 @@ class Views:
             self.clear_items()
             self.fill_items()
             await interaction.message.edit(view=self)
-            await interaction.response.send_message("Paused the player.")
+            await interaction.response.send_message("Paused the player.", ephemeral=True)
 
         @discord.ui.button(
             emoji=constants.emotes["play"], style=discord.ButtonStyle.gray
@@ -3646,75 +3608,8 @@ class Views:
             self.clear_items()
             self.fill_items()
             await interaction.message.edit(view=self)
-            await interaction.response.send_message("Resumed the player.")
+            await interaction.response.send_message("Resumed the player.", ephemeral=True)
 
-
-        @discord.ui.button(
-            emoji=constants.emotes["download"], style=discord.ButtonStyle.gray
-        )
-        async def _download(
-            self, button: discord.ui.Button, interaction: discord.Interaction
-        ):
-            """Saves the current queue"""
-            if self.input_lock.locked():
-                await interaction.response.send_message(
-                    "Already waiting for your response...", ephemeral=True
-                )
-                return
-
-            if self.message is None:
-                return
-
-            async with self.input_lock:
-                channel = self.message.channel
-                author_id = interaction.user and interaction.user.id
-                await interaction.response.send_message(
-                    "Enter a name to save this queue under.", ephemeral=True
-                )
-
-                def message_check(m):
-                    if not m.author.id == author_id:
-                        return False
-                    if not channel == m.channel:
-                        return False
-                    return True
-
-                try:
-                    msg = await self.ctx.bot.wait_for(
-                        "message", check=message_check, timeout=30.0
-                    )
-                except asyncio.TimeoutError:
-                    await interaction.followup.send(
-                        "Queue saving expired.", ephemeral=True
-                    )
-                    await asyncio.sleep(5)
-                else:
-                    name = msg.content.lower()
-                    queue = [self.ctx.voice_state.entry] + list(
-                        self.ctx.voice_state.tracks
-                    )
-                    queue = json.dumps([entry.json for entry in queue])
-                    query = """
-                            INSERT INTO queues (owner_id, name, queue)
-                            VALUES ($1, $2, $3::JSONB)
-                            """
-                    try:
-                        await self.ctx.bot.cxn.execute(
-                            query, author_id, name.lower(), queue
-                        )
-                    except asyncpg.exceptions.UniqueViolationError:
-                        await interaction.followup.send(
-                            "You already have a saved queue with that name. Please try again with a different name",
-                            ephemeral=True,
-                        )
-                        return
-                    await interaction.followup.send(
-                        f"{constants.emotes['success']} Saved the current queue with name: **{name}**"
-                    )
-                    try:
-                        await msg.delete()
-                    except:
-                        pass
 
         @discord.ui.button(
             emoji=constants.emotes["skip"], style=discord.ButtonStyle.gray
@@ -3839,7 +3734,7 @@ class Views:
                 inline=False,
             )
             embed.add_field(
-                name=constants.emotes["trash"] + "  Delete this session.",
+                name=constants.emotes["trash"] + "  Delete session.",
                 value="This button deletes the message and ends the session.",
                 inline=False,
             )
@@ -3854,7 +3749,7 @@ class Views:
             await interaction.message.delete()
             self.stop()
 
-        @discord.ui.button(label="Delete this session", style=discord.ButtonStyle.red)
+        @discord.ui.button(label="Delete session", style=discord.ButtonStyle.red)
         async def _delete(
             self, button: discord.ui.Button, interaction: discord.Interaction
         ):
@@ -3869,10 +3764,11 @@ class Views:
         ):
             self.clear_items()
             self.fill_items()
-            if isinstance(self.current_page, discord.Embed):
-                await interaction.message.edit(embed=self.current_page, view=self)
+            page = MusicUtils.make_embed(self.ctx, self.ctx.voice_state.source)
+            if isinstance(page, discord.Embed):
+                await interaction.message.edit(embed=page, view=self)
             else:
-                await interaction.message.edit(content=self.current_page, view=self)
+                await interaction.message.edit(content=page, view=self)
 
     class QueueSource(discord.ui.View):
         async def __init__(self, ctx, pages, *, content="", compact=True):
@@ -4242,7 +4138,7 @@ class Views:
                 inline=False,
             )
             embed.add_field(
-                name=constants.emotes["trash"] + "  Delete this session.",
+                name=constants.emotes["trash"] + "  Delete session.",
                 value="This button deletes the message and ends the session.",
                 inline=False,
             )
@@ -4263,7 +4159,7 @@ class Views:
             await interaction.message.delete()
             self.stop()
 
-        @discord.ui.button(label="Delete this session", style=discord.ButtonStyle.red)
+        @discord.ui.button(label="Delete session", style=discord.ButtonStyle.red)
         async def _delete(
             self, button: discord.ui.Button, interaction: discord.Interaction
         ):
@@ -4409,7 +4305,7 @@ class Views:
             else:
                 self.opts[selection][1]()
             await interaction.response.send_message(
-                f"{self.ctx.bot.emote_dict['success']} {self.opts[selection][2]}"
+                f"{self.ctx.bot.emote_dict['success']} {self.opts[selection][2]}", ephemeral=True
             )
             await interaction.message.edit(view=self.view)
 
@@ -4417,6 +4313,7 @@ class Views:
         def __init__(self, ctx):
             self.ctx = ctx
             self.player = ctx.voice_state
+            self.input_lock = asyncio.Lock()
             self.effects = [
                 #"backwards",
                 "bass",
@@ -4442,22 +4339,92 @@ class Views:
                 lambda e: f"Toggle the {e} audio effect. (Currently {'en' if self.player[e] else 'dis'}abled)"
             )
 
+            speed_pitch_reset = [
+                discord.SelectOption(
+                    label="Speed", description=f"Alter the speed of the player. (Current speed: {self.player['speed']})", emoji=constants.emotes["speed"]
+                ),
+                discord.SelectOption(
+                    label="Pitch", description=f"Alter the pitch of the player. (Current pitch: {self.player['pitch']})", emoji=constants.emotes["music"]
+                ),
+                discord.SelectOption(
+                    label="Reset", description="Reset all effects to default.", emoji=constants.emotes["trash"]
+                )
+
+            ]
             return [
                 discord.SelectOption(
                     label=effect, description=get_desc(effect), emoji=get_emoji(effect)
                 )
                 for effect in self.effects
-            ]
+            ] + speed_pitch_reset
 
         async def callback(self, interaction: discord.Interaction):
             selection = interaction.data["values"][0]
-            self.player[selection] = not self.player[selection]
+            if selection == "Reset":
+                self.player.clear_effects()
+                await interaction.response.send_message(
+                    "All audio effects have been restored to default.", ephemeral=True
+                )
+            elif selection in ["Speed", "Pitch"]:
+                if self.input_lock.locked():
+                    await interaction.response.send_message(
+                        "Already waiting for your response...", ephemeral=True
+                    )
+                    return
+
+
+                async with self.input_lock:
+                    channel = self.ctx.channel
+                    author_id = interaction.user and interaction.user.id
+                    await interaction.response.send_message(
+                        f"Enter a {selection.lower()} value between `0.25` and `2`.", ephemeral=True
+                    )
+
+                    def message_check(m):
+                        if not m.author.id == author_id:
+                            return False
+                        if not channel == m.channel:
+                            return False
+                        if not m.content.isdigit():
+                            return False
+                        try:
+                            value = float(m.content)
+                        except ValueError:
+                            return False
+                        else:
+                                
+                            return True
+
+                    try:
+                        msg = await self.ctx.bot.wait_for(
+                            "message", check=message_check, timeout=30.0
+                        )
+                    except asyncio.TimeoutError:
+                        await interaction.followup.send(
+                            f"{selection} input expired.", ephemeral=True
+                        )
+                        await asyncio.sleep(5)
+                    else:
+                        value = float(msg.content)
+                        if not 0.25 <= value <= 2:
+                            await interaction.followup.send(
+                                f"Audio {selection.lower()} must be between `0.25` and `2`.", ephemeral=True
+                            )
+                        else:
+                            self.player[selection.lower()] = value
+                            await interaction.followup.send(
+                                f"Audio {selection.lower()} set to `{value}`.", ephemeral=True
+                            )
+                        try:
+                            await msg.delete()
+                        except:
+                            pass
+            else:
+                self.player[selection] = not self.player[selection]
+                await interaction.response.send_message(f"{selection.capitalize()} effect {'en' if self.player[selection] else 'dis'}abled.", ephemeral=True)
             self.options.clear()
             self.options.extend(self.get_options())
-            await interaction.message.edit(
-                f"{selection.capitalize()} effect {'en' if self.player[selection] else 'dis'}abled.",
-                view=self.view,
-            )
+            await interaction.message.edit(view=self.view)
 
     class Effects(discord.ui.View):
         def __init__(self, ctx, player):
@@ -4475,6 +4442,17 @@ class Views:
                 await interaction.response.send_message(
                     "Only the command invoker can use this menu.", ephemeral=True
                 )
+
+        async def on_error(
+            self,
+            error: Exception,
+            item: discord.ui.Item,
+            interaction: discord.Interaction,
+        ):
+            if interaction.response.is_done():
+                await interaction.followup.send(str(error), ephemeral=True)
+            else:
+                await interaction.response.send_message(str(error), ephemeral=True)
 
         async def on_timeout(self):
             if self.message:
@@ -4562,6 +4540,17 @@ class Views:
                     "Only the command invoker can use this button.", ephemeral=True
                 )
 
+        async def on_error(
+            self,
+            error: Exception,
+            item: discord.ui.Item,
+            interaction: discord.Interaction,
+        ):
+            if interaction.response.is_done():
+                await interaction.followup.send(str(error), ephemeral=True)
+            else:
+                await interaction.response.send_message(str(error), ephemeral=True)
+
         async def on_timeout(self):
             if self.message:
                 await self.message.delete()
@@ -4629,6 +4618,17 @@ class Views:
                 await interaction.response.send_message(
                     "Only the command invoker can use this button.", ephemeral=True
                 )
+
+        async def on_error(
+            self,
+            error: Exception,
+            item: discord.ui.Item,
+            interaction: discord.Interaction,
+        ):
+            if interaction.response.is_done():
+                await interaction.followup.send(str(error), ephemeral=True)
+            else:
+                await interaction.response.send_message(str(error), ephemeral=True)
 
         async def on_timeout(self):
             if self.message:
