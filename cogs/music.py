@@ -47,20 +47,21 @@ from utilities import decorators
 # Set up our music-specific logger.
 log = logging.getLogger("MUSIC_LOGGER")
 log.setLevel(logging.INFO)
-handler = RotatingFileHandler(
-    filename="./data/logs/music.log",
-    encoding="utf-8",
-    mode="w",
-    maxBytes=30 * 1024 * 1024,
-    backupCount=5,
-)
-log.addHandler(handler)
-formatter = logging.Formatter(
-    fmt="{asctime}: [{levelname}] {name} || {message}",
-    datefmt="%Y-%m-%d %H:%M:%S",
-    style="{",
-)
-handler.setFormatter(formatter)
+if not log.handlers:
+    handler = RotatingFileHandler(
+        filename="./data/logs/music.log",
+        encoding="utf-8",
+        mode="w",
+        maxBytes=30 * 1024 * 1024,
+        backupCount=5,
+    )
+    log.addHandler(handler)
+    formatter = logging.Formatter(
+        fmt="{asctime}: [{levelname}] {name} || {message}",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        style="{",
+    )
+    handler.setFormatter(formatter)
 
 # Silence useless bug reports messages
 youtube_dl.utils.bug_reports_message = lambda: ""
@@ -80,7 +81,7 @@ YTDL_OPTIONS = {
     "noplaylist": True,
     "flatplaylist": False,
     "nocheckcertificate": True,
-    "ignoreerrors": True,  # TODO change to false and handle download errors
+    "ignoreerrors": False,  # TODO change to false and handle download errors
     "logtostderr": False,
     "quiet": True,
     "no_warnings": True,
@@ -720,9 +721,27 @@ class YTDLSource:
         loop = loop or asyncio.get_event_loop()
 
         partial = functools.partial(
-            YOUTUBE_DL.extract_info, url.replace(":", ""), download=False
+            YOUTUBE_DL.extract_info, url, download=False
         )
-        processed_info = await loop.run_in_executor(None, partial)
+    
+        try:
+            processed_info = await loop.run_in_executor(None, partial)
+        except youtube_dl.DownloadError as e:
+            if "urlopen error unknown url type" in str(e):
+                log.warning("Suspected error caused by colon in search query.")
+                try:
+                    partial = functools.partial(
+                        YOUTUBE_DL.extract_info,
+                        url.replace(":", ""),
+                        download=False,
+                        process=False,
+                    )
+                    processed_info = await loop.run_in_executor(None, partial)
+                    log.info("Attempting re-searching with altered url.")
+                except Exception as e:
+                    log.error(f"Re-searching failed: {e}")
+            else:
+                log.error(traceback.format_exc())
 
         if processed_info is None:
             raise exceptions.YTDLError(f"Unable to fetch `{url}`")
@@ -755,11 +774,28 @@ class YTDLSource:
 
         partial = functools.partial(
             YOUTUBE_DL.extract_info,
-            search.replace(":", ""),
+            search,
             download=False,
             process=False,
         )
-        info = await loop.run_in_executor(None, partial)
+        try:
+            info = await loop.run_in_executor(None, partial)
+        except youtube_dl.DownloadError as e:
+            if "urlopen error unknown url type" in str(e):
+                log.warning("Suspected error caused by colon in search query.")
+                try:
+                    partial = functools.partial(
+                        YOUTUBE_DL.extract_info,
+                        search.replace(":", ""),
+                        download=False,
+                        process=False,
+                    )
+                    info = await loop.run_in_executor(None, partial)
+                    log.info("Attempting re-searching with altered url.")
+                except Exception as e:
+                    log.error(f"Re-searching failed: {e}")
+            else:
+                log.error(traceback.format_exc())
 
         if info is None:
             raise exceptions.YTDLError(f"No matches found for `{search}`")
@@ -794,7 +830,6 @@ class YTDLSource:
                     try:
                         data = processed_info["entries"].pop(0)
                     except IndexError as e:
-                        print(e)
                         raise exceptions.YTDLError(
                             f"Unable to retrieve matches for `{processed_info['webpage_url']}`"
                         )
@@ -1068,7 +1103,7 @@ class VoiceClient(discord.VoiceClient):
         else:
             self._voice_state_complete.set()
 
-class AudioSource(discord.PCMVolumeTransformer, VoiceClient):
+class AudioSource(discord.PCMVolumeTransformer):
     """
     Takes a ytdl source and player settings
     and returns a FFmpegPCMAudio source.
@@ -1100,8 +1135,6 @@ class AudioSource(discord.PCMVolumeTransformer, VoiceClient):
         }
 
         effects = "".join([y for x, y in filters.items() if kwargs.get(x)])
-        print(base)
-        print(effects)
         ffmpeg_options = {
             "before_options": FFMPEG_OPTION_BASE + f" -ss {position}",
             "options": f'-vn -af:a "{base + effects}"',
@@ -1110,8 +1143,8 @@ class AudioSource(discord.PCMVolumeTransformer, VoiceClient):
         self.original = discord.FFmpegPCMAudio(ytdl.stream_url, **ffmpeg_options)
         super().__init__(self.original, volume=volume)
 
-    @classmethod
-    async def save(cls, ytdl, volume, position=0, **kwargs):
+    @staticmethod
+    async def save(ytdl, volume, position=0, **kwargs):
         """Returns a class instance and saves track."""
         cxn = ytdl.ctx.bot.cxn
         if cxn:
@@ -1122,7 +1155,28 @@ class AudioSource(discord.PCMVolumeTransformer, VoiceClient):
             await cxn.execute(
                 query, ytdl.requester.id, ytdl.title, ytdl.url, ytdl.uploader
             )
+        return await AudioSource.check_source(ytdl, volume, position, **kwargs)
+
+    @classmethod
+    async def check_source(cls, ytdl, volume, position, **kwargs):
+        asession = ytdl.ctx.bot.session
+        ytdl.stream_url = "https://r2---sn-4g5e6nz7.googlevideo.com/videoplayback?expire=1632369911&ei=l6hLYf2HD5fm1wKMlZCYBg&ip=168.119.185.159&id=o-AI0fl5r6oBlXT0r2wHCC1sXG8cImKviCzXzTBQBc3oh4&itag=251&source=youtube&requiressl=yes&mh=zj&mm=31%2C26&mn=sn-4g5e6nz7%2Csn-f5f7lnl7&ms=au%2Conr&mv=u&mvi=2&pl=27&vprv=1&mime=audio%2Fwebm&ns=KQdSzjH0UAjrdOh5McwX7XQG&gir=yes&clen=21993764&dur=1262.681&lmt=1540807550690764&mt=1632340664&fvip=2&keepalive=yes&fexp=24001373%2C24007246&c=WEB&txp=5411222&n=PNJVg77WDWe-K3H4&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cvprv%2Cmime%2Cns%2Cgir%2Cclen%2Cdur%2Clmt&sig=AOq0QJ8wRAIgK9e3qzHQhoo2S8kHJecbV7774sNtb5VHRubWoO7ObtICIBFDB8S_U0Xud8LXUcS1iWQdQsDmHXKEzOGNrAI1ndAt&lsparams=mh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl&lsig=AG3C_xAwRgIhAPr21g-dvQLUQox85n0IOhdOI3HMqGgTnEazKbLWpQDcAiEA9R8uitJ02vh9WA0iIR-ovUFoFNFyW6o8twQebLSQ9ok%3D"
+        async with asession.get(str(ytdl.stream_url)) as r:
+            if r.status == 403:  # Forbidden stream url.
+                log.info("Forbidden Stream URL. Redownloading...")
+
+                ctx = ytdl.ctx
+                url = ytdl.url
+                loop = ytdl.ctx.bot.loop
+                try:
+                    ytdl = await YTDLSource.get_source(ctx, url, loop=loop)
+                except exceptions.YTDLError as e:
+                    log.error(f"Redownload failed: {e}")
+                    return
+                else:
+                    log.info("Redownload successful")
         return cls(ytdl, volume, position, **kwargs)
+
 
 class VoiceState:
     """
@@ -1226,27 +1280,14 @@ class VoiceState:
         self.source.volume = value
 
     async def connect(self, channel, *, timeout=None):
-        print("bye")
         try:
-            print("tried")
-            try:
-                self.voice = await channel.connect(timeout=timeout, cls=VoiceClient)
-            except:
-                traceback.print_exc()
-            print("connected")
+            self.voice = await channel.connect(timeout=timeout, cls=VoiceClient)
         except discord.ClientException:
-            print("except")
-            if hasattr(channel.guild.me.voice, "channel"):
-                await channel.guild.voice_client.disconnect(force=True)
-                self.voice = await channel.connect(timeout=timeout, cls=VoiceClient)
-        except Exception:
-            raise
-
-        print("byee")
-        print(self.voice)
+            await channel.guild.voice_client.disconnect(force=True)
+            self.voice = await channel.connect(timeout=timeout, cls=VoiceClient)
+            
 
     async def ensure_voice_state(self, ctx):
-        print("hi")
         if not ctx.me.voice:
             if not hasattr(ctx.author.voice, "channel"):
                 raise commands.BadArgument("You must be connected to a voice channel")
@@ -1254,7 +1295,6 @@ class VoiceState:
         else:
             channel = ctx.me.voice.channel
         self.voice = await self.get_voice_client(channel)
-        print(self.voice)
         return self
 
     async def get_voice_client(self, channel, *, timeout=None):
@@ -1262,17 +1302,11 @@ class VoiceState:
         voice_client = channel.guild.voice_client
         if hasattr(voice, "channel"):
             if voice_client:  # Already have everything
-                print("# Already have everything")
                 return voice_client
             else:  # Create voice client
-                print("# Create voice client")
                 return await voice.channel.connect(timeout=timeout, cls=VoiceClient)
         else:
-            print("basic connect")
-            try:
-                return await channel.connect(timeout=timeout, cls=VoiceClient)
-            except:
-                raise
+            return await channel.connect(timeout=timeout, cls=VoiceClient)
 
     async def play_from_file(self, file):
         await file.save("./track.mp3")
@@ -1328,26 +1362,24 @@ class VoiceState:
                     self.current = await self.get_next_track()  # Get song from queue
 
                 else:  # Not looping track or queue.
-                    print("getting next track")
                     self.current = await self.get_next_track()
-                print("making audio source")
                 self.source = await AudioSource.save(
                     self.current,
                     self.volume,
                     **self.effects,
                 )
-                print("made audio source")
-                print("playing...")
-                self.voice.play(self.source, after=self.play_next_track)
-                await MusicUtils.create_embed(self.current.ctx, self.source)
+                if self.source:
+                    self.voice.play(self.source, after=self.play_next_track)
+                    await MusicUtils.create_embed(self.current.ctx, self.source)
+                    await self.next.wait()  # Wait until the track finishes
+                else:  # Something went wrong, get next track
+                    self.next.set()
 
-                await self.next.wait()  # Wait until the track finishes
                 self.previous = self.current  # Store previous track
                 self.current = None
                 self.source = None
             except Exception:
                 tb = traceback.format_exc()
-                print(tb)
                 log.fatal(tb)
                 self.bot.dispatch("error", "MUSIC_ERROR", tb=tb)
                 # run = False
@@ -1372,8 +1404,7 @@ class VoiceState:
 
     def play_next_track(self, error=None):
         if error:
-            log.fatal(error)
-            print("this was raised.")
+            log.warning(error)
         self.next.set()
 
     def skip(self):
@@ -1734,9 +1765,29 @@ class Player(commands.Cog):
         await ctx.success(f"Rewinded to second `{position}`")
 
     @decorators.command(
+        name="current",
+        brief="Show track info.",
+        aliases=["now", "np", "nowplaying"],
+    )
+    @checks.bot_has_perms(embed_links=True)
+    @checks.cooldown()
+    async def _current(self, ctx):
+        """
+        Usage: {0}current
+        Aliases: {0}now, {0}np, {0}current, {0}nowplaying
+        Output: Displays the currently playing song.
+        Notes:
+            Will fall back to sending a codeblock
+            if the bot does not have the Embed Links
+            permission. A progress bar will be included
+            if the bot has the Attach Files permission.
+        """
+        player = ctx.voice_state.validate
+        await Views.TrackView(ctx).start()
+
+    @decorators.command(
         name="trackinfo",
         brief="Show track info.",
-        aliases=["now", "np", "nowplaying", "current"],
     )
     @checks.bot_has_perms(embed_links=True)
     @checks.cooldown()
@@ -1752,12 +1803,12 @@ class Player(commands.Cog):
             if the bot has the Attach Files permission.
         """
         player = ctx.voice_state.validate
-        await Views.TrackView(ctx).start()
+        await MusicUtils.create_embed(ctx, player.source)
 
     @decorators.command(
         name="save",
         brief="Save a song to your liked songs.",
-        aliases=["like", "favorite"],
+        aliases=["like"],
     )
     @checks.cooldown()
     async def _save(self, ctx):
@@ -2170,7 +2221,7 @@ class Queue(commands.Cog):
             await ctx.fail("No previous song to play.")
             return
 
-        ctx.voice_state.tracks.put_nowait(previous)
+        ctx.voice_state.requeue(previous)
         await ctx.music(f"Requeued the previous song: {previous}")
 
     @decorators.command(
@@ -2781,6 +2832,46 @@ class Queue(commands.Cog):
             )
 
         await ctx.send(f"Enqueued your liked songs `({len(records)} tracks)`")
+
+    @decorators.command(
+        name="playtop", aliases=["playpop"], brief="Enqueue the top 10 most frequently queued tracks."
+    )
+    async def _playtop(self, ctx, limit: int = 10):
+        """
+        Usage: {0}playliked
+        Alias: {0}playsaved
+        Output:
+            Enqueues all tracks in the your liked songs
+            by adding them to the end of the current queue.
+        Notes:
+            Add to your saved songs by using the {0}save command
+        """
+        await ctx.trigger_typing()
+        if not 0 < limit < 100:
+            await ctx.fail(f"the `limit` argument must be an integer between `0` and `100`.")
+            return
+        player = await ctx.voice_state.ensure_voice_state(ctx)
+        query = f"""
+                SELECT title, url, uploader, count(url) as c
+                FROM tracks
+                WHERE requester_id = $1
+                GROUP BY title, url, uploader
+                ORDER BY c DESC
+                LIMIT {limit};
+                """
+        records = await self.bot.cxn.fetch(query, ctx.author.id)
+        if not records:
+            await ctx.fail("You have no recorded tracks")
+            return
+
+        for record in records:
+            player.tracks.put_nowait(
+                QueueEntry(
+                    ctx, record["title"], record["url"], uploader=record["uploader"]
+                )
+            )
+
+        await ctx.send(f"Enqueued your top tracks `({len(records)} tracks)`")
 
 
 class Audio(commands.Cog):
@@ -3570,7 +3661,6 @@ class Views:
             except commands.BadArgument as e:
                 await interaction.response.send_message(str(e), ephemeral=True)
             position = self.ctx.voice_state.source.position
-            print(position)
             to_seek = position - 10
             if to_seek <= 0:
                 to_seek = 0
@@ -3770,8 +3860,8 @@ class Views:
             else:
                 await interaction.message.edit(content=page, view=self)
 
-    class QueueSource(discord.ui.View):
-        async def __init__(self, ctx, pages, *, content="", compact=True):
+    class ButtonPages(discord.ui.View):
+        async def __init__(self, ctx, pages, *, content=""):
             super().__init__(timeout=120)
             self.ctx = ctx
             self.pages = pages
@@ -3780,7 +3870,6 @@ class Views:
             self.max_pages = len(self.pages)
             self.current_page = pages[0]
             self.input_lock = asyncio.Lock()
-            self.compact = compact
 
             self.clear_items()
             self.fill_items()
@@ -3798,13 +3887,7 @@ class Views:
             self.add_item(self._select)
             self.add_item(self._next)
             self.add_item(self._last)
-            self.add_item(self._help)
-            self.add_item(self._prev)
-            self.add_item(self._download)
-            self.add_item(self._skip)
-            self.add_item(self._trash)
-            if Checks.is_dj(self.ctx):
-                self.add_item(Views.QueueSelect(self.ctx))
+
 
         async def send_message(self):
             self.update_view(1)
@@ -3947,6 +4030,34 @@ class Views:
                         pass
                     self.update_view(page)
                     await self.show_page(interaction)
+
+    class QueueSource(ButtonPages):
+        async def __init__(self, ctx, pages, *, content=""):
+            self.ctx = ctx
+            self.content = content
+            self.input_lock = asyncio.Lock()
+
+            await super().__init__(ctx, pages, content=content)
+
+        def fill_items(self, _help=None):
+            if _help:
+                self.add_item(self._return)
+                self.add_item(self._delete)
+                return
+
+            self.add_item(self._first)
+            self.add_item(self._back)
+            self.add_item(self._select)
+            self.add_item(self._next)
+            self.add_item(self._last)
+            self.add_item(self._help)
+            self.add_item(self._prev)
+            self.add_item(self._download)
+            self.add_item(self._skip)
+            self.add_item(self._trash)
+            if Checks.is_dj(self.ctx):
+                self.add_item(Views.QueueSelect(self.ctx))
+
 
         @discord.ui.button(
             emoji=constants.emotes["download"], style=discord.ButtonStyle.gray
@@ -4145,9 +4256,6 @@ class Views:
             embed.set_footer(
                 text=f"Previously viewing page {self.page_number} of {self.max_pages}"
             )
-            # embed.add_field(name="Delete session", value="This button ends the pagination session and deletes the message", inline=False)
-            # embed.add_field(name="Compact view", value="This button removes the three colored buttons for a more \"compact\" view", inline=False)
-            # embed.add_field(name="Need help?", value="This button shows this help page.", inline=False)
             await interaction.message.edit(embed=embed, view=self)
 
         @discord.ui.button(
