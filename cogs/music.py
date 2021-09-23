@@ -723,7 +723,7 @@ class YTDLSource:
         partial = functools.partial(
             YOUTUBE_DL.extract_info, url, download=False
         )
-    
+        processed_info = None  # TODO fix this system
         try:
             processed_info = await loop.run_in_executor(None, partial)
         except youtube_dl.DownloadError as e:
@@ -778,6 +778,7 @@ class YTDLSource:
             download=False,
             process=False,
         )
+        info = None  # TODO fix this system
         try:
             info = await loop.run_in_executor(None, partial)
         except youtube_dl.DownloadError as e:
