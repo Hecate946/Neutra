@@ -64,13 +64,3 @@ CREATE TABLE IF NOT EXISTS useravatars (
     avatar TEXT,
     first_seen TIMESTAMP
 );
-
--- Deprecated
--- CREATE TABLE IF NOT EXISTS spotify (
---     id BIGSERIAL PRIMARY KEY,
---     user_id BIGINT,
---     album_id TEXT,
---     artist_id TEXT,
---     track_id TEXT,
---     insertion TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
--- );

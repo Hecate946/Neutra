@@ -230,6 +230,26 @@ class Monitor(commands.Cog):
         await ctx.invoke(sh, prefix="prolog", command="cat ./data/logs/errors.log")
 
     @logger.command(
+        name="music",
+        aliases=["m", "audio", "voice"],
+        brief="Show the music.log file.",
+    )
+    async def _music(self, ctx):
+        """
+        Usage: {0}logger errors
+        Aliases:
+            {0}logger m
+            {0}logger music
+            {0}logger audio
+            {0}logger voice
+        Output:
+            Starts a pagination session
+            showing the errors.log file
+        """
+        sh = self.bot.get_command("sh")
+        await ctx.invoke(sh, prefix="prolog", command="cat ./data/logs/music.log")
+
+    @logger.command(
         name="clear",
         aliases=["cl", "clr"],
         brief="Delete a logging file.",
@@ -257,6 +277,9 @@ class Monitor(commands.Cog):
         elif search in ["t", "trace", "traceback", "tracebacks"]:
             search = "traceback"
             msg = "traceback"
+        elif search in ["m", "audio", "music", "voice"]:
+            search = "music"
+            msg = "music"
         else:
             raise commands.BadArgument(f"Invalid file search.")
         logdir = os.listdir("./data/logs/")

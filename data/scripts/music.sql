@@ -41,3 +41,12 @@ CREATE TABLE IF NOT EXISTS voicetime (
     lastchanged DOUBLE PRECISION NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW()),
     starttime DOUBLE PRECISION NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())
 );
+
+CREATE TABLE IF NOT EXISTS spotify (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT,
+    album_id TEXT,
+    artist_id TEXT,
+    track_id TEXT,
+    insertion TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
+);

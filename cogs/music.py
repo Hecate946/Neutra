@@ -31,7 +31,8 @@ import itertools
 import traceback
 import youtube_dl
 
-from discord.ext import commands
+from datetime import datetime
+from discord.ext import commands, tasks
 from logging.handlers import RotatingFileHandler
 from collections import deque, defaultdict
 from PIL import Image
@@ -1161,7 +1162,6 @@ class AudioSource(discord.PCMVolumeTransformer):
     @classmethod
     async def check_source(cls, ytdl, volume, position, **kwargs):
         asession = ytdl.ctx.bot.session
-        ytdl.stream_url = "https://r2---sn-4g5e6nz7.googlevideo.com/videoplayback?expire=1632369911&ei=l6hLYf2HD5fm1wKMlZCYBg&ip=168.119.185.159&id=o-AI0fl5r6oBlXT0r2wHCC1sXG8cImKviCzXzTBQBc3oh4&itag=251&source=youtube&requiressl=yes&mh=zj&mm=31%2C26&mn=sn-4g5e6nz7%2Csn-f5f7lnl7&ms=au%2Conr&mv=u&mvi=2&pl=27&vprv=1&mime=audio%2Fwebm&ns=KQdSzjH0UAjrdOh5McwX7XQG&gir=yes&clen=21993764&dur=1262.681&lmt=1540807550690764&mt=1632340664&fvip=2&keepalive=yes&fexp=24001373%2C24007246&c=WEB&txp=5411222&n=PNJVg77WDWe-K3H4&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cvprv%2Cmime%2Cns%2Cgir%2Cclen%2Cdur%2Clmt&sig=AOq0QJ8wRAIgK9e3qzHQhoo2S8kHJecbV7774sNtb5VHRubWoO7ObtICIBFDB8S_U0Xud8LXUcS1iWQdQsDmHXKEzOGNrAI1ndAt&lsparams=mh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl&lsig=AG3C_xAwRgIhAPr21g-dvQLUQox85n0IOhdOI3HMqGgTnEazKbLWpQDcAiEA9R8uitJ02vh9WA0iIR-ovUFoFNFyW6o8twQebLSQ9ok%3D"
         async with asession.get(str(ytdl.stream_url)) as r:
             if r.status == 403:  # Forbidden stream url.
                 log.info("Forbidden Stream URL. Redownloading...")
@@ -3567,11 +3567,128 @@ class Voice(commands.Cog):
             await helpers.error_info(ctx, failed)
 
 
+class SpotifyTracker(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        self.batch_lock = asyncio.Lock(loop=bot.loop)
+        self.spotify = MusicUtils.spotify(bot)
+
+        self.spotify_data = defaultdict(dict)
+        self.inserter.start()
+
+    @tasks.loop(seconds=30.0)
+    async def inserter(self):
+        if self.spotify_data:
+            async with self.batch_lock:
+                query = """
+                        INSERT INTO spotify (user_id, album_id, artist_id, track_id, insertion)
+                        SELECT x.user_id, x.album_id, x.artist_id, x.track_id, x.insertion
+                        FROM JSONB_TO_RECORDSET($1::JSONB)
+                        AS x(user_id BIGINT, album_id TEXT, artist_id TEXT, track_id TEXT, insertion TIMESTAMP);
+                        """
+                        
+                data = json.dumps(
+                    [
+                        
+                            {"user_id": user_id, "album_id": info["album_id"], "artist_id": info["artist_id"], "track_id": info["track_id"], "insertion": info["updated"]}
+                            for user_id, info in self.spotify_data.items()
+                    ]
+                )
+                self.spotify_data.clear()
+            await self.bot.cxn.execute(query, data)
+
+
+    @commands.Cog.listener()
+    @decorators.event_check(lambda s, b, a: a.activities)
+    async def on_presence_update(self, before, after):
+        for activity in after.activities:
+            if type(activity) is discord.activity.Spotify:
+                if activity not in before.activities:
+                    async with self.batch_lock:
+                        track = await self.spotify.get_track(activity.track_id)
+                        self.spotify_data[after.id].update({
+                            "album_id": track["album"]["id"],
+                            "artist_id": track["artists"][0]["id"],
+                            "track_id": activity.track_id,
+                            "updated": str(datetime.utcnow())
+                        })
+
+    @decorators.command(name="spotify", hidden=True)
+    async def _spotify(self, ctx, *, user: converters.DiscordMember = None):
+        user = user or ctx.author
+        status = None
+        for activity in user.activities:
+            if type(activity) is discord.activity.Spotify:
+                status = activity
+                break
+ 
+        if not status:
+            await ctx.fail("No current spotify status found.")
+            return
+ 
+        e = discord.Embed(color=self.bot.constants.embed)
+        e.title = f"{user.display_name}'s Spotify Track Information"
+        e.description = f"```fix\n{status.title}```"
+        e.add_field(name="Artist", value=status.artist)
+        e.add_field(name="Album", value=status.album)
+        e.add_field(name="Duration", value=MusicUtils.parse_duration(int(status.duration.total_seconds())))
+        e.add_field(name="Song URL", value=status.track_url, inline=False)
+        e.set_thumbnail(url=status.album_cover_url)
+        track = await self.spotify.get_track(status.track_id)
+        artist_id = track["artists"][0]["id"]
+        album_id = track["album"]["id"]
+        await ctx.send_or_reply(embed=e)
+
+    # @decorators.command()
+    # async def _track(self, ctx, *, user: converters.DiscordUser = None):
+    #     user = user or ctx.author
+    #     # query = """
+    #     #         SELECT ARRAY(
+    #     #             SELECT track_id
+    #     #             FROM spotify
+    #     #             WHERE user_id = $1
+    #     #             ORDER BY COUNT(track_id) DESC
+    #     #             ORDER BY insertion DESC
+    #     #             LIMIT 10;
+  
+    #     #         );
+    #     #         """
+    #     query = """
+    #             select track_id, count(*) as c
+    #             FROM spotify
+    #             where user_id = $1
+    #             group by track_id
+    #             order by c DESC
+    #             limit 10;
+    #             """
+
+    #     records = await self.bot.cxn.fetch(query, user.id)
+
+    #     async def format_track(track_id, count):
+    #         track = await self.spotify.get_track(track_id)
+    #         title = f"{track['name']} `{count} listening session{'' if count == 1 else 's'}`"
+    #         field = f"**Track URL:** {track['external_urls']['spotify']}\n**Album:** [{track['album']['name']}]({track['album']['external_urls']['spotify']})\n**Artist**: [{track['artists'][0]['name']}]({track['artists'][0]['external_urls']['spotify']})"
+    #         return (title, field)
+
+
+    #     entries = []
+    #     for record in records:
+    #         entries.append(await format_track(*record))
+            
+
+    #     p = pagination.MainMenu(pagination.FieldPageSource(entries=entries, per_page=5, title=f"{user.display_name}'s Top 10 Spotify Tracks"))
+    #     try:
+    #         await p.start(ctx)
+    #     except menus.MenuError as e:
+    #         await ctx.send(e)
+
+
 def setup(bot):
     bot.add_cog(Player(bot))
     bot.add_cog(Queue(bot))
     bot.add_cog(Audio(bot))
     bot.add_cog(Voice(bot))
+    bot.add_cog(SpotifyTracker(bot))
 
 
 class Views:
