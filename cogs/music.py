@@ -1286,6 +1286,8 @@ class VoiceState:
         except discord.ClientException:
             await channel.guild.voice_client.disconnect(force=True)
             self.voice = await channel.connect(timeout=timeout, cls=VoiceClient)
+
+        return self.voice
             
 
     async def ensure_voice_state(self, ctx):
