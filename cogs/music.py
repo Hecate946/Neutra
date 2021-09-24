@@ -1305,9 +1305,9 @@ class VoiceState:
             if voice_client:  # Already have everything
                 return voice_client
             else:  # Create voice client
-                return await self.connect(channel, timeout=timeout, cls=VoiceClient)
+                return await self.connect(channel, timeout=timeout)
         else:
-            return await self.connect(channel, timeout=timeout, cls=VoiceClient)
+            return await self.connect(channel, timeout=timeout)
 
     async def play_from_file(self, file):
         await file.save("./track.mp3")
