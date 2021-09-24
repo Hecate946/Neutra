@@ -50,3 +50,10 @@ CREATE TABLE IF NOT EXISTS spotify (
     track_id TEXT,
     insertion TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
 );
+
+CREATE TABLE IF NOT EXISTS voice (
+    server_id BIGINT,
+    user_id BIGINT,
+    connected BOOLEAN,
+    first_seen TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
+);

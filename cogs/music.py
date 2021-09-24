@@ -214,7 +214,7 @@ class Spotify:
             if r.status != 200:
                 raise exceptions.SpotifyError(
                     "Issue making GET request to {0}: [{1.status}] {2}".format(
-                        url, r, await r.json()
+                        url, r, await r.json(content_type=None)
                     )
                 )
             return await r.json()
@@ -1305,9 +1305,9 @@ class VoiceState:
             if voice_client:  # Already have everything
                 return voice_client
             else:  # Create voice client
-                return await voice.channel.connect(timeout=timeout, cls=VoiceClient)
+                return await self.connect(channel, timeout=timeout, cls=VoiceClient)
         else:
-            return await channel.connect(timeout=timeout, cls=VoiceClient)
+            return await self.connect(channel, timeout=timeout, cls=VoiceClient)
 
     async def play_from_file(self, file):
         await file.save("./track.mp3")
@@ -3187,7 +3187,10 @@ class Voice(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.batch = defaultdict(dict)
+        self.voice_data = []
+        self.batch_lock = asyncio.Lock(loop=bot.loop)
+
+        self.voice_tracker.start()
 
     async def cog_check(self, ctx):
         if not ctx.guild:
@@ -3196,6 +3199,50 @@ class Voice(commands.Cog):
 
     async def cog_before_invoke(self, ctx):
         ctx.voice_state = await VOICE_STATES.get_state(ctx)
+
+    @tasks.loop(seconds=10.0)
+    async def voice_tracker(self):
+        if self.voice_data:
+            async with self.batch_lock:
+                query = """
+                        INSERT INTO voice (server_id, user_id, connected, first_seen)
+                        SELECT x.server_id, x.user_id, x.connected, x.first_seen
+                        FROM JSONB_TO_RECORDSET($1::JSONB)
+                        AS x(server_id BIGINT, user_id BIGINT, connected BOOLEAN, first_seen TIMESTAMP);
+                        """
+                data = json.dumps(self.voice_data)
+                await self.bot.cxn.execute(query, data)
+                self.voice_data.clear()
+
+    @commands.Cog.listener()
+    @decorators.event_check(lambda s, m, b, a: m.guild)
+    async def on_voice_state_update(self, member, before, after):
+        if before.channel and not after.channel:
+            # User left a voice channel.
+            async with self.batch_lock:
+                self.voice_data.append(
+                    {
+                        "server_id": member.guild.id,
+                        "user_id": member.id,
+                        "connected": False,
+                        "first_seen": str(datetime.utcnow())
+                    }
+                )
+        if not before.channel and after.channel:
+            # User joined a voice channel.
+            async with self.batch_lock:
+                self.voice_data.append(
+                    {
+                        "server_id": member.guild.id,
+                        "user_id": member.id,
+                        "connected": True,
+                        "first_seen": str(datetime.utcnow())
+                    }
+                )
+
+
+
+
 
     @decorators.group(
         brief="Manage the DJ role.",
@@ -3598,34 +3645,44 @@ class SpotifyTracker(commands.Cog):
             await self.bot.cxn.execute(query, data)
 
 
-    @commands.Cog.listener()
-    @decorators.event_check(lambda s, b, a: a.activities)
-    async def on_presence_update(self, before, after):
-        for activity in after.activities:
-            if type(activity) is discord.activity.Spotify:
-                if activity not in before.activities:
-                    async with self.batch_lock:
-                        track = await self.spotify.get_track(activity.track_id)
-                        self.spotify_data[after.id].update({
-                            "album_id": track["album"]["id"],
-                            "artist_id": track["artists"][0]["id"],
-                            "track_id": activity.track_id,
-                            "updated": str(datetime.utcnow())
-                        })
+    # @commands.Cog.listener()
+    # @decorators.event_check(lambda s, b, a: a.activities)
+    # async def on_presence_update(self, before, after):
+    #     for activity in after.activities:
+    #         if type(activity) is discord.activity.Spotify:
+    #             if activity not in before.activities:
+    #                 async with self.batch_lock:
+    #                     try:
+    #                         track = await self.spotify.get_track(activity.track_id)
+    #                     except Exception:
+    #                         return
+    #                     self.spotify_data[after.id].update({
+    #                         "album_id": track["album"]["id"],
+    #                         "artist_id": track["artists"][0]["id"],
+    #                         "track_id": activity.track_id,
+    #                         "updated": str(datetime.utcnow())
+    #                     })
 
-    @decorators.command(name="spotify", hidden=True)
-    async def _spotify(self, ctx, *, user: converters.DiscordMember = None):
+    @decorators.group(name="spotify", hidden=True)
+    @checks.cooldown()
+    async def _spotify(self, ctx):
+        if ctx.invoked_subcommand is None:
+            return await ctx.invoke(self.spotify_status)
+            
+
+    @_spotify.command()
+    async def spotify_status(self, ctx, *, user: converters.DiscordMember = None):
         user = user or ctx.author
         status = None
         for activity in user.activities:
             if type(activity) is discord.activity.Spotify:
                 status = activity
                 break
- 
+
         if not status:
             await ctx.fail("No current spotify status found.")
             return
- 
+
         e = discord.Embed(color=self.bot.constants.embed)
         e.title = f"{user.display_name}'s Spotify Track Information"
         e.description = f"```fix\n{status.title}```"
@@ -3708,7 +3765,7 @@ class Views:
             embed = MusicUtils.make_embed(self.ctx, self.ctx.voice_state.source)
             self.message = await self.ctx.send(embed=embed, view=self)
 
-        def fill_items(self, _help=None, ):
+        def fill_items(self, _help=None):
             if _help:
                 self.add_item(self._return)
                 self.add_item(self._delete)
