@@ -1789,6 +1789,7 @@ class Utility(commands.Cog):
             + [c for c in self.bot.get_all_channels()]
             + [m for m in self.bot.cached_messages]
         )
+        look_at.append(await self.bot.fetch_user(id))
 
         obj = discord.utils.get(look_at, id=id)
         result = (
