@@ -14,10 +14,135 @@ from utilities import decorators
 from utilities import formatting
 from utilities import pagination
 
+# class HelpCommand(commands.HelpCommand):
+#     def __init__(self):
+#         super().__init__(command_attrs={
+#             'cooldown': commands.CooldownMapping.from_cooldown(1, 3.0, commands.BucketType.member),
+#             'help': 'Shows help about the bot, a command, or a category'
+#         })
+
+    
+#     @property
+#     def help_description(self):
+#         desc = f"**Bot Invite Link:** [https://neutra.discord.bot]({self.context.bot.oauth})\n"
+#         desc += f"**Support Server:**  [https://discord.gg/neutra]({self.context.bot.constants.support})\n"
+#         desc += f"**Voting Link:**  [https://top.gg/bot/neutra/vote](https://top.gg/bot/806953546372087818/vote)"
+#         return desc
+
+#     async def filter_commands(self, commands, *, sort=False, key=None):
+#         return await super().filter_commands(commands, sort=sort, key=key)
+
+#     async def on_help_command_error(self, ctx, error):
+#         if isinstance(error, commands.CommandInvokeError):
+#             await ctx.send(str(error.original))
+
+#     def get_command_signature(self, command):
+#         parent = command.full_parent_name
+#         if len(command.aliases) > 0:
+#             aliases = '|'.join(command.aliases)
+#             fmt = f'[{command.name}|{aliases}]'
+#             if parent:
+#                 fmt = f'{parent} {fmt}'
+#             alias = fmt
+#         else:
+#             alias = command.name if not parent else f'{parent} {command.name}'
+#         return f'{alias} {command.signature}'
+
+
+#     async def send_help(self, ctx, embed):
+#         if not ctx.guild:  # In DMs, just send the embed
+#             msg = await ctx.safe_send(embed=embed, view=HelpView(ctx))
+#         else:  # In a server
+#             if not ctx.channel.permissions_for(ctx.me).embed_links:  # Can't embed
+#                 msg = await self.attempt_dm(ctx, embed, view=HelpView(ctx))  # DM them.
+#             else:
+#                 msg = await ctx.send_or_reply(embed=embed, view=HelpView(ctx))
+
+#         Storage.message = msg
+
+#     async def send_bot_help(self, mapping):
+#         embed = discord.Embed(
+#             title=f"{self.context.bot.user.name}'s Help Command",
+#             url=self.context.bot.constants.support,
+#             description=self.help_description,
+#             color=self.context.bot.constants.embed,
+#         )
+
+#         embed.set_footer(
+#             text=f'Use "{self.context.clean_prefix}help category" for information on a category.'
+#         )
+
+#         def pred(cog):
+#             if len([c for c in cog.get_commands() if not c.hidden]) == 0:
+#                 return False
+#             return True
+
+#         cogs = [cog for cog in self.context.bot.get_cogs() if pred(cog)]
+#         public = ""
+#         beta = ""
+#         admin = ""
+#         for cog in sorted(cogs, key=lambda cog: cog.qualified_name):
+#             if cog.qualified_name.upper() in self.context.bot.admin_cogs:
+#                 admin += f"\n`{cog.qualified_name}` {cog.description}\n"
+#             elif cog.qualified_name.upper() in self.context.bot.music_cogs:
+#                 beta += f"\n`{cog.qualified_name}` {cog.description}\n"
+#             else:
+#                 public += f"\n`{cog.qualified_name}` {cog.description}\n"
+
+#         embed.add_field(
+#             name="**General Categories**", value=f"** **{public}**\n**", inline=False
+#         )
+#         embed.add_field(
+#             name="**Music Categories**",
+#             value=f"** **{beta}**\n**",
+#             inline=False,
+#         )
+#         if self.context.is_admin():
+#             embed.add_field(
+#                 name="**Admin Categories**", value=f"** **{admin}**\n**", inline=False
+#             )
+
+#         await self.send_help(self.context, embed)
+
+#     # async def send_cog_help(self, cog):
+#     #     entries = await self.filter_commands(cog.get_commands(), sort=True)
+#     #     menu = HelpMenu(GroupHelpPageSource(cog, entries, prefix=self.clean_prefix))
+#     #     await self.context.release()
+#     #     await menu.start(self.context)
+
+#     def common_command_formatting(self, embed_like, command):
+#         embed_like.title = self.get_command_signature(command)
+#         if command.description:
+#             embed_like.description = f'{command.description}\n\n{command.help}'
+#         else:
+#             embed_like.description = command.help or 'No help found...'
+
+#     async def send_command_help(self, command):
+#         # No pagination necessary for a single command.
+#         embed = discord.Embed(colour=discord.Colour.blurple())
+#         self.common_command_formatting(embed, command)
+#         await self.context.send(embed=embed)
+
+#     # async def send_group_help(self, group):
+#     #     subcommands = group.commands
+#     #     if len(subcommands) == 0:
+#     #         return await self.send_command_help(group)
+
+#     #     entries = await self.filter_commands(subcommands, sort=True)
+#     #     if len(entries) == 0:
+#     #         return await self.send_command_help(group)
+
+#     #     source = GroupHelpPageSource(group, entries, prefix=self.clean_prefix)
+#     #     self.common_command_formatting(source, group)
+#     #     menu = HelpMenu(source)
+#     #     await self.context.release()
+#     #     await menu.start(self.context)
 
 def setup(bot):
     bot.remove_command("help")
     bot.add_cog(Help(bot))
+    # bot.old_help_command = bot.help_command
+    # bot.help_command = HelpCommand()
 
 
 class Storage(object):
@@ -212,7 +337,6 @@ class Help(commands.Cog):
             await message.remove_reaction(self.bot.emote_dict["trash"], self.bot.user)
 
     async def send_help(self, ctx, embed):
-        s = embed.to_dict()
         if not ctx.guild:  # In DMs, just send the embed
             msg = await ctx.safe_send(embed=embed, view=HelpView(ctx))
         else:  # In a server
@@ -593,6 +717,10 @@ class Help(commands.Cog):
 
             if category_or_command.lower() in ["audio"]:
                 cog = self.bot.get_cog("Audio")
+                return await self.send_cog_help(ctx, cog)
+
+            if category_or_command.lower() in ["playlists"]:
+                cog = self.bot.get_cog("Playlists")
                 return await self.send_cog_help(ctx, cog)
 
             ##########################

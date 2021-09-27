@@ -1,11 +1,13 @@
-CREATE TABLE IF NOT EXISTS queues (
+CREATE TABLE IF NOT EXISTS playlists (
     id BIGSERIAL PRIMARY KEY,
     owner_id BIGINT,
     name TEXT,
     queue JSONB DEFAULT '{}'::JSONB,
+    uses BIGINT NOT NULL DEFAULT 0,
+    likes BIGINT NOT NULL DEFAULT 0,
     insertion TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
 );
-CREATE UNIQUE INDEX IF NOT EXISTS queues_idx ON queues(owner_id, name);
+CREATE UNIQUE INDEX IF NOT EXISTS playlists_idx ON playlists(owner_id, name);
 
 -- Automatically saved songs
 CREATE TABLE IF NOT EXISTS tracks (

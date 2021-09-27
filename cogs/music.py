@@ -13,6 +13,7 @@ This module is entirely separate from the remainder of the client,
 and can be removed with relative ease merely by deleting this file.
 """
 
+from operator import is_
 import re
 import io
 import json
@@ -672,6 +673,96 @@ class QueueEntry:
         }
         return json_entry
 
+class Playlist:
+    """
+    QueueEntry object for enqueueing tracks.
+    All TrackQueue objects are type QueueEntry
+    """
+
+    def __init__(self, ctx, record):
+        self.ctx = ctx
+        self.bot = ctx.bot
+        self.record = record
+        self.queue = json.loads(record.get('queue'))
+        self.entries = [
+            QueueEntry(
+                ctx,
+                track.get("title"),
+                track.get("search"),
+                uploader=track.get("uploader"),
+                link=track.get("link"),
+            )
+            for track in self.queue
+        ]
+        self.tracks = len(self.queue)
+        self.id = record.get('id')
+        self.likes = record.get('likes')
+        self.owner = self.bot.get_user(record.get('owner_id'))
+        self.name = record.get('name')
+        self.uses = record.get('uses', 0)
+        self.created_at = record.get('insertion')
+
+    def is_owner(self, user):
+        return user.id == self.owner.id
+
+    @classmethod
+    async def initialize(cls, ctx, owner, name: str):
+        query = """
+                SELECT * FROM playlists
+                WHERE owner_id = $1
+                AND name = $2
+                """
+        record = await ctx.bot.cxn.fetchrow(query, owner.id, name.lower())
+        if not record:
+            raise commands.BadArgument(f"You do not have a playlist with name: **{name}**")
+        return cls(ctx, record)
+
+    @classmethod
+    async def get_playlists(cls, ctx, owner):
+        query = """
+                SELECT * FROM playlists
+                WHERE owner_id = $1
+                """
+        records = await ctx.bot.cxn.fetch(query, owner.id)
+        if not records:
+            raise commands.BadArgument(f"**{owner}** `{owner.id}` has no saved playlists.")
+        return [cls(ctx, record) for record in records]
+
+
+    async def finalize(self):
+        query = """
+                UPDATE playlists
+                SET queue = $1
+                WHERE owner_id = $2
+                AND name = $3
+                """
+        return await self.bot.cxn.execute(query, json.dumps(self.queue), self.owner.id, self.name.lower())
+
+    async def delete(self):
+        query = """
+                DELETE FROM playlists
+                WHERE owner_id = $1
+                AND name = $2;
+                """
+        return await self.bot.cxn.execute(query, self.owner.id, self.name.lower())
+
+    def pop(self, index: int):
+        try:
+            return self.queue.pop(index - 1)
+        except IndexError:
+            raise IndexError("Invalid index. Please specify a valid track index to remove.")
+
+
+    async def like(self):
+        query = """
+                UPDATE playlists
+                SET likes = likes + 1
+                WHERE owner_id = $1
+                AND name = $2
+                """
+        await self.bot.cxn.execute(query, self.owner.id, self.name.lower())
+        
+    
 
 class YTDLSource:
     """
@@ -1093,12 +1184,7 @@ class VoiceClient(discord.VoiceClient):
             # a channel move and an actual force disconnect
             if channel_id is None:
                 # We're being disconnected so cleanup
-
                 await VOICE_STATES[self.guild.id].stop()
-                del VOICE_STATES[self.guild.id]
-                await self.disconnect(force=True)
-
-                self.guild.voice_client = None
             else:
                 guild = self.guild
                 self.channel = channel_id and guild and guild.get_channel(int(channel_id))  # type: ignore
@@ -1237,6 +1323,17 @@ class VoiceState:
         # Other effects are False by default
         return self.effects.get(key, False)
 
+    async def stop(self):
+        self.tracks.clear()
+
+        if self.voice:
+            await self.voice.disconnect(force=True)
+        
+        self.audio_player.cancel()
+        self.incrementer.cancel()
+
+        del VOICE_STATES[self._ctx.guild.id]
+
     def clear_effects(self):
         self.effects.clear()
         self.alter_audio()
@@ -1289,7 +1386,6 @@ class VoiceState:
 
         return self.voice
             
-
     async def ensure_voice_state(self, ctx):
         if not ctx.me.voice:
             if not hasattr(ctx.author.voice, "channel"):
@@ -1310,6 +1406,15 @@ class VoiceState:
                 return await self.connect(channel, timeout=timeout)
         else:
             return await self.connect(channel, timeout=timeout)
+
+    async def check_voice_client(self):
+        voice = self._ctx.me.guild.me.voice
+        voice_client = self._ctx.me.guild.voice_client
+        if hasattr(voice, "channel"):
+            if voice_client:  # Already have everything
+                return voice_client
+
+        await self.stop()
 
     async def play_from_file(self, file):
         await file.save("./track.mp3")
@@ -1372,6 +1477,7 @@ class VoiceState:
                     **self.effects,
                 )
                 if self.source:
+                    self.voice = await self.check_voice_client()
                     self.voice.play(self.source, after=self.play_next_track)
                     await MusicUtils.create_embed(self.current.ctx, self.source)
                     await self.next.wait()  # Wait until the track finishes
@@ -1426,13 +1532,6 @@ class VoiceState:
     def unloop(self):
         self.queue_is_looped = False
         self.track_is_looped = False
-
-    async def stop(self):
-        self.tracks.clear()
-
-        if self.voice:
-            await self.voice.disconnect(force=True)
-            self.voice = None
 
 
 class VoiceStates(dict):
@@ -1531,15 +1630,11 @@ class Player(commands.Cog):
         if hasattr(ctx.guild.me.voice, "channel"):
             channel = ctx.guild.me.voice.channel
             await ctx.voice_state.stop()
-            del VOICE_STATES[ctx.guild.id]
-            await ctx.guild.voice_client.disconnect(force=True)
             await ctx.message.add_reaction(self.bot.emote_dict["wave"])
             await ctx.success(f"Disconnected from {channel.mention}")
         else:
             await ctx.fail("Not connected to any voice channel.")
-
-        await ctx.voice_state.stop()
-        del VOICE_STATES[ctx.guild.id]
+            await ctx.voice_state.stop()
 
     @decorators.command(
         name="pause",
@@ -2376,7 +2471,7 @@ class Queue(commands.Cog):
 
         entries = [track.hyperlink for track in ctx.voice_state.tracks]
 
-        p = Views.QueuePages(ctx, entries, per_page=10, index=True)
+        p = Views.QueueView(ctx, entries, per_page=10, index=True)
         p.embed.title = "Current Queue"
         if ctx.voice_state.current:
             p.embed.add_field(
@@ -2654,227 +2749,6 @@ class Queue(commands.Cog):
 
         queue.dequeue(user)
         await ctx.success(f"Removed all tracks enqueued by **{user}** `{user.id}`")
-
-    @decorators.command(name="savequeue", brief="Save the current queue.")
-    async def _savequeue(self, ctx, *, name: str):
-        """
-        Usage: {0}savequeue [queue name]
-        Output:
-            Saves the current queue with a given name.
-        Notes:
-            This command will attach the current queue
-            and the provided name to your ID. You will
-            be the only person able to playback this queue
-            at a later time.
-        """
-        player = ctx.voice_state.validate
-        queue = ctx.voice_state.tracks
-        if len(queue) == 0:
-            await ctx.fail("The queue is currently empty.")
-            return
-
-        queue = [player.entry] + list(queue)
-
-        queue = json.dumps([entry.json for entry in queue])
-        query = """
-                INSERT INTO queues (owner_id, name, queue)
-                VALUES ($1, $2, $3::JSONB)
-                """
-        try:
-            await self.bot.cxn.execute(query, ctx.author.id, name.lower(), queue)
-        except asyncpg.exceptions.UniqueViolationError:
-            await ctx.fail(
-                "You already have a saved queue with that name. Please try again with a different name"
-            )
-            return
-        await ctx.success(f"Saved the current queue with name: **{name}**")
-
-    @decorators.command(
-        aliases=["unsavequeue"], name="deletequeue", brief="Delete a saved queue."
-    )
-    @checks.cooldown()
-    async def _deletequeue(self, ctx, *, name: str):
-        """
-        Usage: {0}deletequeue [queue name]
-        Aliases: {0}unsavequeue
-        Output:
-            Deletes a saved queue by name.
-        Notes:
-            Save playable queues by using
-            the {0}savequeue command.
-        """
-        query = """
-                DELETE FROM queues
-                WHERE owner_id = $1
-                AND name = $2
-                """
-        r = await self.bot.cxn.execute(query, ctx.author.id, name.lower())
-        if r == "DELETE 0":
-            await ctx.fail(f"You have no saved queue with name: **{name}**")
-            return
-        await ctx.success(f"Successfully deleted queue: **{name}**")
-
-    @decorators.command(
-        brief="Show queues saved by a user.",
-        name="queues",
-        aliases=["myqueues", "savedqueues", "userqueues"],
-    )
-    @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
-    @checks.cooldown()
-    async def _queues(self, ctx, *, user: converters.DiscordMember = None):
-        """
-        Usage: {0}queues [user]
-        Aliases: {0}myqueues, {0}savedqueues, {0}userqueues
-        Output:
-            Shows all saved queues of a user
-            in a pagination session.
-        Notes:
-            Save playable queues by using
-            the {0}savequeue command.
-        """
-        user = user or ctx.author
-        query = """
-                SELECT name, JSONB_ARRAY_LENGTH(queue) AS len
-                FROM queues
-                WHERE owner_id = $1
-                ORDER BY insertion DESC;
-                """
-        queues = await self.bot.cxn.fetch(query, user.id)
-        if not queues:
-            await ctx.fail(f"User **{user}** `{user.id}` has no saved queues.")
-            return
-        p = views.SimpleView(
-            ctx,
-            entries=[
-                f"**{queue['name'].capitalize()}**: `{queue['len']} tracks`"
-                for queue in queues
-            ],
-            per_page=10,
-            index=True,
-        )
-        p.embed.title = f"{user.display_name}'s Saved Queues"
-        await p.start()
-
-    @decorators.command(
-        name="playqueue", aliases=["loadqueue"], brief="Enqueue a saved queue."
-    )
-    async def _playqueue(self, ctx, *, name: str):
-        """
-        Usage: {0}playqueue [queue name]
-        Alias: {0}loadqueue
-        Output:
-            Enqueues all tracks in the saved queue by
-            adding them to the end of the current queue.
-        Notes:
-            Save playable queues by using
-            the {0}savequeue command.
-        """
-        await ctx.trigger_typing()
-        player = await ctx.voice_state.ensure_voice_state(ctx)
-        query = """
-                SELECT name, queue
-                FROM queues
-                WHERE owner_id = $1
-                AND name = $2
-                """
-        saved_queue = await self.bot.cxn.fetchrow(query, ctx.author.id, name.lower())
-        if not saved_queue:
-            await ctx.fail("You do not have a saved queue with that name")
-            return
-
-        queue = json.loads(saved_queue["queue"])
-
-        player.tracks.extend(
-            [
-                QueueEntry(
-                    ctx,
-                    track.get("title"),
-                    track.get("search"),
-                    uploader=track.get("uploader"),
-                    link=track.get("link"),
-                )
-                for track in queue
-            ]
-        )
-
-        await ctx.send(
-            f"Enqueued saved playlist: {saved_queue['name']} `({len(queue)} tracks)`"
-        )
-
-    @decorators.command(
-        name="playliked", aliases=["playsaved"], brief="Enqueue saved songs."
-    )
-    async def _playliked(self, ctx):
-        """
-        Usage: {0}playliked
-        Alias: {0}playsaved
-        Output:
-            Enqueues all tracks in the your liked songs
-            by adding them to the end of the current queue.
-        Notes:
-            Add to your saved songs by using the {0}save command
-        """
-        await ctx.trigger_typing()
-        player = await ctx.voice_state.ensure_voice_state(ctx)
-        query = """
-                SELECT title, url, uploader
-                FROM saved
-                WHERE requester_id = $1
-                ORDER BY insertion DESC;
-                """
-        records = await self.bot.cxn.fetch(query, ctx.author.id)
-        if not records:
-            await ctx.fail("You have no liked tracks")
-            return
-
-        for record in records:
-            player.tracks.put_nowait(
-                QueueEntry(
-                    ctx, record["title"], record["url"], uploader=record["uploader"]
-                )
-            )
-
-        await ctx.send(f"Enqueued your liked songs `({len(records)} tracks)`")
-
-    @decorators.command(
-        name="playtop", aliases=["playpop"], brief="Enqueue the top 10 most frequently queued tracks."
-    )
-    async def _playtop(self, ctx, limit: int = 10):
-        """
-        Usage: {0}playliked
-        Alias: {0}playsaved
-        Output:
-            Enqueues all tracks in the your liked songs
-            by adding them to the end of the current queue.
-        Notes:
-            Add to your saved songs by using the {0}save command
-        """
-        await ctx.trigger_typing()
-        if not 0 < limit < 100:
-            await ctx.fail(f"the `limit` argument must be an integer between `0` and `100`.")
-            return
-        player = await ctx.voice_state.ensure_voice_state(ctx)
-        query = f"""
-                SELECT title, url, uploader, count(url) as c
-                FROM tracks
-                WHERE requester_id = $1
-                GROUP BY title, url, uploader
-                ORDER BY c DESC
-                LIMIT {limit};
-                """
-        records = await self.bot.cxn.fetch(query, ctx.author.id)
-        if not records:
-            await ctx.fail("You have no recorded tracks")
-            return
-
-        for record in records:
-            player.tracks.put_nowait(
-                QueueEntry(
-                    ctx, record["title"], record["url"], uploader=record["uploader"]
-                )
-            )
-
-        await ctx.send(f"Enqueued your top tracks `({len(records)} tracks)`")
 
 
 class Audio(commands.Cog):
@@ -3182,6 +3056,350 @@ class Audio(commands.Cog):
         )
 
 
+class Playlists(commands.Cog):
+    """
+    Module for saving and managing playlists.
+    """
+    def __init__(self, bot):
+        self.bot = bot
+
+    async def cog_check(self, ctx):
+        if not ctx.guild:
+            raise commands.NoPrivateMessage()
+        return True
+
+    async def cog_before_invoke(self, ctx):
+        ctx.voice_state = await VOICE_STATES.get_state(ctx)
+        Checks.raise_if_bound(ctx)
+        Checks.raise_if_locked(ctx)
+
+    @decorators.group(name="playlist", brief="Manage playlists.")
+    async def _playlist(self, ctx):
+        if ctx.invoked_subcommand is None:
+            await ctx.send_help(str(ctx.command))
+
+    @_playlist.command(name="save", brief="Save the queue to a new playlist.")
+    async def playlist_save(self, ctx, *, name: str):
+        """
+        Usage: {0}playlist save [playlist name]
+        Output:
+            Saves the current queue to a playlist with a given name.
+        Notes:
+            This command will attach the current queue
+            and the provided name to your ID. You will
+            be the only person able to playback this queue
+            at a later time.
+        """
+        player = ctx.voice_state.validate
+        queue = list(ctx.voice_state.tracks)
+        if player.entry:
+            queue.insert(0, player.entry)
+        if len(queue) == 0:
+            await ctx.fail("The queue is currently empty.")
+            return
+
+
+        queue = json.dumps([entry.json for entry in queue])
+        query = """
+                INSERT INTO playlists (owner_id, name, queue)
+                VALUES ($1, $2, $3::JSONB)
+                """
+        try:
+            await self.bot.cxn.execute(query, ctx.author.id, name.lower(), queue)
+        except asyncpg.exceptions.UniqueViolationError:
+            await ctx.fail(
+                "You already have a saved playlist with that name. Please try again with a different name"
+            )
+            return
+        await ctx.success(f"Saved the current queue to playlist: **{name}**")
+
+    @_playlist.command(name="delete", brief="Delete one of your saved playlists.")
+    async def playlist_delete(self, ctx, *, name: str):
+        """
+        Usage: {0}playlist delete [playlist name]
+        Output:
+            Deletes a saved playlist by name.
+        """
+        query = """
+                DELETE FROM playlists
+                WHERE owner_id = $1
+                AND name = $2
+                """
+        r = await self.bot.cxn.execute(query, ctx.author.id, name.lower())
+        if r == "DELETE 0":
+            await ctx.fail(f"You have no saved playlist with name: **{name}**")
+            return
+        await ctx.success(f"Successfully deleted playlist: **{name}**")
+
+    @_playlist.command(name="append", aliases=['add'], brief="Add to a saved playlist.")
+    async def playlist_append(self, ctx, *, name: str):
+        """
+        Usage: {0}playlist append [playlist name]
+        Output:
+            Appends the current song to the end of a saved playlist.
+        """
+        await ctx.trigger_typing()
+        player = ctx.voice_state.validate
+        if not player.entry:
+            await ctx.fail("No current track to append to the playlist.")
+            return
+
+        query = """
+                SELECT queue
+                FROM playlists
+                WHERE owner_id = $1
+                AND name = $2;
+                """
+        playlist = await self.bot.cxn.fetchval(query, ctx.author.id, name.lower())
+        if not playlist:
+            await ctx.fail(f"You do not have a playlist with name: **{name}**")
+            return
+
+        playlist = json.loads(playlist)
+        playlist.append(player.entry.json)
+        playlist = json.dumps(playlist)
+
+        query = """
+                UPDATE queues
+                SET queue = $1
+                WHERE owner_id = $2
+                AND name = $3;
+                """
+        await self.bot.cxn.execute(query, playlist, ctx.author.id, name.lower())
+        await ctx.success(f"Appended the current track to playlist: **{name}**")
+
+    @_playlist.command(name="extend", brief="Extend a saved playlist with the current queue.")
+    async def playlist_extend(self, ctx, *, name: str):
+        """
+        Usage: {0}playlist save [playlist name]
+        Output:
+            Saves the current queue to a playlist with a given name.
+        Notes:
+            This command will attach the current queue
+            and the provided name to your ID. You will
+            be the only person able to playback this queue
+            at a later time.
+        """
+        await ctx.trigger_typing()
+        player = ctx.voice_state.validate
+        queue = list(ctx.voice_state.tracks)
+        if player.entry:
+            queue.insert(0, player.entry)
+        if len(queue) == 0:
+            await ctx.fail("The queue is currently empty.")
+            return
+
+        query = """
+                SELECT queue
+                FROM playlists
+                WHERE owner_id = $1
+                AND name = $2;
+                """
+        playlist = await self.bot.cxn.fetchval(query, ctx.author.id, name.lower())
+        if not playlist:
+            await ctx.fail(f"You do not have a playlist with name: **{name}**")
+            return
+
+        playlist = json.loads(playlist)
+        playlist.extend([entry.json for entry in queue])
+        playlist = json.dumps(playlist)
+
+        query = """
+                UPDATE queues
+                SET queue = $1
+                WHERE owner_id = $2
+                AND name = $3;
+                """
+        await self.bot.cxn.execute(query, playlist, ctx.author.id, name.lower())
+        await ctx.success(f"Extended playlist: **{name}** with the current queue.")
+
+    @_playlist.command(name="enqueue", aliases=['play', 'start', 'queue', 'load'], brief="Enqueue a saved playlist.")
+    async def playlist_enqueue(self, ctx, *, name: str):
+        """
+        Usage: {0}playlist enqueue [playlist name]
+        Aliases:
+            {0}playlist play, {0}playlist start,
+            0}playlist queue, 0}playlist load
+        Output:
+            Enqueues all tracks in the saved queue by
+            adding them to the end of the current queue.
+        Notes:
+            Save playable queues by using
+            the {0}playlist save command.
+        """
+        await ctx.trigger_typing()
+        player = await ctx.voice_state.ensure_voice_state(ctx)
+        query = """
+                SELECT queue
+                FROM playlists
+                WHERE owner_id = $1
+                AND name = $2
+                """
+        saved_queue = await self.bot.cxn.fetchrow(query, ctx.author.id, name.lower())
+        if not saved_queue:
+            await ctx.fail("You do not have a saved playlist with that name")
+            return
+
+        queue = json.loads(saved_queue["queue"])
+
+        player.tracks.extend(
+            [
+                QueueEntry(
+                    ctx,
+                    track.get("title"),
+                    track.get("search"),
+                    uploader=track.get("uploader"),
+                    link=track.get("link"),
+                )
+                for track in queue
+            ]
+        )
+
+        await ctx.music(
+            f"Enqueued saved playlist: {name} `({len(queue)} tracks)`"
+        )
+        query = """
+                UPDATE playlists
+                SET uses = uses + 1
+                WHERE owner_id = $1
+                AND name = $2
+                """
+        await self.bot.cxn.execute(query, ctx.author.id, name.lower())
+
+
+    @_playlist.command(name="view", aliases=['info'], brief="Show info on a playlist.")
+    async def playlist_view(self, ctx, user: typing.Optional[converters.DiscordMember], *, name: str):
+        """
+        Usage: {0}playlist view [playlist owner] [playlist name]
+        Alias: {0}playlist info
+        Output:
+            Show some statistics on a saved playlist
+        """
+        await ctx.trigger_typing()
+        user = user or ctx.author
+        playlist = await Playlist.initialize(ctx, user, name)
+
+
+        view = Views.QueueView(ctx, [entry.hyperlink for entry in playlist.entries], playlist=playlist)
+        view.embed.set_thumbnail(url=playlist.owner.display_avatar)
+        view.embed.title = "Playlist Viewing Session"
+        view.embed.add_field(name="Playlist Name", value=name.title())
+        view.embed.add_field(name="Playlist Owner", value=str(playlist.owner))
+        view.embed.add_field(name="Created on", value=playlist.created_at.__format__('%m/%d/%Y'))
+        view.embed.add_field(name="Total Tracks", value=playlist.tracks)
+        view.embed.add_field(name="Total Likes", value=playlist.likes)
+        view.embed.add_field(name="Total Uses", value=playlist.uses)
+        await view.start()
+
+
+    @decorators.command(
+        brief="Show queues saved by a user.",
+        name="playlists",
+        aliases=["queues"],
+    )
+    @checks.bot_has_perms(embed_links=True)
+    @checks.cooldown()
+    async def _playlists(self, ctx, *, user: converters.DiscordMember = None):
+        """
+        Usage: {0}queues [user]
+        Aliases: {0}myqueues, {0}savedqueues, {0}userqueues
+        Output:
+            Shows all saved queues of a user
+            in a pagination session.
+        Notes:
+            Save playable queues by using
+            the {0}savequeue command.
+        """
+        user = user or ctx.author
+        playlists = await Playlist.get_playlists(ctx, user)
+        p = views.SimpleView(
+            ctx,
+            entries=[
+                f"**{playlist.name.title()}**: `{playlist.tracks} tracks`"
+                for playlist in playlists
+            ],
+            per_page=10,
+            index=True,
+        )
+        p.embed.title = f"{user.display_name}'s Saved Playlists"
+        await p.start()
+
+
+    @decorators.command(
+        name="playliked", aliases=["playsaved"], brief="Enqueue saved songs."
+    )
+    async def _playliked(self, ctx):
+        """
+        Usage: {0}playliked
+        Alias: {0}playsaved
+        Output:
+            Enqueues all tracks in the your liked songs
+            by adding them to the end of the current queue.
+        Notes:
+            Add to your saved songs by using the {0}save command
+        """
+        await ctx.trigger_typing()
+        player = await ctx.voice_state.ensure_voice_state(ctx)
+        query = """
+                SELECT title, url, uploader
+                FROM saved
+                WHERE requester_id = $1
+                ORDER BY insertion DESC;
+                """
+        records = await self.bot.cxn.fetch(query, ctx.author.id)
+        if not records:
+            await ctx.fail("You have no liked tracks")
+            return
+
+        for record in records:
+            player.tracks.put_nowait(
+                QueueEntry(
+                    ctx, record["title"], record["url"], uploader=record["uploader"]
+                )
+            )
+
+        await ctx.send(f"Enqueued your liked songs `({len(records)} tracks)`")
+
+    @decorators.command(
+        name="playtop", aliases=["playpop"], brief="Enqueue the top 10 most frequently queued tracks."
+    )
+    async def _playtop(self, ctx, limit: int = 10):
+        """
+        Usage: {0}playliked
+        Alias: {0}playsaved
+        Output:
+            Enqueues all tracks in the your liked songs
+            by adding them to the end of the current queue.
+        Notes:
+            Add to your saved songs by using the {0}save command
+        """
+        await ctx.trigger_typing()
+        if not 0 < limit < 100:
+            await ctx.fail(f"the `limit` argument must be an integer between `0` and `100`.")
+            return
+        player = await ctx.voice_state.ensure_voice_state(ctx)
+        query = f"""
+                SELECT title, url, uploader, count(url) as c
+                FROM tracks
+                WHERE requester_id = $1
+                GROUP BY title, url, uploader
+                ORDER BY c DESC
+                LIMIT {limit};
+                """
+        records = await self.bot.cxn.fetch(query, ctx.author.id)
+        if not records:
+            await ctx.fail("You have no recorded tracks")
+            return
+
+        for record in records:
+            player.tracks.put_nowait(
+                QueueEntry(
+                    ctx, record["title"], record["url"], uploader=record["uploader"]
+                )
+            )
+
+        await ctx.send(f"Enqueued your top tracks `({len(records)} tracks)`")
+
 class Voice(commands.Cog):
     """
     Module for voice permissions.
@@ -3242,9 +3460,37 @@ class Voice(commands.Cog):
                     }
                 )
 
-
-
-
+    @decorators.command(
+        brief="Get voice statistics for a user",
+        aliases=['vtime']
+    )
+    async def voicetime(self, ctx, *, user: converters.DiscordUser = None):
+        user = user or ctx.author
+        query = """
+                with voice_data as(
+                    SELECT connected,
+                    user_id,
+                    first_seen,
+                    case when 
+                        lag(first_seen) over (order by first_seen desc) is null then
+                            now() at time zone 'utc'
+                        else
+                            lag(first_seen) over (order by first_seen desc)
+                        end as last_seen
+                        from voice
+                    where user_id = $1
+                    and connected = True
+                    group by connected, user_id, first_seen
+                )
+                select sum(extract(epoch from(last_seen - first_seen))) as sum
+                from voice_data
+                order by sum desc
+                """
+        record = await self.bot.cxn.fetchval(query, user.id)
+        from utilities import utils
+        voice_time = utils.time_between(time.time() - record, time.time())
+        await ctx.send_or_reply(f"{self.bot.emote_dict['graph']} User **{user}** `{user.id}` has spent **{voice_time}** in voice channels throughout this server.")
+        
 
     @decorators.group(
         brief="Manage the DJ role.",
@@ -3665,6 +3911,7 @@ class SpotifyTracker(commands.Cog):
     #                         "updated": str(datetime.utcnow())
     #                     })
 
+
     @decorators.group(name="spotify", hidden=True)
     @checks.cooldown()
     async def _spotify(self, ctx):
@@ -3743,7 +3990,9 @@ class SpotifyTracker(commands.Cog):
 
 
 def setup(bot):
+    bot.music_cogs = ["PLAYER", "PLAYLISTS", "AUDIO", "QUEUE", "VOICE"]
     bot.add_cog(Player(bot))
+    bot.add_cog(Playlists(bot))
     bot.add_cog(Queue(bot))
     bot.add_cog(Audio(bot))
     bot.add_cog(Voice(bot))
@@ -3751,6 +4000,48 @@ def setup(bot):
 
 
 class Views:
+
+
+    class Confirmation(discord.ui.View):
+        def __init__(self, interaction: discord.Interaction, message="", **kwargs):
+            super().__init__(timeout=10.0)
+            self.interaction = interaction
+            self.message = message
+            self.kwargs = kwargs
+            self.result = None
+
+        async def prompt(self):
+            if self.interaction.response.is_done():
+                await self.interaction.followup.send(self.message, **self.kwargs, ephemeral=True, view=self)
+            else:
+                await self.interaction.response.send_message(self.message, **self.kwargs, ephemeral=True, view=self)
+            await self.wait()
+            return self.result
+
+        async def on_timeout(self):
+            await self.interaction.edit_original_message(content="**Confirmation Cancelled.**", view=None)
+
+        async def interaction_check(self, interaction):
+            if self.interaction.user.id == interaction.user.id:
+                return True
+            else:
+                await interaction.response.send_message(
+                    "Only the command invoker can use this button.", ephemeral=True
+                )
+
+        @discord.ui.button(
+            emoji=constants.emotes["success"], style=discord.ButtonStyle.gray
+        )
+        async def _confirm(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            self.result = self.interaction
+            self.stop()
+
+        @discord.ui.button(emoji=constants.emotes["failed"], style=discord.ButtonStyle.gray)
+        async def _deny(self, button: discord.ui.Button, interaction: discord.Interaction):
+            await self.interaction.edit_original_message(content="**Confirmation Cancelled.**", view=None)
+            self.stop()
 
     class TrackView(discord.ui.View):
         def __init__(self, ctx):
@@ -4209,9 +4500,10 @@ class Views:
                     await self.show_page(interaction)
 
     class QueueSource(ButtonPages):
-        async def __init__(self, ctx, pages, *, content=""):
+        async def __init__(self, ctx, pages, *, playlist=None, content=""):
             self.ctx = ctx
             self.content = content
+            self.playlist = playlist
             self.input_lock = asyncio.Lock()
 
             await super().__init__(ctx, pages, content=content)
@@ -4220,6 +4512,25 @@ class Views:
             if _help:
                 self.add_item(self._return)
                 self.add_item(self._delete)
+                return
+
+            if self.playlist:
+                self.add_item(self._first)
+                self.add_item(self._back)
+                self.add_item(self._select)
+                self.add_item(self._next)
+                self.add_item(self._last)
+                self.add_item(self._help)
+                if self.playlist.is_owner(self.ctx.author):
+                    self.add_item(self._subtract)
+                else:
+                    self.add_item(self._download)
+                self.add_item(self._enqueue)
+                if self.playlist.is_owner(self.ctx.author):
+                    self.add_item(self._drop)
+                else:
+                    self.add_item(self._like)
+                self.add_item(self._trash)
                 return
 
             self.add_item(self._first)
@@ -4237,12 +4548,12 @@ class Views:
 
 
         @discord.ui.button(
-            emoji=constants.emotes["download"], style=discord.ButtonStyle.gray
+            emoji=constants.emotes["minus"], style=discord.ButtonStyle.gray
         )
-        async def _download(
+        async def _subtract(
             self, button: discord.ui.Button, interaction: discord.Interaction
         ):
-            """Saves the current queue"""
+            """Remove a track from a saved playlist."""
             if self.input_lock.locked():
                 await interaction.response.send_message(
                     "Already waiting for your response...", ephemeral=True
@@ -4256,7 +4567,93 @@ class Views:
                 channel = self.message.channel
                 author_id = interaction.user and interaction.user.id
                 await interaction.response.send_message(
-                    "Enter a name to save this queue under.", ephemeral=True
+                    "Please enter the track index to be removed from this playlist.", ephemeral=True
+                )
+
+                def message_check(m):
+                    if not m.author.id == author_id:
+                        return False
+                    if not channel == m.channel:
+                        return False
+                    if not m.content.isdigit():
+                        return False
+                    if int(m.content) < 1:
+                        raise IndexError("Invalid index. Please specify a valid track index to remove.")
+                    return True
+
+                try:
+                    msg = await self.ctx.bot.wait_for(
+                        "message", check=message_check, timeout=30.0
+                    )
+                except asyncio.TimeoutError:
+                    await interaction.followup.send(
+                        "Playlist editing expired.", ephemeral=True
+                    )
+                    await asyncio.sleep(5)
+                else:
+                    track = self.playlist.pop(int(msg.content))
+                    res = await Views.Confirmation(interaction, message=f"**This action will remove track: `{track['title']}` from this playlist. Do you wish to continue?**").prompt()
+                    if res:
+                        await self.playlist.finalize()
+                        await res.edit_original_message(content="Saved this playlist to your liked songs.", view=None)
+                    try:
+                        await msg.delete()
+                    except:
+                        pass
+
+        @discord.ui.button(
+            emoji=constants.emotes["delete"], style=discord.ButtonStyle.gray
+        )
+        async def _drop(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            res = await Views.Confirmation(interaction, message="**This will permanently delete this playlist. Do you wish to continue?**").prompt()
+            if res:
+                name = self.playlist.name.title()
+                await self.playlist.delete()
+                await res.edit_original_message(content=f"Deleted playlist: **{name}**", view=None)
+
+        @discord.ui.button(
+            emoji=constants.emotes["heart"], style=discord.ButtonStyle.gray
+        )
+        async def _like(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            await self.playlist.like()
+            await interaction.response.send_message(content="Added a like to the playlist.", ephemeral=True)
+
+        @discord.ui.button(
+            emoji=constants.emotes["music"], style=discord.ButtonStyle.gray
+        )
+        async def _enqueue(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            player = await self.ctx.voice_state.ensure_voice_state(self.ctx)
+            player.tracks.extend(self.playlist.entries)
+            await interaction.response.send_message(f"Enqueued playlist: **{self.playlist.name.title()}** `({self.playlist.tracks} tracks)`")
+
+
+        @discord.ui.button(
+            emoji=constants.emotes["download"], style=discord.ButtonStyle.gray
+        )
+        async def _download(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            """Saves the current playlist"""
+            if self.input_lock.locked():
+                await interaction.response.send_message(
+                    "Already waiting for your response...", ephemeral=True
+                )
+                return
+
+            if self.message is None:
+                return
+
+            async with self.input_lock:
+                channel = self.message.channel
+                author_id = interaction.user and interaction.user.id
+                await interaction.response.send_message(
+                    "Enter a name to save this playlist under.", ephemeral=True
                 )
 
                 def message_check(m):
@@ -4272,7 +4669,7 @@ class Views:
                     )
                 except asyncio.TimeoutError:
                     await interaction.followup.send(
-                        "Queue saving expired.", ephemeral=True
+                        "Playlist saving expired.", ephemeral=True
                     )
                     await asyncio.sleep(5)
                 else:
@@ -4282,7 +4679,7 @@ class Views:
                     )
                     queue = json.dumps([entry.json for entry in queue])
                     query = """
-                            INSERT INTO queues (owner_id, name, queue)
+                            INSERT INTO playlists (owner_id, name, queue)
                             VALUES ($1, $2, $3::JSONB)
                             """
                     try:
@@ -4291,7 +4688,7 @@ class Views:
                         )
                     except asyncpg.exceptions.UniqueViolationError:
                         await interaction.followup.send(
-                            "You already have a saved queue with that name. Please try again with a different name",
+                            "You already have a saved playlist with that name. Please try again with a different name",
                             ephemeral=True,
                         )
                         return
@@ -4464,7 +4861,70 @@ class Views:
             else:
                 await interaction.message.edit(content=self.current_page, view=self)
 
-    class QueuePages(QueueSource):
+    class QueueView(QueueSource):
+        """
+        Simple button page session that turns
+        a list of strings into a pagination session
+        by splitting them up and adding them to the
+        description of an embed.
+        Parameters:
+            ctx: The context of a command
+            entries: The list of strings
+            per_page: How many entries per embed
+            index: Whether or not to prepend numbers to each entry
+            desc_head: Prefix the description with a string
+            desc_foot: Suffix the description with a string
+        """
+
+        def __init__(
+            self,
+            ctx,
+            entries,
+            *,
+            per_page: int = 10,
+            index: bool = True,
+            desc_head: str = "",
+            desc_foot: str = "",
+            playlist=None,
+            content="",
+        ):
+            self.ctx = ctx
+            self.entries = entries
+            self.playlist = playlist
+            self.per_page = per_page
+            self.index = index
+            self.desc_head = desc_head
+            self.desc_foot = desc_foot
+            self.content = content
+
+            self.embed = discord.Embed(color=ctx.bot.constants.embed)
+
+        async def start(self):
+            self.pages = self.create_pages(self.entries, self.per_page)
+            await super().__init__(self.ctx, self.pages, playlist=self.playlist, content=self.content)
+
+        def create_pages(self, entries, per_page):
+            embeds = []
+            index = 0
+            while entries:
+                embed = self.embed.copy()
+                embed.description = self.desc_head
+                if self.index:
+                    for entry in entries[:per_page]:
+                        index += 1
+                        embed.description += f"{index}. {entry}\n"
+                else:
+                    embed.description += "\n".join(entries[:per_page])
+                embed.description += self.desc_foot
+                del entries[:per_page]
+
+                embeds.append(embed)
+
+            for count, embed in enumerate(embeds, start=1):
+                embed.set_footer(text=f"Page {count} of {len(embeds)}")
+            return embeds
+
+    class SimpleView(ButtonPages):
         """
         Simple button page session that turns
         a list of strings into a pagination session
@@ -4670,14 +5130,11 @@ class Views:
                             return False
                         if not channel == m.channel:
                             return False
-                        if not m.content.isdigit():
-                            return False
                         try:
-                            value = float(m.content)
+                            float(m.content)
                         except ValueError:
                             return False
-                        else:
-                                
+                        else:   
                             return True
 
                     try:

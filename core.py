@@ -167,7 +167,7 @@ class Neutra(commands.AutoShardedBot):
             "MONITOR",
         ]
         self.do_not_load = ["CONVERSION"]
-        self.music_cogs = ["PLAYER", "AUDIO", "QUEUE", "VOICE"]
+        self.music_cogs = []
 
         self.home_guilds = [
             805638877762420786,  # Support server

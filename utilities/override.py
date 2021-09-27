@@ -8,6 +8,13 @@ class BotContext(commands.Context):
         super().__init__(**kwargs)
         self.handled = False
 
+    def is_owner(self):
+        """ Checks if the author is one of the owners """
+        return self.author.id in self.bot.constants.owners
+
+    def is_admin(self):
+        return self.author.id in self.bot.constants.admins or self.author.id in self.bot.constants.owners
+
     async def fail(self, content=None, refer=True, **kwargs):
         if refer:
             return await self.send_or_reply(
