@@ -511,9 +511,7 @@ def cleanup_code(content):
 
 def get_icon(guild):
     """Return cdn poop image if no icon"""
-    if not guild.icon:
-        guild.icon = DISCORD_FAILURE
-    return guild.icon
+    return guild.icon or DISCORD_FAILURE
 
 
 class CachedHistoryIterator(HistoryIterator):

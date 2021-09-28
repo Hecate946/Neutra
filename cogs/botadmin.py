@@ -98,6 +98,15 @@ class Botadmin(commands.Cog):
         return js["html_url"]
 
     @decorators.command(
+        aliases=['rawhelp'],
+        brief="Invoke the default help command",
+    )
+    async def defaulthelp(self, ctx, *, search=None):
+        if not search:
+            return await ctx.send_help()
+        await ctx.send_help(str(search))
+
+    @decorators.command(
         aliases=["helpless"],
         brief="Send a file showing incomplete commands.",
         implemented="2021-04-14 00:54:20.465452",

@@ -9,7 +9,7 @@ try:
     owners = config["owners"]
     postgres = config["postgres"]
     prefix = config["prefix"]
-    support = config["support"]
+    support = "https://discord.gg/H2qTG4yxqb"  # config["support"]
     tester = config["tester"]
     timezonedb = config["timezonedb"]
     token = config["token"]
@@ -20,7 +20,6 @@ except KeyError as e:
           Add this key or the bot might not function properly.
           """
     )
-
 
 class Colors(object):
     GREEN = (46, 204, 113)

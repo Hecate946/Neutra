@@ -1,4 +1,3 @@
-import asyncio
 import inspect
 import discord
 import traceback
@@ -14,262 +13,70 @@ from utilities import decorators
 from utilities import formatting
 from utilities import pagination
 
-# class HelpCommand(commands.HelpCommand):
-#     def __init__(self):
-#         super().__init__(command_attrs={
-#             'cooldown': commands.CooldownMapping.from_cooldown(1, 3.0, commands.BucketType.member),
-#             'help': 'Shows help about the bot, a command, or a category'
-#         })
-
-    
-#     @property
-#     def help_description(self):
-#         desc = f"**Bot Invite Link:** [https://neutra.discord.bot]({self.context.bot.oauth})\n"
-#         desc += f"**Support Server:**  [https://discord.gg/neutra]({self.context.bot.constants.support})\n"
-#         desc += f"**Voting Link:**  [https://top.gg/bot/neutra/vote](https://top.gg/bot/806953546372087818/vote)"
-#         return desc
-
-#     async def filter_commands(self, commands, *, sort=False, key=None):
-#         return await super().filter_commands(commands, sort=sort, key=key)
-
-#     async def on_help_command_error(self, ctx, error):
-#         if isinstance(error, commands.CommandInvokeError):
-#             await ctx.send(str(error.original))
-
-#     def get_command_signature(self, command):
-#         parent = command.full_parent_name
-#         if len(command.aliases) > 0:
-#             aliases = '|'.join(command.aliases)
-#             fmt = f'[{command.name}|{aliases}]'
-#             if parent:
-#                 fmt = f'{parent} {fmt}'
-#             alias = fmt
-#         else:
-#             alias = command.name if not parent else f'{parent} {command.name}'
-#         return f'{alias} {command.signature}'
-
-
-#     async def send_help(self, ctx, embed):
-#         if not ctx.guild:  # In DMs, just send the embed
-#             msg = await ctx.safe_send(embed=embed, view=HelpView(ctx))
-#         else:  # In a server
-#             if not ctx.channel.permissions_for(ctx.me).embed_links:  # Can't embed
-#                 msg = await self.attempt_dm(ctx, embed, view=HelpView(ctx))  # DM them.
-#             else:
-#                 msg = await ctx.send_or_reply(embed=embed, view=HelpView(ctx))
-
-#         Storage.message = msg
-
-#     async def send_bot_help(self, mapping):
-#         embed = discord.Embed(
-#             title=f"{self.context.bot.user.name}'s Help Command",
-#             url=self.context.bot.constants.support,
-#             description=self.help_description,
-#             color=self.context.bot.constants.embed,
-#         )
-
-#         embed.set_footer(
-#             text=f'Use "{self.context.clean_prefix}help category" for information on a category.'
-#         )
-
-#         def pred(cog):
-#             if len([c for c in cog.get_commands() if not c.hidden]) == 0:
-#                 return False
-#             return True
-
-#         cogs = [cog for cog in self.context.bot.get_cogs() if pred(cog)]
-#         public = ""
-#         beta = ""
-#         admin = ""
-#         for cog in sorted(cogs, key=lambda cog: cog.qualified_name):
-#             if cog.qualified_name.upper() in self.context.bot.admin_cogs:
-#                 admin += f"\n`{cog.qualified_name}` {cog.description}\n"
-#             elif cog.qualified_name.upper() in self.context.bot.music_cogs:
-#                 beta += f"\n`{cog.qualified_name}` {cog.description}\n"
-#             else:
-#                 public += f"\n`{cog.qualified_name}` {cog.description}\n"
-
-#         embed.add_field(
-#             name="**General Categories**", value=f"** **{public}**\n**", inline=False
-#         )
-#         embed.add_field(
-#             name="**Music Categories**",
-#             value=f"** **{beta}**\n**",
-#             inline=False,
-#         )
-#         if self.context.is_admin():
-#             embed.add_field(
-#                 name="**Admin Categories**", value=f"** **{admin}**\n**", inline=False
-#             )
-
-#         await self.send_help(self.context, embed)
-
-#     # async def send_cog_help(self, cog):
-#     #     entries = await self.filter_commands(cog.get_commands(), sort=True)
-#     #     menu = HelpMenu(GroupHelpPageSource(cog, entries, prefix=self.clean_prefix))
-#     #     await self.context.release()
-#     #     await menu.start(self.context)
-
-#     def common_command_formatting(self, embed_like, command):
-#         embed_like.title = self.get_command_signature(command)
-#         if command.description:
-#             embed_like.description = f'{command.description}\n\n{command.help}'
-#         else:
-#             embed_like.description = command.help or 'No help found...'
-
-#     async def send_command_help(self, command):
-#         # No pagination necessary for a single command.
-#         embed = discord.Embed(colour=discord.Colour.blurple())
-#         self.common_command_formatting(embed, command)
-#         await self.context.send(embed=embed)
-
-#     # async def send_group_help(self, group):
-#     #     subcommands = group.commands
-#     #     if len(subcommands) == 0:
-#     #         return await self.send_command_help(group)
-
-#     #     entries = await self.filter_commands(subcommands, sort=True)
-#     #     if len(entries) == 0:
-#     #         return await self.send_command_help(group)
-
-#     #     source = GroupHelpPageSource(group, entries, prefix=self.clean_prefix)
-#     #     self.common_command_formatting(source, group)
-#     #     menu = HelpMenu(source)
-#     #     await self.context.release()
-#     #     await menu.start(self.context)
-
-def setup(bot):
-    bot.remove_command("help")
-    bot.add_cog(Help(bot))
-    # bot.old_help_command = bot.help_command
-    # bot.help_command = HelpCommand()
-
-
-class Storage(object):
-    """
-    Storage class to cache the needed
-    objects for the help command views.
-    """
-
-    invite = None  # The bot's invite link
-    support = None  # The support server invite
-    help_embed = None  # The help embed
-    message = None  # The interaction message
-    github = "https://github.com/Hecate946/Neutra/blob/main/README.md"  # "Docs link"
-
-
 class HelpView(discord.ui.View):
-    def __init__(self, ctx):
-        super().__init__(timeout=60)
+    def __init__(self, ctx, embed):
+        super().__init__(timeout=120)
+
         self.ctx = ctx
+        self.bot = ctx.bot
+        self.embed = embed
 
-        self.add_item(
-            discord.ui.Button(
-                label="Docs",
-                url=Storage.github,
+        invite_url = ctx.bot.oauth
+        support_url = ctx.bot.constants.support
+        github_url = "https://github.com/Hecate946/Neutra/blob/main/README.md"  # "Docs link
+
+        self.invite = discord.ui.Button(label="Invite", url=invite_url)
+        self.support = discord.ui.Button(label="Support", url=support_url)
+        self.github = discord.ui.Button(label="Docs", url=github_url)
+
+        self.clear_items()
+        self.fill_items()
+
+
+
+    def fill_items(self, *, _help=False, expired=False):
+        if expired:
+            self.add_item(self.github)
+            self.add_item(self.invite)
+            self.add_item(self.support)
+            return
+        if _help:
+            self.add_item(self.delete)
+            self.add_item(self._return)
+            self.add_item(self.github)
+            self.add_item(self.invite)
+            self.add_item(self.support)
+            return
+
+        self.add_item(self.delete)
+        self.add_item(self.helper)
+        self.add_item(self.github)
+
+
+    async def start(self):
+        if not self.ctx.guild:  # In DMs, just send the embed
+            self.message = await self.ctx.safe_send(embed=self.embed, view=self)
+        else:  # In a server
+            if not self.ctx.channel.permissions_for(self.ctx.me).embed_links:  # Can't embed
+                self.message = await self.attempt_dm(self.ctx, self.embed)  # DM them.
+            else:
+                self.message = await self.ctx.send_or_reply(embed=self.embed, view=self)
+
+        return self.message
+
+    async def attempt_dm(self, ctx, embed):
+        try:
+            msg = await ctx.author.send(embed=embed, view=self)
+        except Exception:
+            await ctx.fail(
+                f"I was unable to send you help. Please ensure I have the `Embed Links` permission in this channel or enable your DMs for this server."
             )
-        )
-
-    async def interaction_check(self, interaction):
-        if self.ctx.author.id == interaction.user.id:
-            return True
         else:
-            await interaction.response.send_message(
-                "Only the command invoker can use this button.", ephemeral=True
-            )
-
-    async def on_timeout(self):
-        view = discord.ui.View()
-        view.add_item(discord.ui.Button(label="Docs", url=Storage.github))
-        view.add_item(discord.ui.Button(label="Invite", url=Storage.invite))
-        view.add_item(discord.ui.Button(label="Support", url=Storage.support))
-        await Storage.message.edit(embed=Storage.message.embeds[0], view=view)
-        self.stop()
-
-    @discord.ui.button(label="Delete", style=discord.ButtonStyle.red)
-    async def delete(self, button: discord.ui.Button, interaction: discord.Interaction):
-        await interaction.message.delete()
-        self.stop()
-
-    @discord.ui.button(label="Need help?", style=discord.ButtonStyle.green)
-    async def helper(self, button: discord.ui.Button, interaction: discord.Interaction):
-        await interaction.message.edit(embed=Storage.help_embed, view=GoBack(self.ctx))
-        self.stop()
-
-
-class GoBack(discord.ui.View):
-    def __init__(self, ctx):
-        super().__init__(timeout=60)
-        self.ctx = ctx
-
-        self.add_item(
-            discord.ui.Button(
-                label="Docs",
-                url=Storage.github,
-            )
-        )
-        self.add_item(
-            discord.ui.Button(
-                label="Invite",
-                url=Storage.invite,
-            )
-        )
-        self.add_item(
-            discord.ui.Button(
-                label="Support",
-                url=Storage.support,
-            )
-        )
-
-    async def interaction_check(self, interaction):
-        if self.ctx.author.id == interaction.user.id:
-            return True
-        else:
-            await interaction.response.send_message(
-                "Only the command invoker can use this button.", ephemeral=True
-            )
-
-    async def on_timeout(self):
-        view = discord.ui.View()
-        view.add_item(discord.ui.Button(label="Docs", url=Storage.github))
-        view.add_item(discord.ui.Button(label="Invite", url=Storage.invite))
-        view.add_item(discord.ui.Button(label="Support", url=Storage.support))
-        await Storage.message.edit(embed=Storage.message.embeds[0], view=view)
-        self.stop()
-
-    @discord.ui.button(label="Delete", style=discord.ButtonStyle.red)
-    async def delete(self, button: discord.ui.Button, interaction: discord.Interaction):
-        await interaction.message.delete()
-        self.stop()
-
-    @discord.ui.button(label="Go back", style=discord.ButtonStyle.blurple)
-    async def edit(self, button: discord.ui.Button, interaction: discord.Interaction):
-        await interaction.message.edit(
-            embed=Storage.message.embeds[0], view=HelpView(self.ctx)
-        )
-        self.stop()
-
-
-class Help(commands.Cog):
-    """
-    My extensive help category.
-    """
-
-    def __init__(self, bot):
-        self.bot = bot
-
-        Storage.invite = self.bot.oauth
-        Storage.support = self.bot.constants.support
-        Storage.help_embed = self.get_help_embed
-
-        self.desc = (
-            f"**Bot Invite Link:** [https://neutra.discord.bot]({self.bot.oauth})\n"
-        )
-        self.desc += f"**Support Server:**  [https://discord.gg/neutra]({self.bot.constants.support})\n"
-        self.desc += f"**Voting Link:**  [https://top.gg/bot/neutra/vote](https://top.gg/bot/806953546372087818/vote)"
+            await ctx.react(self.bot.emote_dict["letter"])
+            return msg
 
     @property
-    def get_help_embed(self):
+    def help_embed(self):
         help_embed = discord.Embed(
             description="I'm a multipurpose discord bot that specializes in stat tracking and moderation.",
             color=self.bot.constants.embed,
@@ -304,62 +111,74 @@ class Help(commands.Cog):
         )
         return help_embed
 
+
+    async def interaction_check(self, interaction):
+        if self.ctx.author.id == interaction.user.id:
+            return True
+        else:
+            await interaction.response.send_message(
+                "Only the command invoker can use this button.", ephemeral=True
+            )
+
+    async def on_error(
+        self,
+        error: Exception,
+        item: discord.ui.Item,
+        interaction: discord.Interaction,
+    ):
+        if interaction.response.is_done():
+            await interaction.followup.send(str(error), ephemeral=True)
+        else:
+            await interaction.response.send_message(str(error), ephemeral=True)
+
+    async def on_timeout(self):
+        self.clear_items()
+        self.fill_items(expired=True)
+        await self.message.edit(embed=self.embed, view=self)
+
+    @discord.ui.button(label="Delete", style=discord.ButtonStyle.red)
+    async def delete(self, button: discord.ui.Button, interaction: discord.Interaction):
+        await interaction.message.delete()
+        self.stop()
+
+    @discord.ui.button(label="Need help?", style=discord.ButtonStyle.green)
+    async def helper(self, button: discord.ui.Button, interaction: discord.Interaction):
+        self.clear_items()
+        self.fill_items(_help=True)
+        await interaction.message.edit(embed=self.help_embed, view=self)
+
+    @discord.ui.button(label="Go back", style=discord.ButtonStyle.blurple)
+    async def _return(self, button: discord.ui.Button, interaction: discord.Interaction):
+        self.clear_items()
+        self.fill_items()
+        await interaction.message.edit(embed=self.embed, view=self)
+
+def setup(bot):
+    bot.remove_command("help")
+    bot.add_cog(Help(bot))
+
+class Help(commands.Cog):
+    """
+    My extensive help category.
+    """
+
+    def __init__(self, bot):
+        self.bot = bot
+
+        self.desc = (
+            f"**Bot Invite Link:** [https://neutra.discord.bot]({self.bot.oauth})\n"
+        )
+        self.desc += f"**Support Server:**  [https://discord.gg/neutra]({self.bot.constants.support})\n"
+        self.desc += f"**Voting Link:**  [https://top.gg/bot/neutra/vote](https://top.gg/bot/806953546372087818/vote)"
+
+
     ############################
     ## Get Commands From Cogs ##
     ############################
-    async def attempt_dm(self, ctx, embed, view):
-        try:
-            msg = await ctx.author.send(embed=embed, view=view)
-        except Exception:
-            await ctx.fail(
-                f"I was unable to send you help. Please ensure I have the `Embed Links` permission in this channel or enable your DMs for this server."
-            )
-        else:
-            await ctx.react(self.bot.emote_dict["letter"])
-            return msg
-
-    async def do_reaction(self, message, ctx):
-        def rxn_pred(m):
-            if (
-                m.message_id == message.id  # Same message
-                and m.user_id == ctx.author.id  # Only the author
-                and str(m.emoji) == self.bot.emote_dict["trash"]  # Same emoji
-            ):
-                return True
-            return False
-
-        await message.add_reaction(self.bot.emote_dict["trash"])
-
-        try:
-            await self.bot.wait_for("raw_reaction_add", timeout=60.0, check=rxn_pred)
-            await message.delete()
-        except asyncio.TimeoutError:  # Been a minute.
-            await message.remove_reaction(self.bot.emote_dict["trash"], self.bot.user)
 
     async def send_help(self, ctx, embed):
-        if not ctx.guild:  # In DMs, just send the embed
-            msg = await ctx.safe_send(embed=embed, view=HelpView(ctx))
-        else:  # In a server
-            if not ctx.channel.permissions_for(ctx.me).embed_links:  # Can't embed
-                msg = await self.attempt_dm(ctx, embed, view=HelpView(ctx))  # DM them.
-            else:
-                msg = await ctx.send_or_reply(embed=embed, view=HelpView(ctx))
+        await HelpView(ctx, embed).start()
 
-        Storage.message = msg
-
-        return
-
-        if msg:
-            if not ctx.channel.permissions_for(
-                ctx.me
-            ).add_reactions:  # Cannot add the trash emoji
-                return
-            if not ctx.channel.permissions_for(
-                ctx.me
-            ).external_emojis:  # Cannot add the trash emoji
-                return
-
-            await self.do_reaction(msg, ctx)
 
     async def send_category_help(self, ctx):
 
@@ -439,8 +258,7 @@ class Help(commands.Cog):
 
         if command.hidden:
             return await ctx.fail(f"No command named `{search}` found.")
-        # if command.cog_name in self.bot.music_cogs and not checks.is_home(ctx):
-        #     return await ctx.fail(f"No command named `{search}` found.")
+
         if command.cog_name in self.bot.admin_cogs and not checks.is_admin(ctx):
             return await ctx.fail(f"No command named `{search}` found.")
 

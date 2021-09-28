@@ -3058,7 +3058,7 @@ class Audio(commands.Cog):
 
 class Playlists(commands.Cog):
     """
-    Module for saving and managing playlists.
+    Module for managing playlists.
     """
     def __init__(self, bot):
         self.bot = bot
@@ -4004,7 +4004,7 @@ class Views:
 
     class Confirmation(discord.ui.View):
         def __init__(self, interaction: discord.Interaction, message="", **kwargs):
-            super().__init__(timeout=10.0)
+            super().__init__(timeout=30.0)
             self.interaction = interaction
             self.message = message
             self.kwargs = kwargs
