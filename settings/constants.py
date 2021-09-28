@@ -21,6 +21,7 @@ except KeyError as e:
           """
     )
 
+
 class Colors(object):
     GREEN = (46, 204, 113)
     YELLOW = (255, 228, 0)

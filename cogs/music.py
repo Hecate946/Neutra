@@ -622,6 +622,7 @@ class Checks:
                 "You must have the `Manage Roles` or the `Manage Guild` permission to use this command."
             )
 
+
 class QueueEntry:
     """
     QueueEntry object for enqueueing tracks.
@@ -673,6 +674,7 @@ class QueueEntry:
         }
         return json_entry
 
+
 class Playlist:
     """
     QueueEntry object for enqueueing tracks.
@@ -683,7 +685,7 @@ class Playlist:
         self.ctx = ctx
         self.bot = ctx.bot
         self.record = record
-        self.queue = json.loads(record.get('queue'))
+        self.queue = json.loads(record.get("queue"))
         self.entries = [
             QueueEntry(
                 ctx,
@@ -695,12 +697,12 @@ class Playlist:
             for track in self.queue
         ]
         self.tracks = len(self.queue)
-        self.id = record.get('id')
-        self.likes = record.get('likes')
-        self.owner = self.bot.get_user(record.get('owner_id'))
-        self.name = record.get('name')
-        self.uses = record.get('uses', 0)
-        self.created_at = record.get('insertion')
+        self.id = record.get("id")
+        self.likes = record.get("likes")
+        self.owner = self.bot.get_user(record.get("owner_id"))
+        self.name = record.get("name")
+        self.uses = record.get("uses", 0)
+        self.created_at = record.get("insertion")
 
     def is_owner(self, user):
         return user.id == self.owner.id
@@ -714,7 +716,9 @@ class Playlist:
                 """
         record = await ctx.bot.cxn.fetchrow(query, owner.id, name.lower())
         if not record:
-            raise commands.BadArgument(f"You do not have a playlist with name: **{name}**")
+            raise commands.BadArgument(
+                f"You do not have a playlist with name: **{name}**"
+            )
         return cls(ctx, record)
 
     @classmethod
@@ -725,9 +729,10 @@ class Playlist:
                 """
         records = await ctx.bot.cxn.fetch(query, owner.id)
         if not records:
-            raise commands.BadArgument(f"**{owner}** `{owner.id}` has no saved playlists.")
+            raise commands.BadArgument(
+                f"**{owner}** `{owner.id}` has no saved playlists."
+            )
         return [cls(ctx, record) for record in records]
-
 
     async def finalize(self):
         query = """
@@ -736,7 +741,9 @@ class Playlist:
                 WHERE owner_id = $2
                 AND name = $3
                 """
-        return await self.bot.cxn.execute(query, json.dumps(self.queue), self.owner.id, self.name.lower())
+        return await self.bot.cxn.execute(
+            query, json.dumps(self.queue), self.owner.id, self.name.lower()
+        )
 
     async def delete(self):
         query = """
@@ -750,8 +757,9 @@ class Playlist:
         try:
             return self.queue.pop(index - 1)
         except IndexError:
-            raise IndexError("Invalid index. Please specify a valid track index to remove.")
-
+            raise IndexError(
+                "Invalid index. Please specify a valid track index to remove."
+            )
 
     async def like(self):
         query = """
@@ -761,8 +769,7 @@ class Playlist:
                 AND name = $2
                 """
         await self.bot.cxn.execute(query, self.owner.id, self.name.lower())
-        
-    
+
 
 class YTDLSource:
     """
@@ -812,9 +819,7 @@ class YTDLSource:
         """
         loop = loop or asyncio.get_event_loop()
 
-        partial = functools.partial(
-            YOUTUBE_DL.extract_info, url, download=False
-        )
+        partial = functools.partial(YOUTUBE_DL.extract_info, url, download=False)
         processed_info = None  # TODO fix this system
         try:
             processed_info = await loop.run_in_executor(None, partial)
@@ -1191,11 +1196,13 @@ class VoiceClient(discord.VoiceClient):
         else:
             self._voice_state_complete.set()
 
+
 class AudioSource(discord.PCMVolumeTransformer):
     """
     Takes a ytdl source and player settings
     and returns a FFmpegPCMAudio source.
     """
+
     def __init__(self, ytdl, volume, position: float = 0.0, **kwargs):
         self.ytdl = ytdl
         self.position = position
@@ -1205,7 +1212,7 @@ class AudioSource(discord.PCMVolumeTransformer):
         s_filter = f"atempo=sqrt({speed}/{pitch}),atempo=sqrt({speed}/{pitch})"
         p_filter = f",asetrate=48000*{pitch}" if pitch != 1 else ""
 
-        base = s_filter  + p_filter
+        base = s_filter + p_filter
 
         filters = {  # Mapping of filters to their names
             "nightcore": ",asetrate=48000*1.1",
@@ -1214,7 +1221,7 @@ class AudioSource(discord.PCMVolumeTransformer):
             "muffle": ",lowpass=f=300",
             "treble": ",treble=g=15",
             "bass": ",bass=g=15",
-            #"backwards": ",areverse",
+            # "backwards": ",areverse",
             "phaser": ",aphaser=type=t:speed=2:decay=0.6",
             "robot": ",afftfilt=real='hypot(re,im)*sin(0)':imag='hypot(re,im)*cos(0)':win_size=512:overlap=0.75",
             "tremolo": ",apulsator=mode=sine:hz=3:width=0.1:offset_r=0",
@@ -1328,7 +1335,7 @@ class VoiceState:
 
         if self.voice:
             await self.voice.disconnect(force=True)
-        
+
         self.audio_player.cancel()
         self.incrementer.cancel()
 
@@ -1385,7 +1392,7 @@ class VoiceState:
             self.voice = await channel.connect(timeout=timeout, cls=VoiceClient)
 
         return self.voice
-            
+
     async def ensure_voice_state(self, ctx):
         if not ctx.me.voice:
             if not hasattr(ctx.author.voice, "channel"):
@@ -1509,7 +1516,6 @@ class VoiceState:
             if condition():
                 self.source.position += self.source.rate
             await asyncio.sleep(1.0)
-
 
     def play_next_track(self, error=None):
         if error:
@@ -3060,6 +3066,7 @@ class Playlists(commands.Cog):
     """
     Module for managing playlists.
     """
+
     def __init__(self, bot):
         self.bot = bot
 
@@ -3098,7 +3105,6 @@ class Playlists(commands.Cog):
             await ctx.fail("The queue is currently empty.")
             return
 
-
         queue = json.dumps([entry.json for entry in queue])
         query = """
                 INSERT INTO playlists (owner_id, name, queue)
@@ -3131,7 +3137,7 @@ class Playlists(commands.Cog):
             return
         await ctx.success(f"Successfully deleted playlist: **{name}**")
 
-    @_playlist.command(name="append", aliases=['add'], brief="Add to a saved playlist.")
+    @_playlist.command(name="append", aliases=["add"], brief="Add to a saved playlist.")
     async def playlist_append(self, ctx, *, name: str):
         """
         Usage: {0}playlist append [playlist name]
@@ -3168,7 +3174,9 @@ class Playlists(commands.Cog):
         await self.bot.cxn.execute(query, playlist, ctx.author.id, name.lower())
         await ctx.success(f"Appended the current track to playlist: **{name}**")
 
-    @_playlist.command(name="extend", brief="Extend a saved playlist with the current queue.")
+    @_playlist.command(
+        name="extend", brief="Extend a saved playlist with the current queue."
+    )
     async def playlist_extend(self, ctx, *, name: str):
         """
         Usage: {0}playlist save [playlist name]
@@ -3213,7 +3221,11 @@ class Playlists(commands.Cog):
         await self.bot.cxn.execute(query, playlist, ctx.author.id, name.lower())
         await ctx.success(f"Extended playlist: **{name}** with the current queue.")
 
-    @_playlist.command(name="enqueue", aliases=['play', 'start', 'queue', 'load'], brief="Enqueue a saved playlist.")
+    @_playlist.command(
+        name="enqueue",
+        aliases=["play", "start", "queue", "load"],
+        brief="Enqueue a saved playlist.",
+    )
     async def playlist_enqueue(self, ctx, *, name: str):
         """
         Usage: {0}playlist enqueue [playlist name]
@@ -3255,9 +3267,7 @@ class Playlists(commands.Cog):
             ]
         )
 
-        await ctx.music(
-            f"Enqueued saved playlist: {name} `({len(queue)} tracks)`"
-        )
+        await ctx.music(f"Enqueued saved playlist: {name} `({len(queue)} tracks)`")
         query = """
                 UPDATE playlists
                 SET uses = uses + 1
@@ -3266,9 +3276,10 @@ class Playlists(commands.Cog):
                 """
         await self.bot.cxn.execute(query, ctx.author.id, name.lower())
 
-
-    @_playlist.command(name="view", aliases=['info'], brief="Show info on a playlist.")
-    async def playlist_view(self, ctx, user: typing.Optional[converters.DiscordMember], *, name: str):
+    @_playlist.command(name="view", aliases=["info"], brief="Show info on a playlist.")
+    async def playlist_view(
+        self, ctx, user: typing.Optional[converters.DiscordMember], *, name: str
+    ):
         """
         Usage: {0}playlist view [playlist owner] [playlist name]
         Alias: {0}playlist info
@@ -3279,18 +3290,20 @@ class Playlists(commands.Cog):
         user = user or ctx.author
         playlist = await Playlist.initialize(ctx, user, name)
 
-
-        view = Views.QueueView(ctx, [entry.hyperlink for entry in playlist.entries], playlist=playlist)
+        view = Views.QueueView(
+            ctx, [entry.hyperlink for entry in playlist.entries], playlist=playlist
+        )
         view.embed.set_thumbnail(url=playlist.owner.display_avatar)
         view.embed.title = "Playlist Viewing Session"
         view.embed.add_field(name="Playlist Name", value=name.title())
         view.embed.add_field(name="Playlist Owner", value=str(playlist.owner))
-        view.embed.add_field(name="Created on", value=playlist.created_at.__format__('%m/%d/%Y'))
+        view.embed.add_field(
+            name="Created on", value=playlist.created_at.__format__("%m/%d/%Y")
+        )
         view.embed.add_field(name="Total Tracks", value=playlist.tracks)
         view.embed.add_field(name="Total Likes", value=playlist.likes)
         view.embed.add_field(name="Total Uses", value=playlist.uses)
         await view.start()
-
 
     @decorators.command(
         brief="Show queues saved by a user.",
@@ -3323,7 +3336,6 @@ class Playlists(commands.Cog):
         )
         p.embed.title = f"{user.display_name}'s Saved Playlists"
         await p.start()
-
 
     @decorators.command(
         name="playliked", aliases=["playsaved"], brief="Enqueue saved songs."
@@ -3361,7 +3373,9 @@ class Playlists(commands.Cog):
         await ctx.send(f"Enqueued your liked songs `({len(records)} tracks)`")
 
     @decorators.command(
-        name="playtop", aliases=["playpop"], brief="Enqueue the top 10 most frequently queued tracks."
+        name="playtop",
+        aliases=["playpop"],
+        brief="Enqueue the top 10 most frequently queued tracks.",
     )
     async def _playtop(self, ctx, limit: int = 10):
         """
@@ -3375,7 +3389,9 @@ class Playlists(commands.Cog):
         """
         await ctx.trigger_typing()
         if not 0 < limit < 100:
-            await ctx.fail(f"the `limit` argument must be an integer between `0` and `100`.")
+            await ctx.fail(
+                f"the `limit` argument must be an integer between `0` and `100`."
+            )
             return
         player = await ctx.voice_state.ensure_voice_state(ctx)
         query = f"""
@@ -3399,6 +3415,7 @@ class Playlists(commands.Cog):
             )
 
         await ctx.send(f"Enqueued your top tracks `({len(records)} tracks)`")
+
 
 class Voice(commands.Cog):
     """
@@ -3445,7 +3462,7 @@ class Voice(commands.Cog):
                         "server_id": member.guild.id,
                         "user_id": member.id,
                         "connected": False,
-                        "first_seen": str(datetime.utcnow())
+                        "first_seen": str(datetime.utcnow()),
                     }
                 )
         if not before.channel and after.channel:
@@ -3456,14 +3473,11 @@ class Voice(commands.Cog):
                         "server_id": member.guild.id,
                         "user_id": member.id,
                         "connected": True,
-                        "first_seen": str(datetime.utcnow())
+                        "first_seen": str(datetime.utcnow()),
                     }
                 )
 
-    @decorators.command(
-        brief="Get voice statistics for a user",
-        aliases=['vtime']
-    )
+    @decorators.command(brief="Get voice statistics for a user", aliases=["vtime"])
     async def voicetime(self, ctx, *, user: converters.DiscordUser = None):
         user = user or ctx.author
         query = """
@@ -3488,9 +3502,11 @@ class Voice(commands.Cog):
                 """
         record = await self.bot.cxn.fetchval(query, user.id)
         from utilities import utils
+
         voice_time = utils.time_between(time.time() - record, time.time())
-        await ctx.send_or_reply(f"{self.bot.emote_dict['graph']} User **{user}** `{user.id}` has spent **{voice_time}** in voice channels throughout this server.")
-        
+        await ctx.send_or_reply(
+            f"{self.bot.emote_dict['graph']} User **{user}** `{user.id}` has spent **{voice_time}** in voice channels throughout this server."
+        )
 
     @decorators.group(
         brief="Manage the DJ role.",
@@ -3881,17 +3897,21 @@ class SpotifyTracker(commands.Cog):
                         FROM JSONB_TO_RECORDSET($1::JSONB)
                         AS x(user_id BIGINT, album_id TEXT, artist_id TEXT, track_id TEXT, insertion TIMESTAMP);
                         """
-                        
+
                 data = json.dumps(
                     [
-                        
-                            {"user_id": user_id, "album_id": info["album_id"], "artist_id": info["artist_id"], "track_id": info["track_id"], "insertion": info["updated"]}
-                            for user_id, info in self.spotify_data.items()
+                        {
+                            "user_id": user_id,
+                            "album_id": info["album_id"],
+                            "artist_id": info["artist_id"],
+                            "track_id": info["track_id"],
+                            "insertion": info["updated"],
+                        }
+                        for user_id, info in self.spotify_data.items()
                     ]
                 )
                 self.spotify_data.clear()
             await self.bot.cxn.execute(query, data)
-
 
     # @commands.Cog.listener()
     # @decorators.event_check(lambda s, b, a: a.activities)
@@ -3911,13 +3931,11 @@ class SpotifyTracker(commands.Cog):
     #                         "updated": str(datetime.utcnow())
     #                     })
 
-
     @decorators.group(name="spotify", hidden=True)
     @checks.cooldown()
     async def _spotify(self, ctx):
         if ctx.invoked_subcommand is None:
             return await ctx.invoke(self.spotify_status)
-            
 
     @_spotify.command()
     async def spotify_status(self, ctx, *, user: converters.DiscordMember = None):
@@ -3937,7 +3955,10 @@ class SpotifyTracker(commands.Cog):
         e.description = f"```fix\n{status.title}```"
         e.add_field(name="Artist", value=status.artist)
         e.add_field(name="Album", value=status.album)
-        e.add_field(name="Duration", value=MusicUtils.parse_duration(int(status.duration.total_seconds())))
+        e.add_field(
+            name="Duration",
+            value=MusicUtils.parse_duration(int(status.duration.total_seconds())),
+        )
         e.add_field(name="Song URL", value=status.track_url, inline=False)
         e.set_thumbnail(url=status.album_cover_url)
         track = await self.spotify.get_track(status.track_id)
@@ -3956,7 +3977,7 @@ class SpotifyTracker(commands.Cog):
     #     #             ORDER BY COUNT(track_id) DESC
     #     #             ORDER BY insertion DESC
     #     #             LIMIT 10;
-  
+
     #     #         );
     #     #         """
     #     query = """
@@ -3976,11 +3997,9 @@ class SpotifyTracker(commands.Cog):
     #         field = f"**Track URL:** {track['external_urls']['spotify']}\n**Album:** [{track['album']['name']}]({track['album']['external_urls']['spotify']})\n**Artist**: [{track['artists'][0]['name']}]({track['artists'][0]['external_urls']['spotify']})"
     #         return (title, field)
 
-
     #     entries = []
     #     for record in records:
     #         entries.append(await format_track(*record))
-            
 
     #     p = pagination.MainMenu(pagination.FieldPageSource(entries=entries, per_page=5, title=f"{user.display_name}'s Top 10 Spotify Tracks"))
     #     try:
@@ -4000,8 +4019,6 @@ def setup(bot):
 
 
 class Views:
-
-
     class Confirmation(discord.ui.View):
         def __init__(self, interaction: discord.Interaction, message="", **kwargs):
             super().__init__(timeout=30.0)
@@ -4012,14 +4029,20 @@ class Views:
 
         async def prompt(self):
             if self.interaction.response.is_done():
-                await self.interaction.followup.send(self.message, **self.kwargs, ephemeral=True, view=self)
+                await self.interaction.followup.send(
+                    self.message, **self.kwargs, ephemeral=True, view=self
+                )
             else:
-                await self.interaction.response.send_message(self.message, **self.kwargs, ephemeral=True, view=self)
+                await self.interaction.response.send_message(
+                    self.message, **self.kwargs, ephemeral=True, view=self
+                )
             await self.wait()
             return self.result
 
         async def on_timeout(self):
-            await self.interaction.edit_original_message(content="**Confirmation Cancelled.**", view=None)
+            await self.interaction.edit_original_message(
+                content="**Confirmation Cancelled.**", view=None
+            )
 
         async def interaction_check(self, interaction):
             if self.interaction.user.id == interaction.user.id:
@@ -4038,9 +4061,15 @@ class Views:
             self.result = self.interaction
             self.stop()
 
-        @discord.ui.button(emoji=constants.emotes["failed"], style=discord.ButtonStyle.gray)
-        async def _deny(self, button: discord.ui.Button, interaction: discord.Interaction):
-            await self.interaction.edit_original_message(content="**Confirmation Cancelled.**", view=None)
+        @discord.ui.button(
+            emoji=constants.emotes["failed"], style=discord.ButtonStyle.gray
+        )
+        async def _deny(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
+            await self.interaction.edit_original_message(
+                content="**Confirmation Cancelled.**", view=None
+            )
             self.stop()
 
     class TrackView(discord.ui.View):
@@ -4075,7 +4104,6 @@ class Views:
             if Checks.is_dj(self.ctx):
                 self.add_item(Views.EffectSelect(self.ctx))
 
-
         async def interaction_check(self, interaction):
             if self.ctx.author.id == interaction.user.id:
                 return True
@@ -4101,11 +4129,12 @@ class Views:
             else:
                 await interaction.response.send_message(str(error), ephemeral=True)
 
-
         @discord.ui.button(
             emoji=constants.emotes["fastforward"], style=discord.ButtonStyle.gray
         )
-        async def _forward(self, button: discord.ui.Button, interaction: discord.Interaction):
+        async def _forward(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
             try:
                 Checks.assert_is_dj(self.ctx)
             except commands.BadArgument as e:
@@ -4118,12 +4147,16 @@ class Views:
             self.player.alter_audio(position=to_seek)
             embed = MusicUtils.make_embed(self.ctx, self.ctx.voice_state.source)
             await interaction.message.edit(embed=embed)
-            await interaction.response.send_message("Fast forwarded 10 seconds.", ephemeral=True)
+            await interaction.response.send_message(
+                "Fast forwarded 10 seconds.", ephemeral=True
+            )
 
         @discord.ui.button(
             emoji=constants.emotes["rewind"], style=discord.ButtonStyle.gray
         )
-        async def _rewind(self, button: discord.ui.Button, interaction: discord.Interaction):
+        async def _rewind(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
             try:
                 Checks.assert_is_dj(self.ctx)
             except commands.BadArgument as e:
@@ -4136,12 +4169,16 @@ class Views:
             embed = MusicUtils.make_embed(self.ctx, self.ctx.voice_state.source)
             await interaction.message.edit(embed=embed)
             self.player.alter_audio(position=to_seek)
-            await interaction.response.send_message("Rewinded 10 seconds.", ephemeral=True)
+            await interaction.response.send_message(
+                "Rewinded 10 seconds.", ephemeral=True
+            )
 
         @discord.ui.button(
             emoji=constants.emotes["pause"], style=discord.ButtonStyle.gray
         )
-        async def _pause(self, button: discord.ui.Button, interaction: discord.Interaction):
+        async def _pause(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
             try:
                 Checks.assert_is_dj(self.ctx)
             except commands.BadArgument as e:
@@ -4151,12 +4188,16 @@ class Views:
             self.clear_items()
             self.fill_items()
             await interaction.message.edit(view=self)
-            await interaction.response.send_message("Paused the player.", ephemeral=True)
+            await interaction.response.send_message(
+                "Paused the player.", ephemeral=True
+            )
 
         @discord.ui.button(
             emoji=constants.emotes["play"], style=discord.ButtonStyle.gray
         )
-        async def _resume(self, button: discord.ui.Button, interaction: discord.Interaction):
+        async def _resume(
+            self, button: discord.ui.Button, interaction: discord.Interaction
+        ):
             try:
                 Checks.assert_is_dj(self.ctx)
             except commands.BadArgument as e:
@@ -4166,8 +4207,9 @@ class Views:
             self.clear_items()
             self.fill_items()
             await interaction.message.edit(view=self)
-            await interaction.response.send_message("Resumed the player.", ephemeral=True)
-
+            await interaction.response.send_message(
+                "Resumed the player.", ephemeral=True
+            )
 
         @discord.ui.button(
             emoji=constants.emotes["skip"], style=discord.ButtonStyle.gray
@@ -4356,7 +4398,6 @@ class Views:
             self.add_item(self._next)
             self.add_item(self._last)
 
-
         async def send_message(self):
             self.update_view(1)
             if isinstance(self.pages[0], discord.Embed):
@@ -4364,9 +4405,7 @@ class Views:
                     self.content, embed=self.pages[0], view=self
                 )
             else:
-                message = await self.ctx.send(
-                    self.content + self.pages[0], view=self
-                )
+                message = await self.ctx.send(self.content + self.pages[0], view=self)
             return message
 
         async def interaction_check(self, interaction):
@@ -4546,7 +4585,6 @@ class Views:
             if Checks.is_dj(self.ctx):
                 self.add_item(Views.QueueSelect(self.ctx))
 
-
         @discord.ui.button(
             emoji=constants.emotes["minus"], style=discord.ButtonStyle.gray
         )
@@ -4567,7 +4605,8 @@ class Views:
                 channel = self.message.channel
                 author_id = interaction.user and interaction.user.id
                 await interaction.response.send_message(
-                    "Please enter the track index to be removed from this playlist.", ephemeral=True
+                    "Please enter the track index to be removed from this playlist.",
+                    ephemeral=True,
                 )
 
                 def message_check(m):
@@ -4578,7 +4617,9 @@ class Views:
                     if not m.content.isdigit():
                         return False
                     if int(m.content) < 1:
-                        raise IndexError("Invalid index. Please specify a valid track index to remove.")
+                        raise IndexError(
+                            "Invalid index. Please specify a valid track index to remove."
+                        )
                     return True
 
                 try:
@@ -4592,10 +4633,16 @@ class Views:
                     await asyncio.sleep(5)
                 else:
                     track = self.playlist.pop(int(msg.content))
-                    res = await Views.Confirmation(interaction, message=f"**This action will remove track: `{track['title']}` from this playlist. Do you wish to continue?**").prompt()
+                    res = await Views.Confirmation(
+                        interaction,
+                        message=f"**This action will remove track: `{track['title']}` from this playlist. Do you wish to continue?**",
+                    ).prompt()
                     if res:
                         await self.playlist.finalize()
-                        await res.edit_original_message(content="Saved this playlist to your liked songs.", view=None)
+                        await res.edit_original_message(
+                            content="Saved this playlist to your liked songs.",
+                            view=None,
+                        )
                     try:
                         await msg.delete()
                     except:
@@ -4607,11 +4654,16 @@ class Views:
         async def _drop(
             self, button: discord.ui.Button, interaction: discord.Interaction
         ):
-            res = await Views.Confirmation(interaction, message="**This will permanently delete this playlist. Do you wish to continue?**").prompt()
+            res = await Views.Confirmation(
+                interaction,
+                message="**This will permanently delete this playlist. Do you wish to continue?**",
+            ).prompt()
             if res:
                 name = self.playlist.name.title()
                 await self.playlist.delete()
-                await res.edit_original_message(content=f"Deleted playlist: **{name}**", view=None)
+                await res.edit_original_message(
+                    content=f"Deleted playlist: **{name}**", view=None
+                )
 
         @discord.ui.button(
             emoji=constants.emotes["heart"], style=discord.ButtonStyle.gray
@@ -4620,7 +4672,9 @@ class Views:
             self, button: discord.ui.Button, interaction: discord.Interaction
         ):
             await self.playlist.like()
-            await interaction.response.send_message(content="Added a like to the playlist.", ephemeral=True)
+            await interaction.response.send_message(
+                content="Added a like to the playlist.", ephemeral=True
+            )
 
         @discord.ui.button(
             emoji=constants.emotes["music"], style=discord.ButtonStyle.gray
@@ -4630,8 +4684,9 @@ class Views:
         ):
             player = await self.ctx.voice_state.ensure_voice_state(self.ctx)
             player.tracks.extend(self.playlist.entries)
-            await interaction.response.send_message(f"Enqueued playlist: **{self.playlist.name.title()}** `({self.playlist.tracks} tracks)`")
-
+            await interaction.response.send_message(
+                f"Enqueued playlist: **{self.playlist.name.title()}** `({self.playlist.tracks} tracks)`"
+            )
 
         @discord.ui.button(
             emoji=constants.emotes["download"], style=discord.ButtonStyle.gray
@@ -4901,7 +4956,9 @@ class Views:
 
         async def start(self):
             self.pages = self.create_pages(self.entries, self.per_page)
-            await super().__init__(self.ctx, self.pages, playlist=self.playlist, content=self.content)
+            await super().__init__(
+                self.ctx, self.pages, playlist=self.playlist, content=self.content
+            )
 
         def create_pages(self, entries, per_page):
             embeds = []
@@ -5050,7 +5107,8 @@ class Views:
             else:
                 self.opts[selection][1]()
             await interaction.response.send_message(
-                f"{self.ctx.bot.emote_dict['success']} {self.opts[selection][2]}", ephemeral=True
+                f"{self.ctx.bot.emote_dict['success']} {self.opts[selection][2]}",
+                ephemeral=True,
             )
             await interaction.message.edit(view=self.view)
 
@@ -5060,7 +5118,7 @@ class Views:
             self.player = ctx.voice_state
             self.input_lock = asyncio.Lock()
             self.effects = [
-                #"backwards",
+                # "backwards",
                 "bass",
                 "earrape",
                 "echo",
@@ -5086,15 +5144,20 @@ class Views:
 
             speed_pitch_reset = [
                 discord.SelectOption(
-                    label="Speed", description=f"Alter the speed of the player. (Current speed: {self.player['speed']})", emoji=constants.emotes["speed"]
+                    label="Speed",
+                    description=f"Alter the speed of the player. (Current speed: {self.player['speed']})",
+                    emoji=constants.emotes["speed"],
                 ),
                 discord.SelectOption(
-                    label="Pitch", description=f"Alter the pitch of the player. (Current pitch: {self.player['pitch']})", emoji=constants.emotes["music"]
+                    label="Pitch",
+                    description=f"Alter the pitch of the player. (Current pitch: {self.player['pitch']})",
+                    emoji=constants.emotes["music"],
                 ),
                 discord.SelectOption(
-                    label="Reset", description="Reset all effects to default.", emoji=constants.emotes["trash"]
-                )
-
+                    label="Reset",
+                    description="Reset all effects to default.",
+                    emoji=constants.emotes["trash"],
+                ),
             ]
             return [
                 discord.SelectOption(
@@ -5117,12 +5180,12 @@ class Views:
                     )
                     return
 
-
                 async with self.input_lock:
                     channel = self.ctx.channel
                     author_id = interaction.user and interaction.user.id
                     await interaction.response.send_message(
-                        f"Enter a {selection.lower()} value between `0.25` and `2`.", ephemeral=True
+                        f"Enter a {selection.lower()} value between `0.25` and `2`.",
+                        ephemeral=True,
                     )
 
                     def message_check(m):
@@ -5134,7 +5197,7 @@ class Views:
                             float(m.content)
                         except ValueError:
                             return False
-                        else:   
+                        else:
                             return True
 
                     try:
@@ -5150,12 +5213,14 @@ class Views:
                         value = float(msg.content)
                         if not 0.25 <= value <= 2:
                             await interaction.followup.send(
-                                f"Audio {selection.lower()} must be between `0.25` and `2`.", ephemeral=True
+                                f"Audio {selection.lower()} must be between `0.25` and `2`.",
+                                ephemeral=True,
                             )
                         else:
                             self.player[selection.lower()] = value
                             await interaction.followup.send(
-                                f"Audio {selection.lower()} set to `{value}`.", ephemeral=True
+                                f"Audio {selection.lower()} set to `{value}`.",
+                                ephemeral=True,
                             )
                         try:
                             await msg.delete()
@@ -5163,7 +5228,10 @@ class Views:
                             pass
             else:
                 self.player[selection] = not self.player[selection]
-                await interaction.response.send_message(f"{selection.capitalize()} effect {'en' if self.player[selection] else 'dis'}abled.", ephemeral=True)
+                await interaction.response.send_message(
+                    f"{selection.capitalize()} effect {'en' if self.player[selection] else 'dis'}abled.",
+                    ephemeral=True,
+                )
             self.options.clear()
             self.options.extend(self.get_options())
             await interaction.message.edit(view=self.view)
@@ -5259,7 +5327,7 @@ class Views:
             self.player = player
             self.message = None
             self.effects = {
-                #"backwards": "This effect plays the song from the end.",
+                # "backwards": "This effect plays the song from the end.",
                 "bass": "This effect boosts the bass clef audio.",
                 "earrape": "This effect makes audio sound scratchy.",
                 "echo": "This effect makes audio sound with an echo.",
@@ -5338,7 +5406,7 @@ class Views:
             self.player = player
             self.message = None
             self.effects = {
-                #"backwards": "This effect plays the song from the end.",
+                # "backwards": "This effect plays the song from the end.",
                 "bass": "This effect boosts the bass clef audio.",
                 "earrape": "This effect makes audio sound scratchy.",
                 "echo": "This effect makes audio sound with an echo.",

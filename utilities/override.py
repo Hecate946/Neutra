@@ -13,7 +13,10 @@ class BotContext(commands.Context):
         return self.author.id in self.bot.constants.owners
 
     def is_admin(self):
-        return self.author.id in self.bot.constants.admins or self.author.id in self.bot.constants.owners
+        return (
+            self.author.id in self.bot.constants.admins
+            or self.author.id in self.bot.constants.owners
+        )
 
     async def fail(self, content=None, refer=True, **kwargs):
         if refer:

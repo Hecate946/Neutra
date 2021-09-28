@@ -1217,8 +1217,6 @@ class Tracking(commands.Cog):
     @decorators.command(
         aliases=["ms", "mstats", "messagestatistics"],
         brief="Show message stats.",
-        invoke_without_command=True,
-        case_insensitive=True,
         implemented="2021-03-13 04:47:25.624232",
         updated="2021-05-07 04:26:00.620200",
         examples="""
@@ -1240,7 +1238,7 @@ class Tracking(commands.Cog):
         since: humantime.PastTime = None,
     ):
         """
-        Usage: {0}activity [since]
+        Usage: {0}messagestats [since]
         Permission: Manage Messages
         Output:
             Shows the most active server
@@ -1310,6 +1308,96 @@ class Tracking(commands.Cog):
             pagination.LinePageSource(msg, prefix="```autohotkey", lines=20)
         )
         title = f"{self.bot.emote_dict['graph']} Message leaderboard for {title_fmt} since **{utils.short_time(since)}**"
+
+        await ctx.send_or_reply(title)
+        try:
+            await pages.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send_or_reply(str(e))
+
+    @decorators.command(
+        aliases=["cstats", "chanstats", "channelstatistics"],
+        brief="Show channel activity.",
+        implemented="2021-03-13 04:47:25.624232",
+        updated="2021-05-07 04:26:00.620200",
+        examples="""
+                {0}cstats
+                {0}channelstats 2d
+                {0}cstats since 3 weeks ago
+                {0}channelstatistics 10 mins ago
+                {0}chanstats since 1 year ago
+                """,
+    )
+    @checks.guild_only()
+    @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
+    @checks.cooldown()
+    async def channelstats(
+        self,
+        ctx,
+        *,
+        since: humantime.PastTime = None,
+    ):
+        """
+        Usage: {0}channelstats [since]
+        Aliases: {0}cstats, {0}chanstats
+        Permission: Manage Messages
+        Output:
+            Shows the most active server
+            channels ordered by the number
+            of messages sent in them.
+        Notes:
+            If no unit of time is specified,
+            of if the unit is invalid, the bot
+            will default to one month for its unit.
+        """
+        await ctx.trigger_typing()
+        if not since:  # They didn't specify. Default to past month
+            since = discord.utils.utcnow() - timedelta(30)  # 30 days ago
+        else:
+            since = since.dt
+
+        seconds_ago = (discord.utils.utcnow() - since).total_seconds()
+        diff = time.time() - seconds_ago
+
+        query = """
+                SELECT COUNT(*) as c, channel_id
+                FROM messages
+                WHERE server_id = $1
+                AND unix > $2
+                GROUP BY channel_id
+                ORDER BY c DESC
+                """
+        records = await self.bot.cxn.fetch(query, ctx.guild.id, diff)
+        if not records:
+            await ctx.fail(
+                f"No channel activity statistics available in **{ctx.guild.name}** for that time period."
+            )
+            return
+
+        def pred(snowflake):
+            chan = self.bot.get_channel(snowflake)
+            if chan:
+                return "#" + chan.name
+
+        usage_dict = {
+            pred(record["channel_id"]): record["c"]
+            for record in records
+            if pred(record["channel_id"])
+        }
+
+        width = len(max(usage_dict, key=len))
+
+        total = sum(usage_dict.values())
+
+        output = "\n".join(
+            f"{channel:<{width}} : {cnt}" for channel, cnt in usage_dict.items()
+        )
+
+        msg = "{0} \n\nTOTAL: {1}".format(output, total)
+        pages = pagination.MainMenu(
+            pagination.LinePageSource(msg, prefix="```autohotkey", lines=20)
+        )
+        title = f"{self.bot.emote_dict['graph']} Channel activity leaderboard for **{ctx.guild.name}** since **{utils.short_time(since)}**"
 
         await ctx.send_or_reply(title)
         try:

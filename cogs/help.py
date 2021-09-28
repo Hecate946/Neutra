@@ -13,6 +13,7 @@ from utilities import decorators
 from utilities import formatting
 from utilities import pagination
 
+
 class HelpView(discord.ui.View):
     def __init__(self, ctx, embed):
         super().__init__(timeout=120)
@@ -23,7 +24,9 @@ class HelpView(discord.ui.View):
 
         invite_url = ctx.bot.oauth
         support_url = ctx.bot.constants.support
-        github_url = "https://github.com/Hecate946/Neutra/blob/main/README.md"  # "Docs link
+        github_url = (
+            "https://github.com/Hecate946/Neutra/blob/main/README.md"  # "Docs link
+        )
 
         self.invite = discord.ui.Button(label="Invite", url=invite_url)
         self.support = discord.ui.Button(label="Support", url=support_url)
@@ -31,8 +34,6 @@ class HelpView(discord.ui.View):
 
         self.clear_items()
         self.fill_items()
-
-
 
     def fill_items(self, *, _help=False, expired=False):
         if expired:
@@ -52,12 +53,13 @@ class HelpView(discord.ui.View):
         self.add_item(self.helper)
         self.add_item(self.github)
 
-
     async def start(self):
         if not self.ctx.guild:  # In DMs, just send the embed
             self.message = await self.ctx.safe_send(embed=self.embed, view=self)
         else:  # In a server
-            if not self.ctx.channel.permissions_for(self.ctx.me).embed_links:  # Can't embed
+            if not self.ctx.channel.permissions_for(
+                self.ctx.me
+            ).embed_links:  # Can't embed
                 self.message = await self.attempt_dm(self.ctx, self.embed)  # DM them.
             else:
                 self.message = await self.ctx.send_or_reply(embed=self.embed, view=self)
@@ -111,7 +113,6 @@ class HelpView(discord.ui.View):
         )
         return help_embed
 
-
     async def interaction_check(self, interaction):
         if self.ctx.author.id == interaction.user.id:
             return True
@@ -148,14 +149,18 @@ class HelpView(discord.ui.View):
         await interaction.message.edit(embed=self.help_embed, view=self)
 
     @discord.ui.button(label="Go back", style=discord.ButtonStyle.blurple)
-    async def _return(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def _return(
+        self, button: discord.ui.Button, interaction: discord.Interaction
+    ):
         self.clear_items()
         self.fill_items()
         await interaction.message.edit(embed=self.embed, view=self)
 
+
 def setup(bot):
     bot.remove_command("help")
     bot.add_cog(Help(bot))
+
 
 class Help(commands.Cog):
     """
@@ -171,14 +176,12 @@ class Help(commands.Cog):
         self.desc += f"**Support Server:**  [https://discord.gg/neutra]({self.bot.constants.support})\n"
         self.desc += f"**Voting Link:**  [https://top.gg/bot/neutra/vote](https://top.gg/bot/806953546372087818/vote)"
 
-
     ############################
     ## Get Commands From Cogs ##
     ############################
 
     async def send_help(self, ctx, embed):
         await HelpView(ctx, embed).start()
-
 
     async def send_category_help(self, ctx):
 
