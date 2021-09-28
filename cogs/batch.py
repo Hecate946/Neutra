@@ -12,7 +12,7 @@ from discord.ext import commands, tasks
 from utilities import utils
 from utilities import decorators
 
-command_logger = logging.getLogger("Neutra")
+command_logger = logging.getLogger("COMMAND_LOGGER")
 
 EMOJI_REGEX = re.compile(r"<a?:.+?:([0-9]{15,21})>")
 EMOJI_NAME_REGEX = re.compile(r"[0-9a-zA-Z\_]{2,32}")
@@ -40,11 +40,13 @@ class Batch(commands.Cog):
         self.invite_batch = []
         self.message_batch = []
         self.nicknames_batch = []
+        self.presence_batch = []
         self.roles_batch = defaultdict(dict)
         self.snipe_batch = []
         self.status_batch = defaultdict(dict)
         self.tracking_batch = defaultdict(dict)
         self.usernames_batch = []
+        self.voice_batch = []
 
         self.batch_lock = asyncio.Lock(loop=bot.loop)
         self.queue = asyncio.Queue(loop=bot.loop)
@@ -351,6 +353,30 @@ class Batch(commands.Cog):
                 await self.bot.cxn.execute(query, data)
                 self.invite_batch.clear()
 
+        if self.voice_batch:
+            async with self.batch_lock:
+                query = """
+                        INSERT INTO voice (server_id, user_id, connected, first_seen)
+                        SELECT x.server_id, x.user_id, x.connected, x.first_seen
+                        FROM JSONB_TO_RECORDSET($1::JSONB)
+                        AS x(server_id BIGINT, user_id BIGINT, connected BOOLEAN, first_seen TIMESTAMP);
+                        """
+                data = json.dumps(self.voice_batch)
+                await self.bot.cxn.execute(query, data)
+                self.voice_batch.clear()
+
+        if self.presence_batch:
+            async with self.batch_lock:
+                query = """
+                        INSERT INTO statuses (user_id, status, first_seen)
+                        SELECT x.user_id, x.status, x.first_seen
+                        FROM JSONB_TO_RECORDSET($1::JSONB)
+                        AS x(user_id BIGINT, status TEXT, first_seen TIMESTAMP);
+                        """
+                data = json.dumps(self.presence_batch)
+                await self.bot.cxn.execute(query, data)
+                self.presence_batch.clear()
+
     @bulk_inserter.error
     async def loop_error(self, exc):
         self.bot.dispatch("error", "loop_error", tb=utils.traceback_maker(exc))
@@ -451,6 +477,17 @@ class Batch(commands.Cog):
         if self.status_changed(before, after):
             async with self.batch_lock:
                 self.status_batch[str(before.status)][after.id] = time.time()
+
+                lowest = discord.utils.find(lambda x: x.get_member(after.id) is not None, sorted(self.bot.guilds, key=lambda x: x.id))
+                if after.guild.id == lowest.id:
+                    print("changed")
+                    self.presence_batch.append(
+                        {
+                            "user_id": after.id,
+                            "status": after.status.name,
+                            "first_seen": str(datetime.utcnow())
+                        }
+                    )
                 status_txt = (
                     f"updating their status: `{before.status}` ➔ `{after.status}`"
                 )
@@ -575,10 +612,33 @@ class Batch(commands.Cog):
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
-    @decorators.event_check(lambda s, m, b, a: not m.bot)
+    @decorators.event_check(lambda s, m, b, a: not m.bot and m.guild)
     async def on_voice_state_update(self, member, before, after):
         async with self.batch_lock:
             self.tracking_batch[member.id] = {time.time(): "changing their voice state"}
+
+        if before.channel and not after.channel:
+            # User left a voice channel.
+            async with self.batch_lock:
+                self.voice_batch.append(
+                    {
+                        "server_id": member.guild.id,
+                        "user_id": member.id,
+                        "connected": False,
+                        "first_seen": str(datetime.utcnow()),
+                    }
+                )
+        if not before.channel and after.channel:
+            # User joined a voice channel.
+            async with self.batch_lock:
+                self.voice_batch.append(
+                    {
+                        "server_id": member.guild.id,
+                        "user_id": member.id,
+                        "connected": True,
+                        "first_seen": str(datetime.utcnow()),
+                    }
+                )
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()

@@ -259,6 +259,37 @@ class Tracking(commands.Cog):
             await ctx.send_or_reply(e)
     '''
 
+    @decorators.command(brief="Get voice data", aliases=["vtime"])
+    @checks.guild_only()
+    @checks.cooldown()
+    async def voicetime(self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None):
+        user = user or ctx.author
+        query = """
+                with voice_data as(
+                    SELECT connected,
+                    user_id,
+                    first_seen,
+                    case when 
+                        lag(first_seen) over (order by first_seen desc) is null then
+                            now() at time zone 'utc'
+                        else
+                            lag(first_seen) over (order by first_seen desc)
+                        end as last_seen
+                        from voice
+                    where user_id = $1
+                    and connected = True
+                    group by connected, user_id, first_seen
+                )
+                select sum(extract(epoch from(last_seen - first_seen))) as sum
+                from voice_data
+                order by sum desc
+                """
+        record = await self.bot.cxn.fetchval(query, user.id)
+        voice_time = utils.time_between(time.time() - record, time.time())
+        await ctx.send_or_reply(
+            f"{self.bot.emote_dict['graph']} User **{user}** `{user.id}` has spent **{voice_time}** in voice channels throughout this server."
+        )
+
     @decorators.command(aliases=["mc"], brief="Count the messages a user sent.")
     @checks.guild_only()
     @checks.cooldown()
@@ -890,7 +921,7 @@ class Tracking(commands.Cog):
             await ctx.send_or_reply(str(e))
 
     @decorators.command(
-        brief="Count the commands run by a user.",
+        brief="Show a user's commands.",
         aliases=["cc"],
         implemented="2021-03-11 18:22:43.628118",
         updated="2021-05-05 04:49:50.161683",

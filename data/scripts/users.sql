@@ -64,3 +64,17 @@ CREATE TABLE IF NOT EXISTS useravatars (
     avatar TEXT,
     first_seen TIMESTAMP
 );
+
+
+CREATE TABLE IF NOT EXISTS voice (
+    server_id BIGINT,
+    user_id BIGINT,
+    connected BOOLEAN,
+    first_seen TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
+);
+
+CREATE TABLE IF NOT EXISTS statuses (
+    user_id BIGINT,
+    status TEXT,
+    first_seen TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
+);

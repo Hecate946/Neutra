@@ -3424,10 +3424,6 @@ class Voice(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.voice_data = []
-        self.batch_lock = asyncio.Lock(loop=bot.loop)
-
-        self.voice_tracker.start()
 
     async def cog_check(self, ctx):
         if not ctx.guild:
@@ -3437,76 +3433,6 @@ class Voice(commands.Cog):
     async def cog_before_invoke(self, ctx):
         ctx.voice_state = await VOICE_STATES.get_state(ctx)
 
-    @tasks.loop(seconds=10.0)
-    async def voice_tracker(self):
-        if self.voice_data:
-            async with self.batch_lock:
-                query = """
-                        INSERT INTO voice (server_id, user_id, connected, first_seen)
-                        SELECT x.server_id, x.user_id, x.connected, x.first_seen
-                        FROM JSONB_TO_RECORDSET($1::JSONB)
-                        AS x(server_id BIGINT, user_id BIGINT, connected BOOLEAN, first_seen TIMESTAMP);
-                        """
-                data = json.dumps(self.voice_data)
-                await self.bot.cxn.execute(query, data)
-                self.voice_data.clear()
-
-    @commands.Cog.listener()
-    @decorators.event_check(lambda s, m, b, a: m.guild)
-    async def on_voice_state_update(self, member, before, after):
-        if before.channel and not after.channel:
-            # User left a voice channel.
-            async with self.batch_lock:
-                self.voice_data.append(
-                    {
-                        "server_id": member.guild.id,
-                        "user_id": member.id,
-                        "connected": False,
-                        "first_seen": str(datetime.utcnow()),
-                    }
-                )
-        if not before.channel and after.channel:
-            # User joined a voice channel.
-            async with self.batch_lock:
-                self.voice_data.append(
-                    {
-                        "server_id": member.guild.id,
-                        "user_id": member.id,
-                        "connected": True,
-                        "first_seen": str(datetime.utcnow()),
-                    }
-                )
-
-    @decorators.command(brief="Get voice statistics for a user", aliases=["vtime"])
-    async def voicetime(self, ctx, *, user: converters.DiscordUser = None):
-        user = user or ctx.author
-        query = """
-                with voice_data as(
-                    SELECT connected,
-                    user_id,
-                    first_seen,
-                    case when 
-                        lag(first_seen) over (order by first_seen desc) is null then
-                            now() at time zone 'utc'
-                        else
-                            lag(first_seen) over (order by first_seen desc)
-                        end as last_seen
-                        from voice
-                    where user_id = $1
-                    and connected = True
-                    group by connected, user_id, first_seen
-                )
-                select sum(extract(epoch from(last_seen - first_seen))) as sum
-                from voice_data
-                order by sum desc
-                """
-        record = await self.bot.cxn.fetchval(query, user.id)
-        from utilities import utils
-
-        voice_time = utils.time_between(time.time() - record, time.time())
-        await ctx.send_or_reply(
-            f"{self.bot.emote_dict['graph']} User **{user}** `{user.id}` has spent **{voice_time}** in voice channels throughout this server."
-        )
 
     @decorators.group(
         brief="Manage the DJ role.",
