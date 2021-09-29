@@ -16,14 +16,15 @@ units["seconds"].append("secs")
 
 class ShortTime:
     compiled = re.compile(
-        """(?:(?P<years>[0-9])(?:years?|y))?             # e.g. 2y
-                             (?:(?P<months>[0-9]{1,2})(?:months?|mo))?     # e.g. 2months
-                             (?:(?P<weeks>[0-9]{1,4})(?:weeks?|w))?        # e.g. 10w
-                             (?:(?P<days>[0-9]{1,5})(?:days?|d))?          # e.g. 14d
-                             (?:(?P<hours>[0-9]{1,5})(?:hours?|h))?        # e.g. 12h
-                             (?:(?P<minutes>[0-9]{1,5})(?:minutes?|m))?    # e.g. 10m
-                             (?:(?P<seconds>[0-9]{1,5})(?:seconds?|s))?    # e.g. 15s
-                          """,
+        """
+        (?:(?P<years>[0-9])(?:years?|y))?             # e.g. 2y
+        (?:(?P<months>[0-9]{1,2})(?:months?|mo))?     # e.g. 2months
+        (?:(?P<weeks>[0-9]{1,4})(?:weeks?|w))?        # e.g. 10w
+        (?:(?P<days>[0-9]{1,5})(?:days?|d))?          # e.g. 14d
+        (?:(?P<hours>[0-9]{1,5})(?:hours?|h))?        # e.g. 12h
+        (?:(?P<minutes>[0-9]{1,5})(?:minutes?|m))?    # e.g. 10m
+        (?:(?P<seconds>[0-9]{1,5})(?:seconds?|s))?    # e.g. 15s
+        """,
         re.VERBOSE,
     )
 
@@ -211,6 +212,7 @@ class UserFriendlyTime(commands.Converter):
     async def convert(self, ctx, argument):
         # Create a copy of ourselves to prevent race conditions from two
         # events modifying the same instance of a converter
+        #argument = argument.replace('for')  # people sometimes use "for" in the time string
         result = self.copy()
         try:
             calendar = HumanTime.calendar
@@ -219,6 +221,7 @@ class UserFriendlyTime(commands.Converter):
 
             match = regex.match(argument)
             if match is not None and match.group(0):
+                print("matched")
                 data = {k: int(v) for k, v in match.groupdict(default=0).items()}
                 remaining = argument[match.end() :].strip()
                 result.dt = now + relativedelta(**data)
@@ -238,7 +241,7 @@ class UserFriendlyTime(commands.Converter):
                     argument = argument[6:]
 
             if argument.strip().startswith("for "):
-                argument = argument[:4]
+                argument = argument[4:]
 
             elements = calendar.nlp(argument, sourceTime=now)
             if elements is None or len(elements) == 0:

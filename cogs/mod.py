@@ -445,7 +445,7 @@ class Mod(commands.Cog):
                 ctx.guild.me, overwrite=bot_perms, reason="For channel lockdown."
             )
 
-        endtime = duration.dt.replace(tzinfo=None) if duration else None
+        endtime = duration.dt.replace(tzinfo=None) if duration and duration.dt else None
 
         timer = await task.create_timer(
             endtime,
