@@ -102,9 +102,9 @@ class BotContext(commands.Context):
             await self.send_or_reply(content, **kwargs)
 
     async def trigger_typing(self):
-        if self.channel.permissions_for(self.me).send_messages:
-            return await super().trigger_typing()
-        else:
+        try:
+            await super().trigger_typing()
+        except Exception:
             return
 
 
