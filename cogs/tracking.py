@@ -763,18 +763,18 @@ class Tracking(commands.Cog):
             username with discrim Username#0001.
             Will default to you if no user is specified.
         """
-        async with ctx.typing():
-            user = user or ctx.author
+        await ctx.trigger_typing()
+        user = user or ctx.author
 
-            if user.bot:
-                raise commands.BadArgument("I do not track bots.")
+        if user.bot:
+            raise commands.BadArgument("I do not track bots.")
 
-            tracker = self.bot.get_cog("Batch")
-            data = await tracker.get_last_seen(user)
+        tracker = self.bot.get_cog("Batch")
+        data = await tracker.get_last_seen(user)
 
-            if not data:
-                return await ctx.fail(f"I have not seen **{user}** `{user.id}`.")
-            await ctx.send_or_reply(data)
+        if not data:
+            return await ctx.fail(f"I have not seen **{user}** `{user.id}`.")
+        await ctx.send_or_reply(data)
 
     @decorators.command(
         aliases=["lastspoke"],
@@ -808,18 +808,18 @@ class Tracking(commands.Cog):
             username with discrim Username#0001.
             Will default to you if no user is specified.
         """
-        async with ctx.typing():
-            user = user or ctx.author
+        await ctx.trigger_typing()
+        user = user or ctx.author
 
-            if user.bot:
-                raise commands.BadArgument("I do not track bots.")
+        if user.bot:
+            raise commands.BadArgument("I do not track bots.")
 
-            tracker = self.bot.get_cog("Batch")
-            data = await tracker.get_last_spoke(user)
+        tracker = self.bot.get_cog("Batch")
+        data = await tracker.get_last_spoke(user)
 
-            if not data:
-                return await ctx.fail(f"I have not seen `{user}` speak.")
-            await ctx.send_or_reply(f"User `{user}` last spoke **{data}** ago.")
+        if not data:
+            return await ctx.fail(f"I have not seen `{user}` speak.")
+        await ctx.send_or_reply(f"User `{user}` last spoke **{data}** ago.")
 
     @decorators.command(
         aliases=["lastspokehere"],
@@ -853,18 +853,18 @@ class Tracking(commands.Cog):
             username with discrim Username#0001.
             Will default to you if no user is specified.
         """
-        async with ctx.typing():
-            user = user or ctx.author
+        await ctx.trigger_typing()
+        user = user or ctx.author
 
-            if user.bot:
-                raise commands.BadArgument("I do not track bots.")
+        if user.bot:
+            raise commands.BadArgument("I do not track bots.")
 
-            tracker = self.bot.get_cog("Batch")
-            data = await tracker.get_server_last_spoke(user)
+        tracker = self.bot.get_cog("Batch")
+        data = await tracker.get_server_last_spoke(user)
 
-            if not data:
-                return await ctx.fail(f"I have not seen `{user}` speak here.")
-            await ctx.send_or_reply(f"User `{user}` last spoke here **{data}** ago.")
+        if not data:
+            return await ctx.fail(f"I have not seen `{user}` speak here.")
+        await ctx.send_or_reply(f"User `{user}` last spoke here **{data}** ago.")
 
     @decorators.command(
         aliases=["cs"],
