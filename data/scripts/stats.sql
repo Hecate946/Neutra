@@ -1,11 +1,3 @@
--- CREATE TABLE IF NOT EXISTS emojistats (
---     index BIGSERIAL PRIMARY KEY,
---     server_id BIGINT,
---     emoji_id BIGINT,
---     total BIGINT DEFAULT 0 NOT NULL
--- );
--- CREATE UNIQUE INDEX IF NOT EXISTS emojistats_idx ON emojistats(server_id, emoji_id);
-
 CREATE TABLE IF NOT EXISTS emojidata (
     index BIGSERIAL PRIMARY KEY,
     server_id BIGINT,
@@ -19,7 +11,7 @@ CREATE TABLE IF NOT EXISTS messages (
     index BIGSERIAL PRIMARY KEY,
     unix REAL,
     timestamp TIMESTAMP,
-    content TEXT,
+    -- content TEXT, # DROPPED AND DEPRECATED FOR DISCORD VERIFICATION REQUIREMENTS.
     message_id BIGINT,
     author_id BIGINT,
     channel_id BIGINT,

@@ -47,6 +47,20 @@ def traceback_maker(err, advance: bool = True):
     return error if advance else f"{type(err).__name__}: {err}"
 
 
+def format_dt(dt, style=None):
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+
+    if style is None:
+        return f"<t:{int(dt.timestamp())}>"
+    return f"<t:{int(dt.timestamp())}:{style}>"
+
+
+def format_relative(dt):
+    if str(dt).isdecimal():
+        return f"<t:{int(dt)}:R>"
+    return format_dt(dt, "R")
+
 def timetext(name):
     """ Timestamp, but in text form """
     return f"{name}_{int(time.time())}.txt"

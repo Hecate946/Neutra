@@ -262,7 +262,8 @@ class Stats(commands.Cog):
         def pred(emoji_id):
             emoji = self.bot.get_emoji(emoji_id)
             if emoji:
-                return emoji
+                if emoji.is_usable():
+                    return emoji
 
         if user is None:
             query = """

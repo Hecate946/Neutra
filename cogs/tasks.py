@@ -11,6 +11,7 @@ import textwrap
 from datetime import timedelta
 from discord.ext import commands, menus
 
+from utilities import utils
 from utilities import humantime
 from utilities import formatting
 from utilities import pagination
@@ -292,7 +293,7 @@ class Tasks(commands.Cog):
                 entries=[
                     (
                         f"**Reminder ID:** {index}",
-                        f"**Expires:** {humantime.format_relative(expires)}\n"
+                        f"**Expires:** {utils.format_relative(expires)}\n"
                         f"**About:** {textwrap.shorten(message, width=512)}",
                     )
                     for index, expires, message in records

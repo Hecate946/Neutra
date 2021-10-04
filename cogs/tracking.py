@@ -290,6 +290,47 @@ class Tracking(commands.Cog):
             f"{self.bot.emote_dict['graph']} User **{user}** `{user.id}` has spent **{voice_time}** in voice channels throughout this server."
         )
 
+    @decorators.command(brief="Get status data", aliases=["_ps"], hidden=True)
+    @checks.guild_only()
+    @checks.cooldown()
+    async def _piestatus(self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None):
+        user = user or ctx.author
+        query = """
+                with status_data as(
+                    SELECT status,
+                    first_seen,
+                    case when 
+                        lag(first_seen) over (order by first_seen desc) is null then
+                            now() at time zone 'utc'
+                        else
+                            lag(first_seen) over (order by first_seen desc)
+                    end as last_seen
+                    from statuses
+                    where user_id = $1
+                )
+                select
+                    status,
+                    sum(
+                    extract(
+                    epoch from(
+                    last_seen - first_seen
+                ))) as sum
+                from status_data
+                group by status
+                order by sum desc
+                """
+        records = await self.bot.cxn.fetch(query, user.id)
+        statuses = {record["status"]: record["sum"] for record in records}
+        startdate = await self.bot.cxn.fetchval("select min(first_seen) from statuses where user_id = $1", user.id)
+        buffer = await self.bot.loop.run_in_executor(None, images.get_piestatus, statuses, startdate)
+
+        em = discord.Embed(color=self.bot.constants.embed)
+        dfile = discord.File(fp=buffer, filename="piestatus.png")
+        em.title = f"{ctx.author}'s Status Statistics"
+        em.set_image(url="attachment://piestatus.png")
+        await ctx.send_or_reply(embed=em, file=dfile)
+
+
     @decorators.command(aliases=["mc"], brief="Count the messages a user sent.")
     @checks.guild_only()
     @checks.cooldown()
@@ -1022,165 +1063,166 @@ class Tracking(commands.Cog):
 
         await ctx.send_or_reply(embed=e)
 
-    @decorators.command(
-        brief="Most used words from a user.",
-        implemented="2021-03-11 20:10:05.766906",
-        updated="2021-05-07 02:24:13.585137",
-        examples="""
-                {0}words
-                {0}words 700
-                {0}words Hecate
-                {0}words @Hecate
-                {0}words Hecate#3523
-                {0}words 708584008065351681
-                {0}words Hecate 300
-                {0}words @Hecate 400
-                {0}words Hecate#3523 500
-                {0}words 708584008065351681 600
-                """,
-    )
-    @checks.guild_only()
-    @checks.bot_has_perms(add_reactions=True, external_emojis=True)
-    @checks.cooldown()
-    async def words(
-        self,
-        ctx,
-        user: typing.Optional[converters.DiscordMember] = None,
-        limit: int = 100,
-    ):
-        """
-        Usage: {0}words [user] [limit]
-        Output: Most commonly used words by the passed user
-        Permission: Manage Messages
-        Notes:
-            Will default to yourself if no user is passed.
-            Pass a limit argument after or instead of a user
-            argument to limit the number of common words to show.
-        """
-        if user:
-            user = await converters.SelfMember(manage_messages=True).convert(
-                ctx, user.id
-            )
-        else:
-            user = ctx.author
+    # DEPRECATED TO SATISFY DISCORD VERIFICATION REQUIREMENTS
+    # @decorators.command(
+    #     brief="Most used words from a user.",
+    #     implemented="2021-03-11 20:10:05.766906",
+    #     updated="2021-05-07 02:24:13.585137",
+    #     examples="""
+    #             {0}words
+    #             {0}words 700
+    #             {0}words Hecate
+    #             {0}words @Hecate
+    #             {0}words Hecate#3523
+    #             {0}words 708584008065351681
+    #             {0}words Hecate 300
+    #             {0}words @Hecate 400
+    #             {0}words Hecate#3523 500
+    #             {0}words 708584008065351681 600
+    #             """,
+    # )
+    # @checks.guild_only()
+    # @checks.bot_has_perms(add_reactions=True, external_emojis=True)
+    # @checks.cooldown()
+    # async def words(
+    #     self,
+    #     ctx,
+    #     user: typing.Optional[converters.DiscordMember] = None,
+    #     limit: int = 100,
+    # ):
+    #     """
+    #     Usage: {0}words [user] [limit]
+    #     Output: Most commonly used words by the passed user
+    #     Permission: Manage Messages
+    #     Notes:
+    #         Will default to yourself if no user is passed.
+    #         Pass a limit argument after or instead of a user
+    #         argument to limit the number of common words to show.
+    #     """
+    #     if user:
+    #         user = await converters.SelfMember(manage_messages=True).convert(
+    #             ctx, user.id
+    #         )
+    #     else:
+    #         user = ctx.author
 
-        if user.bot:
-            raise commands.BadArgument("I do not track bots.")
+    #     if user.bot:
+    #         raise commands.BadArgument("I do not track bots.")
 
-        if limit < 1:
-            raise commands.BadArgument("The `limit` argument must be greater than 1.")
-        if limit > 1000:
-            raise commands.BadArgument("The `limit` argument must be less than 1000.")
+    #     if limit < 1:
+    #         raise commands.BadArgument("The `limit` argument must be greater than 1.")
+    #     if limit > 1000:
+    #         raise commands.BadArgument("The `limit` argument must be less than 1000.")
 
-        message = await ctx.load("Collecting Word Statistics...")
+    #     message = await ctx.load("Collecting Word Statistics...")
 
-        query = """
-                SELECT word, count(*)
-                FROM messages, unnest(
-                string_to_array(
-                translate(content, '\n', ' '),
-                ' ')) word
-                WHERE LENGTH(word) > 1
-                AND server_id = $1
-                AND author_id = $2
-                GROUP BY 1
-                ORDER BY 2 DESC
-                LIMIT $3;
-                """
-        records = await self.bot.cxn.fetch(query, ctx.guild.id, user.id, limit)
-        if not records:
-            return await message.edit(
-                content=f"No words have been recorded for `{user}`"
-            )
+    #     query = """
+    #             SELECT word, count(*)
+    #             FROM messages, unnest(
+    #             string_to_array(
+    #             translate(content, '\n', ' '),
+    #             ' ')) word
+    #             WHERE LENGTH(word) > 1
+    #             AND server_id = $1
+    #             AND author_id = $2
+    #             GROUP BY 1
+    #             ORDER BY 2 DESC
+    #             LIMIT $3;
+    #             """
+    #     records = await self.bot.cxn.fetch(query, ctx.guild.id, user.id, limit)
+    #     if not records:
+    #         return await message.edit(
+    #             content=f"No words have been recorded for `{user}`"
+    #         )
 
-        msg = "\n".join(
-            [
-                f"Uses: [{str(record['count']).zfill(2)}] Word: {record['word']}"
-                for record in records
-            ]
-        )
-        pages = pagination.MainMenu(
-            pagination.LinePageSource(msg, prefix="```ini", lines=20)
-        )
+    #     msg = "\n".join(
+    #         [
+    #             f"Uses: [{str(record['count']).zfill(2)}] Word: {record['word']}"
+    #             for record in records
+    #         ]
+    #     )
+    #     pages = pagination.MainMenu(
+    #         pagination.LinePageSource(msg, prefix="```ini", lines=20)
+    #     )
 
-        await message.edit(
-            content=f"{self.bot.emote_dict['graph']} Top **{limit}** most common words sent by **{user}**",
-        )
-        try:
-            await pages.start(ctx)
-        except menus.MenuError as e:
-            await ctx.send_or_reply(str(e))
+    #     await message.edit(
+    #         content=f"{self.bot.emote_dict['graph']} Top **{limit}** most common words sent by **{user}**",
+    #     )
+    #     try:
+    #         await pages.start(ctx)
+    #     except menus.MenuError as e:
+    #         await ctx.send_or_reply(str(e))
 
-    @decorators.command(
-        brief="Usage for a specific word.",
-        implemented="2021-03-13 18:18:34.790741",
-        updated="2021-05-07 03:51:54.934511",
-        ignore_extra=False,
-        examples="""
-                {0}word Hello
-                {0}word Hecate Hello
-                {0}word @Hecate Hello
-                {0}word Hecate#3523 Hello
-                {0}word 708584008065351681 Hello
-                """,
-    )
-    @checks.guild_only()
-    @checks.bot_has_perms(add_reactions=True, external_emojis=True)
-    @checks.cooldown()
-    async def word(
-        self,
-        ctx,
-        user: typing.Optional[converters.DiscordMember],
-        word: str,
-    ):
-        """
-        Usage: {0}word [user] <word>
-        Permission: Manage Messages
-        Output:
-            Show how many times a specific word
-            has been used by a user.
-        Notes:
-            Will default to you if no user is passed.
-        """
-        if user:
-            user = await converters.SelfMember(manage_messages=True).convert(
-                ctx, user.id
-            )
-        else:
-            user = ctx.author
-        if user.bot:
-            raise commands.BadArgument("I do not track bots.")
-        if len(word) < 2:
-            raise commands.BadArgument("Word must be at least 2 characters in length.")
-        message = await ctx.load("Collecting Word Statistics...")
+    # @decorators.command(
+    #     brief="Usage for a specific word.",
+    #     implemented="2021-03-13 18:18:34.790741",
+    #     updated="2021-05-07 03:51:54.934511",
+    #     ignore_extra=False,
+    #     examples="""
+    #             {0}word Hello
+    #             {0}word Hecate Hello
+    #             {0}word @Hecate Hello
+    #             {0}word Hecate#3523 Hello
+    #             {0}word 708584008065351681 Hello
+    #             """,
+    # )
+    # @checks.guild_only()
+    # @checks.bot_has_perms(add_reactions=True, external_emojis=True)
+    # @checks.cooldown()
+    # async def word(
+    #     self,
+    #     ctx,
+    #     user: typing.Optional[converters.DiscordMember],
+    #     word: str,
+    # ):
+    #     """
+    #     Usage: {0}word [user] <word>
+    #     Permission: Manage Messages
+    #     Output:
+    #         Show how many times a specific word
+    #         has been used by a user.
+    #     Notes:
+    #         Will default to you if no user is passed.
+    #     """
+    #     if user:
+    #         user = await converters.SelfMember(manage_messages=True).convert(
+    #             ctx, user.id
+    #         )
+    #     else:
+    #         user = ctx.author
+    #     if user.bot:
+    #         raise commands.BadArgument("I do not track bots.")
+    #     if len(word) < 2:
+    #         raise commands.BadArgument("Word must be at least 2 characters in length.")
+    #     message = await ctx.load("Collecting Word Statistics...")
 
-        query = """
-                SELECT word, count(*)
-                FROM messages, unnest(
-                string_to_array(
-                translate(content, '\n', ' '),
-                ' ')) word
-                WHERE word = $1
-                AND LENGTH(word) > 1
-                AND server_id = $2
-                AND author_id = $3
-                GROUP BY 1;
-                """
-        data = await self.bot.cxn.fetchrow(query, word, ctx.guild.id, user.id)
-        if not data:
-            return await message.edit(
-                content=f"{self.bot.emote_dict['failed']} The word `{word}` has never been used by **{user}**",
-            )
+    #     query = """
+    #             SELECT word, count(*)
+    #             FROM messages, unnest(
+    #             string_to_array(
+    #             translate(content, '\n', ' '),
+    #             ' ')) word
+    #             WHERE word = $1
+    #             AND LENGTH(word) > 1
+    #             AND server_id = $2
+    #             AND author_id = $3
+    #             GROUP BY 1;
+    #             """
+    #     data = await self.bot.cxn.fetchrow(query, word, ctx.guild.id, user.id)
+    #     if not data:
+    #         return await message.edit(
+    #             content=f"{self.bot.emote_dict['failed']} The word `{word}` has never been used by **{user}**",
+    #         )
 
-        await message.edit(
-            content=f"{self.bot.emote_dict['graph']} The word `{data['word']}` has been used {data['count']} time{'' if data['count'] == 1 else 's'} by **{user}**"
-        )
+    #     await message.edit(
+    #         content=f"{self.bot.emote_dict['graph']} The word `{data['word']}` has been used {data['count']} time{'' if data['count'] == 1 else 's'} by **{user}**"
+    #     )
 
-    @word.error
-    async def word_error(self, ctx, error):
-        if isinstance(error, commands.TooManyArguments):
-            await ctx.fail("Please only provide one word at a time to search.")
-            ctx.handled = True
+    # @word.error
+    # async def word_error(self, ctx, error):
+    #     if isinstance(error, commands.TooManyArguments):
+    #         await ctx.fail("Please only provide one word at a time to search.")
+    #         ctx.handled = True
 
     @decorators.command(
         brief="Show the most active users.",
@@ -1436,69 +1478,70 @@ class Tracking(commands.Cog):
         except menus.MenuError as e:
             await ctx.send_or_reply(str(e))
 
-    @decorators.command(
-        aliases=["chars"],
-        brief="Show character usage.",
-        implemented="2021-04-19 06:02:49.713396",
-        updated="2021-05-07 04:31:07.411009",
-        examples="""
-                {0}chars
-                {0}chars day
-                {0}chars week
-                {0}chars month
-                {0}chars year
-                {0}characters
-                {0}characters day
-                {0}characters week
-                {0}characters month
-                {0}characters year
-                """,
-    )
-    @checks.guild_only()
-    @checks.bot_has_perms(embed_links=True)
-    @checks.has_perms(manage_messages=True)
-    async def characters(self, ctx, unit: str = "day"):
-        """
-        Usage: {0}characters [unit of time]
-        Alias: {0}chars
-        Permission: Manage Messages
-        Output:
-            Shows the most active server
-            users ordered by the number
-            of characters they've sent.
-        Notes:
-            If no unit of time is specified,
-            of if the unit is invalid, the bot
-            will default to day for its unit.
-        """
-        unit = unit.lower()
-        time_dict = {"day": 86400, "week": 604800, "month": 2592000, "year": 31556952}
-        if unit not in time_dict:
-            unit = "day"
-        time_seconds = time_dict.get(unit, 2592000)
-        now = int(time.time())
-        diff = now - time_seconds
-        query = """
-                SELECT SUM(LENGTH(content)) as c, author_id, COUNT(*)
-                FROM messages
-                WHERE server_id = $1
-                AND unix > $2
-                GROUP BY author_id
-                ORDER BY c DESC LIMIT 25"""
-        stuff = await self.bot.cxn.fetch(query, ctx.guild.id, diff)
-        e = discord.Embed(
-            title="Character Leaderboard",
-            description=f"{sum(x[0] for x in stuff)} characters from {len(stuff)} user{'' if len(stuff) == 1 else 's'} in the last {unit}",
-            color=self.bot.constants.embed,
-        )
-        for n, v in enumerate(stuff):
-            try:
-                name = ctx.guild.get_member(int(v[1])).name
-            except AttributeError:
-                continue
-            e.add_field(name=f"{n+1}. {name}", value=f"{v[0]:,} chars")
+    # DEPRECATED TO SATISFY DISCORD VERIFICATION REQUIREMENTS
+    # @decorators.command(
+    #     aliases=["chars"],
+    #     brief="Show character usage.",
+    #     implemented="2021-04-19 06:02:49.713396",
+    #     updated="2021-05-07 04:31:07.411009",
+    #     examples="""
+    #             {0}chars
+    #             {0}chars day
+    #             {0}chars week
+    #             {0}chars month
+    #             {0}chars year
+    #             {0}characters
+    #             {0}characters day
+    #             {0}characters week
+    #             {0}characters month
+    #             {0}characters year
+    #             """,
+    # )
+    # @checks.guild_only()
+    # @checks.bot_has_perms(embed_links=True)
+    # @checks.has_perms(manage_messages=True)
+    # async def characters(self, ctx, unit: str = "day"):
+    #     """
+    #     Usage: {0}characters [unit of time]
+    #     Alias: {0}chars
+    #     Permission: Manage Messages
+    #     Output:
+    #         Shows the most active server
+    #         users ordered by the number
+    #         of characters they've sent.
+    #     Notes:
+    #         If no unit of time is specified,
+    #         of if the unit is invalid, the bot
+    #         will default to day for its unit.
+    #     """
+    #     unit = unit.lower()
+    #     time_dict = {"day": 86400, "week": 604800, "month": 2592000, "year": 31556952}
+    #     if unit not in time_dict:
+    #         unit = "day"
+    #     time_seconds = time_dict.get(unit, 2592000)
+    #     now = int(time.time())
+    #     diff = now - time_seconds
+    #     query = """
+    #             SELECT SUM(LENGTH(content)) as c, author_id, COUNT(*)
+    #             FROM messages
+    #             WHERE server_id = $1
+    #             AND unix > $2
+    #             GROUP BY author_id
+    #             ORDER BY c DESC LIMIT 25"""
+    #     stuff = await self.bot.cxn.fetch(query, ctx.guild.id, diff)
+    #     e = discord.Embed(
+    #         title="Character Leaderboard",
+    #         description=f"{sum(x[0] for x in stuff)} characters from {len(stuff)} user{'' if len(stuff) == 1 else 's'} in the last {unit}",
+    #         color=self.bot.constants.embed,
+    #     )
+    #     for n, v in enumerate(stuff):
+    #         try:
+    #             name = ctx.guild.get_member(int(v[1])).name
+    #         except AttributeError:
+    #             continue
+    #         e.add_field(name=f"{n+1}. {name}", value=f"{v[0]:,} chars")
 
-        await ctx.send_or_reply(embed=e)
+    #     await ctx.send_or_reply(embed=e)
 
     @decorators.command(
         brief="Show days a user was active.",

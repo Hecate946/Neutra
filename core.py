@@ -209,6 +209,7 @@ class Neutra(commands.AutoShardedBot):
 
     def setup(self):
         # Start the task loop
+        
         self.status_loop.start()
 
         # load all blacklisted discord objects

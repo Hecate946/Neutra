@@ -3,8 +3,10 @@
 import io
 import math
 
+from datetime import datetime
 from PIL import Image, ImageFont, ImageDraw, ImageSequence
 
+from . import utils
 from settings.constants import Colors
 
 statusmap = {
@@ -14,91 +16,93 @@ statusmap = {
     "offline": Colors.GRAY,
 }
 
-# def get_piestatus(title, statuses):
-#     total = sum(statuses.values())
+def get_piestatus(statuses, startdate):
+    total = sum(statuses.values())
+    online = statuses.get("online", 0)
+    idle = statuses.get("idle", 0)
+    dnd = statuses.get("dnd", 0)
+    offline = statuses.get("offline", 0)
+    uptime = total - offline
 
-#     img = Image.new("RGBA", (2500, 1024), (0, 0, 0, 0))
-#     draw = ImageDraw.Draw(img)
-#     font = ImageFont.truetype("./data/assets/Helvetica.ttf", 100)
-#     shape = [(50, 0), (1050, 1000)]
-#     start = 0
-#     for status, value in sorted(statuses.items(), key=lambda x: x[1], reverse=True):
-#         end = 360 * (value / total) + start
-#         draw.arc(
-#             shape,
-#             start=start,
-#             end=360 * (value / total) + start,
-#             fill=statusmap.get(status),
-#             width=200,
-#         )
-#         start = end
+    img = Image.new("RGBA", (2500, 1000), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    font = ImageFont.truetype("./data/assets/Helvetica.ttf", 100)
+    shape = [(50, 0), (1050, 1000)]
+    start = 0
+    for status, value in sorted(statuses.items(), key=lambda x: x[1], reverse=True):
+        end = 360 * (value / total) + start
+        draw.arc(
+            shape,
+            start=start,
+            end=360 * (value / total) + start,
+            fill=statusmap.get(status),
+            width=200,
+        )
+        start = end
 
-#     uptime = statuses.get("online") + statuses.get("dnd") + statuses.get("idle")
-#     text = f"{uptime/total:.2%}"
-#     text_width, text_height = draw.textsize(text, font)
-#     position = ((1100 - text_width) / 2, (1000 - text_height) / 2)
-#     draw.text(position, text, Colors.WHITE, font=font)
+    text = f"{uptime/total:.2%}"
+    text_width, text_height = draw.textsize(text, font)
+    position = ((1100 - text_width) / 2, (1000 - text_height) / 2)
+    draw.text(position, text, Colors.WHITE, font=font)
 
-#     font = ImageFont.truetype("./data/assets/Helvetica-Bold.ttf", 85)
-#     draw.text(
-#         (1200, 0), "Status Tracking Startdate:", fill=(255, 255, 255), font=font
-#     )
-#     font = ImageFont.truetype("./data/assets/Helvetica.ttf", 68)
-#     draw.text(
-#         (1200, 100),
-#         utils.timeago(
-#             datetime.utcnow() - datetime.utcfromtimestamp(starttime)
-#         ),  # .split(".")[0] + "]",
-#         fill=(255, 255, 255),
-#         font=font,
-#     )
-#     font = ImageFont.truetype("./data/assets/Helvetica-Bold.ttf", 85)
-#     draw.text((1200, 300), "Total Online Time:", fill=(255, 255, 255), font=font)
-#     font = ImageFont.truetype("./data/assets/Helvetica.ttf", 68)
-#     draw.text(
-#         (1200, 400),
-#         f"{uptime/3600:.2f} {'Hour' if int(uptime/3600) == 1 else 'Hours'}",
-#         fill=(255, 255, 255),
-#         font=font,
-#     )
+    font = ImageFont.truetype("./data/assets/Helvetica-Bold.ttf", 85)
+    draw.text(
+        (1200, 0), "Status Tracking Startdate:", fill=Colors.WHITE, font=font
+    )
+    font = ImageFont.truetype("./data/assets/Helvetica.ttf", 68)
+    draw.text(
+        (1200, 100),
+        utils.timeago(datetime.utcnow() - startdate),
+        fill=Colors.WHITE,
+        font=font,
+    )
+    font = ImageFont.truetype("./data/assets/Helvetica-Bold.ttf", 85)
+    draw.text((1200, 300), "Total Online Time:", fill=Colors.WHITE, font=font)
+    font = ImageFont.truetype("./data/assets/Helvetica.ttf", 68)
+    draw.text(
+        (1200, 400),
+        f"{uptime/3600:.2f} {'Hour' if int(uptime/3600) == 1 else 'Hours'}",
+        fill=Colors.WHITE,
+        font=font,
+    )
 
-#     font = ImageFont.truetype("./data/assets/Helvetica-Bold.ttf", 85)
-#     draw.text((1200, 600), "Status Information:", fill=(255, 255, 255), font=font)
-#     font = ImageFont.truetype("./data/assets/Helvetica.ttf", 68)
+    font = ImageFont.truetype("./data/assets/Helvetica-Bold.ttf", 85)
+    draw.text((1200, 600), "Status Information:", fill=Colors.WHITE, font=font)
+    font = ImageFont.truetype("./data/assets/Helvetica.ttf", 68)
 
-#     draw.rectangle((1200, 800, 1275, 875), fill=(46, 204, 113), outline=(0, 0, 0))
-#     draw.text(
-#         (1300, 810),
-#         f"Online: {statuses.get('online')/total:.2%}",
-#         fill=(255, 255, 255),
-#         font=font,
-#     )
-#     draw.rectangle((1850, 800, 1925, 875), fill=(255, 228, 0), outline=(0, 0, 0))
-#     draw.text(
-#         (1950, 810),
-#         f"Idle: {statuses.get('idle')/total:.2%}",
-#         fill=(255, 255, 255),
-#         font=font,
-#     )
-#     draw.rectangle((1200, 900, 1275, 975), fill=(237, 41, 57), outline=(0, 0, 0))
-#     draw.text(
-#         (1300, 910),
-#         f"DND: {statuses.get('dnd')/total:.2%}",
-#         fill=(255, 255, 255),
-#         font=font,
-#     )
-#     draw.rectangle((1850, 900, 1925, 975), fill=(97, 109, 126), outline=(0, 0, 0))
-#     draw.text(
-#         (1950, 910),
-#         f"Offline: {statuses.get('offline')/total:.2%}",
-#         fill=(255, 255, 255),
-#         font=font,
-#     )
+    draw.rectangle((1200, 700, 1275, 775), fill=Colors.GREEN)
+    draw.text(
+        (1300, 710),
+        f"Online: {online/total:.2%}",
+        fill=Colors.WHITE,
+        font=font,
+    )
+    draw.rectangle((1850, 700, 1925, 775), fill=Colors.YELLOW)
+    draw.text(
+        (1950, 710),
+        f"Idle: {idle/total:.2%}",
+        fill=Colors.WHITE,
+        font=font,
+    )
+    draw.rectangle((1200, 800, 1275, 875), fill=Colors.RED)
+    draw.text(
+        (1300, 810),
+        f"DND: {dnd/total:.2%}",
+        fill=Colors.WHITE,
+        font=font,
+    )
+    draw.rectangle((1850, 800, 1925, 875), fill=Colors.GRAY, outline=(0, 0, 0))
+    draw.text(
+        (1950, 810),
+        f"Offline: {offline/total:.2%}",
+        fill=Colors.WHITE,
+        font=font,
+    )
 
-#     buffer = io.BytesIO()
-#     img.save(buffer, "png")
-#     buffer.seek(0)
-#     return buffer
+    buffer = io.BytesIO()
+    img.save(buffer, "png")
+    buffer.seek(0)
+    return buffer
 
 
 def get_barstatus(title, statuses):

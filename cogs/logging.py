@@ -64,6 +64,9 @@ class Logging(commands.Cog):
             False: bot.emote_dict["fail"],
         }  # Map for determining the emote.
 
+        self.snipes = []
+        self.edited = []
+
     def cog_unload(self):  # Stop the task loop
         self.dispatch_webhooks.stop()
 
@@ -1026,6 +1029,7 @@ class Logging(commands.Cog):
     @decorators.wait_until_ready()
     @decorators.event_check(lambda s, b, a: a.guild and not a.author.bot)
     async def on_message_edit(self, before, after):
+        self.edited.append(before)
         if before.content == after.content:
             return  # giphy, tenor, and imgur links trigger this but they shouldn't be logged
 
@@ -1075,6 +1079,8 @@ class Logging(commands.Cog):
     @decorators.wait_until_ready()
     @decorators.event_check(lambda s, m: m.guild and not m.author.bot)
     async def on_message_delete(self, message):
+
+        self.snipes.append(message)
 
         webhook = self.get_webhook(message.guild, "messages")
         if not webhook:
@@ -1162,33 +1168,26 @@ class Logging(commands.Cog):
         Notes:
             Will fetch a messages sent by a specific user if specified
         """
-        if member is None:
-            query = """
-                    SELECT author_id, message_id, content, timestamp
-                    FROM messages
-                    WHERE channel_id = $1
-                    AND deleted = True
-                    ORDER BY unix DESC;
-                    """
-            result = await self.bot.cxn.fetchrow(query, ctx.channel.id)
-        else:
-            query = """
-                    SELECT author_id, message_id, content, timestamp
-                    FROM messages
-                    WHERE channel_id = $1
-                    AND author_id = $2
-                    AND deleted = True
-                    ORDER BY unix DESC;
-                    """
-            result = await self.bot.cxn.fetchrow(query, ctx.channel.id, member.id)
+        def get_snipe(author_id=None):
+            msgs = [m for m in self.snipes if m.channel.id == ctx.channel.id]
+            if author_id:
+                msgs = [m for m in msgs if m.author_id == author_id]
 
-        if not result:
+            if msgs:
+                return msgs[-1]
+  
+        if member is None:
+            msg = get_snipe()
+        else:
+            msg = get_snipe(member.id)
+
+        if not msg:
             return await ctx.fail(f"There is nothing to snipe.")
 
-        author = result["author_id"]
-        message_id = result["message_id"]
-        content = result["content"]
-        timestamp = result["timestamp"]
+        author = msg.author.id
+        message_id = msg.id
+        content = msg.content
+        timestamp = msg.created_at.utcnow()
 
         author = self.bot.get_user(author)
         if not author:
@@ -1230,33 +1229,26 @@ class Logging(commands.Cog):
         Notes:
             Will fetch a messages sent by a specific user if specified
         """
+        def get_snipe(author_id=None):
+            msgs = [m for m in self.edited if m.channel.id == ctx.channel.id]
+            if author_id:
+                msgs = [m for m in msgs if m.author_id == author_id]
+
+            if msgs:
+                return msgs[-1]
+
         if member is None:
-            query = """
-                    SELECT author_id, message_id, content, timestamp
-                    FROM messages
-                    WHERE channel_id = $1
-                    AND edited = True
-                    ORDER BY unix DESC;
-                    """
-            result = await self.bot.cxn.fetchrow(query, ctx.channel.id)
+            msg = get_snipe()
         else:
-            query = """
-                    SELECT author_id, message_id, content, timestamp
-                    FROM messages
-                    WHERE channel_id = $1
-                    AND author_id = $2
-                    AND edited = True
-                    ORDER BY unix DESC;
-                    """
-            result = await self.bot.cxn.fetchrow(query, ctx.channel.id, member.id)
+            msg = get_snipe(member.id)
 
-        if not result:
-            return await ctx.fail("There are no edits to snipe.")
+        if not msg:
+            return await ctx.fail(f"There are no edits to snipe.")
 
-        author = result["author_id"]
-        message_id = result["message_id"]
-        content = result["content"]
-        timestamp = result["timestamp"]
+        author = msg.author.id
+        message_id = msg.id
+        content = msg.content
+        timestamp = msg.created_at.utcnow()
 
         author = self.bot.get_user(author)
         if not author:

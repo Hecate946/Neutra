@@ -675,13 +675,42 @@ class QueueEntry:
         return json_entry
 
 
+class SavedTracks:
+    """
+    Load saved tracks into this object
+    for utility functions.
+    """
+    def __init__(self, ctx, records, owner):
+        self.ctx = ctx
+        self.bot = ctx.bot
+        self.owner = owner
+        self.entries = [QueueEntry(
+            ctx,
+            record['title'],
+            record['url'],
+            uploader=record['uploader']
+        ) for record in records]
+        self.tracks = len(self.entries)
+
+    @classmethod
+    async def initialize_liked(cls, ctx, owner):
+        query = """
+                SELECT title, url, uploader
+                FROM saved WHERE requester_id = $1
+                ORDER BY insertion DESC
+                """
+        records = await ctx.bot.cxn.fetch(query, owner.id)
+        if not records:
+            raise commands.BadArgument("You do not have any liked songs.")
+        return cls(ctx, records, owner)
+
 class Playlist:
     """
     QueueEntry object for enqueueing tracks.
     All TrackQueue objects are type QueueEntry
     """
 
-    def __init__(self, ctx, record):
+    def __init__(self, ctx, record, *, owner=None):
         self.ctx = ctx
         self.bot = ctx.bot
         self.record = record
@@ -699,7 +728,7 @@ class Playlist:
         self.tracks = len(self.queue)
         self.id = record.get("id")
         self.likes = record.get("likes")
-        self.owner = self.bot.get_user(record.get("owner_id"))
+        self.owner = owner or self.bot.get_user(record.get("owner_id"))
         self.name = record.get("name")
         self.uses = record.get("uses", 0)
         self.created_at = record.get("insertion")
@@ -717,9 +746,10 @@ class Playlist:
         record = await ctx.bot.cxn.fetchrow(query, owner.id, name.lower())
         if not record:
             raise commands.BadArgument(
-                f"You do not have a playlist with name: **{name}**"
+                f"User **{owner}** `{owner.id}` does not have a saved playlist with name: **{name}**"
             )
-        return cls(ctx, record)
+        return cls(ctx, record, owner=owner)
+
 
     @classmethod
     async def get_playlists(cls, ctx, owner):
@@ -751,7 +781,8 @@ class Playlist:
                 WHERE owner_id = $1
                 AND name = $2;
                 """
-        return await self.bot.cxn.execute(query, self.owner.id, self.name.lower())
+        args = (query, self.owner.id, self.name.lower())
+        return await self.bot.cxn.execute(*args)
 
     def pop(self, index: int):
         try:
@@ -1332,10 +1363,8 @@ class VoiceState:
 
     async def stop(self):
         self.tracks.clear()
-
-        if self.voice:
-            await self.voice.disconnect(force=True)
-
+        if self._ctx.guild.voice_client:
+            await self._ctx.guild.voice_client.disconnect(force=True)
         self.audio_player.cancel()
         self.incrementer.cancel()
 
@@ -2507,7 +2536,7 @@ class Queue(commands.Cog):
             queue.clear()
             await ctx.success("Cleared all tracks from the queue.")
 
-    @_clear.command(name="range", brief="Ckear a range from the queue.")
+    @_clear.command(name="range", brief="Clear a range from the queue.")
     async def _clear_range(self, ctx, start: int, end: int):
         Checks.assert_is_dj(ctx)
         queue = ctx.voice_state.tracks
@@ -2943,6 +2972,7 @@ class Audio(commands.Cog):
         """
         await self.set_effect(ctx)
 
+    # Breaks FFMPEG
     # @decorators.command(
     #     name="backwards",
     #     brief="Toggle the backwards effect.",
@@ -2996,7 +3026,7 @@ class Audio(commands.Cog):
         """
         await self.set_effect(ctx)
 
-    @decorators.group(
+    @decorators.command(
         name="effects",
         brief="Show audio effects.",
     )
@@ -3015,28 +3045,27 @@ class Audio(commands.Cog):
         )
         view.message = msg
 
-    @_effects.command(
-        aliases=["clear"],
-        name="reset",
-        brief="Reset audio effects.",
+    @decorators.command(
+        name="default",
+        brief="Restore audio effects to default.",
     )
     @checks.cooldown()
-    async def reset_effects(self, ctx):
+    async def _default(self, ctx):
         """
-        Usage: {0}effects reset
-        Alias: {0}effects clear
+        Usage: {0}default
         Output: Resets all effects to default.
         """
         player = ctx.voice_state.validate
         Checks.assert_is_dj(ctx)
         player.clear_effects()
-        await ctx.success("Reset all audio effects.")
+        await ctx.success("Restored all audio effects to default.")
 
     @decorators.command(
         aliases=["vol", "sound"],
         name="volume",
         brief="Alter the volume.",
     )
+    @checks.cooldown()
     async def _volume(self, ctx, volume: int = None):
         """
         Usage: {0}volume [volume]
@@ -3305,6 +3334,27 @@ class Playlists(commands.Cog):
         view.embed.add_field(name="Total Uses", value=playlist.uses)
         await view.start()
 
+    # @decorators.command(name="liked", aliases=["saved"], brief="Show your liked songs.")
+    # async def _liked(self, ctx):
+    #     """
+    #     Usage: {0}playlist view [playlist owner] [playlist name]
+    #     Alias: {0}playlist info
+    #     Output:
+    #         Show some statistics on a saved playlist
+    #     """
+    #     await ctx.trigger_typing()
+    #     user = ctx.author
+    #     playlist = await SavedTracks.initialize_liked(ctx, user)
+
+    #     view = Views.QueueView(
+    #         ctx, [entry.hyperlink for entry in playlist.entries], playlist=playlist
+    #     )
+    #     view.embed.set_thumbnail(url=playlist.owner.display_avatar)
+    #     view.embed.title = "Liked Tracks"
+    #     view.embed.add_field(name="Playlist Owner", value=str(playlist.owner))
+    #     view.embed.add_field(name="Total Tracks", value=playlist.tracks)
+    #     await view.start()
+
     @decorators.command(
         brief="Show queues saved by a user.",
         name="playlists",
@@ -3360,7 +3410,7 @@ class Playlists(commands.Cog):
                 """
         records = await self.bot.cxn.fetch(query, ctx.author.id)
         if not records:
-            await ctx.fail("You have no liked tracks")
+            await ctx.fail("You have no saved tracks")
             return
 
         for record in records:
@@ -3370,7 +3420,7 @@ class Playlists(commands.Cog):
                 )
             )
 
-        await ctx.send(f"Enqueued your liked songs `({len(records)} tracks)`")
+        await ctx.send(f"Enqueued your saved tracks `({len(records)} tracks)`")
 
     @decorators.command(
         name="playtop",
@@ -3595,7 +3645,7 @@ class Voice(commands.Cog):
             await ctx.success(f"Successfully bound to {channel.mention}.")
 
     @decorators.command(
-        brief="Unbind music commands to a channel.",
+        brief="Unbind music commands from a channel.",
         name="unbind",
     )
     @checks.has_perms(manage_channels=True)
@@ -4138,67 +4188,6 @@ class Views:
             )
 
         @discord.ui.button(
-            emoji=constants.emotes["skip"], style=discord.ButtonStyle.gray
-        )
-        async def _skip(
-            self, button: discord.ui.Button, interaction: discord.Interaction
-        ):
-            if Checks.is_requester(self.ctx):
-                self.ctx.voice_state.skip()  # Song requester can skip.
-
-            elif Checks.is_dj(self.ctx):
-                self.ctx.voice_state.skip()  # Server Djs can skip.
-
-            elif self.ctx.author.id not in self.ctx.voice_state.skip_votes:
-                self.ctx.voice_state.skip_votes.add(self.ctx.author.id)
-                total_votes = len(self.ctx.voice_state.skip_votes)
-
-                listeners = self.ctx.voice_state.voice.channel.members
-                valid_voters = [user for user in listeners if not user.bot]
-                required_votes = len(valid_voters) + 1 // 2  # Require majority
-
-                if total_votes >= required_votes:
-                    self.ctx.voice_state.skip()
-                else:
-                    await interaction.response.send_message(
-                        f"{constants.emotes['success']} Skip vote added, currently at `{total_votes}/{required_votes}`"
-                    )
-                    return
-            else:
-                await interaction.response.send_message(
-                    "You have already voted to skip this track.", ephemeral=True
-                )
-                return
-            await interaction.response.send_message(
-                f"{constants.emotes['success']} Skipped the current track."
-            )
-
-        @discord.ui.button(
-            emoji=constants.emotes["previous"], style=discord.ButtonStyle.gray
-        )
-        async def _prev(
-            self, button: discord.ui.Button, interaction: discord.Interaction
-        ):
-            try:
-                Checks.assert_is_dj(self.ctx)
-            except commands.BadArgument as e:
-                await interaction.response.send_message(str(e), ephemeral=True)
-            else:
-                prev = self.ctx.voice_state.previous
-                if not prev:
-                    await interaction.response.send_message(
-                        "No previous song to play.", ephemeral=True
-                    )
-                    return
-
-                self.ctx.voice_state.replay(prev)
-                self.ctx.voice_state.skip()
-
-                await interaction.response.send_message(
-                    f"{constants.emotes['success']} Replaying the previous song."
-                )
-
-        @discord.ui.button(
             emoji=constants.emotes["help"], style=discord.ButtonStyle.gray
         )
         async def _help(
@@ -4215,48 +4204,18 @@ class Views:
                 "Read below for a description of each button and it's function."
             )
             embed.add_field(
-                name=constants.emotes["backward2"] + "  Jump to the first page",
-                value="This button shows the first page of the pagination session.",
-                inline=False,
-            )
-            embed.add_field(
-                name=constants.emotes["backward"] + "  Show the previous page",
-                value="This button shows the previous page of the pagination session.",
-                inline=False,
-            )
-            embed.add_field(
-                name=constants.emotes["1234button"] + "  Input a page number",
-                value="This button shows a page after you input a page number.",
-                inline=False,
-            )
-            embed.add_field(
-                name=constants.emotes["forward"] + "  Show the next page",
-                value="This button shows the next page of the pagination session",
-                inline=False,
-            )
-            embed.add_field(
-                name=constants.emotes["forward2"] + "  Jump to the last page.",
-                value="This button shows the last page of the pagination session",
-                inline=False,
-            )
-            embed.add_field(
                 name=constants.emotes["help"] + "  Show the help page.",
                 value="This button shows this help page.",
                 inline=False,
             )
             embed.add_field(
-                name=constants.emotes["previous"] + "  Play the previous track.",
-                value="This button skips the current track and replays the previous track. (if it exists)",
+                name=constants.emotes["rewind"] + "  Rewind the track.",
+                value="This button rewinds the current track by ten seconds.",
                 inline=False,
             )
             embed.add_field(
-                name=constants.emotes["download"] + "  Save the current queue.",
-                value="This button saves the current queue under a name so that you can listen to it later.",
-                inline=False,
-            )
-            embed.add_field(
-                name=constants.emotes["skip"] + "  Play the next track.",
-                value="This button skips the current track and plays the next track. (If it exists)",
+                name=constants.emotes["pause"] + "  Pause the track.",
+                value="This button pauses the current track. Press the button again to resume.",
                 inline=False,
             )
             embed.add_field(
@@ -4264,6 +4223,7 @@ class Views:
                 value="This button deletes the message and ends the session.",
                 inline=False,
             )
+            embed.set_footer("This menu will expire after 2 minutes of inactivity.")
             await interaction.message.edit(embed=embed, view=self)
 
         @discord.ui.button(
@@ -5202,14 +5162,6 @@ class Views:
             await interaction.message.delete()
             self.stop()
 
-        @discord.ui.button(label="Save", style=discord.ButtonStyle.green, row=2)
-        async def save_button(
-            self, button: discord.ui.Button, interaction: discord.Interaction
-        ):
-            await interaction.message.edit(
-                "Successfully saved audio effect settings.", view=None
-            )
-            self.stop()
 
         @discord.ui.button(label="Reset", style=discord.ButtonStyle.blurple, row=2)
         async def reset_button(
@@ -5403,7 +5355,7 @@ class Views:
             embed.description = f"Below are comprehensive instructions on how to use the `{self.ctx.clean_prefix}effects` dropdown menu command. Each effect in the dropdown menu is a toggle switch. This means that if an effect is disabled, it will be enabled when clicked, and vice-versa. The **Main Menu** category below shows how to work the main page, while the **Help Menu** category shows instructions for this page."
             embed.add_field(
                 name="Main Menu",
-                value="`Cancel` simply deletes the menu.\n`Reset` resets all effects to default.\n`Save` saves the effect settings and stops the menu.\n`Help` shows this help page.",
+                value="`Cancel` simply deletes the menu.\n`Reset` resets all effects to default.\n`Help` shows this help page.",
             )
             embed.add_field(
                 name="Help Menu",

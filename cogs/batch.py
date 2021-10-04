@@ -162,12 +162,12 @@ class Batch(commands.Cog):
 
         if self.message_batch:  # Insert every message into the db
             query = """
-                    INSERT INTO messages (unix, timestamp, content,
+                    INSERT INTO messages (unix, timestamp,
                     message_id, author_id, channel_id, server_id)
-                    SELECT x.unix, x.timestamp, x.content,
+                    SELECT x.unix, x.timestamp,
                     x.message_id, x.author_id, x.channel_id, x.server_id
                     FROM JSONB_TO_RECORDSET($1::JSONB)
-                    AS x(unix REAL, timestamp TIMESTAMP, content TEXT,
+                    AS x(unix REAL, timestamp TIMESTAMP,
                     message_id BIGINT, author_id BIGINT,
                     channel_id BIGINT, server_id BIGINT)
                     """
@@ -480,7 +480,6 @@ class Batch(commands.Cog):
 
                 lowest = discord.utils.find(lambda x: x.get_member(after.id) is not None, sorted(self.bot.guilds, key=lambda x: x.id))
                 if after.guild.id == lowest.id:
-                    print("changed")
                     self.presence_batch.append(
                         {
                             "user_id": after.id,
@@ -556,7 +555,6 @@ class Batch(commands.Cog):
                 {
                     "unix": message.created_at.timestamp(),
                     "timestamp": str(message.created_at.utcnow()),
-                    "content": message.clean_content.replace("\u0000", ""),
                     "message_id": message.id,
                     "author_id": message.author.id,
                     "channel_id": message.channel.id,
@@ -828,14 +826,15 @@ class Batch(commands.Cog):
         data = await self.bot.cxn.fetchrow(query, user.id)
         if not data:
             return
-        last_seen = utils.time_between(int(data["unix"]), int(time.time()))
+        last_seen = utils.time_between(int(data["unix"]), int(time.time())) + " ago."
+        #last_seen = utils.format_relative(int(data["unix"]))
         if raw:
             return last_seen
 
         if data["action"]:
-            msg = f"User **{user}** `{user.id}` was last seen {data['action']} **{last_seen}** ago."
+            msg = f"User **{user}** `{user.id}` was last seen {data['action']} **{last_seen}**"
         else:
-            msg = f"User **{user}** `{user.id}` was last seen **{last_seen}** ago."
+            msg = f"User **{user}** `{user.id}` was last seen **{last_seen}**"
 
         return msg
 
