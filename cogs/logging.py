@@ -1159,7 +1159,6 @@ class Logging(commands.Cog):
     @decorators.command(brief="Snipe a deleted message.", aliases=["retrieve"])
     @checks.guild_only()
     @checks.bot_has_perms(embed_links=True)
-    @checks.has_perms(manage_messages=True)
     async def snipe(self, ctx, *, member: converters.DiscordMember = None):
         """
         Usage: {0}snipe [user]
@@ -1220,7 +1219,6 @@ class Logging(commands.Cog):
     )
     @checks.guild_only()
     @checks.bot_has_perms(embed_links=True)
-    @checks.has_perms(manage_messages=True)
     async def editsnipe(self, ctx, *, member: converters.DiscordMember = None):
         """
         Usage: {0}editsnipe [user]
