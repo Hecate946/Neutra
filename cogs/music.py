@@ -4665,7 +4665,7 @@ class Views:
                     self.ctx.voice_state.skip()
                 else:
                     await interaction.response.send_message(
-                        f"{constants.emotes['success']} Skip vote added, currently at `{total_votes}/{required_votes}`"
+                        f"Skip vote added, currently at `{total_votes}/{required_votes}`"
                     )
                     return
             else:
@@ -4674,7 +4674,7 @@ class Views:
                 )
                 return
             await interaction.response.send_message(
-                f"{constants.emotes['success']} Skipped the current track."
+                f"Skipped the current track."
             )
 
         @discord.ui.button(
@@ -4699,7 +4699,7 @@ class Views:
                 self.ctx.voice_state.skip()
 
                 await interaction.response.send_message(
-                    f"{constants.emotes['success']} Replaying the previous song."
+                    f"Replaying the previous song."
                 )
 
         @discord.ui.button(
