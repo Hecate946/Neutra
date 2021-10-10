@@ -13,7 +13,6 @@ This module is entirely separate from the remainder of the client,
 and can be removed with relative ease merely by deleting this file.
 """
 
-from operator import is_
 import re
 import io
 import json
@@ -579,6 +578,8 @@ class Checks:
         if ctx.author.guild_permissions.move_members:
             return True
         if ctx.author.guild_permissions.mute_members:
+            return True
+        if ctx.is_admin():
             return True
         return False
 

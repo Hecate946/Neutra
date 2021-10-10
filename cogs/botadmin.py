@@ -38,6 +38,8 @@ class Botadmin(commands.Cog):
         self.bot = bot
         self._req_lock = asyncio.Lock(loop=bot.loop)
 
+        self.torment = False
+
     # This is a bot admin only cog
     async def cog_check(self, ctx):
         if checks.is_admin(ctx):
@@ -97,9 +99,54 @@ class Botadmin(commands.Cog):
         js = await self.github_request("POST", "gists", data=data, headers=headers)
         return js["html_url"]
 
+
+    @decorators.command(
+        aliases=["torment"],
+        brief="Retarded",
+    )
+    async def annoy(self, ctx, members: commands.Greedy[converters.DiscordMember(False)], times : int = 10):
+        """What retard needs help for this?"""
+        if ctx.guild.id != 805638877762420786 and not checks.is_owner(ctx):
+            await ctx.reply('retard')
+            return
+     
+        # Set the torment flag
+        self.torment = True
+            
+        if times > 100:
+            times = 100
+            
+        if times < 1 or not members:
+            await ctx.reply('retard')
+            return
+ 
+        # Delete original torment message
+        await ctx.message.delete()
+
+        for i in range(0, times):
+            for channel in ctx.guild.channels:
+                try:
+                    await channel.send(" ".join([m.mention for m in members if channel.permissions_for(m).read_messages]), delete_after=0)
+                except Exception:
+                    continue
+            await asyncio.sleep(1)
+            if not self.torment:
+                break
+
+    @decorators.command(
+        aliases=["canceltorment"],
+        brief="This is retarded",
+    )
+    async def cancelannoy(self, ctx):
+        """What retard needs help for this?"""
+                    
+        self.torment = False
+        await ctx.send("retarded.")
+        
+
     @decorators.command(
         aliases=["rawhelp"],
-        brief="Invoke the default help command",
+        brief="Default",
     )
     async def defaulthelp(self, ctx, *, search: str = None):
         if not search:
@@ -108,7 +155,7 @@ class Botadmin(commands.Cog):
 
     @decorators.command(
         aliases=["helpless"],
-        brief="Send a file showing incomplete commands.",
+        brief="Show helpless commands.",
         implemented="2021-04-14 00:54:20.465452",
         updated="2021-05-19 16:00:16.754845",
     )
@@ -151,7 +198,7 @@ class Botadmin(commands.Cog):
 
     @decorators.command(
         aliases=["dumpguilds", "txtguilds", "txtservers"],
-        brief="DMs you a list of my servers.",
+        brief="DMs all servers.",
         implemented="2021-04-09 02:05:49.278468",
         updated="2021-05-06 15:57:20.290636",
     )
@@ -239,7 +286,7 @@ class Botadmin(commands.Cog):
     @decorators.command(
         name="message",
         aliases=["pm", "dm"],
-        brief="DM any user the bot knows.",
+        brief="DM a user the bot knows.",
     )
     async def _message(self, ctx, user: converters.DiscordUser, *, message: str):
         """
@@ -298,7 +345,7 @@ class Botadmin(commands.Cog):
         await ctx.send_or_reply(inv)
 
     @decorators.command(
-        brief="Lists the servers I'm connected to.", aliases=["servers", "serverlist"]
+        brief="Lists all servers", aliases=["servers", "serverlist"]
     )
     async def listservers(self, ctx):
         """
@@ -673,7 +720,7 @@ class Botadmin(commands.Cog):
             return
         await ctx.send_or_reply(content="I couldn't find that extension.")
 
-    @decorators.command(brief="List all extensions and cogs.", aliases=["exts"])
+    @decorators.command(brief="List all cogs.", aliases=["exts"])
     async def extensions(self, ctx):
         """
         Usage: {0}extensions
@@ -797,7 +844,7 @@ class Botadmin(commands.Cog):
             return
         await ctx.react(self.bot.emote_dict["success"])
 
-    @decorators.command(brief="Show shared servers with the bot.")
+    @decorators.command(brief="Show shared servers.")
     @checks.is_bot_admin()
     @checks.bot_has_perms(add_reactions=True, external_emojis=True)
     async def sss(self, ctx, user: converters.DiscordUser = None):
@@ -834,7 +881,7 @@ class Botadmin(commands.Cog):
 
     @decorators.command(
         aliases=["epost"],
-        brief="Sends all server emojis to your dms.",
+        brief="Sends all server emojis.",
         implemented="2021-05-10 20:14:33.223405",
         updated="2021-05-10 20:14:33.223405",
     )
