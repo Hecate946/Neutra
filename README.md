@@ -8,8 +8,8 @@ Hello! I'm Neutra, and I specialize in tracking and moderation.
 I was designed to collect all sorts of data on servers, users,
 messages, emojis, online time, and more! I also come with a fast
 and clean moderation system that offers every opportunity for effective
-server management. Apart from moderation and tracking, I feature 283
-commands across 20 categories that provide awesome utilities!
+server management. Apart from moderation and tracking, I feature 313
+commands across 25 categories that provide awesome utilities!
 Some examples include managing roles and logging server actions.
 ## Categories
 ##### [Admin](#Admin-1)
@@ -26,7 +26,12 @@ Some examples include managing roles and logging server actions.
 ##### [Manager](#Manager-1)
 ##### [Mod](#Mod-1)
 ##### [Monitor](#Monitor-1)
-##### [Music](#Music-1)
+##### [Player](#Player-1)
+##### [Playlists](#Playlists-1)
+##### [Queue](#Queue-1)
+##### [Audio](#Audio-1)
+##### [Voice](#Voice-1)
+##### [SpotifyTracker](#SpotifyTracker-1)
 ##### [Server](#Server-1)
 ##### [Stats](#Stats-1)
 ##### [Tasks](#Tasks-1)
@@ -87,28 +92,32 @@ warns: Display the server warnlist.
 ```
 
 ### Botadmin
-#### Bot admin only stats cog. (21 Commands)
+#### Bot admin only stats cog. (24 Commands)
 
 ```yaml
+annoy: Retarded
+
 bottomservers: Show least member servers.
 
 cachedcommands: Show commands in the cache.
 
+cancelannoy: This is retarded
+
 command_history: Show command history.
 
-debug: Send a file showing incomplete commands.
+debug: Show helpless commands.
+
+defaulthelp: Default
 
 del: Delete a message.
 
-dumpservers: DMs you a list of my servers.
+dumpservers: DMs all servers.
 
-echo: Echo a message.
-
-emojipost: Sends all server emojis to your dms.
+emojipost: Sends all server emojis.
 
 extension: Show info on an extension.
 
-extensions: List all extensions and cogs.
+extensions: List all cogs.
 
 firstservers: Show first joined servers.
 
@@ -118,17 +127,19 @@ guild: Get stats on a bot server.
 
 inv: Create a server invite.
 
-listservers: Lists the servers I'm connected to.
+listservers: Lists all servers
 
 members: Show members for a server.
 
-message: DM any user the bot knows.
+message: DM a user the bot knows.
 
 nickscan: List all bot nicknames.
 
 recentservers: Show latest joined servers.
 
-sss: Show shared servers with the bot.
+say: Say a message.
+
+sss: Show shared servers.
 
 topservers: Show most member servers.
 ```
@@ -388,7 +399,7 @@ unload: Unload an extension.
 ```
 
 ### Mod
-#### Keep your server under control. (20 Commands)
+#### Keep your server under control. (17 Commands)
 
 ```yaml
 addrole: Add multiple roles to a user.
@@ -424,12 +435,6 @@ unblock: Reallow users to send messages.
 unlock: Unlock a channel.
 
 unmute: Unmute muted users.
-
-vckick: Kick users from a voice channel.
-
-vcmove: Move a user from a voice channel.
-
-vcpurge: Kick all users from a voice channel.
 ```
 
 ### Monitor
@@ -449,35 +454,19 @@ threadinfo: Show bot threadinfo.
 todo: Manage the bot's todo list.
 ```
 
-### Music
-#### Module for playing music (31 Commands)
+### Player
+#### Module for playing audio. (17 Commands)
 
 ```yaml
-247: Enable 247 mode.
-
-clear: Clear the queue.
+connect: Connect to a channel.
 
 current: Show track info.
 
-dedupe: Remove duplicate tracks.
-
-dequeue: Clear absent user enqueues.
+disconnect: Disconnects from a channel.
 
 fastforward: Fast forward the track.
 
-join: Joins a channel.
-
-jump: Jump to a track.
-
-leave: Leaves a channel.
-
-loop: Loop the track or queue.
-
-move: Move a song in the queue.
-
 pause: Pause the track.
-
-pitch: Alter the pitch of the player.
 
 play: Play a track from a search.
 
@@ -485,35 +474,131 @@ playnext: Front queue a track.
 
 position: Show the track position.
 
-queue: Show the track queue.
-
-remove: Remove a track.
-
 replay: Play the previous track.
 
 resume: Resume the track.
 
-reverse: Reverse the queue.
-
 rewind: Rewind the track.
+
+save: Save a song to your liked songs.
 
 seek: Seek to a position in the track.
 
-shuffle: Shuffle the queue.
-
 skip: Skip the track.
-
-skipto: Skip to a track.
-
-speed: Alter the speed of the player.
 
 stop: Stop track and clear the queue.
 
-volume: Set the volume of the player.
-
-weed: Clear absent user enqueues.
+trackinfo: Show track info.
 
 youtube: Get results from a search.
+```
+
+### Playlists
+#### Module for managing playlists. (4 Commands)
+
+```yaml
+playliked: Enqueue saved songs.
+
+playlist: Manage playlists.
+
+playlists: Show queues saved by a user.
+
+playtop: Enqueue the top 10 most frequently queued tracks.
+```
+
+### Queue
+#### Module for managing the queue. (14 Commands)
+
+```yaml
+clear: Clear the queue.
+
+dedupe: Remove duplicate tracks.
+
+dequeue: Clear a user's enqueues.
+
+jump: Jump to a track in the queue.
+
+loop: Loop the track or queue.
+
+move: Move a song in the queue.
+
+remove: Remove a track from the queue.
+
+requeue: Queue the previous track.
+
+reverse: Reverse the queue.
+
+shuffle: Shuffle the queue.
+
+skipto: Skip to a track in the queue.
+
+tracks: Show the track queue.
+
+unloop: Un-loop the track or queue.
+
+weed: Clear absent user enqueues.
+```
+
+### Audio
+#### Module for managing the queue. (16 Commands)
+
+```yaml
+bass: Toggle the bass effect.
+
+default: Restore audio effects to default.
+
+earrape: Toggle the earrape effect.
+
+echo: Toggle the echo effect.
+
+effects: Show audio effects.
+
+muffle: Toggle the muffle effect.
+
+nightcore: Toggle the nightcore effect.
+
+phaser: Toggle the phaser effect.
+
+pitch: Alter the pitch of the player.
+
+robot: Toggle the robot effect.
+
+speed: Alter the speed of the player.
+
+treble: Toggle the treble effect.
+
+tremolo: Toggle the tremolo effect.
+
+vibrato: Toggle the vibrato effect.
+
+volume: Alter the volume.
+
+whisper: Toggle the whisper effect.
+```
+
+### Voice
+#### Module for voice permissions. (10 Commands)
+
+```yaml
+bind: Bind music commands to a channel.
+
+djlock: Lock the music module to DJs.
+
+djrole: Manage the DJ role.
+
+djs: Show the server djs.
+
+djunlock: Unlock the music module.
+
+unbind: Unbind music commands from a channel.
+
+vckick: Kick users from a voice channel.
+
+vcmove: Move a user from a voice channel.
+
+vcpurge: Kick all users from a voice channel.
+
+vctransfer: Transfer users into a new channel.
 ```
 
 ### Server
@@ -590,7 +675,7 @@ reminder: Set a reminder for yourself.
 ```
 
 ### Tracking
-#### Module for all user stats (24 Commands)
+#### Module for all user stats (23 Commands)
 
 ```yaml
 activity: Show the most active users.
@@ -601,13 +686,13 @@ barstatus: Status info in a bar graph.
 
 botusage: Show the top bot users.
 
-characters: Show character usage.
+channelstats: Show channel activity.
 
 clocker: Show days a user was active.
 
 clocking: Show all active users.
 
-commandcount: Count the commands run by a user.
+commandcount: Show a user's commands.
 
 commandstats: Bot commands listed by popularity.
 
@@ -623,13 +708,13 @@ messagestats: Show message stats.
 
 nicknames: Show a user's past nicknames.
 
+piestatus: Status info in a piechart.
+
 seen: Check when a user was last seen.
 
 spoke: Check when a user last spoke.
 
 spokehere: Check when a user last spoke here.
-
-statusinfo: Status info in a piechart.
 
 top: Show top message senders.
 
@@ -637,13 +722,11 @@ user: Show information on a user.
 
 usernames: Show a user's past usernames.
 
-word: Usage for a specific word.
-
-words: Most used words from a user.
+voicetime: Get voice data
 ```
 
 ### Utility
-#### Module for general utilities. (24 Commands)
+#### Module for general utilities. (25 Commands)
 
 ```yaml
 ascify: Convert special characters to ascii.
@@ -693,4 +776,6 @@ snowflake: Show info on a discord snowflake.
 status: Show a user's discord status.
 
 voiceusers: Show all the users in a vc.
+
+whatis: Get the type of a discord object.
 ```
