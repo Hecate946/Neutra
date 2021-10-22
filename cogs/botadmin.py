@@ -560,7 +560,6 @@ class Botadmin(commands.Cog):
         """
         counter = self.bot.command_stats
         width = len(max(counter, key=len))
-        total = sum(counter.values())
 
         if limit > 0:
             common = counter.most_common(limit)
@@ -577,8 +576,8 @@ class Botadmin(commands.Cog):
     @decorators.command(aliases=["ns"], brief="List all bot nicknames.")
     async def nickscan(self, ctx):
         """
-        Usage: -nickscan
-        Alias: -ns
+        Usage: {0}nickscan
+        Alias: {0}ns
         Output:
             All my nicknames across all servers
         """
@@ -859,14 +858,9 @@ class Botadmin(commands.Cog):
             Will default to you if no user is
             specified.
         """
-        if user is None:
-            user = ctx.author
+        user = user or ctx.author
 
-        shared = []
-        for guild in self.bot.guilds:
-            for member in guild.members:
-                if member.id == user.id:
-                    shared.append((guild.id, guild.name))
+        shared = user.mutual_guilds
 
         width = max([len(str(x[0])) for x in shared])
         formatted = "\n".join([f"{str(x[0]).ljust(width)} : {x[1]}" for x in shared])

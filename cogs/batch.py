@@ -472,7 +472,7 @@ class Batch(commands.Cog):
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
-    @decorators.event_check(lambda s, b, a: not a.bot)
+    @decorators.event_check(lambda s, b, a: a.guild and not a.bot)
     async def on_presence_update(self, before, after):
         if self.status_changed(before, after):
             async with self.batch_lock:

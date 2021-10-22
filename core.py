@@ -166,7 +166,7 @@ class Neutra(commands.AutoShardedBot):
             "DATABASE",
             "MONITOR",
         ]
-        self.do_not_load = ["CONVERSION"]
+        self.do_not_load = ["CONVERSION", "MUSIC"]
         self.music_cogs = []
 
         self.home_guilds = [
