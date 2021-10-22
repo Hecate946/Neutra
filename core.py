@@ -166,7 +166,7 @@ class Neutra(commands.AutoShardedBot):
             "DATABASE",
             "MONITOR",
         ]
-        self.do_not_load = ["CONVERSION", "MUSIC"]
+        self.do_not_load = []
         self.music_cogs = []
 
         self.home_guilds = [
@@ -380,6 +380,7 @@ class Neutra(commands.AutoShardedBot):
 
         if self.tester is False:
             await self.setup_webhooks()
+            self.do_not_load = ["CONVERSION", "MUSIC"]
 
         # The rest of the botvars that couldn't be set earlier
         await self.load_globals()
