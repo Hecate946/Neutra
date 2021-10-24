@@ -460,10 +460,12 @@ class Neutra(commands.AutoShardedBot):
             self.server_settings = database.settings
 
         if not hasattr(self, "invites"):
+
             self.invites = {
-                guild.id: await guild.invites()
-                for guild in self.guilds
-                if guild.me.guild_permissions.manage_guild
+                # TODO
+                # guild.id: await guild.invites()
+                # for guild in self.guilds
+                # if guild.me.guild_permissions.manage_guild
             }
         if not hasattr(self, "listing_sites"):
             self.listing_sites = {
