@@ -380,8 +380,9 @@ class Neutra(commands.AutoShardedBot):
             print(utils.traceback_maker(e))
 
         if self.tester is False:
+            self.do_not_load.extend(["CONVERSION", "MUSIC"])
             await self.setup_webhooks()
-            self.do_not_load = ["CONVERSION", "MUSIC"]
+            print(utils.prefix_log("Established Webhooks."))
 
         # The rest of the botvars that couldn't be set earlier
         await self.load_globals()
@@ -482,6 +483,7 @@ class Neutra(commands.AutoShardedBot):
                 },
             }
 
+        print(utils.prefix_log("Established Globals."))
         await self.finalize_startup()
 
     async def set_status(self):
