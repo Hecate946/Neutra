@@ -48,7 +48,8 @@ class Home(commands.Cog):
     @decorators.wait_until_ready()
     @decorators.event_check(lambda s, m: m.guild.id == HOME)
     async def on_member_join(self, member):
-        await self.welcome(member)
+        if self.bot.tester is False:
+            await self.welcome(member)
 
     async def welcome(self, member):
         byteav = await member.display_avatar.with_size(128).read()

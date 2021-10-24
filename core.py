@@ -375,6 +375,7 @@ class Neutra(commands.AutoShardedBot):
         member_list = [x for x in self.get_all_members()]
         try:
             await database.initialize(self, member_list)
+            print(utils.prefix_log("Initialized Database."))
         except Exception as e:
             print(utils.traceback_maker(e))
 
