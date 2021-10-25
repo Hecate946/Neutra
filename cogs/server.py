@@ -260,7 +260,7 @@ class Server(commands.Cog):
         await self.do_removal(ctx, search, lambda e: True)
 
     @purge.command(brief="Purge messages sent by a user.", aliases=["member"])
-    async def user(self, ctx, user: converters.DiscordMember, search=100):
+    async def user(self, ctx, user: converters.DiscordUser, search=100):
         """
         Usage: {0}purge user <user> [amount]
         Aliases:
