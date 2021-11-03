@@ -198,7 +198,7 @@ class Tracking(commands.Cog):
             msg += f"Join Position  : {position:,}/{len(user.guild.members)}\n"
 
         if last_seen:
-            msg += f"Last Seen      : {last_seen} ago\n"
+            msg += f"Last Seen      : {last_seen}\n"
         if last_spoke:
             msg += f"Last Spoke     : {last_spoke} ago\n"
         if server_spoke:
