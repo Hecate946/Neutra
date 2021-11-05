@@ -1384,6 +1384,8 @@ class Admin(commands.Cog):
             For any assistance in deleting data,
             join the support server.
             Invite: https://discord.gg/H2qTG4yxqb
+            For specific data options,
+            use {0}help reset <subcommand>
         """
         if ctx.invoked_subcommand is None:
             await ctx.usage("<my/user/server> <data option> [user]")
