@@ -524,26 +524,25 @@ class Help(commands.Cog):
             ###############
             ## Beta help ##
             ###############
-            if self.bot.get_cog("Player"):
-                if category_or_command.lower() in ["music", "player"]:
-                    cog = self.bot.get_cog("Player")
-                    return await self.send_cog_help(ctx, cog)
+            if category_or_command.lower() in ["music", "player"] and self.bot.get_cog("Player"):
+                cog = self.bot.get_cog("Player")
+                return await self.send_cog_help(ctx, cog)
 
-                if category_or_command.lower() in ["queue"]:
-                    cog = self.bot.get_cog("Queue")
-                    return await self.send_cog_help(ctx, cog)
+            if category_or_command.lower() in ["queue"] and self.bot.get_cog("Player"):
+                cog = self.bot.get_cog("Queue")
+                return await self.send_cog_help(ctx, cog)
 
-                if category_or_command.lower() in ["voice"]:
-                    cog = self.bot.get_cog("Voice")
-                    return await self.send_cog_help(ctx, cog)
+            if category_or_command.lower() in ["voice"] and self.bot.get_cog("Player"):
+                cog = self.bot.get_cog("Voice")
+                return await self.send_cog_help(ctx, cog)
 
-                if category_or_command.lower() in ["audio"]:
-                    cog = self.bot.get_cog("Audio")
-                    return await self.send_cog_help(ctx, cog)
+            if category_or_command.lower() in ["audio"] and self.bot.get_cog("Player"):
+                cog = self.bot.get_cog("Audio")
+                return await self.send_cog_help(ctx, cog)
 
-                if category_or_command.lower() in ["playlists"]:
-                    cog = self.bot.get_cog("Playlists")
-                    return await self.send_cog_help(ctx, cog)
+            if category_or_command.lower() in ["playlists"] and self.bot.get_cog("Player"):
+                cog = self.bot.get_cog("Playlists")
+                return await self.send_cog_help(ctx, cog)
 
             ##########################
             ## Manages Command Help ##

@@ -183,7 +183,7 @@ class Stats(commands.Cog):
     )
     @checks.guild_only()
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
-    @checks.has_perms(view_audit_log=True)
+    @checks.has_perms(view_guild_insights=True)
     @checks.cooldown()
     async def emojiusage(self, ctx, emoji: converters.GuildEmojiConverter):
         """
@@ -245,7 +245,7 @@ class Stats(commands.Cog):
     )
     @checks.guild_only()
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
-    @checks.has_perms(view_audit_log=True)
+    @checks.has_perms(view_guild_insights=True)
     async def emojistats(self, ctx, *, user: converters.DiscordMember = None):
         """
         Usage: {0}emojistats [user]
@@ -374,7 +374,7 @@ class Stats(commands.Cog):
     )
     @checks.guild_only()
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
-    @checks.has_perms(view_audit_log=True)
+    @checks.has_perms(view_guild_insights=True)
     @checks.cooldown()
     async def firstjoins(self, ctx):
         """
@@ -443,7 +443,7 @@ class Stats(commands.Cog):
                 """,
     )
     @checks.guild_only()
-    @checks.has_perms(view_audit_log=True)
+    @checks.has_perms(view_guild_insights=True)
     @checks.cooldown()
     async def joined(self, ctx, *, user: converters.DiscordMember = None):
         """
@@ -476,7 +476,7 @@ class Stats(commands.Cog):
                 """,
     )
     @checks.guild_only()
-    @checks.has_perms(view_audit_log=True)
+    @checks.has_perms(view_guild_insights=True)
     @checks.cooldown()
     async def joinedatpos(self, ctx, *, position):
         """
@@ -528,7 +528,7 @@ class Stats(commands.Cog):
                 """,
     )
     @checks.guild_only()
-    @checks.has_perms(view_audit_log=True)
+    @checks.has_perms(view_guild_insights=True)
     @checks.cooldown()
     async def joinpos(self, ctx, *, user: converters.DiscordMember = None):
         """
@@ -599,7 +599,7 @@ class Stats(commands.Cog):
     )
     @checks.guild_only()
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
-    @checks.has_perms(view_audit_log=True)
+    @checks.has_perms(view_guild_insights=True)
     @checks.cooldown()
     async def lastjoins(self, ctx):
         """
@@ -660,7 +660,7 @@ class Stats(commands.Cog):
     )
     @checks.guild_only()
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
-    @checks.has_perms(view_audit_log=True)
+    @checks.has_perms(view_guild_insights=True)
     @checks.cooldown()
     async def listbots(self, ctx):
         """
@@ -899,7 +899,7 @@ class Stats(commands.Cog):
         updated="2021-07-02 21:58:28.689246",
     )
     @checks.guild_only()
-    @checks.has_perms(view_audit_log=True)
+    @checks.has_perms(view_guild_insights=True)
     async def _permissions(
         self,
         ctx,

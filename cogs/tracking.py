@@ -47,7 +47,7 @@ class Tracking(commands.Cog):
     @checks.guild_only()
     @checks.cooldown()
     async def invited(
-        self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None
+        self, ctx, *, user: converters.SelfMember(view_guild_insights=True) = None
     ):
         """
         Usage: {0}invited [user]
@@ -136,7 +136,7 @@ class Tracking(commands.Cog):
                 """,
     )
     @checks.cooldown(2, 20)
-    async def user(self, ctx, *, user: converters.SelfUser(view_audit_log=True) = None):
+    async def user(self, ctx, *, user: converters.SelfUser(view_guild_insights=True) = None):
         """
         Usage:   {0}user [user]
         Alias:   {0}lookup
@@ -232,7 +232,7 @@ class Tracking(commands.Cog):
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.cooldown()
     async def statuses(
-        self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None
+        self, ctx, *, user: converters.SelfMember(view_guild_insights=True) = None
     ):
         """
         Usage: {0}statuses [user]
@@ -262,7 +262,7 @@ class Tracking(commands.Cog):
     @decorators.command(brief="Get voice data", aliases=["vtime"])
     @checks.guild_only()
     @checks.cooldown()
-    async def voicetime(self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None):
+    async def voicetime(self, ctx, *, user: converters.SelfMember(view_guild_insights=True) = None):
         user = user or ctx.author
         query = """
                 with voice_data as(
@@ -293,7 +293,7 @@ class Tracking(commands.Cog):
     @decorators.command(brief="Get status data", aliases=["_ps"], hidden=True)
     @checks.guild_only()
     @checks.cooldown()
-    async def _piestatus(self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None):
+    async def _piestatus(self, ctx, *, user: converters.SelfMember(view_guild_insights=True) = None):
         user = user or ctx.author
         query = """
                 with status_data as(
@@ -432,7 +432,7 @@ class Tracking(commands.Cog):
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
     @checks.cooldown()
     async def nicknames(
-        self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None
+        self, ctx, *, user: converters.SelfMember(view_guild_insights=True) = None
     ):
         """
         Usage: {0}nicknames [user]
@@ -481,9 +481,8 @@ class Tracking(commands.Cog):
     )
     @checks.guild_only()
     @checks.bot_has_perms(add_reactions=True, embed_links=True, external_emojis=True)
-    @checks.has_perms(view_audit_log=True)
     async def usernames(
-        self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None
+        self, ctx, *, user: converters.SelfMember(view_guild_insights=True) = None
     ):
         """
         Usage: {0}usernames [user]
@@ -533,7 +532,7 @@ class Tracking(commands.Cog):
     @checks.bot_has_perms(attach_files=True, embed_links=True)
     @checks.cooldown(1, 10)
     async def avatars(
-        self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None
+        self, ctx, *, user: converters.SelfMember(view_guild_insights=True) = None
     ):
         """
         Usage: {0}avatars [user]
@@ -608,7 +607,7 @@ class Tracking(commands.Cog):
     # @checks.bot_has_perms(attach_files=True, embed_links=True)
     # @checks.cooldown(1, 10)
     # async def avatarpages(
-    #     self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None
+    #     self, ctx, *, user: converters.SelfMember(view_guild_insights=True) = None
     # ):
     #     """
     #     Usage: {0}avatars [user]
@@ -794,7 +793,7 @@ class Tracking(commands.Cog):
     )
     @checks.cooldown()
     async def spoke(
-        self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None
+        self, ctx, *, user: converters.SelfMember(view_guild_insights=True) = None
     ):
         """
         Usage: {0}spoke [user]
@@ -839,7 +838,7 @@ class Tracking(commands.Cog):
     )
     @checks.cooldown()
     async def spokehere(
-        self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None
+        self, ctx, *, user: converters.SelfMember(view_guild_insights=True) = None
     ):
         """
         Usage: {0}spokehere [user]
@@ -921,7 +920,7 @@ class Tracking(commands.Cog):
             if user.bot:
                 raise commands.BadArgument("I do not track bots.")
 
-            user = await converters.SelfMember(view_audit_log=True).convert(
+            user = await converters.SelfMember(view_guild_insights=True).convert(
                 ctx, user.id
             )
 
@@ -1029,7 +1028,7 @@ class Tracking(commands.Cog):
     )
     @checks.guild_only()
     @checks.bot_has_perms(embed_links=True)
-    @checks.has_perms(view_audit_log=True)
+    @checks.has_perms(view_guild_insights=True)
     @checks.cooldown()
     async def botusage(self, ctx, unit: str = "month"):
         """
@@ -1570,7 +1569,7 @@ class Tracking(commands.Cog):
             will default to 1 week.
         """
         if user:
-            user = await converters.SelfMember(view_audit_log=True).convert(
+            user = await converters.SelfMember(view_guild_insights=True).convert(
                 ctx, user.id
             )
         else:
@@ -1677,7 +1676,7 @@ class Tracking(commands.Cog):
     @checks.bot_has_perms(attach_files=True, embed_links=True)
     @checks.cooldown()
     async def piestatus(
-        self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None
+        self, ctx, *, user: converters.SelfMember(view_guild_insights=True) = None
     ):
         """
         Usage: {0}statusinfo [user]
@@ -2003,7 +2002,7 @@ class Tracking(commands.Cog):
     @checks.bot_has_perms(attach_files=True, embed_links=True)
     @checks.cooldown()
     async def barstatus(
-        self, ctx, *, user: converters.SelfMember(view_audit_log=True) = None
+        self, ctx, *, user: converters.SelfMember(view_guild_insights=True) = None
     ):
         """
         Usage: {0}barstatus [user]

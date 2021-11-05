@@ -2,6 +2,7 @@ import io
 import re
 import copy
 import shlex
+import asyncpg
 import discord
 
 from datetime import timedelta
@@ -1384,6 +1385,8 @@ class Admin(commands.Cog):
             For any assistance in deleting data,
             join the support server.
             Invite: https://discord.gg/H2qTG4yxqb
+            For specific data options,
+            use {0}help reset <subcommand>
         """
         if ctx.invoked_subcommand is None:
             await ctx.usage("<my/user/server> <data option> [user]")
@@ -1539,6 +1542,48 @@ class Admin(commands.Cog):
 
             await self.bot.cxn.execute(query, ctx.guild.id)
             await ctx.success(f"Reset all {option[:-1]} data for this server.")
+
+    @decorators.command(
+        brief="Opt out of all data collection.",
+    )
+    async def optout(self, ctx):
+        """
+        Usage: {0}optout
+        Output:
+            Stops all collection of your data and
+            recursively deletes all preexisting data.
+        Notes:
+            This data deleted cannot be recovered.
+            If you wish to opt back in to data tracking,
+            use the {0}optin command or join the support server.
+        """
+        batch = self.bot.get_cog("Batch")
+        c = await ctx.confirm("WARNING! This action will permanently delete all your stored data, and prevent all future data tracking.")
+        if c:
+            message = await ctx.load("Recursively deleting all stored data...")
+            try:
+                await batch.opt_out(ctx.author.id)
+            except asyncpg.exceptions.UniqueViolationError:
+                await message.edit("You have already opted out of all data tracking. No additional data to delete.")
+            else:
+                await message.edit(f"Successfully opted out of all data tracking systems.")
+
+    @decorators.command(
+        brief="Opt back in to data collection.",
+    )
+    async def optin(self, ctx):
+        """
+        Usage: {0}optin
+        Output:
+            Restarts previously opted out of data collection.
+        """
+        batch = self.bot.get_cog("Batch")
+        try:
+            await batch.opt_in(ctx.author.id)
+        except ValueError:
+            await ctx.fail("Already opted into data tracking systems.")
+        await ctx.success("Successfully opted back into data tracking systems.")
+
 
     # @decorators.command(
     #     aliases=["serverlock", "lockserver", "frost"],

@@ -64,7 +64,6 @@ class Confirmation(discord.ui.View):
     async def prompt(self):
         self.message = await self.ctx.send(self.msg, view=self, **self.kwargs)
         await self.wait()
-        print(self.result)
         return self.result
 
     async def on_timeout(self):

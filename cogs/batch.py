@@ -30,19 +30,20 @@ class Batch(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+        self.whitelist = []  # Users that opted out
+        bot.loop.create_task(self.load_whitelist())
+
         # Removed for now at least
         # self.activity_batch = defaultdict(dict)
 
         # Data holders
         self.command_batch = []
-        self.edited_batch = []
         self.emote_batch = defaultdict(dict)
         self.invite_batch = []
         self.message_batch = []
         self.nicknames_batch = []
         self.presence_batch = []
         self.roles_batch = defaultdict(dict)
-        self.snipe_batch = []
         self.status_batch = defaultdict(dict)
         self.tracking_batch = defaultdict(dict)
         self.usernames_batch = []
@@ -61,6 +62,75 @@ class Batch(commands.Cog):
         self.message_inserter.stop()
         self.status_inserter.stop()
         self.invite_tracker.stop()
+
+    async def load_whitelist(self):
+        query = "SELECT ARRAY(SELECT user_id FROM whitelist);"
+        self.whitelist = await self.bot.cxn.fetchval(query)
+
+    async def opt_in(self, user_id):
+        self.whitelist.remove(user_id)
+        query = "DELETE FROM whitelist WHERE user_id = $1"
+        await self.bot.cxn.execute(query, user_id)
+
+
+    async def opt_out(self, user_id):
+        query = "INSERT INTO whitelist VALUES ($1);"
+        await self.bot.cxn.execute(query, user_id)
+        self.whitelist.append(user_id)
+        await self.delete_all(user_id)
+
+    async def delete_all(self, user_id):
+        queries = [
+            """
+            WITH data AS (
+                DELETE FROM useravatars
+                WHERE user_id = $1
+                RETURNING avatar
+            )
+            DELETE FROM avatars
+            WHERE hash IN (
+                SELECT avatar
+                FROM data
+            );
+            """,
+            """
+            DELETE FROM usernames
+            WHERE user_id = $1; 
+            """,
+            """
+            DELETE FROM usernicks
+            WHERE user_id = $1;
+            """,
+            """
+            DELETE FROM userstatus
+            WHERE user_id = $1;
+            """,
+            """
+            DELETE FROM tracker
+            WHERE user_id = $1;
+            """,
+            """
+            DELETE FROM voice
+            WHERE user_id = $1;
+            """,
+            """
+            DELETE FROM statuses
+            WHERE user_id = $1;
+            """,
+            """
+            DELETE FROM emojidata
+            WHERE author_id = $1;
+            """,
+            """
+            DELETE FROM messages
+            WHERE author_id = $1;
+            """,
+
+        ]
+        async with self.bot.cxn.acquire() as conn:      
+            async with conn.transaction():
+                for query in queries:
+                    await conn.execute(query, user_id)
 
     @tasks.loop(minutes=1.0)
     async def invite_tracker(self):
@@ -175,26 +245,6 @@ class Batch(commands.Cog):
                 data = json.dumps(self.message_batch)
                 await self.bot.cxn.execute(query, data)
                 self.message_batch.clear()
-
-        if self.snipe_batch:  # Snipe command setup
-            query = """
-                    UPDATE messages
-                    SET deleted = True
-                    WHERE message_id = $1;
-                    """  # Updates already stored messages.
-            async with self.batch_lock:
-                await self.bot.cxn.executemany(query, ((x,) for x in self.snipe_batch))
-                self.snipe_batch.clear()
-
-        if self.edited_batch:  # Edit snipe command setup
-            query = """
-                    UPDATE messages
-                    SET edited = True
-                    WHERE message_id = $1;
-                    """  # Updates already stored messages.
-            async with self.batch_lock:
-                await self.bot.cxn.executemany(query, ((x,) for x in self.edited_batch))
-                self.edited_batch.clear()
 
     @message_inserter.error
     async def loop_error(self, exc):
@@ -404,12 +454,6 @@ class Batch(commands.Cog):
                 }
             )
 
-    @commands.Cog.listener()
-    @decorators.wait_until_ready()
-    async def on_raw_message_delete(self, payload):
-        async with self.batch_lock:
-            self.snipe_batch.append(payload.message_id)
-
     # Helper functions to detect changes
     @staticmethod
     def status_changed(before, after):
@@ -460,6 +504,9 @@ class Batch(commands.Cog):
     @decorators.wait_until_ready()
     @decorators.event_check(lambda s, b, a: not a.bot)
     async def on_member_update(self, before, after):
+        if after.id in self.whitelist:
+            return
+
         if self.nickname_changed(before, after):
             async with self.batch_lock:
                 self.nicknames_batch.append(
@@ -474,6 +521,9 @@ class Batch(commands.Cog):
     @decorators.wait_until_ready()
     @decorators.event_check(lambda s, b, a: a.guild is not None and a.bot is False)
     async def on_presence_update(self, before, after):
+        if after.id in self.whitelist:
+            return
+
         if self.status_changed(before, after):
             async with self.batch_lock:
                 self.status_batch[str(before.status)][after.id] = time.time()
@@ -509,6 +559,8 @@ class Batch(commands.Cog):
         Here's where we get notified of avatar,
         username, and discriminator changes.
         """
+        if after.id in self.whitelist:
+            return
         if self.avatar_changed(before, after):
             async with self.batch_lock:
                 self.tracking_batch[before.id] = {time.time(): "updating their avatar"}
@@ -549,6 +601,9 @@ class Batch(commands.Cog):
     @decorators.wait_until_ready()
     @decorators.event_check(lambda s, m: m.guild and not m.author.bot)
     async def on_message(self, message):
+        if message.author.id in self.whitelist:
+            return
+
         self.bot.message_stats[message.guild.id] += 1
         async with self.batch_lock:
             self.message_batch.append(
@@ -575,13 +630,14 @@ class Batch(commands.Cog):
     @decorators.wait_until_ready()
     @decorators.event_check(lambda s, c, u, w: not u.bot)
     async def on_typing(self, channel, user, when):
+        if user.id in self.whitelist:
+            return
         async with self.batch_lock:
             self.tracking_batch[user.id] = {time.time(): "typing"}
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
     async def on_raw_message_edit(self, payload):
-        self.edited_batch.append(payload.message_id)
         channel_obj = self.bot.get_channel(payload.channel_id)
         try:
             message = await channel_obj.fetch_message(payload.message_id)
@@ -591,13 +647,16 @@ class Batch(commands.Cog):
             return
         if message.author.bot:
             return
+        if message.author.id in self.whitelist:
+            return
         async with self.batch_lock:
             self.tracking_batch[message.author.id] = {time.time(): "editing a message"}
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
     async def on_raw_reaction_add(self, payload):
-
+        if payload.user_id in self.whitelist:
+            return
         user = self.bot.get_user(payload.user_id)
         if not user:
             return
@@ -612,6 +671,9 @@ class Batch(commands.Cog):
     @decorators.wait_until_ready()
     @decorators.event_check(lambda s, m, b, a: not m.bot and m.guild)
     async def on_voice_state_update(self, member, before, after):
+        if member.id in self.whitelist:
+            return
+
         async with self.batch_lock:
             self.tracking_batch[member.id] = {time.time(): "changing their voice state"}
 
@@ -642,6 +704,9 @@ class Batch(commands.Cog):
     @decorators.wait_until_ready()
     @decorators.event_check(lambda s, i: i.inviter and not i.inviter.bot)
     async def on_invite_create(self, invite):
+        if invite.inviter.id in self.whitelist:
+            return
+
         async with self.batch_lock:
             self.tracking_batch[invite.inviter.id] = {time.time(): "creating an invite"}
         if not invite.guild.me.guild_permissions.manage_guild:
@@ -659,6 +724,9 @@ class Batch(commands.Cog):
     @decorators.wait_until_ready()
     @decorators.event_check(lambda s, m: not m.bot)
     async def on_member_join(self, member):
+        if member.id in self.whitelist:
+            return
+
         async with self.batch_lock:
             self.tracking_batch[member.id] = {time.time(): "joining a server"}
 
@@ -695,9 +763,13 @@ class Batch(commands.Cog):
     @decorators.event_check(lambda s, m: not m.bot)
     async def on_member_remove(self, member):
         async with self.batch_lock:
-            self.tracking_batch[member.id] = {time.time(): "leaving a server"}
+
             roles = ",".join([str(x.id) for x in member.roles if x.name != "@everyone"])
             self.roles_batch[member.guild.id].update({member.id: roles})
+
+            if member.id in self.whitelist:
+                return
+            self.tracking_batch[member.id] = {time.time(): "leaving a server"}
 
         if not member.guild.me.guild_permissions.manage_guild:
             return

@@ -78,3 +78,7 @@ CREATE TABLE IF NOT EXISTS statuses (
     status TEXT,
     first_seen TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'UTC')
 );
+
+CREATE TABLE IF NOT EXISTS whitelist (
+    user_id BIGINT PRIMARY KEY
+);
