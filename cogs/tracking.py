@@ -750,7 +750,7 @@ class Tracking(commands.Cog):
                 """,
     )
     @checks.cooldown()
-    async def seen(self, ctx, *, user: converters.DiscordUser = None):
+    async def seen(self, ctx, *, user: converters.SelfMember(view_guild_insights=True) = None):
         """
         Usage: {0}seen [user]
         Aliases:
