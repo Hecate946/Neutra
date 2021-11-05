@@ -1972,9 +1972,9 @@ class Tracking(commands.Cog):
         buffer = io.BytesIO()
         img.save(buffer, "png")  # 'save' function for PIL
         buffer.seek(0)
-        dfile = discord.File(fp=buffer, filename="uptime.png")
+        dfile = discord.File(fp=buffer, filename="piestatus.png")
         em.title = f"{user}'s Status Statistics"
-        em.set_image(url="attachment://statusinfo.png")
+        em.set_image(url="attachment://piestatus.png")
         await ctx.send_or_reply(embed=em, file=dfile)
 
     @decorators.command(
