@@ -284,7 +284,7 @@ class Tracking(commands.Cog):
                 from voice_data
                 order by sum desc
                 """
-        record = await self.bot.cxn.fetchval(query, user.id)
+        record = await self.bot.cxn.fetchval(query, user.id) or 0
         voice_time = utils.time_between(time.time() - record, time.time())
         await ctx.send_or_reply(
             f"{self.bot.emote_dict['graph']} User **{user}** `{user.id}` has spent **{voice_time}** in voice channels throughout this server."
