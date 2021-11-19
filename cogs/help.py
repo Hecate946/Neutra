@@ -393,9 +393,7 @@ class Help(commands.Cog):
                 "util",
                 "utilities",
                 "tools",
-                "miscellaneous",
                 "random",
-                "misc",
             ]:
                 cog = self.bot.get_cog("Utility")
                 return await self.send_cog_help(ctx, cog)
@@ -524,6 +522,10 @@ class Help(commands.Cog):
             ###############
             ## Beta help ##
             ###############
+            if category_or_command.lower() in ["miscellaneous", "misc"] and self.bot.get_cog("Misc"):
+                cog = self.bot.get_cog("Misc")
+                return await self.send_cog_help(ctx, cog)
+
             if category_or_command.lower() in ["music", "player"] and self.bot.get_cog("Player"):
                 cog = self.bot.get_cog("Player")
                 return await self.send_cog_help(ctx, cog)
