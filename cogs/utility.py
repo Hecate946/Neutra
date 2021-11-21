@@ -814,7 +814,7 @@ class Utility(commands.Cog):
             else f"Links to `{name}'s` {option}:  "
             f"[png]({url}) | "
             f"[jpeg]({url.replace('png', 'jpg', 1)}) | "
-            f"[webp]({url.replace('png', 'webp', 1)}) | ",
+            f"[webp]({url.replace('png', 'webp', 1)})",
             color=self.bot.constants.embed,
         )
         embed.set_image(url=url)

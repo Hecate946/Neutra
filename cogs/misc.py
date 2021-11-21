@@ -139,3 +139,18 @@ class Misc(commands.Cog):
             return
 
         await message.edit(content=final)
+
+    @decorators.command(brief="Just try it and see.")
+    @checks.cooldown()
+    async def size(self, ctx, *, user: converters.DiscordUser = None):
+        user = user or ctx.author
+        def find_size(snowflake):
+            s = 0
+            while snowflake:
+                snowflake //= 10
+                s += snowflake % 10
+                return (s%10) * 2
+
+        await ctx.send_or_reply(f"**{user.display_name}'s** size: 8{'=' * find_size(user.id)}D")
+
+        

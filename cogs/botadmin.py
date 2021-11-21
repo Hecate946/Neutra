@@ -862,8 +862,8 @@ class Botadmin(commands.Cog):
 
         shared = user.mutual_guilds
 
-        width = max([len(str(x[0])) for x in shared])
-        formatted = "\n".join([f"{str(x[0]).ljust(width)} : {x[1]}" for x in shared])
+        width = max([len(str(x.name)) for x in shared])
+        formatted = "\n".join([f"{str(x.name).ljust(width)} : {x.id}" for x in shared])
         p = pagination.MainMenu(
             pagination.TextPageSource(formatted, prefix="```fix", max_size=500)
         )
