@@ -106,8 +106,6 @@ class Botadmin(commands.Cog):
     )
     async def annoy(self, ctx, members: commands.Greedy[converters.DiscordMember(False)], times : int = 10):
         """What retard needs help for this?"""
-        if ctx.guild.id != 805638877762420786 and not checks.is_owner(ctx):
-            await ctx.reply('retard')
      
         # Set the torment flag
         self.torment = True
@@ -120,7 +118,10 @@ class Botadmin(commands.Cog):
             return
  
         # Delete original torment message
-        await ctx.message.delete()
+        try:
+            await ctx.message.delete()
+        except:
+            pass
 
         for i in range(0, times):
             for channel in ctx.guild.channels:
