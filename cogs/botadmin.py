@@ -108,7 +108,6 @@ class Botadmin(commands.Cog):
         """What retard needs help for this?"""
         if ctx.guild.id != 805638877762420786 and not checks.is_owner(ctx):
             await ctx.reply('retard')
-            return
      
         # Set the torment flag
         self.torment = True
