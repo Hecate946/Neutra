@@ -177,6 +177,7 @@ class Tracking(commands.Cog):
         messages_sent = await batch.get_message_count(user)
         commands_run = await batch.get_command_count(user)
         last_seen = await batch.get_last_seen(user, raw=True)
+        mutual_guilds = user.mutual_guilds if user != self.bot else user.guilds
 
         msg = ""
         msg += f"ID             : {user.id}\n"
@@ -187,7 +188,7 @@ class Tracking(commands.Cog):
         if status:
             msg += f"Status         : {status}\n"
 
-        msg += f"Common Servers : {len(user.mutual_guilds)}\n"
+        msg += f"Common Servers : {len(mutual_guilds)}\n"
         msg += f"Created        : {utils.format_time(user.created_at)}\n"
 
         if joined_at:

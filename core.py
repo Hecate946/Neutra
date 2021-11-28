@@ -380,7 +380,7 @@ class Neutra(commands.AutoShardedBot):
             print(utils.traceback_maker(e))
 
         if self.tester is False:
-            self.do_not_load.extend(["CONVERSION", "MUSIC", "MISC"])
+            self.do_not_load.extend(["CONVERSION", "MUSIC", "MISC", "ANIMALS"])
             await self.setup_webhooks()
             print(utils.prefix_log("Established Webhooks."))
 

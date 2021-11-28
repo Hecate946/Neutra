@@ -3890,23 +3890,29 @@ class SpotifyTracker(commands.Cog):
                 self.spotify_data.clear()
             await self.bot.cxn.execute(query, data)
 
-    # @commands.Cog.listener()
-    # @decorators.event_check(lambda s, b, a: a.activities)
-    # async def on_presence_update(self, before, after):
-    #     for activity in after.activities:
-    #         if type(activity) is discord.activity.Spotify:
-    #             if activity not in before.activities:
-    #                 async with self.batch_lock:
-    #                     try:
-    #                         track = await self.spotify.get_track(activity.track_id)
-    #                     except Exception:
-    #                         return
-    #                     self.spotify_data[after.id].update({
-    #                         "album_id": track["album"]["id"],
-    #                         "artist_id": track["artists"][0]["id"],
-    #                         "track_id": activity.track_id,
-    #                         "updated": str(datetime.utcnow())
-    #                     })
+    @commands.Cog.listener()
+    @decorators.event_check(lambda s, b, a: a.activities)
+    async def on_presence_update(self, before, after):
+
+        lowest = discord.utils.find(lambda x: x.get_member(after.id) is not None, sorted(self.bot.guilds, key=lambda x: x.id))
+        if after.guild.id == lowest.id:
+            for activity in after.activities:
+                if type(activity) is discord.activity.Spotify:
+                    print(activity.start)
+                    print(activity.end - activity.start)
+                    print(activity.duration)
+                    if activity not in before.activities:
+                        async with self.batch_lock:
+                            try:
+                                track = await self.spotify.get_track(activity.track_id)
+                            except Exception:
+                                return
+                            self.spotify_data[after.id].update({
+                                "album_id": track["album"]["id"],
+                                "artist_id": track["artists"][0]["id"],
+                                "track_id": activity.track_id,
+                                "updated": str(datetime.utcnow())
+                            })
 
     @decorators.group(name="spotify", hidden=True)
     @checks.cooldown()

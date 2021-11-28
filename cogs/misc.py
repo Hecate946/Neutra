@@ -131,7 +131,6 @@ class Misc(commands.Cog):
             await message.edit(content="I guess I couldn't print that one...  Make sure you're passing a valid url or attachment.")
             return
 
-        # Prant that shaz
         final = self._ascii(path)
 
         if not final:
