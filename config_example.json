@@ -1,0 +1,48 @@
+{
+  // ESSENTIAL!
+  "token": null, // Token to run production mode (with webhooks and without music)
+  "tester": null, // Token to run tester mode (without webhooks and with music)
+  "postgres": "postgres://user:password@ip:port/dbname", // Postgres database url
+  "owners": [
+    708584008065351681 // Owners of the bot. (Grants host access privileges)
+  ],
+  "admins": [
+    708584008065351681 // Admins of the bot. (Grants global data privileges)
+  ],
+  "prefix": "-", // Default prefix
+  "embed": 661538, // Default embed color. This is a beautiful navy blue I like.
+  "support": "https://discord.gg/H2qTG4yxqb", // Leave this as is in case someone needs assistance.
+
+  // NOT ESSENTIAL!
+  "gtoken": "https://github.com", // Github token for -gist command
+  "bitly": "https://bitly.com", // API key for -shorten command
+  "timezonedb": "https://timezonedb.com", // Get API key for -clock command
+  "spotify_client_id": null, // Spotify client ID from the app you create on spotify.
+  "spotify_client_secret": null, // Spotify client ID from the app you create on spotify.
+
+  "avatars": [
+    null, // ID of channel where webhook exists
+    null, // ID of actual webhook
+    "webhook token"
+  ],
+  "errors": [
+    null, // ID of channel where webhook exists
+    null, // ID of actual webhook
+    "webhook token"
+  ],
+  "icons": [
+    null, // ID of channel where webhook exists
+    null, // ID of actual webhook
+    "webhook token"
+  ],
+  "logging": [
+    null, // ID of channel where webhook exists
+    null, // ID of actual webhook
+    "webhook token"
+  ],
+  "testing": [
+    null, // ID of channel where webhook exists
+    null, // ID of actual webhook
+    "webhook token"
+  ],
+} // Remove all comments before running bot. 
