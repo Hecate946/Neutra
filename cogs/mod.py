@@ -68,6 +68,7 @@ class Mod(commands.Cog):
         Example: {0}block Hecate 708584008065351681 @Elizabeth
         Permission: Kick Members
         Output: Stops users from messaging in the channel.
+        Notes: This mutes users in one channel
         """
         await self.restrictor(ctx, targets, "on", "block")
 
@@ -86,6 +87,7 @@ class Mod(commands.Cog):
         Example:    {0}unblock Hecate 708584008065351681 @Elizabeth
         Permission: Kick Members
         Output:     Reallows blocked users to send messages.
+        Notes:      This unmutes users in one channel
         """
         await self.restrictor(ctx, targets, "off", "unblock")
 

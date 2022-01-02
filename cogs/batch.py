@@ -72,7 +72,6 @@ class Batch(commands.Cog):
         query = "DELETE FROM whitelist WHERE user_id = $1"
         await self.bot.cxn.execute(query, user_id)
 
-
     async def opt_out(self, user_id):
         query = "INSERT INTO whitelist VALUES ($1);"
         await self.bot.cxn.execute(query, user_id)
@@ -125,9 +124,8 @@ class Batch(commands.Cog):
             DELETE FROM messages
             WHERE author_id = $1;
             """,
-
         ]
-        async with self.bot.cxn.acquire() as conn:      
+        async with self.bot.cxn.acquire() as conn:
             async with conn.transaction():
                 for query in queries:
                     await conn.execute(query, user_id)
@@ -528,13 +526,16 @@ class Batch(commands.Cog):
             async with self.batch_lock:
                 self.status_batch[str(before.status)][after.id] = time.time()
 
-                lowest = discord.utils.find(lambda x: x.get_member(after.id) is not None, sorted(self.bot.guilds, key=lambda x: x.id))
+                lowest = discord.utils.find(
+                    lambda x: x.get_member(after.id) is not None,
+                    sorted(self.bot.guilds, key=lambda x: x.id),
+                )
                 if after.guild.id == lowest.id:
                     self.presence_batch.append(
                         {
                             "user_id": after.id,
                             "status": after.status.name,
-                            "first_seen": str(datetime.utcnow())
+                            "first_seen": str(datetime.utcnow()),
                         }
                     )
                 status_txt = (
@@ -899,7 +900,7 @@ class Batch(commands.Cog):
         if not data:
             return
         last_seen = utils.time_between(int(data["unix"]), int(time.time())) + " ago."
-        #last_seen = utils.format_relative(int(data["unix"]))
+        # last_seen = utils.format_relative(int(data["unix"]))
         if raw:
             return last_seen
 

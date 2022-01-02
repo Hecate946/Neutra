@@ -16,6 +16,7 @@ statusmap = {
     "offline": Colors.GRAY,
 }
 
+
 def get_piestatus(statuses, startdate):
     total = sum(statuses.values())
     online = statuses.get("online", 0)
@@ -46,9 +47,7 @@ def get_piestatus(statuses, startdate):
     draw.text(position, text, Colors.WHITE, font=font)
 
     font = ImageFont.truetype("./data/assets/Helvetica-Bold.ttf", 85)
-    draw.text(
-        (1200, 0), "Status Tracking Startdate:", fill=Colors.WHITE, font=font
-    )
+    draw.text((1200, 0), "Status Tracking Startdate:", fill=Colors.WHITE, font=font)
     font = ImageFont.truetype("./data/assets/Helvetica.ttf", 68)
     draw.text(
         (1200, 100),

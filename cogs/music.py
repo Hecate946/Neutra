@@ -681,16 +681,15 @@ class SavedTracks:
     Load saved tracks into this object
     for utility functions.
     """
+
     def __init__(self, ctx, records, owner):
         self.ctx = ctx
         self.bot = ctx.bot
         self.owner = owner
-        self.entries = [QueueEntry(
-            ctx,
-            record['title'],
-            record['url'],
-            uploader=record['uploader']
-        ) for record in records]
+        self.entries = [
+            QueueEntry(ctx, record["title"], record["url"], uploader=record["uploader"])
+            for record in records
+        ]
         self.tracks = len(self.entries)
 
     @classmethod
@@ -704,6 +703,7 @@ class SavedTracks:
         if not records:
             raise commands.BadArgument("You do not have any liked songs.")
         return cls(ctx, records, owner)
+
 
 class Playlist:
     """
@@ -750,7 +750,6 @@ class Playlist:
                 f"User **{owner}** `{owner.id}` does not have a saved playlist with name: **{name}**"
             )
         return cls(ctx, record, owner=owner)
-
 
     @classmethod
     async def get_playlists(cls, ctx, owner):
@@ -3484,7 +3483,6 @@ class Voice(commands.Cog):
     async def cog_before_invoke(self, ctx):
         ctx.voice_state = await VOICE_STATES.get_state(ctx)
 
-
     @decorators.group(
         brief="Manage the DJ role.",
         name="djrole",
@@ -3894,7 +3892,10 @@ class SpotifyTracker(commands.Cog):
     @decorators.event_check(lambda s, b, a: a.activities)
     async def on_presence_update(self, before, after):
 
-        lowest = discord.utils.find(lambda x: x.get_member(after.id) is not None, sorted(self.bot.guilds, key=lambda x: x.id))
+        lowest = discord.utils.find(
+            lambda x: x.get_member(after.id) is not None,
+            sorted(self.bot.guilds, key=lambda x: x.id),
+        )
         if after.guild.id == lowest.id:
             for activity in after.activities:
                 if type(activity) is discord.activity.Spotify:
@@ -3907,12 +3908,14 @@ class SpotifyTracker(commands.Cog):
                                 track = await self.spotify.get_track(activity.track_id)
                             except Exception:
                                 return
-                            self.spotify_data[after.id].update({
-                                "album_id": track["album"]["id"],
-                                "artist_id": track["artists"][0]["id"],
-                                "track_id": activity.track_id,
-                                "updated": str(datetime.utcnow())
-                            })
+                            self.spotify_data[after.id].update(
+                                {
+                                    "album_id": track["album"]["id"],
+                                    "artist_id": track["artists"][0]["id"],
+                                    "track_id": activity.track_id,
+                                    "updated": str(datetime.utcnow()),
+                                }
+                            )
 
     @decorators.group(name="spotify", hidden=True)
     @checks.cooldown()
@@ -4680,9 +4683,7 @@ class Views:
                     "You have already voted to skip this track.", ephemeral=True
                 )
                 return
-            await interaction.response.send_message(
-                f"Skipped the current track."
-            )
+            await interaction.response.send_message(f"Skipped the current track.")
 
         @discord.ui.button(
             emoji=constants.emotes["previous"], style=discord.ButtonStyle.gray
@@ -4705,9 +4706,7 @@ class Views:
                 self.ctx.voice_state.replay(prev)
                 self.ctx.voice_state.skip()
 
-                await interaction.response.send_message(
-                    f"Replaying the previous song."
-                )
+                await interaction.response.send_message(f"Replaying the previous song.")
 
         @discord.ui.button(
             emoji=constants.emotes["help"], style=discord.ButtonStyle.gray
@@ -5168,7 +5167,6 @@ class Views:
         ):
             await interaction.message.delete()
             self.stop()
-
 
         @discord.ui.button(label="Reset", style=discord.ButtonStyle.blurple, row=2)
         async def reset_button(

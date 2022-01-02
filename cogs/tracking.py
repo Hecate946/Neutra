@@ -136,7 +136,9 @@ class Tracking(commands.Cog):
                 """,
     )
     @checks.cooldown(2, 20)
-    async def user(self, ctx, *, user: converters.SelfUser(view_guild_insights=True) = None):
+    async def user(
+        self, ctx, *, user: converters.SelfUser(view_guild_insights=True) = None
+    ):
         """
         Usage:   {0}user [user]
         Alias:   {0}lookup
@@ -263,7 +265,9 @@ class Tracking(commands.Cog):
     @decorators.command(brief="Get voice data", aliases=["vtime"])
     @checks.guild_only()
     @checks.cooldown()
-    async def voicetime(self, ctx, *, user: converters.SelfMember(view_guild_insights=True) = None):
+    async def voicetime(
+        self, ctx, *, user: converters.SelfMember(view_guild_insights=True) = None
+    ):
         user = user or ctx.author
         query = """
                 with voice_data as(
@@ -294,7 +298,9 @@ class Tracking(commands.Cog):
     @decorators.command(brief="Get status data", aliases=["_ps"], hidden=True)
     @checks.guild_only()
     @checks.cooldown()
-    async def _piestatus(self, ctx, *, user: converters.SelfMember(view_guild_insights=True) = None):
+    async def _piestatus(
+        self, ctx, *, user: converters.SelfMember(view_guild_insights=True) = None
+    ):
         user = user or ctx.author
         query = """
                 with status_data as(
@@ -322,15 +328,18 @@ class Tracking(commands.Cog):
                 """
         records = await self.bot.cxn.fetch(query, user.id)
         statuses = {record["status"]: record["sum"] for record in records}
-        startdate = await self.bot.cxn.fetchval("select min(first_seen) from statuses where user_id = $1", user.id)
-        buffer = await self.bot.loop.run_in_executor(None, images.get_piestatus, statuses, startdate)
+        startdate = await self.bot.cxn.fetchval(
+            "select min(first_seen) from statuses where user_id = $1", user.id
+        )
+        buffer = await self.bot.loop.run_in_executor(
+            None, images.get_piestatus, statuses, startdate
+        )
 
         em = discord.Embed(color=self.bot.constants.embed)
         dfile = discord.File(fp=buffer, filename="piestatus.png")
         em.title = f"{ctx.author}'s Status Statistics"
         em.set_image(url="attachment://piestatus.png")
         await ctx.send_or_reply(embed=em, file=dfile)
-
 
     @decorators.command(aliases=["mc"], brief="Count the messages a user sent.")
     @checks.guild_only()
@@ -751,7 +760,9 @@ class Tracking(commands.Cog):
                 """,
     )
     @checks.cooldown()
-    async def seen(self, ctx, *, user: converters.SelfMember(view_guild_insights=True) = None):
+    async def seen(
+        self, ctx, *, user: converters.SelfMember(view_guild_insights=True) = None
+    ):
         """
         Usage: {0}seen [user]
         Aliases:

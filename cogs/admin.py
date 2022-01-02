@@ -1558,15 +1558,21 @@ class Admin(commands.Cog):
             use the {0}optin command or join the support server.
         """
         batch = self.bot.get_cog("Batch")
-        c = await ctx.confirm("WARNING! This action will permanently delete all your stored data, and prevent all future data tracking.")
+        c = await ctx.confirm(
+            "WARNING! This action will permanently delete all your stored data, and prevent all future data tracking."
+        )
         if c:
             message = await ctx.load("Recursively deleting all stored data...")
             try:
                 await batch.opt_out(ctx.author.id)
             except asyncpg.exceptions.UniqueViolationError:
-                await message.edit("You have already opted out of all data tracking. No additional data to delete.")
+                await message.edit(
+                    "You have already opted out of all data tracking. No additional data to delete."
+                )
             else:
-                await message.edit(f"Successfully opted out of all data tracking systems.")
+                await message.edit(
+                    f"Successfully opted out of all data tracking systems."
+                )
 
     @decorators.command(
         brief="Opt back in to data collection.",
@@ -1583,7 +1589,6 @@ class Admin(commands.Cog):
         except ValueError:
             await ctx.fail("Already opted into data tracking systems.")
         await ctx.success("Successfully opted back into data tracking systems.")
-
 
     # @decorators.command(
     #     aliases=["serverlock", "lockserver", "frost"],

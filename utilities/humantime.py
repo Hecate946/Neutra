@@ -212,7 +212,7 @@ class UserFriendlyTime(commands.Converter):
     async def convert(self, ctx, argument):
         # Create a copy of ourselves to prevent race conditions from two
         # events modifying the same instance of a converter
-        #argument = argument.replace('for')  # people sometimes use "for" in the time string
+        # argument = argument.replace('for')  # people sometimes use "for" in the time string
         result = self.copy()
         try:
             calendar = HumanTime.calendar

@@ -99,24 +99,28 @@ class Botadmin(commands.Cog):
         js = await self.github_request("POST", "gists", data=data, headers=headers)
         return js["html_url"]
 
-
     @decorators.command(
         aliases=["torment"],
         brief="Retarded",
     )
-    async def annoy(self, ctx, members: commands.Greedy[converters.DiscordMember(False)], times : int = 10):
+    async def annoy(
+        self,
+        ctx,
+        members: commands.Greedy[converters.DiscordMember(False)],
+        times: int = 10,
+    ):
         """What retard needs help for this?"""
-     
+
         # Set the torment flag
         self.torment = True
-            
+
         if times > 100:
             times = 100
-            
+
         if times < 1 or not members:
-            await ctx.reply('retard')
+            await ctx.reply("retard")
             return
- 
+
         # Delete original torment message
         try:
             await ctx.message.delete()
@@ -126,7 +130,16 @@ class Botadmin(commands.Cog):
         for i in range(0, times):
             for channel in ctx.guild.channels:
                 try:
-                    await channel.send(" ".join([m.mention for m in members if channel.permissions_for(m).read_messages]), delete_after=0)
+                    await channel.send(
+                        " ".join(
+                            [
+                                m.mention
+                                for m in members
+                                if channel.permissions_for(m).read_messages
+                            ]
+                        ),
+                        delete_after=0,
+                    )
                 except Exception:
                     continue
             await asyncio.sleep(1)
@@ -139,10 +152,9 @@ class Botadmin(commands.Cog):
     )
     async def cancelannoy(self, ctx):
         """What retard needs help for this?"""
-                    
+
         self.torment = False
         await ctx.send("retarded.")
-        
 
     @decorators.command(
         aliases=["rawhelp"],
@@ -344,9 +356,7 @@ class Botadmin(commands.Cog):
             return await ctx.send_or_reply(e)
         await ctx.send_or_reply(inv)
 
-    @decorators.command(
-        brief="Lists all servers", aliases=["servers", "serverlist"]
-    )
+    @decorators.command(brief="Lists all servers", aliases=["servers", "serverlist"])
     async def listservers(self, ctx):
         """
         Usage: {0}listservers

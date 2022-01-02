@@ -61,6 +61,7 @@ def format_relative(dt):
         return f"<t:{int(dt)}:R>"
     return format_dt(dt, "R")
 
+
 def timetext(name):
     """ Timestamp, but in text form """
     return f"{name}_{int(time.time())}.txt"

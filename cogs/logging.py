@@ -1167,6 +1167,7 @@ class Logging(commands.Cog):
         Notes:
             Will fetch a messages sent by a specific user if specified
         """
+
         def get_snipe(author_id=None):
             msgs = [m for m in self.snipes if m.channel.id == ctx.channel.id]
             if author_id:
@@ -1174,7 +1175,7 @@ class Logging(commands.Cog):
 
             if msgs:
                 return msgs[-1]
-  
+
         if member is None:
             msg = get_snipe()
         else:
@@ -1227,6 +1228,7 @@ class Logging(commands.Cog):
         Notes:
             Will fetch a messages sent by a specific user if specified
         """
+
         def get_snipe(author_id=None):
             msgs = [m for m in self.edited if m.channel.id == ctx.channel.id]
             if author_id:

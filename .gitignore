@@ -20,6 +20,6 @@
 /a
 /aaaaa
 /aaaaa-master
-# Track storage
-./track.mp3
+# My secret keys
+/web/secrets.py
 
