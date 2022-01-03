@@ -16,7 +16,6 @@ from utilities import checks
 from utilities import helpers
 from utilities import converters
 from utilities import decorators
-from utilities import pagination
 
 
 def setup(bot):

@@ -3,14 +3,21 @@ import aiohttp
 import asyncio
 import asyncpg
 
-from web import secrets
+from secrets import POSTGRES
+
 
 class Client:
     def __init__(self):
         self.loop = asyncio.get_event_loop()
-        self.scripts = [x[:-4] for x in os.listdir("./data/scripts") if x.endswith(".sql")]
+        asyncio.set_event_loop(self.loop)
+
+        self.scripts = [
+            x[:-4] for x in os.listdir("./data/scripts") if x.endswith(".sql")
+        ]
         self.session = aiohttp.ClientSession(loop=self.loop)
-        self.cxn = self.loop.run_until_complete(asyncpg.create_pool(secrets.POSTGRES.uri))
+        self.cxn = self.loop.run_until_complete(
+            asyncpg.create_pool(POSTGRES.uri)
+        )
 
         self.loop.run_until_complete(self.scriptexec())
 
@@ -19,7 +26,6 @@ class Client:
         for script in self.scripts:
             with open(f"./data/scripts/{script}.sql", "r", encoding="utf-8") as script:
                 await self.cxn.execute(script.read())
-
 
     ##############################
     ## Aiohttp Helper Functions ##
@@ -35,5 +41,6 @@ class Client:
 
     async def post(self, url, *args, **kwargs):
         return await self.query(url, "post", *args, **kwargs)
+
 
 client = Client()

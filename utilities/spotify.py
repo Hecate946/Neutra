@@ -6,10 +6,11 @@ import json
 
 
 from secrets import SPOTIFY
-from web import client
+from core import bot as client
 
 
 class CONSTANTS:
+    WHITE_ICON = "https://cdn.discordapp.com/attachments/872338764276576266/927649624888602624/spotify_white.png"
     API_URL = "https://api.spotify.com/v1/"
     AUTH_URL = "https://accounts.spotify.com/authorize"
     TOKEN_URL = "https://accounts.spotify.com/api/token"
@@ -130,9 +131,7 @@ class User:  # Spotify user w discord user_id
         token_info = await client.cxn.fetchval(query, int(user_id))
 
         if token_info:
-            token_info = json.loads(token_info)
-
-        return cls(user_id, token_info)
+            return cls(user_id, json.loads(token_info))
 
     async def get(self, url):
         access_token = await oauth.get_access_token(self.token_info)
@@ -141,7 +140,7 @@ class User:  # Spotify user w discord user_id
             "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json",
         }
-        return await client.get(url, headers=headers)
+        return await client.get(url, headers=headers, res_method="json")
 
     async def get_profile(self):
         return await self.get(CONSTANTS.API_URL + "me")

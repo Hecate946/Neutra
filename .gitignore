@@ -6,6 +6,7 @@
 .vscode
 *.DS_Store
 *__pycache__
+*.sock
 *.json
 *.log
 *.rdb
@@ -21,5 +22,5 @@
 /aaaaa
 /aaaaa-master
 # My secret keys
-/web/secrets.py
+/secrets.py
 

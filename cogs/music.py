@@ -3917,41 +3917,6 @@ class SpotifyTracker(commands.Cog):
                                 }
                             )
 
-    @decorators.group(name="spotify", hidden=True)
-    @checks.cooldown()
-    async def _spotify(self, ctx):
-        if ctx.invoked_subcommand is None:
-            return await ctx.invoke(self.spotify_status)
-
-    @_spotify.command()
-    async def spotify_status(self, ctx, *, user: converters.DiscordMember = None):
-        user = user or ctx.author
-        status = None
-        for activity in user.activities:
-            if type(activity) is discord.activity.Spotify:
-                status = activity
-                break
-
-        if not status:
-            await ctx.fail("No current spotify status found.")
-            return
-
-        e = discord.Embed(color=self.bot.constants.embed)
-        e.title = f"{user.display_name}'s Spotify Track Information"
-        e.description = f"```fix\n{status.title}```"
-        e.add_field(name="Artist", value=status.artist)
-        e.add_field(name="Album", value=status.album)
-        e.add_field(
-            name="Duration",
-            value=MusicUtils.parse_duration(int(status.duration.total_seconds())),
-        )
-        e.add_field(name="Song URL", value=status.track_url, inline=False)
-        e.set_thumbnail(url=status.album_cover_url)
-        track = await self.spotify.get_track(status.track_id)
-        artist_id = track["artists"][0]["id"]
-        album_id = track["album"]["id"]
-        await ctx.send_or_reply(embed=e)
-
     # @decorators.command()
     # async def _track(self, ctx, *, user: converters.DiscordUser = None):
     #     user = user or ctx.author

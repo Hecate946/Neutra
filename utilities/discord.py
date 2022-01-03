@@ -1,7 +1,7 @@
 from urllib.parse import urlencode
 
 from secrets import DISCORD
-from web import client
+from core import bot as client
 
 
 class CONSTANTS:
