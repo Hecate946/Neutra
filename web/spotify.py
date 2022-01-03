@@ -131,8 +131,7 @@ class User:  # Spotify user w discord user_id
 
         if token_info:
             token_info = json.loads(token_info)
-
-        return cls(user_id, token_info)
+            return cls(user_id, token_info)
 
     async def get(self, url):
         access_token = await oauth.get_access_token(self.token_info)
