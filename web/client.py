@@ -3,7 +3,7 @@ import aiohttp
 import asyncio
 import asyncpg
 
-from secrets import POSTGRES
+from config import POSTGRES
 
 
 class Client:

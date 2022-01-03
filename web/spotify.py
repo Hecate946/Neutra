@@ -5,7 +5,7 @@ import time
 import json
 
 
-from secrets import SPOTIFY
+from config import SPOTIFY
 from web import client
 
 

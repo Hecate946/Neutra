@@ -1,8 +1,7 @@
 from urllib.parse import urlencode
 
-from secrets import DISCORD
+from config import DISCORD
 from core import bot as client
-
 
 class CONSTANTS:
     API_URL = "https://discord.com/api"

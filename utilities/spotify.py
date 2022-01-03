@@ -5,7 +5,7 @@ import time
 import json
 
 
-from secrets import SPOTIFY
+from config import SPOTIFY
 from core import bot as client
 
 

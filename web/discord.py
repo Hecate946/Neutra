@@ -1,6 +1,6 @@
 from urllib.parse import urlencode
 
-from secrets import DISCORD
+from config import DISCORD
 from web import client
 
 
