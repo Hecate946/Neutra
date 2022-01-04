@@ -270,6 +270,13 @@ class Neutra(commands.AutoShardedBot):
     async def post(self, url, *args, **kwargs):
         return await self.query(url, "post", *args, **kwargs)
 
+    async def put(self, url, *args, **kwargs):
+        return await self.query(url, "put", *args, **kwargs)
+
+    async def patch(self, url, *args, **kwargs):
+        return await self.query(url, "patch", *args, **kwargs)
+
+
     def public_stats(self):
         command_list = [
             x.name

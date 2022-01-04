@@ -32,7 +32,6 @@ class Connections(commands.Cog):
         return ', '.join(self.hyperlink(artist['name'], artist['external_urls']['spotify'], max_chars) for artist in artists)
 
     async def get_spotify_user(self, ctx, user):
-        from config import BASE_WEB_URL
         sp_user = await spotify.User.load(user.id)
         if not sp_user:
             if user == ctx.author:

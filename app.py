@@ -21,27 +21,22 @@ async def index():
 <meta property="og:description" content="Hello! I'm Neutra, and I specialize in tracking and moderation. I was designed to collect statistics on servers, users, messages, and more." />
 <meta name="theme-color" content="#0A1822">"""
 
+@app.route("/test")
+async def test():
+    user = await spotify.User.load(708584008065351681)
+    a = await user.volume(100)
+    #a = await user.play(context_uri="spotify:playlist:6icIkJjrZ8z3TFuctVcfeB", offset={"position": 0})
+    return str(a)
+
 
 @app.route("/discord_login", methods=["GET"])
 async def discord_login():
     code = request.args.get("code")
-    user_id = request.args.get("state")
 
     if code:  # User was redirected from discord auth url
         token_info = await discord.oauth.request_access_token(code)
-        user_data = await discord.oauth.get_user_data(token_info.get("access_token"))
-        user_id = user_data.get("id")
-
-        query = """
-                INSERT INTO discord_auth
-                VALUES ($1, $2)
-                ON CONFLICT (user_id)
-                DO UPDATE SET token_info = $2
-                WHERE discord_auth.user_id = $1;
-                """
-        await client.cxn.execute(query, int(user_id), json.dumps(token_info))
-
-        return redirect(spotify.oauth.get_auth_url(user_id))
+        user = await discord.User.from_token(token_info) # Save user
+        return redirect(spotify.oauth.get_auth_url(user.user_id))
     else:
         # They were redirected by me, or they visited the endpoint on their own.
         # Send them to discord to get their user_id.
