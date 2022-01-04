@@ -60,9 +60,10 @@ class Connections(commands.Cog):
     )
     @checks.cooldown()
     async def _sp(self, ctx):
-        sp_user = await self.get_spotify_user(ctx, ctx.author)
-        if sp_user:
-            await ctx.success("You have already connected your spotify account.")
+        if not ctx.invoked_subcommand:
+            sp_user = await self.get_spotify_user(ctx, ctx.author)
+            if sp_user:
+                await ctx.success("You have already connected your spotify account.")
 
     @_sp.command(brief="Get top spotify tracks.", aliases=["tt"])
     async def top_tracks(self, ctx, user: converters.DiscordMember = None, time_frame: converters.SpotifyTimeFrame = "short_term"):
