@@ -25,10 +25,21 @@ async def index():
 @app.route("/discord_login", methods=["GET"])
 async def discord_login():
     code = request.args.get("code")
+    user_id = request.args.get("state")
+
     if code:  # User was redirected from discord auth url
-        access_token = await discord.oauth.get_access_token(code)
-        user_data = await discord.oauth.get_user_data(access_token)
+        token_info = await discord.oauth.request_access_token(code)
+        user_data = await discord.oauth.get_user_data(token_info.get("access_token"))
         user_id = user_data.get("id")
+
+        query = """
+                INSERT INTO discord_auth
+                VALUES ($1, $2)
+                ON CONFLICT (user_id)
+                DO UPDATE SET token_info = $2
+                WHERE discord_auth.user_id = $1;
+                """
+        await client.cxn.execute(query, int(user_id), json.dumps(token_info))
 
         return redirect(spotify.oauth.get_auth_url(user_id))
     else:
