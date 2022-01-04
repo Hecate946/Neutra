@@ -13,8 +13,6 @@ app.config["SECRET_KEY"] = os.urandom(64)
 
 @app.route("/")
 async def index():
-    user = await spotify.User.load(708584008065351681)
-    stuff = await user.get_recently_played()
     return """
 <meta property="og:title" content="Neutra" />
 <meta property="og:type" content="website" />
@@ -77,4 +75,4 @@ async def spotify_login():
 
 
 if __name__ == "__main__":
-    app.run(port=3000, loop=client.loop)
+    app.run(host="0.0.0.0", port=3000, loop=client.loop)
