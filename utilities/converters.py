@@ -1278,6 +1278,7 @@ class UserDataOption(commands.Converter):
             return argument.lower()
 
 
+
 class ChannelOrRoleOrMemberOption(commands.Converter):
     async def convert(self, ctx, argument):
         server_options = ["servers", "server", "guilds", "guild"]
@@ -1310,6 +1311,34 @@ class ChannelOrRoleOrMemberOption(commands.Converter):
             raise commands.BadArgument(f"**Invalid Option.**{completed}")
         return option
 
+class SpotifyTimeFrame(commands.Converter):
+    async def convert(self, ctx, argument):
+        argument = str(argument)
+        month = ["month", "short"]
+        semester = ["semester", "medium"]
+        year = ["year", "long"]
+        if argument.lower() in month:
+            option = "short_term"
+        elif argument.lower() in semester:
+            option = "medium_term"
+        elif argument.lower() in year:
+            option = "long_term"
+        else:
+            headers = ["MONTH", "SEMESTER", "YEAR"]
+            rows = tuple(
+                zip(
+                    month,
+                    semester,
+                    year,
+                )
+            )
+            table = formatting.TabularData()
+            table.set_columns(headers)
+            table.add_rows(rows)
+            render = table.render()
+            completed = f"```sml\nVALID OPTIONS:\n{render}```"
+            raise commands.BadArgument(f"**Invalid Option.**{completed}")
+        return option
 
 class EmojiURL:
     def __init__(self, *, animated, url):

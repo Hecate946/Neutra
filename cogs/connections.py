@@ -60,21 +60,22 @@ class Connections(commands.Cog):
     )
     @checks.cooldown()
     async def _sp(self, ctx):
-        pass
+        sp_user = await self.get_spotify_user(ctx, ctx.author)
+        if sp_user:
+            await ctx.success("You have already connected your spotify account.")
 
     @_sp.command(brief="Get top spotify tracks.", aliases=["tt"])
-    async def top_tracks(self, ctx, user: converters.DiscordMember = None):
+    async def top_tracks(self, ctx, user: converters.DiscordMember = None, time_frame: converters.SpotifyTimeFrame = "short_term"):
+        time_map = {"short_term": "month", "medium_term": "semester", "long_term": "year"}
         user = user or ctx.author
         sp_user = await self.get_spotify_user(ctx, user)
         if not sp_user:
             return
 
-        top_tracks = await sp_user.get_top_tracks()
-        if not top_tracks:
-            await ctx.send_or_reply(f"error")
-            return
+        top_tracks = await sp_user.get_top_tracks(time_range=time_frame)
+
         if not top_tracks.get("items"):
-            await ctx.send_or_reply(f"no top tracks")
+            await ctx.fail(f"{f'User **{user}** `{user.id}` has' if user != ctx.author else 'You have'} no top tracks.")
             return
 
         entries = [
@@ -86,23 +87,22 @@ class Connections(commands.Cog):
             entries=entries,
             per_page=10,
         )
-        p.embed.title = f"{user.display_name}'s Spotify Top Tracks"
+        p.embed.title = f"{user.display_name}'s top Spotify tracks in the past {time_map[time_frame]}."
         p.embed.set_thumbnail(url=spotify.CONSTANTS.WHITE_ICON)
         await p.start(ctx)
 
     @_sp.command(brief="Get top spotify artists.", aliases=["ta"])
-    async def top_artists(self, ctx, user: converters.DiscordMember = None):
+    async def top_artists(self, ctx, user: converters.DiscordMember = None, time_frame: converters.SpotifyTimeFrame = "short_term"):
+        time_map = {"short_term": "month", "medium_term": "semester", "long_term": "year"}
         user = user or ctx.author
         sp_user = await self.get_spotify_user(ctx, user)
         if not sp_user:
             return
 
         top_artists = await sp_user.get_top_artists()
-        if not top_artists:
-            await ctx.send_or_reply(f"error")
-            return
+
         if not top_artists.get("items"):
-            await ctx.send_or_reply(f"no top artists")
+            await ctx.fail(f"{f'User **{user}** `{user.id}` has' if user != ctx.author else 'You have'} no top artists.")
             return
 
         entries = [
@@ -114,7 +114,7 @@ class Connections(commands.Cog):
             entries=entries,
             per_page=10,
         )
-        p.embed.title = f"{user.display_name}'s Spotify Top Artists"
+        p.embed.title = f"{user.display_name}'s top Spotify artists in the past {time_map[time_frame]}."
         p.embed.set_thumbnail(url=spotify.CONSTANTS.WHITE_ICON)
         await p.start(ctx)
 
