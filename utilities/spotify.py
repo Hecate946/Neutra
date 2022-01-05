@@ -1,5 +1,6 @@
 from urllib.parse import urlencode
 
+import re
 import base64
 import time
 import json
@@ -8,7 +9,17 @@ import json
 from config import SPOTIFY
 from core import bot as client
 
+
+def url_to_uri(url):
+    if "open.spotify.com" in url:
+        sub_regex = r"(http[s]?:\/\/)?(open.spotify.com)\/"
+        url = "spotify:" + re.sub(sub_regex, "", url)
+        url = url.replace("/", ":")
+        # remove session id (and other query stuff)
+        uri = re.sub("\?.*", "", url)
+        return uri
 class CONSTANTS:
+    WHITE_ICON = "https://cdn.discordapp.com/attachments/872338764276576266/927649624888602624/spotify_white.png"
     API_URL = "https://api.spotify.com/v1/"
     AUTH_URL = "https://accounts.spotify.com/authorize"
     TOKEN_URL = "https://accounts.spotify.com/api/token"
@@ -151,7 +162,7 @@ class User:  # Spotify user w discord user_id
         return headers
 
     async def get(self, url):
-        return await client.get(url, headers=await self.auth())
+        return await client.get(url, headers=await self.auth(), res_method="json")
 
     async def put(self, url, json=None, res_method=None):
         return await client.put(url, headers=await self.auth(), json=json, res_method=res_method)
@@ -232,3 +243,7 @@ class User:  # Spotify user w discord user_id
         params = {"uri": uri}
         query_params = urlencode(params)
         return await client.post(CONSTANTS.API_URL + "me/player/queue?" + query_params, headers=await self.auth(), res_method=None)
+
+    async def get_playlist(self, uri):
+        playlist_id = uri.split(":")[-1]
+        return await self.get(CONSTANTS.API_URL + f"playlists/{playlist_id}")

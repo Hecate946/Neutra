@@ -10,6 +10,7 @@ from web import client
 
 
 class CONSTANTS:
+    WHITE_ICON = "https://cdn.discordapp.com/attachments/872338764276576266/927649624888602624/spotify_white.png"
     API_URL = "https://api.spotify.com/v1/"
     AUTH_URL = "https://accounts.spotify.com/authorize"
     TOKEN_URL = "https://accounts.spotify.com/api/token"

@@ -1,3 +1,4 @@
+import typing
 import discord
 from discord.ext import commands
 
@@ -16,6 +17,7 @@ def setup(bot):
 class Connections(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.time_map = {"short_term": "month", "medium_term": "semester", "long_term": "year"}
 
     def truncate(self, string, max_chars=20):
         return (string[: max_chars - 3] + "...") if len(string) > max_chars else string
@@ -65,8 +67,7 @@ class Connections(commands.Cog):
                 await ctx.success("You have already connected your spotify account.")
 
     @_sp.command(brief="Get top spotify tracks.", aliases=["tt"])
-    async def top_tracks(self, ctx, user: converters.DiscordMember = None, time_frame: converters.SpotifyTimeFrame = "short_term"):
-        time_map = {"short_term": "month", "medium_term": "semester", "long_term": "year"}
+    async def top_tracks(self, ctx, user: typing.Optional[converters.DiscordMember], time_frame: converters.SpotifyTimeFrame = "short_term"):
         user = user or ctx.author
         sp_user = await self.get_spotify_user(ctx, user)
         if not sp_user:
@@ -87,13 +88,12 @@ class Connections(commands.Cog):
             entries=entries,
             per_page=10,
         )
-        p.embed.title = f"{user.display_name}'s top Spotify tracks in the past {time_map[time_frame]}."
+        p.embed.title = f"{user.display_name}'s top Spotify tracks in the past {self.time_map[time_frame]}."
         p.embed.set_thumbnail(url=spotify.CONSTANTS.WHITE_ICON)
         await p.start(ctx)
 
     @_sp.command(brief="Get top spotify artists.", aliases=["ta"])
-    async def top_artists(self, ctx, user: converters.DiscordMember = None, time_frame: converters.SpotifyTimeFrame = "short_term"):
-        time_map = {"short_term": "month", "medium_term": "semester", "long_term": "year"}
+    async def top_artists(self, ctx, user: typing.Optional[converters.DiscordMember], time_frame: converters.SpotifyTimeFrame = "short_term"):
         user = user or ctx.author
         sp_user = await self.get_spotify_user(ctx, user)
         if not sp_user:
@@ -114,11 +114,46 @@ class Connections(commands.Cog):
             entries=entries,
             per_page=10,
         )
-        p.embed.title = f"{user.display_name}'s top Spotify artists in the past {time_map[time_frame]}."
+        p.embed.title = f"{user.display_name}'s top Spotify artists in the past {self.time_map[time_frame]}."
         p.embed.set_thumbnail(url=spotify.CONSTANTS.WHITE_ICON)
         await p.start(ctx)
 
-    @_sp.command(brief="Disconnect your spotify account.")
+    @_sp.command(brief="Get recent Spotify listens", aliases=['r'])
+    async def recent(self, ctx, *, user: converters.DiscordMember = None):
+        user = user or ctx.author
+        sp_user = await self.get_spotify_user(ctx, user)
+        if not sp_user:
+            return
+
+        recent = await sp_user.get_recently_played()
+        if not recent.get("items"):
+            await ctx.fail(f"{f'User **{user}** `{user.id}` has' if user != ctx.author else 'You have'} recent tracks.")
+            return
+
+        entries = [
+            f"{self.format_track(item['track'])} by {self.format_artists(item['track']['artists'])}"
+            for item in recent["items"]
+        ]
+
+        p = pagination.SimplePages(
+            entries=entries,
+            per_page=10,
+        )
+        p.embed.title = f"{user.display_name}'s recently played Spotify tracks."
+        p.embed.set_thumbnail(url=spotify.CONSTANTS.WHITE_ICON)
+        await p.start(ctx)
+
+    @_sp.command(brief="Get current song data")
+    async def plst(self, ctx, *, user: converters.DiscordMember = None):
+        sp_user = await self.get_spotify_user(ctx, ctx.author)
+        url = "https://open.spotify.com/playlist/6K9uHsMwuRGRWvHLNK4rT2?si=f7be2003e315494b"
+        url = "https://open.spotify.com/playlist/490Su62TmufWRkdxmggDnY?si=37542cff68fb4899"
+        uri = spotify.url_to_uri(url)
+        data = await sp_user.get_playlist(uri)
+        del data['tracks']
+        print(data)
+
+    @_sp.command(brief="Disconnect your Spotify account.")
     async def disconnect(self, ctx):
         query = """
                 DELETE FROM spotify_auth
