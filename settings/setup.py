@@ -33,7 +33,7 @@ def start():
         postgres = input("Enter the postgres connection URI here: ")
     msg = "You're almost done. Now its time to enter a color for all my embeds. It should be a hex code.\n"
     msg += "As an example, aqua blue is 29f4ff\n"
-    msg += "If you're not sure which color you want, I love this color: 661538"
+    msg += "If you're not sure which color you want, I love this color: 0A1822"
     print(msg)
     embed = input("Enter my embed color code: ")
     while len(embed) != 6:
