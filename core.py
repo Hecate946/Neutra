@@ -612,15 +612,15 @@ class Neutra(commands.AutoShardedBot):
 
     async def set_guild_prefixes(self, guild, prefixes):
         if len(prefixes) == 0:
-            await self.put(guild.id, [None])
+            await self.put_prefixes(guild.id, [None])
             self.prefixes[guild.id] = prefixes
         elif len(prefixes) > 10:
             raise RuntimeError("Cannot have more than 10 custom prefixes.")
         else:
-            await self.put(guild.id, prefixes)
+            await self.put_prefixes(guild.id, prefixes)
             self.prefixes[guild.id] = prefixes
 
-    async def put(self, guild_id, prefixes):
+    async def put_prefixes(self, guild_id, prefixes):
         query = """
                 DELETE FROM prefixes
                 WHERE server_id = $1
