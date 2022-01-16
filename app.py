@@ -1,6 +1,8 @@
 import os
-from quart import Quart, request, redirect, url_for
+import secrets
+from quart import Quart, request, redirect, url_for, render_template
 import json
+import uuid
 
 from web import client
 from web import discord
@@ -8,19 +10,18 @@ from web import spotify
 
 
 app = Quart(__name__)
-app.config["SECRET_KEY"] = os.urandom(64)
+app.secret_key = secrets.token_urlsafe(64)
 
 
 @app.route("/")
 async def index():
-    return """
-<meta property="og:title" content="Neutra" />
-<meta property="og:type" content="website" />
-<meta property="og:url" content="https://neutrabot.com" />
-<meta property="og:image" content="https://cdn.discordapp.com/attachments/872338764276576266/927503071242747944/neutra.png" />
-<meta property="og:description" content="Hello! I'm Neutra, and I specialize in tracking and moderation. I was designed to collect statistics on servers, users, messages, and more." />
-<meta name="theme-color" content="#0A1822">"""
+    return await render_template("home.html")
 
+
+@app.route("/docs")
+async def docs():
+    return await render_template("docs.html")
+    
 @app.route("/test")
 async def test():
     user = await spotify.User.load(708584008065351681)
@@ -58,7 +59,8 @@ async def spotify_login():
                 """
         token_info = await client.cxn.fetchval(query, int(user_id))
         if token_info:
-            return "you are already logged in"
+            return await render_template("success.html")
+
         else:
             token_info = await spotify.oauth.request_access_token(code)
 
@@ -73,12 +75,18 @@ async def spotify_login():
                     WHERE spotify_auth.user_id = $1;
                     """
             await client.cxn.execute(query, int(user_id), json.dumps(token_info))
-            return "successfully logged in"
+            return await render_template("success.html")
+
+    
 
     else:  # User visited the endpoint on their own. Aka was not redirected.
         # Send them to discord to get their user_id
         return redirect(url_for("discord_login"))
 
+@app.route("/spotify_stats")
+async def spotify_stats():
+    print(uuid.uuid4())
+    return "hi"
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3000, loop=client.loop)

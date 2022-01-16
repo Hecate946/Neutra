@@ -1,0 +1,74 @@
+.counter {
+    display: inline-block;
+    height: 90px;
+    line-height: 90px;
+    text-shadow: 0 0 2px #fff;
+    font-weight: bold;
+    white-space: normal;
+    font-size: 50px;
+    position: relative;
+    left: 200px;
+  }
+  
+  .counter > div {
+    display: inline-block;
+    vertical-align: top;
+    height: 100%;
+  }
+  
+  .counter > div > b {
+    display: inline-block;
+    width: 40px;
+    height: 100%;
+    margin: 0 0.1em;
+    border-radius: 8px;
+    text-align: center;
+    background: white;
+    overflow: hidden;
+  }
+  
+  .counter > div > b::before {
+    content: ' 0 1 2 3 4 5 6 7 8 9 ';
+    display: block;
+    word-break: break-all;
+    -webkit-transition: 0.5s cubic-bezier(0.75, 0.15, 0.6, 1.15), text-shadow 150ms;
+    transition: 0.5s cubic-bezier(0.75, 0.15, 0.6, 1.15), text-shadow 150ms;
+  }
+  
+  .counter > div > b.blur {
+    text-shadow: 2px 1px 3px rgba(0, 0, 0, 0.2), 
+                 0 0.1em 2px rgba(255, 255, 255, 0.6), 
+                 0 0.3em 3px rgba(255, 255, 255, 0.3), 
+                 0 -0.1em 2px rgba(255, 255, 255, 0.6), 
+                 0 -0.3em 3px rgba(255, 255, 255, 0.3);
+  }
+  
+  .counter > div > b[data-value="1"]::before { margin-top: -90px; }
+  .counter > div > b[data-value="2"]::before { margin-top: -180px;}
+  .counter > div > b[data-value="3"]::before { margin-top: -270px;}
+  .counter > div > b[data-value="4"]::before { margin-top: -360px;}
+  .counter > div > b[data-value="5"]::before { margin-top: -450px;}
+  .counter > div > b[data-value="6"]::before { margin-top: -540px;}
+  .counter > div > b[data-value="7"]::before { margin-top: -630px;}
+  .counter > div > b[data-value="8"]::before { margin-top: -720px;}
+  .counter > div > b[data-value="9"]::before { margin-top: -810px;}
+  
+  .counter > div:nth-last-child(3n)::before {
+    content: ",";
+    display: inline;
+    font-size: 1.1em;
+    opacity: .6;
+    color: white;
+  }
+  
+  .counter {
+    overflow: hidden;
+    padding: .4em;
+    text-align: center;
+   
+    border-radius: 16px;
+    background: black;
+  }
+  .counter b {
+    color: black;
+  }

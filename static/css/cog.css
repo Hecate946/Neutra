@@ -1,0 +1,59 @@
+.helpbox {
+    border: 5px outset blue;
+    border-color: blueviolet;
+    border-radius: 3px;
+    border-width: thin;
+    float: left;
+    width: 1125px;
+    position: relative;
+    left: 180;
+    overflow: hidden;
+    min-height: 60px;
+    box-shadow: 5px 1px 5px #AEC1C6;
+    margin-left: 20px;
+    cursor: pointer;
+}
+.helpbox:hover {
+    transition: .25s ease;
+    background-color: rgb(0, 15, 45);
+    border-color: rgb(200, 75, 30);
+}
+
+.helpbox .dropDownIcon {
+    max-width: 100%;
+    height: auto;
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    transform: rotate(-90deg);
+    transition: transform .2s ease; 
+}
+
+.exp-button {
+    position: relative;
+    right: 150px;
+    top: 15px;
+    float: right;
+    height: 50px;
+    font-size: 25px;
+    color: #f8bae9;
+    background-color: #031013;
+    border-style: groove;
+    border-color: #040424;
+    box-shadow: 0px 0px 5px #AEC1C6;
+    margin-bottom: 10px;
+    margin-left: 25px;
+    cursor: pointer;
+}
+
+.exp-button:hover {
+    transition: .2s ease;
+    /*box-shadow: 0px 0px 8px rgb(0, 15, 45);*/
+    background-color: rgb(0, 15, 45);
+}
+
+.downDropDownIcon {
+    /* look, I need a way to detect if each icon is rotated or not, 
+    so i just toggle this class every time I change the rotation of the drop down icon. 
+    i dont know how else to do it please help. this does nothing except being detected in jquery */
+}

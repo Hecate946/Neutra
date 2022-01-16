@@ -74,6 +74,7 @@ class Connections(commands.Cog):
             return
 
         top_tracks = await sp_user.get_top_tracks(time_range=time_frame)
+        print(top_tracks)
 
         if not top_tracks.get("items"):
             await ctx.fail(f"{f'User **{user}** `{user.id}` has' if user != ctx.author else 'You have'} no top tracks.")
@@ -126,9 +127,11 @@ class Connections(commands.Cog):
             return
 
         recent = await sp_user.get_recently_played()
+        print(recent)
         if not recent.get("items"):
-            await ctx.fail(f"{f'User **{user}** `{user.id}` has' if user != ctx.author else 'You have'} recent tracks.")
+            await ctx.fail(f"{f'User **{user}** `{user.id}` has' if user != ctx.author else 'You have'} no recent tracks.")
             return
+
 
         entries = [
             f"{self.format_track(item['track'])} by {self.format_artists(item['track']['artists'])}"
@@ -146,12 +149,56 @@ class Connections(commands.Cog):
     @_sp.command(brief="Get current song data")
     async def plst(self, ctx, *, user: converters.DiscordMember = None):
         sp_user = await self.get_spotify_user(ctx, ctx.author)
-        url = "https://open.spotify.com/playlist/6K9uHsMwuRGRWvHLNK4rT2?si=f7be2003e315494b"
         url = "https://open.spotify.com/playlist/490Su62TmufWRkdxmggDnY?si=37542cff68fb4899"
+        url = "https://open.spotify.com/playlist/6K9uHsMwuRGRWvHLNK4rT2?si=f7be2003e315494b"
         uri = spotify.url_to_uri(url)
-        data = await sp_user.get_playlist(uri)
+        data = await spotify.get_playlist(uri)
         del data['tracks']
         print(data)
+
+    @_sp.command(brief="Get user playlists")
+    async def playlists(self, ctx, *, user: converters.DiscordMember=None):
+        user = user or ctx.author
+        sp_user = await self.get_spotify_user(ctx, ctx.author)
+        data = await sp_user.get_playlists()
+        if not data.get("items"):
+            await ctx.fail(f"{f'User **{user}** `{user.id}` has' if user != ctx.author else 'You have'} no recent tracks.")
+            return
+
+
+        entries = [
+            f"{self.format_track(playlist)} ID: `{playlist['id']}`"
+            for playlist in data["items"]
+        ]
+
+        p = pagination.SimplePages(
+            entries=entries,
+            per_page=10,
+        )
+        p.embed.title = f"{user.display_name}'s Spotify playlists."
+        p.embed.set_thumbnail(url=spotify.CONSTANTS.WHITE_ICON)
+        await p.start(ctx)
+
+    @_sp.command(brief="Get user playlists")
+    async def user_playlists(self, ctx, username):
+        data = await spotify.get_user_playlists(username)
+        if not data.get("items"):
+            await ctx.fail(f"No user found with username: `{username}`")
+            return
+
+
+        entries = [
+            f"{self.format_track(playlist)} ID: `{playlist['id']}`"
+            for playlist in data["items"]
+        ]
+
+        p = pagination.SimplePages(
+            entries=entries,
+            per_page=10,
+        )
+        p.embed.title = f"{username}'s Spotify playlists."
+        p.embed.set_thumbnail(url=spotify.CONSTANTS.WHITE_ICON)
+        await p.start(ctx)
 
     @_sp.command(brief="Disconnect your Spotify account.")
     async def disconnect(self, ctx):

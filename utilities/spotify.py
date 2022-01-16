@@ -50,10 +50,10 @@ class CONSTANTS:
 
 class Oauth:
     def __init__(self, scope=None):
-        self.client_id = SPOTIFY.client_id
-        self.client_secret = SPOTIFY.client_secret
-        self.redirect_uri = SPOTIFY.redirect_uri
         self.scope = " ".join(CONSTANTS.SCOPES)
+
+        self.client_token = None
+
 
     @property
     def headers(self):
@@ -61,7 +61,7 @@ class Oauth:
         Return proper headers for all token requests
         """
         auth_header = base64.b64encode(
-            (self.client_id + ":" + self.client_secret).encode("ascii")
+            (SPOTIFY.client_id + ":" + SPOTIFY.client_secret).encode("ascii")
         )
         return {
             "Authorization": "Basic %s" % auth_header.decode("ascii"),
@@ -73,9 +73,9 @@ class Oauth:
         Return an authorization url to get an access code
         """
         params = {
-            "client_id": self.client_id,
+            "client_id": SPOTIFY.client_id,
             "response_type": "code",
-            "redirect_uri": self.redirect_uri,
+            "redirect_uri": SPOTIFY.redirect_uri,
             "state": state,
             "scope": " ".join(CONSTANTS.SCOPES),
             # "show_dialog": True
@@ -120,16 +120,35 @@ class Oauth:
         return token_info
 
     async def request_access_token(self, code):
-        params = {
+        payload = {
             "grant_type": "authorization_code",
             "code": code,
-            "redirect_uri": self.redirect_uri,
+            "redirect_uri": SPOTIFY.redirect_uri,
         }
         token_info = await client.post(
-            CONSTANTS.TOKEN_URL, data=params, headers=self.headers, res_method="json"
+            CONSTANTS.TOKEN_URL, data=payload, headers=self.headers, res_method="json"
         )
         return token_info
 
+
+    async def get_client_token(self):
+        """Gets the token or creates a new one if expired"""
+        if self.client_token and self.validate_token(self.client_token):
+            return self.client_token["access_token"]
+
+        client_token = await self.request_client_token()
+
+        client_token["expires_at"] = int(time.time()) + client_token["expires_in"]
+        self.client_token = client_token
+        return self.client_token["access_token"]
+
+
+    async def request_client_token(self):
+        """Obtains a token from Spotify and returns it"""
+        payload = {"grant_type": "client_credentials"}
+        return await client.post(
+            CONSTANTS.TOKEN_URL, data=payload, headers=self.headers, res_method="json"
+        )
 
 oauth = Oauth()
 
@@ -164,8 +183,9 @@ class User:  # Spotify user w discord user_id
     async def get(self, url):
         return await client.get(url, headers=await self.auth(), res_method="json")
 
-    async def put(self, url, json=None, res_method=None):
-        return await client.put(url, headers=await self.auth(), json=json, res_method=res_method)
+    async def put(self, url, headers=None, json=None, res_method=None):
+        headers = headers or await self.auth()
+        return await client.put(url, headers=headers, json=json, res_method=res_method)
 
     async def get_profile(self):
         return await self.get(CONSTANTS.API_URL + "me")
@@ -244,6 +264,35 @@ class User:  # Spotify user w discord user_id
         query_params = urlencode(params)
         return await client.post(CONSTANTS.API_URL + "me/player/queue?" + query_params, headers=await self.auth(), res_method=None)
 
-    async def get_playlist(self, uri):
-        playlist_id = uri.split(":")[-1]
-        return await self.get(CONSTANTS.API_URL + f"playlists/{playlist_id}")
+    async def get_playlists(self, limit=50, offset=0):
+        """Get a user's owned and followed playlists"""
+        params = {"limit": limit, "offset": offset}
+        query_params = urlencode(params)
+        return await self.get(CONSTANTS.API_URL + "me/playlists?" + query_params)
+
+
+
+
+async def auth():
+    access_token = await oauth.get_client_token()
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+    }
+    return headers
+
+
+async def _get(url):
+    return await client.get(url,  headers=await auth(), res_method="json")
+
+async def get_playlist(uri):
+    playlist_id = uri.split(":")[-1]
+    return await _get(CONSTANTS.API_URL + f"playlists/{playlist_id}")
+
+async def get_user_playlists(username, limit=50, offset=0):
+    """Get a user's owned and followed playlists"""
+
+    params = {"limit": limit, "offset": offset}
+    query_params = urlencode(params)
+    return await _get(CONSTANTS.API_URL + f"users/{username}/playlists?" + query_params)
