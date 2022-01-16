@@ -1,5 +1,5 @@
 from urllib.parse import urlencode
-
+import html
 import base64
 import time
 import json
@@ -11,6 +11,7 @@ from web import client
 
 class CONSTANTS:
     WHITE_ICON = "https://cdn.discordapp.com/attachments/872338764276576266/927649624888602624/spotify_white.png"
+    GREEN_ICON = "https://cdn.discordapp.com/attachments/872338764276576266/932399347289706556/spotify_green.png"
     API_URL = "https://api.spotify.com/v1/"
     AUTH_URL = "https://accounts.spotify.com/authorize"
     TOKEN_URL = "https://accounts.spotify.com/api/token"
@@ -59,7 +60,7 @@ class Oauth:
             "Content-Type": "application/x-www-form-urlencoded",
         }
 
-    def get_auth_url(self, state):
+    def get_auth_url(self, state=None):
         """
         Return an authorization url to get an access code
         """
@@ -67,10 +68,11 @@ class Oauth:
             "client_id": self.client_id,
             "response_type": "code",
             "redirect_uri": self.redirect_uri,
-            "state": state,
             "scope": " ".join(CONSTANTS.SCOPES),
             # "show_dialog": True
         }
+        if state:
+            params["state"] = state
         constructed = urlencode(params)
         return "%s?%s" % (CONSTANTS.AUTH_URL, constructed)
 
@@ -119,6 +121,8 @@ class Oauth:
         token_info = await client.post(
             CONSTANTS.TOKEN_URL, data=params, headers=self.headers, res_method="json"
         )
+        if not token_info.get("access_token"):  # Something went wrong, return None
+            return
         return token_info
 
 
@@ -142,6 +146,21 @@ class User:  # Spotify user w discord user_id
         if token_info:
             token_info = json.loads(token_info)
             return cls(user_id, token_info)
+
+    @classmethod
+    async def from_token(cls, token_info):
+        user_data = await oauth.identify(token_info.get("access_token"))
+        user_id = int(user_data.get("id"))
+        query = """
+                INSERT INTO spotify_auth
+                VALUES ($1, $2)
+                ON CONFLICT (user_id)
+                DO UPDATE SET token_info = $2
+                WHERE spotify_auth.user_id = $1;
+                """
+        await client.cxn.execute(query, user_id, json.dumps(token_info))
+
+        return cls(token_info, user_id)
 
     async def auth(self):
         access_token = await oauth.get_access_token(self.user_id, self.token_info)
@@ -234,3 +253,97 @@ class User:  # Spotify user w discord user_id
         params = {"uri": uri}
         query_params = urlencode(params)
         return await client.post(CONSTANTS.API_URL + "me/player/queue?" + query_params, headers=await self.auth(), res_method=None)
+
+
+class Formatting:
+    def __init__(self) -> None:
+        self.time_range_map = {"short_term": "in the past four weeks", "medium_term": "in the past six months", "long_term": "across all time"}
+        self.html_table_base = """
+        <html>
+        <head>
+        <style>
+        table {
+            font-family: Avenir,Helvetica,Arial,sans-serif;
+            color: #2c3e50;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        caption {
+            padding: 20px;
+            font-size: 25px;
+            font-weight: bold;
+        }
+        th, td {
+        padding: 10px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+        }
+        tr:hover {background-color: #ADD8E6;}
+        td:first-child {
+            font-weight: bold;
+        }
+        td:nth-child(2) {
+            font-weight: bold;
+            font-size: 25px;
+        }
+        </style>
+        </head>
+        <body>
+        """
+
+    def get_image(self, obj):
+        try:
+            return obj["images"][0]["url"]
+        except IndexError:
+            return CONSTANTS.GREEN_ICON
+
+    def track_html_table(self, data, time_range):
+        table = [[index, self.get_image(track["album"]), track["name"], ', '.join([artist["name"] for artist in track["artists"]])] for index, track in enumerate(data["items"], start=1)]
+
+
+        
+        html_table = '<table>\n'
+        html_table += f"<caption>Showing your top Spotify tracks {self.time_range_map[time_range]}.</caption>\n"
+        html_table += "<tbody>\n"
+        for i in table:
+            html_table += f'<tr><td>{i[0]}</td><td><img src="{i[1]}" width=40 height=40></td><td>{html.escape(i[2])}</td><td>{html.escape(i[3])}</td></tr>\n'
+        html_table += "</tbody>\n"
+        html_table += "</table>\n"
+        html_table += "</body>\n"
+        html_table += "</html>\n"
+
+        return self.html_table_base + html_table
+
+    def recent_html_table(self, data):
+        table = [[index, self.get_image(item["track"]["album"]), item["track"]["name"], ', '.join([artist["name"] for artist in item["track"]["artists"]])] for index, item in enumerate(data["items"], start=1)]
+
+        
+        html_table = '<table>\n'
+        html_table += f"<caption>Showing your recent Spotify tracks.</caption>\n"
+        html_table += "<tbody>\n"
+        for i in table:
+            html_table += f'<tr><td>{i[0]}</td><td><img src="{i[1]}" width=40 height=40></td><td>{html.escape(i[2])}</td><td>{html.escape(i[3])}</td></tr>\n'
+        html_table += "</tbody>\n"
+        html_table += "</table>\n"
+        html_table += "</body>\n"
+        html_table += "</html>\n"
+
+        return self.html_table_base + html_table
+
+    def artist_html_table(self, data, time_range):
+        table = [[index, self.get_image(artist), artist["name"]] for index, artist in enumerate(data["items"], start=1)]
+
+        html_table = '<table>\n'
+        html_table += f"<caption>Showing your top Spotify artists {self.time_range_map[time_range]}.</caption>\n"
+        html_table += "<tbody>\n"
+        for i in table:
+            html_table += f'<tr><td><img src="{i[1]}" width=200 height=200></td><td>{i[0]}. {html.escape(i[2])}</td></tr>\n'
+            
+        html_table += "</tbody>\n"
+        html_table += "</table>\n"
+        html_table += "</body>\n"
+        html_table += "</html>\n"
+
+        return self.html_table_base + html_table
+
+formatting = Formatting()

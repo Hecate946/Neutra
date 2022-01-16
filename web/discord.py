@@ -91,6 +91,10 @@ class Oauth:
         token_info = await client.post(
             CONSTANTS.TOKEN_URL, data=params, headers=headers, res_method="json"
         )
+
+        if not token_info.get("expires_in"): # Something went wrong, return None
+            return
+
         token_info["expires_at"] = int(time.time()) + token_info["expires_in"]
         return token_info
 
