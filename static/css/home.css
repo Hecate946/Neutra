@@ -55,7 +55,7 @@
   position: relative; 
  }
  .dropdown {
-  background-color: rgb(1, 139, 139);
+  background-color: #8d99ae;
   padding: 1em 0;
   position: absolute; /*WITH RESPECT TO PARENT*/
   display: none;
@@ -92,7 +92,7 @@ input[type=checkbox]{
  .menu { 
   display:none;
   position: absolute;
-  background-color:teal;
+  background-color:#8d99ae;
   right: 0;
   left: 0;
   text-align: center;
