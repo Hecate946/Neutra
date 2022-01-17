@@ -1,0 +1,110 @@
+
+        {% extends 'ducky/cog_template.html' %}
+        {% block title %}Snowbot: Tracking{% endblock %}
+        {% block body %}
+        {{ block.super }}
+        {% load static %}
+        <h1>Tracking</h1>
+<h2>Module for all user stats</h2>
+        <div class="helpbox">
+            <h3>Activity: Show the most active server users.</h3>
+            <p style="display:none">Usage: -activity [unit of time]<br>Output: Top message senders in the server<br>Permission: Manage Messages</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Avatars: Show a user's avatars.</h3>
+            <p style="display:none">Usage: -avatars [user]<br>Alias: -avs<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Embed of the past 16 avatars<br>&nbsp;&nbsp;&nbsp;&nbsp;A user has had<br>Permission: Manage Messages<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Will default to yourself if no user is passed</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Commands: Count the commands run.</h3>
+            <p style="display:none">Usage:  -commands [user]<br>Output: Command count for the user or server<br>Permission: Manage Messages<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;If no user is passed, will show total server commands</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Commandstats: Bot commands listed by popularity.</h3>
+            <p style="display:none">Usage: -commandstats [user] [limit]<br>Output: Most popular commands<br>Permission: Manage Messages</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Messagecount: Count the messages a user sent.</h3>
+            <p style="display:none">Usage:  -messagecount [user]<br>Alias:  -mc<br>Output: Shows how many messages a user has sent on the server.<br>Permission: Manage Messages<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Will default to yourself if no user is passed.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Messagestats: Show the top message senders.</h3>
+            <p style="display:none">Usage: -messagestats<br>Alias: -top<br>Output: Top message senders in the server<br>Permission: Manage Messages</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Names: Show a user's usernames.</h3>
+            <p style="display:none">Usage: -names [user]<br>Alias: -usernames<br>Output: Embed of all user's names.<br>Permission: Manage Messages<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Will default to yourself if no user is passed</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Nicks: Show a user's nicknames.</h3>
+            <p style="display:none">Usage: -nicks [user]<br>Alias: -nicknames<br>Output: Embed of all user's nicknames.<br>Permission: Manage Messages<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Will default to yourself if no user is passed</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Platform: Show which platform a user is on.</h3>
+            <p style="display:none">Usage:  -mobile &lt;member&gt; [member] [member]...<br>Alias:  -platform<br>Output: Shows whether a user is on desktop or mobile.<br>Notes:  Cannot determine platform when users are offline.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Seen: Check when a user was last seen.</h3>
+            <p style="display:none">Usage:  -seen [user]<br>Alias:  -lastseen, -track, -tracker<br>Output: Get when a user was last observed on discord.<br>Permission: Manage Messages<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;User can be a mention, user id, or full discord<br>&nbsp;&nbsp;&nbsp;&nbsp;username with discrim Username#0001.<br>&nbsp;&nbsp;&nbsp;&nbsp;Will default to yourself if no user is passed</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Spammers: Show all users who spam.</h3>
+            <p style="display:none">Usage: -spammers<br>Permission: Manage Messages<br>Output: Users recorded spamming</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Status: Show a user's status</h3>
+            <p style="display:none">Usage: -status &lt;member&gt;</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Statusinfo: Status info and online time.</h3>
+            <p style="display:none">Usage: -statusinfo &lt;user&gt;<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;A pie chart graph with details<br>&nbsp;&nbsp;&nbsp;&nbsp;of the passed user's status<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Will default to yourself<br>&nbsp;&nbsp;&nbsp;&nbsp;if no user is passed.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Usage: Show the top bot users.</h3>
+            <p style="display:none">Usage: -usage [unit of time]<br>ALias: -botusage<br>Output: Top bot users in the server<br>Permission: Manage Messages</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>User: Show information on a user.</h3>
+            <p style="display:none">Usage:   -user &lt;user&gt;<br>Alias:   -lookup<br>Example: -user 810377376269205546<br>Output:  General information on any discord user.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Accepts nickname, ID, mention, username, and username+discrim<br>&nbsp;&nbsp;&nbsp;&nbsp;Neither you nor the bot must share a server with the user.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Word: Usage for a specific word.</h3>
+            <p style="display:none">Usage: -word &lt;word&gt; [user]<br>Output: Number of times a word has been used by a user<br>Permission: Manage Messages<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Will default to you if no user is passed.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Words: Most used words from a user.</h3>
+            <p style="display:none">Usage: -words [user]<br>Output: Most commonly used words by the passed user<br>Permission: Manage Messages<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Will default to yourself if no user is passed.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        {% endblock %}

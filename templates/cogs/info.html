@@ -1,0 +1,116 @@
+
+        {% extends 'ducky/cog_template.html' %}
+        {% block title %}Snowbot: Info{% endblock %}
+        {% block body %}
+        {{ block.super }}
+        {% load static %}
+        <h1>Info</h1>
+<h2>Module for bot information.</h2>
+        <div class="helpbox">
+            <h3>About: Display information about the bot.</h3>
+            <p style="display:none">Usage: -about<br>Aliases: -info, -bot, -botstats, botinfo<br>Output: Version info and bot stats</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Botinvite: Invite me to your server!</h3>
+            <p style="display:none">Usage: -botinvite<br>Aliases: -bi, -invite<br>Output: An invite link to invite me to your server</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Bugreport: Send a bugreport to the developer.</h3>
+            <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp;-bugreport &lt;report&gt;<br>Aliases:  -issuereport, -reportbug, -reportissue<br>Examples: -bugreport Hello! I found a bug with Snowbot<br>Output:   Confirmation that your bug report has been sent.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Do not hesitate to use this command,<br>&nbsp;&nbsp;&nbsp;&nbsp;but please be very specific when describing the bug so<br>&nbsp;&nbsp;&nbsp;&nbsp;that the developer may easily see the issue and<br>&nbsp;&nbsp;&nbsp;&nbsp;correct it as soon as possible.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Changelog: Show my changelog.</h3>
+            <p style="display:none">Usage: -changelog<br>Alias: -updates<br>Output: My changelog</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Hostinfo: Show the bot's host environment.</h3>
+            <p style="display:none">Usage: -hostinfo<br>Output: Detailed information on the bot's host environment</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Is_ratelimited: Check if the bot is rate limited</h3>
+            <p style="display:none">Usage: -is_ratelimited<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Boolean value stating whether<br>&nbsp;&nbsp;&nbsp;&nbsp;or not the bot is rate-limited</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Lines: Show sourcecode statistics.</h3>
+            <p style="display:none">Usage: -lines<br>Aliases: -cloc, -code, codeinfo<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Gives lines, characters, imports, functions,<br>&nbsp;&nbsp;&nbsp;&nbsp;classes, comments, and files in the source code</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Neofetch: Run the neofetch command.</h3>
+            <p style="display:none">Usage: -neofetch<br>Output: Some stats on the bot's server</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Overview: Show some info on the bot's purpose.</h3>
+            <p style="display:none">Usage:  -overview<br>Alias:  -boss, botowner<br>Output: Me and my purpose</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Ping: Test the bot's response latency.</h3>
+            <p style="display:none">Usage: -ping<br>Aliases: -latency, -response<br>Output: Bot latency statistics.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Use -speed and the bot will attempt<br>&nbsp;&nbsp;&nbsp;&nbsp;to run an internet speedtest. May fail.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Request: Send a request to the developer.</h3>
+            <p style="display:none">Usage: -request &lt;request content&gt;<br>Alias: -contact<br>Examples: -suggest Hello! I request...<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Confirmation that your request has been sent.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;This command must be used in DMs for privacy</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Sharedservers: Servers you and the bot share.</h3>
+            <p style="display:none">Usage: -sharedservers [member]<br>Output: The servers that the passed member share with the bot<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Will default to youself if no member is passed</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Source: Display the source code.</h3>
+            <p style="display:none">Usage: -source [command]<br>Alias: -sourcecode<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;If no command is specified, shows full repository</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Speed: Bot network speed.</h3>
+            <p style="display:none">Usage: -speed<br>Aliases:<br>&nbsp;&nbsp;&nbsp;&nbsp;-speedtest, -network, -speed,<br>&nbsp;&nbsp;&nbsp;&nbsp;-wifi, -download, -upload<br>Output: Internet speed statistics<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;The speedtest takes around 30 seconds<br>&nbsp;&nbsp;&nbsp;&nbsp;to complete. Please be patient. This<br>&nbsp;&nbsp;&nbsp;&nbsp;command is heavily rate limited.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Suggest: Send a suggestion to the developer.</h3>
+            <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp;-suggest &lt;report&gt;<br>Aliases:  -suggestion<br>Examples: -suggest Hello! You should add this feature...<br>Output:   Confirmation that your suggestion has been sent.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Do not hesitate to use this command,<br>&nbsp;&nbsp;&nbsp;&nbsp;your feedback is valued immensly.<br>&nbsp;&nbsp;&nbsp;&nbsp;However, please be detailed and concise.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Support: Join my support server!</h3>
+            <p style="display:none">Usage: -support<br>Aliases: -sup, -assist, -assistance<br>Output: An invite link to my support server</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Uptime: Show the bot's uptime.</h3>
+            <p style="display:none">Usage: -uptime<br>Alias: -runtime<br>Output: Time since last boot.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Users: Shows all users I'm connected to.</h3>
+            <p style="display:none">Usage: -users<br>Output: Detailed information on my user stats</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        {% endblock %}

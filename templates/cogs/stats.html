@@ -1,0 +1,98 @@
+
+        {% extends 'ducky/cog_template.html' %}
+        {% block title %}Snowbot: Stats{% endblock %}
+        {% block body %}
+        {{ block.super }}
+        {% load static %}
+        <h1>Stats</h1>
+<h2>Module for server stats</h2>
+        <div class="helpbox">
+            <h3>Admins: Show the server admins.</h3>
+            <p style="display:none">Usage: -admins<br>Alias: -administrators<br>Output: All the server admins and their respective status</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Channelinfo: Get info about a channel.</h3>
+            <p style="display:none">Usage: -channelinfo<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Specific info on a given channel<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;If no channel is specified,<br>&nbsp;&nbsp;&nbsp;&nbsp;current channel will be used.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Emoji: Get usage stats on an emoji.</h3>
+            <p style="display:none">Usage: -emoji &lt;custom emoji&gt;<br>Output: Usage stats on the passed emoji</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Emojistats: Emoji usage tracking.</h3>
+            <p style="display:none">Usage -emojistats<br>Output: Get detailed emoji usage stats.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Firstjoins: Show the first users to join.</h3>
+            <p style="display:none">Usage: -firstjoins<br>Permission: Manage Server<br>Output: Embed of members to first join the current server.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Joinedat: Check when a user joined the server.</h3>
+            <p style="display:none">Usage: -joinedat &lt;member&gt;<br>Output: Shows when the passed user joined the server<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Will default to youself if no member is passed.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Joinedatpos: Show who joined at a position.</h3>
+            <p style="display:none">Usage: -joinedatpos &lt;integer&gt;<br>Alias: -joinedatposition<br>Example: -joinedatpos 34<br>Output: Shows the user that joined at the passed position.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Joinpos: Show the join position of a user.</h3>
+            <p style="display:none">Usage: -joinpos &lt;member&gt;<br>Alias: -joinposition<br>Example: -joinpos @Hecate<br>Output: Tells when a user joined compared to other users.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Listbots: Shows all the server's bots.</h3>
+            <p style="display:none">Usage: -listbots [server]<br>Permission: Manage Server<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;A pagination session showing<br>&nbsp;&nbsp;&nbsp;&nbsp;all server bots and their IDs</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Listchannels: Show the server's channels.</h3>
+            <p style="display:none">Usage: -listchannels<br>Alias: -channels<br>Output: Embed of all server channels<br>Permission: Manage Channels</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Mods: Show the server mods.</h3>
+            <p style="display:none">Usage: -mods<br>Alias: -moderators<br>Output: All the server moderators and their respective status</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Permissions: Show a user's permissions.</h3>
+            <p style="display:none">Usage:  -permissions [member] [channel]<br>Permission: Manage Messages<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Shows a member's permissions in a specific channel.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Will default to yourself and the current channel<br>&nbsp;&nbsp;&nbsp;&nbsp;if they are not specified.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Recentjoins: Show the latest users to join.</h3>
+            <p style="display:none">Usage: -recentjoins<br>Permission: Manage Server<br>Output: Embed of most recent members to join the server.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Serverinfo: Show server information.</h3>
+            <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp;-serverinfo<br>Aliases:  -server, -serverstats, si, ss<br>Examples: -serverinfo, -ss<br>Output:   General stats on the server.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Topic: Show a channel topic.</h3>
+            <p style="display:none">Quote the channel topic at people.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        {% endblock %}

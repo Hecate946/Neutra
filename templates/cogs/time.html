@@ -1,0 +1,56 @@
+
+        {% extends 'ducky/cog_template.html' %}
+        {% block title %}Snowbot: Time{% endblock %}
+        {% block body %}
+        {{ block.super }}
+        {% load static %}
+        <h1>Time</h1>
+<h2>Module for time functions.</h2>
+        <div class="helpbox">
+            <h3>Clock: Get the time of any location</h3>
+            <p style="display:none">Usage: -clock &lt;location&gt;<br>Aliases: -worldclock, -worldtime<br>Examples:<br>&nbsp;&nbsp;&nbsp;&nbsp;-clock Los Angeles<br>&nbsp;&nbsp;&nbsp;&nbsp;-clock Netherlands<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;The current time in the specified location<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Can accept cities, states, provinces,<br>&nbsp;&nbsp;&nbsp;&nbsp;and countries as valid locations</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Listtz: List all available timezones.</h3>
+            <p style="display:none">Usage: -listtz<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;A pagination session that shows<br>&nbsp;&nbsp;&nbsp;&nbsp;all available timezones.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Remtz: Remove your timezone.</h3>
+            <p style="display:none">Remove your timezone</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Settz: Set your timezone.</h3>
+            <p style="display:none">Usage: -settz &lt;timezone&gt;<br>Aliases: -settimezone, -settime<br>Output: Sets your timezone<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Will provide you with the 5 closest<br>&nbsp;&nbsp;&nbsp;&nbsp;timezone matches if the supplied timezone<br>&nbsp;&nbsp;&nbsp;&nbsp;is invalid. Invoke with no arguments to<br>&nbsp;&nbsp;&nbsp;&nbsp;show all available timezones.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Stopwatch: Start or stop a stopwatch.</h3>
+            <p style="display:none">Usage: -stopwatch<br>Alias: -sw<br>Output: Starts or ends a stopwatch<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp; One stopwatch is available per user.<br>&nbsp;&nbsp;&nbsp;&nbsp; Your stopwatch will not be interrupted<br>&nbsp;&nbsp;&nbsp;&nbsp; if another user executes the command.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Timezone: See a member's timezone.</h3>
+            <p style="display:none">Usage: -timezone &lt;user&gt;<br>Aliases: -tz<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Shows you the passed member's timezone, if applicable</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Usertime: Show a user's current time.</h3>
+            <p style="display:none">Usage: -usertime [member]<br>Alias: -time<br>Output: Time for the passed user, if set.<br>Notes: Will default to you if no user is specified</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Usertimes: Show times for all users.</h3>
+            <p style="display:none">Usage: -usertimes<br>Aliases: -alltime, -alltimes<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Shows the current time for all<br>&nbsp;&nbsp;&nbsp;&nbsp;users who set their timezone</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        {% endblock %}

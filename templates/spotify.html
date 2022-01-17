@@ -1,0 +1,13 @@
+{% extends "home.html" %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/spotify.css') }}" />
+{% endblock %}
+{% block body %}
+<div class="card">
+<h1 class="header">View your Spotify stats.</h1>
+<a class="buttons" href="{{ url_for('spotify_top', spotify_type='tracks') }}">Top Tracks</a>
+<a class="buttons" href="{{ url_for('spotify_top', spotify_type='artists') }}">Top Artists</a>
+<a class="buttons" href="{{ url_for('spotify_top', spotify_type='genres') }}">Top Genres</a>
+<a class="buttons" href="{{ url_for('spotify_recent', spotify_type='tracks') }}">Recently Played</a>
+</div>
+{% endblock %}

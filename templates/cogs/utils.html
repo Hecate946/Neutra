@@ -1,0 +1,122 @@
+
+        {% extends 'ducky/cog_template.html' %}
+        {% block title %}Snowbot: Utility{% endblock %}
+        {% block body %}
+        {{ block.super }}
+        {% load static %}
+        <h1>Utility</h1>
+<h2>Module for general utilities.</h2>
+        <div class="helpbox">
+            <h3>Ascify: Convert special characters to ascii.</h3>
+            <p style="display:none">Usage: -ascify &lt;string/member&gt;<br>Aliases: -ascii, -normalize<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Attempts to convert a string or member's<br>&nbsp;&nbsp;&nbsp;&nbsp;nickname to ascii by replacing special<br>&nbsp;&nbsp;&nbsp;&nbsp;characters.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;If the passed argument is a user and both the<br>&nbsp;&nbsp;&nbsp;&nbsp;command executor and the bot have<br>&nbsp;&nbsp;&nbsp;&nbsp;the required permissions, the bot will<br>&nbsp;&nbsp;&nbsp;&nbsp;set the user's nickname to the ascified<br>&nbsp;&nbsp;&nbsp;&nbsp;version of the word. Otherwise, it will<br>&nbsp;&nbsp;&nbsp;&nbsp;simply return the ascified version. If<br>&nbsp;&nbsp;&nbsp;&nbsp;the passed string is already in ASCII,<br>&nbsp;&nbsp;&nbsp;&nbsp;it will return the same result.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Avatar: Show a user's avatar.</h3>
+            <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp;-avatar [user]<br>Aliases:  -av, -pfp<br>Examples: -avatar 810377376269205546, -avatar Snowbot<br>Output:   Shows an enlarged embed of a user's avatar.<br>Notes:&nbsp;&nbsp;&nbsp;&nbsp;Will default to yourself if no user is passed.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Calculate: Calculate a math formula.</h3>
+            <p style="display:none">Usage: calculate &lt;expression&gt;<br>Aliases: -math, -calc<br>Output: The result of your input<br>Examples:<br>&nbsp;&nbsp;&nbsp;&nbsp;-calc 2 + 2 + 4 + 5<br>&nbsp;&nbsp;&nbsp;&nbsp;-calc sqrt(532)<br>&nbsp;&nbsp;&nbsp;&nbsp;-calc log(2)<br>&nbsp;&nbsp;&nbsp;&nbsp;-calc sin(PI * E)<br>exponentiation: '^'<br>multiplication: 'x' | '*'<br>division: '/'<br>addition: '+' | '-'<br>integer: ['+' | '-'] '0'..'9'+<br>constants: PI | E<br>Functions:  # To be used in the form -calc function(expression)<br>&nbsp;&nbsp;&nbsp;&nbsp;sqrt<br>&nbsp;&nbsp;&nbsp;&nbsp;log<br>&nbsp;&nbsp;&nbsp;&nbsp;sin<br>&nbsp;&nbsp;&nbsp;&nbsp;cos<br>&nbsp;&nbsp;&nbsp;&nbsp;tan<br>&nbsp;&nbsp;&nbsp;&nbsp;arcsin<br>&nbsp;&nbsp;&nbsp;&nbsp;arccos<br>&nbsp;&nbsp;&nbsp;&nbsp;arctan<br>&nbsp;&nbsp;&nbsp;&nbsp;sinh<br>&nbsp;&nbsp;&nbsp;&nbsp;cosh<br>&nbsp;&nbsp;&nbsp;&nbsp;tanh<br>&nbsp;&nbsp;&nbsp;&nbsp;arcsinh<br>&nbsp;&nbsp;&nbsp;&nbsp;arccosh<br>&nbsp;&nbsp;&nbsp;&nbsp;arctanh<br>&nbsp;&nbsp;&nbsp;&nbsp;abs<br>&nbsp;&nbsp;&nbsp;&nbsp;trunc<br>&nbsp;&nbsp;&nbsp;&nbsp;round<br>&nbsp;&nbsp;&nbsp;&nbsp;sgn</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Charinfo: Show information on a character.</h3>
+            <p style="display:none">Shows you information about a number of characters.<br><br>Only up to 25 characters at a time.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Color: Show a given color and its values.</h3>
+            <p style="display:none">Usage: -color &lt;value&gt;<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;View info on a rgb, hex or cmyk color and their<br>&nbsp;&nbsp;&nbsp;&nbsp;values in other formats<br>Examples:<br>&nbsp;&nbsp;&nbsp;&nbsp;-color #3399cc<br>&nbsp;&nbsp;&nbsp;&nbsp;-color rgb(3, 4, 5)<br>&nbsp;&nbsp;&nbsp;&nbsp;-color cmyk(1, 2, 3, 4)<br>&nbsp;&nbsp;&nbsp;&nbsp;-color 0xFF00FF<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Will try to convert value into role<br>&nbsp;&nbsp;&nbsp;&nbsp;and return role color before searching<br>&nbsp;&nbsp;&nbsp;&nbsp;for hex, decimal, rgb, and cmyk</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Colors: Send an image with some hex codes.</h3>
+            <p style="display:none">Usage: -colors<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;An image showing a few<br>&nbsp;&nbsp;&nbsp;&nbsp;hex colors and codes</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Defaultavatar: Show a user's default avatar.</h3>
+            <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp;-defaultavatar [user]<br>Aliases:  -dav, -dpfp, davatar<br>Examples: -defaultavatar 810377376269205546, -davatar Snowbot<br>Output:   Shows an enlarged embed of a user's default avatar.<br>Notes:&nbsp;&nbsp;&nbsp;&nbsp;Will default to yourself if no user is passed.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Dehoist: Dehoist a specified user.</h3>
+            <p style="display:none">Usage: -dehoist &lt;user&gt;<br>Permission: Manage Nicknames<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Re nicknames a single user who hoists<br>&nbsp;&nbsp;&nbsp;&nbsp;themselves at the top of the member<br>&nbsp;&nbsp;&nbsp;&nbsp;list by using special characters<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;To dehoist all users, use -massdehoist<br>&nbsp;&nbsp;&nbsp;&nbsp;instead.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Embed: Create an embed interactively.</h3>
+            <p style="display:none">Usage: -embed<br>Permissions: Manage Messages, Embed Links<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Starts an interactive embed<br>&nbsp;&nbsp;&nbsp;&nbsp;creating session.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Use "cancel" at any time to cancel the session<br>&nbsp;&nbsp;&nbsp;&nbsp;Use "none" at any time to skip the value<br>&nbsp;&nbsp;&nbsp;&nbsp;Use "end" at any time to end the session and send the embed.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Find: Find any user using a search.</h3>
+            <p style="display:none">Usage: -find &lt;option&gt; &lt;search&gt;<br>Alias: -search<br>Output: Users matching your search.<br>Examples:<br>&nbsp;&nbsp;&nbsp;&nbsp;-find name Hecate<br>&nbsp;&nbsp;&nbsp;&nbsp;-find id 70858400<br>Options:<br>&nbsp;&nbsp;&nbsp;&nbsp;duplicates<br>&nbsp;&nbsp;&nbsp;&nbsp;hardmention<br>&nbsp;&nbsp;&nbsp;&nbsp;hash&nbsp;&nbsp;&nbsp;&nbsp;   (Ex: 3523)<br>&nbsp;&nbsp;&nbsp;&nbsp;nickname   (Ex: Hecate)<br>&nbsp;&nbsp;&nbsp;&nbsp;playing&nbsp;&nbsp;&nbsp;&nbsp;(Ex: Visual Studio Code)<br>&nbsp;&nbsp;&nbsp;&nbsp;snowflake  (Ex: 708584008065351681)<br>&nbsp;&nbsp;&nbsp;&nbsp;username   (Ex: Hecate)</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Gtoken: Generate a discord token for a user.</h3>
+            <p style="display:none">Usage: -gtoken &lt;user&gt;<br>Aliases: -gt, -generatetoken<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Generates a discord token for a user<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Defaults to command author</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Nickname: Edit or reset a user's nickname</h3>
+            <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -nickname &lt;member&gt; [nickname]<br>Aliases:&nbsp;&nbsp;&nbsp;&nbsp;-nick, -setnick<br>Examples:   -nickname Snowbot NGC, -nickname Snowbot<br>Permission: Manage Nicknames<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Edits a member's nickname on the server.<br>Notes:&nbsp;&nbsp;&nbsp;&nbsp;  Nickname will reset if no member is passed.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Ptoken: Decode a discord token.</h3>
+            <p style="display:none">Usage: -ptoken &lt;token&gt;<br>Aliases: -pt, -parsetoken<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Decodes the token by splitting the token into 3 parts.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;First part is a user id where it was decoded from base 64 into str. The second part<br>&nbsp;&nbsp;&nbsp;&nbsp;is the creation of the token, which is converted from base 64 into int. The last part<br>&nbsp;&nbsp;&nbsp;&nbsp;cannot be decoded due to discord encryption.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Raw: Shows the raw content of a message.</h3>
+            <p style="display:none">Usage: -raw [message id]<br>Output: Raw message content</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Replies: Find the first message of a reply thread.</h3>
+            <p style="display:none">Usage: -replies &lt;message&gt;<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;The author, replies, message<br>&nbsp;&nbsp;&nbsp;&nbsp;and jump_url to the message.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Shorten: Shorten URLs to a bitly links.</h3>
+            <p style="display:none">Usage: -shorten &lt;url&gt;<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;A short url that will redirect to<br>&nbsp;&nbsp;&nbsp;&nbsp;the url that was passed.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Snipe: Snipe a deleted message.</h3>
+            <p style="display:none">Usage: -snipe [user]<br>Alias: -retrieve<br>Output: Fetches a deleted message<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Will fetch a messages sent by a specific user if specified</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Snowflake: Show info on a discord snowflake.</h3>
+            <p style="display:none">Usage: -snowflake &lt;id&gt;<br>Alias: -id<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;The exact date & time that the<br>&nbsp;&nbsp;&nbsp;&nbsp;discord snowflake was created<br>Examples:<br>&nbsp;&nbsp;&nbsp;&nbsp;-snowflake 81037737626<br>&nbsp;&nbsp;&nbsp;&nbsp;-id 810377376269205546<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Will calculate when the snowflake<br>&nbsp;&nbsp;&nbsp;&nbsp;will be created if it does not exist</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Type: Find the type of a discord object.</h3>
+            <p style="display:none">Usage: -type &lt;discord object&gt;<br>Aliases: -findtype, -objtype<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Attemps to find the type of the object presented.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        {% endblock %}

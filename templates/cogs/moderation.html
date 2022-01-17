@@ -1,0 +1,128 @@
+
+        {% extends 'ducky/cog_template.html' %}
+        {% block title %}Snowbot: Mod{% endblock %}
+        {% block body %}
+        {{ block.super }}
+        {% load static %}
+        <h1>Mod</h1>
+<h2>Keep your server under control.</h2>
+        <div class="helpbox">
+            <h3>Ban: Ban users from the server.</h3>
+            <p style="display:none">Usage: -ban &lt;target&gt; [target]... [delete message days = 1] [reason]<br>Example: -ban @Jacob Sarah 4 for advertising<br>Permission: Ban Members<br>Output: Ban passed members from the server.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Blind: Hide a channel from a user.</h3>
+            <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -blind &lt;target&gt; [target]...<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-blind Hecate 708584008065351681 @Elizabeth<br>Permission: Kick Members<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Prevents users from seeing the channel.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Block: Restrict users from sending messages.</h3>
+            <p style="display:none">Usage: -block &lt;target&gt; [target]...<br>Example: -block Hecate 708584008065351681 @Elizabeth<br>Permission: Kick Members<br>Output: Stops users from messaging in the channel.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Cleanup: Clean up command usage.</h3>
+            <p style="display:none">Usage: -cleanup [search]<br>Alias: -clean<br>Output: Cleans up the bot's messages from the channel.<br>Permission: Manage Messages<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;If a search number is specified, it searches that many messages to delete.<br>&nbsp;&nbsp;&nbsp;&nbsp;If the bot has Manage Messages permissions then it will try to delete<br>&nbsp;&nbsp;&nbsp;&nbsp;messages that look like they invoked the bot as well.<br>&nbsp;&nbsp;&nbsp;&nbsp;After the cleanup is completed, the bot will send you a message with<br>&nbsp;&nbsp;&nbsp;&nbsp;which people got their messages deleted and their count. This is useful<br>&nbsp;&nbsp;&nbsp;&nbsp;to see which users are spammers.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Hackban: Hackban multiple users.</h3>
+            <p style="display:none">Usage: -hackban &lt;user id&gt; &lt;user id&gt;... [--reason] [--delete]<br>Example:<br>&nbsp;&nbsp;&nbsp;&nbsp;-hackban 805871188462010398 --reason for spamming --delete 2<br>Permission: Ban Members<br>Output: Hackbans multiple users.<br>Notes: Users do not have to be in the server.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Kick: Kick users from the server.</h3>
+            <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -kick &lt;target&gt; [target]... [reason]<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-kick @Jacob Sarah for advertising<br>Permission: Kick Members<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Kicks passed members from the server.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Lock: Lock a channel</h3>
+            <p style="display:none">Usage: -lock [channel] [minutes]<br>Aliases: -lockdown, -lockchannel<br>Permission: Administrator<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Locked channel for the specified time. Infinite if not specified<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Max timed lock is 2 hours</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Mute: Mute users for misbehaving.</h3>
+            <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp; -hardmute &lt;target&gt; [target]... [minutes] [reason]<br>Alias:&nbsp;&nbsp;&nbsp;&nbsp; -hackmute<br>Example:   -hardmute person1 person2 10 for spamming<br>Pemission: Kick Members<br>Output:&nbsp;&nbsp;&nbsp;&nbsp;Takes all roles from passed users and mutes them.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Command -muterole must be executed prior to usage of<br>&nbsp;&nbsp;&nbsp;&nbsp;this command. Upon usage, will not be able to read<br>&nbsp;&nbsp;&nbsp;&nbsp;messages in any channel. Roles will be given back to<br>&nbsp;&nbsp;&nbsp;&nbsp;the user upon -unmute, or when their timed mute ends.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Purge: Remove any type of content.</h3>
+            <p style="display:none">Usage: -purge &lt;option&gt; &lt;amount&gt;<br>Aliases: -prune, -delete, -remove<br>Permission: Manage Messages<br>Options:<br>&nbsp;&nbsp;&nbsp;&nbsp;all, bots, contains, embeds,<br>&nbsp;&nbsp;&nbsp;&nbsp;emojis, files, humans, images,<br>&nbsp;&nbsp;&nbsp;&nbsp;invites, mentions, reactions,<br>&nbsp;&nbsp;&nbsp;&nbsp;until, urls, user, webhooks.<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Deletes messages that match<br>&nbsp;&nbsp;&nbsp;&nbsp;a specific search criteria<br>Examples:<br>&nbsp;&nbsp;&nbsp;&nbsp;-prune user Hecate<br>&nbsp;&nbsp;&nbsp;&nbsp;-prune bots<br>&nbsp;&nbsp;&nbsp;&nbsp;-prune invites 1000<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Specify the amount kwarg<br>&nbsp;&nbsp;&nbsp;&nbsp;to search that number of<br>&nbsp;&nbsp;&nbsp;&nbsp;messages. For example,<br>&nbsp;&nbsp;&nbsp;&nbsp;-prune user Hecate 1000<br>&nbsp;&nbsp;&nbsp;&nbsp;will search for all messages<br>&nbsp;&nbsp;&nbsp;&nbsp;in the past 1000 sent in the<br>&nbsp;&nbsp;&nbsp;&nbsp;channel, and delete all that<br>&nbsp;&nbsp;&nbsp;&nbsp;were sent by Hecate.<br>&nbsp;&nbsp;&nbsp;&nbsp;Default amount is 100.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Slowmode: Set the slowmode for a channel</h3>
+            <p style="display:none">Usage: -slowmode [channel] [seconds]<br>Permission: Manage Channels<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Sets the channel's slowmode to your input value.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;If no slowmode is passed, will reset the slowmode.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Softban: Softban users from the server.</h3>
+            <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -softban &lt;targets&gt; [delete message = 7] [reason]<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-softban @Jacob Sarah 6 for advertising<br>Permission: Kick Members<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Softbans members from the server.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;A softban bans the member and immediately<br>&nbsp;&nbsp;&nbsp;&nbsp;unbans s/he in order to delete messages.<br>&nbsp;&nbsp;&nbsp;&nbsp;The days to delete messages is set to 7 days.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Tempban: Temporarily ban users.</h3>
+            <p style="display:none">Usage: -tempban &lt;user&gt; [user]... [hours till unban] [days to delete messages] [reason]<br>Alias: -timedban<br>Permission: Ban Members</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Unban: Unban a previously banned user.</h3>
+            <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -unban &lt;user&gt; [reason]<br>Alias:&nbsp;&nbsp;&nbsp;&nbsp;  -revokeban<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;Unban Hecate#3523 Because...<br>Permission: Ban Members<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Unbans a member from the server.<br>Notes:&nbsp;&nbsp;&nbsp;&nbsp;  Pass either the user's ID or their username</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Unblind: Reallow users see a channel.</h3>
+            <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -unblind &lt;target&gt; [target]...<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-unblind Hecate 708584008065351681 @Elizabeth<br>Permission: Kick Members<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Reallows blinded users to see the channel.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Unblock: Reallow users to send messages.</h3>
+            <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -unblock &lt;target&gt; [target]...<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-unblock Hecate 708584008065351681 @Elizabeth<br>Permission: Kick Members<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Reallows blocked users to send messages.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Unlock: Unlock a channel.</h3>
+            <p style="display:none">Usage: -unlock [channel]<br>Alias: -unlockchannel<br>Permission: Administrator<br>Output: Unlocks a previously locked channel</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Unmute: Unmute previously muted members.</h3>
+            <p style="display:none">Usage: -unmute &lt;target&gt; [target]...<br>Alias: -endmute<br>Example: -unmute Hecate @Elizabeth 708584008065351681<br>Permissiom: Kick Members<br>Output: Unmutes members muted by the -hardmute command.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Vckick: Kick users from a voice channel.</h3>
+            <p style="display:none">Usage: -vckick &lt;target&gt; &lt;target&gt;..<br>Output: Kicks passed members from their channel<br>Permission: Move Members</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Vcmove: Move a user from a voice channel.</h3>
+            <p style="display:none">Usage: -vcmove &lt;target&gt; &lt;target&gt;... &lt;channel&gt;<br>Output: Moves members into a new voice channel<br>Permission: Move Members</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Vcpurge: Kick all users from a voice channel.</h3>
+            <p style="display:none">Usage: -vcpurge &lt;voice channel&gt;<br>Output: Kicks all members from the channel<br>Permission: Move Members</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        {% endblock %}

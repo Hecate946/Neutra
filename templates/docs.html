@@ -1,35 +1,10 @@
-<!DOCTYPE:html>
-<html>
-    <head>
-        <title>Neutra</title>
-        <link rel="shortcut icon" type="image/x-icon" href="{{ url_for('static', filename='assets/neutra.ico') }}" id="favicon">
-        <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
-    </head>
-    <body>
-        <div id="sidebar">
-            <a href="." class="docstitle">Neutra<br>Documentation</a>
-            <a href="/docs/administration">Administration</a>
-            <a href="/docs/automoderation">Automoderation</a>
-            <a href="/docs/bot">Bot</a>
-            <a href="/docs/conversion">Conversion</a>
-            <a href="/docs/files">Files</a>
-            <a href="/docs/info">Info</a>
-            <a href="/docs/logging">Logging</a>
-            <a href="/docs/moderation">Moderation</a>
-            <a href="/docs/roles">Roles</a>
-            <a href="/docs/server">Server</a>
-            <a href="/docs/stats">Stats</a>
-            <a href="/docs/time">Time</a>
-            <a href="/docs/tracking">Tracking</a>
-            <a href="/docs/users">Users</a>
-            <a href="/docs/utils">Utilities</a>
-            <a href="/docs/warn">Warns</a>
-        </div>
-        <div><button id="expand" class="exp-button" type="button">Expand All</button></div>
-        <div><button id="collapse" class="exp-button" type="button">Collapse All</button></div>
-    </body>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+{% extends 'base.html' %}
 
+<!-- 475348957439! 068 -->
+    {% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/cog.css') }}">
+    {% endblock %}
+    {% block body %}
     <div><button id="expand" class="exp-button" type="button">Expand All</button></div>
     <div><button id="collapse" class="exp-button" type="button">Collapse All</button></div>
     <script>
@@ -71,3 +46,4 @@
         });
     });
 </script>
+{% endblock%}

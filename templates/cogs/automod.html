@@ -1,0 +1,62 @@
+
+        {% extends 'ducky/cog_template.html' %}
+        {% block title %}Snowbot: Automod{% endblock %}
+        {% block body %}
+        {{ block.super }}
+        {% load static %}
+        <h1>Automod</h1>
+<h2>Manage the automod system.</h2>
+        <div class="helpbox">
+            <h3>Antiinvite: Enable or disable auto-deleting invite links</h3>
+            <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -antiinvite &lt;yes|enable|true|on||no|disable|false|off&gt;<br>Aliases:&nbsp;&nbsp;&nbsp;&nbsp;-removeinvites, -deleteinvites, -antiinvites<br>Permission: Manage Server<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Removes invite links sent by users.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Users with the Manage Messages permission<br>&nbsp;&nbsp;&nbsp;&nbsp;are immune to the antiinviter.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Autorole: Assign roles to new members.</h3>
+            <p style="display:none">Usage: -autorole &lt;option&gt;<br>Aliases:<br>&nbsp;&nbsp;&nbsp;&nbsp;-autoassign<br>&nbsp;&nbsp;&nbsp;&nbsp;-autoroles<br>Output: Assigns roles to new users<br>Examples:<br>&nbsp;&nbsp;&nbsp;&nbsp;-autorole add &lt;role1&gt; &lt;role2&gt;<br>&nbsp;&nbsp;&nbsp;&nbsp;-autorole show<br>Permission: Manage Server, Manage Roles<br>Options:<br>&nbsp;&nbsp;&nbsp;&nbsp;add, remove, clear, show</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Clearwarns: Clear a user's warnings</h3>
+            <p style="display:none">Usage: -clearwarns [user]<br>Aliases: -deletewarnings, -removewarns, -removewarnings, -deletewarns, -clearwarnings<br>Permission: Kick Members<br>Output: Clears all warnings for that user</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Filter: Manage the server's word filter.</h3>
+            <p style="display:none">Usage: -filter &lt;option&gt;<br>Alias: -profanity<br>Permission: Manage Server<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Adds, removes, clears, or displays the filter.<br>Example:<br>&nbsp;&nbsp;&nbsp;&nbsp;-filter add &lt;badwords&gt;<br>Options:<br>&nbsp;&nbsp;&nbsp;&nbsp;add, remove, display, clear<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Words added to the filter list<br>&nbsp;&nbsp;&nbsp;&nbsp;will delete all messages with<br>&nbsp;&nbsp;&nbsp;&nbsp;that word. Users with the<br>&nbsp;&nbsp;&nbsp;&nbsp;Manage Messages permission are immune.<br>&nbsp;&nbsp;&nbsp;&nbsp;To add or remove multiple words with<br>&nbsp;&nbsp;&nbsp;&nbsp;one command, separate the words by a comma.<br>&nbsp;&nbsp;&nbsp;&nbsp;Example: -filter add badword1, badword2</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Reassign: Reassign roles on user rejoin.</h3>
+            <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -reassign &lt;yes|enable|true|on||no|disable|false|off&gt;<br>Aliases:&nbsp;&nbsp;&nbsp;&nbsp;-stickyroles<br>Permission: Manage Server<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Reassigns roles when past members rejoin the server.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;This setting is enabled by default. The bot will attempt to<br>&nbsp;&nbsp;&nbsp;&nbsp;add the users their old roles unless it is missing permissions.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Revokewarn: Revoke a warning from a user</h3>
+            <p style="display:none">Usage: -revokewarn [user]<br>Aliases: -revokewarning, -undowarning, -undowarn<br>Permission: Kick Members<br>Output: Revokes a warning from a user</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Serverwarns: Display the server warnlist.</h3>
+            <p style="display:none">Usage: -serverwarns<br>Alias: -warns<br>Output: Embed of all warned members in the server<br>Permission: Manage Messages</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Warn: Warn users with an optional reason.</h3>
+            <p style="display:none">Usage: -warn [target] [target]... [reason]<br>Output: Warns members and DMs them the reason they were warned for<br>Permission: Kick Members<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Warnings do not automatically enforce punishments on members.<br>&nbsp;&nbsp;&nbsp;&nbsp;They only store a record of how many instances a user has misbehaved.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Warncount: Count the warnings a user has.</h3>
+            <p style="display:none">Usage: -warncount [member]<br>Alias: -listwarns<br>Output: Show how many warnings the user has</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        {% endblock %}

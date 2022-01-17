@@ -1,8 +1,9 @@
 from urllib.parse import urlencode
-import html
+from collections import Counter
 import base64
 import time
 import json
+
 
 
 from config import SPOTIFY
@@ -209,6 +210,14 @@ class User:  # Spotify user w discord user_id
         query_params = urlencode(params)
         return await self.get(CONSTANTS.API_URL + "me/top/artists?" + query_params)
 
+    async def get_top_genres(self, limit=50, time_range="long_term"):
+        data = await self.get_top_artists(limit, time_range)
+        genres = []
+        for artist in data["items"]:
+            genres.extend(artist["genres"])
+
+        return Counter(genres)
+
     async def get_top_albums(self, limit=50):
         params = {"limit": limit}
         query_params = urlencode(params)
@@ -258,38 +267,17 @@ class User:  # Spotify user w discord user_id
 class Formatting:
     def __init__(self) -> None:
         self.time_range_map = {"short_term": "in the past four weeks", "medium_term": "in the past six months", "long_term": "across all time"}
-        self.html_table_base = """
-        <html>
-        <head>
-        <style>
-        table {
-            font-family: Avenir,Helvetica,Arial,sans-serif;
-            color: #2c3e50;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        caption {
-            padding: 20px;
-            font-size: 25px;
-            font-weight: bold;
-        }
-        th, td {
-        padding: 10px;
-        text-align: left;
-        border-bottom: 1px solid #ddd;
-        }
-        tr:hover {background-color: #ADD8E6;}
-        td:first-child {
-            font-weight: bold;
-        }
-        td:nth-child(2) {
-            font-weight: bold;
-            font-size: 25px;
-        }
-        </style>
-        </head>
-        <body>
-        """
+        
+    def get_caption(self, option, time_range="short_term"):
+        if option == "recents":
+            return "Showing your recent Spotify tracks."
+        if option == "tracks":
+            return f"Showing your top Spotify tracks {self.time_range_map[time_range]}."
+        if option == "artists":
+            return f"Showing your top Spotify artists {self.time_range_map[time_range]}."
+        if option == "genres":
+            return f"Showing your top Spotify genres {self.time_range_map[time_range]}."
+
 
     def get_image(self, obj):
         try:
@@ -297,53 +285,45 @@ class Formatting:
         except IndexError:
             return CONSTANTS.GREEN_ICON
 
-    def track_html_table(self, data, time_range):
-        table = [[index, self.get_image(track["album"]), track["name"], ', '.join([artist["name"] for artist in track["artists"]])] for index, track in enumerate(data["items"], start=1)]
+    def top_tracks(self, data):
+        return [
+            {
+                "index": index,
+                "image": self.get_image(track["album"]),
+                "name": track["name"],
+                "artist": ', '.join([artist["name"] for artist in track["artists"]]),
+            } for index, track in enumerate(data["items"], start=1)
+        ]
 
 
-        
-        html_table = '<table>\n'
-        html_table += f"<caption>Showing your top Spotify tracks {self.time_range_map[time_range]}.</caption>\n"
-        html_table += "<tbody>\n"
-        for i in table:
-            html_table += f'<tr><td>{i[0]}</td><td><img src="{i[1]}" width=40 height=40></td><td>{html.escape(i[2])}</td><td>{html.escape(i[3])}</td></tr>\n'
-        html_table += "</tbody>\n"
-        html_table += "</table>\n"
-        html_table += "</body>\n"
-        html_table += "</html>\n"
+    def recent_tracks(self, data):
+        return [
+            {
+                "index": index,
+                "image": self.get_image(item["track"]["album"]),
+                "name": item["track"]["name"],
+                "artist": ', '.join([artist["name"] for artist in item["track"]["artists"]]),
+            } for index, item in enumerate(data["items"], start=1)
+        ]
 
-        return self.html_table_base + html_table
 
-    def recent_html_table(self, data):
-        table = [[index, self.get_image(item["track"]["album"]), item["track"]["name"], ', '.join([artist["name"] for artist in item["track"]["artists"]])] for index, item in enumerate(data["items"], start=1)]
 
-        
-        html_table = '<table>\n'
-        html_table += f"<caption>Showing your recent Spotify tracks.</caption>\n"
-        html_table += "<tbody>\n"
-        for i in table:
-            html_table += f'<tr><td>{i[0]}</td><td><img src="{i[1]}" width=40 height=40></td><td>{html.escape(i[2])}</td><td>{html.escape(i[3])}</td></tr>\n'
-        html_table += "</tbody>\n"
-        html_table += "</table>\n"
-        html_table += "</body>\n"
-        html_table += "</html>\n"
+    def top_artists(self, data):
+        return [
+            {
+                "index": index,
+                "image": self.get_image(artist),
+                "name": artist["name"],
+            } for index, artist in enumerate(data["items"], start=1)
+        ]
 
-        return self.html_table_base + html_table
-
-    def artist_html_table(self, data, time_range):
-        table = [[index, self.get_image(artist), artist["name"]] for index, artist in enumerate(data["items"], start=1)]
-
-        html_table = '<table>\n'
-        html_table += f"<caption>Showing your top Spotify artists {self.time_range_map[time_range]}.</caption>\n"
-        html_table += "<tbody>\n"
-        for i in table:
-            html_table += f'<tr><td><img src="{i[1]}" width=200 height=200></td><td>{i[0]}. {html.escape(i[2])}</td></tr>\n'
-            
-        html_table += "</tbody>\n"
-        html_table += "</table>\n"
-        html_table += "</body>\n"
-        html_table += "</html>\n"
-
-        return self.html_table_base + html_table
-
+    def top_genres(self, data):
+        return [
+            {
+                "index": index,
+                "name": genre.capitalize(),
+                "percent": f"{count/sum(data.values()):.2%}"
+            }
+            for index, (genre, count) in enumerate(data.most_common())
+        ]
 formatting = Formatting()

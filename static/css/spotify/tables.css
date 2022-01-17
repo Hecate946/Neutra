@@ -1,0 +1,28 @@
+table {
+    font-family: Avenir,Helvetica,Arial,sans-serif;
+    color: #edf2f4;
+    margin-left: auto;
+    margin-right: auto;
+    width: 70%;
+}
+caption {
+    padding: 40px;
+    font-size: 25px;
+    font-weight: bold;
+}
+th, td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+tr:hover {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+td:first-child {
+    font-weight: bold;
+}
+td:nth-child(2) {
+    font-weight: bold;
+    font-size: 25px;
+}

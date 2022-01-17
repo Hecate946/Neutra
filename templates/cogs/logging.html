@@ -1,0 +1,32 @@
+
+        {% extends 'ducky/cog_template.html' %}
+        {% block title %}Snowbot: Logging{% endblock %}
+        {% block body %}
+        {{ block.super }}
+        {% load static %}
+        <h1>Logging</h1>
+<h2>Log all server events.</h2>
+        <div class="helpbox">
+            <h3>Log: Enable specific logging events.</h3>
+            <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -log &lt;option&gt;<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-log deletes<br>Permission: Manage Server<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Enables a specific logging event<br>Options:<br>&nbsp;&nbsp;&nbsp;&nbsp;deletes<br>&nbsp;&nbsp;&nbsp;&nbsp;edits<br>&nbsp;&nbsp;&nbsp;&nbsp;roles<br>&nbsp;&nbsp;&nbsp;&nbsp;names<br>&nbsp;&nbsp;&nbsp;&nbsp;voice<br>&nbsp;&nbsp;&nbsp;&nbsp;avatars<br>&nbsp;&nbsp;&nbsp;&nbsp;moderation<br>&nbsp;&nbsp;&nbsp;&nbsp;channels<br>&nbsp;&nbsp;&nbsp;&nbsp;leaves<br>&nbsp;&nbsp;&nbsp;&nbsp;joins<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;After your server's log channel has been setup,<br>&nbsp;&nbsp;&nbsp;&nbsp;all actions are enabled by default.<br>&nbsp;&nbsp;&nbsp;&nbsp;Use 'all' as an option to enable all options.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Logchannel: Set your server's logging channel.</h3>
+            <p style="display:none">Usage: -logchannel [channel]<br>Aliases: -logserver, -setlogchannel<br>Output: Sets up a logging channel for the server<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Use -log [event] and -unlog [event] to enable/disable<br>&nbsp;&nbsp;&nbsp;&nbsp;specific logging events that are sent to the logchannel</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Unlog: Disable specific logging events.</h3>
+            <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -unlog &lt;option&gt;<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-unlog deletes<br>Permission: Manage Server<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Disables a specific logging event<br>Options:<br>&nbsp;&nbsp;&nbsp;&nbsp;deletes<br>&nbsp;&nbsp;&nbsp;&nbsp;edits<br>&nbsp;&nbsp;&nbsp;&nbsp;roles<br>&nbsp;&nbsp;&nbsp;&nbsp;names<br>&nbsp;&nbsp;&nbsp;&nbsp;voice<br>&nbsp;&nbsp;&nbsp;&nbsp;avatars<br>&nbsp;&nbsp;&nbsp;&nbsp;moderation<br>&nbsp;&nbsp;&nbsp;&nbsp;channels<br>&nbsp;&nbsp;&nbsp;&nbsp;leaves<br>&nbsp;&nbsp;&nbsp;&nbsp;joins<br><br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;After your server's log channel has been setup,<br>&nbsp;&nbsp;&nbsp;&nbsp;all actions are enabled by default.<br>&nbsp;&nbsp;&nbsp;&nbsp;-----------------------------------------------<br>&nbsp;&nbsp;&nbsp;&nbsp;Use 'all' as an option to disable all options.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Unlogchannel: Remove the logging channel.</h3>
+            <p style="display:none">Usage: -unlogchannel<br>Alias: -unlogserver<br>Permission: Manage Server<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Removes the server's logging channel</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        {% endblock %}

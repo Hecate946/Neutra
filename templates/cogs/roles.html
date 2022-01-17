@@ -1,0 +1,68 @@
+
+        {% extends 'ducky/cog_template.html' %}
+        {% block title %}Snowbot: Roles{% endblock %}
+        {% block body %}
+        {{ block.super }}
+        {% load static %}
+        <h1>Roles</h1>
+<h2>Manage all actions regarding roles.</h2>
+        <div class="helpbox">
+            <h3>Addrole: Adds roles to users.</h3>
+            <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -addrole [user] [user...] [role] [role]...<br>Aliases:&nbsp;&nbsp;&nbsp;&nbsp;-ar, -adrole, -adrl, -addrl<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-ar Hecate#3523 @Snowbot @Verified Member<br>Permission: Manage Roles<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Adds multiple roles to multiple users</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Emptyroles: Show roles that have no users.</h3>
+            <p style="display:none">Usage: -emptyroles<br>Output: Shows all roles with zero users</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Listroles: Show an embed of all server roles.</h3>
+            <p style="display:none">Usage: -listroles<br>Alias: -roles<br>Permission: Manage Messages<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Shows roles and their member counts. Takes one argument,<br>&nbsp;&nbsp;&nbsp;&nbsp;sort_order, which can be default, name, count, or color.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Massrole: Mass adds or removes a role to users.</h3>
+            <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -massrole &lt;method&gt; &lt;role1&gt; &lt;role2&gt;<br>Alias:&nbsp;&nbsp;&nbsp;&nbsp;  -multirole<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-massrole add @everyone Verified<br>Permission: Manage Roles<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Adds or removes a role to all users with a given role<br>Methods:<br>&nbsp;&nbsp;&nbsp;&nbsp;add<br>&nbsp;&nbsp;&nbsp;&nbsp;remove (Aliases: rem, rm)<br><br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Command may take a few minutes to complete its execution.<br>&nbsp;&nbsp;&nbsp;&nbsp;Please be patient.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Removerole: Removes roles from users.</h3>
+            <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -removerole [user] [user...] [role] [role]...<br>Aliases:&nbsp;&nbsp;&nbsp;&nbsp;-rr, -remrole, -rmrole, -rmrl<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-rr Hecate#3523 @Snowbot @Verified Member<br>Permission: Manage Roles<br>Output:&nbsp;&nbsp;&nbsp;&nbsp; Removes multiple roles from multiple users</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Rolecall: Counts the users with a role.</h3>
+            <p style="display:none">Usage: -rolecall &lt;role&gt;<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Shows the number of people with the passed role.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Rolecount: Counts the roles on the server.</h3>
+            <p style="display:none">Usage: -rolecount<br>Output: Counts all server roles</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Roleinfo: Get info on a specific role.</h3>
+            <p style="display:none">Usage:  -roleinfo &lt;role&gt;<br>Alias:  -ri<br>Output: Info on the passed role</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Roleperms: Show the permissions for a role.</h3>
+            <p style="display:none">Usage:  -roleperms &lt;role&gt;<br>Alias:  -rp<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Embed with all the permissions<br>&nbsp;&nbsp;&nbsp;&nbsp;granted to the passed role</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Whohas: Show the people who have a role.</h3>
+            <p style="display:none">Usage: -whohas &lt;role&gt;<br>Permission: Manage Messages<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Lists the people who have the specified role with their status.<br>Notes:</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        {% endblock %}

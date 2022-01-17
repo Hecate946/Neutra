@@ -1,0 +1,92 @@
+
+        {% extends 'ducky/cog_template.html' %}
+        {% block title %}Snowbot: Files{% endblock %}
+        {% block body %}
+        {{ block.super }}
+        {% load static %}
+        <h1>Files</h1>
+<h2>Module for downloading files.</h2>
+        <div class="helpbox">
+            <h3>Dumpbans: DMs you a file of server bans.</h3>
+            <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -dumpbans<br>Aliases:&nbsp;&nbsp;&nbsp;&nbsp;-banlist, txtbans<br>Permission: Ban Members<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Sends a txt file to your DMs with all<br>&nbsp;&nbsp;&nbsp;&nbsp;server bans.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Dumpbots: DMs you a file of server bots.</h3>
+            <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -dumphumans<br>Aliases:&nbsp;&nbsp;&nbsp;&nbsp;-botlist, -robotlist, dumprobots<br>Permission: Manage Messages<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Sends a txt file to your DMs with all<br>&nbsp;&nbsp;&nbsp;&nbsp;server bots</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Dumpcategories: DMs you a file of voice channels.</h3>
+            <p style="display:none">Usage:  -dumpcategories<br>Alias:  -dumpcc<br>Permission: Manage Channels<br>Output:  Sends a list of categories to your DMs</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Dumpchannels: DMs you a file of text channels.</h3>
+            <p style="display:none">Usage:  -dumptextchannels<br>Alias:  -dumptc, -dumptextchannels<br>Output:  Sends a list of channels for the server to your DMs<br>Permission: Manage Channels</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Dumpemotes: DMs you a file of server emojis.</h3>
+            <p style="display:none">Usage:  -dumpemotes<br>Alias:  -dumpemojis<br>Permission: Manage Emojis<br>Output:  Sends a list of server emojis to your DMs</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Dumphelp: DMs you a file of commands.</h3>
+            <p style="display:none">Usage: -dumphelp<br>Aliases: -txthelp, -helpfile<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;DMs you a file with all my commands<br>&nbsp;&nbsp;&nbsp;&nbsp;and their descriptions.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Dumphumans: DMs you a file of server humans.</h3>
+            <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -dumphumans<br>Aliases:&nbsp;&nbsp;&nbsp;&nbsp;-humanlist<br>Permission: Manage Messages<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Sends a txt file to your DMs with all<br>&nbsp;&nbsp;&nbsp;&nbsp;server humans</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Dumpmembers: DMs you a file of server members.</h3>
+            <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -dumpmembers<br>Aliases:&nbsp;&nbsp;&nbsp;&nbsp;-dumpusers, -memberlist, -userlist<br>Permission: Manage Messages<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Sends a txt file to your DMs with all<br>&nbsp;&nbsp;&nbsp;&nbsp;server members.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Dumpmessages: DMs you a file of channel messages.</h3>
+            <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -dumpmessages [message amount] [channel]<br>Aliases:&nbsp;&nbsp;&nbsp;&nbsp;-messagedump, -dumpmessages, logmessages<br>Permission: Manage Messages<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Logs a passed number of messages from a specified channel<br>&nbsp;&nbsp;&nbsp;&nbsp;- 25 by default.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Dumproles: DMs you a file of server roles.</h3>
+            <p style="display:none">Usage:  -dumproles<br>Alias:  -txtroles<br>Permission: Manage Roles<br>Output:  Sends a list of roles for the server to your DMs</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Dumpsettings: DMs you a file of server settings.</h3>
+            <p style="display:none">Usage: -dumpsettings<br>Alias: -serversettings<br>Permission: Manage Server<br>Output: Sends a json file of server settings to your DMs.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Dumptimezones: DMs you a file of time zones.</h3>
+            <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -dumptimezones<br>Aliases:&nbsp;&nbsp;&nbsp;&nbsp;-listtimezones, -timezonelist<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Sends a txt file to your DMs with all<br>&nbsp;&nbsp;&nbsp;&nbsp;available timezones to set using -settz</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Dumpvoicechannels: DMs you a file of voice channels.</h3>
+            <p style="display:none">Usage:  -dumpvoicechannels<br>Alias:  -dumpvc<br>Output:  Sends a list of voice channels to your DMs<br>Permission: Manage Channels</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Readme: DMs you my readme file.</h3>
+            <p style="display:none">Usage: -readme<br>Alias: -md<br>Output: Sends my readme file on github to your DMs<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;This command actually updates the readme file<br>&nbsp;&nbsp;&nbsp;&nbsp;to include all the current command descriptions<br>&nbsp;&nbsp;&nbsp;&nbsp;for each registered category.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        {% endblock %}

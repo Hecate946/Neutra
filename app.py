@@ -15,18 +15,8 @@ app.secret_key = secrets.token_urlsafe(64)
 
 
 @app.route("/")
-async def index():
+async def home():
     return await render_template("home.html")
-
-
-@app.route("/docs")
-async def docs():
-    return await render_template("docs.html")
-    
-@app.route("/test")
-async def test():
-
-    return redirect(url_for("discord_login"))
 
 
 @app.route("/discord/login")
@@ -68,6 +58,11 @@ async def discord_logout():
     if ref:
         return redirect(ref)
     return "logged out of discord"
+
+
+@app.route("/spotify")
+async def _spotify():
+    return await render_template("spotify.html")
 
 
 @app.route("/spotify/connect")
@@ -117,6 +112,21 @@ async def spotify_connect():
         return redirect(ref)
     return await render_template("success.html")
 
+@app.route("/spotify/recent")
+async def spotify_recent():
+    user_id = session.get("user_id")
+
+    if not user_id:  # User is not logged in to discord, redirect them back
+        session["referrer"] = url_for("spotify_recent") # So they'll send the user back here
+        return redirect(url_for("discord_login"))
+
+
+    user = await spotify.User.load(user_id)
+
+    data = await user.get_recently_played()
+    tracks = spotify.formatting.recent_tracks(data)
+    caption = spotify.formatting.get_caption("recents")
+    return await render_template("spotify/tables.html", data=tracks, caption=caption)
 
 @app.route("/spotify/top/<spotify_type>")
 async def spotify_top(spotify_type):
@@ -133,40 +143,28 @@ async def spotify_top(spotify_type):
 
     if spotify_type == "artists":
         data = await user.get_top_artists(time_range=time_range)
-        return spotify.formatting.artist_html_table(data, time_range)
+        artists = spotify.formatting.top_artists(data)
+        caption = spotify.formatting.get_caption("artists", time_range)
+        return await render_template("spotify/tables.html", artist=True, data=artists, caption=caption)
 
     if spotify_type == "tracks":
         data = await user.get_top_tracks(time_range=time_range)
-        return spotify.formatting.track_html_table(data, time_range)
+        tracks = spotify.formatting.top_tracks(data)
+        caption = spotify.formatting.get_caption("tracks", time_range)
+        return await render_template("spotify/tables.html", data=tracks, caption=caption)
 
-@app.route("/spotify/recent")
-async def spotify_recent():
-    user_id = session.get("user_id")
-
-    if not user_id:  # User is not logged in to discord, redirect them back
-        session["referrer"] = url_for("spotify_recent") # So they'll send the user back here
-        return redirect(url_for("discord_login"))
-
-
-    user = await spotify.User.load(user_id)
-
-    data = await user.get_recently_played()
-    return spotify.formatting.recent_html_table(data)
+    if spotify_type == "genres":
+        data = await user.get_top_genres(time_range=time_range)
+        genres = spotify.formatting.top_genres(data)
+        caption =  spotify.formatting.get_caption("genres", time_range)
+        return await render_template("spotify/tables.html", genre=True, data=genres, caption=caption)
 
 
+@app.route("/docs/<cog>")
+async def docs(cog):
+    print(cog)
+    return await render_template(f"cogs/{cog}.html")
 
-
-
-
-
-
-
-
-
-
-
-    
-    return "hi"
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3000, loop=client.loop)

@@ -1,0 +1,98 @@
+
+        {% extends 'ducky/cog_template.html' %}
+        {% block title %}Snowbot: Conversion{% endblock %}
+        {% block body %}
+        {{ block.super }}
+        {% load static %}
+        <h1>Conversion</h1>
+<h2>Module for unit conversions.</h2>
+        <div class="helpbox">
+            <h3>Binint: Convert binary to an integer.</h3>
+            <p style="display:none">Usage: -binint &lt;binary&gt;<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Converts the input binary to its integer representation.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Binstr: Convert binary to a string</h3>
+            <p style="display:none">Usage: -binstr &lt;binary&gt;<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Converts the input binary to its string representation.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Cm: Convert centimeters to feet and inches.</h3>
+            <p style="display:none">Usage: -cm<br>Alias: -centimeters<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Turns cm (height) to ft + inch<br>&nbsp;&nbsp;&nbsp;&nbsp;(metric to imperial) by approximation</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Dechex: Convert decimal into hex.</h3>
+            <p style="display:none">Usage: -dechex &lt;hex&gt;</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Decode: Decode from b32, b64, b85, rot13, hex.</h3>
+            <p style="display:none">Usage: -decode &lt;method&gt;<br>Methods:<br>&nbsp;&nbsp;&nbsp;&nbsp;b32<br>&nbsp;&nbsp;&nbsp;&nbsp;b64<br>&nbsp;&nbsp;&nbsp;&nbsp;b85<br>&nbsp;&nbsp;&nbsp;&nbsp;rot13<br>&nbsp;&nbsp;&nbsp;&nbsp;hex</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Encode: Encode to: b32, b64, b85, rot13, hex.</h3>
+            <p style="display:none">Usage: -encode &lt;method&gt;<br>Methods:<br>&nbsp;&nbsp;&nbsp;&nbsp;b32<br>&nbsp;&nbsp;&nbsp;&nbsp;b64<br>&nbsp;&nbsp;&nbsp;&nbsp;b85<br>&nbsp;&nbsp;&nbsp;&nbsp;rot13<br>&nbsp;&nbsp;&nbsp;&nbsp;hex</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Ft: Convert feet.inches to centimeters</h3>
+            <p style="display:none">Usage: -ft &lt;value&gt;<br>Alias: -feet<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Turns height ft.inch (Eg: 5.11)<br>&nbsp;&nbsp;&nbsp;&nbsp;to cm (imperial to metric)</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Hexdec: Convert hex to decimal.</h3>
+            <p style="display:none">Usage: -hexdec &lt;hex&gt;</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Intbin: Convert an integer to binary.</h3>
+            <p style="display:none">Usage: -intbin &lt;integer&gt;<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Converts the input integer to its binary representation.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Kg: Convert kilograms to pounds.</h3>
+            <p style="display:none">Usage: -kg &lt;value&gt;<br>Alias: -kgs, kilograms<br>Output: Turn kg into lb (metric to imperial)</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Lb: Convert pounds to kilograms</h3>
+            <p style="display:none">Usage: -lb &lt;value&gt;<br>Aliases: -lbs, pounds, pound<br>Output: Turn lb into kg (imperial to metric)</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Morse: Converts ascii to morse code.</h3>
+            <p style="display:none">Usage: -morse &lt;content&gt;<br>Output: Converts ascii to morse code.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Accepts a-z and 0-9.<br>&nbsp;&nbsp;&nbsp;&nbsp;Each letter is comprised of "-" or "."<br>&nbsp;&nbsp;&nbsp;&nbsp;and separated by 1 space.<br>&nbsp;&nbsp;&nbsp;&nbsp;Each word is separated by 4 spaces.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Morsetable: Show the morse lookup table</h3>
+            <p style="display:none">Usage: -morsetable<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Prints out the morse code lookup table.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Strbin: Convert a string to binary.</h3>
+            <p style="display:none">Usage: -strbin &lt;string&gt;<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Converts the input string to its binary representation.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        
+        <div class="helpbox">
+            <h3>Unmorse: Converts morse code to ascii.</h3>
+            <p style="display:none">Usage: -unmorse &lt;morse&gt;<br>Output: Converts morse code to ascii.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Each letter is comprised of "-" or "."<br>&nbsp;&nbsp;&nbsp;&nbsp;and separated by 1 space.<br>&nbsp;&nbsp;&nbsp;&nbsp;Each word is separated by 4 spaces.</p>
+            <img class="dropDownIcon" src="{% static 'ducky/dropdown.png' %}">
+        </div>
+        {% endblock %}
