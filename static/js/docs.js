@@ -43,7 +43,6 @@ $(function(){
     // this will get the full URL at the address bar
     // passes on every "a" tag 
     $("#navbar2 a").each(function() {
-        console.log("hi")
             // checks if its the same on the address bar
         if(window.location.href == (this.href)) { 
             $(this).closest("a").addClass("active");

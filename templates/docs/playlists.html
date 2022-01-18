@@ -1,0 +1,262 @@
+
+{% extends 'docs.html' %}
+{% block title %}
+Neutra Docs: Playlists
+{% endblock %}
+{% block body %}
+{{ super() }}
+<div class="container">
+    <div class="box">
+        <span>
+            <b>
+                Playlists:
+            </b>
+            Module for managing playlists.
+        </span>
+    </div>
+    <div>
+        <button class="button" id="toggle">
+            <span class="button_text" id="label">
+                Expand All
+            </span>
+        </button>
+    </div>
+</div>
+<script src="{{ url_for('static', filename='js/docs.js')}}" type="text/javascript">
+</script>
+<div class="helpbox">
+    <h3>
+        <b>
+            Playliked:
+        </b>
+        Enqueue saved songs.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -playliked
+        <br>
+        <b>
+            Alias:
+        </b>
+        -playsaved
+        <br>
+        <b>
+            Output:
+        </b>
+        Enqueues all tracks in the your liked songs by adding them to the end of the current queue.
+        <br>
+        <b>
+            Notes:
+        </b>
+        Add to your saved songs by using the -save command
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Playlist Append:
+        </b>
+        Add to a saved playlist.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -playlist append [playlist name]
+        <br>
+        <b>
+            Output:
+        </b>
+        Appends the current song to the end of a saved playlist.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Playlist Delete:
+        </b>
+        Delete one of your saved playlists.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -playlist delete [playlist name]
+        <br>
+        <b>
+            Output:
+        </b>
+        Deletes a saved playlist by name.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Playlist Enqueue:
+        </b>
+        Enqueue a saved playlist.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -playlist enqueue [playlist name]
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -playlist play, -playlist start, 0}playlist queue, 0}playlist load
+        <br>
+        <b>
+            Output:
+        </b>
+        Enqueues all tracks in the saved queue by adding them to the end of the current queue.
+        <br>
+        <b>
+            Notes:
+        </b>
+        Save playable queues by using the -playlist save command.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Playlist Extend:
+        </b>
+        Extend a saved playlist with the current queue.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -playlist save [playlist name]
+        <br>
+        <b>
+            Output:
+        </b>
+        Saves the current queue to a playlist with a given name.
+        <br>
+        <b>
+            Notes:
+        </b>
+        This command will attach the current queue and the provided name to your ID. You will be the only person able to playback this queue at a later time.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Playlist Save:
+        </b>
+        Save the queue to a new playlist.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -playlist save [playlist name]
+        <br>
+        <b>
+            Output:
+        </b>
+        Saves the current queue to a playlist with a given name.
+        <br>
+        <b>
+            Notes:
+        </b>
+        This command will attach the current queue and the provided name to your ID. You will be the only person able to playback this queue at a later time.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Playlist View:
+        </b>
+        Show info on a playlist.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -playlist view [playlist owner] [playlist name]
+        <br>
+        <b>
+            Alias:
+        </b>
+        -playlist info
+        <br>
+        <b>
+            Output:
+        </b>
+        Show some statistics on a saved playlist
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Playlists:
+        </b>
+        Show queues saved by a user.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -queues [user]
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -myqueues, -savedqueues, -userqueues
+        <br>
+        <b>
+            Output:
+        </b>
+        Shows all saved queues of a user in a pagination session.
+        <br>
+        <b>
+            Notes:
+        </b>
+        Save playable queues by using the -savequeue command.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Playtop:
+        </b>
+        Enqueue the top 10 most frequently queued tracks.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -playliked
+        <br>
+        <b>
+            Alias:
+        </b>
+        -playsaved
+        <br>
+        <b>
+            Output:
+        </b>
+        Enqueues all tracks in the your liked songs by adding them to the end of the current queue.
+        <br>
+        <b>
+            Notes:
+        </b>
+        Add to your saved songs by using the -save command
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+{% endblock %}

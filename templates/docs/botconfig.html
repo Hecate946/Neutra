@@ -1,7 +1,7 @@
 
 {% extends 'docs.html' %}
 {% block title %}
-Neutra Docs: Conversion
+Neutra Docs: Botconfig
 {% endblock %}
 {% block body %}
 {{ super() }}
@@ -9,9 +9,9 @@ Neutra Docs: Conversion
     <div class="box">
         <span>
             <b>
-                Conversion:
+                Botconfig:
             </b>
-            Module for unit conversions.
+            Owner only configuration cog.
         </span>
     </div>
     <div>
@@ -27,355 +27,371 @@ Neutra Docs: Conversion
 <div class="helpbox">
     <h3>
         <b>
-            Binint:
+            Addadmin:
         </b>
-        Convert binary to an integer.
+        Add a new bot admin.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -binint &lt;binary&gt;
+        -addadmin &lt;user&gt;
+        <br>
+        <b>
+            Permission:
+        </b>
+        Hecate#3523
         <br>
         <b>
             Output:
         </b>
-        Converts the input binary to its integer representation.
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Binstr:
-        </b>
-        Convert binary to a string
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -binstr &lt;binary&gt;
-        <br>
-        <b>
-            Output:
-        </b>
-        Converts the input binary to its string representation.
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Cm:
-        </b>
-        Convert centimeters to feet and inches.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -cm
-        <br>
-        <b>
-            Alias:
-        </b>
-        -centimeters
-        <br>
-        <b>
-            Output:
-        </b>
-        Turns cm (height) to ft + inch (metric to imperial) by approximation
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Dechex:
-        </b>
-        Convert decimal into hex.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -dechex &lt;hex&gt;
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Decode:
-        </b>
-        Decode from b32, b64, b85, rot13, hex.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -decode &lt;method&gt;
-        <br>
-        <b>
-            Methods:
-        </b>
-        b32 b64 b85 rot13 hex
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Encode:
-        </b>
-        Encode to: b32, b64, b85, rot13, hex.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -encode &lt;method&gt;
-        <br>
-        <b>
-            Methods:
-        </b>
-        b32 b64 b85 rot13 hex
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Ft:
-        </b>
-        Convert feet.inches to centimeters
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -ft &lt;value&gt;
-        <br>
-        <b>
-            Alias:
-        </b>
-        -feet
-        <br>
-        <b>
-            Output:
-        </b>
-        Turns height ft.inch
-        <br>
-        <b>
-            (Eg:
-        </b>
-        5.11) to cm (imperial to metric)
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Hexdec:
-        </b>
-        Convert hex to decimal.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -hexdec &lt;hex&gt;
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Intbin:
-        </b>
-        Convert an integer to binary.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -intbin &lt;integer&gt;
-        <br>
-        <b>
-            Output:
-        </b>
-        Converts the input integer to its binary representation.
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Kg:
-        </b>
-        Convert kilograms to pounds.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -kg &lt;value&gt;
-        <br>
-        <b>
-            Alias:
-        </b>
-        -kgs, kilograms
-        <br>
-        <b>
-            Output:
-        </b>
-        Turn kg into lb (metric to imperial)
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Lb:
-        </b>
-        Convert pounds to kilograms
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -lb &lt;value&gt;
-        <br>
-        <b>
-            Aliases:
-        </b>
-        -lbs, pounds, pound
-        <br>
-        <b>
-            Output:
-        </b>
-        Turn lb into kg (imperial to metric)
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Morse:
-        </b>
-        Converts ascii to morse code.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -morse &lt;content&gt;
-        <br>
-        <b>
-            Output:
-        </b>
-        Converts ascii to morse code.
+        Adds the passed user's ID to the admins key in the config.json file
         <br>
         <b>
             Notes:
         </b>
-        Accepts a-z and 0-9. Each letter is comprised of "-" or "." and separated by 1 space. Each word is separated by 4 spaces.
+        USE WITH CAUTION! This will allow the user to access global bot information. This includes s complete server list, member list, etc. To reflect changes instantly, use -botvars.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Morsetable:
+            Addowner:
         </b>
-        Show the morse lookup table
+        Add a new bot owner.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -morsetable
+        -addowner &lt;user&gt;
+        <br>
+        <b>
+            Permission:
+        </b>
+        Hecate#3523
         <br>
         <b>
             Output:
         </b>
-        Prints out the morse code lookup table.
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Strbin:
-        </b>
-        Convert a string to binary.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -strbin &lt;string&gt;
-        <br>
-        <b>
-            Output:
-        </b>
-        Converts the input string to its binary representation.
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Temp:
-        </b>
-        Convert between units of temperature.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -temp [temp_value] [from unit] [to unit]
-        <br>
-        <b>
-            Aliases:
-        </b>
-        -temperature, -tconvert
-        <br>
-        <b>
-            Output:
-        </b>
-        Converts between Fahrenheit, Celsius, and Kelvin.
-        <br>
-        <b>
-            Units:
-        </b>
-        (F)ahrenheit (C)elsius (K)elvin
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Unmorse:
-        </b>
-        Converts morse code to ascii.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -unmorse &lt;morse&gt;
-        <br>
-        <b>
-            Output:
-        </b>
-        Converts morse code to ascii.
+        Adds the passed user's ID to the owners key in the config.json file
         <br>
         <b>
             Notes:
         </b>
-        Each letter is comprised of "-" or "." and separated by 1 space. Each word is separated by 4 spaces.
+        USE WITH CAUTION! This will allow the user to access all commands including those with root privileges. To reflect changes instantly, use the -botvars command
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Adminlock:
+        </b>
+        Admin-lock the bot.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -adminlock
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Blacklist:
+        </b>
+        Blacklist a discord object.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -blacklist &lt;object&gt; [reason]
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Blacklisted:
+        </b>
+        Show blacklisted objects.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -blacklisted
+        <br>
+        <b>
+            Output:
+        </b>
+        Shows which users are blacklisted globally.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Change:
+        </b>
+        Change the bot's specifications.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -change &lt;options&gt; &lt;new&gt;
+        <br>
+        <b>
+            Examples:
+        </b>
+        -change name Tester -change avatar &lt;url&gt;
+        <br>
+        <b>
+            Permission:
+        </b>
+        Bot Owner
+        <br>
+        <b>
+            Output:
+        </b>
+        Edits the specified bot attribute.
+        <br>
+        <b>
+            Options:
+        </b>
+        avatar, nickname, username status, activity, presence
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Config:
+        </b>
+        Change a config.json value.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -config &lt;Key to change&gt; &lt;New Value&gt;
+        <br>
+        <b>
+            Alias:
+        </b>
+        -conf
+        <br>
+        <b>
+            Output:
+        </b>
+        Edits the specified config.json file key to the passed value.
+        <br>
+        <b>
+            Notes:
+        </b>
+        To reflect the changes of the file change immediately, use the -botvars command instead of rebooting the entire client.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Leaveserver:
+        </b>
+        Have the bot leave a server.
+    </h3>
+    <p style="display:none">
+        Leaves a server - can take a name or id (owner only).
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Ownerlock:
+        </b>
+        Owner-lock the bot.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -ownerlock
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Remadmin:
+        </b>
+        Remove a bot admin.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -remadmin &lt;user&gt;
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -removeadmin, -rmadmin
+        <br>
+        <b>
+            Permission:
+        </b>
+        Hecate#3523
+        <br>
+        <b>
+            Output:
+        </b>
+        Removes a user from the admins key in my config.json file
+        <br>
+        <b>
+            Notes:
+        </b>
+        To reflect changes instantly, use the -botvars command
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Remowner:
+        </b>
+        Remove a user from my owner list.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -remowner &lt;user&gt;
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -removeowner, -rmowner
+        <br>
+        <b>
+            Permission:
+        </b>
+        Hecate#3523
+        <br>
+        <b>
+            Output:
+        </b>
+        Removes a user from the owners key in my config.json file
+        <br>
+        <b>
+            Notes:
+        </b>
+        To reflect changes instantly, use the -botvars command
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Toggle:
+        </b>
+        Toggle disabling a command.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -toggle &lt;command&gt;
+        <br>
+        <b>
+            Output:
+        </b>
+        Globally disables or enables a command
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Unblacklist:
+        </b>
+        Unblacklist discord objects.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -unblacklist &lt;object&gt;
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Write:
+        </b>
+        Write to the bot overview or changelog.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -write &lt;method&gt;
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -set, -add
+        <br>
+        <b>
+            Methods:
+        </b>
+        <br>
+        <b>
+            overview:
+        </b>
+        Edit the bot's overview
+        <br>
+        <b>
+            changelog:
+        </b>
+        Post an entry to the changelog
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Write Readme:
+        </b>
+        Update the bot readme file.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -readme
+        <br>
+        <b>
+            Alias:
+        </b>
+        -md
+        <br>
+        <b>
+            Output:
+        </b>
+        Sends my readme file on github to your DMs
+        <br>
+        <b>
+            Notes:
+        </b>
+        This command updates the readme file to include all the current command descriptions for each registered category.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>

@@ -1,7 +1,7 @@
 
 {% extends 'docs.html' %}
 {% block title %}
-Neutra Docs: Logging
+Neutra Docs: Queue
 {% endblock %}
 {% block body %}
 {{ super() }}
@@ -9,9 +9,9 @@ Neutra Docs: Logging
     <div class="box">
         <span>
             <b>
-                Logging:
+                Queue:
             </b>
-            Manage the logging system
+            Module for managing the queue.
         </span>
     </div>
     <div>
@@ -27,430 +27,355 @@ Neutra Docs: Logging
 <div class="helpbox">
     <h3>
         <b>
-            Editsnipe:
+            Clear:
         </b>
-        Snipe an edited message.
+        Clear the queue.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -editsnipe [user]
+        -clear
         <br>
         <b>
             Alias:
         </b>
-        -editretrieve, -snipeedit, -retriveedit
+        -c
         <br>
         <b>
             Output:
         </b>
-        Fetches an edited message
+        Removes all queued tracks.
         <br>
         <b>
             Notes:
         </b>
-        Will fetch a messages sent by a specific user if specified
+        Specify a range, e.g. -clear 3 10 to remove only the tracks between position 3 and 10 in the queue.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Find:
+            Dedupe:
         </b>
-        Find any user using a search.
+        Remove duplicate tracks.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -find &lt;option&gt; &lt;search&gt;
+        -dedupe
         <br>
         <b>
             Alias:
         </b>
-        -search
+        -dd, -uniquify, {deduplicate}
         <br>
         <b>
             Output:
         </b>
-        Users matching your search.
-        <br>
-        <b>
-            Examples:
-        </b>
-        -find name Hecate -find id 708584008065351681
-        <br>
-        <b>
-            Options:
-        </b>
-        duplicates hardmention hash
-        <br>
-        <b>
-            (Ex:
-        </b>
-        3523) nickname
-        <br>
-        <b>
-            (Ex:
-        </b>
-        Hecate) playing
-        <br>
-        <b>
-            (Ex:
-        </b>
-        Visual Studio Code) snowflake
-        <br>
-        <b>
-            (Ex:
-        </b>
-        708584008065351681) username
-        <br>
-        <b>
-            (Ex:
-        </b>
-        Hecate)
+        Remove all duplicate tracks in the queue.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Find Duplicates:
+            Dequeue:
         </b>
-        Find users with identical names.
+        Clear a user's enqueues.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -find duplicates
+        -dequeue [user]
         <br>
         <b>
             Alias:
         </b>
-        -find dups
+        -detrack, -dq
         <br>
         <b>
             Output:
         </b>
-        Starts a pagination session showing all users who's nicknames are not unique on the server
+        Remove all tracks queued by a specific user.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Find Hard:
+            Jump:
         </b>
-        Find users with hard to mention names.
+        Jump to a track in the queue.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -find hard [--username]
+        -jump [index]
+        <br>
+        <b>
+            Output:
+        </b>
+        Skips the current track and plays the selected track in the queue.
+        <br>
+        <b>
+            Notes:
+        </b>
+        All other tracks in the queue will remain in their respective positions.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Loop:
+        </b>
+        Loop the track or queue.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -loop [option]
+        <br>
+        <b>
+            Output:
+        </b>
+        Loops the currently playing song.
+        <br>
+        <b>
+            Notes:
+        </b>
+        Use -loop queue to loop the entire queue. Use -loop track to loop only the current track. Use -loop off to stop looping the track or queue. Will loop the current track if neither is specified. Use -unloop can also be used to stop looping settings.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Move:
+        </b>
+        Move a song in the queue.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -move &lt;index&gt; &lt;position&gt;
         <br>
         <b>
             Alias:
         </b>
-        -find weird -find special -find hardmention
+        -switch, -relocate
         <br>
         <b>
             Output:
         </b>
-        Starts a pagination session showing all users who use special characters that make their name hard to mention
-        <br>
-        <b>
-            Notes:
-        </b>
-        Specify a username kwarg, as in -find hardmention --username to search for hard to mention usernames instead of nicknames.
+        Move a song to a new position in the queue.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Find Hash:
+            Remove:
         </b>
-        Search for users by discriminator.
+        Remove a track from the queue.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -find hash &lt;search&gt;
-        <br>
-        <b>
-            Aliases:
-        </b>
-        -find discrim -find discriminator
-        <br>
-        <b>
-            Output:
-        </b>
-        Starts a pagination session showing all users who's hash (discriminator) contain your search
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Find Id:
-        </b>
-        Search for users by id.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -find id &lt;search&gt;
+        -remove [index]
         <br>
         <b>
             Alias:
         </b>
-        -find snowflake
+        -pop
         <br>
         <b>
             Output:
         </b>
-        Starts a pagination session showing all users who's IDs contain your search.
+        Removes a song from the queue at a given index.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Find Nicknames:
+            Requeue:
         </b>
-        Search for users by nickname.
+        Queue the previous track.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -find nicknames &lt;search&gt;
-        <br>
-        <b>
-            Aliases:
-        </b>
-        -find nicks -find nick -find nickname
-        <br>
-        <b>
-            Output:
-        </b>
-        A pagination session with all user's nicknames that match your search
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Find Playing:
-        </b>
-        Search for users by game.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -find playing &lt;search&gt;
+        -requeue
         <br>
         <b>
             Alias:
         </b>
-        -find status, -find activity
+        -last, -back, -previous
         <br>
         <b>
             Output:
         </b>
-        All the users currently playing the specified activity
+        Add the previous song to the end of the track queue.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Find Username:
+            Reverse:
         </b>
-        Search for users by username.
+        Reverse the queue.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -find username &lt;search&gt;
-        <br>
-        <b>
-            Aliases:
-        </b>
-        -find name -find user
+        -reverse
         <br>
         <b>
             Output:
         </b>
-        A pagination session with all user's usernames that match your search
+        Reverses the queue.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Log:
+            Shuffle:
         </b>
-        Enable specific logging events.
+        Shuffle the queue.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -log [event or subcommand]
-        <br>
-        <b>
-            Permission:
-        </b>
-        Manage Server
+        -shuffle
         <br>
         <b>
             Output:
         </b>
-        Manages the server logging system
+        Shuffles the queue.
         <br>
         <b>
             Notes:
         </b>
-        use -log with no arguments to output the current logging configuration.
-        <br>
-        <b>
-            Events:
-        </b>
-        avatars channels emojis invites joins leaves messages moderation nicknames usernames roles server voice
-        <br>
-        <b>
-            Subcommands:
-        </b>
-        -log channel [channel] # Set up the server's logging -log disable # Remove the server's logging
+        Specify a range, e.g. -shuffle 3 10 to shuffle only the tracks between position 3 and 10 in the queue.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Logchannel:
+            Skipto:
         </b>
-        Set your server's logging channel.
+        Skip to a track in the queue.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -logchannel [channel]
-        <br>
-        <b>
-            Aliases:
-        </b>
-        -logserver, -setlogchannel
+        -skipto [index]
         <br>
         <b>
             Output:
         </b>
-        Sets up a logging channel for the server
+        Skips the current track and plays the selected track in the queue.
         <br>
         <b>
             Notes:
         </b>
-        Use -log [event] and -unlog [event] to enable/disable specific logging events that are sent to the logchannel
+        Tracks before the selected song will be removed from the queue.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Snipe:
+            Tracks:
         </b>
-        Snipe a deleted message.
+        Show the track queue.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -snipe [user]
+        -tracks
         <br>
         <b>
             Alias:
         </b>
-        -retrieve
+        -q, -queue
         <br>
         <b>
             Output:
         </b>
-        Fetches a deleted message
+        Starts a pagination session showing all the tracks in the current queue.
         <br>
         <b>
             Notes:
         </b>
-        Will fetch a messages sent by a specific user if specified
+        Each page contains 10 queue elements. Will invoke the play command if a search is specified.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Unlog:
+            Unloop:
         </b>
-        Disable specific logging events.
+        Un-loop the track or queue.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -unlog [event]
+        -unloop
         <br>
         <b>
-            Permission:
+            Alias:
         </b>
-        Manage Server
+        -deloop
         <br>
         <b>
             Output:
         </b>
-        Stop logging a specific event.
-        <br>
-        <b>
-            Notes:
-        </b>
-        Use -log disable to teardown the server's logging system.
+        Stops looping the current song or queue
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Unlogchannel:
+            Weed:
         </b>
-        Remove the server logging channel.
+        Clear absent user enqueues.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -unlogchannel
+        -weed
         <br>
         <b>
-            Aliases:
+            Alias:
         </b>
-        -unlogserver
+        -lc, -leavechannel, -cull
         <br>
         <b>
             Output:
         </b>
-        Removes the server's logging channel
-        <br>
-        <b>
-            Notes:
-        </b>
-        Use -log [event] and -unlog [event] to enable/disable specific logging events that are sent to the logchannel
+        Remove all tracks enqueued by users who have left the music channel.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>

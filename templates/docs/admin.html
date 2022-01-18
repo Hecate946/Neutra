@@ -1,119 +1,689 @@
+
 {% extends 'docs.html' %}
-{% block title %}Neutra Docs: Admin{% endblock %}
+{% block title %}
+Neutra Docs: Admin
+{% endblock %}
 {% block body %}
 {{ super() }}
 <div class="container">
-<div class="box"><span><b>Admin:</b> Module for server administration.</span></div>
-<div><button id="toggle" class="button"><span id="label" class="button_text">Expand All</span></button></div>
+    <div class="box">
+        <span>
+            <b>
+                Admin:
+            </b>
+            Module for server administration.
+        </span>
+    </div>
+    <div>
+        <button class="button" id="toggle">
+            <span class="button_text" id="label">
+                Expand All
+            </span>
+        </button>
+    </div>
 </div>
-<script type="text/javascript" src="{{ url_for('static', filename='js/docs.js')}}"></script>
-
-
+<script src="{{ url_for('static', filename='js/docs.js')}}" type="text/javascript">
+</script>
 <div class="helpbox">
-    <h3>Addprefix: Add a custom server prefix.</h3>
-    <p style="display:none">Usage: -addprefix<br>Aliases: -prefix, -setprefix<br>Output: Adds a custom prefix to your server.</p>
+    <h3>
+        <b>
+            Kill:
+        </b>
+        Have the bot leave the server.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -kill
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -die
+        <br>
+        <b>
+            Output:
+        </b>
+        Clears all stored server data and kicks the bot from the server.
+        <br>
+        <b>
+            Notes:
+        </b>
+        You will receive confirmation, upon executing this command, all emoji stats, messages, last seen data roles, nicknames, and usernames will be deleted.
+    </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
-
 <div class="helpbox">
-    <h3>Clearprefix: Clear all custom server prefixes.</h3>
-    <p style="display:none">Usage: -clearprefix<br>Aliases:<br>&nbsp;&nbsp;&nbsp;&nbsp;-clearprefixes, -removeprefixes, -remprefixes,<br>&nbsp;&nbsp;&nbsp;&nbsp;-rmprefixes, -purgeprefixes, -purgeprefix<br>Output: Clears all custom server prefixes<br>Notes:</p>
+    <h3>
+        <b>
+            Massascify:
+        </b>
+        Mass nickname users with odd names.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -massascify [role]
+        <br>
+        <b>
+            Permission:
+        </b>
+        Manage Server
+        <br>
+        <b>
+            Output:
+        </b>
+        The bot will attempt to edit the nicknames of all users with special characters in their names.
+        <br>
+        <b>
+            Notes:
+        </b>
+        Specify a role to only ascify the users who have that role. May take several minutes on larger servers
+    </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
-
 <div class="helpbox">
-    <h3>Disable: Disable a command.</h3>
-    <p style="display:none">Disables the passed command or all commands in the passed cog (owner only).  Command and cog names are case-sensitive.</p>
+    <h3>
+        <b>
+            Massban:
+        </b>
+        Massban users matching a search.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -massban &lt;arguments&gt;
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -multiban
+        <br>
+        <b>
+            Permissions:
+        </b>
+        Manage Server, Ban Members
+        <br>
+        <b>
+            Output:
+        </b>
+        Massbans users matching searches
+        <br>
+        <b>
+            Notes:
+        </b>
+        Use -massban --help to show all valid arguments.
+    </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
-
 <div class="helpbox">
-    <h3>Disableall: Disable all commands.</h3>
-    <p style="display:none">Disables all enabled commands outside this module (admin-only).</p>
+    <h3>
+        <b>
+            Massdehoist:
+        </b>
+        Dehoist all server users.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -massdehoist [symbol]
+        <br>
+        <b>
+            Permission:
+        </b>
+        Manage Server
+        <br>
+        <b>
+            Output:
+        </b>
+        Re-nicknames all users who hoist their names with characters like "!"
+        <br>
+        <b>
+            Notes:
+        </b>
+        Pass an optional symbol to only nickname users who's names begin with that symbol. By default, all hoisting symbols will be removed. If a user's name is made up entirely of hoisting characters, their nickname will be changed to "Dehoisted." The bot will inform you of the number of users it was able to edit and the number of users that have superior permissions and are immune to nickname editing.
+    </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
-
 <div class="helpbox">
-    <h3>Disabledreact: React on disabled commands.</h3>
-    <p style="display:none">Sets whether the bot reacts to disabled commands when attempted (admin-only).</p>
+    <h3>
+        <b>
+            Masskick:
+        </b>
+        Mass kick users matching a search.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -masskick &lt;arguments&gt;
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -multikick
+        <br>
+        <b>
+            Permissions:
+        </b>
+        Manage Server, Kick Members
+        <br>
+        <b>
+            Output:
+        </b>
+        Mass kicks users matching searches
+        <br>
+        <b>
+            Notes:
+        </b>
+        Use -masskick --help to show all valid arguments.
+    </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
-
 <div class="helpbox">
-    <h3>Enable: Enable a command.</h3>
-    <p style="display:none">Enables the passed command or all commands in the passed cog (admin-only).  Command and cog names are case-sensitive.</p>
+    <h3>
+        <b>
+            Massrenick:
+        </b>
+        Reset all server nicknames.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -massrenick [role]
+        <br>
+        <b>
+            Alias:
+        </b>
+        -massrenickname
+        <br>
+        <b>
+            Permission:
+        </b>
+        Manage Server
+        <br>
+        <b>
+            Output:
+        </b>
+        The bot will attempt to edit the nicknames of all users to their default username.
+        <br>
+        <b>
+            Notes:
+        </b>
+        Specify an optional role to renickname only the users with that role. This command may take several minutes on larger servers.
+    </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
-
 <div class="helpbox">
-    <h3>Enableall: Enable all commands</h3>
-    <p style="display:none">Enables all disabled commands (admin-only).</p>
+    <h3>
+        <b>
+            Massrole:
+        </b>
+        Manage mass adding/removing roles.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -role &lt;add/remove&gt; &lt;option&gt; &lt;role&gt;
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -massrole, -multirole
+        <br>
+        <b>
+            Permission:
+        </b>
+        Manage Roles
+        <br>
+        <b>
+            Output:
+        </b>
+        Mass adds or removes a role to and from all users matching your specifications Add
+        <br>
+        <b>
+            options:
+        </b>
+        <br>
+        <b>
+            all/everyone:
+        </b>
+        Add everyone a role
+        <br>
+        <b>
+            humans/people:
+        </b>
+        Add humans a role
+        <br>
+        <b>
+            bots/robots:
+        </b>
+        Add bots a role
+        <br>
+        <b>
+            role:
+        </b>
+        Add a role to all users with this role Remove
+        <br>
+        <b>
+            options:
+        </b>
+        <br>
+        <b>
+            all/everyone:
+        </b>
+        Remove everyone a role
+        <br>
+        <b>
+            humans/people:
+        </b>
+        Remove humans a role
+        <br>
+        <b>
+            bots/robots:
+        </b>
+        Remove bots a role
+        <br>
+        <b>
+            role:
+        </b>
+        Remove a role from all users with this role
+        <br>
+        <b>
+            Examples:
+        </b>
+        -role add all @Helper -massrole remove @Helper Mod -multirole add bots @BotRole
+    </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
-
 <div class="helpbox">
-    <h3>Ignore: Disallow users from using the bot.</h3>
-    <p style="display:none">Usage: -ignore &lt;user&gt; [react] [reason]<br>Output: Will not process commands from the passed user.<br>Permission: Administrator<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Specify the "react" to choose whether or not to<br>&nbsp;&nbsp;&nbsp;&nbsp;react to the user's attempted commands.</p>
+    <h3>
+        <b>
+            Massrole Add:
+        </b>
+        Add roles users with a role.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -role add &lt;option&gt; &lt;role&gt;
+        <br>
+        <b>
+            Permission:
+        </b>
+        Manage Roles
+        <br>
+        <b>
+            Output:
+        </b>
+        Mass adds a role to all users matching your specifications.
+        <br>
+        <b>
+            Options:
+        </b>
+        <br>
+        <b>
+            all/everyone:
+        </b>
+        Add everyone a role
+        <br>
+        <b>
+            humans/people:
+        </b>
+        Add humans a role
+        <br>
+        <b>
+            bots/robots:
+        </b>
+        Add bots a role
+        <br>
+        <b>
+            role:
+        </b>
+        Add a role to all users with this role
+        <br>
+        <b>
+            Notes:
+        </b>
+        Pass two roles to add the second role to all users who have the first role. Pass 'bots' and a role to add all bots to a specified role Pass 'humans' and a role to add all humans to a specified role Pass 'all' and a role to add all users to a specified role If no role is found and 'bots', 'humans' and 'all' were not used as an option, the bot will show a table with all valid option inputs. Roles can be passed as a mention, case-insensitive name, or an ID
+        <br>
+        <b>
+            Examples:
+        </b>
+        -role add all @Helper -massrole add @Helper Mod -multirole add bots @Bots
+    </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
-
 <div class="helpbox">
-    <h3>Isdisabled: Show the status of a command.</h3>
-    <p style="display:none">Outputs whether the passed command - or all commands in a passed cog are disabled (admin-only).</p>
+    <h3>
+        <b>
+            Massrole Remove:
+        </b>
+        Add roles users with a role.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -role remove &lt;option&gt; &lt;role&gt;
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -role rm, -role rem
+        <br>
+        <b>
+            Permission:
+        </b>
+        Manage Roles
+        <br>
+        <b>
+            Output:
+        </b>
+        Mass removes a role from all users matching your specifications.
+        <br>
+        <b>
+            Options:
+        </b>
+        <br>
+        <b>
+            all/everyone:
+        </b>
+        Add everyone a role
+        <br>
+        <b>
+            humans/people:
+        </b>
+        Add humans a role
+        <br>
+        <b>
+            bots/robots:
+        </b>
+        Add bots a role
+        <br>
+        <b>
+            role:
+        </b>
+        Remove a role from all users with this role
+        <br>
+        <b>
+            Notes:
+        </b>
+        Pass two roles to remove the second role from all users who have the first role. Pass 'bots' and a role to remove all bots from a specified role Pass 'humans' and a role to remove all humans from a specified role Pass 'all' and a role to remove all users from a specified role If no role is found and 'bots', 'humans' and 'all' were not used as an option, the bot will show a table with all valid option inputs. Roles can be passed as a mention, case-insensitive name, or an ID
+        <br>
+        <b>
+            Examples:
+        </b>
+        -role remove all @Helper -massrole rem @Helper Mod -multirole rm bots @Bots
+    </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
-
 <div class="helpbox">
-    <h3>Leave: Have the bot leave the server.</h3>
-    <p style="display:none">Usage: -leave<br>Aliases: -kill, -die<br>Output: Clears all stored server data and kicks me.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;You will receive confirmation, upon executing this<br>&nbsp;&nbsp;&nbsp;&nbsp;command, all emoji stats, messages, last seen data<br>&nbsp;&nbsp;&nbsp;&nbsp;roles, nicknames, and usernames will be deleted.</p>
+    <h3>
+        <b>
+            Muterole:
+        </b>
+        Setup server muting system.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -muterole &lt;role&gt;
+        <br>
+        <b>
+            Alias:
+        </b>
+        -setmuterole
+        <br>
+        <b>
+            Example:
+        </b>
+        -muterole @Muted
+        <br>
+        <b>
+            Permission:
+        </b>
+        Manage Server
+        <br>
+        <b>
+            Output:
+        </b>
+        This command will set a role of your choice as the "Muted" role.
+        <br>
+        <b>
+            Notes:
+        </b>
+        When this command is run, the permissions for every channel will have the Send Messages permission set to false for the muted role.
+    </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
-
 <div class="helpbox">
-    <h3>Listdisabled: List disabled commands.</h3>
-    <p style="display:none">Lists all disabled commands (admin-only).</p>
+    <h3>
+        <b>
+            Optin:
+        </b>
+        Opt back in to data collection.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -optin
+        <br>
+        <b>
+            Output:
+        </b>
+        Restarts previously opted out of data collection.
+    </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
-
 <div class="helpbox">
-    <h3>Massascify: Mass nickname users with odd names.</h3>
-    <p style="display:none">Usage: -massascify<br>Permission: Manage Server<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;The bot will attempt to edit the<br>&nbsp;&nbsp;&nbsp;&nbsp;nicknames of all users with<br>&nbsp;&nbsp;&nbsp;&nbsp;special characters in their names.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;May take several minutes on larger servers</p>
+    <h3>
+        <b>
+            Optout:
+        </b>
+        Opt out of all data collection.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -optout
+        <br>
+        <b>
+            Output:
+        </b>
+        Stops all collection of your data and recursively deletes all preexisting data.
+        <br>
+        <b>
+            Notes:
+        </b>
+        This data deleted cannot be recovered. If you wish to opt back in to data tracking, use the -optin command or join the support server.
+    </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
-
 <div class="helpbox">
-    <h3>Massban: Massban users matching a search.</h3>
-    <p style="display:none">Usage: -massban &lt;arguments&gt;<br>Aliases: -multiban<br>Permissions: Manage Server, Ban Members<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Massbans users matching searches<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Use -massban --help<br>&nbsp;&nbsp;&nbsp;&nbsp;to show all valid arguments.</p>
+    <h3>
+        <b>
+            Prefix:
+        </b>
+        Show all server prefixes.
+    </h3>
+    <p style="display:none">
+        Alias for -prefixes
+    </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
-
 <div class="helpbox">
-    <h3>Massdehoist: Dehoist all server users.</h3>
-    <p style="display:none">Usage: -massdehoist [symbol]<br>Permission: Manage Server<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Re nicknames all users who hoist<br>&nbsp;&nbsp;&nbsp;&nbsp;their names with characters like "!"<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Pass an optional symbol to only nickname<br>&nbsp;&nbsp;&nbsp;&nbsp;users who's names begin with that symbol.<br>&nbsp;&nbsp;&nbsp;&nbsp;By default, all hoisting symbols will be<br>&nbsp;&nbsp;&nbsp;&nbsp;removed. If a user's name is made up entirely<br>&nbsp;&nbsp;&nbsp;&nbsp;of hoisting characters, their nickname will be<br>&nbsp;&nbsp;&nbsp;&nbsp;changed to "Dehoisted." The bot will inform you<br>&nbsp;&nbsp;&nbsp;&nbsp;of the number of users it was able to edit<br>&nbsp;&nbsp;&nbsp;&nbsp;and the number of users that have superior<br>&nbsp;&nbsp;&nbsp;&nbsp;permissions and are immune to nickname editing.</p>
+    <h3>
+        <b>
+            Prefixes:
+        </b>
+        Show all server prefixes.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -prefix
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -prefix, -prefix show, -prefix display, -showprefixes, -showprefix, -whatprefix -displayprefixes, -displayprefix
+        <br>
+        <b>
+            Output:
+        </b>
+        Shows all my current server prefixes.
+    </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
-
 <div class="helpbox">
-    <h3>Muterole: Setup server muting system.</h3>
-    <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp;  -muterole &lt;role&gt;<br>Alias:&nbsp;&nbsp;&nbsp;&nbsp;  -setmuterole<br>Example:&nbsp;&nbsp;&nbsp;&nbsp;-muterole @Muted<br>Permission: Manage Server<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;This command will set a role of your choice as the<br>&nbsp;&nbsp;&nbsp;&nbsp;"Muted" role. The bot will also create a channel<br>&nbsp;&nbsp;&nbsp;&nbsp;named "muted" specifically for muted members.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Channel "muted" may be deleted after command execution<br>&nbsp;&nbsp;&nbsp;&nbsp;if so desired.</p>
+    <h3>
+        <b>
+            Reset:
+        </b>
+        Manage stored user data.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -reset &lt;subcommand&gt; &lt;data option&gt; [user]
+        <br>
+        <b>
+            Subcommands:
+        </b>
+        <br>
+        <b>
+            my:
+        </b>
+        Reset data for yourself
+        <br>
+        <b>
+            user:
+        </b>
+        Reset server data for a user
+        <br>
+        <b>
+            server:
+        </b>
+        Reset data for the whole server
+        <br>
+        <b>
+            Notes:
+        </b>
+        For any assistance in deleting data, join the support server.
+        <br>
+        <b>
+            Invite:
+        </b>
+        https://discord.gg/H2qTG4yxqb For specific data options, use -help reset &lt;subcommand&gt;
+    </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
-
 <div class="helpbox">
-    <h3>Prefixes: Show all server prefixes.</h3>
-    <p style="display:none">Usage: -prefixes<br>Aliases:<br>&nbsp;&nbsp;&nbsp;&nbsp;-showprefix, -showprefixes, -listprefixes,<br>&nbsp;&nbsp;&nbsp;&nbsp;-listprefix, -displayprefixes, -displayprefix<br>Output: Shows all the current server prefixes</p>
+    <h3>
+        <b>
+            Reset My:
+        </b>
+        Reset your global data
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -reset my [option]
+        <br>
+        <b>
+            Alias:
+        </b>
+        -reset me
+        <br>
+        <b>
+            Options:
+        </b>
+        avatars statuses usernames
+        <br>
+        <b>
+            Notes:
+        </b>
+        If you wish to delete data not in the above options, voice your wish in the support server.
+        <br>
+        <b>
+            Invite:
+        </b>
+        https://discord.gg/H2qTG4yxqb
+    </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
-
 <div class="helpbox">
-    <h3>Removeprefix: Remove a custom server prefix.</h3>
-    <p style="display:none">Usage: -removeprefix<br>Aliases: -remprefix, -rmprefix<br>Output: Removes a custom prefix from your server.</p>
+    <h3>
+        <b>
+            Reset Server:
+        </b>
+        Reset server data for a user.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -reset server &lt;option&gt;
+        <br>
+        <b>
+            Output:
+        </b>
+        Delete recorded data for the entire server
+        <br>
+        <b>
+            Options:
+        </b>
+        invites messages nicknames emojis
+        <br>
+        <b>
+            Notes:
+        </b>
+        Once removed, the data cannot be recovered. Use with caution.
+    </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
-
 <div class="helpbox">
-    <h3>Unignore: Reallow users to use the bot.</h3>
-    <p style="display:none">Usage: -unignore &lt;user&gt;<br>Alias: -listen<br>Output: Will delete the passed user from the ignored list<br>Permission: Administrator</p>
+    <h3>
+        <b>
+            Reset User:
+        </b>
+        Reset server data for a user.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -reset user &lt;option&gt; &lt;user&gt;
+        <br>
+        <b>
+            Output:
+        </b>
+        Delete recorded data for a user
+        <br>
+        <b>
+            Options:
+        </b>
+        invites messages nicknames
+        <br>
+        <b>
+            Notes:
+        </b>
+        Once removed, the data cannot be recovered. Use with caution.
+    </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 {% endblock %}

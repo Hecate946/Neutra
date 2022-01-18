@@ -1,7 +1,7 @@
 
 {% extends 'docs.html' %}
 {% block title %}
-Neutra Docs: Logging
+Neutra Docs: Manager
 {% endblock %}
 {% block body %}
 {{ super() }}
@@ -9,9 +9,9 @@ Neutra Docs: Logging
     <div class="box">
         <span>
             <b>
-                Logging:
+                Manager:
             </b>
-            Manage the logging system
+            Manage bot processes and cogs.
         </span>
     </div>
     <div>
@@ -27,430 +27,478 @@ Neutra Docs: Logging
 <div class="helpbox">
     <h3>
         <b>
-            Editsnipe:
+            Botvars:
         </b>
-        Snipe an edited message.
+        Reload the bot variables.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -editsnipe [user]
-        <br>
-        <b>
-            Alias:
-        </b>
-        -editretrieve, -snipeedit, -retriveedit
+        -botvars
         <br>
         <b>
             Output:
         </b>
-        Fetches an edited message
+        Resets all global bot variables
         <br>
         <b>
             Notes:
         </b>
-        Will fetch a messages sent by a specific user if specified
+        Useful to use this command as an alternative to restarting the bot when changes are made to the config.json file
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Find:
+            Cleartrace:
         </b>
-        Find any user using a search.
+        Clear the console.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -find &lt;option&gt; &lt;search&gt;
+        -cleartrace
         <br>
         <b>
             Alias:
         </b>
-        -search
+        -cl
         <br>
         <b>
             Output:
         </b>
-        Users matching your search.
-        <br>
-        <b>
-            Examples:
-        </b>
-        -find name Hecate -find id 708584008065351681
-        <br>
-        <b>
-            Options:
-        </b>
-        duplicates hardmention hash
-        <br>
-        <b>
-            (Ex:
-        </b>
-        3523) nickname
-        <br>
-        <b>
-            (Ex:
-        </b>
-        Hecate) playing
-        <br>
-        <b>
-            (Ex:
-        </b>
-        Visual Studio Code) snowflake
-        <br>
-        <b>
-            (Ex:
-        </b>
-        708584008065351681) username
-        <br>
-        <b>
-            (Ex:
-        </b>
-        Hecate)
+        Clears the console and prints a clean nicely formatted message.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Find Duplicates:
+            Do:
         </b>
-        Find users with identical names.
+        Repeat a command.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -find duplicates
-        <br>
-        <b>
-            Alias:
-        </b>
-        -find dups
+        -do &lt;times&gt; &lt;command&gt;
         <br>
         <b>
             Output:
         </b>
-        Starts a pagination session showing all users who's nicknames are not unique on the server
+        Repeats a command a specified number of times.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Find Hard:
+            Elapse:
         </b>
-        Find users with hard to mention names.
+        Time a command response.
     </h3>
     <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -find hard [--username]
-        <br>
-        <b>
-            Alias:
-        </b>
-        -find weird -find special -find hardmention
-        <br>
-        <b>
-            Output:
-        </b>
-        Starts a pagination session showing all users who use special characters that make their name hard to mention
-        <br>
-        <b>
-            Notes:
-        </b>
-        Specify a username kwarg, as in -find hardmention --username to search for hard to mention usernames instead of nicknames.
+        Checks the timing of a command, attempting to suppress HTTP and DB calls.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Find Hash:
+            Eval:
         </b>
-        Search for users by discriminator.
+        Evaluate python code.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -find hash &lt;search&gt;
+        -eval &lt;body&gt;
         <br>
         <b>
             Aliases:
         </b>
-        -find discrim -find discriminator
+        -e -exe -exec -evaluate
         <br>
         <b>
             Output:
         </b>
-        Starts a pagination session showing all users who's hash (discriminator) contain your search
+        Code evaluation
+        <br>
+        <b>
+            Environment:
+        </b>
+        <br>
+        <b>
+            "self":
+        </b>
+        Manager,
+        <br>
+        <b>
+            "utils":
+        </b>
+        utils,
+        <br>
+        <b>
+            "converters":
+        </b>
+        converters,
+        <br>
+        <b>
+            "discord":
+        </b>
+        discord,
+        <br>
+        <b>
+            "bot":
+        </b>
+        self.bot,
+        <br>
+        <b>
+            "ctx":
+        </b>
+        ctx,
+        <br>
+        <b>
+            "channel":
+        </b>
+        ctx.channel,
+        <br>
+        <b>
+            "author":
+        </b>
+        ctx.author,
+        <br>
+        <b>
+            "guild":
+        </b>
+        ctx.guild,
+        <br>
+        <b>
+            "message":
+        </b>
+        ctx.message,
+        <br>
+        <b>
+            "_":
+        </b>
+        self._last_result,
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Find Id:
+            Git:
         </b>
-        Search for users by id.
+        Run github commands.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -find id &lt;search&gt;
+        -git &lt;command&gt;
         <br>
         <b>
             Alias:
         </b>
-        -find snowflake
+        -github
         <br>
         <b>
             Output:
         </b>
-        Starts a pagination session showing all users who's IDs contain your search.
+        Runs a git command.
+        <br>
+        <b>
+            Notes:
+        </b>
+        Use the shorthand -git give to run 3 commands concurrently. namely, git add . git commit -m "update" git push
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Find Nicknames:
+            Load:
         </b>
-        Search for users by nickname.
+        Load an extension.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -find nicknames &lt;search&gt;
+        -load &lt;file&gt;
         <br>
         <b>
             Aliases:
         </b>
-        -find nicks -find nick -find nickname
+        -loadcog, -lc
         <br>
         <b>
             Output:
         </b>
-        A pagination session with all user's nicknames that match your search
+        Loads the extension (cog) with the given name.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Find Playing:
+            Ras:
         </b>
-        Search for users by game.
+        Reload all settings modules.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -find playing &lt;search&gt;
+        -ras
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -reloadallsettings
+        <br>
+        <b>
+            Output:
+        </b>
+        Reloads all extensions in the ./settings directory. Excludes database.py.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Rau:
+        </b>
+        Reload all utilities modules.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -reloadallutils
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -rau
+        <br>
+        <b>
+            Output:
+        </b>
+        Reloads all extensions in the ./utilties directory.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Reboot:
+        </b>
+        Cleanly reboot the bot.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -reboot
         <br>
         <b>
             Alias:
         </b>
-        -find status, -find activity
+        -restart
         <br>
         <b>
             Output:
         </b>
-        All the users currently playing the specified activity
+        Shuts down all processes, sends a confirmation message, then updates the message when the bot is once again ready.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Find Username:
+            Refresh:
         </b>
-        Search for users by username.
+        A faster way of rebooting.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -find username &lt;search&gt;
-        <br>
-        <b>
-            Aliases:
-        </b>
-        -find name -find user
+        -refresh [db|-db|--db=False]
         <br>
         <b>
             Output:
         </b>
-        A pagination session with all user's usernames that match your search
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Log:
-        </b>
-        Enable specific logging events.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -log [event or subcommand]
-        <br>
-        <b>
-            Permission:
-        </b>
-        Manage Server
-        <br>
-        <b>
-            Output:
-        </b>
-        Manages the server logging system
+        Runs all reloading commands.
         <br>
         <b>
             Notes:
         </b>
-        use -log with no arguments to output the current logging configuration.
-        <br>
-        <b>
-            Events:
-        </b>
-        avatars channels emojis invites joins leaves messages moderation nicknames usernames roles server voice
-        <br>
-        <b>
-            Subcommands:
-        </b>
-        -log channel [channel] # Set up the server's logging -log disable # Remove the server's logging
+        Pass the --db flag to restart the database.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Logchannel:
+            Reload:
         </b>
-        Set your server's logging channel.
+        Reload an extension.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -logchannel [channel]
-        <br>
-        <b>
-            Aliases:
-        </b>
-        -logserver, -setlogchannel
-        <br>
-        <b>
-            Output:
-        </b>
-        Sets up a logging channel for the server
-        <br>
-        <b>
-            Notes:
-        </b>
-        Use -log [event] and -unlog [event] to enable/disable specific logging events that are sent to the logchannel
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Snipe:
-        </b>
-        Snipe a deleted message.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -snipe [user]
+        -reload &lt;file&gt;
         <br>
         <b>
             Alias:
         </b>
-        -retrieve
+        -r
         <br>
         <b>
             Output:
         </b>
-        Fetches a deleted message
-        <br>
-        <b>
-            Notes:
-        </b>
-        Will fetch a messages sent by a specific user if specified
+        Reloads the extension (cog) with the given name.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Unlog:
+            Reloadall:
         </b>
-        Disable specific logging events.
+        Reload all extensions.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -unlog [event]
+        -reloadall
         <br>
         <b>
-            Permission:
+            Alias:
         </b>
-        Manage Server
+        -ra
         <br>
         <b>
             Output:
         </b>
-        Stop logging a specific event.
-        <br>
-        <b>
-            Notes:
-        </b>
-        Use -log disable to teardown the server's logging system.
+        Reloads all extensions in the ./cogs directory.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Unlogchannel:
+            Reloadsetting:
         </b>
-        Remove the server logging channel.
+        Reload a utilities module.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -unlogchannel
+        -reloadutil &lt;file&gt;
         <br>
         <b>
             Aliases:
         </b>
-        -unlogserver
+        -rss -reloadsettings
         <br>
         <b>
             Output:
         </b>
-        Removes the server's logging channel
+        Reloads an extension in the ./settings directory.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Reloadutil:
+        </b>
+        Reload a utilities module.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -reloadutil &lt;file&gt;
         <br>
         <b>
-            Notes:
+            Aliases:
         </b>
-        Use -log [event] and -unlog [event] to enable/disable specific logging events that are sent to the logchannel
+        -ru -reloadutils -reloadutility
+        <br>
+        <b>
+            Output:
+        </b>
+        Reloads an extension in the ./utilities directory.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Sh:
+        </b>
+        Run shell commands.
+    </h3>
+    <p style="display:none">
+        Runs a shell command.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Sudo:
+        </b>
+        Run a command as another user.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -sudo [channel] [user] &lt;command&gt;
+        <br>
+        <b>
+            Outpue:
+        </b>
+        Run a command as another user optionally in another channel.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Unload:
+        </b>
+        Unload an extension.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -unload &lt;file&gt;
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -unloadcog, -uc
+        <br>
+        <b>
+            Output:
+        </b>
+        Unloads the extension (cog) with the given name.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>

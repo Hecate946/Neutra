@@ -1,7 +1,7 @@
 
 {% extends 'docs.html' %}
 {% block title %}
-Neutra Docs: Automod
+Neutra Docs: Botadmin
 {% endblock %}
 {% block body %}
 {{ super() }}
@@ -9,9 +9,9 @@ Neutra Docs: Automod
     <div class="box">
         <span>
             <b>
-                Automod:
+                Botadmin:
             </b>
-            Manage the automod system.
+            Bot admin only stats cog.
         </span>
     </div>
     <div>
@@ -27,539 +27,516 @@ Neutra Docs: Automod
 <div class="helpbox">
     <h3>
         <b>
-            Antiinvite:
+            Annoy:
         </b>
-        Enable or disable auto-deleting invite links
+        Retarded
     </h3>
     <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -antiinvite &lt;yes|enable|true|on||no|disable|false|off&gt;
-        <br>
-        <b>
-            Aliases:
-        </b>
-        -removeinvites, -deleteinvites, -antiinvites
-        <br>
-        <b>
-            Permission:
-        </b>
-        Manage Server
-        <br>
-        <b>
-            Output:
-        </b>
-        Removes invite links sent by users.
-        <br>
-        <b>
-            Notes:
-        </b>
-        Users with the Manage Messages permission are immune to the antiinviter.
+        What retard needs help for this?
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Autorole:
+            Bottomservers:
         </b>
-        Assign roles to new members.
+        Show least member servers.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -autorole &lt;option&gt;
-        <br>
-        <b>
-            Aliases:
-        </b>
-        -autoassign -autoroles
+        -bottomservers
         <br>
         <b>
             Output:
         </b>
-        Assigns roles to new users
+        The servers with the least memebers
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Cachedcommands:
+        </b>
+        Show commands in the cache.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -cachedcommands
         <br>
         <b>
-            Examples:
+            Output:
         </b>
-        -autorole add &lt;role1&gt; &lt;role2&gt; -autorole show
+        Show the commands in the bot's cache
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Cancelannoy:
+        </b>
+        This is retarded
+    </h3>
+    <p style="display:none">
+        What retard needs help for this?
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Command_History:
+        </b>
+        Show command history.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -command_history &lt;option&gt; [args]
         <br>
         <b>
-            Permission:
+            Output:
         </b>
-        Manage Server, Manage Roles
+        Recorded command history matching the specified arguments.
         <br>
         <b>
             Options:
         </b>
-        add, remove, clear, show
+        command, server, user, log, cog
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Autorole Add:
+            Debug:
         </b>
-        Auto-assign roles on user join.
+        Show helpless commands.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -autorole add &lt;role1&gt; [role2]...
-        <br>
-        <b>
-            Output:
-        </b>
-        Will automatically assign the passed roles to users who join the server.
-        <br>
-        <b>
-            Examples:
-        </b>
-        -autorole add &lt;role1&gt; [role2] -autoassign add &lt;role&gt;
-        <br>
-        <b>
-            Notes:
-        </b>
-        Accepts any number of roles. Roles with multiple words must be encapsulated by quotes.
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Autorole Clear:
-        </b>
-        Clear all current autoroles.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -autorole clear
-        <br>
-        <b>
-            Output:
-        </b>
-        Will no longer assign any previous autoroles to users who join the server.
-        <br>
-        <b>
-            Examples:
-        </b>
-        -autorole rm &lt;role1&gt; [role2] -autoassign remove &lt;role&gt;
-        <br>
-        <b>
-            Notes:
-        </b>
-        Will ask for confirmation.
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Autorole Remove:
-        </b>
-        Remove automatic autoroles.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -autorole remove &lt;role1&gt; [role2]...
-        <br>
-        <b>
-            Output:
-        </b>
-        Will no longer assign the passed roles to users who join the server.
-        <br>
-        <b>
-            Examples:
-        </b>
-        -autorole rm &lt;role1&gt; &lt;role2&gt; -autoassign remove &lt;role&gt;
-        <br>
-        <b>
-            Notes:
-        </b>
-        Accepts any number of roles. Roles with multiple words must be encapsulated by quotes.
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Autorole Show:
-        </b>
-        Show all current autoroles.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -autorole show
+        -debug
         <br>
         <b>
             Alias:
         </b>
-        -autorole display
+        -helpless
         <br>
         <b>
             Output:
         </b>
-        Will start a pagination session showing all current autoroles
-        <br>
-        <b>
-            Examples:
-        </b>
-        -autorole display -autoassign show
+        Shows all commands that lack descriptions or help.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Clearwarns:
+            Del:
         </b>
-        Clear a user's warnings
+        Delete a message.
+    </h3>
+    <p style="display:none">
+        Usage -del
+        <br>
+        <b>
+            Output:
+        </b>
+        Delete a specific message ID.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Dumpservers:
+        </b>
+        DMs all servers.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -clearwarns [user]
+        -dumpservers
         <br>
         <b>
-            Aliases:
+            ALiases:
         </b>
-        -deletewarnings, -removewarns, -removewarnings, -deletewarns, -clearwarnings
+        -dumpguilds, {0]txtguilds, -txtservers
         <br>
         <b>
             Permission:
         </b>
-        Kick Members
+        Bot Admin
         <br>
         <b>
             Output:
         </b>
-        Clears all warnings for that user
+        DMs you a file with all my servers, their member count, owners, and their IDs
+        <br>
+        <b>
+            Notes:
+        </b>
+        If you have your DMs blocked, the bot will send the file to the channel where the the command was invoked.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Filter:
+            Emojipost:
         </b>
-        Manage the server's word filter.
+        Sends all server emojis.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -filter &lt;option&gt;
+        -emojipost [nodm]
         <br>
         <b>
             Alias:
         </b>
-        -profanity
-        <br>
-        <b>
-            Permission:
-        </b>
-        Manage Server
+        -epost
         <br>
         <b>
             Output:
         </b>
-        Adds, removes, clears, or displays the filter.
+        Sends a formatted list of emojis and their IDs. Specify the nodm bool argument to avoid the bot from DMing you.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Extension:
+        </b>
+        Show info on an extension.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -extension &lt;extension&gt;
+        <br>
+        <b>
+            Alias:
+        </b>
+        -ext Outputs the cogs attatched to the passed extension.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Extensions:
+        </b>
+        List all cogs.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -extensions
+        <br>
+        <b>
+            Alias:
+        </b>
+        -exts
+        <br>
+        <b>
+            Output:
+        </b>
+        Lists all extensions and their corresponding cogs.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Firstservers:
+        </b>
+        Show first joined servers.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -firstservers
+        <br>
+        <b>
+            Output:
+        </b>
+        Lists the first servers I joined
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Gist:
+        </b>
+        Post a gist on github.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -gist [filename=output.txt] [content]
+        <br>
+        <b>
+            Output:
+        </b>
+        Creates a gist using your posted content
+        <br>
+        <b>
+            Notes:
+        </b>
+        Will post a gist of the first message attachment with it's file extension if no content is passed.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Guild:
+        </b>
+        Get stats on a bot server.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -guild [server]
+        <br>
+        <b>
+            Alias:
+        </b>
+        -guildinfo, -gi
+        <br>
+        <b>
+            Output:
+        </b>
+        Lists some info about the current or specified server.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Inv:
+        </b>
+        Create a server invite.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -inv &lt;server&gt;
+        <br>
+        <b>
+            Output:
+        </b>
+        Invite for that server (if bot could create it)
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Listservers:
+        </b>
+        Lists all servers
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -listservers
+        <br>
+        <b>
+            Alias:
+        </b>
+        -servers, -serverlist
+        <br>
+        <b>
+            Output:
+        </b>
+        Lists the servers I'm connected to.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Members:
+        </b>
+        Show members for a server.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -members
+        <br>
+        <b>
+            Output:
+        </b>
+        Lists the members of a passed server
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Message:
+        </b>
+        DM a user the bot knows.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -message &lt;user&gt; &lt;message&gt;
+        <br>
+        <b>
+            Alias:
+        </b>
+        -pm, -dm
         <br>
         <b>
             Example:
         </b>
-        -filter add &lt;badwords&gt;
+        -dm 384059834985989 Hi
         <br>
         <b>
-            Subcommands:
+            Permissions:
         </b>
-        add, remove, display, clear
-        <br>
-        <b>
-            Notes:
-        </b>
-        Words added to the filter list will delete all messages with that word. Users with the Manage Messages permission are immune. To add or remove multiple words with one command, separate the words by a comma.
-        <br>
-        <b>
-            Example:
-        </b>
-        -filter add badword1, badword2
+        Bot Owner
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Filter Add:
+            Nickscan:
         </b>
-        Add words to the filter.
+        List all bot nicknames.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -filter add &lt;words&gt;
-        <br>
-        <b>
-            Output:
-        </b>
-        Saves all the passed words and will delete when users without the Manage Messages permission send those words.
-        <br>
-        <b>
-            Notes:
-        </b>
-        separate words by a comma to add multiple words at once.
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Filter Clear:
-        </b>
-        Clear all words from the filer.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -filter clear
-        <br>
-        <b>
-            Output:
-        </b>
-        Confirmation that the filtered word list has been cleared.
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Filter Display:
-        </b>
-        Show all filtered words.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -filter display
+        -nickscan
         <br>
         <b>
             Alias:
         </b>
-        -filter show
+        -ns
         <br>
         <b>
             Output:
         </b>
-        Starts a pagination session to show all currently filtered words.
+        All my nicknames across all servers
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Filter Remove:
+            Recentservers:
         </b>
-        Removes words from the filter.
+        Show latest joined servers.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -filter remove &lt;words&gt;
+        -recentservers
         <br>
         <b>
             Alias:
         </b>
-        --, -rm , -rem
+        -lastservers
         <br>
         <b>
             Output:
         </b>
-        Deletes the passed words from the filter (if they were saved.)
+        Lists the most recent servers joined
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Say:
+        </b>
+        Say a message.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -say
+        <br>
+        <b>
+            Output:
+        </b>
+        Deletes the command invocation and resends the exact content.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Sss:
+        </b>
+        Show shared servers.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -sss [user]
+        <br>
+        <b>
+            Output:
+        </b>
+        Servers that the user shares with the bot.
         <br>
         <b>
             Notes:
         </b>
-        separate words by a comma to remove multiple words at once.
+        This supplies a more verbose output than the public ss command. Will default to you if no user is specified.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Listwarns:
+            Topservers:
         </b>
-        Show all warnings a user has.
+        Show most member servers.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Reassign:
-        </b>
-        Reassign roles on user rejoin.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -reassign &lt;yes|enable|true|on||no|disable|false|off&gt;
-        <br>
-        <b>
-            Aliases:
-        </b>
-        -stickyroles
-        <br>
-        <b>
-            Permission:
-        </b>
-        Manage Server
+        -topservers
         <br>
         <b>
             Output:
         </b>
-        Reassigns roles when past members rejoin the server.
-        <br>
-        <b>
-            Notes:
-        </b>
-        This setting is enabled by default. The bot will attempt to add the users their old roles unless it is missing permissions.
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Unwarn:
-        </b>
-        Revoke a warning from a user
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -unwarn [warning id]
-        <br>
-        <b>
-            Aliases:
-        </b>
-        -unstrike
-        <br>
-        <b>
-            Permission:
-        </b>
-        Kick Members
-        <br>
-        <b>
-            Output:
-        </b>
-        Revokes a warning from a user
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Warn:
-        </b>
-        Warn users with an optional reason.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -warn [target] [target]... [reason]
-        <br>
-        <b>
-            Alias:
-        </b>
-        -strike
-        <br>
-        <b>
-            Output:
-        </b>
-        Warns members and DMs them the reason they were warned for
-        <br>
-        <b>
-            Permission:
-        </b>
-        Kick Members
-        <br>
-        <b>
-            Notes:
-        </b>
-        Warnings do not automatically enforce punishments on members. They only store a record of how many instances a user has misbehaved.
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Warncount:
-        </b>
-        Count the warnings a user has.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -warncount [user]
-        <br>
-        <b>
-            Output:
-        </b>
-        Show how many warnings the user has
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Warns:
-        </b>
-        Display the server warnlist.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -warns
-        <br>
-        <b>
-            Alias:
-        </b>
-        -serverwarns
-        <br>
-        <b>
-            Output:
-        </b>
-        Embed of all warned members in the server
-        <br>
-        <b>
-            Permission:
-        </b>
-        Manage Messages
+        The servers with the most memebers
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>

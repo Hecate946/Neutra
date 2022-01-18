@@ -18,19 +18,31 @@ h2 {
     margin-bottom: 20px;
 }
 
+
 h3 {
     color: #edf2f4;
     position: relative;
     left: 15;
+    margin-left: 20px;
+    padding: 15px;
     font-family: Avenir,Helvetica,Arial,sans-serif;
+    font-weight: normal;
 }
 
+
 p {
-    color: #edf2f4;
-    margin-left: 15px;
-    margin-right: 10px;
+    color: #b1bbbe;
+    margin: 10px 10px 35px 35px;
+    padding: 0;
     font-family: Avenir,Helvetica,Arial,sans-serif;
+    line-height: 25px;
 }
+
+p b {
+    color: #017b91;
+}
+
+
 .helpbox {
     border: 5px outset #017b91;
     border-color: #017b91;
@@ -38,10 +50,7 @@ p {
     border-width: thin;
     width: 70%;
     position: relative;
-    line-height: 60px;
-    text-indent: 20px;
     overflow: hidden;
-    min-height: 60px;
     box-shadow: 1px 1px 2px #AEC1C6;
     margin: auto;
     cursor: pointer;

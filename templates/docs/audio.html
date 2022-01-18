@@ -1,7 +1,7 @@
 
 {% extends 'docs.html' %}
 {% block title %}
-Neutra Docs: Conversion
+Neutra Docs: Audio
 {% endblock %}
 {% block body %}
 {{ super() }}
@@ -9,9 +9,9 @@ Neutra Docs: Conversion
     <div class="box">
         <span>
             <b>
-                Conversion:
+                Audio:
             </b>
-            Module for unit conversions.
+            Module for managing the queue.
         </span>
     </div>
     <div>
@@ -27,355 +27,345 @@ Neutra Docs: Conversion
 <div class="helpbox">
     <h3>
         <b>
-            Binint:
+            Bass:
         </b>
-        Convert binary to an integer.
+        Toggle the bass effect.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -binint &lt;binary&gt;
+        -bass
         <br>
         <b>
             Output:
         </b>
-        Converts the input binary to its integer representation.
+        Toggles the bass audio effect.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Binstr:
+            Default:
         </b>
-        Convert binary to a string
+        Restore audio effects to default.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -binstr &lt;binary&gt;
+        -default
         <br>
         <b>
             Output:
         </b>
-        Converts the input binary to its string representation.
+        Resets all effects to default.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Cm:
+            Earrape:
         </b>
-        Convert centimeters to feet and inches.
+        Toggle the earrape effect.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -cm
-        <br>
-        <b>
-            Alias:
-        </b>
-        -centimeters
+        -earrape
         <br>
         <b>
             Output:
         </b>
-        Turns cm (height) to ft + inch (metric to imperial) by approximation
+        Enables the earrape audio effect.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Dechex:
+            Echo:
         </b>
-        Convert decimal into hex.
+        Toggle the echo effect.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -dechex &lt;hex&gt;
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Decode:
-        </b>
-        Decode from b32, b64, b85, rot13, hex.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -decode &lt;method&gt;
-        <br>
-        <b>
-            Methods:
-        </b>
-        b32 b64 b85 rot13 hex
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Encode:
-        </b>
-        Encode to: b32, b64, b85, rot13, hex.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -encode &lt;method&gt;
-        <br>
-        <b>
-            Methods:
-        </b>
-        b32 b64 b85 rot13 hex
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Ft:
-        </b>
-        Convert feet.inches to centimeters
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -ft &lt;value&gt;
-        <br>
-        <b>
-            Alias:
-        </b>
-        -feet
+        -echo
         <br>
         <b>
             Output:
         </b>
-        Turns height ft.inch
-        <br>
-        <b>
-            (Eg:
-        </b>
-        5.11) to cm (imperial to metric)
+        Enables the echo audio effect.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Hexdec:
+            Effects:
         </b>
-        Convert hex to decimal.
+        Show audio effects.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -hexdec &lt;hex&gt;
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Intbin:
-        </b>
-        Convert an integer to binary.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -intbin &lt;integer&gt;
+        -effects
         <br>
         <b>
             Output:
         </b>
-        Converts the input integer to its binary representation.
+        Shows all available effects
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Kg:
+            Muffle:
         </b>
-        Convert kilograms to pounds.
+        Toggle the muffle effect.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -kg &lt;value&gt;
-        <br>
-        <b>
-            Alias:
-        </b>
-        -kgs, kilograms
+        -muffle
         <br>
         <b>
             Output:
         </b>
-        Turn kg into lb (metric to imperial)
+        Toggles the muffle audio effect.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Lb:
+            Nightcore:
         </b>
-        Convert pounds to kilograms
+        Toggle the nightcore effect.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -lb &lt;value&gt;
-        <br>
-        <b>
-            Aliases:
-        </b>
-        -lbs, pounds, pound
+        -nightcore
         <br>
         <b>
             Output:
         </b>
-        Turn lb into kg (imperial to metric)
+        Enables the nightcore audio effect.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Morse:
+            Phaser:
         </b>
-        Converts ascii to morse code.
+        Toggle the phaser effect.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -morse &lt;content&gt;
+        -phaser
         <br>
         <b>
             Output:
         </b>
-        Converts ascii to morse code.
+        Toggles the phaser audio effect.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Pitch:
+        </b>
+        Alter the pitch of the player.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -pitch [pitch]
+        <br>
+        <b>
+            Output:
+        </b>
+        Alter the pitch of the player.
         <br>
         <b>
             Notes:
         </b>
-        Accepts a-z and 0-9. Each letter is comprised of "-" or "." and separated by 1 space. Each word is separated by 4 spaces.
+        The pitch must be between 0.5 and 2.0. Will output the current pitch if no new pitch is explicitly specified.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Morsetable:
+            Robot:
         </b>
-        Show the morse lookup table
+        Toggle the robot effect.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -morsetable
+        -robot
         <br>
         <b>
             Output:
         </b>
-        Prints out the morse code lookup table.
+        Toggles the robot audio effect.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Strbin:
+            Speed:
         </b>
-        Convert a string to binary.
+        Alter the speed of the player.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -strbin &lt;string&gt;
+        -speed [speed]
+        <br>
+        <b>
+            Alias:
+        </b>
+        -tempo
         <br>
         <b>
             Output:
         </b>
-        Converts the input string to its binary representation.
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Temp:
-        </b>
-        Convert between units of temperature.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -temp [temp_value] [from unit] [to unit]
-        <br>
-        <b>
-            Aliases:
-        </b>
-        -temperature, -tconvert
-        <br>
-        <b>
-            Output:
-        </b>
-        Converts between Fahrenheit, Celsius, and Kelvin.
-        <br>
-        <b>
-            Units:
-        </b>
-        (F)ahrenheit (C)elsius (K)elvin
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Unmorse:
-        </b>
-        Converts morse code to ascii.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -unmorse &lt;morse&gt;
-        <br>
-        <b>
-            Output:
-        </b>
-        Converts morse code to ascii.
+        Speed up or slow down the player.
         <br>
         <b>
             Notes:
         </b>
-        Each letter is comprised of "-" or "." and separated by 1 space. Each word is separated by 4 spaces.
+        The speed must be between 0.5 and 2.0. Will output the current speed if no new speed is explicitly specified.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Treble:
+        </b>
+        Toggle the treble effect.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -treble
+        <br>
+        <b>
+            Output:
+        </b>
+        Toggles the treble audio effect.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Tremolo:
+        </b>
+        Toggle the tremolo effect.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -tremolo
+        <br>
+        <b>
+            Output:
+        </b>
+        Enables the tremolo audio effect.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Vibrato:
+        </b>
+        Toggle the vibrato effect.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -vibrato
+        <br>
+        <b>
+            Output:
+        </b>
+        Enables the vibrato audio effect.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Volume:
+        </b>
+        Alter the volume.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -volume [volume]
+        <br>
+        <b>
+            Alias:
+        </b>
+        -vol, -sound
+        <br>
+        <b>
+            Output:
+        </b>
+        Changes the volume of the player.
+        <br>
+        <b>
+            Notes:
+        </b>
+        Will show current volume if no new volume is specified.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Whisper:
+        </b>
+        Toggle the whisper effect.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -whisper
+        <br>
+        <b>
+            Output:
+        </b>
+        Toggles the whisper audio effect.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>

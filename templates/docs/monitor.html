@@ -1,7 +1,7 @@
 
 {% extends 'docs.html' %}
 {% block title %}
-Neutra Docs: Logging
+Neutra Docs: Monitor
 {% endblock %}
 {% block body %}
 {{ super() }}
@@ -9,9 +9,9 @@ Neutra Docs: Logging
     <div class="box">
         <span>
             <b>
-                Logging:
+                Monitor:
             </b>
-            Manage the logging system
+            Module for monitoring bot status.
         </span>
     </div>
     <div>
@@ -27,430 +27,425 @@ Neutra Docs: Logging
 <div class="helpbox">
     <h3>
         <b>
-            Editsnipe:
+            Bothealth:
         </b>
-        Snipe an edited message.
+        Show bot health.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -editsnipe [user]
-        <br>
-        <b>
-            Alias:
-        </b>
-        -editretrieve, -snipeedit, -retriveedit
+        -bothealth
         <br>
         <b>
             Output:
         </b>
-        Fetches an edited message
-        <br>
-        <b>
-            Notes:
-        </b>
-        Will fetch a messages sent by a specific user if specified
+        Various bot health monitoring tools.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Find:
+            Logger:
         </b>
-        Find any user using a search.
+        View logging files.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -find &lt;option&gt; &lt;search&gt;
+        -logger &lt;option&gt;
         <br>
         <b>
             Alias:
         </b>
-        -search
+        -l
+        <br>
+        <b>
+            Permission:
+        </b>
+        Bot owner
         <br>
         <b>
             Output:
         </b>
-        Users matching your search.
-        <br>
-        <b>
-            Examples:
-        </b>
-        -find name Hecate -find id 708584008065351681
+        View any log recorded in ./data/logs
         <br>
         <b>
             Options:
         </b>
-        duplicates hardmention hash
-        <br>
-        <b>
-            (Ex:
-        </b>
-        3523) nickname
-        <br>
-        <b>
-            (Ex:
-        </b>
-        Hecate) playing
-        <br>
-        <b>
-            (Ex:
-        </b>
-        Visual Studio Code) snowflake
-        <br>
-        <b>
-            (Ex:
-        </b>
-        708584008065351681) username
-        <br>
-        <b>
-            (Ex:
-        </b>
-        Hecate)
+        commands|command|cmds|cmd errors|stderr|error|err|e information|info|i tracebacks|traceback|trace|tb|t clear|clr|cl
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Find Duplicates:
+            Logger Clear:
         </b>
-        Find users with identical names.
+        Delete a logging file.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -find duplicates
-        <br>
-        <b>
-            Alias:
-        </b>
-        -find dups
-        <br>
-        <b>
-            Output:
-        </b>
-        Starts a pagination session showing all users who's nicknames are not unique on the server
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Find Hard:
-        </b>
-        Find users with hard to mention names.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -find hard [--username]
-        <br>
-        <b>
-            Alias:
-        </b>
-        -find weird -find special -find hardmention
-        <br>
-        <b>
-            Output:
-        </b>
-        Starts a pagination session showing all users who use special characters that make their name hard to mention
-        <br>
-        <b>
-            Notes:
-        </b>
-        Specify a username kwarg, as in -find hardmention --username to search for hard to mention usernames instead of nicknames.
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Find Hash:
-        </b>
-        Search for users by discriminator.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -find hash &lt;search&gt;
+        -logger clear &lt;search&gt;
         <br>
         <b>
             Aliases:
         </b>
-        -find discrim -find discriminator
+        -cl, -clr
         <br>
         <b>
             Output:
         </b>
-        Starts a pagination session showing all users who's hash (discriminator) contain your search
+        Deletes a logging file.
+        <br>
+        <b>
+            Searches:
+        </b>
+        commands|command|cmds|cmd errors|stderr|error|err information|info|i tracebacks|traceback|trace|t
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Find Id:
+            Logger Commands:
         </b>
-        Search for users by id.
+        Show the commands.log file.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -find id &lt;search&gt;
+        -logger commands
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -logger cmds
+        <br>
+        <b>
+            Output:
+        </b>
+        Starts a pagination session showing the commands.log file
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Logger Errors:
+        </b>
+        Show the errors.log file.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -logger errors
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -logger e -logger err -logger error -logger stderr
+        <br>
+        <b>
+            Output:
+        </b>
+        Starts a pagination session showing the errors.log file
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Logger Info:
+        </b>
+        Show the info.log file.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -logger info
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -logger i -logger information
+        <br>
+        <b>
+            Output:
+        </b>
+        Starts a pagination session showing the info.log file
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Logger Music:
+        </b>
+        Show the music.log file.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -logger errors
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -logger m -logger music -logger audio -logger voice
+        <br>
+        <b>
+            Output:
+        </b>
+        Starts a pagination session showing the errors.log file
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Logger Traceback:
+        </b>
+        Show the traceback.log file
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -logger traceback
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -logger t -logger tb -logger trace -logger tracebacks
+        <br>
+        <b>
+            Output:
+        </b>
+        Starts a pagination session showing the traceback.log file
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Objgrowth:
+        </b>
+        Debug memory leaks.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -objgrowth
         <br>
         <b>
             Alias:
         </b>
-        -find snowflake
+        -objg
         <br>
         <b>
             Output:
         </b>
-        Starts a pagination session showing all users who's IDs contain your search.
+        Shows detailed object memory usage
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Find Nicknames:
+            Pm2:
         </b>
-        Search for users by nickname.
+        View pm2 files.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -find nicknames &lt;search&gt;
+        -pm2 &lt;option&gt;
+        <br>
+        <b>
+            Output:
+        </b>
+        View any pm2 log file in ./data/pm2
+        <br>
+        <b>
+            Options:
+        </b>
+        stdout|out|output stderr|err|error|errors pid|process|processid clear|clr|cl
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Pm2 Clear:
+        </b>
+        Delete a pm2 log file.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -pm2 clear &lt;search&gt;
         <br>
         <b>
             Aliases:
         </b>
-        -find nicks -find nick -find nickname
+        -cl, -clr
         <br>
         <b>
             Output:
         </b>
-        A pagination session with all user's nicknames that match your search
+        Deletes a pm2 file.
+        <br>
+        <b>
+            Searches:
+        </b>
+        out|output|stdout errors|stderr|error|err pid|process|processid
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Find Playing:
+            Pm2 Pid:
         </b>
-        Search for users by game.
+        View the pm2 process ID.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -find playing &lt;search&gt;
+        -pm2 pid
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -pm2 process -pm2 processid
+        <br>
+        <b>
+            Output:
+        </b>
+        Shows the process ID of the pm2 process.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Pm2 Stderr:
+        </b>
+        View the pm2 stderr file
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -pm2 stderr
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -pm2 err -pm2 error -pm2 errors
+        <br>
+        <b>
+            Output:
+        </b>
+        Starts a pagination session showing the pm2 stderr file.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Pm2 Stdout:
+        </b>
+        View the pm2 stdout file.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -pm2 stdout
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -pm2 out -pm2 output
+        <br>
+        <b>
+            Output:
+        </b>
+        Starts a pagination session showing the pm2 stdout file.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Threadinfo:
+        </b>
+        Show bot threadinfo.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -threadinfo
+        <br>
+        <b>
+            Output:
+        </b>
+        Shows some info on bot threads.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Todo:
+        </b>
+        Manage the bot's todo list.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -todo &lt;method&gt;
         <br>
         <b>
             Alias:
         </b>
-        -find status, -find activity
+        -to-do
         <br>
         <b>
-            Output:
+            Methods:
         </b>
-        All the users currently playing the specified activity
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Find Username:
-        </b>
-        Search for users by username.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -find username &lt;search&gt;
+        no
         <br>
         <b>
-            Aliases:
+            subcommand:
         </b>
-        -find name -find user
+        shows the todo list
         <br>
         <b>
-            Output:
+            add:
         </b>
-        A pagination session with all user's usernames that match your search
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Log:
-        </b>
-        Enable specific logging events.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -log [event or subcommand]
+        Adds an entry to the todo list
         <br>
         <b>
-            Permission:
+            remove|rm|rem:
         </b>
-        Manage Server
-        <br>
-        <b>
-            Output:
-        </b>
-        Manages the server logging system
-        <br>
-        <b>
-            Notes:
-        </b>
-        use -log with no arguments to output the current logging configuration.
-        <br>
-        <b>
-            Events:
-        </b>
-        avatars channels emojis invites joins leaves messages moderation nicknames usernames roles server voice
-        <br>
-        <b>
-            Subcommands:
-        </b>
-        -log channel [channel] # Set up the server's logging -log disable # Remove the server's logging
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Logchannel:
-        </b>
-        Set your server's logging channel.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -logchannel [channel]
-        <br>
-        <b>
-            Aliases:
-        </b>
-        -logserver, -setlogchannel
-        <br>
-        <b>
-            Output:
-        </b>
-        Sets up a logging channel for the server
-        <br>
-        <b>
-            Notes:
-        </b>
-        Use -log [event] and -unlog [event] to enable/disable specific logging events that are sent to the logchannel
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Snipe:
-        </b>
-        Snipe a deleted message.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -snipe [user]
-        <br>
-        <b>
-            Alias:
-        </b>
-        -retrieve
-        <br>
-        <b>
-            Output:
-        </b>
-        Fetches a deleted message
-        <br>
-        <b>
-            Notes:
-        </b>
-        Will fetch a messages sent by a specific user if specified
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Unlog:
-        </b>
-        Disable specific logging events.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -unlog [event]
-        <br>
-        <b>
-            Permission:
-        </b>
-        Manage Server
-        <br>
-        <b>
-            Output:
-        </b>
-        Stop logging a specific event.
-        <br>
-        <b>
-            Notes:
-        </b>
-        Use -log disable to teardown the server's logging system.
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Unlogchannel:
-        </b>
-        Remove the server logging channel.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -unlogchannel
-        <br>
-        <b>
-            Aliases:
-        </b>
-        -unlogserver
-        <br>
-        <b>
-            Output:
-        </b>
-        Removes the server's logging channel
-        <br>
-        <b>
-            Notes:
-        </b>
-        Use -log [event] and -unlog [event] to enable/disable specific logging events that are sent to the logchannel
+        Removes an entry from the todo list
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>

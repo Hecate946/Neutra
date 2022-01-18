@@ -1,119 +1,682 @@
+
 {% extends 'docs.html' %}
-{% block title %}Neutra Docs: Info{% endblock %}
+{% block title %}
+Neutra Docs: Info
+{% endblock %}
 {% block body %}
 {{ super() }}
 <div class="container">
-<div class="box"><span><b>Info:</b> Module for bot information.</span></div>
-<div><button id="toggle" class="button"><span id="label" class="button_text">Expand All</span></button></div>
+    <div class="box">
+        <span>
+            <b>
+                Info:
+            </b>
+            Module for bot information.
+        </span>
+    </div>
+    <div>
+        <button class="button" id="toggle">
+            <span class="button_text" id="label">
+                Expand All
+            </span>
+        </button>
+    </div>
 </div>
-<script type="text/javascript" src="{{ url_for('static', filename='js/docs.js')}}"></script>
-
-
-        <div class="helpbox">
-            <h3>About: Display information about the bot.</h3>
-            <p style="display:none">Usage: -about<br>Aliases: -info, -bot, -botstats, botinfo<br>Output: Version info and bot stats</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Botinvite: Invite me to your server!</h3>
-            <p style="display:none">Usage: -botinvite<br>Aliases: -bi, -invite<br>Output: An invite link to invite me to your server</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Bugreport: Send a bugreport to the developer.</h3>
-            <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp;-bugreport &lt;report&gt;<br>Aliases:  -issuereport, -reportbug, -reportissue<br>Examples: -bugreport Hello! I found a bug with Snowbot<br>Output:   Confirmation that your bug report has been sent.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Do not hesitate to use this command,<br>&nbsp;&nbsp;&nbsp;&nbsp;but please be very specific when describing the bug so<br>&nbsp;&nbsp;&nbsp;&nbsp;that the developer may easily see the issue and<br>&nbsp;&nbsp;&nbsp;&nbsp;correct it as soon as possible.</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Changelog: Show my changelog.</h3>
-            <p style="display:none">Usage: -changelog<br>Alias: -updates<br>Output: My changelog</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Hostinfo: Show the bot's host environment.</h3>
-            <p style="display:none">Usage: -hostinfo<br>Output: Detailed information on the bot's host environment</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Is_ratelimited: Check if the bot is rate limited</h3>
-            <p style="display:none">Usage: -is_ratelimited<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Boolean value stating whether<br>&nbsp;&nbsp;&nbsp;&nbsp;or not the bot is rate-limited</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Lines: Show sourcecode statistics.</h3>
-            <p style="display:none">Usage: -lines<br>Aliases: -cloc, -code, codeinfo<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Gives lines, characters, imports, functions,<br>&nbsp;&nbsp;&nbsp;&nbsp;classes, comments, and files in the source code</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Neofetch: Run the neofetch command.</h3>
-            <p style="display:none">Usage: -neofetch<br>Output: Some stats on the bot's server</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Overview: Show some info on the bot's purpose.</h3>
-            <p style="display:none">Usage:  -overview<br>Alias:  -boss, botowner<br>Output: Me and my purpose</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Ping: Test the bot's response latency.</h3>
-            <p style="display:none">Usage: -ping<br>Aliases: -latency, -response<br>Output: Bot latency statistics.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Use -speed and the bot will attempt<br>&nbsp;&nbsp;&nbsp;&nbsp;to run an internet speedtest. May fail.</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Request: Send a request to the developer.</h3>
-            <p style="display:none">Usage: -request &lt;request content&gt;<br>Alias: -contact<br>Examples: -suggest Hello! I request...<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Confirmation that your request has been sent.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;This command must be used in DMs for privacy</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Sharedservers: Servers you and the bot share.</h3>
-            <p style="display:none">Usage: -sharedservers [member]<br>Output: The servers that the passed member share with the bot<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Will default to youself if no member is passed</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Source: Display the source code.</h3>
-            <p style="display:none">Usage: -source [command]<br>Alias: -sourcecode<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;If no command is specified, shows full repository</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Speed: Bot network speed.</h3>
-            <p style="display:none">Usage: -speed<br>Aliases:<br>&nbsp;&nbsp;&nbsp;&nbsp;-speedtest, -network, -speed,<br>&nbsp;&nbsp;&nbsp;&nbsp;-wifi, -download, -upload<br>Output: Internet speed statistics<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;The speedtest takes around 30 seconds<br>&nbsp;&nbsp;&nbsp;&nbsp;to complete. Please be patient. This<br>&nbsp;&nbsp;&nbsp;&nbsp;command is heavily rate limited.</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Suggest: Send a suggestion to the developer.</h3>
-            <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp;-suggest &lt;report&gt;<br>Aliases:  -suggestion<br>Examples: -suggest Hello! You should add this feature...<br>Output:   Confirmation that your suggestion has been sent.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Do not hesitate to use this command,<br>&nbsp;&nbsp;&nbsp;&nbsp;your feedback is valued immensly.<br>&nbsp;&nbsp;&nbsp;&nbsp;However, please be detailed and concise.</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Support: Join my support server!</h3>
-            <p style="display:none">Usage: -support<br>Aliases: -sup, -assist, -assistance<br>Output: An invite link to my support server</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Uptime: Show the bot's uptime.</h3>
-            <p style="display:none">Usage: -uptime<br>Alias: -runtime<br>Output: Time since last boot.</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Users: Shows all users I'm connected to.</h3>
-            <p style="display:none">Usage: -users<br>Output: Detailed information on my user stats</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        {% endblock %}
+<script src="{{ url_for('static', filename='js/docs.js')}}" type="text/javascript">
+</script>
+<div class="helpbox">
+    <h3>
+        <b>
+            About:
+        </b>
+        Display information about the bot.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -about
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -info, -bot, -botstats, -botinfo, -ab
+        <br>
+        <b>
+            Output:
+        </b>
+        Version info and bot stats
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Avgping:
+        </b>
+        View the average message latency.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -avgping
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -averageping -avglat -avglatency
+        <br>
+        <b>
+            Output:
+        </b>
+        Shows the average message latency over the past 500 messages sent.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Botadmins:
+        </b>
+        Show the bot's admins.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -botadmins
+        <br>
+        <b>
+            Alias:
+        </b>
+        -badmins
+        <br>
+        <b>
+            Output:
+        </b>
+        An embed of all the current bot admins
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Botowners:
+        </b>
+        Show the bot's owners.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -botowners
+        <br>
+        <b>
+            Alias:
+        </b>
+        -owners
+        <br>
+        <b>
+            Output:
+        </b>
+        An embed of the bot's owners
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Bugreport:
+        </b>
+        Send a bugreport to the developer.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -bugreport &lt;report&gt;
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -issuereport, -reportbug, -reportissue
+        <br>
+        <b>
+            Examples:
+        </b>
+        -bugreport Hello! I found a bug with this command...
+        <br>
+        <b>
+            Output:
+        </b>
+        Confirmation that your bug report has been sent.
+        <br>
+        <b>
+            Notes:
+        </b>
+        Do not hesitate to use this command, but please be very specific when describing the bug so that the developer may easily see the issue and correct it as soon as possible.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Changelog:
+        </b>
+        Show my changelog.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -changelog
+        <br>
+        <b>
+            Output:
+        </b>
+        My changelog
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Cogs:
+        </b>
+        List all current cogs.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -cogs
+        <br>
+        <b>
+            Output:
+        </b>
+        An embed of all my current cogs
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Github:
+        </b>
+        Github commit history.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -github
+        <br>
+        <b>
+            Alias:
+        </b>
+        -updates
+        <br>
+        <b>
+            Output:
+        </b>
+        Shows an embed of the last 5 github commits
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Hostinfo:
+        </b>
+        Show the host environment.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -hostinfo
+        <br>
+        <b>
+            Output:
+        </b>
+        Detailed information on the bot's host environment
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Invite:
+        </b>
+        Invite me to your server!
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -invite
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -bi, -botinvite
+        <br>
+        <b>
+            Output:
+        </b>
+        A selection of invite links to invite me to your server
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Lines:
+        </b>
+        Show sourcecode statistics.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -lines
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -cloc, -code, -codeinfo
+        <br>
+        <b>
+            Output:
+        </b>
+        Gives the linecount, characters, imports, functions, classes, comments, and files within the source code.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Neofetch:
+        </b>
+        Run the neofetch command.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -neofetch
+        <br>
+        <b>
+            Alias:
+        </b>
+        -nf
+        <br>
+        <b>
+            Output:
+        </b>
+        Some stats on the bot's server
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Overview:
+        </b>
+        Show some info on the bot's purpose.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -overview
+        <br>
+        <b>
+            Alias:
+        </b>
+        -purpose
+        <br>
+        <b>
+            Output:
+        </b>
+        Me and my purpose
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Ping:
+        </b>
+        Test the bot's response latency.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -ping
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -latency, -response
+        <br>
+        <b>
+            Output:
+        </b>
+        Bot latency statistics.
+        <br>
+        <b>
+            Notes:
+        </b>
+        Use -speed and the bot will attempt to run an internet speedtest. May fail.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Privacy:
+        </b>
+        View the privacy policy.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -privacy
+        <br>
+        <b>
+            Alias:
+        </b>
+        -policy
+        <br>
+        <b>
+            Output:
+        </b>
+        Details on terms of use and privacy regarding the bot and its database.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Replytime:
+        </b>
+        Show reply latencies.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -replytime
+        <br>
+        <b>
+            Output:
+        </b>
+        Shows 3 times showing the discrepancy between timestamps.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Sharedservers:
+        </b>
+        Show servers shared with the bot.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -sharedservers [user]
+        <br>
+        <b>
+            Alias:
+        </b>
+        -shared
+        <br>
+        <b>
+            Output:
+        </b>
+        Counts the servers in common between the user passed and the bot.
+        <br>
+        <b>
+            Notes:
+        </b>
+        Will default to youself if no user is passed
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Socket:
+        </b>
+        Show bot socket stats.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -socket
+        <br>
+        <b>
+            Alias:
+        </b>
+        -socketstats
+        <br>
+        <b>
+            Output:
+        </b>
+        Fetch information on the socket events received from Discord.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Source:
+        </b>
+        Display the source code.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -source [command]
+        <br>
+        <b>
+            Alias:
+        </b>
+        -sourcecode, -src
+        <br>
+        <b>
+            Notes:
+        </b>
+        If no command is specified, shows full repository
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Stats:
+        </b>
+        Display the bot's discord info.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -about
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -info, -bot, -botstats, -botinfo, -statistics
+        <br>
+        <b>
+            Output:
+        </b>
+        Version info and bot stats
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Suggest:
+        </b>
+        Send a suggestion to the developer.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -suggest &lt;report&gt;
+        <br>
+        <b>
+            Alias:
+        </b>
+        -suggestion
+        <br>
+        <b>
+            Examples:
+        </b>
+        -suggest Hello! You should add this feature...
+        <br>
+        <b>
+            Output:
+        </b>
+        Confirmation that your suggestion has been sent.
+        <br>
+        <b>
+            Notes:
+        </b>
+        Do not hesitate to use this command, your feedback is valued immensly. However, please be detailed and concise.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Support:
+        </b>
+        Join my support server!
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -support
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -sup, -assist, -assistance
+        <br>
+        <b>
+            Output:
+        </b>
+        An invite link to my support server
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Uptime:
+        </b>
+        Show the bot's uptime.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -uptime
+        <br>
+        <b>
+            Alias:
+        </b>
+        -runtime
+        <br>
+        <b>
+            Output:
+        </b>
+        Time since last boot.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Uptimeinfo:
+        </b>
+        Show a graph of uptime stats
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -uptimeinfo
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -percentuptime, -pieuptime, -pu
+        <br>
+        <b>
+            Output:
+        </b>
+        Shows a pie-chart graph of bot uptime across all time
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Users:
+        </b>
+        Show users I'm connected to.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -users
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -userstats, -usercount
+        <br>
+        <b>
+            Output:
+        </b>
+        Shows users and bots I'm connected to and percentages of unique and online members.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Vote:
+        </b>
+        Show your support by voting for me!
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -vote
+        <br>
+        <b>
+            Output:
+        </b>
+        A link to top.gg where you can vote to support me.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+{% endblock %}

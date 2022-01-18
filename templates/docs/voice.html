@@ -1,0 +1,287 @@
+
+{% extends 'docs.html' %}
+{% block title %}
+Neutra Docs: Voice
+{% endblock %}
+{% block body %}
+{{ super() }}
+<div class="container">
+    <div class="box">
+        <span>
+            <b>
+                Voice:
+            </b>
+            Module for voice permissions.
+        </span>
+    </div>
+    <div>
+        <button class="button" id="toggle">
+            <span class="button_text" id="label">
+                Expand All
+            </span>
+        </button>
+    </div>
+</div>
+<script src="{{ url_for('static', filename='js/docs.js')}}" type="text/javascript">
+</script>
+<div class="helpbox">
+    <h3>
+        <b>
+            Djlock:
+        </b>
+        Lock the music module to DJs.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -djlock
+        <br>
+        <b>
+            Alias:
+        </b>
+        -musiclock
+        <br>
+        <b>
+            Output:
+        </b>
+        Locks the music module to DJs
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Djrole:
+        </b>
+        Manage the DJ role.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -djrole [option]
+        <br>
+        <b>
+            Alias:
+        </b>
+        -dj
+        <br>
+        <b>
+            Output:
+        </b>
+        Manages the server DJ role
+        <br>
+        <b>
+            Options:
+        </b>
+        - create # Creates the server DJ role - delete # Deletes the server DJ role
+        <br>
+        <b>
+            Notes:
+        </b>
+        This role, when added to users, gives users full control over the music module. Note that all users with the Move Members, Mute Members, and Deafen Members permission will always be DJs.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Djrole Create:
+        </b>
+        Create a DJ role.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -djrole create [role]
+        <br>
+        <b>
+            Alias:
+        </b>
+        -djrole make
+        <br>
+        <b>
+            Output:
+        </b>
+        Creates a DJ role
+        <br>
+        <b>
+            Notes:
+        </b>
+        If no role is specified, a new role named DJ will be automatically created by the bot.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Djrole Delete:
+        </b>
+        Delete the DJ role.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -djrole delete
+        <br>
+        <b>
+            Alias:
+        </b>
+        -djrole remove
+        <br>
+        <b>
+            Output:
+        </b>
+        Deletes the server DJ role
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Djs:
+        </b>
+        Show the server djs.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -djs
+        <br>
+        <b>
+            Output:
+        </b>
+        Show all the server music djs and their respective statuses.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Djunlock:
+        </b>
+        Unlock the music module.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -djunlock
+        <br>
+        <b>
+            Alias:
+        </b>
+        -musicunlock
+        <br>
+        <b>
+            Output:
+        </b>
+        Unlocks the music module to all
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Vckick:
+        </b>
+        Kick users from a voice channel.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -vckick &lt;targets&gt;...
+        <br>
+        <b>
+            Output:
+        </b>
+        Kicks passed members from their channel
+        <br>
+        <b>
+            Permission:
+        </b>
+        Move Members
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Vcmove:
+        </b>
+        Move a user from a voice channel.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -vcmove &lt;targets&gt;... &lt;channel&gt;
+        <br>
+        <b>
+            Output:
+        </b>
+        Moves members into a new voice channel
+        <br>
+        <b>
+            Permission:
+        </b>
+        Move Members
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Vcpurge:
+        </b>
+        Kick all users from a voice channel.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -vcpurge &lt;voice channel&gt;
+        <br>
+        <b>
+            Output:
+        </b>
+        Kicks all members from the channel
+        <br>
+        <b>
+            Permission:
+        </b>
+        Move Members
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Vctransfer:
+        </b>
+        Transfer users into a new channel.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -vctransfer &lt;voice channel&gt; &lt;voice channel&gt;
+        <br>
+        <b>
+            Output:
+        </b>
+        Transfers all members from one channel to another
+        <br>
+        <b>
+            Permission:
+        </b>
+        Move Members
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+{% endblock %}

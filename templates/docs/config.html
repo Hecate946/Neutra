@@ -1,88 +1,367 @@
+
 {% extends 'docs.html' %}
-{% block title %}Neutra Docs: Config{% endblock %}
+{% block title %}
+Neutra Docs: Config
+{% endblock %}
 {% block body %}
 {{ super() }}
 <div class="container">
-<div class="box"><span><b>Config:</b> Configure the permission system.</span></div>
-<div><button id="toggle" class="button"><span id="label" class="button_text">Expand All</span></button></div>
+    <div class="box">
+        <span>
+            <b>
+                Config:
+            </b>
+            Configure the permission system.
+        </span>
+    </div>
+    <div>
+        <button class="button" id="toggle">
+            <span class="button_text" id="label">
+                Expand All
+            </span>
+        </button>
+    </div>
 </div>
-<script type="text/javascript" src="{{ url_for('static', filename='js/docs.js')}}"></script>
-
-        <div class="helpbox">
-            <h3>About: Display information about the bot.</h3>
-            <p style="display:none">Usage:  -about<br>Alias:  -info<br>Output: Version Information, Bot Statistics</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Botinvite: Invite me to your server!</h3>
-            <p style="display:none">Usage: -botinvite<br>Aliases: -bi, -invite<br>Output: An invite link to invite me to your server</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Bugreport: Send a bugreport to the developer.</h3>
-            <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp;-bugreport &lt;report&gt;<br>Aliases:  -issuereport, -reportbug, -reportissue<br>Examples: -bugreport Hello! I found a bug with Hypernova<br>Output:   Confirmation that your bug report has been sent.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Do not hesitate to use this command,<br>&nbsp;&nbsp;&nbsp;&nbsp;but please be very specific when describing the bug so<br>&nbsp;&nbsp;&nbsp;&nbsp;that the developer may easily see the issue and<br>&nbsp;&nbsp;&nbsp;&nbsp;correct it as soon as possible.</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Hostinfo: Show the bot's host environment.</h3>
-            <p style="display:none">Usage: -hostinfo<br>Output: Detailed information on the bot's host environment</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Overview: Show some info on the bot's purpose.</h3>
-            <p style="display:none">Usage:  -overview<br>Alias:  -boss, botowner<br>Output: Me and my purpose</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Ping: Test the bot's response latency.</h3>
-            <p style="display:none">Usage: -ping<br>Aliases: -latency, -response<br>Output: Bot latency statistics.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Use -speed and the bot will attempt<br>&nbsp;&nbsp;&nbsp;&nbsp;to run an internet speedtest. May fail.</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Sharedservers: Servers you and the bot share.</h3>
-            <p style="display:none">Usage: -sharedservers [member]<br>Output: The servers that the passed member share with the bot<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Will default to youself if no member is passed</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Source: Display the source code.</h3>
-            <p style="display:none">Usage: -source [command]<br>Alias: -sourcecode<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;If no command is specified, shows full repository</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Speed: Bot network speed.</h3>
-            <p style="display:none">Usage: -speed<br>Aliases:<br>&nbsp;&nbsp;&nbsp;&nbsp;-speedtest, -network, -speed,<br>&nbsp;&nbsp;&nbsp;&nbsp;-wifi, -download, -upload<br>Output: Internet speed statistics<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;The speedtest takes around 30 seconds<br>&nbsp;&nbsp;&nbsp;&nbsp;to complete. Please be patient. This<br>&nbsp;&nbsp;&nbsp;&nbsp;command is heavily rate limited.</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Suggest: Send a suggestion to the developer.</h3>
-            <p style="display:none">Usage:&nbsp;&nbsp;&nbsp;&nbsp;-suggest &lt;report&gt;<br>Aliases:  -suggestion<br>Examples: -suggest Hello! You should add this feature...<br>Output:   Confirmation that your suggestion has been sent.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Do not hesitate to use this command,<br>&nbsp;&nbsp;&nbsp;&nbsp;your feedback is valued immensly.<br>&nbsp;&nbsp;&nbsp;&nbsp;However, please be detailed and concise.</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Support: Join my support server!</h3>
-            <p style="display:none">Usage: -support<br>Aliases: -sup, -assist, -assistance<br>Output: An invite link to my support server</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Uptime: Show the bot's uptime.</h3>
-            <p style="display:none">Usage:  -uptime<br>Alias:  -runtime<br>Output: Time since last reboot.</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Users: Shows all users I'm connected to.</h3>
-            <p style="display:none">Usage: -users<br>Output: Detailed information on my user stats</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        {% endblock %}
+<script src="{{ url_for('static', filename='js/docs.js')}}" type="text/javascript">
+</script>
+<div class="helpbox">
+    <h3>
+        <b>
+            Disable:
+        </b>
+        Disable commands for users, roles, and channels.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -disable [entity] &lt;commands&gt;
+        <br>
+        <b>
+            Permission:
+        </b>
+        Manage Server
+        <br>
+        <b>
+            Output:
+        </b>
+        Prevents specific commands from being run in channels, by users, or by any user with a given role.
+        <br>
+        <b>
+            Notes:
+        </b>
+        If no 'entity' is specified, the command will be disabled for the whole server. Users with Manage Server can still use the bot, regardless of whether or not a command has been disabled. Use -disable all as a shorthand to disable all commands.
+        <br>
+        <b>
+            Explanation:
+        </b>
+        If channels are passed, any commands passed will not be available to users inside that channel. If roles are passed, any user with that role will not be able to execute the passed commands in all channels in the server. If a user is passed, they will not be able to run any passed commands inside of the server.
+        <br>
+        <b>
+            Subcommands:
+        </b>
+        -disable list # List all the disabled commands. -disable clear # Unignore all entities.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Disable Clear:
+        </b>
+        Clear the disabled command list.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -disable clear
+        <br>
+        <b>
+            Permission:
+        </b>
+        Manage Server
+        <br>
+        <b>
+            Output:
+        </b>
+        Enables all the disabled commands for channels, roles and users.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Disable List:
+        </b>
+        Show disabled channels, roles, and users.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -disable list [entity] [dm]
+        <br>
+        <b>
+            Permission:
+        </b>
+        Manage Server
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Enable:
+        </b>
+        Enable commands for users, roles, and channels.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -enable [entity] &lt;commands...&gt;
+        <br>
+        <b>
+            Permission:
+        </b>
+        Manage Server
+        <br>
+        <b>
+            Output:
+        </b>
+        Prevents specific commands from being run in channels, by users, or by any user with a given role.
+        <br>
+        <b>
+            Notes:
+        </b>
+        If no 'entity' is specified, the command will be enabled across the whole server. Users with Manage Server can still use the bot, regardless of whether or not a command has been disabled. Use -disable all as a shorthand to disable all commands.
+        <br>
+        <b>
+            Explanation:
+        </b>
+        If channels are passed, any commands passed will not be available to users inside that channel. If roles are passed, any user with that role will not be able to execute the passed commands in all channels in the server. If a user is passed, they will not be able to run any passed commands inside of the server.
+        <br>
+        <b>
+            Subcommands:
+        </b>
+        -disable list # List all the disabled commands. -disable clear # Unignore all entities.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Enable All:
+        </b>
+        Enable all disabled commands
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -enable all
+        <br>
+        <b>
+            Permission:
+        </b>
+        Manage Server
+        <br>
+        <b>
+            Output:
+        </b>
+        Enables all the disabled commands for channels, roles and users.
+        <br>
+        <b>
+            Notes:
+        </b>
+        Alias for -disable clear
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Ignore:
+        </b>
+        Ignore channels, roles, and users.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -ignore [entities...]
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -restrict, -plonk
+        <br>
+        <b>
+            Permission:
+        </b>
+        Manage Server
+        <br>
+        <b>
+            Output:
+        </b>
+        Prevents commands from being run in channels, by users, or by any user with a given role.
+        <br>
+        <b>
+            Notes:
+        </b>
+        Users with Manage Server can still use the bot, regardless of whether or not they've been ignored. Use -ignore all as a shorthand to ignore everyone.
+        <br>
+        <b>
+            Explanation:
+        </b>
+        If channels are passed, no commands will be available to users inside that channel If roles are passed, any user with that role will not be able to execute commands in all channels in the server. If a user is passed, they will not be able to run any commands inside of the server.
+        <br>
+        <b>
+            Subcommands:
+        </b>
+        -ignore list # List all the ignored entities. -ignore all # Shortcut for -ignore @everyone. -ignore clear # Unignore all entities.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Ignore All:
+        </b>
+        Ignore all server users.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -ignore all
+        <br>
+        <b>
+            Permission:
+        </b>
+        Manage Server
+        <br>
+        <b>
+            Output:
+        </b>
+        Ignores every single user in the server without the Manage Server permission
+        <br>
+        <b>
+            Notes:
+        </b>
+        Shortcut for -ignore @everyone Useful for not mentioning @everyone
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Ignore Clear:
+        </b>
+        Clear the ignore list.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -ignore clear
+        <br>
+        <b>
+            Permission:
+        </b>
+        Manage Server
+        <br>
+        <b>
+            Output:
+        </b>
+        Removes all entities from the ignored list of objects.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Ignore List:
+        </b>
+        Show all ignored objects.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -ignore list Permission Manage Server
+        <br>
+        <b>
+            Output:
+        </b>
+        Shows all ignored users, roles, and channels in the server
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Unignore:
+        </b>
+        Unignore channels, users, and roles.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -unignore [entities...]
+        <br>
+        <b>
+            Alias:
+        </b>
+        -unplonk, -unrestrict
+        <br>
+        <b>
+            Permission:
+        </b>
+        Manage Server
+        <br>
+        <b>
+            Output:
+        </b>
+        Allows channels, users, or roles to run bot commands again.
+        <br>
+        <b>
+            Subcommands:
+        </b>
+        all # Unignore all previous entities.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Unignore All:
+        </b>
+        Unignore all users, roles, and channels
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -unignore all
+        <br>
+        <b>
+            Permission:
+        </b>
+        Manage Server
+        <br>
+        <b>
+            Output:
+        </b>
+        Unignores all users, roles, and channels that were ignored.
+        <br>
+        <b>
+            Notes:
+        </b>
+        An alias for -ignore clear
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+{% endblock %}

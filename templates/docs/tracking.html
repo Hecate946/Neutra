@@ -1,113 +1,712 @@
+
 {% extends 'docs.html' %}
-{% block title %}Neutra Docs: Tracking{% endblock %}
+{% block title %}
+Neutra Docs: Tracking
+{% endblock %}
 {% block body %}
 {{ super() }}
 <div class="container">
-<div class="box"><span><b>Stats:</b> Module for user statistics.</span></div>
-<div><button id="toggle" class="button"><span id="label" class="button_text">Expand All</span></button></div>
+    <div class="box">
+        <span>
+            <b>
+                Tracking:
+            </b>
+            Module for user statistics
+        </span>
+    </div>
+    <div>
+        <button class="button" id="toggle">
+            <span class="button_text" id="label">
+                Expand All
+            </span>
+        </button>
+    </div>
 </div>
-<script type="text/javascript" src="{{ url_for('static', filename='js/docs.js')}}"></script>
-
-
-        <div class="helpbox">
-            <h3>Activity: Show the most active server users.</h3>
-            <p style="display:none">Usage: -activity [unit of time]<br>Output: Top message senders in the server<br>Permission: Manage Messages</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Avatars: Show a user's avatars.</h3>
-            <p style="display:none">Usage: -avatars [user]<br>Alias: -avs<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;Embed of the past 16 avatars<br>&nbsp;&nbsp;&nbsp;&nbsp;A user has had<br>Permission: Manage Messages<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Will default to yourself if no user is passed</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Commands: Count the commands run.</h3>
-            <p style="display:none">Usage:  -commands [user]<br>Output: Command count for the user or server<br>Permission: Manage Messages<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;If no user is passed, will show total server commands</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Commandstats: Bot commands listed by popularity.</h3>
-            <p style="display:none">Usage: -commandstats [user] [limit]<br>Output: Most popular commands<br>Permission: Manage Messages</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Messagecount: Count the messages a user sent.</h3>
-            <p style="display:none">Usage:  -messagecount [user]<br>Alias:  -mc<br>Output: Shows how many messages a user has sent on the server.<br>Permission: Manage Messages<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Will default to yourself if no user is passed.</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Messagestats: Show the top message senders.</h3>
-            <p style="display:none">Usage: -messagestats<br>Alias: -top<br>Output: Top message senders in the server<br>Permission: Manage Messages</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Names: Show a user's usernames.</h3>
-            <p style="display:none">Usage: -names [user]<br>Alias: -usernames<br>Output: Embed of all user's names.<br>Permission: Manage Messages<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Will default to yourself if no user is passed</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Nicks: Show a user's nicknames.</h3>
-            <p style="display:none">Usage: -nicks [user]<br>Alias: -nicknames<br>Output: Embed of all user's nicknames.<br>Permission: Manage Messages<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Will default to yourself if no user is passed</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Platform: Show which platform a user is on.</h3>
-            <p style="display:none">Usage:  -mobile &lt;member&gt; [member] [member]...<br>Alias:  -platform<br>Output: Shows whether a user is on desktop or mobile.<br>Notes:  Cannot determine platform when users are offline.</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Seen: Check when a user was last seen.</h3>
-            <p style="display:none">Usage:  -seen [user]<br>Alias:  -lastseen, -track, -tracker<br>Output: Get when a user was last observed on discord.<br>Permission: Manage Messages<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;User can be a mention, user id, or full discord<br>&nbsp;&nbsp;&nbsp;&nbsp;username with discrim Username#0001.<br>&nbsp;&nbsp;&nbsp;&nbsp;Will default to yourself if no user is passed</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Spammers: Show all users who spam.</h3>
-            <p style="display:none">Usage: -spammers<br>Permission: Manage Messages<br>Output: Users recorded spamming</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Status: Show a user's status</h3>
-            <p style="display:none">Usage: -status &lt;member&gt;</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Statusinfo: Status info and online time.</h3>
-            <p style="display:none">Usage: -statusinfo &lt;user&gt;<br>Output:<br>&nbsp;&nbsp;&nbsp;&nbsp;A pie chart graph with details<br>&nbsp;&nbsp;&nbsp;&nbsp;of the passed user's status<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Will default to yourself<br>&nbsp;&nbsp;&nbsp;&nbsp;if no user is passed.</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Usage: Show the top bot users.</h3>
-            <p style="display:none">Usage: -usage [unit of time]<br>ALias: -botusage<br>Output: Top bot users in the server<br>Permission: Manage Messages</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>User: Show information on a user.</h3>
-            <p style="display:none">Usage:   -user &lt;user&gt;<br>Alias:   -lookup<br>Example: -user 810377376269205546<br>Output:  General information on any discord user.<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Accepts nickname, ID, mention, username, and username+discrim<br>&nbsp;&nbsp;&nbsp;&nbsp;Neither you nor the bot must share a server with the user.</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Word: Usage for a specific word.</h3>
-            <p style="display:none">Usage: -word &lt;word&gt; [user]<br>Output: Number of times a word has been used by a user<br>Permission: Manage Messages<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Will default to you if no user is passed.</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        
-        <div class="helpbox">
-            <h3>Words: Most used words from a user.</h3>
-            <p style="display:none">Usage: -words [user]<br>Output: Most commonly used words by the passed user<br>Permission: Manage Messages<br>Notes:<br>&nbsp;&nbsp;&nbsp;&nbsp;Will default to yourself if no user is passed.</p>
-            <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-        </div>
-        {% endblock %}
+<script src="{{ url_for('static', filename='js/docs.js')}}" type="text/javascript">
+</script>
+<div class="helpbox">
+    <h3>
+        <b>
+            Activity:
+        </b>
+        Show the most active users.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -activity [unit of time]
+        <br>
+        <b>
+            Permission:
+        </b>
+        Manage Messages
+        <br>
+        <b>
+            Output:
+        </b>
+        Shows the most active server users ordered by the number of messages they've sent.
+        <br>
+        <b>
+            Notes:
+        </b>
+        If no unit of time is specified, of if the unit is invalid, the bot will default to month for its unit.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Avatars:
+        </b>
+        Show past user avatars.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -avatars [user]
+        <br>
+        <b>
+            Alias:
+        </b>
+        -avs, -avhistory -avatarhistory
+        <br>
+        <b>
+            Output:
+        </b>
+        Shows an embed containing up to the 16 last avatars of a user.
+        <br>
+        <b>
+            Permission:
+        </b>
+        View Audit Log
+        <br>
+        <b>
+            Notes:
+        </b>
+        Will default to you if no user is passed.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Barstatus:
+        </b>
+        Status info in a bar graph.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -barstatus [user]
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -bs -bstatus
+        <br>
+        <b>
+            Output:
+        </b>
+        Generates a bar graph showing a given user's status info.
+        <br>
+        <b>
+            Notes:
+        </b>
+        Will default to you if no user is explicitly specified
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Botusage:
+        </b>
+        Show the top bot users.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -botusage [unit of time]
+        <br>
+        <b>
+            Permission:
+        </b>
+        View Audit Log
+        <br>
+        <b>
+            Output:
+        </b>
+        Top bot users in the server
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Channelstats:
+        </b>
+        Show channel activity.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -channelstats [since]
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -cstats, -chanstats
+        <br>
+        <b>
+            Permission:
+        </b>
+        Manage Messages
+        <br>
+        <b>
+            Output:
+        </b>
+        Shows the most active server channels ordered by the number of messages sent in them.
+        <br>
+        <b>
+            Notes:
+        </b>
+        If no unit of time is specified, of if the unit is invalid, the bot will default to one month for its unit.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Clocker:
+        </b>
+        Show days a user was active.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -clocker [user] [time]
+        <br>
+        <b>
+            Output:
+        </b>
+        Counts the days that a user has sent a message in the specified time period.
+        <br>
+        <b>
+            Notes:
+        </b>
+        If no time frame is specified, will default to 1 week.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Clocking:
+        </b>
+        Show all active users.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -clocking
+        <br>
+        <b>
+            Output:
+        </b>
+        Shows the number of days that a user sent at least one message in the server during the past month.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Commandcount:
+        </b>
+        Show a user's commands.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -commandcount [user]
+        <br>
+        <b>
+            Alias:
+        </b>
+        -cc
+        <br>
+        <b>
+            Output:
+        </b>
+        Command count for a specific user.
+        <br>
+        <b>
+            Notes:
+        </b>
+        If no user is passed, the bot will show total server commands.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Commandstats:
+        </b>
+        Bot commands listed by popularity.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -commandstats [user] [limit]
+        <br>
+        <b>
+            Alias:
+        </b>
+        -cs
+        <br>
+        <b>
+            Permission:
+        </b>
+        View Audit Log
+        <br>
+        <b>
+            Output:
+        </b>
+        Show the most popular commands in a pagination session.
+        <br>
+        <b>
+            Notes:
+        </b>
+        If no user is passed, the bot will show the most popular commands across the entire server. Specify a limit argument to control how many commands should be included (100 by default).
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Icons:
+        </b>
+        Show past server icons.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -icons
+        <br>
+        <b>
+            Alias:
+        </b>
+        -iconhistory
+        <br>
+        <b>
+            Output:
+        </b>
+        Shows an embed containing up to the 16 last icons of the server.
+        <br>
+        <b>
+            Permission:
+        </b>
+        View Audit Log
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Invited:
+        </b>
+        See who invited a user.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -invited [user]
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -inviter, -whoinvited
+        <br>
+        <b>
+            Permission:
+        </b>
+        View Audit Log
+        <br>
+        <b>
+            Output:
+        </b>
+        Show who invited the passed user.
+        <br>
+        <b>
+            Notes:
+        </b>
+        Will default to you if no user is passed.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Invites:
+        </b>
+        Count the invites of a user.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -invites [user]
+        <br>
+        <b>
+            Output:
+        </b>
+        Show how many users a user has invited.
+        <br>
+        <b>
+            Notes:
+        </b>
+        Will default to you if no user is passed.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Messagecount:
+        </b>
+        Count the messages a user sent.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -messagecount [user]
+        <br>
+        <b>
+            Alias:
+        </b>
+        -mc
+        <br>
+        <b>
+            Output:
+        </b>
+        Shows how many messages a user has sent on the server.
+        <br>
+        <b>
+            Permission:
+        </b>
+        Manage Messages
+        <br>
+        <b>
+            Notes:
+        </b>
+        Will default to yourself if no user is passed.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Messagestats:
+        </b>
+        Show message stats.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -messagestats [since]
+        <br>
+        <b>
+            Permission:
+        </b>
+        Manage Messages
+        <br>
+        <b>
+            Output:
+        </b>
+        Shows the most active server users ordered by the number of messages they've sent.
+        <br>
+        <b>
+            Notes:
+        </b>
+        If no unit of time is specified, of if the unit is invalid, the bot will default to month for its unit.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Nicknames:
+        </b>
+        Show a user's past nicknames.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -nicknames [user]
+        <br>
+        <b>
+            Alias:
+        </b>
+        -nicks, -usernicks
+        <br>
+        <b>
+            Permission:
+        </b>
+        View Audit Log
+        <br>
+        <b>
+            Output:
+        </b>
+        Shows an embed of all the passed user's nicknames (past and present).
+        <br>
+        <b>
+            Notes:
+        </b>
+        Will default to yourself if no user is passed
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Piestatus:
+        </b>
+        Status info in a piechart.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -statusinfo [user]
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -piestatus, -ps,
+        <br>
+        <b>
+            Output:
+        </b>
+        Show a pie chart graph with details of the passed user's status statistics.
+        <br>
+        <b>
+            Notes:
+        </b>
+        Will default to yourself if no user is passed.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Seen:
+        </b>
+        Check when a user was last seen.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -seen [user]
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -lastseen, -track, -tracker, -observed
+        <br>
+        <b>
+            Permission:
+        </b>
+        View Audit Log
+        <br>
+        <b>
+            Output:
+        </b>
+        Show how long its been since a user was last observed using discord.
+        <br>
+        <b>
+            Notes:
+        </b>
+        User can be a mention, user id, or full discord username with discrim Username#0001. Will default to you if no user is specified.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Spoke:
+        </b>
+        Check when a user last spoke.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -spoke [user]
+        <br>
+        <b>
+            Alias:
+        </b>
+        -lastspoke
+        <br>
+        <b>
+            Permission:
+        </b>
+        View Audit Log
+        <br>
+        <b>
+            Output:
+        </b>
+        Show how long its been since a user last sent a message tracked by the bot.
+        <br>
+        <b>
+            Notes:
+        </b>
+        User can be a mention, user id, or full discord username with discrim Username#0001. Will default to you if no user is specified.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Spokehere:
+        </b>
+        Check when a user last spoke here.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -spokehere [user]
+        <br>
+        <b>
+            Alias:
+        </b>
+        -lastspokehere
+        <br>
+        <b>
+            Permission:
+        </b>
+        View Audit Log
+        <br>
+        <b>
+            Output:
+        </b>
+        Show how long its been since a user last sent a message in the server.
+        <br>
+        <b>
+            Notes:
+        </b>
+        User can be a mention, user id, or full discord username with discrim Username#0001. Will default to you if no user is specified.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Top:
+        </b>
+        Show top message senders.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -top
+        <br>
+        <b>
+            Permission:
+        </b>
+        View Audit Log
+        <br>
+        <b>
+            Output:
+        </b>
+        Show top message senders in the server
+        <br>
+        <b>
+            Notes:
+        </b>
+        Specify the limit kwarg to adjust the number of members to include in the messagestats embed
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            User:
+        </b>
+        Show information on a user.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -user [user]
+        <br>
+        <b>
+            Alias:
+        </b>
+        -lookup
+        <br>
+        <b>
+            Output:
+        </b>
+        General information on any discord user.
+        <br>
+        <b>
+            Notes:
+        </b>
+        Accepts nickname, ID, mention, username, and username+discrim Neither you nor the bot must share a server with the passed user. Will default to you if no user is passed into the command.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Usernames:
+        </b>
+        Show a user's past usernames.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -usernames [user]
+        <br>
+        <b>
+            Alias:
+        </b>
+        -names
+        <br>
+        <b>
+            Output:
+        </b>
+        Shows an embed of all past and present usernames for the specified user.
+        <br>
+        <b>
+            Permission:
+        </b>
+        View Audit Log
+        <br>
+        <b>
+            Notes:
+        </b>
+        Will default to you if no user is passed.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+{% endblock %}

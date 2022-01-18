@@ -1,7 +1,7 @@
 
 {% extends 'docs.html' %}
 {% block title %}
-Neutra Docs: Logging
+Neutra Docs: Help
 {% endblock %}
 {% block body %}
 {{ super() }}
@@ -9,9 +9,9 @@ Neutra Docs: Logging
     <div class="box">
         <span>
             <b>
-                Logging:
+                Help:
             </b>
-            Manage the logging system
+            My extensive help category.
         </span>
     </div>
     <div>
@@ -27,430 +27,445 @@ Neutra Docs: Logging
 <div class="helpbox">
     <h3>
         <b>
-            Editsnipe:
+            Aliases:
         </b>
-        Snipe an edited message.
+        Show the aliases for a command
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -editsnipe [user]
+        -aliases &lt;command&gt;
         <br>
         <b>
             Alias:
         </b>
-        -editretrieve, -snipeedit, -retriveedit
+        -alias
         <br>
         <b>
             Output:
         </b>
-        Fetches an edited message
-        <br>
-        <b>
-            Notes:
-        </b>
-        Will fetch a messages sent by a specific user if specified
+        Shows all the aliases for a given command
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Find:
+            Botperms:
         </b>
-        Find any user using a search.
+        Check if the bot can run a command.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -find &lt;option&gt; &lt;search&gt;
+        -botperms &lt;command&gt;
         <br>
         <b>
-            Alias:
+            Aliases:
         </b>
-        -search
+        -bothasperms, -botpermissions, -bothaspermissions
         <br>
         <b>
             Output:
         </b>
-        Users matching your search.
+        Check which permissions the bot requires to run that command.
         <br>
+        <b>
+            Notes:
+        </b>
+        The emote will signify whether or not the bot has the permissions needed to run that command.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Brief:
+        </b>
+        Get the short description of a command.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -brief &lt;command&gt;
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -shortdocs, -shortdoc
+        <br>
+        <b>
+            Output:
+        </b>
+        The short description of the passed command
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Canrun:
+        </b>
+        See if a command can be executed.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -canrun &lt;command&gt;
+        <br>
+        <b>
+            Alias:
+        </b>
+        -checker
+        <br>
+        <b>
+            Output:
+        </b>
+        Tells you whether or not you have permission to run a command
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Category:
+        </b>
+        Show the parent category of a command.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -category &lt;command&gt;
+        <br>
+        <b>
+            Alias:
+        </b>
+        -cog &lt;command&gt;
+        <br>
+        <b>
+            Output:
+        </b>
+        Show the parent category (cog) of a passed command.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Commandinfo:
+        </b>
+        Get attribute info on a command.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -commandinfo &lt;command&gt;
+        <br>
+        <b>
+            Alias:
+        </b>
+        -cmdinfo
+        <br>
+        <b>
+            Output:
+        </b>
+        Specific command information
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Commandsearch:
+        </b>
+        Search for a command by name.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -commandsearch &lt;search&gt;
+        <br>
+        <b>
+            Alias:
+        </b>
+        -cmdsearch
+        <br>
+        <b>
+            Output:
+        </b>
+        Searches for the most similar commands based off a search query. Outputs the results in tabular format.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Cooldown:
+        </b>
+        Show the cooldown for a command.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -cooldown &lt;command&gt;
+        <br>
+        <b>
+            Output:
+        </b>
+        Show the cooldown for a command.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Docstring:
+        </b>
+        Get the help docstring of a command.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -docstring &lt;command&gt;
+        <br>
+        <b>
+            Alias:
+        </b>
+        -helpstr &lt;command&gt;
+        <br>
+        <b>
+            Output:
+        </b>
+        The long description of the passed command
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
         <b>
             Examples:
         </b>
-        -find name Hecate -find id 708584008065351681
-        <br>
-        <b>
-            Options:
-        </b>
-        duplicates hardmention hash
-        <br>
-        <b>
-            (Ex:
-        </b>
-        3523) nickname
-        <br>
-        <b>
-            (Ex:
-        </b>
-        Hecate) playing
-        <br>
-        <b>
-            (Ex:
-        </b>
-        Visual Studio Code) snowflake
-        <br>
-        <b>
-            (Ex:
-        </b>
-        708584008065351681) username
-        <br>
-        <b>
-            (Ex:
-        </b>
-        Hecate)
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Find Duplicates:
-        </b>
-        Find users with identical names.
+        Get specific examples for a command.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -find duplicates
+        -example &lt;command&gt;
         <br>
         <b>
             Alias:
         </b>
-        -find dups
+        -ex
         <br>
         <b>
             Output:
         </b>
-        Starts a pagination session showing all users who's nicknames are not unique on the server
+        Shows all possible command usages with aliases and valid arguments.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Find Hard:
+            Help:
         </b>
-        Find users with hard to mention names.
+        My documentation for all commands.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -find hard [--username]
+        -help [command/category] [pm = true]
+        <br>
+        <b>
+            Output:
+        </b>
+        Show documentation for all my commands.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Made:
+        </b>
+        Show when a command was first made.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -made &lt;command&gt;
         <br>
         <b>
             Alias:
         </b>
-        -find weird -find special -find hardmention
+        -implemented
         <br>
         <b>
             Output:
         </b>
-        Starts a pagination session showing all users who use special characters that make their name hard to mention
-        <br>
-        <b>
-            Notes:
-        </b>
-        Specify a username kwarg, as in -find hardmention --username to search for hard to mention usernames instead of nicknames.
+        Show exactly when a command was first added to the bot.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Find Hash:
+            Reqperms:
         </b>
-        Search for users by discriminator.
+        Check if you can run a command.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -find hash &lt;search&gt;
+        -authorperms &lt;command&gt;
         <br>
         <b>
             Aliases:
         </b>
-        -find discrim -find discriminator
+        -userperms, -userhasperms, -requiredperms, -userhaspermissions, -requiredpermissions
         <br>
         <b>
             Output:
         </b>
-        Starts a pagination session showing all users who's hash (discriminator) contain your search
+        Check which permissions the command user requires to run that command.
+        <br>
+        <b>
+            Notes:
+        </b>
+        The emote will signify whether or not you have permission to run that command.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Find Id:
+            Updated:
         </b>
-        Search for users by id.
+        Show when a command was last updated.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -find id &lt;search&gt;
+        -updated &lt;command&gt;
         <br>
         <b>
             Alias:
         </b>
-        -find snowflake
+        -changed
         <br>
         <b>
             Output:
         </b>
-        Starts a pagination session showing all users who's IDs contain your search.
+        Show exactly when a command was last updated by the owner.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Find Nicknames:
+            Usage:
         </b>
-        Search for users by nickname.
+        Get a usage example for a command.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -find nicknames &lt;search&gt;
+        -usage &lt;command&gt;
         <br>
         <b>
             Aliases:
         </b>
-        -find nicks -find nick -find nickname
+        -signature, -usage
         <br>
         <b>
             Output:
         </b>
-        A pagination session with all user's nicknames that match your search
+        The usage of a command
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Find Playing:
+            Where:
         </b>
-        Search for users by game.
+        Show where a command can be run.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -find playing &lt;search&gt;
+        -where &lt;command&gt;
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -dmonly -guildonly -serveronly
+        <br>
+        <b>
+            Output:
+        </b>
+        Show where a command can be run. Can either be exclusive to servers, restricted to bot-user DMs only, or available in both.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Writer:
+        </b>
+        Show who wrote a command.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -writer &lt;command&gt;
         <br>
         <b>
             Alias:
         </b>
-        -find status, -find activity
+        -whowrote &lt;command&gt;
         <br>
         <b>
             Output:
         </b>
-        All the users currently playing the specified activity
+        Show the developer who created a specific command.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Find Username:
+            Writers:
         </b>
-        Search for users by username.
+        Show all people who wrote for me.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -find username &lt;search&gt;
-        <br>
-        <b>
-            Aliases:
-        </b>
-        -find name -find user
+        -writers
         <br>
         <b>
             Output:
         </b>
-        A pagination session with all user's usernames that match your search
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Log:
-        </b>
-        Enable specific logging events.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -log [event or subcommand]
-        <br>
-        <b>
-            Permission:
-        </b>
-        Manage Server
-        <br>
-        <b>
-            Output:
-        </b>
-        Manages the server logging system
-        <br>
-        <b>
-            Notes:
-        </b>
-        use -log with no arguments to output the current logging configuration.
-        <br>
-        <b>
-            Events:
-        </b>
-        avatars channels emojis invites joins leaves messages moderation nicknames usernames roles server voice
-        <br>
-        <b>
-            Subcommands:
-        </b>
-        -log channel [channel] # Set up the server's logging -log disable # Remove the server's logging
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Logchannel:
-        </b>
-        Set your server's logging channel.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -logchannel [channel]
-        <br>
-        <b>
-            Aliases:
-        </b>
-        -logserver, -setlogchannel
-        <br>
-        <b>
-            Output:
-        </b>
-        Sets up a logging channel for the server
-        <br>
-        <b>
-            Notes:
-        </b>
-        Use -log [event] and -unlog [event] to enable/disable specific logging events that are sent to the logchannel
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Snipe:
-        </b>
-        Snipe a deleted message.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -snipe [user]
-        <br>
-        <b>
-            Alias:
-        </b>
-        -retrieve
-        <br>
-        <b>
-            Output:
-        </b>
-        Fetches a deleted message
-        <br>
-        <b>
-            Notes:
-        </b>
-        Will fetch a messages sent by a specific user if specified
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Unlog:
-        </b>
-        Disable specific logging events.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -unlog [event]
-        <br>
-        <b>
-            Permission:
-        </b>
-        Manage Server
-        <br>
-        <b>
-            Output:
-        </b>
-        Stop logging a specific event.
-        <br>
-        <b>
-            Notes:
-        </b>
-        Use -log disable to teardown the server's logging system.
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Unlogchannel:
-        </b>
-        Remove the server logging channel.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -unlogchannel
-        <br>
-        <b>
-            Aliases:
-        </b>
-        -unlogserver
-        <br>
-        <b>
-            Output:
-        </b>
-        Removes the server's logging channel
-        <br>
-        <b>
-            Notes:
-        </b>
-        Use -log [event] and -unlog [event] to enable/disable specific logging events that are sent to the logchannel
+        Show all the developers who created commands for me.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>

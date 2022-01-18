@@ -1,7 +1,7 @@
 
 {% extends 'docs.html' %}
 {% block title %}
-Neutra Docs: Logging
+Neutra Docs: Player
 {% endblock %}
 {% block body %}
 {{ super() }}
@@ -9,9 +9,9 @@ Neutra Docs: Logging
     <div class="box">
         <span>
             <b>
-                Logging:
+                Player:
             </b>
-            Manage the logging system
+            Module for playing audio.
         </span>
     </div>
     <div>
@@ -27,430 +27,465 @@ Neutra Docs: Logging
 <div class="helpbox">
     <h3>
         <b>
-            Editsnipe:
+            Connect:
         </b>
-        Snipe an edited message.
+        Connect to a channel.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -editsnipe [user]
+        -connect [channel]
         <br>
         <b>
             Alias:
         </b>
-        -editretrieve, -snipeedit, -retriveedit
+        -join
         <br>
         <b>
             Output:
         </b>
-        Fetches an edited message
+        Connects to a specified voice or stage channel.
         <br>
         <b>
             Notes:
         </b>
-        Will fetch a messages sent by a specific user if specified
+        If you do not specify a channel, the bot will join your current channel. (If it exists) If the bot is currently active in another channel, you must have DJ perms for the command to function properly.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Find:
+            Current:
         </b>
-        Find any user using a search.
+        Show track info.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -find &lt;option&gt; &lt;search&gt;
-        <br>
-        <b>
-            Alias:
-        </b>
-        -search
-        <br>
-        <b>
-            Output:
-        </b>
-        Users matching your search.
-        <br>
-        <b>
-            Examples:
-        </b>
-        -find name Hecate -find id 708584008065351681
-        <br>
-        <b>
-            Options:
-        </b>
-        duplicates hardmention hash
-        <br>
-        <b>
-            (Ex:
-        </b>
-        3523) nickname
-        <br>
-        <b>
-            (Ex:
-        </b>
-        Hecate) playing
-        <br>
-        <b>
-            (Ex:
-        </b>
-        Visual Studio Code) snowflake
-        <br>
-        <b>
-            (Ex:
-        </b>
-        708584008065351681) username
-        <br>
-        <b>
-            (Ex:
-        </b>
-        Hecate)
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Find Duplicates:
-        </b>
-        Find users with identical names.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -find duplicates
-        <br>
-        <b>
-            Alias:
-        </b>
-        -find dups
-        <br>
-        <b>
-            Output:
-        </b>
-        Starts a pagination session showing all users who's nicknames are not unique on the server
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Find Hard:
-        </b>
-        Find users with hard to mention names.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -find hard [--username]
-        <br>
-        <b>
-            Alias:
-        </b>
-        -find weird -find special -find hardmention
-        <br>
-        <b>
-            Output:
-        </b>
-        Starts a pagination session showing all users who use special characters that make their name hard to mention
-        <br>
-        <b>
-            Notes:
-        </b>
-        Specify a username kwarg, as in -find hardmention --username to search for hard to mention usernames instead of nicknames.
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Find Hash:
-        </b>
-        Search for users by discriminator.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -find hash &lt;search&gt;
+        -current
         <br>
         <b>
             Aliases:
         </b>
-        -find discrim -find discriminator
+        -now, -np, -current, -nowplaying
         <br>
         <b>
             Output:
         </b>
-        Starts a pagination session showing all users who's hash (discriminator) contain your search
+        Displays the currently playing song.
+        <br>
+        <b>
+            Notes:
+        </b>
+        Will fall back to sending a codeblock if the bot does not have the Embed Links permission. A progress bar will be included if the bot has the Attach Files permission.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Find Id:
+            Disconnect:
         </b>
-        Search for users by id.
+        Disconnects from a channel.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -find id &lt;search&gt;
+        -leave
         <br>
         <b>
             Alias:
         </b>
-        -find snowflake
+        -dc, -disconnect
         <br>
         <b>
             Output:
         </b>
-        Starts a pagination session showing all users who's IDs contain your search.
+        Clears the queue and leaves the voice or stage channel.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Find Nicknames:
+            Fastforward:
         </b>
-        Search for users by nickname.
+        Fast forward the track.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -find nicknames &lt;search&gt;
-        <br>
-        <b>
-            Aliases:
-        </b>
-        -find nicks -find nick -find nickname
-        <br>
-        <b>
-            Output:
-        </b>
-        A pagination session with all user's nicknames that match your search
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Find Playing:
-        </b>
-        Search for users by game.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -find playing &lt;search&gt;
+        -fastforward [seconds]
         <br>
         <b>
             Alias:
         </b>
-        -find status, -find activity
+        -ff
         <br>
         <b>
             Output:
         </b>
-        All the users currently playing the specified activity
+        Fast forward a certain number of seconds in a song.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Find Username:
+            Pause:
         </b>
-        Search for users by username.
+        Pause the track.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -find username &lt;search&gt;
-        <br>
-        <b>
-            Aliases:
-        </b>
-        -find name -find user
-        <br>
-        <b>
-            Output:
-        </b>
-        A pagination session with all user's usernames that match your search
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Log:
-        </b>
-        Enable specific logging events.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -log [event or subcommand]
-        <br>
-        <b>
-            Permission:
-        </b>
-        Manage Server
-        <br>
-        <b>
-            Output:
-        </b>
-        Manages the server logging system
-        <br>
-        <b>
-            Notes:
-        </b>
-        use -log with no arguments to output the current logging configuration.
-        <br>
-        <b>
-            Events:
-        </b>
-        avatars channels emojis invites joins leaves messages moderation nicknames usernames roles server voice
-        <br>
-        <b>
-            Subcommands:
-        </b>
-        -log channel [channel] # Set up the server's logging -log disable # Remove the server's logging
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Logchannel:
-        </b>
-        Set your server's logging channel.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -logchannel [channel]
-        <br>
-        <b>
-            Aliases:
-        </b>
-        -logserver, -setlogchannel
-        <br>
-        <b>
-            Output:
-        </b>
-        Sets up a logging channel for the server
-        <br>
-        <b>
-            Notes:
-        </b>
-        Use -log [event] and -unlog [event] to enable/disable specific logging events that are sent to the logchannel
-    </p>
-    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
-</div>
-<div class="helpbox">
-    <h3>
-        <b>
-            Snipe:
-        </b>
-        Snipe a deleted message.
-    </h3>
-    <p style="display:none">
-        <b>
-            Usage:
-        </b>
-        -snipe [user]
+        -pause
         <br>
         <b>
             Alias:
         </b>
-        -retrieve
+        -halt
         <br>
         <b>
             Output:
         </b>
-        Fetches a deleted message
+        Pauses the current track.
         <br>
         <b>
             Notes:
         </b>
-        Will fetch a messages sent by a specific user if specified
+        To resume playback, use the -resume command or invoke the -play command with no arguments.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Unlog:
+            Play:
         </b>
-        Disable specific logging events.
+        Play a track from a search.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -unlog [event]
+        -play &lt;search&gt;
         <br>
         <b>
-            Permission:
+            Alias:
         </b>
-        Manage Server
+        -p, -enqueue
         <br>
         <b>
             Output:
         </b>
-        Stop logging a specific event.
+        Plays a track from your search.
         <br>
         <b>
             Notes:
         </b>
-        Use -log disable to teardown the server's logging system.
+        If there are tracks in the queue, this will be queued until the other tracks finished playing. This command automatically searches youtube if no url is provided. Accepts spotify and youtube urls.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
 <div class="helpbox">
     <h3>
         <b>
-            Unlogchannel:
+            Playnext:
         </b>
-        Remove the server logging channel.
+        Front queue a track.
     </h3>
     <p style="display:none">
         <b>
             Usage:
         </b>
-        -unlogchannel
+        -playnext &lt;search&gt;
+        <br>
+        <b>
+            Alias:
+        </b>
+        -frontqueue, -pn
+        <br>
+        <b>
+            Output:
+        </b>
+        Plays a track from your selection.
+        <br>
+        <b>
+            Notes:
+        </b>
+        If there are tracks in the queue, this will be queued before all other tracks in the queue. If the track you select is a playlist, all tracks in the playlist will be placed ahead of the previously queued tracks.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Position:
+        </b>
+        Show the track position.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -position
+        <br>
+        <b>
+            Alias:
+        </b>
+        -pos
+        <br>
+        <b>
+            Output:
+        </b>
+        Shows the current position of the song.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Replay:
+        </b>
+        Play the previous track.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -replay
+        <br>
+        <b>
+            Alias:
+        </b>
+        -again
+        <br>
+        <b>
+            Output:
+        </b>
+        Add the previous song to the beginning of the track queue.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Resume:
+        </b>
+        Resume the track.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -resume
+        <br>
+        <b>
+            Alias:
+        </b>
+        -unpause
+        <br>
+        <b>
+            Output:
+        </b>
+        Resumes playback paused by the -pause command.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Rewind:
+        </b>
+        Rewind the track.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -rewind [seconds]
+        <br>
+        <b>
+            Alias:
+        </b>
+        -rw
+        <br>
+        <b>
+            Output:
+        </b>
+        Rewind a certain number of seconds in a song.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Save:
+        </b>
+        Save a song to your liked songs.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -save
         <br>
         <b>
             Aliases:
         </b>
-        -unlogserver
+        -like
         <br>
         <b>
             Output:
         </b>
-        Removes the server's logging channel
+        Sends info and saves the current track
         <br>
         <b>
             Notes:
         </b>
-        Use -log [event] and -unlog [event] to enable/disable specific logging events that are sent to the logchannel
+        Will attempt to DM you the info and fall back to sending track information to the current channel. Saving songs with this command will add songs to your "Liked Songs" which can be played using the playliked command.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Seek:
+        </b>
+        Seek to a position in the track.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -seek [time]
+        <br>
+        <b>
+            Output:
+        </b>
+        Seeks to a certain position in the track
+        <br>
+        <b>
+            Notes:
+        </b>
+        The position must be given in seconds.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Skip:
+        </b>
+        Skip the track.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -skip
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -s, -fs, -vs, -next -voteskip, -forceskip
+        <br>
+        <b>
+            Output:
+        </b>
+        Vote to skip a song.
+        <br>
+        <b>
+            Notes:
+        </b>
+        The song requester and those with the Manage Server permission can automatically skip Otherwise half the listeners neet to vote skip for the song to be skipped.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Stop:
+        </b>
+        Stop track and clear the queue.
+    </h3>
+    <p style="display:none">
+        <b>
+            -Usage:
+        </b>
+        -stop
+        <br>
+        <b>
+            Output:
+        </b>
+        Stops playing song and clears the queue.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Trackinfo:
+        </b>
+        Show track info.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -trackinfo
+        <br>
+        <b>
+            Aliases:
+        </b>
+        -now, -np, -current, -nowplaying
+        <br>
+        <b>
+            Output:
+        </b>
+        Displays the currently playing song.
+        <br>
+        <b>
+            Notes:
+        </b>
+        Will fall back to sending a codeblock if the bot does not have the Embed Links permission. A progress bar will be included if the bot has the Attach Files permission.
+    </p>
+    <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
+</div>
+<div class="helpbox">
+    <h3>
+        <b>
+            Youtube:
+        </b>
+        Get results from a search.
+    </h3>
+    <p style="display:none">
+        <b>
+            Usage:
+        </b>
+        -youtube &lt;search&gt;
+        <br>
+        <b>
+            Alias:
+        </b>
+        -yt, -ytsearch
+        <br>
+        <b>
+            Output:
+        </b>
+        Searches youtube and returns an embed of the first 10 results collected.
+        <br>
+        <b>
+            Notes:
+        </b>
+        Choose one of the titles by typing a number or cancel by typing "cancel". Each title in the list can be clicked as a link.
     </p>
     <img class="dropDownIcon" src="{{ url_for('static', filename='assets/dropdown.png') }}">
 </div>
