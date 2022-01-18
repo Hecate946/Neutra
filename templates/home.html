@@ -12,13 +12,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="shortcut icon" type="image/x-icon" href="{{ url_for('static', filename='assets/neutra.ico') }}" id="favicon">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}" />
+<script type="text/javascript" src="{{ url_for('static', filename='jquery-3.6.0.js') }}"></script>
 {% block head %}{% endblock %}
-<title>Neutra</title>
+<title>{% block title %}Neutra{% endblock %}</title>
 </head>
 <body>
 <nav class="navbar">
 <!-- LOGO -->
-<div class="logo">Neutra</div>
+<div class="logo"><img src="{{ url_for('static', filename='assets/neutra.png')}}" height="50" width="50" ></div>
 <!-- NAVIGATION MENU -->
 <ul class="nav-links">
 <!-- USING CHECKBOX HACK -->
@@ -26,30 +27,31 @@
 <label for="checkbox_toggle" class="hamburger">&#9776;</label>
 <!-- NAVIGATION MENUS -->
 <div class="menu">
-<li><a href="/">Home</a></li>
-<li><a href="/">About</a></li>
-<li class="documentation">
-<a href="/">Documentation</a>
+
+<!-- <li class="documentation">
+<a href="/docs">Documentation</a> -->
 <!-- DROPDOWN MENU -->
-<ul class="dropdown">
-<li><a href="/">Overview</a></li>
-<li><a href="/">Administration</a></li>
-<li><a href="/">Auto Moderation</a></li>
-<li><a href="/">Configuration</a></li>
-<li><a href="/">Files</a></li>
-<li><a href="/">Help</a></li>
-<li><a href="/">Information</a></li>
-<li><a href="/">Logging</a></li>
-<li><a href="/">Moderation</a></li>
-<li><a href="/">Server</a></li>
-<li><a href="/">Statistics</a></li>
-<li><a href="/">Tasks</a></li>
-<li><a href="/">Tracking</a></li>
-<li><a href="/">Utility</a></li>
+<!-- <ul class="dropdown">
+<li><a href="/docs/admin">Administration</a></li>
+<li><a href="/docs/automod">Auto Moderation</a></li>
+<li><a href="/docs/config">Configuration</a></li>
+<li><a href="/docs/files">Files</a></li>
+<li><a href="/docs/help">Help</a></li>
+<li><a href="/docs/info">Information</a></li>
+<li><a href="/docs/logging">Logging</a></li>
+<li><a href="/docs/mod">Moderation</a></li>
+<li><a href="/docs/server">Server</a></li>
+<li><a href="/docs/stats">Statistics</a></li>
+<li><a href="/docs/tasks">Tasks</a></li>
+<li><a href="/docs/tracking">Tracking</a></li>
+<li><a href="/docs/utility">Utility</a></li>
 </ul>
-</li>
+</li> -->
+
+<li><a href="/docs">Documentation</a></li>
 <li><a href="/spotify">Spotify</a></li>
-<li><a href="/">Contact</a></li>
+<li><a href="/invite">Invite</a></li>
+<li><a href="/support">Support</a></li>
 </div>
 </nav>
 </ul>

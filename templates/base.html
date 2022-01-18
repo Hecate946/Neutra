@@ -1,86 +1,20 @@
-<!-- <meta property="og:title" content="Neutra" />
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta property="og:title" content="Neutra" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://neutrabot.com" />
 <meta property="og:image" content="https://cdn.discordapp.com/attachments/872338764276576266/927503071242747944/neutra.png" />
 <meta property="og:description" content="Hello! I'm Neutra, and I specialize in tracking and moderation. I was designed to collect statistics on servers, users, messages, and more." />
-<meta name="theme-color" content="#0A1822"> -->
-
-<!DOCTYPE:html>
-<html>
-<head>
-	<title>{% block title %}Neutra{% endblock %}</title>
-    <meta property="og:title" content="Neutra" />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://neutrabot.com" />
-    <meta property="og:image" content="https://cdn.discordapp.com/attachments/872338764276576266/927503071242747944/neutra.png" />
-    <meta property="og:description" content="Hello! I'm Neutra, and I specialize in tracking and moderation. I was designed to collect statistics on servers, users, messages, and more." />
-    <meta name="theme-color" content="#0A1822">
-    <link rel="shortcut icon" type="image/x-icon" href="{{ url_for('static', filename='assets/neutra.ico') }}" id="favicon"> 
-	{% block head %}{% endblock %}
-    <script type="text/javascript" src="{{ url_for('static', filename='jquery-3.6.0.js') }}"></script>
-    <style>
-        .button {
-            display: inline-flex;
-            height: 50px;
-            padding: 0;
-            background-color: #8d99ae;
-            border: none;
-            border-radius: 5px;
-            overflow: hidden;
-            font-family: Avenir,Helvetica,Arial,sans-serif;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-        }
-        .button:hover {
-            background-color: #768091;
-        }
-        .button:active{
-            background-color: #5f6774;
-        }
-        .button_text {
-            display: inline-flex;
-            align-items: center;
-            padding: 0px 24px;
-            color: red;
-            height: 100%;
-        }
-
-        .button_icon {
-            font-size: 24px;
-            background-color: rgba(0, 0, 0, 0.8);
-            align-self: start;
-
-        }
-    </style>
+<meta name="theme-color" content="#0A1822">
+<meta charset="UTF-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="shortcut icon" type="image/x-icon" href="{{ url_for('static', filename='assets/neutra.ico') }}" id="favicon">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}" />
+{% block head %}{% endblock %}
 </head>
-	<body>
-		<!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}"> -->
-        <button type="button" class="button">
-            <span class="button_text">Logout</span>
-            <span class "button_icon">
-                <img src="{{url_for('static', filename='assets/logout.png')}}" >
-            </span>
-        </button>
-
-
-        
-		<div id="sidebar">
-			<a href="." class="docstitle">Neutra<br>Documentation</a>
-			<a href="admin">Admin</a>
-			<a href="automod">Automod</a>
-			<a href="config">Config</a>
-			<a href="conversion">Conversion</a>
-			<a href="files">Files</a>
-			<a href="help">Help</a>
-			<a href="info">Info</a>
-			<a href="logging">Logging</a>
-			<a href="mod">Mod</a>
-			<a href="server">Server</a>
-			<a href="stats">Stats</a>
-			<a href="tasks">Tasks</a>
-			<a href="tracking">Tracking</a>
-			<a href="utility">Utility</a>
-		</div>
-	</body>
-</h1>
+<body>
+{% block body %}{% endblock %}
+</body>
+</html>

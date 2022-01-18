@@ -5,6 +5,7 @@ from urllib.parse import urlencode
 from config import DISCORD
 from web import client
 
+
 class CONSTANTS:
     API_URL = "https://discord.com/api"
     AUTH_URL = "https://discord.com/api/oauth2/authorize"
@@ -13,25 +14,25 @@ class CONSTANTS:
         "guilds",
         "guilds.join",
         "identify",
-        "email",
     ]
 
 
 class Oauth:
-
-    def __init__(self, scope=None):
+    def __init__(self):
         self.client_id = DISCORD.client_id
         self.client_secret = DISCORD.client_secret
         self.redirect_uri = DISCORD.redirect_uri
         self.scope = " ".join(CONSTANTS.SCOPES)
 
-    def get_auth_url(self, scope=None):
+    def get_auth_url(self, invite=False):
         params = {
             "client_id": self.client_id,
             "redirect_uri": self.redirect_uri,
             "response_type": "code",
-            "scope": scope or self.scope,
-            "prompt": "none", # "consent" to force them to agree again
+            "scope": self.scope + " bot applications.commands"
+            if invite
+            else self.scope,
+            "prompt": "none",  # "consent" to force them to agree again
         }
         query_params = urlencode(params)
         return "%s?%s" % (CONSTANTS.AUTH_URL, query_params)
@@ -46,16 +47,18 @@ class Oauth:
         if self.validate_token(user.token_info):
             return user.token_info["access_token"]
 
-        user.token_info = await self.refresh_access_token(user.user_id, user.token_info.get("refresh_token"))
+        user.token_info = await self.refresh_access_token(
+            user.user_id, user.token_info.get("refresh_token")
+        )
 
         return user.token_info["access_token"]
-        
+
     async def refresh_access_token(self, user_id, refresh_token):
         params = {
             "client_id": self.client_id,
             "client_secret": self.client_secret,
             "grant_type": "refresh_token",
-            "refresh_token": refresh_token
+            "refresh_token": refresh_token,
         }
 
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
@@ -92,7 +95,7 @@ class Oauth:
             CONSTANTS.TOKEN_URL, data=params, headers=headers, res_method="json"
         )
 
-        if not token_info.get("expires_in"): # Something went wrong, return None
+        if not token_info.get("expires_in"):  # Something went wrong, return None
             return
 
         token_info["expires_at"] = int(time.time()) + token_info["expires_in"]
@@ -109,6 +112,7 @@ class Oauth:
 
 
 oauth = Oauth()
+
 
 class User:  # Discord user operations with scopes
     def __init__(self, token_info, user_id):
@@ -165,4 +169,8 @@ class User:  # Discord user operations with scopes
         headers = {
             "Authorization": f"Bot {DISCORD.token}",
         }
-        return await client.put(CONSTANTS.API_URL + f"/guilds/{guild_id}/members/{self.user_id}", headers=headers, json=params)
+        return await client.put(
+            CONSTANTS.API_URL + f"/guilds/{guild_id}/members/{self.user_id}",
+            headers=headers,
+            json=params,
+        )

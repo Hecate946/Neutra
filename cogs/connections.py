@@ -1,6 +1,7 @@
+from email import header
 import typing
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 from utilities import checks
 from utilities import converters
@@ -14,24 +15,45 @@ from utilities.discord import oauth as discord_oauth
 def setup(bot):
     bot.add_cog(Connections(bot))
 
+
 class Connections(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.time_map = {"short_term": "month", "medium_term": "semester", "long_term": "year"}
+        self.time_map = {
+            "short_term": "month",
+            "medium_term": "semester",
+            "long_term": "year",
+        }
+        # self.live_stats.start()
+        
+
+    # @tasks.loop(seconds=5)
+    # async def live_stats(self):
+    @decorators.command()
+    async def post(self, ctx):
+        import requests
+        import json
+        print(self.bot.message_stats)
+        requests.post("http://localhost:3000/live_stats", data=json.dumps(self.bot.message_stats), headers={"Content-Type": "application/json"})
 
     def truncate(self, string, max_chars=20):
         return (string[: max_chars - 3] + "...") if len(string) > max_chars else string
 
     def hyperlink(self, name, url, max_chars=20):
         return f"**[{self.truncate(name, max_chars)}]({url})**"
-    
+
     def format_track(self, track):
-        return self.hyperlink(track['name'], track['external_urls']['spotify'])
+        return self.hyperlink(track["name"], track["external_urls"]["spotify"])
 
     def format_artists(self, artists):
-        artists = artists[:3] # more than 3 artists looks bad on embed
+        artists = artists[:3]  # more than 3 artists looks bad on embed
         max_chars = 40 // len(artists)
-        return ', '.join(self.hyperlink(artist['name'], artist['external_urls']['spotify'], max_chars) for artist in artists)
+        return ", ".join(
+            self.hyperlink(
+                artist["name"], artist["external_urls"]["spotify"], max_chars
+            )
+            for artist in artists
+        )
 
     async def get_spotify_user(self, ctx, user):
         sp_user = await spotify.User.load(user.id)
@@ -52,7 +74,6 @@ class Connections(commands.Cog):
                     f"User **{user}** `{user.id}` has not connected their Spotify account yet."
                 )
         return sp_user
-    
 
     @decorators.group(
         name="spotify",
@@ -67,7 +88,12 @@ class Connections(commands.Cog):
                 await ctx.success("You have already connected your spotify account.")
 
     @_sp.command(brief="Get top spotify tracks.", aliases=["tt"])
-    async def top_tracks(self, ctx, user: typing.Optional[converters.DiscordMember], time_frame: converters.SpotifyTimeFrame = "short_term"):
+    async def top_tracks(
+        self,
+        ctx,
+        user: typing.Optional[converters.DiscordMember],
+        time_frame: converters.SpotifyTimeFrame = "short_term",
+    ):
         user = user or ctx.author
         sp_user = await self.get_spotify_user(ctx, user)
         if not sp_user:
@@ -77,7 +103,9 @@ class Connections(commands.Cog):
         print(top_tracks)
 
         if not top_tracks.get("items"):
-            await ctx.fail(f"{f'User **{user}** `{user.id}` has' if user != ctx.author else 'You have'} no top tracks.")
+            await ctx.fail(
+                f"{f'User **{user}** `{user.id}` has' if user != ctx.author else 'You have'} no top tracks."
+            )
             return
 
         entries = [
@@ -94,7 +122,12 @@ class Connections(commands.Cog):
         await p.start(ctx)
 
     @_sp.command(brief="Get top spotify artists.", aliases=["ta"])
-    async def top_artists(self, ctx, user: typing.Optional[converters.DiscordMember], time_frame: converters.SpotifyTimeFrame = "short_term"):
+    async def top_artists(
+        self,
+        ctx,
+        user: typing.Optional[converters.DiscordMember],
+        time_frame: converters.SpotifyTimeFrame = "short_term",
+    ):
         user = user or ctx.author
         sp_user = await self.get_spotify_user(ctx, user)
         if not sp_user:
@@ -103,11 +136,15 @@ class Connections(commands.Cog):
         top_artists = await sp_user.get_top_artists()
 
         if not top_artists.get("items"):
-            await ctx.fail(f"{f'User **{user}** `{user.id}` has' if user != ctx.author else 'You have'} no top artists.")
+            await ctx.fail(
+                f"{f'User **{user}** `{user.id}` has' if user != ctx.author else 'You have'} no top artists."
+            )
             return
 
         entries = [
-            self.hyperlink(artist['name'], artist['external_urls']['spotify'], max_chars=50)
+            self.hyperlink(
+                artist["name"], artist["external_urls"]["spotify"], max_chars=50
+            )
             for artist in top_artists["items"]
         ]
 
@@ -119,7 +156,7 @@ class Connections(commands.Cog):
         p.embed.set_thumbnail(url=spotify.CONSTANTS.WHITE_ICON)
         await p.start(ctx)
 
-    @_sp.command(brief="Get recent Spotify listens", aliases=['r'])
+    @_sp.command(brief="Get recent Spotify listens", aliases=["r"])
     async def recent(self, ctx, *, user: converters.DiscordMember = None):
         user = user or ctx.author
         sp_user = await self.get_spotify_user(ctx, user)
@@ -129,9 +166,10 @@ class Connections(commands.Cog):
         recent = await sp_user.get_recently_played()
         print(recent)
         if not recent.get("items"):
-            await ctx.fail(f"{f'User **{user}** `{user.id}` has' if user != ctx.author else 'You have'} no recent tracks.")
+            await ctx.fail(
+                f"{f'User **{user}** `{user.id}` has' if user != ctx.author else 'You have'} no recent tracks."
+            )
             return
-
 
         entries = [
             f"{self.format_track(item['track'])} by {self.format_artists(item['track']['artists'])}"
@@ -153,18 +191,19 @@ class Connections(commands.Cog):
         url = "https://open.spotify.com/playlist/6K9uHsMwuRGRWvHLNK4rT2?si=f7be2003e315494b"
         uri = spotify.url_to_uri(url)
         data = await spotify.get_playlist(uri)
-        del data['tracks']
+        del data["tracks"]
         print(data)
 
     @_sp.command(brief="Get user playlists")
-    async def playlists(self, ctx, *, user: converters.DiscordMember=None):
+    async def playlists(self, ctx, *, user: converters.DiscordMember = None):
         user = user or ctx.author
         sp_user = await self.get_spotify_user(ctx, ctx.author)
         data = await sp_user.get_playlists()
         if not data.get("items"):
-            await ctx.fail(f"{f'User **{user}** `{user.id}` has' if user != ctx.author else 'You have'} no recent tracks.")
+            await ctx.fail(
+                f"{f'User **{user}** `{user.id}` has' if user != ctx.author else 'You have'} no recent tracks."
+            )
             return
-
 
         entries = [
             f"{self.format_track(playlist)} ID: `{playlist['id']}`"
@@ -185,7 +224,6 @@ class Connections(commands.Cog):
         if not data.get("items"):
             await ctx.fail(f"No user found with username: `{username}`")
             return
-
 
         entries = [
             f"{self.format_track(playlist)} ID: `{playlist['id']}`"
@@ -210,6 +248,4 @@ class Connections(commands.Cog):
         if status != "DELETE 0":
             await ctx.success("Successfully disconnected your spotify account.")
         else:
-            await ctx.fail(
-                "You have not connected your Spotify account yet."
-            )
+            await ctx.fail("You have not connected your Spotify account yet.")

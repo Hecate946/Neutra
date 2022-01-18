@@ -24,7 +24,7 @@ def setup(bot):
 
 class Mod(commands.Cog):
     """
-    Keep your server under control.
+    Moderate server users.
     """
 
     def __init__(self, bot):

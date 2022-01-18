@@ -15,9 +15,7 @@ class Client:
             x[:-4] for x in os.listdir("./data/scripts") if x.endswith(".sql")
         ]
         self.session = aiohttp.ClientSession(loop=self.loop)
-        self.cxn = self.loop.run_until_complete(
-            asyncpg.create_pool(POSTGRES.uri)
-        )
+        self.cxn = self.loop.run_until_complete(asyncpg.create_pool(POSTGRES.uri))
 
         self.loop.run_until_complete(self.scriptexec())
 
@@ -47,8 +45,6 @@ class Client:
 
     async def patch(self, url, *args, **kwargs):
         return await self.query(url, "patch", *args, **kwargs)
-
-
 
 
 client = Client()

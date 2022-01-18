@@ -26,7 +26,7 @@ def setup(bot):
 
 class Tracking(commands.Cog):
     """
-    Module for all user stats
+    Module for user statistics
     """
 
     def __init__(self, bot):

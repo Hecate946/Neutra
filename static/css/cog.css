@@ -1,16 +1,49 @@
+h1 {
+    color:white;
+    margin: 10px;
+    position: relative;
+    left: 190;
+    width: 375;
+    font-family: 'Trebuchet MS', sans-serif;
+    text-shadow: 1px 1px 3px #AEC1C6;
+}
+
+h2 {
+    color: white;
+    margin: 5px;
+    position: relative;
+    left: 190;
+    width: 500;
+    font-family: sans-serif;
+    margin-bottom: 20px;
+}
+
+h3 {
+    color: white;
+    position: relative;
+    left: 15;
+    font-family: sans-serif;
+}
+
+p {
+    color: #edf2f4;
+    margin-left: 15px;
+    margin-right: 10px;
+    font-family: sans-serif;
+}
 .helpbox {
     border: 5px outset blue;
     border-color: blueviolet;
     border-radius: 3px;
     border-width: thin;
-    float: left;
-    width: 1125px;
+    width: 70%;
     position: relative;
-    left: 180;
+    line-height: 60px;
+    text-indent: 20px;
     overflow: hidden;
     min-height: 60px;
     box-shadow: 5px 1px 5px #AEC1C6;
-    margin-left: 20px;
+    margin: auto;
     cursor: pointer;
 }
 .helpbox:hover {
@@ -29,31 +62,86 @@
     transition: transform .2s ease; 
 }
 
-.exp-button {
-    position: relative;
-    right: 150px;
-    top: 15px;
-    float: right;
-    height: 50px;
-    font-size: 25px;
-    color: #f8bae9;
-    background-color: #031013;
-    border-style: groove;
-    border-color: #040424;
-    box-shadow: 0px 0px 5px #AEC1C6;
-    margin-bottom: 10px;
-    margin-left: 25px;
-    cursor: pointer;
+.container {
+    padding: 20px;
+    display: flex;
+    justify-content: flex-end;
 }
 
-.exp-button:hover {
-    transition: .2s ease;
-    /*box-shadow: 0px 0px 8px rgb(0, 15, 45);*/
-    background-color: rgb(0, 15, 45);
+.box {
+    flex: 1;
+    display: flex;
+    justify-content: center;
 }
+
+.box:first-child > span {
+    margin-right: auto;
+    font-family: Avenir,Helvetica,Arial,sans-serif;
+    font-size: 25px;
+    color: #edf2f4;
+}
+
+.box:last-child  > span { margin-left: auto;  }
+
+
+.button {
+    display: inline-flex;
+    height: 50px;
+    padding: 10px;
+    background-color: #8d99ae;
+    border-radius: 5px;
+    overflow: hidden;
+    font-family: Avenir,Helvetica,Arial,sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+}
+.button:hover {
+    background-color: #768091;
+}
+.button:active{
+    background-color: #5f6774;
+}
+.button_text {
+    display: inline-flex;
+    align-items: center;
+    padding: 0px 24px;
+    color: #edf2f4;
+    height: 100%;
+}
+
 
 .downDropDownIcon {
     /* look, I need a way to detect if each icon is rotated or not, 
     so i just toggle this class every time I change the rotation of the drop down icon. 
     i dont know how else to do it please help. this does nothing except being detected in jquery */
+}
+
+
+#navbar2 {
+    background-color: #8d99ae;
+    justify-content: space-between;
+    display: flex;
+    font-size: 18px;
+    top: 0px;
+    padding-bottom: 15px;
+    padding-left: 3px;
+    padding-right: 27px;
+}
+
+#navbar2 a:hover {
+    color: #ef233c;
+}
+
+
+#navbar2 a {
+    padding: 0px 8px 6px 20px;
+    text-decoration: none;
+    font-size: 13px;
+    display: block;
+    color: #3b4249;
+}
+
+#navbar2 .active {
+    color:#017b91;
 }

@@ -19,7 +19,7 @@ def setup(bot):
 
 class Stats(commands.Cog):
     """
-    Module for server stats
+    Module for server statistics
     """
 
     def __init__(self, bot):

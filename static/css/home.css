@@ -16,25 +16,33 @@
  }
 
  /* NAVBAR STYLING STARTS */
+
 .navbar {
-  display: flex;
+  width: 100%;
+  display:flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 20px;
+  justify-content: flex-start;
+  padding: 10px 20px;
   background-color: #8d99ae;
   color: #fff;
  }
  .nav-links a {
   color: #fff;
+
  }
+
+
  /* LOGO */
  .logo {
   font-size: 32px;
+  margin-bottom: -10px;
+  padding-right: 10px;
+  
  }
  /* NAVBAR MENU */
  .menu {
   display: flex;
-  gap: 1em;
+  gap: 0.3em;
   font-size: 18px;
  }
  .menu li:hover {
@@ -50,6 +58,7 @@
  .menu li {
   padding: 5px 14px;
  }
+
  /* DROPDOWN MENU */
  .documentation {
   position: relative; 

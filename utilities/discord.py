@@ -4,6 +4,7 @@ import json
 from config import DISCORD
 from core import bot as client
 
+
 class CONSTANTS:
     API_URL = "https://discord.com/api"
     AUTH_URL = "https://discord.com/api/oauth2/authorize"
@@ -17,7 +18,6 @@ class CONSTANTS:
 
 
 class Oauth:
-
     def __init__(self, scope=None):
         self.client_id = DISCORD.client_id
         self.client_secret = DISCORD.client_secret
@@ -30,7 +30,7 @@ class Oauth:
             "redirect_uri": self.redirect_uri,
             "response_type": "code",
             "scope": scope or self.scope,
-            "prompt": "none", # "consent" to force them to agree again
+            "prompt": "none",  # "consent" to force them to agree again
         }
         query_params = urlencode(params)
         return "%s?%s" % (CONSTANTS.AUTH_URL, query_params)
@@ -45,16 +45,18 @@ class Oauth:
         if self.validate_token(user.token_info):
             return user.token_info["access_token"]
 
-        user.token_info = await self.refresh_access_token(user.user_id, user.token_info.get("refresh_token"))
+        user.token_info = await self.refresh_access_token(
+            user.user_id, user.token_info.get("refresh_token")
+        )
 
         return user.token_info["access_token"]
-        
+
     async def refresh_access_token(self, user_id, refresh_token):
         params = {
             "client_id": self.client_id,
             "client_secret": self.client_secret,
             "grant_type": "refresh_token",
-            "refresh_token": refresh_token
+            "refresh_token": refresh_token,
         }
 
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
@@ -104,6 +106,7 @@ class Oauth:
 
 
 oauth = Oauth()
+
 
 class User:  # Discord user operations with scopes
     def __init__(self, token_info, user_id):
@@ -160,4 +163,8 @@ class User:  # Discord user operations with scopes
         headers = {
             "Authorization": f"Bot {DISCORD.token}",
         }
-        return await client.put(CONSTANTS.API_URL + f"/guilds/{guild_id}/members/{self.user_id}", headers=headers, json=params)
+        return await client.put(
+            CONSTANTS.API_URL + f"/guilds/{guild_id}/members/{self.user_id}",
+            headers=headers,
+            json=params,
+        )

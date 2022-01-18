@@ -18,6 +18,8 @@ def url_to_uri(url):
         # remove session id (and other query stuff)
         uri = re.sub("\?.*", "", url)
         return uri
+
+
 class CONSTANTS:
     WHITE_ICON = "https://cdn.discordapp.com/attachments/872338764276576266/927649624888602624/spotify_white.png"
     API_URL = "https://api.spotify.com/v1/"
@@ -53,7 +55,6 @@ class Oauth:
         self.scope = " ".join(CONSTANTS.SCOPES)
 
         self.client_token = None
-
 
     @property
     def headers(self):
@@ -94,7 +95,9 @@ class Oauth:
         if self.validate_token(token_info):
             return token_info["access_token"]
 
-        token_info = await self.refresh_access_token(user_id, token_info.get("refresh_token"))
+        token_info = await self.refresh_access_token(
+            user_id, token_info.get("refresh_token")
+        )
 
         return token_info["access_token"]
 
@@ -130,7 +133,6 @@ class Oauth:
         )
         return token_info
 
-
     async def get_client_token(self):
         """Gets the token or creates a new one if expired"""
         if self.client_token and self.validate_token(self.client_token):
@@ -142,13 +144,13 @@ class Oauth:
         self.client_token = client_token
         return self.client_token["access_token"]
 
-
     async def request_client_token(self):
         """Obtains a token from Spotify and returns it"""
         payload = {"grant_type": "client_credentials"}
         return await client.post(
             CONSTANTS.TOKEN_URL, data=payload, headers=self.headers, res_method="json"
         )
+
 
 oauth = Oauth()
 
@@ -200,7 +202,9 @@ class User:  # Spotify user w discord user_id
         return await self.get(CONSTANTS.API_URL + "me/player/devices")
 
     async def transfer_playback(self, devices, play: bool = False):
-        return await self.put(CONSTANTS.API_URL + "me/player", json={"device_ids": devices, "play": play})
+        return await self.put(
+            CONSTANTS.API_URL + "me/player", json={"device_ids": devices, "play": play}
+        )
 
     async def get_recently_played(self, limit=50):
         params = {"limit": limit}
@@ -234,10 +238,18 @@ class User:  # Spotify user w discord user_id
         return await self.put(CONSTANTS.API_URL + "me/player/play", json=kwargs)
 
     async def skip_to_next(self):
-        return await client.post(CONSTANTS.API_URL + "me/player/next", headers=await self.auth(), res_method=None)
+        return await client.post(
+            CONSTANTS.API_URL + "me/player/next",
+            headers=await self.auth(),
+            res_method=None,
+        )
 
     async def skip_to_previous(self):
-        return await client.post(CONSTANTS.API_URL + "me/player/previous", headers=await self.auth(), res_method=None)
+        return await client.post(
+            CONSTANTS.API_URL + "me/player/previous",
+            headers=await self.auth(),
+            res_method=None,
+        )
 
     async def seek(self, position):
         params = {"position_ms": position * 1000}
@@ -262,15 +274,17 @@ class User:  # Spotify user w discord user_id
     async def enqueue(self, uri):
         params = {"uri": uri}
         query_params = urlencode(params)
-        return await client.post(CONSTANTS.API_URL + "me/player/queue?" + query_params, headers=await self.auth(), res_method=None)
+        return await client.post(
+            CONSTANTS.API_URL + "me/player/queue?" + query_params,
+            headers=await self.auth(),
+            res_method=None,
+        )
 
     async def get_playlists(self, limit=50, offset=0):
         """Get a user's owned and followed playlists"""
         params = {"limit": limit, "offset": offset}
         query_params = urlencode(params)
         return await self.get(CONSTANTS.API_URL + "me/playlists?" + query_params)
-
-
 
 
 async def auth():
@@ -284,11 +298,13 @@ async def auth():
 
 
 async def _get(url):
-    return await client.get(url,  headers=await auth(), res_method="json")
+    return await client.get(url, headers=await auth(), res_method="json")
+
 
 async def get_playlist(uri):
     playlist_id = uri.split(":")[-1]
     return await _get(CONSTANTS.API_URL + f"playlists/{playlist_id}")
+
 
 async def get_user_playlists(username, limit=50, offset=0):
     """Get a user's owned and followed playlists"""

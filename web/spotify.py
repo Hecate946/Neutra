@@ -5,7 +5,6 @@ import time
 import json
 
 
-
 from config import SPOTIFY
 from web import client
 
@@ -42,7 +41,7 @@ class CONSTANTS:
 
 
 class Oauth:
-    def __init__(self, scope=None):
+    def __init__(self):
         self.client_id = SPOTIFY.client_id
         self.client_secret = SPOTIFY.client_secret
         self.redirect_uri = SPOTIFY.redirect_uri
@@ -88,7 +87,9 @@ class Oauth:
         if self.validate_token(token_info):
             return token_info["access_token"]
 
-        token_info = await self.refresh_access_token(user_id, token_info.get("refresh_token"))
+        token_info = await self.refresh_access_token(
+            user_id, token_info.get("refresh_token")
+        )
 
         return token_info["access_token"]
 
@@ -176,7 +177,9 @@ class User:  # Spotify user w discord user_id
         return await client.get(url, headers=await self.auth())
 
     async def put(self, url, json=None, res_method=None):
-        return await client.put(url, headers=await self.auth(), json=json, res_method=res_method)
+        return await client.put(
+            url, headers=await self.auth(), json=json, res_method=res_method
+        )
 
     async def get_profile(self):
         return await self.get(CONSTANTS.API_URL + "me")
@@ -191,7 +194,9 @@ class User:  # Spotify user w discord user_id
         return await self.get(CONSTANTS.API_URL + "me/player/devices")
 
     async def transfer_playback(self, devices, play: bool = False):
-        return await self.put(CONSTANTS.API_URL + "me/player", json={"device_ids": devices, "play": play})
+        return await self.put(
+            CONSTANTS.API_URL + "me/player", json={"device_ids": devices, "play": play}
+        )
 
     async def get_recently_played(self, limit=50):
         params = {"limit": limit}
@@ -233,10 +238,18 @@ class User:  # Spotify user w discord user_id
         return await self.put(CONSTANTS.API_URL + "me/player/play", json=kwargs)
 
     async def skip_to_next(self):
-        return await client.post(CONSTANTS.API_URL + "me/player/next", headers=await self.auth(), res_method=None)
+        return await client.post(
+            CONSTANTS.API_URL + "me/player/next",
+            headers=await self.auth(),
+            res_method=None,
+        )
 
     async def skip_to_previous(self):
-        return await client.post(CONSTANTS.API_URL + "me/player/previous", headers=await self.auth(), res_method=None)
+        return await client.post(
+            CONSTANTS.API_URL + "me/player/previous",
+            headers=await self.auth(),
+            res_method=None,
+        )
 
     async def seek(self, position):
         params = {"position_ms": position * 1000}
@@ -261,23 +274,32 @@ class User:  # Spotify user w discord user_id
     async def enqueue(self, uri):
         params = {"uri": uri}
         query_params = urlencode(params)
-        return await client.post(CONSTANTS.API_URL + "me/player/queue?" + query_params, headers=await self.auth(), res_method=None)
+        return await client.post(
+            CONSTANTS.API_URL + "me/player/queue?" + query_params,
+            headers=await self.auth(),
+            res_method=None,
+        )
 
 
 class Formatting:
     def __init__(self) -> None:
-        self.time_range_map = {"short_term": "in the past four weeks", "medium_term": "in the past six months", "long_term": "across all time"}
-        
+        self.time_range_map = {
+            "short_term": "in the past four weeks",
+            "medium_term": "in the past six months",
+            "long_term": "across all time",
+        }
+
     def get_caption(self, option, time_range="short_term"):
         if option == "recents":
             return "Showing your recent Spotify tracks."
         if option == "tracks":
             return f"Showing your top Spotify tracks {self.time_range_map[time_range]}."
         if option == "artists":
-            return f"Showing your top Spotify artists {self.time_range_map[time_range]}."
+            return (
+                f"Showing your top Spotify artists {self.time_range_map[time_range]}."
+            )
         if option == "genres":
             return f"Showing your top Spotify genres {self.time_range_map[time_range]}."
-
 
     def get_image(self, obj):
         try:
@@ -291,10 +313,10 @@ class Formatting:
                 "index": index,
                 "image": self.get_image(track["album"]),
                 "name": track["name"],
-                "artist": ', '.join([artist["name"] for artist in track["artists"]]),
-            } for index, track in enumerate(data["items"], start=1)
+                "artist": ", ".join([artist["name"] for artist in track["artists"]]),
+            }
+            for index, track in enumerate(data["items"], start=1)
         ]
-
 
     def recent_tracks(self, data):
         return [
@@ -302,11 +324,12 @@ class Formatting:
                 "index": index,
                 "image": self.get_image(item["track"]["album"]),
                 "name": item["track"]["name"],
-                "artist": ', '.join([artist["name"] for artist in item["track"]["artists"]]),
-            } for index, item in enumerate(data["items"], start=1)
+                "artist": ", ".join(
+                    [artist["name"] for artist in item["track"]["artists"]]
+                ),
+            }
+            for index, item in enumerate(data["items"], start=1)
         ]
-
-
 
     def top_artists(self, data):
         return [
@@ -314,7 +337,8 @@ class Formatting:
                 "index": index,
                 "image": self.get_image(artist),
                 "name": artist["name"],
-            } for index, artist in enumerate(data["items"], start=1)
+            }
+            for index, artist in enumerate(data["items"], start=1)
         ]
 
     def top_genres(self, data):
@@ -322,8 +346,10 @@ class Formatting:
             {
                 "index": index,
                 "name": genre.capitalize(),
-                "percent": f"{count/sum(data.values()):.2%}"
+                "percent": f"{count/sum(data.values()):.2%}",
             }
             for index, (genre, count) in enumerate(data.most_common())
         ]
+
+
 formatting = Formatting()

@@ -399,7 +399,7 @@ unload: Unload an extension.
 ```
 
 ### Mod
-#### Keep your server under control. (17 Commands)
+#### Moderate server users. (17 Commands)
 
 ```yaml
 addrole: Add multiple roles to a user.
@@ -615,7 +615,7 @@ role: Role management commands.
 ```
 
 ### Stats
-#### Module for server stats (24 Commands)
+#### Module for server statistics (24 Commands)
 
 ```yaml
 admins: Show the server admins.
@@ -675,7 +675,7 @@ reminder: Set a reminder for yourself.
 ```
 
 ### Tracking
-#### Module for all user stats (23 Commands)
+#### Module for user statistics (23 Commands)
 
 ```yaml
 activity: Show the most active users.

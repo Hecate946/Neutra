@@ -1278,7 +1278,6 @@ class UserDataOption(commands.Converter):
             return argument.lower()
 
 
-
 class ChannelOrRoleOrMemberOption(commands.Converter):
     async def convert(self, ctx, argument):
         server_options = ["servers", "server", "guilds", "guild"]
@@ -1311,6 +1310,7 @@ class ChannelOrRoleOrMemberOption(commands.Converter):
             raise commands.BadArgument(f"**Invalid Option.**{completed}")
         return option
 
+
 class SpotifyTimeFrame(commands.Converter):
     async def convert(self, ctx, argument):
         argument = str(argument)
@@ -1339,6 +1339,7 @@ class SpotifyTimeFrame(commands.Converter):
             completed = f"```sml\nVALID OPTIONS:\n{render}```"
             raise commands.BadArgument(f"**Invalid Option.**{completed}")
         return option
+
 
 class EmojiURL:
     def __init__(self, *, animated, url):
