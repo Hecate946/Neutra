@@ -14,7 +14,7 @@ h2 {
     position: relative;
     left: 190;
     width: 500;
-    font-family: sans-serif;
+    font-family: Avenir,Helvetica,Arial,sans-serif;
     margin-bottom: 20px;
 }
 
@@ -22,14 +22,14 @@ h3 {
     color: #edf2f4;
     position: relative;
     left: 15;
-    font-family: sans-serif;
+    font-family: Avenir,Helvetica,Arial,sans-serif;
 }
 
 p {
     color: #edf2f4;
     margin-left: 15px;
     margin-right: 10px;
-    font-family: sans-serif;
+    font-family: Avenir,Helvetica,Arial,sans-serif;
 }
 .helpbox {
     border: 5px outset #017b91;
@@ -42,9 +42,13 @@ p {
     text-indent: 20px;
     overflow: hidden;
     min-height: 60px;
-    box-shadow: 5px 1px 5px #AEC1C6;
+    box-shadow: 1px 1px 2px #AEC1C6;
     margin: auto;
     cursor: pointer;
+}
+
+.helpbox:last-child {
+    margin-bottom: 50px;
 }
 .helpbox:hover {
     transition: .25s ease;
@@ -108,13 +112,6 @@ p {
     padding: 0px 24px;
     color: #edf2f4;
     height: 100%;
-}
-
-
-.downDropDownIcon {
-    /* look, I need a way to detect if each icon is rotated or not, 
-    so i just toggle this class every time I change the rotation of the drop down icon. 
-    i dont know how else to do it please help. this does nothing except being detected in jquery */
 }
 
 
