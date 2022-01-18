@@ -3,9 +3,10 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/spotify/tables.css') }}" />
 {% endblock %}
 </head>
-{% block body %}
+{% block body %} 
 <table>
-<caption>{{caption}}</caption>
+<caption>
+    {{caption}}</caption>
 <tbody>
 {% if artist %}
 {% for artist in data %}

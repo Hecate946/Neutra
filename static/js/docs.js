@@ -5,7 +5,6 @@ $(function() {
             $(this).children('.dropDownIcon').stop().css({transform: "rotate(-90deg)"})
             .removeClass("downDropDownIcon");
             $(this).children('p').stop().slideUp(500);
-
         }
         else {
             $(this).children('.dropDownIcon').stop().css({transform: "rotate(0deg)"})
@@ -18,7 +17,7 @@ $(function() {
 $(function() {
     $('#toggle').on('click', function () {
         var change = document.getElementById("label");
-        if (change.innerHTML == "Expand All") {
+        if (change.innerHTML.includes("Expand All")) {
             change.innerHTML = "Collapse All";
             helpBoxes = $('body').children('.helpbox');
             for (i = 0; i < helpBoxes.length; i++) {

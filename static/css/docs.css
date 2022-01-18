@@ -1,153 +1,154 @@
 h1 {
-    color:#edf2f4;
-    margin: 10px;
-    position: relative;
-    left: 190;
-    width: 375;
-    font-family: Avenir,Helvetica,Arial,sans-serif;
-    text-shadow: 1px 1px 3px #AEC1C6;
+  color: #edf2f4;
+  margin: 10px;
+  position: relative;
+  left: 190;
+  width: 375;
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  text-shadow: 1px 1px 3px #aec1c6;
 }
 
 h2 {
-    color: #edf2f4;
-    margin: 5px;
-    position: relative;
-    left: 190;
-    width: 500;
-    font-family: Avenir,Helvetica,Arial,sans-serif;
-    margin-bottom: 20px;
+  color: #edf2f4;
+  margin: 5px;
+  position: relative;
+  left: 190;
+  width: 500;
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  margin-bottom: 20px;
 }
-
 
 h3 {
-    color: #edf2f4;
-    position: relative;
-    left: 15;
-    margin-left: 20px;
-    padding: 15px;
-    font-family: Avenir,Helvetica,Arial,sans-serif;
-    font-weight: normal;
+  color: #edf2f4;
+  position: relative;
+  left: 15;
+  margin-left: 20px;
+  margin-right: 20px;
+  padding: 20px;
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  font-weight: normal;
 }
 
-
 p {
-    color: #b1bbbe;
-    margin: 10px 10px 35px 35px;
-    padding: 0;
-    font-family: Avenir,Helvetica,Arial,sans-serif;
-    line-height: 25px;
+  color: #b1bbbe;
+  margin: 10px 10px 35px 35px;
+  padding: 0;
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  line-height: 25px;
 }
 
 p b {
-    color: #017b91;
+  color: #017b91;
 }
 
-
 .helpbox {
-    border: 5px outset #017b91;
-    border-color: #017b91;
-    border-radius: 5px;
-    border-width: thin;
-    width: 70%;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 1px 1px 2px #AEC1C6;
-    margin: auto;
-    cursor: pointer;
+  border: 5px outset #017b91;
+  border-color: #017b91;
+  border-radius: 5px;
+  border-width: thin;
+  width: 70%;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 1px 1px 2px #aec1c6;
+  margin: auto;
+  cursor: pointer;
 }
 
 .helpbox:last-child {
-    margin-bottom: 50px;
+  margin-bottom: 50px;
 }
 .helpbox:hover {
-    transition: .25s ease;
-    background-color: rgba(0, 0, 0, 0.377);
-    /* border-color: #0037ec; */
+  transition: 0.25s ease;
+  background-color: rgba(0, 0, 0, 0.377);
+  /* border-color: #0037ec; */
 }
 
 .helpbox .dropDownIcon {
-    max-width: 100%;
-    height: auto;
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    transform: rotate(-90deg);
-    transition: transform .2s ease; 
+  max-width: 100%;
+  height: auto;
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  transform: rotate(-90deg);
+  transition: transform 0.2s ease;
 }
 
 .container {
-    padding: 20px;
-    display: flex;
-    justify-content: flex-end;
+  padding: 20px;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .box {
-    flex: 1;
-    display: flex;
-    justify-content: center;
+  flex: 1;
+  display: flex;
+  justify-content: center;
 }
 
 .box:first-child > span {
-    margin-right: auto;
-    font-family: Avenir,Helvetica,Arial,sans-serif;
-    font-size: 25px;
-    color: #edf2f4;
+  margin-right: auto;
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  font-size: 25px;
+  color: #edf2f4;
 }
 
-.box:last-child  > span { margin-left: auto;  }
-
+.box:last-child > span {
+  margin-left: auto;
+}
 
 .button {
-    display: inline-flex;
-    height: 50px;
-    padding: 10px;
-    background-color: #8d99ae;
-    border-radius: 5px;
-    overflow: hidden;
-    font-family: Avenir,Helvetica,Arial,sans-serif;
-    font-size: 16px;
-    font-weight: 500;
-    cursor: pointer;
+  display: inline-flex;
+  height: 50px;
+  padding: 10px;
+  background-color: #8d99ae;
+  border-radius: 5px;
+  overflow: hidden;
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
 }
 .button:hover {
-    background-color: #768091;
+  background-color: #768091;
 }
-.button:active{
-    background-color: #5f6774;
+.button:active {
+  background-color: #5f6774;
 }
 .button_text {
-    display: inline-flex;
-    align-items: center;
-    padding: 0px 24px;
-    color: #edf2f4;
-    height: 100%;
+  display: inline-flex;
+  align-items: center;
+  padding: 0px 24px;
+  color: #edf2f4;
+  height: 100%;
 }
 
-
 #navbar2 {
-    background-color: #8d99ae;
-    justify-content: space-between;
-    display: flex;
-    font-size: 18px;
-    top: 0px;
-    padding-bottom: 15px;
-    padding-left: 3px;
-    padding-right: 27px;
+  background-color: #8d99ae;
+  justify-content: space-around;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 18px;
+  top: 0px;
+  padding-bottom: 15px;
+  padding-left: 3px;
+  padding-right: 27px;
 }
 
 #navbar2 a:hover {
-    color: #ef233c;
+  color: #ef233c;
 }
 
-
 #navbar2 a {
-    padding: 0px 8px 6px 20px;
-    text-decoration: none;
-    font-size: 13px;
-    display: block;
-    color: #3b4249;
+  padding: 0px 8px 6px 20px;
+  text-decoration: none;
+  font-size: 13px;
+  display: block;
+  color: #3b4249;
 }
 
 #navbar2 .active {
-    color:#017b91;
+  color: #017b91;
+}
+
+.downDropDownIcon {
 }

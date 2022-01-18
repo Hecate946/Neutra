@@ -19,8 +19,9 @@
 <body>
 <nav class="navbar">
 <!-- LOGO -->
-<div class="logo"><img src="{{ url_for('static', filename='assets/neutra.png')}}" height="50" width="50" ></div>
+<img class='logo-image' src="{{ url_for('static', filename='assets/neutra.png')}}">
 <!-- NAVIGATION MENU -->
+
 <ul class="nav-links">
 <!-- USING CHECKBOX HACK -->
 <input type="checkbox" id="checkbox_toggle" />
@@ -58,3 +59,4 @@
 {% block body %}{% endblock %}
 </body>
 </html>
+    
