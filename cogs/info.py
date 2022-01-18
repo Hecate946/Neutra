@@ -551,7 +551,7 @@ class Info(commands.Cog):
         await message.edit(content=msg)
 
     @decorators.command(
-        brief="Invite me to your server!",
+        brief="Invite the bot to your server!",
         aliases=["botinvite", "bi"],
         implemented="2021-05-05 18:05:30.156694",
         updated="2021-05-05 18:05:30.156694",
@@ -569,7 +569,7 @@ class Info(commands.Cog):
             {0}bi, {0}botinvite
         Output:
             A selection of invite links
-            to invite me to your server
+            to invite the bot to your server
         """
         admin_inv = discord.utils.oauth_url(
             self.bot.user.id, permissions=discord.Permissions(8)

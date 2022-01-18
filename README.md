@@ -303,7 +303,7 @@ github: Github commit history.
 
 hostinfo: Show the host environment.
 
-invite: Invite me to your server!
+invite: Invite the bot to your server!
 
 lines: Show sourcecode statistics.
 
