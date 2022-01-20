@@ -1,10 +1,6 @@
-from dis import disco
-import html
-import os
 import secrets
 from quart import Quart, request, redirect, url_for, render_template, session
 import json
-from tabulate import tabulate
 
 from web import client
 from web import discord
@@ -191,11 +187,30 @@ async def support():
 async def invite():
     return redirect(discord.oauth.get_auth_url(invite=True))
 
+
+STATS = {"retard": "hi"}
+
+
 @app.route("/live_stats", methods=["GET", "POST"])
 async def live_stats():
     text = await request.json
-    print(text)
-    return await render_template("stats.html", text=str(text))
+    global STATS
+    STATS = text
+    return "hi"
+
+
+@app.route("/_stuff")
+async def background_process():
+    from quart import jsonify
+
+    return jsonify(result=json.dumps(STATS))
+
+
+# allow both GET and POST requests
+@app.route("/s", methods=["GET"])
+async def retard():
+
+    return await render_template("s.html")
 
 
 if __name__ == "__main__":
