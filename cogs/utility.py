@@ -125,7 +125,7 @@ class Utility(commands.Cog):
                     content=f"{self.bot.emote_dict['failed']} Invalid location.",
                 )
 
-            r = await self.bot.get(
+            r = await self.bot.http_utils.get(
                 "http://api.timezonedb.com/v2.1/get-time-zone?key={}&format=json&by=position&lat={}&lng={}".format(
                     self.bot.constants.timezonedb, location.latitude, location.longitude
                 )
@@ -1187,7 +1187,7 @@ class Utility(commands.Cog):
         """
         params = {"access_token": self.bot.constants.bitly, "longUrl": url}
 
-        response = await self.bot.get(
+        response = await self.bot.http_utils.get(
             "https://api-ssl.bitly.com/v3/shorten", params=params
         )
         resp = json.loads(response)

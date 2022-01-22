@@ -1,33 +1,24 @@
-<head>
-    <title>Suggestions</title>
-</head>
-
-<body>
-
-Search: <input type="text" id="search_form_input"></input>
-
-<div id="place_for_suggestions"></div>
-
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-
-<script>
-$("#search_form_input").keyup(function(){
-    var text = $(this).val();
-
-    $.ajax({
-      url: "/suggestions",
-      type: "get",
-      data: {jsdata: text},
-      success: function(response) {
-        $("#place_for_suggestions").html(response);
-      },
-      error: function(xhr) {
-        //Do Something to handle error
-      }
-    });
-});
-</script>
-
+{% extends "base.html" %} {% block head %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/docs.css') }}"
+/>
+{% endblock %} {% block body %}
+<body onload="update_values();">
+  <h1>Neutra Stats</h1>
+  <p>
+    Members:
+    <span id="members">??</span>
+    Servers:
+    <span id="servers">??</span>
+    Messages:
+    <span id="messages">??</span>
+    Commands:
+    <span id="commands">??</span>
+  </p>
 </body>
-
-</html>
+<script
+  type="text/javascript"
+  src="{{ url_for('static', filename='js/stats.js')}}"
+></script>
+{% endblock %}

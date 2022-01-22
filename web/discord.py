@@ -3,7 +3,6 @@ import time
 from urllib.parse import urlencode
 
 from config import DISCORD
-from web import client
 
 
 class CONSTANTS:
@@ -18,11 +17,13 @@ class CONSTANTS:
 
 
 class Oauth:
-    def __init__(self):
+    def __init__(self, bot_or_app):
         self.client_id = DISCORD.client_id
         self.client_secret = DISCORD.client_secret
         self.redirect_uri = DISCORD.redirect_uri
         self.scope = " ".join(CONSTANTS.SCOPES)
+
+        self.client = bot_or_app
 
     def get_auth_url(self, invite=False):
         params = {
@@ -63,7 +64,7 @@ class Oauth:
 
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
 
-        token_info = await client.post(
+        token_info = await self.client.http_utils.post(
             CONSTANTS.TOKEN_URL, data=params, headers=headers, res_method="json"
         )
         token_info["expires_at"] = int(time.time()) + token_info["expires_in"]
@@ -75,7 +76,7 @@ class Oauth:
                 DO UPDATE SET token_info = $2
                 WHERE discord_auth.user_id = $1;
                 """
-        await client.cxn.execute(query, user_id, json.dumps(token_info))
+        await self.client.cxn.execute(query, user_id, json.dumps(token_info))
 
         return token_info
 
@@ -91,7 +92,7 @@ class Oauth:
 
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
 
-        token_info = await client.post(
+        token_info = await self.client.http_utils.post(
             CONSTANTS.TOKEN_URL, data=params, headers=headers, res_method="json"
         )
 
@@ -105,35 +106,35 @@ class Oauth:
 
         headers = {"Authorization": f"Bearer {access_token}"}
 
-        user_data = await client.get(
+        user_data = await self.client.http_utils.get(
             url=CONSTANTS.API_URL + "/users/@me", headers=headers, res_method="json"
         )
         return user_data
 
 
-oauth = Oauth()
-
-
 class User:  # Discord user operations with scopes
-    def __init__(self, token_info, user_id):
+    def __init__(self, token_info, user_id, bot_or_app, *, oauth=None):
         self.token_info = token_info
         self.user_id = user_id
+        self.client = bot_or_app
+        self.oauth = oauth or Oauth(bot_or_app)
 
     @classmethod
-    async def from_id(cls, user_id):
+    async def from_id(cls, user_id, bot_or_app):
         query = """
                 SELECT token_info
                 FROM discord_auth
                 WHERE user_id = $1;
                 """
-        token_info = await client.cxn.fetchval(query, int(user_id))
+        token_info = await bot_or_app.cxn.fetchval(query, int(user_id))
 
         if token_info:
             token_info = json.loads(token_info)
             return cls(token_info, user_id)
 
     @classmethod
-    async def from_token(cls, token_info):
+    async def from_token(cls, token_info, bot_or_app):
+        oauth = Oauth(bot_or_app)
         user_data = await oauth.identify(token_info.get("access_token"))
         user_id = int(user_data.get("id"))
         query = """
@@ -143,18 +144,18 @@ class User:  # Discord user operations with scopes
                 DO UPDATE SET token_info = $2
                 WHERE discord_auth.user_id = $1;
                 """
-        await client.cxn.execute(query, user_id, json.dumps(token_info))
+        await bot_or_app.cxn.execute(query, user_id, json.dumps(token_info))
 
-        return cls(token_info, user_id)
+        return cls(token_info, user_id, bot_or_app, oauth=oauth)
 
     async def get(self, url, *, access_token=None):
-        access_token = access_token or await oauth.get_access_token(self)
+        access_token = access_token or await self.oauth.get_access_token(self)
 
         headers = {
             "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json",
         }
-        return await client.get(url, headers=headers, res_method="json")
+        return await self.client.http_utils.get(url, headers=headers, res_method="json")
 
     async def identify(self):
         return await self.get(CONSTANTS.API_URL + "/users/@me")
@@ -163,13 +164,13 @@ class User:  # Discord user operations with scopes
         return await self.get(CONSTANTS.API_URL + "/users/@me/guilds")
 
     async def join_guild(self, guild_id):
-        access_token = await oauth.get_access_token(self)
+        access_token = await self.oauth.get_access_token(self)
 
         params = {"access_token": access_token}
         headers = {
             "Authorization": f"Bot {DISCORD.token}",
         }
-        return await client.put(
+        return await self.client.http_utils.put(
             CONSTANTS.API_URL + f"/guilds/{guild_id}/members/{self.user_id}",
             headers=headers,
             json=params,

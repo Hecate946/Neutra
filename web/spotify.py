@@ -6,7 +6,6 @@ import json
 
 
 from config import SPOTIFY
-from web import client
 
 
 class CONSTANTS:
@@ -41,11 +40,13 @@ class CONSTANTS:
 
 
 class Oauth:
-    def __init__(self):
+    def __init__(self, bot_or_app):
         self.client_id = SPOTIFY.client_id
         self.client_secret = SPOTIFY.client_secret
         self.redirect_uri = SPOTIFY.redirect_uri
         self.scope = " ".join(CONSTANTS.SCOPES)
+
+        self.client = bot_or_app
 
     @property
     def headers(self):
@@ -95,7 +96,7 @@ class Oauth:
 
     async def refresh_access_token(self, user_id, refresh_token):
         params = {"grant_type": "refresh_token", "refresh_token": refresh_token}
-        token_info = await client.post(
+        token_info = await self.client.http_utils.post(
             CONSTANTS.TOKEN_URL, data=params, headers=self.headers, res_method="json"
         )
         if not token_info.get("refresh_token"):
@@ -110,7 +111,7 @@ class Oauth:
                 DO UPDATE SET token_info = $2
                 WHERE spotify_auth.user_id = $1;
                 """
-        await client.cxn.execute(query, user_id, json.dumps(token_info))
+        await self.client.cxn.execute(query, user_id, json.dumps(token_info))
 
         return token_info
 
@@ -120,7 +121,7 @@ class Oauth:
             "code": code,
             "redirect_uri": self.redirect_uri,
         }
-        token_info = await client.post(
+        token_info = await self.client.http_utils.post(
             CONSTANTS.TOKEN_URL, data=params, headers=self.headers, res_method="json"
         )
         if not token_info.get("access_token"):  # Something went wrong, return None
@@ -128,29 +129,29 @@ class Oauth:
         return token_info
 
 
-oauth = Oauth()
-
-
 class User:  # Spotify user w discord user_id
-    def __init__(self, user_id, token_info):
+    def __init__(self, user_id, token_info, bot_or_app, *, oauth=None):
         self.user_id = user_id
         self.token_info = token_info
+        self.client = bot_or_app
+        self.oauth = oauth or Oauth(bot_or_app)
 
     @classmethod
-    async def load(cls, user_id):
+    async def load(cls, user_id, bot_or_app):
         query = """
                 SELECT token_info
                 FROM spotify_auth
                 WHERE user_id = $1;
                 """
-        token_info = await client.cxn.fetchval(query, int(user_id))
+        token_info = await bot_or_app.cxn.fetchval(query, int(user_id))
 
         if token_info:
             token_info = json.loads(token_info)
-            return cls(user_id, token_info)
+            return cls(user_id, token_info, bot_or_app)
 
     @classmethod
-    async def from_token(cls, token_info):
+    async def from_token(cls, token_info, bot_or_app):
+        oauth = Oauth(bot_or_app)
         user_data = await oauth.identify(token_info.get("access_token"))
         user_id = int(user_data.get("id"))
         query = """
@@ -160,12 +161,12 @@ class User:  # Spotify user w discord user_id
                 DO UPDATE SET token_info = $2
                 WHERE spotify_auth.user_id = $1;
                 """
-        await client.cxn.execute(query, user_id, json.dumps(token_info))
+        await bot_or_app.cxn.execute(query, user_id, json.dumps(token_info))
 
-        return cls(token_info, user_id)
+        return cls(token_info, user_id, bot_or_app)
 
     async def auth(self):
-        access_token = await oauth.get_access_token(self.user_id, self.token_info)
+        access_token = await self.oauth.get_access_token(self.user_id, self.token_info)
 
         headers = {
             "Authorization": f"Bearer {access_token}",
@@ -174,10 +175,12 @@ class User:  # Spotify user w discord user_id
         return headers
 
     async def get(self, url):
-        return await client.get(url, headers=await self.auth())
+        return await self.client.http_utils.get(
+            url, headers=await self.auth(), res_method="json"
+        )
 
     async def put(self, url, json=None, res_method=None):
-        return await client.put(
+        return await self.client.http_utils.put(
             url, headers=await self.auth(), json=json, res_method=res_method
         )
 
@@ -219,9 +222,15 @@ class User:  # Spotify user w discord user_id
         data = await self.get_top_artists(limit, time_range)
         genres = []
         for artist in data["items"]:
+            print(artist["genres"])
             genres.extend(artist["genres"])
 
         return Counter(genres)
+
+    async def get_genre_seeds(self):
+        return await self.get(
+            CONSTANTS.API_URL + "recommendations/available-genre-seeds"
+        )
 
     async def get_top_albums(self, limit=50):
         params = {"limit": limit}
@@ -238,14 +247,14 @@ class User:  # Spotify user w discord user_id
         return await self.put(CONSTANTS.API_URL + "me/player/play", json=kwargs)
 
     async def skip_to_next(self):
-        return await client.post(
+        return await self.client.http_utils.post(
             CONSTANTS.API_URL + "me/player/next",
             headers=await self.auth(),
             res_method=None,
         )
 
     async def skip_to_previous(self):
-        return await client.post(
+        return await self.client.http_utils.post(
             CONSTANTS.API_URL + "me/player/previous",
             headers=await self.auth(),
             res_method=None,
@@ -274,7 +283,7 @@ class User:  # Spotify user w discord user_id
     async def enqueue(self, uri):
         params = {"uri": uri}
         query_params = urlencode(params)
-        return await client.post(
+        return await self.client.http_utils.post(
             CONSTANTS.API_URL + "me/player/queue?" + query_params,
             headers=await self.auth(),
             res_method=None,
@@ -346,9 +355,10 @@ class Formatting:
             {
                 "index": index,
                 "name": genre.capitalize(),
-                "percent": f"{count/sum(data.values()):.2%}",
+                "percent": f"{count/sum([x[1] for x in data.most_common() if x[1] > 2]):.1%}",
             }
-            for index, (genre, count) in enumerate(data.most_common())
+            for index, (genre, count) in enumerate(data.most_common(), start=1)
+            if count > 2
         ]
 
 

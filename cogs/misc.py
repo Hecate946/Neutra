@@ -34,7 +34,7 @@ class Misc(commands.Cog):
         """
         async with ctx.channel.typing():
             try:
-                url = await self.bot.get(
+                url = await self.bot.http_utils.get(
                     f"https://api.urbandictionary.com/v0/define?term={search}",
                     res_method="json",
                 )
@@ -135,7 +135,7 @@ class Misc(commands.Cog):
 
         message = await ctx.load("Printing...")
 
-        image_bytes = await self.bot.get(url, res_method="read")
+        image_bytes = await self.bot.http_utils.get(url, res_method="read")
         path = BytesIO(image_bytes)
         if not path:
             await message.edit(

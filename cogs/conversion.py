@@ -337,7 +337,7 @@ class Conversion(commands.Cog):
             await ctx.send_help(str(ctx.command))
 
     async def detect_file(self, ctx):
-        """ Detect if user uploaded a file to convert longer text """
+        """Detect if user uploaded a file to convert longer text"""
         if ctx.message.attachments:
             file = ctx.message.attachments[0].url
 
@@ -345,7 +345,7 @@ class Conversion(commands.Cog):
                 raise commands.BadArgument(".txt files only")
 
         try:
-            content = await self.bot.get(file, no_cache=True)
+            content = await self.bot.http_utils.get(file, no_cache=True)
         except Exception:
             raise commands.BadArgument("Invalid .txt file")
 
@@ -354,7 +354,7 @@ class Conversion(commands.Cog):
         return content
 
     async def encryptout(self, ctx, convert: str, input):
-        """ The main, modular function to control encrypt/decrypt commands """
+        """The main, modular function to control encrypt/decrypt commands"""
         if not input:
             return await ctx.usage()
 
@@ -386,7 +386,7 @@ class Conversion(commands.Cog):
 
     @encode.command(name="base32", aliases=["b32"])
     async def encode_base32(self, ctx, *, input: commands.clean_content = None):
-        """ Encode in base32 """
+        """Encode in base32"""
         if not input:
             input = await self.detect_file(ctx)
 
@@ -396,7 +396,7 @@ class Conversion(commands.Cog):
 
     @decode.command(name="base32", aliases=["b32"])
     async def decode_base32(self, ctx, *, input: commands.clean_content = None):
-        """ Decode in base32 """
+        """Decode in base32"""
         if not input:
             input = await self.detect_file(ctx)
 
@@ -409,7 +409,7 @@ class Conversion(commands.Cog):
 
     @encode.command(name="base64", aliases=["b64"])
     async def encode_base64(self, ctx, *, input: commands.clean_content = None):
-        """ Encode in base64 """
+        """Encode in base64"""
         if not input:
             input = await self.detect_file(ctx)
 
@@ -419,7 +419,7 @@ class Conversion(commands.Cog):
 
     @decode.command(name="base64", aliases=["b64"])
     async def decode_base64(self, ctx, *, input: commands.clean_content = None):
-        """ Decode in base64 """
+        """Decode in base64"""
         if not input:
             input = await self.detect_file(ctx)
 
@@ -432,7 +432,7 @@ class Conversion(commands.Cog):
 
     @encode.command(name="rot13", aliases=["r13"])
     async def encode_rot13(self, ctx, *, input: commands.clean_content = None):
-        """ Encode in rot13 """
+        """Encode in rot13"""
         if not input:
             input = await self.detect_file(ctx)
 
@@ -440,7 +440,7 @@ class Conversion(commands.Cog):
 
     @decode.command(name="rot13", aliases=["r13"])
     async def decode_rot13(self, ctx, *, input: commands.clean_content = None):
-        """ Decode in rot13 """
+        """Decode in rot13"""
         if not input:
             input = await self.detect_file(ctx)
 
@@ -451,7 +451,7 @@ class Conversion(commands.Cog):
 
     @encode.command(name="hex")
     async def encode_hex(self, ctx, *, input: commands.clean_content = None):
-        """ Encode in hex """
+        """Encode in hex"""
         if not input:
             input = await self.detect_file(ctx)
 
@@ -461,7 +461,7 @@ class Conversion(commands.Cog):
 
     @decode.command(name="hex")
     async def decode_hex(self, ctx, *, input: commands.clean_content = None):
-        """ Decode in hex """
+        """Decode in hex"""
         if not input:
             input = await self.detect_file(ctx)
 
@@ -474,7 +474,7 @@ class Conversion(commands.Cog):
 
     @encode.command(name="base85", aliases=["b85"])
     async def encode_base85(self, ctx, *, input: commands.clean_content = None):
-        """ Encode in base85 """
+        """Encode in base85"""
         if not input:
             input = await self.detect_file(ctx)
 
@@ -484,7 +484,7 @@ class Conversion(commands.Cog):
 
     @decode.command(name="base85", aliases=["b85"])
     async def decode_base85(self, ctx, *, input: commands.clean_content = None):
-        """ Decode in base85 """
+        """Decode in base85"""
         if not input:
             input = await self.detect_file(ctx)
 
@@ -497,7 +497,7 @@ class Conversion(commands.Cog):
 
     @encode.command(name="ascii85", aliases=["a85"])
     async def encode_ascii85(self, ctx, *, input: commands.clean_content = None):
-        """ Encode in ASCII85 """
+        """Encode in ASCII85"""
         if not input:
             input = await self.detect_file(ctx)
 
@@ -507,7 +507,7 @@ class Conversion(commands.Cog):
 
     @decode.command(name="ascii85", aliases=["a85"])
     async def decode_ascii85(self, ctx, *, input: commands.clean_content = None):
-        """ Decode in ASCII85 """
+        """Decode in ASCII85"""
         if not input:
             input = await self.detect_file(ctx)
 

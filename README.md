@@ -1,46 +1,82 @@
-# Neutra Moderation & Stat Tracking Discord Bot
-### [Bot Invite Link](https://discord.com/oauth2/authorize?client_id=806953546372087818&scope=bot+applications.commands&permissions=956689622)
+# ;ø÷lvvi.u Moderation & Stat Tracking Discord Bot
+
+### [Bot Invite Link](https://discord.com/oauth2/authorize?client_id=813275073459912725&scope=bot+applications.commands&permissions=956689622)
+
 ### [Support Server](https://discord.gg/H2qTG4yxqb)
+
 ### [DiscordBots.gg](https://discord.bots.gg/bots/806953546372087818)
+
 ### [Top.gg](https://top.gg/bot/806953546372087818)
+
 ## Overview
-Hello! I'm Neutra, and I specialize in tracking and moderation.
+
+Hello! I'm ;ø÷lvvi.u, and I specialize in tracking and moderation.
 I was designed to collect all sorts of data on servers, users,
 messages, emojis, online time, and more! I also come with a fast
 and clean moderation system that offers every opportunity for effective
-server management. Apart from moderation and tracking, I feature 313
-commands across 25 categories that provide awesome utilities!
+server management. Apart from moderation and tracking, I feature 351
+commands across 27 categories that provide awesome utilities!
 Some examples include managing roles and logging server actions.
+
 ## Categories
+
 ##### [Admin](#Admin-1)
+
+##### [Animals](#Animals-1)
+
 ##### [Automod](#Automod-1)
+
 ##### [Botadmin](#Botadmin-1)
+
 ##### [Botconfig](#Botconfig-1)
+
 ##### [Config](#Config-1)
+
+##### [Conversion](#Conversion-1)
+
 ##### [Database](#Database-1)
+
 ##### [Files](#Files-1)
+
 ##### [Help](#Help-1)
+
 ##### [Home](#Home-1)
+
 ##### [Info](#Info-1)
+
 ##### [Logging](#Logging-1)
+
 ##### [Manager](#Manager-1)
+
+##### [Misc](#Misc-1)
+
 ##### [Mod](#Mod-1)
+
 ##### [Monitor](#Monitor-1)
+
 ##### [Player](#Player-1)
+
 ##### [Playlists](#Playlists-1)
+
 ##### [Queue](#Queue-1)
+
 ##### [Audio](#Audio-1)
+
 ##### [Voice](#Voice-1)
-##### [SpotifyTracker](#SpotifyTracker-1)
+
 ##### [Server](#Server-1)
+
 ##### [Stats](#Stats-1)
+
 ##### [Tasks](#Tasks-1)
+
 ##### [Tracking](#Tracking-1)
+
 ##### [Utility](#Utility-1)
 
-
 ### Admin
-#### Module for server administration. (11 Commands)
+
+#### Module for server administration. (13 Commands)
 
 ```yaml
 kill: Have the bot leave the server.
@@ -59,6 +95,10 @@ massrole: Manage mass adding/removing roles.
 
 muterole: Setup server muting system.
 
+optin: Opt back in to data collection.
+
+optout: Opt out of all data collection.
+
 prefix: Show all server prefixes.
 
 prefixes: Show all server prefixes.
@@ -66,7 +106,48 @@ prefixes: Show all server prefixes.
 reset: Manage stored user data.
 ```
 
+### Animals
+
+#### (17 Commands)
+
+```yaml
+axolotl: Random picture of an axolotl
+
+bear: Random picture of a bear
+
+bird: Random picture of a birb
+
+bunny: Random picture of a bunny
+
+cat: Random picture of a cat
+
+dog: Random picture of a dog
+
+duck: Random picture of a duck
+
+fox: Random picture of a fox
+
+panda: Random picture of a panda (may be a redpanda)
+
+penguin: Random picture of a penguin
+
+pig: Random picture of a pig
+
+possum: Random picture of a possum
+
+raccoon: Random picture of a raccoon
+
+redpanda: Random picture of a redpanda
+
+sheep: Random picture of a sheep
+
+snake: Random picture of a snake
+
+squirrel: Random picture of a squirrel
+```
+
 ### Automod
+
 #### Manage the automod system. (10 Commands)
 
 ```yaml
@@ -92,6 +173,7 @@ warns: Display the server warnlist.
 ```
 
 ### Botadmin
+
 #### Bot admin only stats cog. (24 Commands)
 
 ```yaml
@@ -145,6 +227,7 @@ topservers: Show most member servers.
 ```
 
 ### Botconfig
+
 #### Owner only configuration cog. (14 Commands)
 
 ```yaml
@@ -178,6 +261,7 @@ write: Write to the bot overview or changelog.
 ```
 
 ### Config
+
 #### Configure the permission system. (4 Commands)
 
 ```yaml
@@ -190,7 +274,46 @@ ignore: Ignore channels, roles, and users.
 unignore: Unignore channels, users, and roles.
 ```
 
+### Conversion
+
+#### Module for unit conversions. (16 Commands)
+
+```yaml
+binint: Convert binary to an integer.
+
+binstr: Convert binary to a string
+
+cm: Convert centimeters to feet and inches.
+
+dechex: Convert decimal into hex.
+
+decode: Decode from b32, b64, b85, rot13, hex.
+
+encode: Encode to: b32, b64, b85, rot13, hex.
+
+ft: Convert feet.inches to centimeters
+
+hexdec: Convert hex to decimal.
+
+intbin: Convert an integer to binary.
+
+kg: Convert kilograms to pounds.
+
+lb: Convert pounds to kilograms
+
+morse: Converts ascii to morse code.
+
+morsetable: Show the morse lookup table
+
+strbin: Convert a string to binary.
+
+temp: Convert between units of temperature.
+
+unmorse: Converts morse code to ascii.
+```
+
 ### Database
+
 #### Module for handling the database (6 Commands)
 
 ```yaml
@@ -208,6 +331,7 @@ update: Update the database.
 ```
 
 ### Files
+
 #### Module for downloading files. (14 Commands)
 
 ```yaml
@@ -241,6 +365,7 @@ readme: DMs you my readme file.
 ```
 
 ### Help
+
 #### My extensive help category. (18 Commands)
 
 ```yaml
@@ -282,6 +407,7 @@ writers: Show all people who wrote for me.
 ```
 
 ### Info
+
 #### Module for bot information. (26 Commands)
 
 ```yaml
@@ -339,6 +465,7 @@ vote: Show your support by voting for me!
 ```
 
 ### Logging
+
 #### Manage the logging system (7 Commands)
 
 ```yaml
@@ -358,6 +485,7 @@ unlogchannel: Remove the server logging channel.
 ```
 
 ### Manager
+
 #### Manage bot processes and cogs. (18 Commands)
 
 ```yaml
@@ -398,7 +526,20 @@ sudo: Run a command as another user.
 unload: Unload an extension.
 ```
 
+### Misc
+
+#### (3 Commands)
+
+```yaml
+define: None
+
+print: None
+
+size: Just try it and see.
+```
+
 ### Mod
+
 #### Moderate server users. (17 Commands)
 
 ```yaml
@@ -438,6 +579,7 @@ unmute: Unmute muted users.
 ```
 
 ### Monitor
+
 #### Module for monitoring bot status. (6 Commands)
 
 ```yaml
@@ -455,6 +597,7 @@ todo: Manage the bot's todo list.
 ```
 
 ### Player
+
 #### Module for playing audio. (17 Commands)
 
 ```yaml
@@ -494,6 +637,7 @@ youtube: Get results from a search.
 ```
 
 ### Playlists
+
 #### Module for managing playlists. (4 Commands)
 
 ```yaml
@@ -507,6 +651,7 @@ playtop: Enqueue the top 10 most frequently queued tracks.
 ```
 
 ### Queue
+
 #### Module for managing the queue. (14 Commands)
 
 ```yaml
@@ -540,6 +685,7 @@ weed: Clear absent user enqueues.
 ```
 
 ### Audio
+
 #### Module for managing the queue. (16 Commands)
 
 ```yaml
@@ -577,6 +723,7 @@ whisper: Toggle the whisper effect.
 ```
 
 ### Voice
+
 #### Module for voice permissions. (10 Commands)
 
 ```yaml
@@ -602,6 +749,7 @@ vctransfer: Transfer users into a new channel.
 ```
 
 ### Server
+
 #### Module for server management (4 Commands)
 
 ```yaml
@@ -615,6 +763,7 @@ role: Role management commands.
 ```
 
 ### Stats
+
 #### Module for server statistics (24 Commands)
 
 ```yaml
@@ -668,6 +817,7 @@ whohas: Show the people who have a role.
 ```
 
 ### Tasks
+
 #### Module for handling all timed tasks. (1 Commands)
 
 ```yaml
@@ -675,6 +825,7 @@ reminder: Set a reminder for yourself.
 ```
 
 ### Tracking
+
 #### Module for user statistics (23 Commands)
 
 ```yaml
@@ -726,6 +877,7 @@ voicetime: Get voice data
 ```
 
 ### Utility
+
 #### Module for general utilities. (25 Commands)
 
 ```yaml

@@ -170,7 +170,7 @@ class Info(commands.Cog):
 
         query = "select (runtime, reboot_count) from config where client_id = $1"
         runtime, reboots = await self.bot.cxn.fetchval(query, self.bot.user.id)
-        uptime = time.time() - self.bot.statustime
+        uptime = time.time() - self.bot.starttime
 
         total_uptime = utils.time_between(0, int(runtime + uptime), verbose=False)
         current_uptime = utils.time_between(0, int(uptime), verbose=False)
@@ -1153,7 +1153,7 @@ class Info(commands.Cog):
                 """
         botstats = await self.bot.cxn.fetchrow(query, self.bot.user.id)
         unix_timestamp = time.time()
-        current_uptime = unix_timestamp - self.bot.statustime
+        current_uptime = unix_timestamp - self.bot.starttime
         uptime = current_uptime + botstats["runtime"]
         total = unix_timestamp - botstats["starttime"]
 

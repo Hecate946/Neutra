@@ -1,4 +1,3 @@
-from email import header
 import typing
 import discord
 from discord.ext import commands, tasks
@@ -24,17 +23,22 @@ class Connections(commands.Cog):
             "medium_term": "semester",
             "long_term": "year",
         }
-        # self.live_stats.start()
-        
+        self.live_stats.start()
 
-    # @tasks.loop(seconds=5)
-    # async def live_stats(self):
-    @decorators.command()
-    async def post(self, ctx):
-        import requests
-        import json
-        print(self.bot.message_stats)
-        requests.post("http://localhost:3000/live_stats", data=json.dumps(self.bot.message_stats), headers={"Content-Type": "application/json"})
+    @tasks.loop(seconds=1)
+    async def live_stats(self):
+
+        r = await self.bot.http_utils.post(
+            "http://localhost:3000/stats",
+            data={
+                "members": len(self.bot.users),
+                "servers": len(self.bot.guilds),
+                "messages": sum(self.bot.message_stats.values()),
+            },
+            headers={"Content-Type": "application/json"},
+            res_method="json",
+        )
+        print(r)
 
     def truncate(self, string, max_chars=20):
         return (string[: max_chars - 3] + "...") if len(string) > max_chars else string

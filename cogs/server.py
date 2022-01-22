@@ -583,7 +583,7 @@ class Server(commands.Cog):
                 "There are no more emoji slots available in this server."
             )
 
-        async with self.bot.session.get(emoji.url) as resp:
+        async with self.bot.http_utils.get(emoji.url) as resp:
             if resp.status >= 400:
                 return await ctx.fail("Could not fetch the image.")
             if int(resp.headers["Content-Length"]) >= (256 * 1024):

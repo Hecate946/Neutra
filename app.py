@@ -1,16 +1,58 @@
-import secrets
-from quart import Quart, request, redirect, url_for, render_template, session
+import os
 import json
+import asyncio
+import aiohttp
+import asyncpg
+import secrets
 
-from web import client
+from quart import Quart, request, redirect, url_for, render_template, session, jsonify
+
 from web import discord
 from web import spotify
 
 from config import SUPPORT
+from config import POSTGRES
+
+from utilities import http
 
 
-app = Quart(__name__)
-app.secret_key = secrets.token_urlsafe(64)
+class Web(Quart):
+    def __init__(self, name):
+        super().__init__(name)
+        self.loop = asyncio.get_event_loop()
+        asyncio.set_event_loop(self.loop)
+
+        self.scripts = [
+            x[:-4] for x in os.listdir("./data/scripts") if x.endswith(".sql")
+        ]
+
+        self.cxn = self.loop.run_until_complete(asyncpg.create_pool(POSTGRES.uri))
+        self.loop.run_until_complete(self.initialize())
+
+        self.stats = {}
+
+        self.secret_key = secrets.token_urlsafe(64)
+
+    def run(self):
+        return super().run(host="0.0.0.0", port=3000, loop=self.loop)
+
+    async def initialize(self):
+        if not hasattr(self, "session"):
+            self.session = aiohttp.ClientSession(loop=self.loop)
+
+        if not hasattr(self, "http_utils"):
+            self.http_utils = http.Utils(self.session)
+
+        await self.scriptexec()
+
+    async def scriptexec(self):
+        # We execute the SQL scripts to make sure we have all our tables.
+        for script in self.scripts:
+            with open(f"./data/scripts/{script}.sql", "r", encoding="utf-8") as script:
+                await self.cxn.execute(script.read())
+
+
+app = Web(__name__)
 
 
 @app.route("/")
@@ -32,15 +74,15 @@ async def discord_login():
     if not code:
         # They were redirected by me, or they visited the endpoint on their own.
         # Send them to discord to get their user_id.
-        return redirect(discord.oauth.get_auth_url())
+        return redirect(discord.Oauth(app).get_auth_url())
 
     # User was redirected from discord auth url
-    token_info = await discord.oauth.request_access_token(code)
+    token_info = await discord.Oauth(app).request_access_token(code)
 
     if not token_info:  # Invalid code or user rejection
-        return redirect(discord.oauth.get_auth_url())
+        return redirect(discord.Oauth(app).get_auth_url())
 
-    user = await discord.User.from_token(token_info)  # Save user
+    user = await discord.User.from_token(token_info, app)  # Save user
     session["user_id"] = int(user.user_id)
 
     ref = session.pop("referrer", None)
@@ -82,7 +124,7 @@ async def spotify_connect():
             FROM spotify_auth
             WHERE user_id = $1
             """
-    token_info = await client.cxn.fetchval(query, user_id)
+    token_info = await app.cxn.fetchval(query, user_id)
     if token_info:  # They already logged in to spotify
         ref = session.pop("referrer", None)
         if ref:
@@ -90,13 +132,13 @@ async def spotify_connect():
         return await render_template("success.html")
 
     if not code:  # Need code, redirect user to spotify
-        return redirect(spotify.oauth.get_auth_url())
+        return redirect(spotify.Oauth(app).get_auth_url())
 
     # We have a discord user redirected from spotify,
 
-    token_info = await spotify.oauth.request_access_token(code)
+    token_info = await spotify.Oauth(app).request_access_token(code)
     if not token_info:  # Invalid code or user rejection
-        return redirect(spotify.oauth.get_auth_url())
+        return redirect(spotify.Oauth(app).get_auth_url())
 
     query = """
             INSERT INTO spotify_auth
@@ -105,7 +147,7 @@ async def spotify_connect():
             DO UPDATE SET token_info = $2
             WHERE spotify_auth.user_id = $1;
             """
-    await client.cxn.execute(query, user_id, json.dumps(token_info))
+    await app.cxn.execute(query, user_id, json.dumps(token_info))
     ref = session.pop("referrer", None)
     if ref:
         return redirect(ref)
@@ -122,7 +164,7 @@ async def spotify_recent():
         )  # So they'll send the user back here
         return redirect(url_for("discord_login"))
 
-    user = await spotify.User.load(user_id)
+    user = await spotify.User.load(user_id, app)
 
     data = await user.get_recently_played()
     tracks = spotify.formatting.recent_tracks(data)
@@ -141,7 +183,7 @@ async def spotify_top(spotify_type):
         )  # So they'll send the user back here
         return redirect(url_for("discord_login"))
 
-    user = await spotify.User.load(user_id)
+    user = await spotify.User.load(user_id, app)
 
     if spotify_type == "artists":
         data = await user.get_top_artists(time_range=time_range)
@@ -185,33 +227,23 @@ async def support():
 
 @app.route("/invite")
 async def invite():
-    return redirect(discord.oauth.get_auth_url(invite=True))
+    return redirect(discord.Oauth(app).get_auth_url(invite=True))
 
 
-STATS = {"retard": "hi"}
+@app.route("/stats", methods=["GET", "POST"])
+async def stats():
+    if request.method == "POST":
+        data = await request.json
+        app.stats = data
+        return ""
+    else:
+        return await render_template("stats.html")
 
 
-@app.route("/live_stats", methods=["GET", "POST"])
-async def live_stats():
-    text = await request.json
-    global STATS
-    STATS = text
-    return "hi"
-
-
-@app.route("/_stuff")
-async def background_process():
-    from quart import jsonify
-
-    return jsonify(result=json.dumps(STATS))
-
-
-# allow both GET and POST requests
-@app.route("/s", methods=["GET"])
-async def retard():
-
-    return await render_template("s.html")
+@app.route("/_stats")
+async def _stats():
+    return jsonify(**app.stats)
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=3000, loop=client.loop)
+    app.run()

@@ -707,7 +707,7 @@ class Config(commands.Cog):
             await ctx.success(f"{title}```sml\n{data}```")
             return
 
-        async with self.bot.session.post(
+        async with self.bot.http_utils.post(
             "https://hastebin.com/documents", data=data
         ) as resp:
             if resp.status != 200:

@@ -576,7 +576,7 @@ class Tracking(commands.Cog):
         async def url_to_bytes(url):
             if not url:
                 return None
-            bytes_av = await self.bot.get(url, res_method="read")
+            bytes_av = await self.bot.http_utils.get(url, res_method="read")
             return bytes_av
 
         avys = await asyncio.gather(*[url_to_bytes(url["url"]) for url in urls])
@@ -707,7 +707,7 @@ class Tracking(commands.Cog):
         async def url_to_bytes(url):
             if not url:
                 return None
-            bytes_av = await self.bot.get(url, res_method="read")
+            bytes_av = await self.bot.http_utils.get(url, res_method="read")
             return bytes_av
 
         avys = await asyncio.gather(*[url_to_bytes(url["url"]) for url in urls])

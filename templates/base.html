@@ -1,34 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta property="og:title" content="Neutra" />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://neutrabot.com" />
-    <meta
-      property="og:image"
-      content="https://cdn.discordapp.com/attachments/872338764276576266/927503071242747944/neutra.png"
-    />
-    <meta
-      property="og:description"
-      content="Hello! I'm Neutra, and I specialize in tracking and moderation. I was designed to collect statistics on servers, users, messages, and more."
-    />
-    <meta name="theme-color" content="#0A1822" />
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link
-      rel="shortcut icon"
-      type="image/x-icon"
-      href="{{ url_for('static', filename='assets/neutra.ico') }}"
-      id="favicon"
-    />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/home.css') }}"
-    />
-    {% block head %}{% endblock %}
-  </head>
-  <body>
-    {% block body %}{% endblock %}
-  </body>
+<head>
+<meta property="og:title" content="Neutra" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://neutrabot.com" />
+<meta property="og:image" content="https://cdn.discordapp.com/attachments/872338764276576266/927503071242747944/neutra.png" />
+<meta property="og:description" content="Hello! I'm Neutra, and I specialize in tracking and moderation. I was designed to collect statistics on servers, users, messages, and more." />
+<meta name="theme-color" content="#0A1822">
+<meta charset="UTF-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="shortcut icon" type="image/x-icon" href="{{ url_for('static', filename='assets/neutra.ico') }}" id="favicon">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}" />
+<script type="text/javascript" src="{{ url_for('static', filename='jquery-3.6.0.js') }}"></script>
+{% block head %}{% endblock %}
+<title>{% block title %}Neutra{% endblock %}</title>
+</head>
+<body>
+<nav class="navbar">
+<!-- LOGO -->
+<div class="logo"><img src="{{ url_for('static', filename='assets/neutra.png')}}"></div>
+<!-- NAVIGATION MENU -->
+<ul class="nav-links">
+<!-- USING CHECKBOX HACK -->
+<input type="checkbox" id="checkbox_toggle" />
+<label for="checkbox_toggle" class="hamburger">&#9776;</label>
+<!-- NAVIGATION MENUS -->
+<div class="menu">
+
+<!-- <li class="documentation">
+<a href="/docs">Documentation</a> -->
+<!-- DROPDOWN MENU -->
+<!-- <ul class="dropdown">
+<li><a href="/docs/admin">Administration</a></li>
+<li><a href="/docs/automod">Auto Moderation</a></li>
+<li><a href="/docs/config">Configuration</a></li>
+<li><a href="/docs/files">Files</a></li>
+<li><a href="/docs/help">Help</a></li>
+<li><a href="/docs/info">Information</a></li>
+<li><a href="/docs/logging">Logging</a></li>
+<li><a href="/docs/mod">Moderation</a></li>
+<li><a href="/docs/server">Server</a></li>
+<li><a href="/docs/stats">Statistics</a></li>
+<li><a href="/docs/tasks">Tasks</a></li>
+<li><a href="/docs/tracking">Tracking</a></li>
+<li><a href="/docs/utility">Utility</a></li>
+</ul>
+</li> -->
+
+<li><a href="/">Home</a></li>
+<li><a href="/docs">Documentation</a></li>
+<li><a href="/spotify">Spotify</a></li>
+<li><a href="/invite">Invite</a></li>
+<li><a href="/support">Support</a></li>
+</div>
+</nav>
+</ul>
+{% block body %}{% endblock %}
+</body>
 </html>

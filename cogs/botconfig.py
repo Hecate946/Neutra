@@ -118,7 +118,7 @@ class Botconfig(commands.Cog):
             url = url.strip("<>") if url else None
 
         try:
-            bio = await self.bot.get(url, res_method="read")
+            bio = await self.bot.http_utils.get(url, res_method="read")
             await self.bot.user.edit(avatar=bio)
             em = discord.Embed(
                 description="**Successfully changed the avatar. Currently using:**",

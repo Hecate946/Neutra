@@ -5,6 +5,7 @@ import sys
 import json
 import time
 import aiohttp
+import asyncio
 import discord
 import logging
 import traceback
@@ -14,7 +15,9 @@ from discord.ext import commands, tasks
 from logging.handlers import RotatingFileHandler
 
 from settings import cleanup, database, constants
-from utilities import utils, saver, override
+from utilities import utils, saver, override, http
+
+import config
 
 MAX_LOGGING_BYTES = 32 * 1024 * 1024  # 32 MiB
 
@@ -155,7 +158,7 @@ class Neutra(commands.AutoShardedBot):
             ":",
         ]  # Common prefixes that are valid in DMs
         self.ready = False
-        self.session = aiohttp.ClientSession(loop=self.loop)
+
         self.socket_events = collections.Counter()
 
         self.admin_cogs = [
@@ -196,6 +199,8 @@ class Neutra(commands.AutoShardedBot):
         self.tester = tester
         try:
             super().run(token, reconnect=True)  # Run the bot
+        except RuntimeError:  # Ignore errors
+            pass
         finally:  # Write up our json files with the stats from the session.
             try:
                 self.status_loop.stop()  # Stop the loop gracefully
@@ -205,7 +210,7 @@ class Neutra(commands.AutoShardedBot):
                         self.blacklist, fp, indent=2
                     )  # New blacklisted users from the session
             except AttributeError:
-                pass  # Killed the bot before it established attributes so ignore errors
+                pass  # Ignore errors
 
     def setup(self):
         # Start the task loop
@@ -386,7 +391,10 @@ class Neutra(commands.AutoShardedBot):
             print(utils.traceback_maker(e))
 
         if self.tester is False:
-            self.do_not_load.extend(["CONVERSION", "MUSIC", "MISC", "ANIMALS"])
+            self.website_stats_updater.start()
+            self.do_not_load.extend(
+                ["CONVERSION", "MUSIC", "MISC", "ANIMALS", "CONNECTIONS", "EMAILSMS"]
+            )
             await self.setup_webhooks()
             print(utils.prefix_log("Established Webhooks."))
 
@@ -459,8 +467,11 @@ class Neutra(commands.AutoShardedBot):
         if not hasattr(self, "starttime"):
             self.starttime = time.time()
 
-        if not hasattr(self, "statustime"):
-            self.statustime = time.time()
+        if not hasattr(self, "session"):
+            self.session = aiohttp.ClientSession(loop=self.loop)
+
+        if not hasattr(self, "http_utils"):
+            self.http_utils = http.Utils(self.session)
 
         if not hasattr(self, "server_settings"):
             self.server_settings = database.settings
@@ -688,11 +699,6 @@ class Neutra(commands.AutoShardedBot):
 
         return await self.fetch_user(user_id)
 
-    async def on_ready(self):
-        # from discord_slash import utils
-        # await utils.manage_commands.remove_all_commands_in(bot.user.id, bot.token, 740734113086177433)
-        pass
-
     async def on_error(self, event, *args, **kwargs):
         """
         All event errors and dispatched errors
@@ -917,12 +923,36 @@ class Neutra(commands.AutoShardedBot):
             if resp.status != 200:
                 return await resp.text()
 
-    # Update stats on all sites listing Discord bots
+    # Update stats on all bot lists
     async def update_all_listing_stats(self):
-        for site in self.listing_sites:
-            resp = await self.update_listing_stats(site)
-            if resp:
-                print(resp)
+        tasks = [self.update_listing_stats(site) for site in self.listing_sites]
+        return await asyncio.gather(*tasks)
+
+    @tasks.loop(seconds=1)
+    async def website_stats_updater(self):
+        url = config.BASE_WEB_URL + "stats"
+        headers = {"content-type": "application/json"}
+        data = {
+            "uptime": utils.time_between(self.starttime, int(time.time())),
+            "servers": len(self.guilds),
+            "channels": sum(1 for c in self.get_all_channels()),
+            "members": sum(1 for m in self.get_all_members()),
+            "commands": sum(self.command_stats.values()),
+            "messages": sum(self.message_stats.values()),
+        }
+        data = json.dumps(data)
+
+        try:
+            async with self.session.post(url, headers=headers, data=data) as resp:
+                if resp.status == 200:
+                    self.website_stats_updater.change_interval(seconds=1)
+                else:
+                    info_logger.info(
+                        f"Invalid responce from website. Retrying in 10 minuts. Status: {resp.status} Response: {await resp.text()}"
+                    )
+                    self.website_stats_updater.change_interval(minutes=10)
+        except aiohttp.ClientConnectorError:  # Website is down, retry in 10 minutes
+            self.website_stats_updater.change_interval(minutes=10)
 
 
 bot = Neutra()

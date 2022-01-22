@@ -1,23 +1,23 @@
-{% extends 'home.html' %}
-
-{% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/docs.css') }}">
-{% endblock %}
-{% block body %}
+{% extends 'base.html' %} {% block head %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/docs.css') }}"
+/>
+{% endblock %} {% block body %}
 <div id="navbar2">
-    <a href="/docs/admin">Admin</a>
-    <a href="/docs/automod">Automod</a>
-    <a href="/docs/config">Config</a>
-    <!-- <a href="/docs/conversion">Conversion</a> -->
-    <a href="/docs/files">Files</a>
-    <a href="/docs/info">Info</a>
-    <a href="/docs/logging">Logging</a>
-    <a href="/docs/mod">Mod</a>
-    <a href="/docs/server">Server</a>
-    <a href="/docs/stats">Stats</a>
-    <a href="/docs/tasks">Tasks</a>
-    <a href="/docs/tracking">Tracking</a>
-    <a href="/docs/utility">Utility</a>
+  <a href="/docs/admin">Admin</a>
+  <a href="/docs/automod">Automod</a>
+  <a href="/docs/config">Config</a>
+  <!-- <a href="/docs/conversion">Conversion</a> -->
+  <a href="/docs/files">Files</a>
+  <a href="/docs/info">Info</a>
+  <a href="/docs/logging">Logging</a>
+  <a href="/docs/mod">Mod</a>
+  <a href="/docs/server">Server</a>
+  <a href="/docs/stats">Stats</a>
+  <a href="/docs/tasks">Tasks</a>
+  <a href="/docs/tracking">Tracking</a>
+  <a href="/docs/utility">Utility</a>
 </div>
 
 {% endblock %}

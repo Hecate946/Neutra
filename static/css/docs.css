@@ -1,13 +1,3 @@
-h1 {
-  color: #edf2f4;
-  margin: 10px;
-  position: relative;
-  left: 190;
-  width: 375;
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  text-shadow: 1px 1px 3px #aec1c6;
-}
-
 h2 {
   color: #edf2f4;
   margin: 5px;
@@ -23,8 +13,7 @@ h3 {
   position: relative;
   left: 15;
   margin-left: 20px;
-  margin-right: 20px;
-  padding: 20px;
+  padding: 15px;
   font-family: Avenir, Helvetica, Arial, sans-serif;
   font-weight: normal;
 }
@@ -124,9 +113,8 @@ p b {
 
 #navbar2 {
   background-color: #8d99ae;
-  justify-content: space-around;
+  justify-content: space-between;
   display: flex;
-  flex-wrap: wrap;
   font-size: 18px;
   top: 0px;
   padding-bottom: 15px;
