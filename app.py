@@ -232,16 +232,13 @@ async def invite():
 
 @app.route("/stats", methods=["GET", "POST"])
 async def stats():
-    if request.method == "POST":
-        data = await request.json
-        app.stats = data
-        return ""
-    else:
-        return await render_template("stats.html")
+    return str(app.stats)
 
 
-@app.route("/_stats")
+@app.route("/_stats", methods=["GET", "POST"])
 async def _stats():
+    if request.method == "POST":
+        app.stats = await request.json
     return jsonify(**app.stats)
 
 

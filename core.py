@@ -931,7 +931,7 @@ class Neutra(commands.AutoShardedBot):
 
     @tasks.loop(seconds=1)
     async def website_stats_updater(self):
-        url = config.BASE_WEB_URL + "stats"
+        url = config.BASE_WEB_URL + "_stats"
         headers = {"content-type": "application/json"}
         data = {
             "uptime": utils.time_between(self.starttime, int(time.time())),
