@@ -390,8 +390,9 @@ class Neutra(commands.AutoShardedBot):
         except Exception as e:
             print(utils.traceback_maker(e))
 
+        self.website_stats_updater.start()
         if self.tester is False:
-            self.website_stats_updater.start()
+            # TODO self.website_stats_updater.start()
             self.do_not_load.extend(
                 ["CONVERSION", "MUSIC", "MISC", "ANIMALS", "CONNECTIONS", "EMAILSMS"]
             )
