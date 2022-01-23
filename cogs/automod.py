@@ -65,7 +65,7 @@ class Automod(commands.Cog):
                 continue
             if reason:
                 try:
-                    embed = discord.Embed(color=self.bot.constants.embed)
+                    embed = discord.Embed(color=self.bot.config.EMBED_COLOR)
                     embed.title = "Warn Notice"
                     embed.description = (
                         f"**Server**: `{ctx.guild.name} ({ctx.guild.id})`\n"
@@ -815,7 +815,7 @@ class Automod(commands.Cog):
     @decorators.wait_until_ready()
     @decorators.event_check(lambda s, m: m.guild and not m.author.bot)
     async def on_message(self, message):  # Check for invite links and bad words
-        if message.author.id in self.bot.constants.owners:
+        if message.author.id in self.bot.config.OWNERS:
             return  # We are immune!
         if message.author.guild_permissions.manage_messages:
             return  # We are immune!
@@ -872,7 +872,7 @@ class Automod(commands.Cog):
     @decorators.wait_until_ready()
     @decorators.event_check(lambda s, b, a: a.guild and not a.author.bot)
     async def on_message_edit(self, before, after):
-        if after.author.id in self.bot.constants.owners:
+        if after.author.id in self.bot.config.OWNERS:
             return  # We are immune!
         if after.author.guild_permissions.manage_messages:
             return  # We are immune!

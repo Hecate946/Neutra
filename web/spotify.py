@@ -4,7 +4,7 @@ import base64
 import time
 import json
 
-
+from utilities import utils
 from config import SPOTIFY
 
 
@@ -289,6 +289,16 @@ class User:  # Spotify user w discord user_id
             res_method=None,
         )
 
+    async def get_playlists(self, limit=50, offset=0):
+        """Get a user's owned and followed playlists"""
+        params = {"limit": limit, "offset": offset}
+        query_params = urlencode(params)
+        return await self.get(CONSTANTS.API_URL + "me/playlists?" + query_params)
+
+    async def get_playlist(self, playlist_id):
+        """Get a user's owned and followed playlists"""
+        return await self.get(CONSTANTS.API_URL + f"playlists/{playlist_id}")
+
 
 class Formatting:
     def __init__(self) -> None:
@@ -323,6 +333,7 @@ class Formatting:
                 "image": self.get_image(track["album"]),
                 "name": track["name"],
                 "artist": ", ".join([artist["name"] for artist in track["artists"]]),
+                "duration": utils.parse_duration(track["duration_ms"] / 1000),
             }
             for index, track in enumerate(data["items"], start=1)
         ]
@@ -336,6 +347,7 @@ class Formatting:
                 "artist": ", ".join(
                     [artist["name"] for artist in item["track"]["artists"]]
                 ),
+                "duration": utils.parse_duration(item["track"]["duration_ms"] / 1000),
             }
             for index, item in enumerate(data["items"], start=1)
         ]
@@ -359,6 +371,20 @@ class Formatting:
             }
             for index, (genre, count) in enumerate(data.most_common(), start=1)
             if count > 2
+        ]
+
+    def playlist(self, data):
+        return [
+            {
+                "index": index,
+                "name": item["track"]["name"],
+                "image": self.get_image(item["track"]["album"]),
+                "artist": ", ".join(
+                    [artist["name"] for artist in item["track"]["artists"]]
+                ),
+                "duration": utils.parse_duration(item["track"]["duration_ms"] / 1000),
+            }
+            for index, item in enumerate(data["tracks"]["items"], start=1)
         ]
 
 

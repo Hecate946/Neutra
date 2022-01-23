@@ -45,6 +45,8 @@ from utilities import helpers
 from utilities import converters
 from utilities import decorators
 
+import config
+
 # Set up our music-specific logger.
 log = logging.getLogger("MUSIC_LOGGER")
 log.setLevel(logging.INFO)
@@ -263,19 +265,13 @@ class MusicUtils:
     and spotify-related helper functions.
     """
 
-    def get_key(key: str = ""):
-        """ Fetch a key from the config file """
-        with open("config.json", encoding="utf8") as data:
-            config = json.load(data)
-        return config.get(key)
-
     def spotify(bot):
         """
         Create utiliites.spotify.Spotify() instance
-        from credentials found in ./config.json
+        from credentials found in ./config.py
         """
-        client_id = MusicUtils.get_key("spotify_client_id")
-        client_secret = MusicUtils.get_key("spotify_client_secret")
+        client_id = bot.config.SPOTIFY.client_id
+        client_secret = bot.config.SPOTIFY.client_secret
 
         if client_id and client_secret:
             return Spotify(
@@ -297,11 +293,11 @@ class MusicUtils:
 
             duration = []
             if days > 0:
-                duration.append("{}".format(str(days).zfill(2)))
+                duration.append(str(days))
             if hours > 0:
-                duration.append("{}".format(str(hours).zfill(2)))
+                duration.append(str(hours))
             if minutes > 0:
-                duration.append("{}".format(str(minutes).zfill(2)))
+                duration.append(str(minutes))
             duration.append("{}".format(str(seconds).zfill(2)))
 
             value = ":".join(duration)
@@ -367,7 +363,7 @@ class MusicUtils:
         block = None
         embed = None
         ytdl = source.ytdl
-        embed = discord.Embed(color=ctx.bot.constants.embed)
+        embed = discord.Embed(color=ctx.bot.config.EMBED_COLOR)
         embed.title = "Now Playing"
         embed.description = f"```fix\n{ytdl.title}\n```"
 
@@ -446,7 +442,7 @@ class MusicUtils:
         MUSIC = ctx.bot.constants.emotes["music"]
         LIKE = ctx.bot.constants.emotes["like"]
         DISLIKE = ctx.bot.constants.emotes["dislike"]
-        embed = discord.Embed(color=ctx.bot.constants.embed)
+        embed = discord.Embed(color=ctx.bot.config.EMBED_COLOR)
         embed.title = "Track Information"
         embed.description = f"```fix\n{ytdl.title}\n```"
 
@@ -666,7 +662,7 @@ class QueueEntry:
 
     @property
     def json(self):
-        """ Returns a json representation of QueueEntry. """
+        """Returns a json representation of QueueEntry."""
         json_entry = {
             "title": self.title,
             "search": self.search,
@@ -1048,7 +1044,7 @@ class YTDLSource:
         embed = discord.Embed(
             title=f"Search results for:\n**{search}**",
             description="\n".join(lst),
-            color=ctx.bot.constants.embed,
+            color=ctx.bot.config.EMBED_COLOR,
             timestamp=discord.utils.utcnow(),
         )
         embed.set_author(
@@ -4170,7 +4166,7 @@ class Views:
         ):
             self.clear_items()
             self.fill_items(_help=True)
-            embed = discord.Embed(color=constants.embed)
+            embed = discord.Embed(color=config.EMBED_COLOR)
             embed.set_author(
                 name="Pagination Help Page",
                 icon_url=self.ctx.bot.user.display_avatar.url,
@@ -4681,7 +4677,7 @@ class Views:
         ):
             self.clear_items()
             self.fill_items(_help=True)
-            embed = discord.Embed(color=constants.embed)
+            embed = discord.Embed(color=config.EMBED_COLOR)
             embed.set_author(
                 name="Pagination Help Page",
                 icon_url=self.ctx.bot.user.display_avatar.url,
@@ -4809,7 +4805,7 @@ class Views:
             self.desc_foot = desc_foot
             self.content = content
 
-            self.embed = discord.Embed(color=ctx.bot.constants.embed)
+            self.embed = discord.Embed(color=ctx.bot.config.EMBED_COLOR)
 
         async def start(self):
             self.pages = self.create_pages(self.entries, self.per_page)
@@ -4873,7 +4869,7 @@ class Views:
             self.desc_foot = desc_foot
             self.content = content
 
-            self.embed = discord.Embed(color=ctx.bot.constants.embed)
+            self.embed = discord.Embed(color=ctx.bot.config.EMBED_COLOR)
 
         async def start(self):
             self.pages = self.create_pages(self.entries, self.per_page)
@@ -5147,7 +5143,7 @@ class Views:
         async def help_button(
             self, button: discord.ui.Button, interaction: discord.Interaction
         ):
-            embed = discord.Embed(color=self.ctx.bot.constants.embed)
+            embed = discord.Embed(color=self.ctx.bot.config.EMBED_COLOR)
             embed.set_author(
                 name="Welcome to the audio effects help page.",
                 icon_url=self.ctx.bot.user.display_avatar.url,
@@ -5225,7 +5221,7 @@ class Views:
         async def effects_button(
             self, button: discord.ui.Button, interaction: discord.Interaction
         ):
-            embed = discord.Embed(color=self.ctx.bot.constants.embed)
+            embed = discord.Embed(color=self.ctx.bot.config.EMBED_COLOR)
             embed.title = "Audio Effects"
             embed.description = "Press the `Cancel` button to delete this message.\nPress the `Return` button to return to the main menu.\nPress the `Help` button for the help menu."
             embed.set_footer(
@@ -5317,7 +5313,7 @@ class Views:
         async def help_button(
             self, button: discord.ui.Button, interaction: discord.Interaction
         ):
-            embed = discord.Embed(color=self.ctx.bot.constants.embed)
+            embed = discord.Embed(color=self.ctx.bot.config.EMBED_COLOR)
             embed.set_author(
                 name="Welcome to the audio effects help page.",
                 icon_url=self.ctx.bot.user.display_avatar.url,

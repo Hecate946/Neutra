@@ -172,6 +172,27 @@ async def spotify_recent():
     return await render_template("spotify/tables.html", data=tracks, caption=caption)
 
 
+@app.route("/spotify/playlists/<playlist_id>")
+async def playlists(playlist_id):
+    user_id = session.get("user_id")
+    raw = request.args.get("raw", False)
+
+    if not user_id:  # User is not logged in to discord, redirect them back
+        session["referrer"] = url_for(
+            "playlists", playlist_id=playlist_id, raw=raw
+        )  # So they'll send the user back here
+        return redirect(url_for("discord_login"))
+
+    user = await spotify.User.load(user_id, app)
+    data = await user.get_playlist(playlist_id)
+    if raw:
+        return str(data)
+    playlist = spotify.formatting.playlist(data)
+    return await render_template(
+        "spotify/tables.html", data=playlist, caption=data["name"]
+    )
+
+
 @app.route("/spotify/top/<spotify_type>")
 async def spotify_top(spotify_type):
     user_id = session.get("user_id")

@@ -33,6 +33,7 @@ li {
 /* LOGO */
 .logo img {
   display: block;
+  position: relative;
   margin-left: auto;
   margin-right: auto;
   width: 50px;
@@ -45,6 +46,7 @@ li {
   padding-left: 10px;
   gap: 0.3em;
   font-size: 18px;
+  padding: 10px;
 }
 .menu li:hover {
   background-color: #677080;
@@ -60,32 +62,6 @@ li {
   padding: 5px 14px;
 }
 
-/* DROPDOWN MENU */
-.documentation {
-  position: relative;
-}
-.dropdown {
-  background-color: #8d99ae;
-  padding: 1em 0;
-  position: absolute; /*WITH RESPECT TO PARENT*/
-  display: none;
-  border-radius: 8px;
-  top: 35px;
-}
-.dropdown li + li {
-  margin-top: 10px;
-}
-.dropdown li {
-  padding: 0.5em 1em;
-  width: 8em;
-  text-align: center;
-}
-.dropdown li:hover {
-  background-color: #677080;
-}
-.documentation:hover .dropdown {
-  display: block;
-}
 /*RESPONSIVE NAVBAR MENU STARTS*/
 /* CHECKBOX HACK */
 input[type="checkbox"] {
@@ -94,19 +70,21 @@ input[type="checkbox"] {
 /*HAMBURGER MENU*/
 .hamburger {
   display: none;
-  font-size: 24px;
-  user-select: none;
 }
 /* APPLYING MEDIA QUERIES */
 @media (max-width: 768px) {
   .menu {
     display: none;
+    border: none;
     position: absolute;
     background-color: #8d99ae;
     right: 0;
     left: 0;
     text-align: center;
-    padding: 16px 0;
+    margin-top: 30px;
+  }
+  .navbar.open {
+    margin-bottom: 300px;
   }
   .menu li:hover {
     display: inline-block;
@@ -115,17 +93,27 @@ input[type="checkbox"] {
   }
   .menu li:active {
     display: inline-block;
+    position: relative;
     background-color: #4a505c;
     transition: 0.3s ease;
   }
-  .menu li + li {
+  .menu li {
     margin-top: 12px;
   }
   input[type="checkbox"]:checked ~ .menu {
     display: block;
   }
+
   .hamburger {
     display: block;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    height: 27px;
+    width: 27px;
+    align-items: center;
+    cursor: pointer;
+    transition: all 1s cubic-bezier(0.19, 1, 0.22, 1);
   }
   .dropdown {
     left: 50%;
@@ -136,3 +124,41 @@ input[type="checkbox"] {
     background-color: #677080;
   }
 }
+
+.line {
+  position: absolute;
+  display: block;
+  background: #f0f0f3;
+  width: 100%;
+  height: 10%;
+  border-radius: 0.2rem;
+  transition: all 0.6s cubic-bezier(0.5, 0.1, 0, 1.2);
+}
+
+.line-1 {
+  top: 0;
+}
+
+.line-2 {
+  top: 50%;
+}
+
+.line-3 {
+  top: 100%;
+}
+
+/* input[type="checkbox"]:checked ~ label .line-1 {
+  top: 0;
+  width: 120%;
+  transform: translateX(-12px) rotate(-45deg) translateY(12px);
+}
+
+input[type="checkbox"]:checked ~ label .line-2 {
+  opacity: 0;
+}
+
+input[type="checkbox"]:checked ~ label .line-3 {
+  top: 50%;
+  width: 120%;
+  transform: translateX(-8px) rotate(45deg) translateY(-8px);
+} */

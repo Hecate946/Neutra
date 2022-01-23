@@ -9,13 +9,13 @@ class BotContext(commands.Context):
         self.handled = False
 
     def is_owner(self):
-        """ Checks if the author is one of the owners """
-        return self.author.id in self.bot.constants.owners
+        """Checks if the author is one of the owners"""
+        return self.author.id in self.bot.config.OWNERS
 
     def is_admin(self):
         return (
-            self.author.id in self.bot.constants.admins
-            or self.author.id in self.bot.constants.owners
+            self.author.id in self.bot.config.ADMINS
+            or self.author.id in self.bot.config.OWNERS
         )
 
     async def fail(self, content=None, refer=True, **kwargs):

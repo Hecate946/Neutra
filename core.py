@@ -6,6 +6,7 @@ import json
 import time
 import aiohttp
 import asyncio
+import asyncpg
 import discord
 import logging
 import traceback
@@ -14,8 +15,8 @@ import collections
 from discord.ext import commands, tasks
 from logging.handlers import RotatingFileHandler
 
-from settings import cleanup, database, constants
-from utilities import utils, saver, override, http
+from settings import constants
+from utilities import utils, saver, override, http, db
 
 import config
 
@@ -101,14 +102,14 @@ def get_prefixes(bot, msg):
     """
     This fetches all custom prefixes
     and defaults to mentions & the prefix
-    in ./config.json.
+    in ./config.py
     """
     user_id = bot.user.id
     base = [f"<@!{user_id}> ", f"<@{user_id}> "]
     if msg.guild is None:
-        base.extend([constants.prefix] + bot.common_prefixes)
+        base.extend([config.DEFAULT_PREFIX] + bot.common_prefixes)
     else:
-        base.extend(bot.prefixes.get(msg.guild.id, [constants.prefix]))
+        base.extend(bot.prefixes.get(msg.guild.id, [config.DEFAULT_PREFIX]))
     return base
 
 
@@ -123,15 +124,21 @@ class Neutra(commands.AutoShardedBot):
             command_prefix=get_prefixes,
             case_insensitive=True,
             strip_after_prefix=True,
-            owner_ids=constants.owners,
+            owner_ids=config.OWNERS,
             intents=discord.Intents.all(),
         )
         self.developer_id = 708584008065351681
 
+        # Mode setters
+        self.development = False
+        self.production = False
+        self.tester = False
+
+        self.config = config
+
         self.command_stats = collections.Counter()
         self.message_stats = collections.Counter()
         self.constants = constants
-        self.cxn = database.cxn
         self.exts = [
             x[:-3] for x in sorted(os.listdir("././cogs")) if x.endswith(".py")
         ]
@@ -139,7 +146,6 @@ class Neutra(commands.AutoShardedBot):
             r"(?:https?://)?discord(?:app)?\.(?:com/invite|gg)/[a-zA-Z0-9]+/?"
         )  # discord invite regex
         self.emote_dict = constants.emotes
-        self.prefixes = database.prefixes
         self.common_prefixes = [
             "!",
             ".",
@@ -158,6 +164,7 @@ class Neutra(commands.AutoShardedBot):
             ":",
         ]  # Common prefixes that are valid in DMs
         self.ready = False
+        self.prefixes = {}
 
         self.socket_events = collections.Counter()
 
@@ -194,9 +201,15 @@ class Neutra(commands.AutoShardedBot):
     def hecate(self):
         return self.get_user(self.developer_id)
 
-    def run(self, token, *, tester=False):  # Everything starts from here
+    def run(self):  # Everything starts from here
         self.setup()  # load the cogs
-        self.tester = tester
+
+        if self.development:
+            token = config.DEVELOPMENT.token
+        elif self.tester:
+            token = config.TESTER.token
+        elif self.production:
+            token = config.PRODUCTION.token
         try:
             super().run(token, reconnect=True)  # Run the bot
         except RuntimeError:  # Ignore errors
@@ -382,25 +395,38 @@ class Neutra(commands.AutoShardedBot):
         print(utils.prefix_log("Initializing Cache..."))
         await self.wait_until_ready()
         print(utils.prefix_log(f"Elapsed time: {str(time.time() - st)[:10]} s"))
-        st = time.time()
-        member_list = [x for x in self.get_all_members()]
-        try:
-            await database.initialize(self, member_list)
-            print(utils.prefix_log("Initialized Database."))
-        except Exception as e:
-            print(utils.traceback_maker(e))
 
-        self.website_stats_updater.start()
-        if self.tester is False:
-            # TODO self.website_stats_updater.start()
+        await self.create_db()
+
+        # The rest of the botvars that couldn't be set earlier
+        await self.load_globals()
+
+        if self.production:
+            self.website_stats_updater.start()
             self.do_not_load.extend(
                 ["CONVERSION", "MUSIC", "MISC", "ANIMALS", "CONNECTIONS", "EMAILSMS"]
             )
             await self.setup_webhooks()
             print(utils.prefix_log("Established Webhooks."))
 
-        # The rest of the botvars that couldn't be set earlier
-        await self.load_globals()
+        await self.finalize_startup()
+
+    async def create_db(self):
+        if self.development:
+            self.cxn = await asyncpg.create_pool(config.DEVELOPMENT.POSTGRES.uri)
+        elif self.tester:
+            self.cxn = await asyncpg.create_pool(config.TESTER.POSTGRES.uri)
+        elif self.production:
+            self.cxn = await asyncpg.create_pool(config.PRODUCTION.POSTGRES.uri)
+
+        self.database = db.Database(self.cxn)
+
+        member_list = [x for x in self.get_all_members()]
+        try:
+            await self.database.initialize(self, member_list)
+            print(utils.prefix_log("Initialized Database."))
+        except Exception as e:
+            print(utils.traceback_maker(e))
 
     async def setup_webhooks(self):
         try:
@@ -474,8 +500,11 @@ class Neutra(commands.AutoShardedBot):
         if not hasattr(self, "http_utils"):
             self.http_utils = http.Utils(self.session)
 
+        if not hasattr(self, "prefixes"):
+            self.prefixes = self.database.prefixes
+
         if not hasattr(self, "server_settings"):
-            self.server_settings = database.settings
+            self.server_settings = self.database.settings
 
         if not hasattr(self, "invites"):
 
@@ -504,12 +533,11 @@ class Neutra(commands.AutoShardedBot):
             }
 
         print(utils.prefix_log("Established Globals."))
-        await self.finalize_startup()
 
     async def set_status(self):
         """
         This sets the bot's presence, status, and activity
-        based off of the values in ./config.json
+        based off of the values in the db
         """
         query = """
                 SELECT (
@@ -552,7 +580,7 @@ class Neutra(commands.AutoShardedBot):
 
     async def finalize_startup(self):
         # Delete all records of servers that kicked the bot
-        await cleanup.basic_cleanup(self.guilds)
+        await self.database.basic_cleanup(self.guilds)
         await self.update_all_listing_stats()
 
         self.avatar_saver = saver.AvatarSaver(
@@ -619,7 +647,7 @@ class Neutra(commands.AutoShardedBot):
         return local_inject(self, proxy_msg)
 
     def get_raw_guild_prefixes(self, guild_id):
-        return self.prefixes.get(guild_id, [self.constants.prefix])
+        return self.prefixes.get(guild_id, [self.config.DEFAULT_PREFIX])
 
     async def set_guild_prefixes(self, guild, prefixes):
         if len(prefixes) == 0:
@@ -847,8 +875,8 @@ class Neutra(commands.AutoShardedBot):
             return
 
         await self.update_all_listing_stats()
-        await database.update_server(guild, guild.members)
-        await database.fix_server(guild.id)
+        await self.database.update_server(guild, guild.members)
+        await self.database.fix_server(guild.id)
         if guild.me.guild_permissions.manage_guild:
             self.invites[guild.id] = await guild.invites()
         try:
@@ -866,7 +894,7 @@ class Neutra(commands.AutoShardedBot):
         # No need to waste any space storing their info anymore.
 
         await self.update_all_listing_stats()
-        await cleanup.destroy_server(guild.id)
+        await self.database.destroy_server(guild.id)
         try:
             await self.logging_webhook.send(
                 f"**Information** `{discord.utils.utcnow()}`\n"

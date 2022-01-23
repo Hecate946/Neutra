@@ -23,7 +23,7 @@ class HelpView(discord.ui.View):
         self.embed = embed
 
         invite_url = ctx.bot.oauth
-        support_url = ctx.bot.constants.support
+        support_url = ctx.bot.config.SUPPORT
         github_url = (
             "https://github.com/Hecate946/Neutra/blob/main/README.md"  # "Docs link
         )
@@ -81,7 +81,7 @@ class HelpView(discord.ui.View):
     def help_embed(self):
         help_embed = discord.Embed(
             description="I'm a multipurpose discord bot that specializes in stat tracking and moderation.",
-            color=self.bot.constants.embed,
+            color=self.bot.config.EMBED_COLOR,
         )
         help_embed.set_author(
             name="Welcome to my help page.", icon_url=self.bot.user.display_avatar.url
@@ -173,7 +173,7 @@ class Help(commands.Cog):
         self.desc = (
             f"**Bot Invite Link:** [https://neutra.discord.bot]({self.bot.oauth})\n"
         )
-        self.desc += f"**Support Server:**  [https://discord.gg/neutra]({self.bot.constants.support})\n"
+        self.desc += f"**Support Server:**  [https://discord.gg/neutra]({self.bot.config.SUPPORT})\n"
         self.desc += f"**Voting Link:**  [https://top.gg/bot/neutra/vote](https://top.gg/bot/806953546372087818/vote)"
 
     ############################
@@ -189,7 +189,7 @@ class Help(commands.Cog):
             title=f"{self.bot.user.name}'s Help Command",
             url="https://discord.gg/947ramn",
             description=self.desc,
-            color=self.bot.constants.embed,
+            color=self.bot.config.EMBED_COLOR,
         )
 
         embed.set_footer(
@@ -236,7 +236,7 @@ class Help(commands.Cog):
         embed = discord.Embed(
             title=f"Category: `{cog.qualified_name}`",
             description=self.desc,
-            color=self.bot.constants.embed,
+            color=self.bot.config.EMBED_COLOR,
         )
         embed.set_footer(
             text=f'Use "{ctx.clean_prefix}help command" for information on a command.\n'
@@ -269,7 +269,7 @@ class Help(commands.Cog):
         embed = discord.Embed(
             title=f"Category: `{command.cog_name}`",
             description=self.desc,
-            color=self.bot.constants.embed,
+            color=self.bot.config.EMBED_COLOR,
         )
         embed.set_footer(
             text=f'Use "{ctx.clean_prefix}help {_footer}" for information on a {_footer}.'
@@ -522,11 +522,20 @@ class Help(commands.Cog):
             ###############
             ## Beta help ##
             ###############
-            if category_or_command.lower() in ["miscellaneous", "misc"] and self.bot.get_cog("Misc"):
+            if (
+                category_or_command.lower()
+                in [
+                    "miscellaneous",
+                    "misc",
+                ]
+                and self.bot.get_cog("Misc")
+            ):
                 cog = self.bot.get_cog("Misc")
                 return await self.send_cog_help(ctx, cog)
 
-            if category_or_command.lower() in ["music", "player"] and self.bot.get_cog("Player"):
+            if category_or_command.lower() in ["music", "player"] and self.bot.get_cog(
+                "Player"
+            ):
                 cog = self.bot.get_cog("Player")
                 return await self.send_cog_help(ctx, cog)
 
@@ -542,7 +551,9 @@ class Help(commands.Cog):
                 cog = self.bot.get_cog("Audio")
                 return await self.send_cog_help(ctx, cog)
 
-            if category_or_command.lower() in ["playlists"] and self.bot.get_cog("Player"):
+            if category_or_command.lower() in ["playlists"] and self.bot.get_cog(
+                "Player"
+            ):
                 cog = self.bot.get_cog("Playlists")
                 return await self.send_cog_help(ctx, cog)
 

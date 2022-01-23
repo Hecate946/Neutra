@@ -65,7 +65,7 @@ class Home(commands.Cog):
             f"> Click [here](https://discord.com/channels/{HOME}/{GENERAL}) to start chatting.\n"
             f"> Click [here](https://discord.com/channels/{HOME}/{TESTING}) to run commands.\n",
             timestamp=discord.utils.utcnow(),
-            color=self.bot.constants.embed,
+            color=self.bot.config.EMBED_COLOR,
             url=self.bot.oauth,
         )
         embed.set_thumbnail(url=utils.get_icon(member.guild))
@@ -113,7 +113,7 @@ class Home(commands.Cog):
             # f"> Click [here](https://discord.com/channels/{HOME}/{GENERAL}) to start chatting.\n"
             # f"> Click [here](https://discord.com/channels/{HOME}/{TESTING}) to run commands.\n",
             timestamp=discord.utils.utcnow(),
-            color=self.bot.constants.embed,
+            color=self.bot.config.EMBED_COLOR,
             url=self.bot.oauth,
         )
         embed.set_thumbnail(url=utils.get_icon(member.guild))

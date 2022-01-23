@@ -118,7 +118,7 @@ class Info(commands.Cog):
             text_channels += len(guild.text_channels)
             voice_channels += len(guild.voice_channels)
 
-        embed = discord.Embed(color=self.bot.constants.embed)
+        embed = discord.Embed(color=self.bot.config.EMBED_COLOR)
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
 
         embed.add_field(name="Last Boot", value=str(uptime).capitalize())
@@ -187,7 +187,7 @@ class Info(commands.Cog):
 
         ram_usage = self.process.memory_full_info().rss / 1024 ** 2
 
-        embed = discord.Embed(color=self.bot.constants.embed)
+        embed = discord.Embed(color=self.bot.config.EMBED_COLOR)
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
         embed.add_field(name="Session Uptime", value=current_uptime)
         embed.add_field(name="Total Runtime", value=total_uptime)
@@ -257,7 +257,7 @@ class Info(commands.Cog):
             An embed of all the current bot admins
         """
         our_list = []
-        for user_id in self.bot.constants.admins:
+        for user_id in self.bot.config.ADMINS:
             user = self.bot.get_user(user_id)
             our_list.append({"name": f"**{str(user)}**", "value": f"ID: `{user.id}`"})
         p = pagination.MainMenu(
@@ -266,7 +266,7 @@ class Info(commands.Cog):
                     ("{}. {}".format(y + 1, x["name"]), x["value"])
                     for y, x in enumerate(our_list)
                 ],
-                title="My Admins ({:,} total)".format(len(self.bot.constants.admins)),
+                title="My Admins ({:,} total)".format(len(self.bot.config.ADMINS)),
                 per_page=15,
             )
         )
@@ -296,7 +296,7 @@ class Info(commands.Cog):
             An embed of the bot's owners
         """
         our_list = []
-        for user_id in self.bot.constants.owners:
+        for user_id in self.bot.config.OWNERS:
             user = self.bot.get_user(user_id)
             our_list.append({"name": f"**{str(user)}**", "value": f"ID: `{user.id}`"})
         p = pagination.MainMenu(
@@ -305,7 +305,7 @@ class Info(commands.Cog):
                     ("{}. {}".format(y + 1, x["name"]), x["value"])
                     for y, x in enumerate(our_list)
                 ],
-                title="My Owners ({:,} total)".format(len(self.bot.constants.owners)),
+                title="My Owners ({:,} total)".format(len(self.bot.config.OWNERS)),
                 per_page=15,
             )
         )
@@ -383,7 +383,7 @@ class Info(commands.Cog):
         )
         commits = process.communicate()[0].strip().decode("utf-8")
 
-        embed = discord.Embed(color=self.bot.constants.embed)
+        embed = discord.Embed(color=self.bot.config.EMBED_COLOR)
         embed.title = "Lastest Github Commits"
         embed.url = "https://github.com/Hecate946/Neutra"
         embed.description = commits
@@ -444,7 +444,7 @@ class Info(commands.Cog):
         embed = discord.Embed(
             title="Extensions",
             description="```css\n" + "\n".join(cog_list) + "```",
-            color=self.bot.constants.embed,
+            color=self.bot.config.EMBED_COLOR,
         )
         await ctx.send_or_reply(embed=embed)
 
@@ -795,7 +795,7 @@ class Info(commands.Cog):
             description=overview.format(
                 self.bot.user.name, len(command_list), len(category_list)
             ),
-            color=self.bot.constants.embed,
+            color=self.bot.config.EMBED_COLOR,
         )
         embed.set_author(name=owner, icon_url=owner.display_avatar.url)
         await ctx.send_or_reply(embed=embed)
@@ -877,7 +877,7 @@ class Info(commands.Cog):
         Aliases: {0}sup, {0}assist, {0}assistance
         Output: An invite link to my support server
         """
-        await ctx.rep_or_ref(self.bot.constants.support)
+        await ctx.rep_or_ref(self.bot.config.SUPPORT)
 
     @decorators.command(
         aliases=["userstats", "usercount"],
@@ -902,7 +902,7 @@ class Info(commands.Cog):
         bots = [x for x in self.bot.get_all_members() if x.bot]
         bots_online = [x for x in bots if x.status != discord.Status.offline]
         unique_bots = set([x.id for x in bots])
-        e = discord.Embed(title="User Stats", color=self.bot.constants.embed)
+        e = discord.Embed(title="User Stats", color=self.bot.config.EMBED_COLOR)
         e.add_field(
             name="Humans",
             value="{:,}/{:,} online ({:,g}%) - {:,} unique ({:,g}%)".format(
@@ -1103,7 +1103,7 @@ class Info(commands.Cog):
             msg += f"{funcs.ljust(width)} Functions\n"
             msg += f"{comments.ljust(width)} Comments"
             msg += "```"
-            em = discord.Embed(color=self.bot.constants.embed)
+            em = discord.Embed(color=self.bot.config.EMBED_COLOR)
             em.title = f"{self.bot.emote_dict['info']}  Source information"
             em.description = msg
             await ctx.send_or_reply(embed=em)
@@ -1167,7 +1167,7 @@ class Info(commands.Cog):
         else:  # Poor uptime
             color = (232, 44, 19)  # Red
         percent = f"{raw_percent:.2%}"
-        em = discord.Embed(color=self.bot.constants.embed)
+        em = discord.Embed(color=self.bot.config.EMBED_COLOR)
         img = Image.new("RGBA", (2500, 1024), (0, 0, 0, 0))
         draw = ImageDraw.Draw(img)
         font = ImageFont.truetype("./data/assets/Helvetica.ttf", 100)

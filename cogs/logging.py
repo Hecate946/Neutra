@@ -277,7 +277,7 @@ class Logging(commands.Cog):
                 embed = discord.Embed(
                     title="Logging Settings",
                     description="",
-                    color=self.bot.constants.embed,
+                    color=self.bot.config.EMBED_COLOR,
                 )
 
                 for key, value in settings.items():
@@ -571,7 +571,7 @@ class Logging(commands.Cog):
             f"**Server:** `{message.guild.name}` **ID:** `{message.guild.id}`\n\n"
             f"**__Invite Link:___**```fix\n{regex_match.group(0)}```\n"
             f"**[Jump to message](https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id})**",
-            color=self.bot.constants.embed,
+            color=self.bot.config.EMBED_COLOR,
             timestamp=discord.utils.utcnow(),
         )
         embed.set_author(
@@ -597,7 +597,7 @@ class Logging(commands.Cog):
                 description=f"**Author:**  `{str(audit.user)}`\n\n"
                 f"**___Previous Name___**: ```fix\n{before.name}```"
                 f"**___Current Name___**: ```fix\n{after.name}```",
-                color=self.bot.constants.embed,
+                color=self.bot.config.EMBED_COLOR,
             )
 
             embed.set_author(
@@ -612,7 +612,7 @@ class Logging(commands.Cog):
                 embed = discord.Embed(
                     description=f"**Author:**  `{str(audit.user)}`\n"
                     "**New icon below**",
-                    color=self.bot.constants.embed,
+                    color=self.bot.config.EMBED_COLOR,
                 )
 
                 embed.set_author(
@@ -625,7 +625,7 @@ class Logging(commands.Cog):
             else:
                 embed = discord.Embed(
                     description=f"**Author:**  `{str(audit.user)}`\n",
-                    color=self.bot.constants.embed,
+                    color=self.bot.config.EMBED_COLOR,
                 )
 
                 embed.set_author(
@@ -640,7 +640,7 @@ class Logging(commands.Cog):
             embed = discord.Embed(
                 description=f"**Author:**  `{str(audit.user)}`\n"
                 "**New banner below**",
-                color=self.bot.constants.embed,
+                color=self.bot.config.EMBED_COLOR,
             )
 
             embed.set_author(
@@ -666,7 +666,7 @@ class Logging(commands.Cog):
                     new = False
 
         embed = discord.Embed(
-            color=self.bot.constants.embed,
+            color=self.bot.config.EMBED_COLOR,
             timestamp=discord.utils.utcnow(),
         )
 
@@ -694,7 +694,7 @@ class Logging(commands.Cog):
         embed = discord.Embed(
             description=f"**Channel:** `{channel.name}` **ID:** `{channel.id}`\n"
             f"**Server:** `{channel.guild.name}` **ID:** `{channel.guild.id}`\n\n",
-            color=self.bot.constants.embed,
+            color=self.bot.config.EMBED_COLOR,
             timestamp=discord.utils.utcnow(),
         )
         embed.set_author(
@@ -714,7 +714,7 @@ class Logging(commands.Cog):
         embed = discord.Embed(
             description=f"**Channel:** `{channel.name}` **ID:** `{channel.id}`\n"
             f"**Server:** `{channel.guild.name}` **ID:** `{channel.guild.id}`\n\n",
-            color=self.bot.constants.embed,
+            color=self.bot.config.EMBED_COLOR,
             timestamp=discord.utils.utcnow(),
         )
         embed.set_author(
@@ -736,7 +736,7 @@ class Logging(commands.Cog):
                 description=f"**Channel:** {after.mention} **Name:** `{after}`\n"
                 f"**Old Name:** `{before.name}`\n"
                 f"**New Name:** `{after.name}`\n",
-                colour=self.bot.constants.embed,
+                colour=self.bot.config.EMBED_COLOR,
                 timestamp=discord.utils.utcnow(),
             )
             embed.set_author(name=f"Channel Update")
@@ -748,7 +748,7 @@ class Logging(commands.Cog):
                 description=f"**Channel:** {after.mention} **Name:** `{after}`\n"
                 f"**Old Category:** `{before.category}`\n"
                 f"**New Category:** `{after.category}`\n",
-                colour=self.bot.constants.embed,
+                colour=self.bot.config.EMBED_COLOR,
                 timestamp=discord.utils.utcnow(),
             )
             embed.set_author(name=f"Channel Update")
@@ -761,7 +761,7 @@ class Logging(commands.Cog):
                     description=f"**Channel:** {after.mention} **Name:** `{after}`\n"
                     f"**Old Topic:** `{before.topic}`\n"
                     f"**New Topic:** `{after.topic}`\n",
-                    colour=self.bot.constants.embed,
+                    colour=self.bot.config.EMBED_COLOR,
                     timestamp=discord.utils.utcnow(),
                 )
                 embed.set_author(name=f"Channel Update")
@@ -774,7 +774,7 @@ class Logging(commands.Cog):
                     description=f"**Channel:** {after.mention} **Name:** `{after}`\n"
                     f"**Old Slowmode:** `{before.slowmode_delay}`\n"
                     f"**New Slowmode:** `{after.slowmode_delay}`\n",
-                    colour=self.bot.constants.embed,
+                    colour=self.bot.config.EMBED_COLOR,
                     timestamp=discord.utils.utcnow(),
                 )
                 embed.set_author(name=f"Channel Update")
@@ -787,7 +787,7 @@ class Logging(commands.Cog):
                     description=f"**Channel:** {after.mention} **Name:** `{after}`\n"
                     f"**Old User Limit:** `{before.user_limit}`\n"
                     f"**New User Limit:** `{after.user_limit}`\n",
-                    colour=self.bot.constants.embed,
+                    colour=self.bot.config.EMBED_COLOR,
                     timestamp=discord.utils.utcnow(),
                 )
                 embed.set_author(name=f"Channel Update")
@@ -823,7 +823,7 @@ class Logging(commands.Cog):
                 description=f"**Channel:** {after.mention} **Name:** `{after}`\n"
                 f"**Old Role Overwrites:** {old_overwrites}\n"
                 f"**New Role Overwrites:** {new_overwrites}\n",
-                colour=self.bot.constants.embed,
+                colour=self.bot.config.EMBED_COLOR,
                 timestamp=discord.utils.utcnow(),
             )
             embed.set_author(name=f"Channel Update")
@@ -843,7 +843,7 @@ class Logging(commands.Cog):
             f"**Targets:** `{', '.join(str(t) for t in targets)}`\n\n"
             f"**__Message Content__**\n ```fix\n{ctx.message.clean_content}```\n"
             f"**[Jump to action](https://discord.com/channels/{ctx.guild.id}/{ctx.channel.id}/{ctx.message.id})**",
-            color=self.bot.constants.embed,
+            color=self.bot.config.EMBED_COLOR,
             timestamp=discord.utils.utcnow(),
         )
         embed.set_author(
@@ -862,7 +862,7 @@ class Logging(commands.Cog):
 
         embed = discord.Embed(
             description=f"**User:** {member.mention} **Name:** `{member}`\n",
-            colour=self.bot.constants.embed,
+            colour=self.bot.config.EMBED_COLOR,
             timestamp=discord.utils.utcnow(),
         )
         embed.set_author(name=f"User Joined")
@@ -878,7 +878,7 @@ class Logging(commands.Cog):
 
         embed = discord.Embed(
             description=f"**User:** {member.mention} **Name:** `{member}`\n",
-            colour=self.bot.constants.embed,
+            colour=self.bot.config.EMBED_COLOR,
             timestamp=discord.utils.utcnow(),
         )
         embed.set_author(name=f"User Left")
@@ -896,7 +896,7 @@ class Logging(commands.Cog):
                     description=f"**User:** {after.mention} **Name:** `{after}`\n"
                     f"**Old Nickname:** `{before.display_name}`\n"
                     f"**New Nickname:** `{after.display_name}`\n",
-                    colour=self.bot.constants.embed,
+                    colour=self.bot.config.EMBED_COLOR,
                     timestamp=discord.utils.utcnow(),
                 )
                 embed.set_author(name=f"Nickname Change")
@@ -913,7 +913,7 @@ class Logging(commands.Cog):
                     description=f"**User:** {after.mention} **Name:** `{after}`\n"
                     f"**Old Roles:** {', '.join([r.mention for r in before.roles if r != after.guild.default_role])}\n"
                     f"**New Roles:** {', '.join([r.mention for r in after.roles if r != after.guild.default_role])}\n",
-                    colour=self.bot.constants.embed,
+                    colour=self.bot.config.EMBED_COLOR,
                     timestamp=discord.utils.utcnow(),
                 )
                 embed.set_author(name=f"Role Updates")
@@ -937,7 +937,7 @@ class Logging(commands.Cog):
                     description=f"**User:** {after.mention} **Name:** `{after}`\n"
                     f"**Old Username:** `{before.name}`\n"
                     f"**New Username:** `{after.name}`\n",
-                    colour=self.bot.constants.embed,
+                    colour=self.bot.config.EMBED_COLOR,
                     timestamp=discord.utils.utcnow(),
                 )
                 embed.set_author(name=f"Username Change")
@@ -955,7 +955,7 @@ class Logging(commands.Cog):
                     description=f"**User:** {after.mention} **Name:** `{after}`\n"
                     f"**Old Discriminator:** `{before.discriminator}`\n"
                     f"**New Discriminator:** `{after.discriminator}`\n",
-                    colour=self.bot.constants.embed,
+                    colour=self.bot.config.EMBED_COLOR,
                     timestamp=discord.utils.utcnow(),
                 )
                 embed.set_author(name=f"Discriminator Change")
@@ -972,7 +972,7 @@ class Logging(commands.Cog):
                 embed = discord.Embed(
                     description=f"**User:** {after.mention} **Name:** `{after}`\n"
                     "New image below",
-                    colour=self.bot.constants.embed,
+                    colour=self.bot.config.EMBED_COLOR,
                     timestamp=discord.utils.utcnow(),
                 )
                 avatar = after.display_avatar.url
@@ -992,7 +992,7 @@ class Logging(commands.Cog):
         if not before.channel and after.channel:
             embed = discord.Embed(
                 description=f"**User:** {member.mention} **Name:** `{member}`\n**Channel:** {after.channel.mention} ID: `{after.channel.id}`\n",
-                colour=self.bot.constants.embed,
+                colour=self.bot.config.EMBED_COLOR,
                 timestamp=discord.utils.utcnow(),
             )
             embed.set_author(name=f"User Joined Voice Channel")
@@ -1003,7 +1003,7 @@ class Logging(commands.Cog):
         elif before.channel and not after.channel:
             embed = discord.Embed(
                 description=f"**User:** {member.mention} **Name:** `{member}`\n**Channel:** {before.channel.mention} **ID:** `{before.channel.id}`\n",
-                colour=self.bot.constants.embed,
+                colour=self.bot.config.EMBED_COLOR,
                 timestamp=discord.utils.utcnow(),
             )
             embed.set_author(name=f"User Left Voice Channel")
@@ -1017,7 +1017,7 @@ class Logging(commands.Cog):
                     description=f"**User:** {member.mention} **Name:** `{member}`\n"
                     f"**Old Channel:** {before.channel.mention} **ID:** `{before.channel.id}`\n"
                     f"**New Channel:** {after.channel.mention} **ID:** `{after.channel.id}`\n",
-                    colour=self.bot.constants.embed,
+                    colour=self.bot.config.EMBED_COLOR,
                     timestamp=discord.utils.utcnow(),
                 )
                 embed.set_author(name=f"User Switched Voice Channels")
@@ -1058,7 +1058,7 @@ class Logging(commands.Cog):
             description=f"**Author:**  {after.author.mention} **ID:** `{after.author.id}`\n"
             f"**Channel:** {after.channel.mention} **ID:** `{after.channel.id}`\n"
             f"**Server:** `{after.guild.name}` **ID:** `{after.guild.id}`\n **\n**",
-            color=self.bot.constants.embed,
+            color=self.bot.config.EMBED_COLOR,
             timestamp=discord.utils.utcnow(),
         )
         embed.add_field(
@@ -1108,7 +1108,7 @@ class Logging(commands.Cog):
             f"**Server:** `{message.guild.name}` **ID:** `{message.guild.id}`\n\n"
             f"{content}"
             f"{attachments}",
-            color=self.bot.constants.embed,
+            color=self.bot.config.EMBED_COLOR,
             timestamp=discord.utils.utcnow(),
         )
         embed.set_author(
@@ -1204,7 +1204,7 @@ class Logging(commands.Cog):
             f"**Server:** `{ctx.guild.name}` **ID:** `{ctx.guild.id}`\n"
             f"**Sent at:** `{timestamp}`\n\n"
             f"{content}",
-            color=self.bot.constants.embed,
+            color=self.bot.config.EMBED_COLOR,
             timestamp=discord.utils.utcnow(),
         )
         embed.set_author(
@@ -1265,7 +1265,7 @@ class Logging(commands.Cog):
             f"**Server:** `{ctx.guild.name}` **ID:** `{ctx.guild.id}`\n"
             f"**Sent at:** `{timestamp}`\n\n"
             f"{content}",
-            color=self.bot.constants.embed,
+            color=self.bot.config.EMBED_COLOR,
             timestamp=discord.utils.utcnow(),
         )
         embed.set_author(

@@ -2,24 +2,21 @@ import discord
 from discord.ext import commands
 from discord.ext.commands.flags import F
 
-from settings import constants
+import config
 
 from utilities import override
 
-owners = constants.owners
-admins = constants.admins
+owners = config.OWNERS
+admins = config.ADMINS
 
 
 def is_owner(ctx):
-    """ Checks if the author is one of the owners """
+    """Checks if the author is one of the owners"""
     return ctx.author.id in owners
 
 
 def is_admin(ctx):
-    if (
-        ctx.author.id in ctx.bot.constants.admins
-        or ctx.author.id in ctx.bot.constants.owners
-    ):
+    if ctx.author.id in ctx.bot.config.ADMINS or ctx.author.id in ctx.bot.config.OWNERS:
         return True
     return
 
@@ -92,7 +89,7 @@ def is_mod():
 
 
 async def check_permissions(ctx, perms, *, check=all):
-    """ Checks if author has permissions to a permission """
+    """Checks if author has permissions to a permission"""
     if ctx.author.id in owners:
         return True
 
@@ -109,7 +106,7 @@ async def check_permissions(ctx, perms, *, check=all):
 
 
 async def check_bot_permissions(ctx, perms, *, check=all):
-    """ Checks if author has permissions to a permission """
+    """Checks if author has permissions to a permission"""
     if ctx.guild:
         resolved = ctx.guild.me.guild_permissions
         guild_perm_checker = check(
@@ -318,7 +315,7 @@ async def checker(ctx, value):
 
 
 def can_handle(ctx, permission: str):
-    """ Checks if bot has permissions or is in DMs right now """
+    """Checks if bot has permissions or is in DMs right now"""
     return isinstance(ctx.channel, discord.DMChannel) or getattr(
         ctx.channel.permissions_for(ctx.guild.me), permission
     )

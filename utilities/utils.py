@@ -1,4 +1,3 @@
-import asyncio
 import calendar
 import difflib
 import json
@@ -31,7 +30,7 @@ def prefix_log(message, title="Neutra"):
 
 
 def config(filename: str = "config"):
-    """ Fetch default config file """
+    """Fetch default config file"""
     try:
         with open(f"{filename}.json", encoding="utf8") as data:
             return json.load(data)
@@ -40,7 +39,7 @@ def config(filename: str = "config"):
 
 
 def traceback_maker(err, advance: bool = True):
-    """ A way to debug your code anywhere """
+    """A way to debug your code anywhere"""
     header = "Traceback (most recent call last):"
     _traceback = "".join(traceback.format_tb(err.__traceback__))
     error = ("{3}\n{1}{0}: {2}\n").format(type(err).__name__, _traceback, err, header)
@@ -63,17 +62,17 @@ def format_relative(dt):
 
 
 def timetext(name):
-    """ Timestamp, but in text form """
+    """Timestamp, but in text form"""
     return f"{name}_{int(time.time())}.txt"
 
 
 def timeago(target):
-    """ Timeago in easier way """
+    """Timeago in easier way"""
     return str(timesince.format(target))
 
 
 def date(target, clock=True):
-    """ Clock format using datetime.strftime() """
+    """Clock format using datetime.strftime()"""
     if not clock:
         return target.strftime("%d %B %Y")
     return target.strftime("%d %B %Y, %H:%M")
@@ -129,6 +128,34 @@ def get_months(timeBetween, year, month, reverse):
     return timeBetween, months
 
 
+def parse_duration(duration: int):
+    """
+    Helper function to get visually pleasing
+    timestamps from position of song in seconds.
+    """
+    duration = round(duration)
+    if duration > 0:
+        minutes, seconds = divmod(duration, 60)
+        hours, minutes = divmod(minutes, 60)
+        days, hours = divmod(hours, 24)
+
+        duration = []
+        if days > 0:
+            duration.append(str(days))
+        if hours > 0:
+            duration.append(str(hours))
+        if minutes > 0:
+            duration.append(str(minutes))
+        duration.append("{}".format(str(seconds).zfill(2)))
+
+        value = ":".join(duration)
+
+    elif duration == 0:
+        value = "LIVE"
+
+    return value
+
+
 def time_between(first, last, reverse=False, *, verbose=True):
     # A helper function to make a readable string between two times
     timeBetween = int(last - first)
@@ -181,7 +208,7 @@ def time_between(first, last, reverse=False, *, verbose=True):
 
 
 def responsible(target, reason):
-    """ Default responsible maker targeted to find user in AuditLogs """
+    """Default responsible maker targeted to find user in AuditLogs"""
     responsible = f"[ {target} ]"
     if not reason:
         return f"{responsible} no reason given..."
@@ -204,16 +231,6 @@ def center(string, header=None):
     else:
         output = leftPad
     return output
-
-
-def edit_config(value: str, changeto: str):
-    """ Change a value from the configs """
-    config_name = "config.json"
-    with open(config_name, "r") as jsonFile:
-        data = json.load(jsonFile)
-    data[value] = changeto
-    with open(config_name, "w") as jsonFile:
-        json.dump(data, jsonFile, indent=2)
 
 
 def write_json(file_path, data):
@@ -369,14 +386,6 @@ def getTimeFromTZ(tz, t=None, strft="%Y-%m-%d %I:%M %p", clock=True):
         getClockForTime(zone_now.strftime(strft)) if clock else zone_now.strftime(strft)
     )
     return {"zone": str(zone), "time": ti}
-
-
-def modify_config(key, value):
-    with open("./config.json", "r", encoding="utf-8") as fp:
-        data = json.load(fp)
-        data[key] = value
-    with open("./config.json", "w") as fp:
-        json.dump(data, fp, indent=2)
 
 
 def load_json(file):

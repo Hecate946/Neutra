@@ -127,7 +127,9 @@ class Utility(commands.Cog):
 
             r = await self.bot.http_utils.get(
                 "http://api.timezonedb.com/v2.1/get-time-zone?key={}&format=json&by=position&lat={}&lng={}".format(
-                    self.bot.constants.timezonedb, location.latitude, location.longitude
+                    self.bot.config.KEYS.timezonedb,
+                    location.latitude,
+                    location.longitude,
                 )
             )
             request = json.loads(r)
@@ -459,7 +461,7 @@ class Utility(commands.Cog):
             f"**Created:** `{user.created_at}`\n"
             f"**Token Created:** `{timestamp}`",
         )
-        embed.color = self.bot.constants.embed
+        embed.color = self.bot.config.EMBED_COLOR
         embed.set_thumbnail(url=user.display_avatar.url)
         await ctx.send_or_reply(embed=embed)
 
@@ -520,7 +522,7 @@ class Utility(commands.Cog):
 
         avatar = user.display_avatar.url
 
-        embed.color = self.bot.constants.embed
+        embed.color = self.bot.config.EMBED_COLOR
         embed.set_thumbnail(url=avatar)
         await ctx.send_or_reply(embed=embed)
 
@@ -815,7 +817,7 @@ class Utility(commands.Cog):
             f"[png]({url}) | "
             f"[jpeg]({url.replace('png', 'jpg', 1)}) | "
             f"[webp]({url.replace('png', 'webp', 1)})",
-            color=self.bot.constants.embed,
+            color=self.bot.config.EMBED_COLOR,
         )
         embed.set_image(url=url)
         if file:
@@ -1185,7 +1187,7 @@ class Utility(commands.Cog):
             A bitly url that will redirect to the
             destination of the url that was passed.
         """
-        params = {"access_token": self.bot.constants.bitly, "longUrl": url}
+        params = {"access_token": self.bot.config.KEYS.bitly, "longUrl": url}
 
         response = await self.bot.http_utils.get(
             "https://api-ssl.bitly.com/v3/shorten", params=params

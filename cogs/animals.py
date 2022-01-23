@@ -14,7 +14,7 @@ async def read_shuffle_and_send(animal, ctx):
         urls = list(csv.reader(f))
 
     embed = discord.Embed(
-        title=f"{animal.capitalize()}!", color=ctx.bot.constants.embed
+        title=f"{animal.capitalize()}!", color=ctx.bot.config.EMBED_COLOR
     )
     embed.set_image(url=random.choice(urls)[0])
     await ctx.send(embed=embed)
@@ -191,7 +191,7 @@ class Animals(commands.Cog):
     @decorators.command(brief="Random picture of a redpanda", aliases=["redpandas"])
     @checks.cooldown()
     async def redpanda(self, ctx):
-        """"Random picture of a redpanda"""
+        """ "Random picture of a redpanda"""
         await read_shuffle_and_send("redpanda", ctx)
 
     @decorators.command(brief="Random picture of a birb", aliases=["birb"])

@@ -31,16 +31,18 @@
 </tr>
 {% endfor %}
 {% else %}
-<th>Rank</th>
+<th></th>
 <th>Cover</th>
 <th>Title</th>
 <th>Artist</th>
+<th>Duration</th>
 {% for track in data %}
 <tr>
 <td class="small center">{{track.index}}</td>
 <td class="small center"><img src="{{track.image}}"></td>
 <td>{{track.name}}</td>
 <td>{{track.artist}}</td>
+<td class="small center">{{track.duration}}</td>
 </tr>
 {% endfor %}
 {% endif %}

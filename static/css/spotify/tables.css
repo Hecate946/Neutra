@@ -21,12 +21,13 @@ th {
   font-size: 20px;
 }
 
-tr:hover {
+/* remove hover for header */
+tr:not(:first-child):hover {
   background-color: rgba(0, 0, 0, 0.5);
 }
 
 .small {
-  width: 50px;
+  width: 20px;
 }
 
 .center {

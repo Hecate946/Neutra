@@ -31,35 +31,6 @@ class Botconfig(commands.Cog):
     async def cog_check(self, ctx):
         return checks.is_owner(ctx)
 
-    @decorators.command(
-        aliases=["conf"],
-        brief="Change a config.json value.",
-        implemented="2021-03-22 06:59:02.430491",
-        updated="2021-05-19 06:10:56.241058",
-    )
-    async def config(self, ctx, key, value):
-        """
-        Usage: {0}config <Key to change> <New Value>
-        Alias: {0}conf
-        Output:
-            Edits the specified config.json file key
-            to the passed value.
-        Notes:
-            To reflect the changes of the file change
-            immediately, use the {0}botvars command
-            instead of rebooting the entire client.
-        """
-        if value.isdigit():
-            utils.modify_config(key=key, value=int(value))
-        elif str(value).lower() == "true":
-            val = True
-        elif str(value).lower() == "false":
-            val = False
-            utils.modify_config(key=key, value=val)
-        else:
-            utils.modify_config(key=key, value=str(value))
-        await ctx.success(f"Edited key `{key}` to `{value}`")
-
     @decorators.group(case_insensitive=True, brief="Change the bot's specifications.")
     async def change(self, ctx):
         """
@@ -122,7 +93,7 @@ class Botconfig(commands.Cog):
             await self.bot.user.edit(avatar=bio)
             em = discord.Embed(
                 description="**Successfully changed the avatar. Currently using:**",
-                color=self.bot.constants.embed,
+                color=self.bot.config.EMBED_COLOR,
             )
             em.set_image(url=url)
             await ctx.send_or_reply(embed=em)
@@ -234,7 +205,7 @@ class Botconfig(commands.Cog):
         premsg += f"# {self.bot.user.name} Moderation & Stat Tracking Discord Bot\n"
         # premsg += "![6010fc1cf1ae9c815f9b09168dbb65a7-1](https://user-images.githubusercontent.com/74381783/108671227-f6d3f580-7494-11eb-9a77-9478f5a39684.png)\n"
         premsg += f"### [Bot Invite Link]({self.bot.oauth})\n"
-        premsg += f"### [Support Server]({self.bot.constants.support})\n"
+        premsg += f"### [Support Server]({self.bot.config.SUPPORT})\n"
         premsg += (
             "### [DiscordBots.gg](https://discord.bots.gg/bots/806953546372087818)\n"
         )
@@ -377,153 +348,6 @@ class Botconfig(commands.Cog):
                 )
             except Exception:
                 return
-            return
-
-    @decorators.command(brief="Add a new bot owner.")
-    async def addowner(self, ctx, *, member: converters.DiscordUser):
-        """
-        Usage: {0}addowner <user>
-        Permission: Hecate#3523
-        Output:
-            Adds the passed user's ID to the owners key
-            in the config.json file
-        Notes:
-            USE WITH CAUTION! This will allow the user
-            to access all commands including those with
-            root privileges. To reflect changes instantly, use the
-            {0}botvars command
-        """
-        if ctx.author.id != self.bot.developer_id:
-            return
-        if member.bot:
-            raise commands.BadArgument("I cannot be owned by a bot.")
-
-        data = utils.load_json("config.json")
-        current_owners = data["owners"]
-
-        if member.id in current_owners:
-            return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['warn']} **`{member}` is already an owner.**",
-            )
-
-        c = await ctx.confirm(f"This action will add `{member}` as an owner.")
-        if c:
-            current_owners.append(member.id)
-            utils.modify_config("owners", current_owners)
-            await ctx.success(f"**`{member}` is now officially one of my owners.**")
-            return
-
-    @decorators.command(
-        aliases=["removeowner", "rmowner"],
-        brief="Remove a user from my owner list.",
-    )
-    async def remowner(self, ctx, *, member: converters.DiscordUser):
-        """
-        Usage: {0}remowner <user>
-        Aliases: {0}removeowner, -rmowner
-        Permission: Hecate#3523
-        Output:
-            Removes a user from the owners key in
-            my config.json file
-        Notes:
-            To reflect changes instantly, use the
-            {0}botvars command
-        """
-        if ctx.author.id != self.bot.developer_id:
-            return
-
-        data = utils.load_json("config.json")
-        current_owners = data["owners"]
-
-        if member.id not in current_owners:
-            return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['warn']} **`{member}` is not an owner.**",
-            )
-
-        c = await ctx.confirm(
-            f"This action will remove `{member}` from the owner list."
-        )
-
-        if c:
-            index = current_owners.index(member.id)
-            current_owners.pop(index)
-            utils.modify_config("owners", current_owners)
-            await ctx.success(
-                f"**Successfully removed `{member}` from my owner list.**"
-            )
-            return
-
-    @decorators.command(brief="Add a new bot admin.")
-    async def addadmin(self, ctx, *, member: converters.DiscordUser):
-        """
-        Usage: {0}addadmin <user>
-        Permission: Hecate#3523
-        Output:
-            Adds the passed user's ID to the admins key
-            in the config.json file
-        Notes:
-            USE WITH CAUTION! This will allow the user
-            to access global bot information. This includes
-            s complete server list, member list, etc.
-            To reflect changes instantly, use {0}botvars.
-        """
-        if ctx.author.id != self.bot.developer_id:
-            return
-
-        if member.bot:
-            raise commands.BadArgument(f"I cannot be owned by a bot.")
-
-        data = utils.load_json("config.json")
-        current_admins = data["admins"]
-
-        if member.id in current_admins:
-            return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['warn']} **`{member}` is already an admin.**",
-            )
-
-        c = await ctx.confirm(f"This action will add `{member}` as an admin.")
-
-        if c:
-            current_admins.append(member.id)
-            utils.modify_config("admins", current_admins)
-            await ctx.success(f"**`{member}` is now officially one of my admins.**")
-            return
-
-    @decorators.command(aliases=["removeadmin", "rmadmin"], brief="Remove a bot admin.")
-    async def remadmin(self, ctx, *, member: converters.DiscordUser):
-        """
-        Usage: {0}remadmin <user>
-        Aliases: {0}removeadmin, {0}rmadmin
-        Permission: Hecate#3523
-        Output:
-            Removes a user from the admins key in
-            my config.json file
-        Notes:
-            To reflect changes instantly, use the
-            {0}botvars command
-        """
-        if ctx.author.id != self.bot.developer_id:
-            return
-
-        data = utils.load_json("config.json")
-        current_admins = data["admins"]
-
-        if member.id not in current_admins:
-            return await ctx.send_or_reply(
-                content=f"{self.bot.emote_dict['warn']} **`{member}` is not an admin.**",
-            )
-
-        c = await ctx.confirm(
-            f"This action will remove `{member}` from the admin list."
-        )
-
-        if c:
-            index = current_admins.index(member.id)
-            current_admins.pop(index)
-            utils.modify_config("admins", current_admins)
-            await ctx.success(
-                f"**Successfully removed `{member}` from my admin list.**"
-            )
             return
 
     @decorators.command(brief="Owner-lock the bot.")

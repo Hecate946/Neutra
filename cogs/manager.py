@@ -70,30 +70,6 @@ class Manager(commands.Cog):
         await ctx.success("**Completed**")
 
     @decorators.command(
-        brief="Reload the bot variables.",
-        implemented="2021-04-03 04:30:16.385794",
-        updated="2021-05-11 02:41:27.186046",
-        examples="""
-                {0}botvars
-                """,
-    )
-    async def botvars(self, ctx):
-        """
-        Usage: {0}botvars
-        Output: Resets all global bot variables
-        Notes:
-            Useful to use this command as an
-            alternative to restarting the bot when
-            changes are made to the config.json file
-        """
-        consts = importlib.import_module(f".constants", package="settings")
-        importlib.reload(consts)
-        self.bot.constants = consts
-        self.bot.emote_dict = consts.emotes
-        self.bot.owner_ids = consts.owners
-        await ctx.success("**Reloaded all botvars.**")
-
-    @decorators.command(
         aliases=["loadcog"],
         brief="Load an extension.",
         implemented="2021-03-19 21:57:05.162549",

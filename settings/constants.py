@@ -1,27 +1,3 @@
-from utilities import utils
-
-config = utils.config()
-try:
-    admins = config["admins"]
-    bitly = config["bitly"]
-    embed = config["embed"]
-    gtoken = config["gtoken"]
-    owners = config["owners"]
-    postgres = config["postgres"]
-    prefix = config["prefix"]
-    support = "https://discord.gg/H2qTG4yxqb"  # config["support"]
-    tester = config["tester"]
-    timezonedb = config["timezonedb"]
-    token = config["token"]
-except KeyError as e:
-    print(
-        f"""
-          Warning! The key {e} is missing from your ./config.json file.
-          Add this key or the bot might not function properly.
-          """
-    )
-
-
 class Colors(object):
     GREEN = (46, 204, 113)
     YELLOW = (255, 228, 0)

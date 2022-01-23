@@ -45,10 +45,9 @@ class Database(commands.Cog):
             that normally occurs on bot startup
         """
         if await ctx.confirm("This action will restart my database."):
-            from settings.database import initialize
 
             members = [x for x in self.bot.get_all_members()]
-            await initialize(self.bot, members)
+            await self.bot.database.initialize(self.bot, members)
             await ctx.success("**Updated database**")
 
     @decorators.command(
@@ -69,9 +68,8 @@ class Database(commands.Cog):
         c = await ctx.confirm("This action will purge all this server's data.")
         if c:
             msg = await ctx.load("Recursively discarding all server data...")
-            from settings.cleanup import destroy_server
 
-            await destroy_server(server.id)
+            await self.bot.database.destroy_server(server.id)
             await msg.edit(
                 content=f"**{self.bot.emote_dict['delete']} Successfully discarded all server data.**"
             )
@@ -215,9 +213,7 @@ class Database(commands.Cog):
         if table_name is None:
             query = """SELECT pg_size_pretty(pg_database_size($1));"""
             try:
-                results = await self.bot.cxn.fetch(
-                    query, self.bot.constants.postgres.split("/")[-1]
-                )
+                results = await self.bot.cxn.fetch(query, self.bot.config.POSTGRES.name)
             except asyncpg.UndefinedTableError:
                 return await ctx.send_or_reply(
                     content=f"{self.bot.emote_dict['failed']} Table `{table_name}` does not exist.",

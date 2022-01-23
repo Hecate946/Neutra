@@ -632,7 +632,7 @@ class Mod(commands.Cog):
                 continue
             try:
                 if reason:
-                    embed = discord.Embed(color=self.bot.constants.embed)
+                    embed = discord.Embed(color=self.bot.config.EMBED_COLOR)
                     timefmt = humantime.human_timedelta(
                         endtime, source=ctx.message.created_at
                     )
@@ -818,7 +818,7 @@ class Mod(commands.Cog):
                 # await user.add_roles(muterole, reason=reason)
                 muted.append(str(user))
                 if reason:
-                    embed = discord.Embed(color=self.bot.constants.embed)
+                    embed = discord.Embed(color=self.bot.config.EMBED_COLOR)
                     embed.title = f"Mute Notice"
                     embed.description = (
                         f"**Server: `{ctx.guild.name} ({ctx.guild.id})`**\n"
@@ -918,7 +918,7 @@ class Mod(commands.Cog):
                 failed.append((str(user), e))
                 continue
             if dm:
-                embed = discord.Embed(color=self.bot.constants.embed)
+                embed = discord.Embed(color=self.bot.config.EMBED_COLOR)
                 embed.title = f"Unmute Notice"
                 embed.description = f"**Server: `{ctx.guild.name} ({ctx.guild.id})`**\n"
                 embed.description += f"**Moderator: `{ctx.author} ({ctx.author.id})`**"
@@ -966,7 +966,7 @@ class Mod(commands.Cog):
         except Exception:  # They probably removed roles lmao.
             return
         if dm:
-            embed = discord.Embed(color=self.bot.constants.embed)
+            embed = discord.Embed(color=self.bot.config.EMBED_COLOR)
             embed.title = f"{self.bot.emote_dict['audioadd']} Unmute Notice"
             embed.description = f"**Server: `{guild.name} ({guild.id})`**\n"
             embed.description += f"**Moderator: `{moderator}`**"

@@ -2,6 +2,7 @@ from os import name
 import discord
 import asyncio
 from settings import constants
+import config
 
 
 class MuteRoleView(discord.ui.View):
@@ -283,7 +284,7 @@ class ButtonPages(discord.ui.View):
     async def _help(self, button: discord.ui.Button, interaction: discord.Interaction):
         self.clear_items()
         self.fill_items(_help=True)
-        embed = discord.Embed(color=constants.embed)
+        embed = discord.Embed(color=config.EMBED_COLOR)
         embed.set_author(
             name="Pagination Help Page", icon_url=self.ctx.bot.user.display_avatar.url
         )
@@ -370,7 +371,7 @@ class SimpleView(ButtonPages):
         self.desc_foot = desc_foot
         self.content = content
 
-        self.embed = discord.Embed(color=ctx.bot.constants.embed)
+        self.embed = discord.Embed(color=ctx.bot.config.EMBED_COLOR)
 
     async def start(self):
         self.pages = self.create_pages(self.entries, self.per_page)
@@ -484,7 +485,7 @@ class ImageView(ButtonPages):
         self.thumbnail = thumbnail
         self.content = content
 
-        self.embed = discord.Embed(color=ctx.bot.constants.embed)
+        self.embed = discord.Embed(color=ctx.bot.config.EMBED_COLOR)
 
     async def start(self):
         self.embeds = self.create_embeds(self.entries)
