@@ -12,7 +12,7 @@ def main(mode):
     if mode in ["dev", "development"]:
         bot.development = True
 
-    elif mode == ["tester", "testing"]:
+    elif mode in ["tester", "testing"]:
         bot.tester = True
     else:
         bot.production = True
