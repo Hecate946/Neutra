@@ -44,9 +44,11 @@
         <!-- USING CHECKBOX HACK -->
         <input type="checkbox" id="checkbox_toggle" />
         <label for="checkbox_toggle" class="hamburger">
-          <div class="line line-1"></div>
-          <div class="line line-2"></div>
-          <div class="line line-3"></div>
+          <div id="nav-icon1">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
         </label>
         <!-- NAVIGATION MENUS -->
         <div class="menu">
@@ -82,6 +84,11 @@
       $("#checkbox_toggle").click(function () {
         $(".navbar").toggleClass("open");
       });
+      $(document).ready(function(){
+	$('#nav-icon1,#nav-icon2,#nav-icon3,#nav-icon4').click(function(){
+		$(this).toggleClass('open');
+	});
+});
     </script>
     {% block body %}{% endblock %}
   </body>

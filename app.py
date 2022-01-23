@@ -10,8 +10,7 @@ from quart import Quart, request, redirect, url_for, render_template, session, j
 from web import discord
 from web import spotify
 
-from config import SUPPORT
-from config import POSTGRES
+import config
 
 from utilities import http
 
@@ -26,7 +25,7 @@ class Web(Quart):
             x[:-4] for x in os.listdir("./data/scripts") if x.endswith(".sql")
         ]
 
-        self.cxn = self.loop.run_until_complete(asyncpg.create_pool(POSTGRES.uri))
+        self.cxn = self.loop.run_until_complete(asyncpg.create_pool(config.DEVELOPMENT.POSTGRES.uri))
         self.loop.run_until_complete(self.initialize())
 
         self.stats = {}
@@ -243,7 +242,7 @@ async def cog_docs(cog):
 
 @app.route("/support")
 async def support():
-    return redirect(SUPPORT)
+    return redirect(config.SUPPORT)
 
 
 @app.route("/invite")
