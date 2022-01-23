@@ -951,9 +951,32 @@ class Neutra(commands.AutoShardedBot):
                     info_logger.info(
                         f"Invalid responce from website. Retrying in 10 minuts. Status: {resp.status} Response: {await resp.text()}"
                     )
-                    self.website_stats_updater.change_interval(minutes=10)
-        except aiohttp.ClientConnectorError:  # Website is down, retry in 10 minutes
-            self.website_stats_updater.change_interval(minutes=10)
+                    self.website_stats_updater.change_interval(minutes=5)
+        except aiohttp.ClientConnectorError:  # Website is down, retry in 5 minutes
+            self.website_stats_updater.change_interval(minutes=5)
+
+    @website_stats_updater.after_loop
+    async def reset_website_stats(self):
+        url = config.BASE_WEB_URL + "_stats"
+        headers = {"content-type": "application/json"}
+        data = {
+            "uptime": "Currently Offline",
+            "servers": len(self.guilds),
+            "channels": sum(1 for c in self.get_all_channels()),
+            "members": sum(1 for m in self.get_all_members()),
+            "commands": sum(self.command_stats.values()),
+            "messages": sum(self.message_stats.values()),
+        }
+        data = json.dumps(data)
+
+        try:
+            async with self.session.post(url, headers=headers, data=data) as resp:
+                if resp.status != 200:
+                    info_logger.info(
+                        f"Invalid responce from website. Status: {resp.status} Response: {await resp.text()}"
+                    )
+        except aiohttp.ClientConnectorError:  # Website is down
+            pass
 
 
 bot = Neutra()

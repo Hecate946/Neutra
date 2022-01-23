@@ -230,11 +230,6 @@ async def invite():
     return redirect(discord.Oauth(app).get_auth_url(invite=True))
 
 
-@app.route("/stats", methods=["GET", "POST"])
-async def stats():
-    return str(app.stats)
-
-
 @app.route("/_stats", methods=["GET", "POST"])
 async def _stats():
     if request.method == "POST":
