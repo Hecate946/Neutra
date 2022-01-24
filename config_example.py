@@ -68,11 +68,11 @@ class DEVELOPMENT:
     token = "https://discord.com/developers/applications/"
 
     class POSTGRES:
-        user = "postgres"
-        password = "CySD191540"
-        host = "168.119.185.159"
-        port = 5432
-        name = "Development"
+        user = "postgres"  # Postgres username, defualt "postgres"
+        password = "WUACK"  # Postgres password
+        host = "localhost"  # Postgres host IP, default "localhost"
+        port = 5432  # Postgres port, leave 5432 for default
+        name = "Development"  # Database name
         uri = f"postgres://{user}:{password}@{host}:{port}/{name}"
 
 
