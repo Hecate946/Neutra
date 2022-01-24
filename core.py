@@ -518,14 +518,14 @@ class Neutra(commands.AutoShardedBot):
             self.listing_sites = {
                 "discord.bots.gg": {
                     "name": "Discord Bots",
-                    "token": utils.config().get("dbotsgg"),
+                    "token": config.LISTING_SITES.dbotsgg,
                     "url": f"https://discord.bots.gg/api/v1/bots/{self.user.id}/stats",
                     "data": {"guildCount": len(self.guilds)},
                     "guild_count_name": "guildCount",
                 },
                 "discordbots.org": {
                     "name": "Discord Bot List",
-                    "token": utils.config().get("topgg"),
+                    "token": config.LISTING_SITES.topgg,
                     "url": f"https://discordbots.org/api/bots/{self.user.id}/stats",
                     "data": {"server_count": len(self.guilds)},
                     "guild_count_name": "server_count",

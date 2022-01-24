@@ -25,7 +25,9 @@ class Web(Quart):
             x[:-4] for x in os.listdir("./data/scripts") if x.endswith(".sql")
         ]
 
-        self.cxn = self.loop.run_until_complete(asyncpg.create_pool(config.DEVELOPMENT.POSTGRES.uri))
+        self.cxn = self.loop.run_until_complete(
+            asyncpg.create_pool(config.DEVELOPMENT.POSTGRES.uri)
+        )
         self.loop.run_until_complete(self.initialize())
 
         self.stats = {}
@@ -176,6 +178,33 @@ async def spotify_recent():
     return await render_template("spotify/tables.html", data=tracks, caption=caption)
 
 
+@app.route("/spotify/playlists/create/<spotify_type>")
+async def create_playlist(spotify_type):
+    user_id = session.get("user_id")
+    time_range = request.args.get("time_range", "short_term")
+
+    if not user_id:  # User is not logged in to discord, redirect them back
+        session["referrer"] = url_for(
+            "create_playlist", spotify_type=spotify_type, time_range=time_range
+        )  # So they'll send the user back here
+        return redirect(url_for("discord_login"))
+
+    user = await spotify.User.load(user_id, app)
+    if not user:
+        session["referrer"] = url_for(
+            "create_playlist", spotify_type=spotify_type, time_range=time_range
+        )  # So they'll send the user back here
+        return redirect(url_for("spotify_connect"))
+
+    if spotify_type == "recent":
+        await user.create_recent_tracks_playlist()
+
+    if spotify_type == "top":
+        await user.create_top_tracks_playlist(time_range=time_range)
+
+    return "created playlist"
+
+
 @app.route("/spotify/playlists/<playlist_id>")
 async def playlists(playlist_id):
     user_id = session.get("user_id")
@@ -228,7 +257,7 @@ async def spotify_top(spotify_type):
         tracks = spotify.formatting.top_tracks(data)
         caption = spotify.formatting.get_caption("tracks", time_range)
         return await render_template(
-            "spotify/tables.html", data=tracks, caption=caption
+            "spotify/tables.html", track=True, data=tracks, caption=caption
         )
 
     if spotify_type == "genres":

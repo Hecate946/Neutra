@@ -4,6 +4,7 @@ import base64
 import time
 import json
 
+from datetime import datetime
 from utilities import utils
 from config import SPOTIFY
 
@@ -184,6 +185,10 @@ class User:  # Spotify user w discord user_id
             url, headers=await self.auth(), json=json, res_method=res_method
         )
 
+    async def get_spotify_id(self):
+        profile = await self.get_profile()
+        return profile["id"]
+
     async def get_profile(self):
         return await self.get(CONSTANTS.API_URL + "me")
 
@@ -299,26 +304,74 @@ class User:  # Spotify user w discord user_id
         """Get a user's owned and followed playlists"""
         return await self.get(CONSTANTS.API_URL + f"playlists/{playlist_id}")
 
+    async def create_playlist(self, name, *, public=True, collab=False, desc=""):
+        spotify_id = await self.get_spotify_id()
+        data = {
+            "name": name,
+            "public": public,
+            "collaborative": collab,
+            "description": desc,
+        }
+        return await self.client.http_utils.post(
+            CONSTANTS.API_URL + f"users/{spotify_id}/playlists",
+            data=json.dumps(data),
+            headers=await self.auth(),
+            res_method="json",
+        )
+
+    async def add_to_playlist(self, playlist_id, uris, position=None):
+        data = {"uris": uris}
+        if position:
+            data["position"] = position
+        return await self.client.http_utils.post(
+            CONSTANTS.API_URL + f"playlists/{playlist_id}/tracks",
+            data=json.dumps(data),
+            headers=await self.auth(),
+            res_method="json",
+        )
+
+    async def create_top_tracks_playlist(self, time_range="short_term"):
+        name = f"Top Tracks {datetime.utcnow().strftime('%B %-d, %Y')}"
+        playlist = await self.create_playlist(
+            name, desc=f"Top tracks in the past {formatting.time_range_map[time_range]}"
+        )
+
+        top_tracks = await self.get_top_tracks(time_range=time_range)
+        track_uris = [track["uri"] for track in top_tracks["items"]]
+        return await self.add_to_playlist(playlist["id"], track_uris)
+
+    async def create_recent_tracks_playlist(self):
+        name = f"Recent Tracks {datetime.utcnow().strftime('%B %-d, %Y')}"
+        playlist = await self.create_playlist(name, desc="Last 50 most recent listens.")
+
+        recent_tracks = await self.get_recently_played()
+        track_uris = [item["track"]["uri"] for item in recent_tracks["items"]]
+        return await self.add_to_playlist(playlist["id"], track_uris)
+
 
 class Formatting:
     def __init__(self) -> None:
         self.time_range_map = {
-            "short_term": "in the past four weeks",
-            "medium_term": "in the past six months",
-            "long_term": "across all time",
+            "short_term": "four weeks.",
+            "medium_term": "six months.",
+            "long_term": "few years.",
         }
 
     def get_caption(self, option, time_range="short_term"):
         if option == "recents":
-            return "Showing your recent Spotify tracks."
+            return ("Showing your recent Spotify tracks.",)
         if option == "tracks":
-            return f"Showing your top Spotify tracks {self.time_range_map[time_range]}."
+            return (
+                f"Showing your top Spotify tracks in the past",
+                self.time_range_map[time_range],
+            )
         if option == "artists":
             return (
-                f"Showing your top Spotify artists {self.time_range_map[time_range]}."
+                f"Showing your top Spotify artists",
+                self.time_range_map[time_range],
             )
         if option == "genres":
-            return f"Showing your top Spotify genres {self.time_range_map[time_range]}."
+            return (f"Showing your top Spotify genres", self.time_range_map[time_range])
 
     def get_image(self, obj):
         try:

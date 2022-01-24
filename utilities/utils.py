@@ -29,15 +29,6 @@ def prefix_log(message, title="Neutra"):
     return f"{Fore.LIGHTCYAN_EX}[{Fore.LIGHTMAGENTA_EX}{title}{Fore.LIGHTCYAN_EX}]{Style.RESET_ALL} {message}"
 
 
-def config(filename: str = "config"):
-    """Fetch default config file"""
-    try:
-        with open(f"{filename}.json", encoding="utf8") as data:
-            return json.load(data)
-    except FileNotFoundError:
-        raise FileNotFoundError("JSON file wasn't found")
-
-
 def traceback_maker(err, advance: bool = True):
     """A way to debug your code anywhere"""
     header = "Traceback (most recent call last):"
