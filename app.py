@@ -164,6 +164,11 @@ async def spotify_recent():
         return redirect(url_for("discord_login"))
 
     user = await spotify.User.load(user_id, app)
+    if not user:
+        session["referrer"] = url_for(
+            "spotify_recent"
+        )  # So they'll send the user back here
+        return redirect(url_for("spotify_connect"))
 
     data = await user.get_recently_played()
     tracks = spotify.formatting.recent_tracks(data)
@@ -204,6 +209,11 @@ async def spotify_top(spotify_type):
         return redirect(url_for("discord_login"))
 
     user = await spotify.User.load(user_id, app)
+    if not user:
+        session["referrer"] = url_for(
+            "spotify_top", spotify_type=spotify_type, time_range=time_range
+        )  # So they'll send the user back here
+        return redirect(url_for("spotify_connect"))
 
     if spotify_type == "artists":
         data = await user.get_top_artists(time_range=time_range)
