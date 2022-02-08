@@ -848,8 +848,6 @@ class Automod(commands.Cog):
             if required_perms:
                 await self._dehoist(member)
 
-                
-
         autoroles = self.bot.server_settings[member.guild.id]["autoroles"]
         if autoroles:
             required_perms = guild.me.guild_permissions.manage_roles
@@ -1000,4 +998,7 @@ class Automod(commands.Cog):
                 name = name[1:]
             if name.strip() == "":
                 name = "Dehoisted"
-            await member.edit(nick=name, reason="Automatically Dehoisted")
+            try:
+                await member.edit(nick=name, reason="Automatically Dehoisted")
+            except discord.Forbidden:
+                pass  # If lacks perms.

@@ -25,7 +25,9 @@ class Web(Quart):
             x[:-4] for x in os.listdir("./data/scripts") if x.endswith(".sql")
         ]
 
-        self.cxn = self.loop.run_until_complete(asyncpg.create_pool(config.DEVELOPMENT.POSTGRES.uri))
+        self.cxn = self.loop.run_until_complete(
+            asyncpg.create_pool(config.DEVELOPMENT.POSTGRES.uri)
+        )
         self.loop.run_until_complete(self.initialize())
 
         self.stats = {}
