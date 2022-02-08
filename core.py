@@ -397,6 +397,7 @@ class Neutra(commands.AutoShardedBot):
         print(utils.prefix_log(f"Elapsed time: {str(time.time() - st)[:10]} s"))
 
         await self.create_db()
+        print("created db")
 
         # The rest of the botvars that couldn't be set earlier
         await self.load_globals()

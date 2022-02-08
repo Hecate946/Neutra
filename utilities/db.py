@@ -96,6 +96,7 @@ class Database:
                     servers.muterole,
                     servers.antiinvite,
                     servers.reassign,
+                    servers.autodehoist,
                     servers.autoroles,
                     servers.profanities
                 ) AS _) AS settings
@@ -116,6 +117,7 @@ class Database:
                     servers.muterole,
                     servers.antiinvite,
                     servers.reassign,
+                    servers.autodehoist,
                     servers.autoroles,
                     servers.profanities
                 ) AS _) AS settings
