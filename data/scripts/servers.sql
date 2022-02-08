@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS servers (
     muterole BIGINT,
     antiinvite BOOLEAN DEFAULT False,
     reassign BOOLEAN DEFAULT True,
+    autodehoist BOOLEAN DEFAULT False,
     autoroles BIGINT[] DEFAULT '{}',
     profanities TEXT[] DEFAULT '{}'
 );

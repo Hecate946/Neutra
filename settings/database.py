@@ -103,6 +103,7 @@ async def load_settings():
                 servers.muterole,
                 servers.antiinvite,
                 servers.reassign,
+                servers.autodehoist,
                 servers.autoroles,
                 servers.profanities
             ) AS _) AS settings
@@ -122,6 +123,7 @@ async def fix_server(server):
                 servers.muterole,
                 servers.antiinvite,
                 servers.reassign,
+                servers.autodehoist,
                 servers.autoroles,
                 servers.profanities
             ) AS _) AS settings

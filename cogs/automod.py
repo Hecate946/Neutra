@@ -539,6 +539,57 @@ class Automod(commands.Cog):
             self.bot.server_settings[ctx.guild.id]["reassign"] = reassign
         await ctx.send_or_reply(msg)
 
+    @decorators.command(brief="Automarically dehoist users.")
+    @commands.guild_only()
+    @checks.bot_has_perms(manage_nicknames=True)
+    @checks.has_perms(manage_guild=True, manage_nicknames=True)
+    async def autodehoist(self, ctx, *, yes_no=None):
+        """
+        Usage:      {0}autodehoist <yes|enable|true|on||no|disable|false|off>
+        Permission: Manage Server, Manage Nicknames
+        Output:     Dehoists users when they edit their nickname or join the server
+        Notes:
+            This setting is disabled by default. The bot will attempt to
+            add the users their old roles unless it is missing permissions.
+        """
+        current = self.bot.server_settings[ctx.guild.id]["autodehoist"]
+        if current is False:
+            autodehoist = False
+        else:
+            current is True
+            autodehoist = True
+        if yes_no is None:
+            # Output what we have
+            msg = "{} currently **{}**.".format(
+                "Automatically dehoisting users is",
+                "enabled" if current is True else "disabled",
+            )
+        elif yes_no.lower() in ["yes", "on", "true", "enabled", "enable"]:
+            yes_no = True
+            autodehoist = True
+            msg = "{} {} **enabled**.".format(
+                "Automatically dehoisting users",
+                "remains" if current is True else "is now",
+            )
+        elif yes_no.lower() in ["no", "off", "false", "disabled", "disable"]:
+            yes_no = False
+            autodehoist = False
+            msg = "{} {} **disabled**.".format(
+                "Automatically dehoisting users",
+                "is now" if current is True else "remains",
+            )
+        else:
+            msg = f"{self.bot.emote_dict['warn']} That is not a valid setting."
+            yes_no = current
+        if yes_no != current and yes_no is not None:
+            await self.bot.cxn.execute(
+                "UPDATE servers SET autodehoist = $1 WHERE server_id = $2",
+                autodehoist,
+                ctx.guild.id,
+            )
+            self.bot.server_settings[ctx.guild.id]["autodehoist"] = autodehoist
+        await ctx.send_or_reply(msg)
+
     @decorators.group(
         invoke_without_command=True,
         case_insensitive=True,
@@ -755,61 +806,81 @@ class Automod(commands.Cog):
     @decorators.wait_until_ready()
     @decorators.event_check(lambda s, m: not m.bot)
     async def on_member_join(self, member):
-        required_perms = member.guild.me.guild_permissions.manage_roles
-        if not required_perms:
-            return
 
         guild = member.guild
         reassign = self.bot.server_settings[guild.id]["reassign"]
         if reassign:
-            query = """
-                    SELECT roles
-                    FROM userroles
-                    WHERE user_id = $1
-                    and server_id = $2;
-                    """
-            old_roles = await self.bot.cxn.fetchval(query, member.id, guild.id)
-            if old_roles:
-                roles = str(old_roles).split(",")
-                role_objects = [
-                    guild.get_role(int(role_id))
-                    for role_id in roles
-                    if guild.get_role(int(role_id))
-                ]
-                to_reassign = (
-                    role_objects + member.roles
-                )  # In case they already had roles added
-                try:
-                    await member.edit(
-                        roles=to_reassign, reason="Roles reassigned on rejoin."
-                    )
-                except Exception:  # Try to add them on one by one.
-                    for role in role_objects:
-                        if role not in member.roles:
-                            try:
-                                await member.add_roles(role)
-                            except Exception:
-                                continue
+            required_perms = guild.me.guild_permissions.manage_roles
+            if required_perms:
+
+                query = """
+                        SELECT roles
+                        FROM userroles
+                        WHERE user_id = $1
+                        and server_id = $2;
+                        """
+                old_roles = await self.bot.cxn.fetchval(query, member.id, guild.id)
+                if old_roles:
+                    roles = str(old_roles).split(",")
+                    role_objects = [
+                        guild.get_role(int(role_id))
+                        for role_id in roles
+                        if guild.get_role(int(role_id))
+                    ]
+                    to_reassign = (
+                        role_objects + member.roles
+                    )  # In case they already had roles added
+                    try:
+                        await member.edit(
+                            roles=to_reassign, reason="Roles reassigned on rejoin."
+                        )
+                    except Exception:  # Try to add them on one by one.
+                        for role in role_objects:
+                            if role not in member.roles:
+                                try:
+                                    await member.add_roles(role)
+                                except Exception:
+                                    continue
+
+        autodehoist = self.bot.server_settings[member.guild.id]["autodehoist"]
+        if autodehoist:
+            required_perms = guild.me.guild_permissions.manage_nicknames
+            if required_perms:
+                await self._dehoist(member)
+
+                
 
         autoroles = self.bot.server_settings[member.guild.id]["autoroles"]
         if autoroles:
-            role_objects = [
-                guild.get_role(role_id)
-                for role_id in autoroles
-                if guild.get_role(role_id)
-            ]
-            try:
-                await member.add_roles(
-                    *role_objects, reason="Roles auto-assigned on join."
-                )
-            except Exception:  # Try to add them on one by one.
-                for role in role_objects:
-                    try:
-                        await member.add_roles(
-                            role, reason="Roles auto-assigned on join."
-                        )
-                    except Exception:
-                        continue
+            required_perms = guild.me.guild_permissions.manage_roles
+            if required_perms:
+                role_objects = [
+                    guild.get_role(role_id)
+                    for role_id in autoroles
+                    if guild.get_role(role_id)
+                ]
+                try:
+                    await member.add_roles(
+                        *role_objects, reason="Roles auto-assigned on join."
+                    )
+                except Exception:  # Try to add them on one by one.
+                    for role in role_objects:
+                        try:
+                            await member.add_roles(
+                                role, reason="Roles auto-assigned on join."
+                            )
+                        except Exception:
+                            continue
+
+    @commands.Cog.listener()
+    @decorators.wait_until_ready()
+    @decorators.event_check(lambda s, b, a: a.guild and not a.bot)
+    async def on_member_update(self, before, after):
+        autodehoist = self.bot.server_settings[after.guild.id]["autodehoist"]
+        if autodehoist:
+            required_perms = after.guild.me.guild_permissions.manage_nicknames
+            if required_perms:
+                await self._dehoist(after)
 
     @commands.Cog.listener()
     @decorators.wait_until_ready()
@@ -900,3 +971,33 @@ class Automod(commands.Cog):
                         )
                     except Exception:
                         pass
+
+    #######################
+    ## Utility Functions ##
+    #######################
+
+    async def _dehoist(self, member):
+        characters = [
+            "!",
+            '"',
+            "#",
+            "$",
+            "%",
+            "&",
+            "'",
+            "(",
+            ")",
+            "*",
+            "+",
+            ",",
+            "-",
+            ".",
+            "/",
+        ]
+        if member.display_name.startswith(tuple(characters)):
+            name = member.display_name
+            while name.startswith(tuple(characters)):
+                name = name[1:]
+            if name.strip() == "":
+                name = "Dehoisted"
+            await member.edit(nick=name, reason="Automatically Dehoisted")
