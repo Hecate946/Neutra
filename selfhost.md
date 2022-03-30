@@ -64,8 +64,13 @@ pip install -r requirements.txt
 If you are on windows, do this in cmd instead of ubuntu.
 
 ## Step Six: Configure Bot
-Run the command:
+Create a file called `config.py` and copy all the contents of `config_example.py` into it.
+Follow the directions in the comments of `config_example.py` then run:
 ```yaml
-python3 starter.py setup
+python3 starter.py [mode]
 ```
-to start an interactive session that will set up your configuration
+Where the mode determines which credentials in the config.py to use.
+Valid modes are "dev", "tester", and "production"
+The mode will default to production.
+Production mode requires all webhooks to be setup,
+If you are planning to selfhost, use tester mode.
