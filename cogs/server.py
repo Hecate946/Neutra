@@ -10,8 +10,8 @@ from utilities import checks
 from utilities import helpers
 
 
-def setup(bot):
-    bot.add_cog(Server(bot))
+async def setup(bot):
+    await bot.add_cog(Server(bot))
 
 
 class Server(commands.Cog):

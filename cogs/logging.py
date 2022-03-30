@@ -1,11 +1,13 @@
 import io
 import re
 import json
+import time
 import codecs
 import discord
 
 from collections import defaultdict, Counter
 from discord.ext import commands, menus, tasks
+from datetime import timedelta
 
 from utilities import utils
 from utilities import checks
@@ -13,6 +15,7 @@ from utilities import converters
 from utilities import decorators
 from utilities import exceptions
 from utilities import pagination
+from utilities import humantime
 
 DISCORD_FAILURE = "https://cdn.discordapp.com/attachments/846597178918436885/873793100613582878/poop.png"
 CREATED_MESSAGE = "https://cdn.discordapp.com/attachments/846597178918436885/846841649542725632/messagecreate.png"
@@ -20,8 +23,8 @@ UPDATED_MESSAGE = "https://cdn.discordapp.com/attachments/846597178918436885/846
 DELETED_MESSAGE = "https://cdn.discordapp.com/attachments/846597178918436885/846841722994163722/messagedelete.png"
 
 
-def setup(bot):
-    bot.add_cog(Logging(bot))
+async def setup(bot):
+    await bot.add_cog(Logging(bot))
 
 
 class Logging(commands.Cog):
@@ -1520,6 +1523,70 @@ class Logging(commands.Cog):
         )
         await ctx.send_or_reply(
             f"Found **{len(loop)}** on your search for **duplicates**"
+        )
+        p = pagination.MainMenu(
+            pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=800)
+        )
+        try:
+            await p.start(ctx)
+        except menus.MenuError as e:
+            await ctx.send_or_reply(e)
+
+    @find.command(
+        name="inactive",
+        aliases=["dead"],
+        brief="Find users who are inactive since a given time.",
+    )
+    async def find_inactive(self, ctx, *, since: humantime.PastTime = None):
+        """
+        Usage: {0}channelstats [since]
+        Aliases: {0}cstats, {0}chanstats
+        Permission: Manage Messages
+        Output:
+            Shows the most active server
+            channels ordered by the number
+            of messages sent in them.
+        Notes:
+            If no unit of time is specified,
+            of if the unit is invalid, the bot
+            will default to one month for its unit.
+        """
+        await ctx.trigger_typing()
+        if not since:  # They didn't specify. Default to past month
+            since = discord.utils.utcnow() - timedelta(30)  # 30 days ago
+        else:
+            since = since.dt
+
+        seconds_ago = (discord.utils.utcnow() - since).total_seconds()
+        diff = time.time() - seconds_ago
+
+        query = """
+                SELECT ARRAY(
+                    SELECT user_id
+                    FROM tracker
+                    WHERE unix > $1
+                );
+                """
+        active_users = await self.bot.cxn.fetchval(query, diff)
+        inactive_users = [
+            str(g)
+            for g in ctx.guild.members
+            if g.id not in active_users  # Not found to be active in that time frame
+            and str(g.status) == "offline"  # Offline users
+            and not g.bot  # Ignore bots as usual
+        ]
+
+        if not inactive_users:
+            return await ctx.fail(f"**No results.**")
+
+        stuff = "\r\n".join(
+            [
+                f"[{str(num).zfill(2)}] {data}"
+                for num, data in enumerate(inactive_users, start=1)
+            ]
+        )
+        await ctx.send_or_reply(
+            f"Found **{len(inactive_users)}** on your search for **inactive users** since {humantime.human_timedelta(since)}"
         )
         p = pagination.MainMenu(
             pagination.TextPageSource(text=str(stuff), prefix="```ini\n", max_size=800)

@@ -18,8 +18,8 @@ EMOJI_REGEX = re.compile(r"<a?:.+?:([0-9]{15,21})>")
 EMOJI_NAME_REGEX = re.compile(r"[0-9a-zA-Z\_]{2,32}")
 
 
-def setup(bot):
-    bot.add_cog(Batch(bot))
+async def setup(bot):
+    await bot.add_cog(Batch(bot))
 
 
 class Batch(commands.Cog):

@@ -138,28 +138,28 @@ class HelpView(discord.ui.View):
         await self.message.edit(embed=self.embed, view=self)
 
     @discord.ui.button(label="Delete", style=discord.ButtonStyle.red)
-    async def delete(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def delete(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.message.delete()
         self.stop()
 
     @discord.ui.button(label="Need help?", style=discord.ButtonStyle.green)
-    async def helper(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def helper(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.clear_items()
         self.fill_items(_help=True)
-        await interaction.message.edit(embed=self.help_embed, view=self)
+        await interaction.response.edit_message(embed=self.help_embed, view=self)
 
     @discord.ui.button(label="Go back", style=discord.ButtonStyle.blurple)
     async def _return(
-        self, button: discord.ui.Button, interaction: discord.Interaction
+        self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         self.clear_items()
         self.fill_items()
-        await interaction.message.edit(embed=self.embed, view=self)
+        await interaction.response.edit_message(embed=self.embed, view=self)
 
 
-def setup(bot):
+async def setup(bot):
     bot.remove_command("help")
-    bot.add_cog(Help(bot))
+    await bot.add_cog(Help(bot))
 
 
 class Help(commands.Cog):

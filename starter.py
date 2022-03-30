@@ -1,5 +1,5 @@
 import click
-import config
+import asyncio
 
 
 @click.command()
@@ -21,7 +21,7 @@ def main(mode):
     startmsg = f"{block}\n## Running {mode.capitalize()} Mode ## \n{block}"
     click.echo(startmsg)
     # run the application ...
-    bot.run()
+    asyncio.run(bot.run())
 
 
 if __name__ == "__main__":

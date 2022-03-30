@@ -22,8 +22,8 @@ from utilities import decorators
 from utilities import pagination
 
 
-def setup(bot):
-    bot.add_cog(Manager(bot))
+async def setup(bot):
+    await bot.add_cog(Manager(bot))
 
 
 class Manager(commands.Cog):
@@ -89,10 +89,10 @@ class Manager(commands.Cog):
             with the given name.
         """
         try:
-            self.bot.load_extension(f"cogs.{file}")
+            await self.bot.load_extension(f"cogs.{file}")
         except Exception:
             try:
-                self.bot.load_extension(f"{file}")
+                await self.bot.load_extension(f"{file}")
             except Exception as e:
                 return await ctx.send_or_reply(str(e).replace("'", "**"))
         await ctx.success(f"Loaded extension **{file}**")
@@ -117,10 +117,10 @@ class Manager(commands.Cog):
             with the given name.
         """
         try:
-            self.bot.unload_extension(f"cogs.{file}")
+            await self.bot.unload_extension(f"cogs.{file}")
         except Exception:
             try:
-                self.bot.unload_extension(f"{file}")
+                await self.bot.unload_extension(f"{file}")
             except Exception as e:
                 return await ctx.send_or_reply(str(e).replace("'", "**"))
         await ctx.success(f"Unloaded extension **{file}**")
@@ -145,10 +145,10 @@ class Manager(commands.Cog):
             with the given name.
         """
         try:
-            self.bot.reload_extension(f"cogs.{file}")
+            await self.bot.reload_extension(f"cogs.{file}")
         except Exception:
             try:
-                self.bot.reload_extension(f"{file}")
+                await self.bot.reload_extension(f"{file}")
             except Exception as e:
                 return await ctx.send_or_reply(str(e).replace("'", "**"))
         await ctx.success(f"Reloaded extension **{file}.py**")
@@ -176,7 +176,7 @@ class Manager(commands.Cog):
             if fname.endswith(".py"):
                 name = fname[:-3]
                 try:
-                    self.bot.reload_extension(f"cogs.{name}")
+                    await self.bot.reload_extension(f"cogs.{name}")
                 except Exception as e:
                     error_collection.append(
                         [fname, utils.traceback_maker(e, advance=False)]

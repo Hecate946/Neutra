@@ -57,8 +57,8 @@ class Timer:
         return f"<Timer created={self.created_at} expires={self.expires} event={self.event}>"
 
 
-def setup(bot):
-    bot.add_cog(Tasks(bot))
+async def setup(bot):
+    await bot.add_cog(Tasks(bot))
 
 
 class Tasks(commands.Cog):

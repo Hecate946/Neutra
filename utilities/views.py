@@ -32,8 +32,8 @@ class MuteRoleView(discord.ui.View):
     @discord.ui.button(
         label="Block (Cannot send messages)", style=discord.ButtonStyle.blurple
     )
-    async def block(self, button: discord.ui.Button, interaction: discord.Interaction):
-        await interaction.message.edit(
+    async def block(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.edit_message(
             content=self.create_msg("send"), embed=None, view=None
         )
         self.overwrites = {"send_messages": False}
@@ -42,15 +42,15 @@ class MuteRoleView(discord.ui.View):
     @discord.ui.button(
         label="Blind (Cannot read messages)", style=discord.ButtonStyle.gray
     )
-    async def blind(self, button: discord.ui.Button, interaction: discord.Interaction):
-        await interaction.message.edit(
+    async def blind(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.edit_message(
             content=self.create_msg("read"), embed=None, view=None
         )
         self.overwrites = {"send_messages": False, "read_messages": False}
         self.stop()
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
-    async def cancel(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.stop()
 
 
@@ -83,15 +83,17 @@ class Confirmation(discord.ui.View):
         emoji=constants.emotes["success"], style=discord.ButtonStyle.gray
     )
     async def _confirm(
-        self, button: discord.ui.Button, interaction: discord.Interaction
+        self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         await interaction.message.delete()
         self.result = True
         self.stop()
 
     @discord.ui.button(emoji=constants.emotes["failed"], style=discord.ButtonStyle.gray)
-    async def _deny(self, button: discord.ui.Button, interaction: discord.Interaction):
-        await interaction.message.edit(content="**Confirmation Cancelled.**", view=None)
+    async def _deny(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.edit_message(
+            content="**Confirmation Cancelled.**", view=None
+        )
         self.result = False
         self.stop()
 
@@ -180,35 +182,35 @@ class ButtonPages(discord.ui.View):
     async def show_page(self, interaction):
         page = self.current_page = self.pages[self.page_number - 1]
         if isinstance(page, discord.Embed):
-            await interaction.message.edit(embed=page, view=self)
+            await interaction.response.edit_message(embed=page, view=self)
         else:
-            await interaction.message.edit(content=page, view=self)
+            await interaction.response.edit_message(content=page, view=self)
 
     @discord.ui.button(
         emoji=constants.emotes["backward2"], style=discord.ButtonStyle.gray
     )
-    async def _first(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def _first(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.update_view(1)
         await self.show_page(interaction)
 
     @discord.ui.button(
         emoji=constants.emotes["backward"], style=discord.ButtonStyle.gray
     )
-    async def _back(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def _back(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.update_view(self.page_number - 1)
         await self.show_page(interaction)
 
     @discord.ui.button(
         emoji=constants.emotes["forward"], style=discord.ButtonStyle.gray
     )
-    async def _next(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def _next(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.update_view(self.page_number + 1)
         await self.show_page(interaction)
 
     @discord.ui.button(
         emoji=constants.emotes["forward2"], style=discord.ButtonStyle.gray
     )
-    async def _last(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def _last(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.update_view(self.max_pages)
         await self.show_page(interaction)
 
@@ -216,7 +218,7 @@ class ButtonPages(discord.ui.View):
         emoji=constants.emotes["1234button"], style=discord.ButtonStyle.grey
     )
     async def _select(
-        self, button: discord.ui.Button, interaction: discord.Interaction
+        self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         """lets you type a page number to go to"""
         if self.input_lock.locked():
@@ -266,22 +268,22 @@ class ButtonPages(discord.ui.View):
 
     @discord.ui.button(label="Delete session", style=discord.ButtonStyle.red)
     async def _delete(
-        self, button: discord.ui.Button, interaction: discord.Interaction
+        self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         await interaction.message.delete()
         self.stop()
 
     @discord.ui.button(label="Compact view", style=discord.ButtonStyle.blurple)
     async def _compact(
-        self, button: discord.ui.Button, interaction: discord.Interaction
+        self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         self.compact = True
         self.clear_items()
         self.fill_items()
-        await interaction.message.edit(view=self)
+        await interaction.response.edit_message(view=self)
 
     @discord.ui.button(label="Need help?", style=discord.ButtonStyle.green)
-    async def _help(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def _help(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.clear_items()
         self.fill_items(_help=True)
         embed = discord.Embed(color=config.EMBED_COLOR)
@@ -322,18 +324,20 @@ class ButtonPages(discord.ui.View):
         # embed.add_field(name="Delete session", value="This button ends the pagination session and deletes the message", inline=False)
         # embed.add_field(name="Compact view", value="This button removes the three colored buttons for a more \"compact\" view", inline=False)
         # embed.add_field(name="Need help?", value="This button shows this help page.", inline=False)
-        await interaction.message.edit(embed=embed, view=self)
+        await interaction.response.edit_message(embed=embed, view=self)
 
     @discord.ui.button(label="Return to main page", style=discord.ButtonStyle.blurple)
     async def _return(
-        self, button: discord.ui.Button, interaction: discord.Interaction
+        self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         self.clear_items()
         self.fill_items()
         if isinstance(self.current_page, discord.Embed):
-            await interaction.message.edit(embed=self.current_page, view=self)
+            await interaction.response.edit_message(embed=self.current_page, view=self)
         else:
-            await interaction.message.edit(content=self.current_page, view=self)
+            await interaction.response.edit_message(
+                content=self.current_page, view=self
+            )
 
 
 class SimpleView(ButtonPages):

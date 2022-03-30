@@ -14,7 +14,6 @@ import pytz
 import timeago as timesince
 
 from colorama import Fore, Style
-from discord.iterators import HistoryIterator
 
 
 # Some funcs and ideas from corpbot.py and discord_bot.py
@@ -527,44 +526,6 @@ def cleanup_code(content):
 def get_icon(guild):
     """Return cdn poop image if no icon"""
     return guild.icon or DISCORD_FAILURE
-
-
-class CachedHistoryIterator(HistoryIterator):
-    """HistoryIterator, but we hit the cache first."""
-
-    def __init__(
-        self,
-        messageable,
-        limit,
-        before=None,
-        after=None,
-        around=None,
-        oldest_first=None,
-    ):
-        super().__init__(messageable, limit, before, after, around, oldest_first)
-        self.prefill = self.reverse is False and around is None
-
-    async def next(self):
-        if self.prefill:
-            await self.prefill_from_cache()
-            self.prefill = False
-        return await super().next()
-
-    async def prefill_from_cache(self):
-        if not hasattr(self, "channel"):
-            # do the required set up
-            channel = await self.messageable._get_channel()
-            self.channel = channel
-
-        for msg in reversed(self.channel._state._messages):
-            if (
-                msg.channel.id == self.channel.id
-                and self.limit > 0
-                and (not self.before or msg.id < self.before.id)
-            ):
-                self.limit -= 1
-                self.before = discord.Object(id=msg.id)
-                await self.messages.put(msg)
 
 
 def activity_string(activity):

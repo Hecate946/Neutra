@@ -175,6 +175,7 @@ class Neutra(commands.AutoShardedBot):
             "JISHAKU",
             "DATABASE",
             "MONITOR",
+            "RTFM",
         ]
         self.do_not_load = []
         self.music_cogs = []
@@ -201,8 +202,8 @@ class Neutra(commands.AutoShardedBot):
     def hecate(self):
         return self.get_user(self.developer_id)
 
-    def run(self):  # Everything starts from here
-        self.setup()  # load the cogs
+    async def run(self):  # Everything starts from here
+        self.setup()  # Setup json files.
 
         if self.development:
             token = config.DEVELOPMENT.token
@@ -211,7 +212,9 @@ class Neutra(commands.AutoShardedBot):
         elif self.production:
             token = config.PRODUCTION.token
         try:
-            super().run(token, reconnect=True)  # Run the bot
+            async with self:
+                self.status_loop.start()  # Start the task loop
+                await super().start(token, reconnect=True)  # Run the bot
         except RuntimeError:  # Ignore errors
             pass
         finally:  # Write up our json files with the stats from the session.
@@ -226,9 +229,6 @@ class Neutra(commands.AutoShardedBot):
                 pass  # Ignore errors
 
     def setup(self):
-        # Start the task loop
-
-        self.status_loop.start()
 
         # load all blacklisted discord objects
         if not os.path.exists("./data/json/blacklist.json"):
@@ -243,17 +243,17 @@ class Neutra(commands.AutoShardedBot):
         if not hasattr(self, "blacklist"):
             self.blacklist = blacklist
 
-    def load_extension(self, name, *, package=None):
+    async def load_extension(self, name, *, package=None):
         self.dispatch("loaded_extension", name)
-        return super().load_extension(name, package=package)
+        return await super().load_extension(name, package=package)
 
-    def unload_extension(self, name, *, package=None):
+    async def unload_extension(self, name, *, package=None):
         self.dispatch("unloaded_extension", name)
-        return super().unload_extension(name, package=package)
+        return await super().unload_extension(name, package=package)
 
-    def reload_extension(self, name, *, package=None):
+    async def reload_extension(self, name, *, package=None):
         self.dispatch("reloaded_extension", name)
-        return super().reload_extension(name, package=package)
+        return await super().reload_extension(name, package=package)
 
     async def close(self):  # Shutdown the bot cleanly
         try:
@@ -595,7 +595,7 @@ class Neutra(commands.AutoShardedBot):
         for cog in self.exts:
             if cog.upper() not in self.do_not_load:
                 try:
-                    self.load_extension(f"cogs.{cog}")
+                    await self.load_extension(f"cogs.{cog}")
                 except Exception as e:
                     self.dispatch(
                         "error", "extension_error", tb=utils.traceback_maker(e)

@@ -1,6 +1,5 @@
 import discord
 from discord.ext import commands
-from discord.ext.commands.flags import F
 
 import config
 

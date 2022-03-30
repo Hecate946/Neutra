@@ -3955,14 +3955,14 @@ class SpotifyTracker(commands.Cog):
     #         await ctx.send(e)
 
 
-def setup(bot):
+async def setup(bot):
     bot.music_cogs = ["PLAYER", "PLAYLISTS", "AUDIO", "QUEUE", "VOICE"]
-    bot.add_cog(Player(bot))
-    bot.add_cog(Playlists(bot))
-    bot.add_cog(Queue(bot))
-    bot.add_cog(Audio(bot))
-    bot.add_cog(Voice(bot))
-    bot.add_cog(SpotifyTracker(bot))
+    await bot.add_cog(Player(bot))
+    await bot.add_cog(Playlists(bot))
+    await bot.add_cog(Queue(bot))
+    await bot.add_cog(Audio(bot))
+    await bot.add_cog(Voice(bot))
+    await bot.add_cog(SpotifyTracker(bot))
 
 
 class Views:
@@ -4003,7 +4003,7 @@ class Views:
             emoji=constants.emotes["success"], style=discord.ButtonStyle.gray
         )
         async def _confirm(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             self.result = self.interaction
             self.stop()
@@ -4012,7 +4012,7 @@ class Views:
             emoji=constants.emotes["failed"], style=discord.ButtonStyle.gray
         )
         async def _deny(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             await self.interaction.edit_original_message(
                 content="**Confirmation Cancelled.**", view=None
@@ -4080,7 +4080,7 @@ class Views:
             emoji=constants.emotes["fastforward"], style=discord.ButtonStyle.gray
         )
         async def _forward(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             try:
                 Checks.assert_is_dj(self.ctx)
@@ -4093,7 +4093,7 @@ class Views:
 
             self.player.alter_audio(position=to_seek)
             embed = MusicUtils.make_embed(self.ctx, self.ctx.voice_state.source)
-            await interaction.message.edit(embed=embed)
+            await interaction.response.edit_message(embed=embed)
             await interaction.response.send_message(
                 "Fast forwarded 10 seconds.", ephemeral=True
             )
@@ -4102,7 +4102,7 @@ class Views:
             emoji=constants.emotes["rewind"], style=discord.ButtonStyle.gray
         )
         async def _rewind(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             try:
                 Checks.assert_is_dj(self.ctx)
@@ -4114,7 +4114,7 @@ class Views:
                 to_seek = 0
 
             embed = MusicUtils.make_embed(self.ctx, self.ctx.voice_state.source)
-            await interaction.message.edit(embed=embed)
+            await interaction.response.edit_message(embed=embed)
             self.player.alter_audio(position=to_seek)
             await interaction.response.send_message(
                 "Rewinded 10 seconds.", ephemeral=True
@@ -4124,7 +4124,7 @@ class Views:
             emoji=constants.emotes["pause"], style=discord.ButtonStyle.gray
         )
         async def _pause(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             try:
                 Checks.assert_is_dj(self.ctx)
@@ -4134,7 +4134,7 @@ class Views:
             self.voice_client.pause()
             self.clear_items()
             self.fill_items()
-            await interaction.message.edit(view=self)
+            await interaction.response.edit_message(view=self)
             await interaction.response.send_message(
                 "Paused the player.", ephemeral=True
             )
@@ -4143,7 +4143,7 @@ class Views:
             emoji=constants.emotes["play"], style=discord.ButtonStyle.gray
         )
         async def _resume(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             try:
                 Checks.assert_is_dj(self.ctx)
@@ -4153,7 +4153,7 @@ class Views:
             self.voice_client.resume()
             self.clear_items()
             self.fill_items()
-            await interaction.message.edit(view=self)
+            await interaction.response.edit_message(view=self)
             await interaction.response.send_message(
                 "Resumed the player.", ephemeral=True
             )
@@ -4162,7 +4162,7 @@ class Views:
             emoji=constants.emotes["help"], style=discord.ButtonStyle.gray
         )
         async def _help(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             self.clear_items()
             self.fill_items(_help=True)
@@ -4195,20 +4195,20 @@ class Views:
                 inline=False,
             )
             embed.set_footer("This menu will expire after 2 minutes of inactivity.")
-            await interaction.message.edit(embed=embed, view=self)
+            await interaction.response.edit_message(embed=embed, view=self)
 
         @discord.ui.button(
             emoji=constants.emotes["trash"], style=discord.ButtonStyle.gray
         )
         async def _trash(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             await interaction.message.delete()
             self.stop()
 
         @discord.ui.button(label="Delete session", style=discord.ButtonStyle.red)
         async def _delete(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             await interaction.message.delete()
             self.stop()
@@ -4217,15 +4217,15 @@ class Views:
             label="Return to main page", style=discord.ButtonStyle.blurple
         )
         async def _return(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             self.clear_items()
             self.fill_items()
             page = MusicUtils.make_embed(self.ctx, self.ctx.voice_state.source)
             if isinstance(page, discord.Embed):
-                await interaction.message.edit(embed=page, view=self)
+                await interaction.response.edit_message(embed=page, view=self)
             else:
-                await interaction.message.edit(content=page, view=self)
+                await interaction.response.edit_message(content=page, view=self)
 
     class ButtonPages(discord.ui.View):
         async def __init__(self, ctx, pages, *, content=""):
@@ -4301,15 +4301,15 @@ class Views:
         async def show_page(self, interaction):
             page = self.current_page = self.pages[self.page_number - 1]
             if isinstance(page, discord.Embed):
-                await interaction.message.edit(embed=page, view=self)
+                await interaction.response.edit_message(embed=page, view=self)
             else:
-                await interaction.message.edit(content=page, view=self)
+                await interaction.response.edit_message(content=page, view=self)
 
         @discord.ui.button(
             emoji=constants.emotes["backward2"], style=discord.ButtonStyle.gray
         )
         async def _first(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             self.update_view(1)
             await self.show_page(interaction)
@@ -4318,7 +4318,7 @@ class Views:
             emoji=constants.emotes["backward"], style=discord.ButtonStyle.gray
         )
         async def _back(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             self.update_view(self.page_number - 1)
             await self.show_page(interaction)
@@ -4327,7 +4327,7 @@ class Views:
             emoji=constants.emotes["forward"], style=discord.ButtonStyle.gray
         )
         async def _next(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             self.update_view(self.page_number + 1)
             await self.show_page(interaction)
@@ -4336,7 +4336,7 @@ class Views:
             emoji=constants.emotes["forward2"], style=discord.ButtonStyle.gray
         )
         async def _last(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             self.update_view(self.max_pages)
             await self.show_page(interaction)
@@ -4345,7 +4345,7 @@ class Views:
             emoji=constants.emotes["1234button"], style=discord.ButtonStyle.grey
         )
         async def _select(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             """lets you type a page number to go to"""
             if self.input_lock.locked():
@@ -4446,7 +4446,7 @@ class Views:
             emoji=constants.emotes["minus"], style=discord.ButtonStyle.gray
         )
         async def _subtract(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             """Remove a track from a saved playlist."""
             if self.input_lock.locked():
@@ -4509,7 +4509,7 @@ class Views:
             emoji=constants.emotes["delete"], style=discord.ButtonStyle.gray
         )
         async def _drop(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             res = await Views.Confirmation(
                 interaction,
@@ -4526,7 +4526,7 @@ class Views:
             emoji=constants.emotes["heart"], style=discord.ButtonStyle.gray
         )
         async def _like(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             await self.playlist.like()
             await interaction.response.send_message(
@@ -4537,7 +4537,7 @@ class Views:
             emoji=constants.emotes["music"], style=discord.ButtonStyle.gray
         )
         async def _enqueue(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             player = await self.ctx.voice_state.ensure_voice_state(self.ctx)
             player.tracks.extend(self.playlist.entries)
@@ -4549,7 +4549,7 @@ class Views:
             emoji=constants.emotes["download"], style=discord.ButtonStyle.gray
         )
         async def _download(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             """Saves the current playlist"""
             if self.input_lock.locked():
@@ -4616,7 +4616,7 @@ class Views:
             emoji=constants.emotes["skip"], style=discord.ButtonStyle.gray
         )
         async def _skip(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             if Checks.is_requester(self.ctx):
                 self.ctx.voice_state.skip()  # Song requester can skip.
@@ -4650,7 +4650,7 @@ class Views:
             emoji=constants.emotes["previous"], style=discord.ButtonStyle.gray
         )
         async def _prev(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             try:
                 Checks.assert_is_dj(self.ctx)
@@ -4673,7 +4673,7 @@ class Views:
             emoji=constants.emotes["help"], style=discord.ButtonStyle.gray
         )
         async def _help(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             self.clear_items()
             self.fill_items(_help=True)
@@ -4738,20 +4738,20 @@ class Views:
             embed.set_footer(
                 text=f"Previously viewing page {self.page_number} of {self.max_pages}"
             )
-            await interaction.message.edit(embed=embed, view=self)
+            await interaction.response.edit_message(embed=embed, view=self)
 
         @discord.ui.button(
             emoji=constants.emotes["trash"], style=discord.ButtonStyle.gray
         )
         async def _trash(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             await interaction.message.delete()
             self.stop()
 
         @discord.ui.button(label="Delete session", style=discord.ButtonStyle.red)
         async def _delete(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             await interaction.message.delete()
             self.stop()
@@ -4760,14 +4760,18 @@ class Views:
             label="Return to main page", style=discord.ButtonStyle.blurple
         )
         async def _return(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             self.clear_items()
             self.fill_items()
             if isinstance(self.current_page, discord.Embed):
-                await interaction.message.edit(embed=self.current_page, view=self)
+                await interaction.response.edit_message(
+                    embed=self.current_page, view=self
+                )
             else:
-                await interaction.message.edit(content=self.current_page, view=self)
+                await interaction.response.edit_message(
+                    content=self.current_page, view=self
+                )
 
     class QueueView(QueueSource):
         """
@@ -4963,7 +4967,7 @@ class Views:
                 f"{self.ctx.bot.emote_dict['success']} {self.opts[selection][2]}",
                 ephemeral=True,
             )
-            await interaction.message.edit(view=self.view)
+            await interaction.response.edit_message(view=self.view)
 
     class EffectSelect(discord.ui.Select):
         def __init__(self, ctx):
@@ -5087,7 +5091,7 @@ class Views:
                 )
             self.options.clear()
             self.options.extend(self.get_options())
-            await interaction.message.edit(view=self.view)
+            await interaction.response.edit_message(view=self.view)
 
     class Effects(discord.ui.View):
         def __init__(self, ctx, player):
@@ -5124,24 +5128,24 @@ class Views:
 
         @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red, row=2)
         async def cancel_button(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             await interaction.message.delete()
             self.stop()
 
         @discord.ui.button(label="Reset", style=discord.ButtonStyle.blurple, row=2)
         async def reset_button(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             self.player.clear_effects()
-            await interaction.message.edit(
+            await interaction.response.edit_message(
                 "Successfully reset effect settings.", view=None
             )
             self.stop()
 
         @discord.ui.button(label="Help", style=discord.ButtonStyle.gray, row=2)
         async def help_button(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             embed = discord.Embed(color=self.ctx.bot.config.EMBED_COLOR)
             embed.set_author(
@@ -5161,7 +5165,9 @@ class Views:
                 text="This menu will expire after 2 minutes of inactivity."
             )
             help_view = Views.HelpMenu(self.ctx, self.player)
-            await interaction.message.edit(content=None, embed=embed, view=help_view)
+            await interaction.response.edit_message(
+                content=None, embed=embed, view=help_view
+            )
             help_view.message = self.message
             self.stop()
 
@@ -5212,14 +5218,14 @@ class Views:
 
         @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
         async def cancel_button(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             await interaction.message.delete()
             self.stop()
 
         @discord.ui.button(label="Effects", style=discord.ButtonStyle.green)
         async def effects_button(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             embed = discord.Embed(color=self.ctx.bot.config.EMBED_COLOR)
             embed.title = "Audio Effects"
@@ -5231,16 +5237,20 @@ class Views:
                 embed.add_field(name=name, value=description)
 
             return_view = Views.Return(self.ctx, self.player)
-            await interaction.message.edit(content=None, embed=embed, view=return_view)
+            await interaction.response.edit_message(
+                content=None, embed=embed, view=return_view
+            )
             return_view.message = self.message
             self.stop()
 
         @discord.ui.button(label="Return", style=discord.ButtonStyle.blurple)
         async def main_button(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             effects_view = Views.Effects(self.ctx, self.player)
-            await interaction.message.edit(content=None, embed=None, view=effects_view)
+            await interaction.response.edit_message(
+                content=None, embed=None, view=effects_view
+            )
             effects_view.message = self.message
             self.stop()
 
@@ -5291,17 +5301,17 @@ class Views:
 
         @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
         async def cancel_button(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             await interaction.message.delete()
             self.stop()
 
         @discord.ui.button(label="Return", style=discord.ButtonStyle.blurple)
         async def main_button(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             effect_view = Views.Effects(self.ctx, self.player)
-            await interaction.message.edit(
+            await interaction.response.edit_message(
                 content="Select an audio effect from the dropdown below.",
                 embed=None,
                 view=effect_view,
@@ -5311,7 +5321,7 @@ class Views:
 
         @discord.ui.button(label="Help", style=discord.ButtonStyle.gray)
         async def help_button(
-            self, button: discord.ui.Button, interaction: discord.Interaction
+            self, interaction: discord.Interaction, button: discord.ui.Button
         ):
             embed = discord.Embed(color=self.ctx.bot.config.EMBED_COLOR)
             embed.set_author(
@@ -5331,6 +5341,8 @@ class Views:
                 text="This menu will expire after 2 minutes of inactivity."
             )
             help_view = Views.HelpMenu(self.ctx, self.player)
-            await interaction.message.edit(content=None, embed=embed, view=help_view)
+            await interaction.response.edit_message(
+                content=None, embed=embed, view=help_view
+            )
             help_view.message = self.message
             self.stop()

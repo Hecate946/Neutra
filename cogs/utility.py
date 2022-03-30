@@ -33,8 +33,8 @@ from utilities import formatting
 from utilities import pagination
 
 
-def setup(bot):
-    bot.add_cog(Utility(bot))
+async def setup(bot):
+    await bot.add_cog(Utility(bot))
 
 
 # Token commands taken and edited from Stella#2000's bot

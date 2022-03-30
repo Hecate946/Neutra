@@ -21,8 +21,8 @@ from utilities import formatting
 from utilities import pagination
 
 
-def setup(bot):
-    bot.add_cog(Botadmin(bot))
+async def setup(bot):
+    await bot.add_cog(Botadmin(bot))
 
 
 class GithubError(commands.CommandError):

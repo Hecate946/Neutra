@@ -18,8 +18,8 @@ from utilities import converters
 from utilities import decorators
 
 
-def setup(bot):
-    bot.add_cog(Mod(bot))
+async def setup(bot):
+    await bot.add_cog(Mod(bot))
 
 
 class Mod(commands.Cog):

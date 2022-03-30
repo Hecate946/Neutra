@@ -20,8 +20,8 @@ from utilities import formatting
 from utilities import pagination
 
 
-def setup(bot):
-    bot.add_cog(Tracking(bot))
+async def setup(bot):
+    await bot.add_cog(Tracking(bot))
 
 
 class Tracking(commands.Cog):

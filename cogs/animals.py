@@ -20,8 +20,8 @@ async def read_shuffle_and_send(animal, ctx):
     await ctx.send(embed=embed)
 
 
-def setup(bot):
-    bot.add_cog(Animals(bot))
+async def setup(bot):
+    await bot.add_cog(Animals(bot))
 
 
 class Animals(commands.Cog):

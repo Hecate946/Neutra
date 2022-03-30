@@ -13,8 +13,8 @@ from utilities import decorators
 from utilities import pagination
 
 
-def setup(bot):
-    bot.add_cog(Botconfig(bot))
+async def setup(bot):
+    await bot.add_cog(Botconfig(bot))
 
 
 class Botconfig(commands.Cog):

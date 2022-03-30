@@ -16,8 +16,8 @@ TESTING = 871900448955727902  # Testing channel
 ANNOUNCE = 852361774871216150  # Announcement channel
 
 
-def setup(bot):
-    bot.add_cog(Home(bot))
+async def setup(bot):
+    await bot.add_cog(Home(bot))
 
 
 class Home(commands.Cog):

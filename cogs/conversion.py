@@ -12,8 +12,8 @@ from utilities import decorators
 from utilities import override
 
 
-def setup(bot):
-    bot.add_cog(Conversion(bot))
+async def setup(bot):
+    await bot.add_cog(Conversion(bot))
 
 
 class Conversion(commands.Cog):

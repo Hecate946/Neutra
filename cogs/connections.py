@@ -11,8 +11,8 @@ from utilities import spotify
 from utilities.discord import oauth as discord_oauth
 
 
-def setup(bot):
-    bot.add_cog(Connections(bot))
+async def setup(bot):
+    await bot.add_cog(Connections(bot))
 
 
 class Connections(commands.Cog):
