@@ -98,7 +98,6 @@ YTDL_OPTIONS = {
 # YTDL info extractor class
 YOUTUBE_DL = youtube_dl.YoutubeDL(YTDL_OPTIONS)
 
-
 class exceptions:
     class InactivePlayer(commands.BadArgument):
         """
