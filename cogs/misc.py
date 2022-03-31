@@ -17,6 +17,10 @@ async def setup(bot):
 
 
 class Misc(commands.Cog):
+    """
+    Miscellaneous stuff.
+    """
+
     def __init__(self, bot):
         self.bot = bot
 

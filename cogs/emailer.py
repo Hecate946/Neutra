@@ -9,10 +9,14 @@ import aiosmtplib
 
 
 async def setup(bot):
-    await bot.add_cog(Email(bot))
+    await bot.add_cog(Emailer(bot))
 
 
-class Email(commands.Cog):
+class Emailer(commands.Cog):
+    """
+    Send emails and text messages.
+    """
+
     def __init__(self, bot):
         self.bot = bot
 

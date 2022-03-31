@@ -12,10 +12,14 @@ from utilities.discord import oauth as discord_oauth
 
 
 async def setup(bot):
-    await bot.add_cog(Connections(bot))
+    await bot.add_cog(Spotify(bot))
 
 
-class Connections(commands.Cog):
+class Spotify(commands.Cog):
+    """
+    Spotify account statistics.
+    """
+
     def __init__(self, bot):
         self.bot = bot
         self.time_map = {
@@ -38,7 +42,6 @@ class Connections(commands.Cog):
             headers={"Content-Type": "application/json"},
             res_method="json",
         )
-        print(r)
 
     def truncate(self, string, max_chars=20):
         return (string[: max_chars - 3] + "...") if len(string) > max_chars else string

@@ -179,6 +179,7 @@ class Neutra(commands.AutoShardedBot):
         ]
         self.do_not_load = []
         self.music_cogs = []
+        self.tester_cogs = ["CONVERSION", "MISC", "ANIMALS", "SPOTIFY", "EMAILER"]
 
         self.home_guilds = [
             805638877762420786,  # Support server
@@ -404,10 +405,8 @@ class Neutra(commands.AutoShardedBot):
         await self.load_globals()
 
         if self.production:
+            self.do_not_load += self.tester_cogs
             self.website_stats_updater.start()
-            self.do_not_load.extend(
-                ["CONVERSION", "MUSIC", "MISC", "ANIMALS", "CONNECTIONS", "EMAILSMS"]
-            )
             await self.setup_webhooks()
             print(utils.prefix_log("Established Webhooks."))
 
@@ -645,7 +644,6 @@ class Neutra(commands.AutoShardedBot):
         return self.prefixes.get(guild_id, [self.config.DEFAULT_PREFIX])
 
     async def set_guild_prefixes(self, guild, prefixes):
-        print(1, prefixes)
         if len(prefixes) == 0:
             await self.put_prefixes(guild.id, [None])
             self.prefixes[guild.id] = prefixes
@@ -656,7 +654,6 @@ class Neutra(commands.AutoShardedBot):
             self.prefixes[guild.id] = prefixes
 
     async def put_prefixes(self, guild_id, prefixes):
-        print(2, prefixes)
         query = """
                 DELETE FROM prefixes
                 WHERE server_id = $1

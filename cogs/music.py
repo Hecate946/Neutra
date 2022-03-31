@@ -3895,9 +3895,9 @@ class SpotifyTracker(commands.Cog):
         if after.guild.id == lowest.id:
             for activity in after.activities:
                 if type(activity) is discord.activity.Spotify:
-                    print(activity.start)
-                    print(activity.end - activity.start)
-                    print(activity.duration)
+                    # print(activity.start)
+                    # print(activity.end - activity.start)
+                    # print(activity.duration)
                     if activity not in before.activities:
                         async with self.batch_lock:
                             try:

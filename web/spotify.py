@@ -227,7 +227,6 @@ class User:  # Spotify user w discord user_id
         data = await self.get_top_artists(limit, time_range)
         genres = []
         for artist in data["items"]:
-            print(artist["genres"])
             genres.extend(artist["genres"])
 
         return Counter(genres)

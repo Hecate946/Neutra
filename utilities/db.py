@@ -132,7 +132,6 @@ class Database:
                 FROM prefixes GROUP BY server_id;
                 """
         records = await self.cxn.fetch(query)
-        print("load prefixes", records)
         for server_id, prefix_list in records:
             self.prefixes[server_id] = prefix_list
 

@@ -203,23 +203,32 @@ class Help(commands.Cog):
 
         cogs = [cog for cog in self.bot.get_cogs() if pred(cog)]
         public = ""
-        beta = ""
+        music = ""
+        tester = ""
         admin = ""
         for cog in sorted(cogs, key=lambda cog: cog.qualified_name):
             if cog.qualified_name.upper() in self.bot.admin_cogs:
                 admin += f"\n`{cog.qualified_name}` {cog.description}\n"
             elif cog.qualified_name.upper() in self.bot.music_cogs:
-                beta += f"\n`{cog.qualified_name}` {cog.description}\n"
+                music += f"\n`{cog.qualified_name}` {cog.description}\n"
+            elif cog.qualified_name.upper() in self.bot.tester_cogs:
+                tester += f"\n`{cog.qualified_name}` {cog.description}\n"
             else:
                 public += f"\n`{cog.qualified_name}` {cog.description}\n"
 
         embed.add_field(
             name="**General Categories**", value=f"** **{public}**\n**", inline=False
         )
-        if beta != "":
+        if music != "":
             embed.add_field(
                 name="**Music Categories**",
-                value=f"** **{beta}**\n**",
+                value=f"** **{music}**\n**",
+                inline=False,
+            )
+        if tester != "":
+            embed.add_field(
+                name="**Tester Categories**",
+                value=f"** **{tester}**\n**",
                 inline=False,
             )
         if checks.is_admin(ctx):
@@ -244,7 +253,7 @@ class Help(commands.Cog):
 
         value = ""
         for cmd in commands:
-            cmd.brief = cmd.brief or "No description"
+            cmd.brief = cmd.brief or "No description."
             if checks.is_disabled(ctx, cmd):
                 value += f"\n[!] ~~`{cmd.qualified_name}` {cmd.brief}~~\n"
             else:

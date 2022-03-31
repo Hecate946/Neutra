@@ -25,6 +25,8 @@ async def setup(bot):
 
 
 class Animals(commands.Cog):
+    "Get animal facts and pictures :)"
+
     def __init__(self, bot):
         self.bot = bot
 

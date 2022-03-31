@@ -105,7 +105,6 @@ class Monitor(commands.Cog):
     async def remove(self, ctx, *, index_or_todo: str = None):
         with open(self.todo_list, mode="r", encoding="utf-8") as fp:
             lines = fp.readlines()
-            print(lines)
         found = False
         for index, line in enumerate(lines, start=1):
             if str(index) == index_or_todo:
@@ -118,7 +117,6 @@ class Monitor(commands.Cog):
                 break
         if found is True:
             with open(self.todo_list, mode="w", encoding="utf-8") as fp:
-                print(lines)
                 fp.write("".join(lines))
             await ctx.success(
                 f"Successfully removed todo `{index_or_todo}` from the todo list."
