@@ -126,8 +126,8 @@ class FieldPageSource(menus.ListPageSource):
 
     def __init__(self, entries, **kwargs):
         per_page = kwargs.get("per_page", 12)
-        self.title = kwargs.get("title", discord.Embed.Empty)
-        self.desc = kwargs.get("description", discord.Embed.Empty)
+        self.title = kwargs.get("title", None)
+        self.desc = kwargs.get("description", None)
         self.desc_head = kwargs.get("desc_head", None)
         self.desc_foot = kwargs.get("desc_foot", None)
         self.color = kwargs.get("color", config.EMBED_COLOR)
@@ -141,7 +141,7 @@ class FieldPageSource(menus.ListPageSource):
 
     async def format_page(self, menu, entries):
         self.embed.clear_fields()
-        self.embed.description = discord.Embed.Empty
+        self.embed.description = None
 
         for key, value in entries:
             self.embed.add_field(name=key, value=value, inline=False)
@@ -155,7 +155,7 @@ class FieldPageSource(menus.ListPageSource):
 
         self.embed.title = self.title
         self.embed.color = self.color
-        if self.desc_head and self.desc_foot and self.desc is not discord.Embed.Empty:
+        if self.desc_head and self.desc_foot and self.desc is not None:
             self.embed.description = f"{self.desc_head}\n{self.enforce_limit(self.desc, DESC_LIMIT)}\n{self.desc_foot}"
         else:
             self.embed.description = self.enforce_limit(self.desc, DESC_LIMIT)

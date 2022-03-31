@@ -1259,7 +1259,7 @@ class Utility(commands.Cog):
             return
 
         if msg.content.lower() == "none":
-            msg = discord.Embed.Empty
+            msg = None
             return msg
         elif msg.content.lower() == "cancel":
             msg = await ctx.success(f"Embed session cancelled.")

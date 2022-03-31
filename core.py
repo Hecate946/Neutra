@@ -212,9 +212,11 @@ class Neutra(commands.AutoShardedBot):
         elif self.production:
             token = config.PRODUCTION.token
         try:
-            async with self:
-                self.status_loop.start()  # Start the task loop
-                await super().start(token, reconnect=True)  # Run the bot
+            async with aiohttp.ClientSession() as session:
+                async with self:
+                    self.session = session
+                    self.status_loop.start()  # Start the task loop
+                    await super().start(token, reconnect=True)  # Run the bot
         except RuntimeError:  # Ignore errors
             pass
         finally:  # Write up our json files with the stats from the session.
@@ -420,6 +422,8 @@ class Neutra(commands.AutoShardedBot):
             self.cxn = await asyncpg.create_pool(config.PRODUCTION.POSTGRES.uri)
 
         self.database = db.Database(self.cxn)
+        self.prefixes = self.database.prefixes
+        self.server_settings = self.database.settings
 
         member_list = [x for x in self.get_all_members()]
         try:
@@ -494,17 +498,8 @@ class Neutra(commands.AutoShardedBot):
         if not hasattr(self, "starttime"):
             self.starttime = time.time()
 
-        if not hasattr(self, "session"):
-            self.session = aiohttp.ClientSession(loop=self.loop)
-
         if not hasattr(self, "http_utils"):
             self.http_utils = http.Utils(self.session)
-
-        if not hasattr(self, "prefixes"):
-            self.prefixes = self.database.prefixes
-
-        if not hasattr(self, "server_settings"):
-            self.server_settings = self.database.settings
 
         if not hasattr(self, "invites"):
 
@@ -650,6 +645,7 @@ class Neutra(commands.AutoShardedBot):
         return self.prefixes.get(guild_id, [self.config.DEFAULT_PREFIX])
 
     async def set_guild_prefixes(self, guild, prefixes):
+        print(1, prefixes)
         if len(prefixes) == 0:
             await self.put_prefixes(guild.id, [None])
             self.prefixes[guild.id] = prefixes
@@ -660,6 +656,7 @@ class Neutra(commands.AutoShardedBot):
             self.prefixes[guild.id] = prefixes
 
     async def put_prefixes(self, guild_id, prefixes):
+        print(2, prefixes)
         query = """
                 DELETE FROM prefixes
                 WHERE server_id = $1
@@ -937,7 +934,7 @@ class Neutra(commands.AutoShardedBot):
 
     # Update stats on sites listing Discord bots
     async def update_listing_stats(self, site):
-        if self.tester is True:
+        if self.production is False:
             return
 
         site = self.listing_sites.get(site)
