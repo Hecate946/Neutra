@@ -3966,6 +3966,13 @@ async def setup(bot):
 
 
 class Views:
+    async def send_ephemeral_message(interaction, message=None, **kwargs):
+        if interaction.response.is_done():
+            return await interaction.followup.send(message, **kwargs, ephemeral=True)
+        return await interaction.response.send_message(
+            message, **kwargs, ephemeral=True
+        )
+
     class Confirmation(discord.ui.View):
         def __init__(self, interaction: discord.Interaction, message="", **kwargs):
             super().__init__(timeout=30.0)
@@ -3975,14 +3982,17 @@ class Views:
             self.result = None
 
         async def prompt(self):
-            if self.interaction.response.is_done():
-                await self.interaction.followup.send(
-                    self.message, **self.kwargs, ephemeral=True, view=self
-                )
-            else:
-                await self.interaction.response.send_message(
-                    self.message, **self.kwargs, ephemeral=True, view=self
-                )
+            await Views.send_ephemeral_message(
+                self.interaction, self.message, **self.kwargs, view=self
+            )
+            # if self.interaction.response.is_done():
+            #     await self.interaction.followup.send(
+            #         self.message, **self.kwargs, ephemeral=True, view=self
+            #     )
+            # else:
+            #     await self.interaction.response.send_message(
+            #         self.message, **self.kwargs, ephemeral=True, view=self
+            #     )
             await self.wait()
             return self.result
 
@@ -3995,8 +4005,8 @@ class Views:
             if self.interaction.user.id == interaction.user.id:
                 return True
             else:
-                await interaction.response.send_message(
-                    "Only the command invoker can use this button.", ephemeral=True
+                await Views.send_ephemeral_message(
+                    interaction, "Only the command invoker can use this button."
                 )
 
         @discord.ui.button(
@@ -4075,6 +4085,7 @@ class Views:
                 await interaction.followup.send(str(error), ephemeral=True)
             else:
                 await interaction.response.send_message(str(error), ephemeral=True)
+            raise error
 
         @discord.ui.button(
             emoji=constants.emotes["fastforward"], style=discord.ButtonStyle.gray
@@ -4094,8 +4105,8 @@ class Views:
             self.player.alter_audio(position=to_seek)
             embed = MusicUtils.make_embed(self.ctx, self.ctx.voice_state.source)
             await interaction.message.edit(embed=embed)
-            await interaction.response.send_message(
-                "Fast forwarded 10 seconds.", ephemeral=True
+            await Views.send_ephemeral_message(
+                interaction, "Fast forwarded 10 seconds."
             )
 
         @discord.ui.button(
@@ -4116,12 +4127,7 @@ class Views:
             embed = MusicUtils.make_embed(self.ctx, self.ctx.voice_state.source)
             await interaction.message.edit(embed=embed)
             self.player.alter_audio(position=to_seek)
-            if interaction.response.is_done():
-                await interaction.followup.send("Rewinded 10 seconds.")
-            else:
-                await interaction.response.send_message(
-                    "Rewinded 10 seconds.", ephemeral=True
-                )
+            await Views.send_ephemeral_message(interaction, "Rewinded 10 seconds.")
 
         @discord.ui.button(
             emoji=constants.emotes["pause"], style=discord.ButtonStyle.gray
@@ -4138,9 +4144,7 @@ class Views:
             self.clear_items()
             self.fill_items()
             await interaction.message.edit(view=self)
-            await interaction.response.send_message(
-                "Paused the player.", ephemeral=True
-            )
+            await Views.send_ephemeral_message(interaction, "Paused the player.")
 
         @discord.ui.button(
             emoji=constants.emotes["play"], style=discord.ButtonStyle.gray
@@ -4157,9 +4161,7 @@ class Views:
             self.clear_items()
             self.fill_items()
             await interaction.message.edit(view=self)
-            await interaction.response.send_message(
-                "Resumed the player.", ephemeral=True
-            )
+            await Views.send_ephemeral_message(interaction, "Resumed the player.")
 
         @discord.ui.button(
             emoji=constants.emotes["help"], style=discord.ButtonStyle.gray
@@ -4193,6 +4195,11 @@ class Views:
                 inline=False,
             )
             embed.add_field(
+                name=constants.emotes["fastforward"] + "  Fast foward the track.",
+                value="This button fast forwards the current track by ten seconds.",
+                inline=False,
+            )
+            embed.add_field(
                 name=constants.emotes["trash"] + "  Delete session.",
                 value="This button deletes the message and ends the session.",
                 inline=False,
@@ -4200,7 +4207,7 @@ class Views:
             embed.set_footer(
                 text="This menu will expire after 2 minutes of inactivity."
             )
-            await interaction.message.edit(embed=embed, view=self)
+            await interaction.response.edit_message(embed=embed, view=self)
 
         @discord.ui.button(
             emoji=constants.emotes["trash"], style=discord.ButtonStyle.gray
@@ -4228,9 +4235,9 @@ class Views:
             self.fill_items()
             page = MusicUtils.make_embed(self.ctx, self.ctx.voice_state.source)
             if isinstance(page, discord.Embed):
-                await interaction.message.edit(embed=page, view=self)
+                await interaction.response.edit_message(embed=page, view=self)
             else:
-                await interaction.message.edit(content=page, view=self)
+                await interaction.response.edit_message(content=page, view=self)
 
     class ButtonPages(discord.ui.View):
         async def __init__(self, ctx, pages, *, content=""):
@@ -4610,7 +4617,8 @@ class Views:
                         )
                         return
                     await interaction.followup.send(
-                        f"{constants.emotes['success']} Saved the current queue with name: **{name}**"
+                        f"{constants.emotes['success']} Saved the current queue with name: **{name}**",
+                        ephemeral=True,
                     )
                     try:
                         await msg.delete()
@@ -4743,7 +4751,7 @@ class Views:
             embed.set_footer(
                 text=f"Previously viewing page {self.page_number} of {self.max_pages}"
             )
-            await interaction.message.edit(embed=embed, view=self)
+            await interaction.response.edit_message(embed=embed, view=self)
 
         @discord.ui.button(
             emoji=constants.emotes["trash"], style=discord.ButtonStyle.gray
@@ -4770,9 +4778,13 @@ class Views:
             self.clear_items()
             self.fill_items()
             if isinstance(self.current_page, discord.Embed):
-                await interaction.message.edit(embed=self.current_page, view=self)
+                await interaction.response.edit_message(
+                    embed=self.current_page, view=self
+                )
             else:
-                await interaction.message.edit(content=self.current_page, view=self)
+                await interaction.response.edit_message(
+                    content=self.current_page, view=self
+                )
 
     class QueueView(QueueSource):
         """

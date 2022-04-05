@@ -778,7 +778,7 @@ class Files(commands.Cog):
             content="Saving bans to **{}**...".format(time_file),
         )
 
-        ban_list = await ctx.guild.bans()
+        ban_list = [ban async for ban in ctx.guild.bans()]
 
         msg = ""
         for x, y in enumerate(sorted(ban_list, key=lambda m: str(m.user)), start=1):

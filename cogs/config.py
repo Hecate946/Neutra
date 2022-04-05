@@ -556,15 +556,14 @@ class Config(commands.Cog):
             Use {0}disable all as a shorthand to disable all commands.
         Explanation:
             If channels are passed, any commands passed
-            will not be available to users inside that channel.
+            will be available to users inside that channel.
             If roles are passed, any user with that
-            role will not be able to execute the passed
+            role will be able to execute the passed
             commands in all channels in the server.
-            If a user is passed, they will not be able
+            If a user is passed, they will be able
             to run any passed commands inside of the server.
         Subcommands:
-            {0}disable list # List all the disabled commands.
-            {0}disable clear # Unignore all entities.
+            {0}enable all # Enable all disabled commands
         """
         if not commands:
             return await ctx.usage()

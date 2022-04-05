@@ -44,7 +44,7 @@ class SphinxObjectFileReader:
 
 
 class RTFM(commands.Cog):
-    """Copied and pasted from RDanny"""
+    """Copied and pasted from RDanny."""
 
     def __init__(self, bot):
         self.bot = bot

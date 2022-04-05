@@ -27,7 +27,8 @@ class Spotify(commands.Cog):
             "medium_term": "semester",
             "long_term": "year",
         }
-        self.live_stats.start()
+        if self.bot.production:
+            self.live_stats.start()
 
     @tasks.loop(seconds=1)
     async def live_stats(self):

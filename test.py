@@ -1,7 +1,6 @@
-from urllib import request
 import numpy as np
 import math
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
 import requests
 
@@ -25,7 +24,7 @@ h = img.size[1]
 
 # Make sure we're under max params of 50h, 50w
 ratio = 1
-max_wide = 500
+max_wide = 1000
 if h * 2 > w:
     if h > max_wide / adjust:
         ratio = max_wide / adjust / h
@@ -48,6 +47,16 @@ S = (round(w), round(h))
 img = np.sum(np.asarray(img.resize(S)), axis=2)
 img -= img.min()
 img = (1.0 - img / img.max()) ** GCF * (chars.size - 1)
-a = "\n".join(("".join(r) for r in chars[len(chars) - img.astype(int) - 1]))
-print(a)
-a = "```\n" + a + "```"
+text = "\n".join(("".join(r) for r in chars[len(chars) - img.astype(int) - 1]))
+print(text)
+
+image = Image.new("RGB", (2000, 2000), "#000000")  # 060e16")
+draw = ImageDraw.Draw(image)
+font = ImageFont.truetype("./data/assets/SourceCodePro-Regular.ttf", 24)
+draw.text((0, 0), text, "#FFFFFF", font=font)
+image.save("image.png")
+# buffer = BytesIO()
+# image.save(buffer, "png")  # 'save' function for PIL
+# buffer.seek(0)
+# return buffer
+# a = "```\n" + a + "```"

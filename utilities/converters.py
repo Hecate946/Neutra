@@ -755,8 +755,7 @@ class BannedMember(commands.Converter):
                     f"User {await prettify(ctx, argument)} has not been previously banned."
                 )
 
-        ban_list = await ctx.guild.bans()
-        entity = discord.utils.find(lambda u: str(u.user) == argument, ban_list)
+        entity = ctx.guild.bans().find(user=argument)
 
         if not entity:
             raise commands.BadArgument(

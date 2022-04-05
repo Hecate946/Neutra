@@ -171,6 +171,7 @@ class Neutra(commands.AutoShardedBot):
         self.admin_cogs = [
             "BOTCONFIG",
             "BOTADMIN",
+            "EMAILER",
             "MANAGER",
             "JISHAKU",
             "DATABASE",
@@ -179,7 +180,7 @@ class Neutra(commands.AutoShardedBot):
         ]
         self.do_not_load = []
         self.music_cogs = []
-        self.tester_cogs = ["CONVERSION", "MISC", "ANIMALS", "SPOTIFY", "EMAILER"]
+        self.tester_cogs = ["CONVERSION", "MISC", "ANIMALS", "SPOTIFY"]
 
         self.home_guilds = [
             805638877762420786,  # Support server

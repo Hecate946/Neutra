@@ -300,7 +300,7 @@ class Conversion(commands.Cog):
             msg = "I couldn't make that conversion!"
         await ctx.send_or_reply(msg)
 
-    @decorators.command(brief="Convert an integer to binary.")
+    @decorators.command(brief="Convert integers to binary.")
     async def intbin(self, ctx, *, input_int: int):
         """
         Usage: {0}intbin <integer>
@@ -322,7 +322,7 @@ class Conversion(commands.Cog):
         if ctx.invoked_subcommand is None:
             await ctx.send_help(str(ctx.command))
 
-    @decorators.group(brief="Decode from b32, b64, b85, rot13, hex.")
+    @decorators.group(brief="Decode b32, b64, b85, rot13, hex.")
     async def decode(self, ctx):
         """
         Usage: {0}decode <method>
@@ -384,7 +384,7 @@ class Conversion(commands.Cog):
                     content=f"{self.bot.emote_dict['log']} **{convert}**```fix\n{input}```",
                 )
 
-    @encode.command(name="base32", aliases=["b32"])
+    @encode.command(name="base32", aliases=["b32"], brief="Encode base32.")
     async def encode_base32(self, ctx, *, input: commands.clean_content = None):
         """Encode in base32"""
         if not input:
@@ -394,7 +394,7 @@ class Conversion(commands.Cog):
             ctx, "Text -> base32", base64.b32encode(input.encode("UTF-8"))
         )
 
-    @decode.command(name="base32", aliases=["b32"])
+    @decode.command(name="base32", aliases=["b32"], brief="Decode base32.")
     async def decode_base32(self, ctx, *, input: commands.clean_content = None):
         """Decode in base32"""
         if not input:
@@ -407,7 +407,7 @@ class Conversion(commands.Cog):
         except Exception:
             await ctx.send_or_reply(content="Invalid base32...")
 
-    @encode.command(name="base64", aliases=["b64"])
+    @encode.command(name="base64", aliases=["b64"], brief="Encode base64.")
     async def encode_base64(self, ctx, *, input: commands.clean_content = None):
         """Encode in base64"""
         if not input:
@@ -417,7 +417,7 @@ class Conversion(commands.Cog):
             ctx, "Text -> base64", base64.urlsafe_b64encode(input.encode("UTF-8"))
         )
 
-    @decode.command(name="base64", aliases=["b64"])
+    @decode.command(name="base64", aliases=["b64"], brief="Decode base64.")
     async def decode_base64(self, ctx, *, input: commands.clean_content = None):
         """Decode in base64"""
         if not input:
@@ -430,7 +430,7 @@ class Conversion(commands.Cog):
         except Exception:
             await ctx.fail("Invalid base64.")
 
-    @encode.command(name="rot13", aliases=["r13"])
+    @encode.command(name="rot13", aliases=["r13"], brief="Encode rot13.")
     async def encode_rot13(self, ctx, *, input: commands.clean_content = None):
         """Encode in rot13"""
         if not input:
@@ -438,7 +438,7 @@ class Conversion(commands.Cog):
 
         await self.encryptout(ctx, "Text -> rot13", codecs.decode(input, "rot_13"))
 
-    @decode.command(name="rot13", aliases=["r13"])
+    @decode.command(name="rot13", aliases=["r13"], brief="Decode rot13.")
     async def decode_rot13(self, ctx, *, input: commands.clean_content = None):
         """Decode in rot13"""
         if not input:
@@ -447,9 +447,9 @@ class Conversion(commands.Cog):
         try:
             await self.encryptout(ctx, "rot13 -> Text", codecs.decode(input, "rot_13"))
         except Exception:
-            await ctx.send_or_reply(content="Invalid rot13...")
+            await ctx.send_or_reply(content="Invalid rot13.")
 
-    @encode.command(name="hex")
+    @encode.command(name="hex", brief="Encode hex.")
     async def encode_hex(self, ctx, *, input: commands.clean_content = None):
         """Encode in hex"""
         if not input:
@@ -459,7 +459,7 @@ class Conversion(commands.Cog):
             ctx, "Text -> hex", binascii.hexlify(input.encode("UTF-8"))
         )
 
-    @decode.command(name="hex")
+    @decode.command(name="hex", brief="Decode hex.")
     async def decode_hex(self, ctx, *, input: commands.clean_content = None):
         """Decode in hex"""
         if not input:
@@ -472,7 +472,7 @@ class Conversion(commands.Cog):
         except Exception:
             await ctx.send_or_reply(content="Invalid hex...")
 
-    @encode.command(name="base85", aliases=["b85"])
+    @encode.command(name="base85", aliases=["b85"], brief="Encode base85.")
     async def encode_base85(self, ctx, *, input: commands.clean_content = None):
         """Encode in base85"""
         if not input:
@@ -482,7 +482,7 @@ class Conversion(commands.Cog):
             ctx, "Text -> base85", base64.b85encode(input.encode("UTF-8"))
         )
 
-    @decode.command(name="base85", aliases=["b85"])
+    @decode.command(name="base85", aliases=["b85"], brief="Decode base85.")
     async def decode_base85(self, ctx, *, input: commands.clean_content = None):
         """Decode in base85"""
         if not input:
@@ -495,7 +495,7 @@ class Conversion(commands.Cog):
         except Exception:
             await ctx.send_or_reply(content="Invalid base85...")
 
-    @encode.command(name="ascii85", aliases=["a85"])
+    @encode.command(name="ascii85", aliases=["a85"], brief="Encode ascii85.")
     async def encode_ascii85(self, ctx, *, input: commands.clean_content = None):
         """Encode in ASCII85"""
         if not input:
@@ -505,7 +505,7 @@ class Conversion(commands.Cog):
             ctx, "Text -> ASCII85", base64.a85encode(input.encode("UTF-8"))
         )
 
-    @decode.command(name="ascii85", aliases=["a85"])
+    @decode.command(name="ascii85", aliases=["a85"], brief="Decode ascii85.")
     async def decode_ascii85(self, ctx, *, input: commands.clean_content = None):
         """Decode in ASCII85"""
         if not input:
@@ -518,7 +518,7 @@ class Conversion(commands.Cog):
         except Exception:
             await ctx.send_or_reply(content="Invalid ASCII85...")
 
-    @decorators.command(brief="Show the morse lookup table")
+    @decorators.command(brief="Morse lookup table")
     async def morsetable(self, ctx, num_per_row=None):
         """
         Usage: {0}morsetable

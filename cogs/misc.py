@@ -3,8 +3,9 @@ import asyncio
 import random
 import numpy as np
 
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 from discord.ext import commands
+from discord import app_commands
 from io import BytesIO
 
 from utilities import checks
@@ -25,7 +26,7 @@ class Misc(commands.Cog):
         self.bot = bot
 
     @decorators.command(
-        description="Finds the 'best' definition of a word", aliases=["urban"]
+        brief="Finds the 'best' definition of a word", aliases=["urban"]
     )
     @checks.cooldown()
     async def define(self, ctx, *, search: commands.clean_content):
@@ -65,55 +66,49 @@ class Misc(commands.Cog):
                 f"📚 Definitions for **{result['word']}**```yaml\n{definition}```"
             )
 
-    def _ascii(self, image):
-        try:
-            chars = np.asarray(list(" .,:;irsXA253hMHGS#9B&@"))
-            f, WCF, GCF = image, 7 / 4, 0.6
-            img = Image.open(image)
-            # Make sure we have frame 1
-            img = img.convert("RGBA")
+    def ascii_image(self, path):
+        image = Image.open(path)
+        sc = 0.2
+        gcf = 0.2
+        bgcolor = "#060e16"
+        re_list = list(" .,:;irsXA253hMHGS#9B&@")
+        chars = np.asarray(re_list)
+        font = ImageFont.load_default()
+        font = ImageFont.truetype("./data/assets/Monospace.ttf", 10)
+        letter_width = font.getsize("x")[0]
+        letter_height = font.getsize("x")[1]
+        wcf = letter_height / letter_width
+        img = image.convert("RGBA")
 
-            # Let's scale down
-            w, h = 0, 0
-            adjust = 2
-            w = img.size[0] * adjust
-            h = img.size[1]
+        width_by_letter = round(img.size[0] * sc * wcf)
+        height_by_letter = round(img.size[1] * sc)
+        s = (width_by_letter, height_by_letter)
+        img = img.resize(s)
+        img = np.sum(np.asarray(img), axis=2)
+        img -= img.min()
+        img = (1.0 - img / img.max()) ** gcf * (chars.size - 1)
+        lines = ("".join(r) for r in chars[len(chars) - img.astype(int) - 1])
+        new_img_width = letter_width * width_by_letter
+        new_img_height = letter_height * height_by_letter
+        new_img = Image.new("RGBA", (new_img_width, new_img_height), bgcolor)
+        draw = ImageDraw.Draw(new_img)
+        y = 0
+        for line in lines:
+            draw.text((0, y), line, "#FFFFFF", font=font)
+            y += letter_height
 
-            # Make sure we're under max params of 50h, 50w
-            ratio = 1
-            max_wide = 500
-            if h * 2 > w:
-                if h > max_wide / adjust:
-                    ratio = max_wide / adjust / h
-            else:
-                if w > max_wide:
-                    ratio = max_wide / w
-            h = ratio * h
-            w = ratio * w
+        buffer = BytesIO()
+        new_img.save(buffer, "png")  # 'save' function for PIL
+        buffer.seek(0)
+        return buffer
 
-            # Shrink to an area of 1900 or so (allows for extra chars)
-            target = 1900
-            if w * h > target:
-                r = h / w
-                w1 = np.sqrt(target / r)
-                h1 = target / w1
-                w = w1
-                h = h1
-
-            S = (round(w), round(h))
-            img = np.sum(np.asarray(img.resize(S)), axis=2)
-            img -= img.min()
-            img = (1.0 - img / img.max()) ** GCF * (chars.size - 1)
-            a = "\n".join(("".join(r) for r in chars[len(chars) - img.astype(int) - 1]))
-            a = "```\n" + a + "```"
-            return a
-        except Exception:
-            pass
-        return False
-
-    @decorators.command(name="print", aliases=["matrix", "ascii"])
+    @decorators.command(
+        name="matrix",
+        aliases=["ascii", "print"],
+        brief="Generate a dot matrix of an image.",
+    )
     @checks.cooldown()
-    async def print(self, ctx, *, url=None):
+    async def matrix(self, ctx, *, url=None):
         """
         Usage: {0}print [user, image url, or image attachment]
         Aliases: {0}matrix, {0}ascii
@@ -123,7 +118,7 @@ class Misc(commands.Cog):
 
         if url == None and len(ctx.message.attachments) == 0:
             await ctx.send_or_reply(
-                "Usage: `{}print [user, url, or attachment]`".format(ctx.prefix)
+                "Usage: `{}matrix [user, url, or attachment]`".format(ctx.prefix)
             )
             return
 
@@ -137,25 +132,22 @@ class Misc(commands.Cog):
         except Exception:
             pass
 
-        message = await ctx.load("Printing...")
+        message = await ctx.load("Generating dot matrix...")
 
-        image_bytes = await self.bot.http_utils.get(url, res_method="read")
+        try:
+            image_bytes = await self.bot.http_utils.get(url, res_method="read")
+        except Exception:
+            await message.edit(content="Invalid url or attachment.")
+            return
+
         path = BytesIO(image_bytes)
         if not path:
-            await message.edit(
-                content="I guess I couldn't print that one...  Make sure you're passing a valid url or attachment."
-            )
+            await message.edit(content="Invalid url or attachment.")
             return
 
-        final = self._ascii(path)
-
-        if not final:
-            await message.edit(
-                content="I couldn't print that image...  Make sure you're pointing me to a valid image file."
-            )
-            return
-
-        await message.edit(content=final)
+        image = self.ascii_image(path)
+        await ctx.rep_or_ref(file=discord.File(image, filename="matrix.png"))
+        await message.delete()
 
     @decorators.command(brief="Just try it and see.")
     @checks.cooldown()
@@ -169,6 +161,8 @@ class Misc(commands.Cog):
                 s += snowflake % 10
                 return (s % 10) * 2
 
-        await ctx.send_or_reply(
-            f"**{user.display_name}'s** size: 8{'=' * find_size(user.id)}D"
-        )
+        size = find_size(user.id)
+        if user.id == self.bot.developer_id:
+            size *= 5
+
+        await ctx.send_or_reply(f"**{user.display_name}'s** size: 8{'=' * size}D")

@@ -242,13 +242,13 @@ class Utility(commands.Cog):
         for reaction in message.reactions:
             users = [
                 str(user)
-                for user in await reaction.users().flatten()
+                for user in [user async for user in reaction.users()]
                 if user is not None
             ]
             headers.append(f"{str(reaction.emoji)} [{len(users)}]")
             formats[str(reaction.emoji)] = [
                 str(user)
-                for user in await reaction.users().flatten()
+                for user in [user async for user in reaction.users()]
                 if user is not None
             ]
             total.extend(users)

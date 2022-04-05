@@ -36,7 +36,7 @@ class Emailer(commands.Cog):
         self.password = "Neutra#946"
 
     async def cog_check(self, ctx):
-        if ctx.author.id in [
+        if ctx.author.id in [  # Me, wuack, and snek.
             708584008065351681,
             782479134436753428,
             664245010383896620,
