@@ -4310,12 +4310,16 @@ class Views:
             self._last.disabled = page_number == self.max_pages
             self._select.disabled = self.max_pages == 1
 
-        async def show_page(self, interaction):
+        async def show_page(self, interaction, *, with_response=True):
             page = self.current_page = self.pages[self.page_number - 1]
-            if isinstance(page, discord.Embed):
-                await interaction.message.edit(embed=page, view=self)
+            if with_response:
+                coro = interaction.response.edit_message
             else:
-                await interaction.message.edit(content=page, view=self)
+                coro = interaction.message.edit
+            if isinstance(page, discord.Embed):
+                await coro(embed=page, view=self)
+            else:
+                await coro(content=page, view=self)
 
         @discord.ui.button(
             emoji=constants.emotes["backward2"], style=discord.ButtonStyle.gray
@@ -4405,7 +4409,7 @@ class Views:
                     except:
                         pass
                     self.update_view(page)
-                    await self.show_page(interaction)
+                    await self.show_page(interaction, with_response=False)
 
     class QueueSource(ButtonPages):
         async def __init__(self, ctx, pages, *, playlist=None, content=""):

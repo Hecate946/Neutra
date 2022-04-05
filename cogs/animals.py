@@ -41,15 +41,15 @@ class Animals(commands.Cog):
     async def cat(self, ctx):
         robot = ctx.guild.me
         async with ctx.channel.typing():
-            async with self.bot.session as cs:
-                async with cs.get("http://aws.random.cat/meow") as r:
-                    data = await r.json()
+            data = await self.bot.http_utils.get(
+                "http://aws.random.cat/meow", res_method="json"
+            )
 
-                    embed = discord.Embed(title="Meow", color=robot.color)
-                    embed.set_image(url=data["file"])
-                    embed.set_footer(text="http://random.cat/")
+            embed = discord.Embed(title="Meow", color=robot.color)
+            embed.set_image(url=data["file"])
+            embed.set_footer(text="http://random.cat/")
 
-                    await ctx.send(embed=embed)
+            await ctx.send(embed=embed)
 
     @decorators.command(brief="Random picture of a fox")
     @checks.cooldown()
@@ -57,15 +57,15 @@ class Animals(commands.Cog):
         """Random picture of a fox"""
         robot = ctx.guild.me
         async with ctx.channel.typing():
-            async with self.bot.session as cs:
-                async with cs.get("https://randomfox.ca/floof/") as r:
-                    data = await r.json()
+            data = await self.bot.http_utils.get(
+                "https://randomfox.ca/floof/", res_method="json"
+            )
 
-                    embed = discord.Embed(title="Floof", color=robot.color)
-                    embed.set_image(url=data["image"])
-                    embed.set_footer(text="https://randomfox.ca/")
+            embed = discord.Embed(title="Floof", color=robot.color)
+            embed.set_image(url=data["image"])
+            embed.set_footer(text="https://randomfox.ca/")
 
-                    await ctx.send(embed=embed)
+            await ctx.send(embed=embed)
 
     @decorators.command(
         brief="Random picture of a duck", aliases=["quack", "ducc", "ducks"]
@@ -75,15 +75,14 @@ class Animals(commands.Cog):
         """Random picture of a duck"""
         robot = ctx.guild.me
         async with ctx.channel.typing():
-            async with self.bot.session as cs:
-                async with cs.get("https://random-d.uk/api/random") as response:
-                    data = await response.json()
+            data = await self.bot.http_utils.get(
+                "https://random-d.uk/api/random", res_method="json"
+            )
+            embed = discord.Embed(title="Quack", color=robot.color)
+            embed.set_image(url=data["url"])
+            embed.set_footer(text="https://random-d.uk/")
 
-                    embed = discord.Embed(title="Quack", color=robot.color)
-                    embed.set_image(url=data["url"])
-                    embed.set_footer(text="https://random-d.uk/")
-
-                    await ctx.send(embed=embed)
+            await ctx.send(embed=embed)
 
     @decorators.command(
         brief="Random picture of a raccoon", aliases=["racc", "raccoons"]
