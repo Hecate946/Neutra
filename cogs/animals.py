@@ -14,7 +14,7 @@ async def read_shuffle_and_send(animal, ctx):
         urls = list(csv.reader(f))
 
     embed = discord.Embed(
-        title=f"{animal.capitalize()}!", color=ctx.bot.mode.EMBED_COLOR
+        title=f"{animal.capitalize()}!", color=ctx.bot.config.EMBED_COLOR
     )
     embed.set_image(url=random.choice(urls)[0])
     await ctx.send(embed=embed)
@@ -200,3 +200,10 @@ class Animals(commands.Cog):
     async def bird(self, ctx):
         """Random picture of a birb"""
         await read_shuffle_and_send("bird", ctx)
+
+    @decorators.command(brief="Random animal fact", aliases=["animal_fact"])
+    @checks.cooldown
+    async def animalfact(self, ctx):
+        """Random animal fact"""
+        with open("data/csvs/facts.csv") as f:
+            await ctx.send(random.choice(f.readlines()))
