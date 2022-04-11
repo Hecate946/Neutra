@@ -542,7 +542,7 @@ class Server(commands.Cog):
             messages.extend(f"`{author}`: {count}" for author, count in spammers)
         desc = "\n".join(messages)
         em = discord.Embed()
-        em.color = self.bot.config.EMBED_COLOR
+        em.color = self.bot.mode.EMBED_COLOR
         em.description = desc
 
         msg = await ctx.send_or_reply(embed=em)

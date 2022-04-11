@@ -363,7 +363,7 @@ class MusicUtils:
         block = None
         embed = None
         ytdl = source.ytdl
-        embed = discord.Embed(color=ctx.bot.config.EMBED_COLOR)
+        embed = discord.Embed(color=ctx.bot.mode.EMBED_COLOR)
         embed.title = "Now Playing"
         embed.description = f"```fix\n{ytdl.title}\n```"
 
@@ -442,7 +442,7 @@ class MusicUtils:
         MUSIC = ctx.bot.constants.emotes["music"]
         LIKE = ctx.bot.constants.emotes["like"]
         DISLIKE = ctx.bot.constants.emotes["dislike"]
-        embed = discord.Embed(color=ctx.bot.config.EMBED_COLOR)
+        embed = discord.Embed(color=ctx.bot.mode.EMBED_COLOR)
         embed.title = "Track Information"
         embed.description = f"```fix\n{ytdl.title}\n```"
 
@@ -1044,7 +1044,7 @@ class YTDLSource:
         embed = discord.Embed(
             title=f"Search results for:\n**{search}**",
             description="\n".join(lst),
-            color=ctx.bot.config.EMBED_COLOR,
+            color=ctx.bot.mode.EMBED_COLOR,
             timestamp=discord.utils.utcnow(),
         )
         embed.set_author(
@@ -4171,7 +4171,7 @@ class Views:
         ):
             self.clear_items()
             self.fill_items(_help=True)
-            embed = discord.Embed(color=config.EMBED_COLOR)
+            embed = discord.Embed(color=interaction.client.mode.EMBED_COLOR)
             embed.set_author(
                 name="Pagination Help Page",
                 icon_url=self.ctx.bot.user.display_avatar.url,
@@ -4694,7 +4694,7 @@ class Views:
         ):
             self.clear_items()
             self.fill_items(_help=True)
-            embed = discord.Embed(color=config.EMBED_COLOR)
+            embed = discord.Embed(color=interaction.client.mode.EMBED_COLOR)
             embed.set_author(
                 name="Pagination Help Page",
                 icon_url=self.ctx.bot.user.display_avatar.url,
@@ -4826,7 +4826,7 @@ class Views:
             self.desc_foot = desc_foot
             self.content = content
 
-            self.embed = discord.Embed(color=ctx.bot.config.EMBED_COLOR)
+            self.embed = discord.Embed(color=ctx.bot.mode.EMBED_COLOR)
 
         async def start(self):
             self.pages = self.create_pages(self.entries, self.per_page)
@@ -4890,7 +4890,7 @@ class Views:
             self.desc_foot = desc_foot
             self.content = content
 
-            self.embed = discord.Embed(color=ctx.bot.config.EMBED_COLOR)
+            self.embed = discord.Embed(color=ctx.bot.mode.EMBED_COLOR)
 
         async def start(self):
             self.pages = self.create_pages(self.entries, self.per_page)
@@ -5164,7 +5164,7 @@ class Views:
         async def help_button(
             self, interaction: discord.Interaction, button: discord.ui.Button
         ):
-            embed = discord.Embed(color=self.ctx.bot.config.EMBED_COLOR)
+            embed = discord.Embed(color=self.ctx.bot.mode.EMBED_COLOR)
             embed.set_author(
                 name="Welcome to the audio effects help page.",
                 icon_url=self.ctx.bot.user.display_avatar.url,
@@ -5242,7 +5242,7 @@ class Views:
         async def effects_button(
             self, interaction: discord.Interaction, button: discord.ui.Button
         ):
-            embed = discord.Embed(color=self.ctx.bot.config.EMBED_COLOR)
+            embed = discord.Embed(color=self.ctx.bot.mode.EMBED_COLOR)
             embed.title = "Audio Effects"
             embed.description = "Press the `Cancel` button to delete this message.\nPress the `Return` button to return to the main menu.\nPress the `Help` button for the help menu."
             embed.set_footer(
@@ -5334,7 +5334,7 @@ class Views:
         async def help_button(
             self, interaction: discord.Interaction, button: discord.ui.Button
         ):
-            embed = discord.Embed(color=self.ctx.bot.config.EMBED_COLOR)
+            embed = discord.Embed(color=self.ctx.bot.mode.EMBED_COLOR)
             embed.set_author(
                 name="Welcome to the audio effects help page.",
                 icon_url=self.ctx.bot.user.display_avatar.url,

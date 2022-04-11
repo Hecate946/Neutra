@@ -107,7 +107,7 @@ class Stats(commands.Cog):
             current channel will be used.
         """
         channel = channel or ctx.channel
-        em = discord.Embed(color=self.bot.config.EMBED_COLOR)
+        em = discord.Embed(color=self.bot.mode.EMBED_COLOR)
         em.add_field(
             name="Channel", value="{0.name} ({0.id})".format(channel), inline=False
         )
@@ -151,7 +151,7 @@ class Stats(commands.Cog):
             If no channel is specified,
             current channel will be used.
         """
-        em = discord.Embed(color=self.bot.config.EMBED_COLOR)
+        em = discord.Embed(color=self.bot.mode.EMBED_COLOR)
         em.add_field(
             name="Emoji", value="{0.name} ({0.id})".format(emoji), inline=False
         )
@@ -951,7 +951,7 @@ class Stats(commands.Cog):
         embed = discord.Embed(
             title=role.name,
             description="{}/{} online".format(online, count),
-            color=self.bot.config.EMBED_COLOR,
+            color=self.bot.mode.EMBED_COLOR,
         )
         embed.set_footer(text="ID: {}".format(role.id))
         await ctx.send_or_reply(embed=embed)
@@ -997,7 +997,7 @@ class Stats(commands.Cog):
         users = users = sum(1 for m in role.guild.members if m._roles.has(role.id))
         created = f"Created on {role.created_at.__format__('%m/%d/%Y')}"
 
-        embed = discord.Embed(color=self.bot.config.EMBED_COLOR)
+        embed = discord.Embed(color=self.bot.mode.EMBED_COLOR)
         embed.set_author(name=role.name, icon_url=utils.get_icon(ctx.guild))
         embed.set_footer(text=f"Role ID: {role.id} | {created}")
         embed.set_thumbnail(url=utils.get_icon(ctx.guild))
@@ -1108,7 +1108,7 @@ class Stats(commands.Cog):
         else:
             region = str(server.region).title()
 
-        em = discord.Embed(color=self.bot.config.EMBED_COLOR)
+        em = discord.Embed(color=self.bot.mode.EMBED_COLOR)
         em.set_thumbnail(url=utils.get_icon(server))
         em.set_author(name=server.name, icon_url=utils.get_icon(server))
         em.set_footer(
@@ -1339,7 +1339,7 @@ class Stats(commands.Cog):
 
         for index, page in enumerate(pages):  # enumerate so we can add a page number
             embed = discord.Embed(
-                title=f"{title}", description=page, color=self.bot.config.EMBED_COLOR
+                title=f"{title}", description=page, color=self.bot.mode.EMBED_COLOR
             )
             embed.set_footer(text="Page {:,}/{:,}".format(index + 1, len(pages)))
             await ctx.send_or_reply(embed=embed)
@@ -1363,7 +1363,7 @@ class Stats(commands.Cog):
                 denied.append(name)
 
         if ctx.channel.permissions_for(ctx.me).embed_links:
-            embed = discord.Embed(color=self.bot.config.EMBED_COLOR)
+            embed = discord.Embed(color=self.bot.mode.EMBED_COLOR)
             embed.set_author(name=author)
             embed.add_field(name="Allowed", value="\n".join(allowed))
             embed.add_field(name="Denied", value="\n".join(denied))
@@ -1420,7 +1420,7 @@ class Stats(commands.Cog):
 
         avatar = member.display_avatar.url
 
-        embed = discord.Embed(color=self.bot.config.EMBED_COLOR)
+        embed = discord.Embed(color=self.bot.mode.EMBED_COLOR)
         embed.set_author(name=f"{member}", icon_url=avatar)
         embed.set_thumbnail(url=avatar)
         embed.set_footer(

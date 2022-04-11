@@ -461,7 +461,7 @@ class Utility(commands.Cog):
             f"**Created:** `{user.created_at}`\n"
             f"**Token Created:** `{timestamp}`",
         )
-        embed.color = self.bot.config.EMBED_COLOR
+        embed.color = self.bot.mode.EMBED_COLOR
         embed.set_thumbnail(url=user.display_avatar.url)
         await ctx.send_or_reply(embed=embed)
 
@@ -522,7 +522,7 @@ class Utility(commands.Cog):
 
         avatar = user.display_avatar.url
 
-        embed.color = self.bot.config.EMBED_COLOR
+        embed.color = self.bot.mode.EMBED_COLOR
         embed.set_thumbnail(url=avatar)
         await ctx.send_or_reply(embed=embed)
 
@@ -817,7 +817,7 @@ class Utility(commands.Cog):
             f"[png]({url}) | "
             f"[jpeg]({url.replace('png', 'jpg', 1)}) | "
             f"[webp]({url.replace('png', 'webp', 1)})",
-            color=self.bot.config.EMBED_COLOR,
+            color=self.bot.mode.EMBED_COLOR,
         )
         embed.set_image(url=url)
         if file:

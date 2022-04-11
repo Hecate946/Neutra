@@ -21,7 +21,7 @@ class Interactions(commands.Cog):
 
         if not interaction.message.guild:
             prefixes = list(
-                set(self.bot.common_prefixes + [self.bot.config.DEFAULT_PREFIX])
+                set(self.bot.common_prefixes + [self.bot.mode.DEFAULT_PREFIX])
             )
             prefixes = prefixes.copy()
             mention_fmt = self.bot.user.name

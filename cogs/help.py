@@ -81,7 +81,7 @@ class HelpView(discord.ui.View):
     def help_embed(self):
         help_embed = discord.Embed(
             description="I'm a multipurpose discord bot that specializes in stat tracking and moderation.",
-            color=self.bot.config.EMBED_COLOR,
+            color=self.bot.mode.EMBED_COLOR,
         )
         help_embed.set_author(
             name="Welcome to my help page.", icon_url=self.bot.user.display_avatar.url
@@ -189,7 +189,7 @@ class Help(commands.Cog):
             title=f"{self.bot.user.name}'s Help Command",
             url="https://discord.gg/947ramn",
             description=self.desc,
-            color=self.bot.config.EMBED_COLOR,
+            color=self.bot.mode.EMBED_COLOR,
         )
 
         embed.set_footer(
@@ -245,7 +245,7 @@ class Help(commands.Cog):
         embed = discord.Embed(
             title=f"Category: `{cog.qualified_name}`",
             description=self.desc,
-            color=self.bot.config.EMBED_COLOR,
+            color=self.bot.mode.EMBED_COLOR,
         )
         embed.set_footer(
             text=f'Use "{ctx.clean_prefix}help command" for information on a command.\n'
@@ -278,7 +278,7 @@ class Help(commands.Cog):
         embed = discord.Embed(
             title=f"Category: `{command.cog_name}`",
             description=self.desc,
-            color=self.bot.config.EMBED_COLOR,
+            color=self.bot.mode.EMBED_COLOR,
         )
         embed.set_footer(
             text=f'Use "{ctx.clean_prefix}help {_footer}" for information on a {_footer}.'

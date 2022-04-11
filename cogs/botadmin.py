@@ -619,7 +619,7 @@ class Botadmin(commands.Cog):
             try:
                 embed = discord.Embed(
                     title="Servers I Have Nicknames In",
-                    color=self.bot.config.EMBED_COLOR,
+                    color=self.bot.mode.EMBED_COLOR,
                 )
                 embed.description = nick
                 await ctx.send_or_reply(embed=embed)
@@ -699,7 +699,7 @@ class Botadmin(commands.Cog):
                     # Submodule - add it to the list
                     cog_list.append(str(cog))
             # build the embed
-            help_embed = discord.Embed(color=self.bot.config.EMBED_COLOR)
+            help_embed = discord.Embed(color=self.bot.mode.EMBED_COLOR)
 
             help_embed.title = str(e[5:]) + ".py" + " Extension"
             if len(cog_list):
@@ -739,7 +739,7 @@ class Botadmin(commands.Cog):
         """
         # Build the embed
         if isinstance(ctx.author, discord.Member):
-            help_embed = discord.Embed(color=self.bot.config.EMBED_COLOR)
+            help_embed = discord.Embed(color=self.bot.mode.EMBED_COLOR)
         else:
             help_embed = discord.Embed(color=random.choice(self.colors))
 
@@ -949,7 +949,7 @@ class Botadmin(commands.Cog):
         else:
             message = None
             guild = options
-        server_embed = discord.Embed(color=self.bot.config.EMBED_COLOR)
+        server_embed = discord.Embed(color=self.bot.mode.EMBED_COLOR)
         server_embed.title = guild.name
 
         # Get localized user time
@@ -1094,7 +1094,7 @@ class Botadmin(commands.Cog):
             if len(server_embed) > 6000:  # too big
                 server_embed.remove_field(len(server_embed.fields) - 1)
                 await ctx.send_or_reply(embed=server_embed)
-                server_embed = discord.Embed(color=self.bot.config.EMBED_COLOR)
+                server_embed = discord.Embed(color=self.bot.mode.EMBED_COLOR)
                 server_embed.title = guild.name
                 server_embed.set_thumbnail(url=utils.get_icon(guild))
                 server_embed.set_footer(text="Server ID: {}".format(guild.id))
@@ -1297,7 +1297,7 @@ class Botadmin(commands.Cog):
         table.add_rows(tup for tup in as_data)
         render = table.render()
 
-        embed = discord.Embed(title="Summary", color=self.bot.config.EMBED_COLOR)
+        embed = discord.Embed(title="Summary", color=self.bot.mode.EMBED_COLOR)
         embed.set_footer(
             text="Since"
         ).timestamp = datetime.datetime.utcnow() - datetime.timedelta(days=days)

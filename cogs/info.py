@@ -118,7 +118,7 @@ class Info(commands.Cog):
             text_channels += len(guild.text_channels)
             voice_channels += len(guild.voice_channels)
 
-        embed = discord.Embed(color=self.bot.config.EMBED_COLOR)
+        embed = discord.Embed(color=self.bot.mode.EMBED_COLOR)
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
 
         embed.add_field(name="Last Boot", value=str(uptime).capitalize())
@@ -187,7 +187,7 @@ class Info(commands.Cog):
 
         ram_usage = self.process.memory_full_info().rss / 1024 ** 2
 
-        embed = discord.Embed(color=self.bot.config.EMBED_COLOR)
+        embed = discord.Embed(color=self.bot.mode.EMBED_COLOR)
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
         embed.add_field(name="Session Uptime", value=current_uptime)
         embed.add_field(name="Total Runtime", value=total_uptime)
@@ -383,7 +383,7 @@ class Info(commands.Cog):
         )
         commits = process.communicate()[0].strip().decode("utf-8")
 
-        embed = discord.Embed(color=self.bot.config.EMBED_COLOR)
+        embed = discord.Embed(color=self.bot.mode.EMBED_COLOR)
         embed.title = "Lastest Github Commits"
         embed.url = "https://github.com/Hecate946/Neutra"
         embed.description = commits
@@ -444,7 +444,7 @@ class Info(commands.Cog):
         embed = discord.Embed(
             title="Extensions",
             description="```css\n" + "\n".join(cog_list) + "```",
-            color=self.bot.config.EMBED_COLOR,
+            color=self.bot.mode.EMBED_COLOR,
         )
         await ctx.send_or_reply(embed=embed)
 
@@ -795,7 +795,7 @@ class Info(commands.Cog):
             description=overview.format(
                 self.bot.user.name, len(command_list), len(category_list)
             ),
-            color=self.bot.config.EMBED_COLOR,
+            color=self.bot.mode.EMBED_COLOR,
         )
         embed.set_author(name=owner, icon_url=owner.display_avatar.url)
         await ctx.send_or_reply(embed=embed)
@@ -902,7 +902,7 @@ class Info(commands.Cog):
         bots = [x for x in self.bot.get_all_members() if x.bot]
         bots_online = [x for x in bots if x.status != discord.Status.offline]
         unique_bots = set([x.id for x in bots])
-        e = discord.Embed(title="User Stats", color=self.bot.config.EMBED_COLOR)
+        e = discord.Embed(title="User Stats", color=self.bot.mode.EMBED_COLOR)
         e.add_field(
             name="Humans",
             value="{:,}/{:,} online ({:,g}%) - {:,} unique ({:,g}%)".format(
@@ -1103,7 +1103,7 @@ class Info(commands.Cog):
             msg += f"{funcs.ljust(width)} Functions\n"
             msg += f"{comments.ljust(width)} Comments"
             msg += "```"
-            em = discord.Embed(color=self.bot.config.EMBED_COLOR)
+            em = discord.Embed(color=self.bot.mode.EMBED_COLOR)
             em.title = f"{self.bot.emote_dict['info']}  Source information"
             em.description = msg
             await ctx.send_or_reply(embed=em)
@@ -1167,7 +1167,7 @@ class Info(commands.Cog):
         else:  # Poor uptime
             color = (232, 44, 19)  # Red
         percent = f"{raw_percent:.2%}"
-        em = discord.Embed(color=self.bot.config.EMBED_COLOR)
+        em = discord.Embed(color=self.bot.mode.EMBED_COLOR)
         img = Image.new("RGBA", (2500, 1024), (0, 0, 0, 0))
         draw = ImageDraw.Draw(img)
         font = ImageFont.truetype("./data/assets/Helvetica.ttf", 100)

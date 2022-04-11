@@ -67,7 +67,7 @@ class Admin(commands.Cog):
             to false for the muted role.
         """
         view = views.MuteRoleView(ctx)
-        embed = discord.Embed(color=self.bot.config.EMBED_COLOR)
+        embed = discord.Embed(color=self.bot.mode.EMBED_COLOR)
 
         embed.title = "Muterole Configuration Menu"
         embed.description = f"This command will {'create a new role named `muted`' if not role else f'edit the role {role.mention}'} "
@@ -1221,7 +1221,7 @@ class Admin(commands.Cog):
         """
         if not ctx.guild:
             prefixes = list(
-                set(self.bot.common_prefixes + [self.bot.config.DEFAULT_PREFIX])
+                set(self.bot.common_prefixes + [self.bot.mode.DEFAULT_PREFIX])
             )
             prefixes = prefixes.copy()
             mention_fmt = self.bot.user.name

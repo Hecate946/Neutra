@@ -335,7 +335,7 @@ class Tracking(commands.Cog):
             None, images.get_piestatus, statuses, startdate
         )
 
-        em = discord.Embed(color=self.bot.config.EMBED_COLOR)
+        em = discord.Embed(color=self.bot.mode.EMBED_COLOR)
         dfile = discord.File(fp=buffer, filename="piestatus.png")
         em.title = f"{ctx.author}'s Status Statistics"
         em.set_image(url="attachment://piestatus.png")
@@ -583,7 +583,7 @@ class Tracking(commands.Cog):
         if avys:
             file = await self.bot.loop.run_in_executor(None, images.quilt, avys)
             dfile = discord.File(file, "avatars.png")
-            embed = discord.Embed(color=self.bot.config.EMBED_COLOR)
+            embed = discord.Embed(color=self.bot.mode.EMBED_COLOR)
             embed.title = f"Recorded Avatars for {user}"
             embed.set_image(url="attachment://avatars.png")
             await ctx.send_or_reply(embed=embed, file=dfile)
@@ -592,7 +592,7 @@ class Tracking(commands.Cog):
                 batch = self.bot.get_cog("Batch")
                 if user.id not in batch.whitelist:
                     self.bot.avatar_saver.save(user)
-                embed = discord.Embed(color=self.bot.config.EMBED_COLOR)
+                embed = discord.Embed(color=self.bot.mode.EMBED_COLOR)
                 embed.title = f"Recorded Avatars for {user}"
                 embed.set_image(url=str(user.display_avatar.with_size(1024)))
                 await ctx.send_or_reply(embed=embed)
@@ -660,7 +660,7 @@ class Tracking(commands.Cog):
     #     else:
     #         if self.bot.avatar_saver.is_saving:
     #             self.bot.avatar_saver.save(user)
-    #             embed = discord.Embed(color=self.bot.config.EMBED_COLOR)
+    #             embed = discord.Embed(color=self.bot.mode.EMBED_COLOR)
     #             embed.title = f"Recorded Avatars for {user}"
     #             embed.set_image(url=str(user.display_avatar.with_size(1024)))
     #             await ctx.send_or_reply(embed=embed)
@@ -714,7 +714,7 @@ class Tracking(commands.Cog):
         if avys:
             file = await self.bot.loop.run_in_executor(None, images.quilt, avys)
             dfile = discord.File(file, "icons.png")
-            embed = discord.Embed(color=self.bot.config.EMBED_COLOR)
+            embed = discord.Embed(color=self.bot.mode.EMBED_COLOR)
             embed.title = f"Recorded icons for {ctx.guild.name}"
             embed.set_image(url="attachment://icons.png")
             await ctx.send_or_reply(embed=embed, file=dfile)
@@ -722,7 +722,7 @@ class Tracking(commands.Cog):
             if self.bot.icon_saver.is_saving:
                 if ctx.guild.icon:
                     self.bot.icon_saver.save(ctx.guild)
-                    embed = discord.Embed(color=self.bot.config.EMBED_COLOR)
+                    embed = discord.Embed(color=self.bot.mode.EMBED_COLOR)
                     embed.title = f"Recorded icons for {ctx.guild.name}"
                     embed.set_image(url=str(ctx.guild.icon.with_size(1024)))
                     await ctx.send_or_reply(embed=embed)
@@ -1065,7 +1065,7 @@ class Tracking(commands.Cog):
         e = discord.Embed(
             title=f"Bot usage for the last {unit}",
             description=f"{sum(x[0] for x in usage)} commands from {len(usage)} user{'' if len(usage) == 1 else 's'}",
-            color=self.bot.config.EMBED_COLOR,
+            color=self.bot.mode.EMBED_COLOR,
         )
         for n, v in enumerate(usage[:24]):
             name = self.bot.get_user(v[1])
@@ -1286,7 +1286,7 @@ class Tracking(commands.Cog):
         e = discord.Embed(
             title=f"Message Leaderboard",
             description=f"{sum(x[0] for x in stuff)} messages from {len(stuff)} user{'' if len(stuff) == 1 else 's'} in the last {unit}",
-            color=self.bot.config.EMBED_COLOR,
+            color=self.bot.mode.EMBED_COLOR,
         )
         for n, v in enumerate(stuff[:24]):
             try:
@@ -1545,7 +1545,7 @@ class Tracking(commands.Cog):
     #     e = discord.Embed(
     #         title="Character Leaderboard",
     #         description=f"{sum(x[0] for x in stuff)} characters from {len(stuff)} user{'' if len(stuff) == 1 else 's'} in the last {unit}",
-    #         color=self.bot.config.EMBED_COLOR,
+    #         color=self.bot.mode.EMBED_COLOR,
     #     )
     #     for n, v in enumerate(stuff):
     #         try:
@@ -1720,7 +1720,7 @@ class Tracking(commands.Cog):
             dnd_time = row["dnd"]
             last_change = row["last_changed"]
 
-        em = discord.Embed(color=self.bot.config.EMBED_COLOR)
+        em = discord.Embed(color=self.bot.mode.EMBED_COLOR)
         img = Image.new("RGBA", (2400, 1024), (0, 0, 0, 0))
         draw = ImageDraw.Draw(img)
         font = ImageFont.truetype("./data/assets/Helvetica.ttf", 100)
@@ -1744,7 +1744,7 @@ class Tracking(commands.Cog):
         if raw_percent > 1:
             raw_percent = 1
         percent = f"{raw_percent:.2%}"
-        em = discord.Embed(color=self.bot.config.EMBED_COLOR)
+        em = discord.Embed(color=self.bot.mode.EMBED_COLOR)
         img = Image.new("RGBA", (2500, 1024), (0, 0, 0, 0))
         draw = ImageDraw.Draw(img)
         font = ImageFont.truetype("./data/assets/Helvetica.ttf", 100)
@@ -1871,7 +1871,7 @@ class Tracking(commands.Cog):
         ]
 
     async def do_generic(self, ctx, user):
-        em = discord.Embed(color=self.bot.config.EMBED_COLOR)
+        em = discord.Embed(color=self.bot.mode.EMBED_COLOR)
         img = Image.new("RGBA", (2400, 1024), (0, 0, 0, 0))
         draw = ImageDraw.Draw(img)
         font = ImageFont.truetype("./data/assets/Helvetica.ttf", 100)
@@ -1897,7 +1897,7 @@ class Tracking(commands.Cog):
         if raw_percent > 1:
             raw_percent = 1
         percent = f"{raw_percent:.2%}"
-        em = discord.Embed(color=self.bot.config.EMBED_COLOR)
+        em = discord.Embed(color=self.bot.mode.EMBED_COLOR)
         img = Image.new("RGBA", (2500, 1024), (0, 0, 0, 0))
         draw = ImageDraw.Draw(img)
         font = ImageFont.truetype("./data/assets/Helvetica.ttf", 100)
@@ -2062,7 +2062,7 @@ class Tracking(commands.Cog):
         barstatus_file = await self.bot.loop.run_in_executor(
             None, images.get_barstatus, "", statuses
         )
-        embed = discord.Embed(color=self.bot.config.EMBED_COLOR)
+        embed = discord.Embed(color=self.bot.mode.EMBED_COLOR)
         embed.title = f"{user}'s status usage since {datetime.utcfromtimestamp(starttime).__format__('%B %-d, %Y')}"
         embed.set_image(url="attachment://barstatus.png")
         await ctx.send_or_reply(

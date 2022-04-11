@@ -6,17 +6,11 @@ BASE_WEB_URL = "http://localhost:3000/"  # https://neutrabot.com/
 # Support server invite
 SUPPORT = "https://discord.gg/H2qTG4yxqb"
 
-# Discord embed color, default navy blue
-EMBED_COLOR = 661538
-
-# Prefix to use when no custom prefixes are set
-DEFAULT_PREFIX = "-"
-
 # List of user_ids that own the bot
-OWNERS = [708584008065351681]
+OWNERS = [800000000000000000]
 
 # List of user_ids that can see global bot data
-ADMINS = [782479134436753428, 766973396944551968]
+ADMINS = [800000000000000000, 800000000000000000]
 
 # Start by: "python starter.py"
 class PRODUCTION:
@@ -27,7 +21,13 @@ class PRODUCTION:
     """
 
     # Bot token for production bot.
-    token = "https://discord.com/developers/applications/"
+    TOKEN = "https://discord.com/developers/applications/"
+
+    # Discord embed color in decimal format, default navy blue
+    EMBED_COLOR = 661538
+
+    # Prefix to use when no custom prefixes are set
+    DEFAULT_PREFIX = "-"
 
     class POSTGRES:
         user = "postgres"  # Postgres username, defualt "postgres"
@@ -46,7 +46,13 @@ class TESTER:
     """
 
     # Bot token for tester bot.
-    token = "https://discord.com/developers/applications/"
+    TOKEN = "https://discord.com/developers/applications/"
+
+    # Discord embed color in decimal format, default red
+    EMBED_COLOR = 16711763
+
+    # Prefix to use when no custom prefixes are set
+    DEFAULT_PREFIX = ";"
 
     class POSTGRES:
         user = "postgres"  # Postgres username, defualt "postgres"
@@ -65,7 +71,13 @@ class DEVELOPMENT:
     """
 
     # Bot token for development bot.
-    token = "https://discord.com/developers/applications/"
+    TOKEN = "https://discord.com/developers/applications/"
+
+    # Discord embed color in decimal format, default green
+    EMBED_COLOR = 424822
+
+    # Prefix to use when no custom prefixes are set
+    DEFAULT_PREFIX = "?"
 
     class POSTGRES:
         user = "postgres"  # Postgres username, defualt "postgres"
@@ -77,8 +89,8 @@ class DEVELOPMENT:
 
 
 class DISCORD:
-    token = PRODUCTION.token  # Leave as is
-    client_id = "806953546372087818"  # Client ID of production bot as a string
+    token = PRODUCTION.TOKEN  # Leave as is
+    client_id = "800000000000000000"  # Client ID of production bot as a string
     client_secret = "WUACK"  # Client secret of production bot.
 
     # Enter this url on discord dev portal (app -> oauth2 > add redirect)

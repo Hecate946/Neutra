@@ -107,9 +107,9 @@ def get_prefixes(bot, msg):
     user_id = bot.user.id
     base = [f"<@!{user_id}> ", f"<@{user_id}> "]
     if msg.guild is None:
-        base.extend([config.DEFAULT_PREFIX] + bot.common_prefixes)
+        base.extend([bot.mode.DEFAULT_PREFIX] + bot.common_prefixes)
     else:
-        base.extend(bot.prefixes.get(msg.guild.id, [config.DEFAULT_PREFIX]))
+        base.extend(bot.prefixes.get(msg.guild.id, [bot.mode.DEFAULT_PREFIX]))
     return base
 
 
@@ -176,11 +176,10 @@ class Neutra(commands.AutoShardedBot):
             "JISHAKU",
             "DATABASE",
             "MONITOR",
-            "RTFM",
         ]
         self.do_not_load = []
         self.music_cogs = []
-        self.tester_cogs = ["CONVERSION", "MISC", "ANIMALS", "SPOTIFY"]
+        self.tester_cogs = ["CONVERSION", "MISC", "ANIMALS", "SPOTIFY", "RTFM"]
 
         self.home_guilds = [
             805638877762420786,  # Support server
@@ -208,17 +207,17 @@ class Neutra(commands.AutoShardedBot):
         self.setup()  # Setup json files.
 
         if self.development:
-            token = config.DEVELOPMENT.token
+            self.mode = config.DEVELOPMENT
         elif self.tester:
-            token = config.TESTER.token
+            self.mode = config.TESTER
         elif self.production:
-            token = config.PRODUCTION.token
+            self.mode = config.PRODUCTION
         try:
             async with aiohttp.ClientSession() as session:
                 async with self:
                     self.session = session
                     self.status_loop.start()  # Start the task loop
-                    await super().start(token, reconnect=True)  # Run the bot
+                    await super().start(self.mode.TOKEN, reconnect=True)  # Run the bot
         except RuntimeError:  # Ignore errors
             pass
         finally:  # Write up our json files with the stats from the session.
@@ -642,7 +641,7 @@ class Neutra(commands.AutoShardedBot):
         return local_inject(self, proxy_msg)
 
     def get_raw_guild_prefixes(self, guild_id):
-        return self.prefixes.get(guild_id, [self.config.DEFAULT_PREFIX])
+        return self.prefixes.get(guild_id, [self.mode.DEFAULT_PREFIX])
 
     async def set_guild_prefixes(self, guild, prefixes):
         if len(prefixes) == 0:

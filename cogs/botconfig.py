@@ -93,7 +93,7 @@ class Botconfig(commands.Cog):
             await self.bot.user.edit(avatar=bio)
             em = discord.Embed(
                 description="**Successfully changed the avatar. Currently using:**",
-                color=self.bot.config.EMBED_COLOR,
+                color=self.bot.mode.EMBED_COLOR,
             )
             em.set_image(url=url)
             await ctx.send_or_reply(embed=em)

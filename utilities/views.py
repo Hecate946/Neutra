@@ -286,7 +286,7 @@ class ButtonPages(discord.ui.View):
     async def _help(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.clear_items()
         self.fill_items(_help=True)
-        embed = discord.Embed(color=config.EMBED_COLOR)
+        embed = discord.Embed(color=interaction.client.mode.EMBED_COLOR)
         embed.set_author(
             name="Pagination Help Page", icon_url=self.ctx.bot.user.display_avatar.url
         )
@@ -375,7 +375,7 @@ class SimpleView(ButtonPages):
         self.desc_foot = desc_foot
         self.content = content
 
-        self.embed = discord.Embed(color=ctx.bot.config.EMBED_COLOR)
+        self.embed = discord.Embed(color=ctx.bot.mode.EMBED_COLOR)
 
     async def start(self):
         self.pages = self.create_pages(self.entries, self.per_page)
@@ -489,7 +489,7 @@ class ImageView(ButtonPages):
         self.thumbnail = thumbnail
         self.content = content
 
-        self.embed = discord.Embed(color=ctx.bot.config.EMBED_COLOR)
+        self.embed = discord.Embed(color=ctx.bot.mode.EMBED_COLOR)
 
     async def start(self):
         self.embeds = self.create_embeds(self.entries)

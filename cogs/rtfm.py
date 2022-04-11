@@ -171,7 +171,7 @@ class RTFM(commands.Cog):
 
         matches = self.finder(obj, cache, key=lambda t: t[0], lazy=False)[:8]
 
-        e = discord.Embed(color=self.bot.config.EMBED_COLOR)
+        e = discord.Embed(color=self.bot.mode.EMBED_COLOR)
         if len(matches) == 0:
             return await ctx.send("Could not find anything. Sorry.")
 

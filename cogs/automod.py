@@ -65,7 +65,7 @@ class Automod(commands.Cog):
                 continue
             if reason:
                 try:
-                    embed = discord.Embed(color=self.bot.config.EMBED_COLOR)
+                    embed = discord.Embed(color=self.bot.mode.EMBED_COLOR)
                     embed.title = "Warn Notice"
                     embed.description = (
                         f"**Server**: `{ctx.guild.name} ({ctx.guild.id})`\n"
