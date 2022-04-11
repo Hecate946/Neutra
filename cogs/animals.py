@@ -200,3 +200,11 @@ class Animals(commands.Cog):
     async def bird(self, ctx):
         """Random picture of a birb"""
         await read_shuffle_and_send("bird", ctx)
+        
+    @decorators.command(brief="Random animal fact", aliases=["animal_fact"])
+    @checks.cooldown
+    async def animalfact(self, ctx):
+        """Random animal fact"""
+        with open("data/csvs/facts.csv") as f:
+            await ctx.send(random.choice(f.readlines()))
+
