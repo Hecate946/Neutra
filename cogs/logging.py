@@ -1174,7 +1174,7 @@ class Logging(commands.Cog):
         def get_snipe(author_id=None):
             msgs = [m for m in self.snipes if m.channel.id == ctx.channel.id]
             if author_id:
-                msgs = [m for m in msgs if m.author_id == author_id]
+                msgs = [m for m in msgs if m.author.id == author_id]
 
             if msgs:
                 return msgs[-1]

@@ -1378,28 +1378,17 @@ class Stats(commands.Cog):
             await ctx.send_or_reply(msg)
 
     async def get_userinfo(self, member):
-        joinedList = []
-        for mem in member.guild.members:
-            joinedList.append({"ID": mem.id, "Joined": mem.joined_at})
+        joinedList = [(m.id, m.joined_at) for m in member.guild.members]
 
         # sort the users by join date
         joinedList = sorted(
             joinedList,
-            key=lambda x: x["Joined"].timestamp() if x["Joined"] is not None else -1,
+            key=lambda x: x[1].timestamp() if x[1] else -1,
         )
 
-        check_item = {"ID": member.id, "Joined": member.joined_at}
-
+        check_item = (member.id, member.joined_at)
         position = joinedList.index(check_item) + 1
 
-        msg = "{:,}".format(position)
-
-        query = """
-                SELECT COUNT(*)
-                FROM commands
-                WHERE author_id = $1
-                AND server_id = $2;
-                """
         command_count = await self.get_user_cmds(member)
         message_count = await self.get_user_msgs(member)
 
@@ -1444,6 +1433,6 @@ class Stats(commands.Cog):
             value=f"{self.bot.emote_dict['role']} {'@everyone' if member.top_role.name == '@everyone' else member.top_role.mention}",
         )
         embed.add_field(
-            name="Join Position", value=f"{self.bot.emote_dict['invite']} #{msg}"
+            name="Join Position", value=f"{self.bot.emote_dict['invite']} #{position:,}"
         )
         return embed
