@@ -20,6 +20,8 @@ from utilities import utils, saver, override, http, db
 
 import config
 
+discord.http._set_api_version(9)
+
 MAX_LOGGING_BYTES = 32 * 1024 * 1024  # 32 MiB
 
 # Set up our data folders
