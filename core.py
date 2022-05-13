@@ -435,26 +435,32 @@ class Neutra(commands.AutoShardedBot):
 
     async def setup_webhooks(self):
         try:
-            self.avatar_webhook = await self.fetch_webhook(utils.config()["avatars"][1])
+            self.avatar_webhook = await self.fetch_webhook(
+                config.WEBHOOKS.AVATARS.channel_id
+            )
         except Exception as e:
             print(f"Unable to set up avatar webhook: {e}")
         try:
-            self.error_webhook = await self.fetch_webhook(utils.config()["errors"][1])
+            self.error_webhook = await self.fetch_webhook(
+                config.WEBHOOKS.ERRORS.channel_id
+            )
         except Exception as e:
             print(f"Unable to set up error webhook: {e}")
         try:
-            self.icon_webhook = await self.fetch_webhook(utils.config()["icons"][1])
+            self.icon_webhook = await self.fetch_webhook(
+                config.WEBHOOKS.ICONS.channel_id
+            )
         except Exception as e:
             print(f"Unable to set up icon webhook: {e}")
         try:
             self.logging_webhook = await self.fetch_webhook(
-                utils.config()["logging"][1]
+                config.WEBHOOKS.LOGGING.channel_id
             )
         except Exception as e:
             print(f"Unable to set up logging webhook: {e}")
         try:
             self.testing_webhook = await self.fetch_webhook(
-                utils.config()["testing"][1]
+                config.WEBHOOKS.TESTING.channel_id
             )
         except Exception as e:
             print(f"Unable to set up testing webhook: {e}")
