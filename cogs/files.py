@@ -707,7 +707,7 @@ class Files(commands.Cog):
         Aliases: {0}dumpmembers, {0}memberlist, {0}userlist
         Permission: Manage Server
         Output:
-            Sends a txt file to your DMs with all
+            Sends a file to your DMs with all
             server members. Bots are included.
         Notes:
             If you have your DMs blocked, the bot
@@ -716,32 +716,39 @@ class Files(commands.Cog):
         """
 
         timestamp = discord.utils.utcnow().strftime("%Y-%m-%d %H.%M")
-        time_file = "Members-{}.txt".format(timestamp)
+        time_file = "Members-{}.sml".format(timestamp)
 
         mess = await ctx.send_or_reply(
             content="Saving logs to **{}**...".format(time_file),
         )
 
-        member_list = ctx.guild.members
+        member_list = sorted(ctx.guild.members, key=lambda m: str(m))
+        fmt = [
+            (i, m.id, m.created_at, m.joined_at, str(m))
+            for i, m in enumerate(member_list, start=1)
+        ]
 
-        msg = ""
-        for x, y in enumerate(sorted(member_list, key=lambda m: str(m)), start=1):
-            msg += f"{x}\t{y.id}\t{str(y)}\n"
+        table = formatting.TabularData()
+        table.set_columns(["INDEX", "ID", "CREATED AT", "JOINED AT", "USERNAME"])
+        table.add_rows(fmt)
+        render = table.render()
 
-        data = io.BytesIO(msg.encode("utf-8"))
+        completed = f"```sml\n{render}```"
+
         await mess.edit(content="Uploading `{}`...".format(time_file))
-        try:
-            await ctx.author.send(file=discord.File(data, filename=time_file))
-        except Exception:
-            await ctx.send_or_reply(
-                file=discord.File(data, filename=time_file),
-            )
-            await mess.edit(
-                content="{} Uploaded `{}`.".format(
-                    self.bot.emote_dict["success"], time_file
-                )
-            )
-            return
+
+        if len(completed) > 2000:
+            fp = io.BytesIO(completed.encode("utf-8"))
+            try:
+                await ctx.author.send(file=discord.File(fp, "results.sml"))
+            except Exception:
+                await ctx.send_or_reply(file=discord.File(fp, "results.sml"))
+        else:
+            try:
+                await ctx.author.send(completed)
+            except Exception:
+                await ctx.send_or_reply(completed)
+
         await mess.edit(
             content="{} Uploaded `{}`.".format(
                 self.bot.emote_dict["success"], time_file
