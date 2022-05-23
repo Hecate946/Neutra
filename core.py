@@ -406,7 +406,7 @@ class Neutra(commands.AutoShardedBot):
         # The rest of the botvars that couldn't be set earlier
         await self.load_globals()
 
-        if self.production:
+        if self.production or self.development:
             self.do_not_load += self.tester_cogs
             self.website_stats_updater.start()
             await self.setup_webhooks()
@@ -436,31 +436,31 @@ class Neutra(commands.AutoShardedBot):
     async def setup_webhooks(self):
         try:
             self.avatar_webhook = await self.fetch_webhook(
-                config.WEBHOOKS.AVATARS.channel_id
+                config.WEBHOOKS.AVATARS.webhook_id
             )
         except Exception as e:
             print(f"Unable to set up avatar webhook: {e}")
         try:
             self.error_webhook = await self.fetch_webhook(
-                config.WEBHOOKS.ERRORS.channel_id
+                config.WEBHOOKS.ERRORS.webhook_id
             )
         except Exception as e:
             print(f"Unable to set up error webhook: {e}")
         try:
             self.icon_webhook = await self.fetch_webhook(
-                config.WEBHOOKS.ICONS.channel_id
+                config.WEBHOOKS.ICONS.webhook_id
             )
         except Exception as e:
             print(f"Unable to set up icon webhook: {e}")
         try:
             self.logging_webhook = await self.fetch_webhook(
-                config.WEBHOOKS.LOGGING.channel_id
+                config.WEBHOOKS.LOGGING.webhook_id
             )
         except Exception as e:
             print(f"Unable to set up logging webhook: {e}")
         try:
             self.testing_webhook = await self.fetch_webhook(
-                config.WEBHOOKS.TESTING.channel_id
+                config.WEBHOOKS.TESTING.webhook_id
             )
         except Exception as e:
             print(f"Unable to set up testing webhook: {e}")
