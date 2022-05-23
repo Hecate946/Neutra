@@ -406,7 +406,7 @@ class Neutra(commands.AutoShardedBot):
         # The rest of the botvars that couldn't be set earlier
         await self.load_globals()
 
-        if self.production or self.development:
+        if self.production:
             self.do_not_load += self.tester_cogs
             self.website_stats_updater.start()
             await self.setup_webhooks()
