@@ -1,11 +1,15 @@
+from optparse import Option
 import discord
 import asyncio
-from discord import user
 from discord.ext import menus
 from utilities import pagination, utils
 
 
 async def error_info(ctx, failed, option="User"):
+    message = f"Failed to {str(ctx.command)} `{', '.join([x[0] for x in failed])}`"
+    if len(message) > 2000:  # Too many users...
+        message = f"Failed to {str(ctx.command)} `{len(failed)} {option}{'' if len(failed) == 1 else 's'}`"
+
     mess = await ctx.fail(
         f"Failed to {str(ctx.command)} `{', '.join([x[0] for x in failed])}`"
     )
