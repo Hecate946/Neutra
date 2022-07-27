@@ -1058,55 +1058,8 @@ class Stats(commands.Cog):
             role count, region, emoji count,
             channel info, and creation date.
         """
-        server = ctx.message.guild
-        online = 0
-        for i in server.members:
-            if (
-                str(i.status) == "online"
-                or str(i.status) == "idle"
-                or str(i.status) == "dnd"
-            ):
-                online += 1
-        all_users = []
-        for user in server.members:
-            all_users.append("{}#{}".format(user.name, user.discriminator))
-        all_users.sort()
-        all = "\n".join(all_users)
-        total_text_channels = len(server.text_channels)
-        total_voice_channels = len(server.voice_channels)
-        total_channels = total_text_channels + total_voice_channels
-        role_count = len(server.roles)
-        emoji_count = len(server.emojis)
-        bots = []
-        for member in ctx.guild.members:
-            if member.bot:
-                bots.append(member)
-        if str(server.region) == "us-west":
-            region = "🇺🇸 US West"
-        elif str(server.region) == "us-east":
-            region = "🇺🇸 US East"
-        elif str(server.region) == "us-central":
-            region = "🇺🇸 US Central"
-        elif str(server.region) == "us-south":
-            region = "🇺🇸 US South"
-        elif str(server.region) == "hongkong":
-            region = "🇭🇰 Hong Kong"
-        elif str(server.region) == "southafrica":
-            region = "🇿🇦 South Africa"
-        elif str(server.region) == "sydney":
-            region = "🇦🇺 Sydney"
-        elif str(server.region) == "russia":
-            region = "🇷🇺 Russia"
-        elif str(server.region) == "europe":
-            region = "🇪🇺 Europe"
-        elif str(server.region) == "brazil":
-            region = "🇧🇷 Brazil"
-        elif str(server.region) == "brazil":
-            region = "🇸🇬 Singapore"
-        elif str(server.region) == "india":
-            region = "🇮🇳 India"
-        else:
-            region = str(server.region).title()
+        server = ctx.guild
+        online = sum(1 for x in server.members if str(x.status) != "offline")
 
         em = discord.Embed(color=self.bot.mode.EMBED_COLOR)
         em.set_thumbnail(url=utils.get_icon(server))
@@ -1131,10 +1084,14 @@ class Stats(commands.Cog):
         )
         em.add_field(
             name="Role Count",
-            value=f"{self.bot.emote_dict['role']} {role_count:,}",
+            value=f"{self.bot.emote_dict['role']} {len(server.roles):,}",
             inline=True,
         )
-        em.add_field(name="Region", value=region, inline=True)
+        em.add_field(
+            name="Boost Count",
+            value=f"{self.bot.emote_dict['boost']} {server.premium_subscription_count}",
+            inline=True,
+        )
         em.add_field(
             name="Emoji Count",
             value=f"{self.bot.emote_dict['emoji']} {len(server.emojis):,}",
@@ -1147,12 +1104,12 @@ class Stats(commands.Cog):
         )
         em.add_field(
             name="Text Channels",
-            value=f"{self.bot.emote_dict['textchannel']} {total_text_channels:,}",
+            value=f"{self.bot.emote_dict['textchannel']} {len(server.text_channels):,}",
             inline=True,
         )
         em.add_field(
             name="Voice Channels",
-            value=f"{self.bot.emote_dict['voicechannel']} {total_voice_channels:,}",
+            value=f"{self.bot.emote_dict['voicechannel']} {len(server.voice_channels):,}",
             inline=True,
         )
         await ctx.send_or_reply(embed=em)
