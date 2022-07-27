@@ -407,7 +407,7 @@ class Neutra(commands.AutoShardedBot):
         await self.load_globals()
 
         if self.production:
-            self.do_not_load += self.tester_cogs
+            self.do_not_load += self.tester_cogs + self.music_cogs
             self.website_stats_updater.start()
             await self.setup_webhooks()
             print(utils.prefix_log("Established Webhooks."))
