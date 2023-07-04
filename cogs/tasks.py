@@ -68,7 +68,7 @@ class Tasks(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self._have_data = asyncio.Event(loop=bot.loop)
+        self._have_data = asyncio.Event()
         self._current_timer = None
         self._task = bot.loop.create_task(self.dispatch_timers())
 

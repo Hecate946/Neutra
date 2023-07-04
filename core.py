@@ -173,7 +173,6 @@ class Neutra(commands.AutoShardedBot):
         self.admin_cogs = [
             "BOTCONFIG",
             "BOTADMIN",
-            "EMAILER",
             "MANAGER",
             "JISHAKU",
             "DATABASE",
@@ -408,7 +407,6 @@ class Neutra(commands.AutoShardedBot):
 
         if self.production:
             self.do_not_load += self.tester_cogs + self.music_cogs
-            self.website_stats_updater.start()
             await self.setup_webhooks()
             print(utils.prefix_log("Established Webhooks."))
 
@@ -516,23 +514,6 @@ class Neutra(commands.AutoShardedBot):
                 # for guild in self.guilds
                 # if guild.me.guild_permissions.manage_guild
             }
-        if not hasattr(self, "listing_sites"):
-            self.listing_sites = {
-                "discord.bots.gg": {
-                    "name": "Discord Bots",
-                    "token": config.LISTING_SITES.dbotsgg,
-                    "url": f"https://discord.bots.gg/api/v1/bots/{self.user.id}/stats",
-                    "data": {"guildCount": len(self.guilds)},
-                    "guild_count_name": "guildCount",
-                },
-                "discordbots.org": {
-                    "name": "Discord Bot List",
-                    "token": config.LISTING_SITES.topgg,
-                    "url": f"https://discordbots.org/api/bots/{self.user.id}/stats",
-                    "data": {"server_count": len(self.guilds)},
-                    "guild_count_name": "server_count",
-                },
-            }
 
         print(utils.prefix_log("Established Globals."))
 
@@ -582,16 +563,15 @@ class Neutra(commands.AutoShardedBot):
 
     async def finalize_startup(self):
         # Delete all records of servers that kicked the bot
-        await self.database.basic_cleanup(self.guilds)
-        await self.update_all_listing_stats()
+        # await self.database.basic_cleanup(self.guilds)
 
-        self.avatar_saver = saver.AvatarSaver(
-            self.avatar_webhook, self.cxn, self.session, self.loop
-        )  # Start saving avatars.
+        # self.avatar_saver = saver.AvatarSaver(
+        #     self.avatar_webhook, self.cxn, self.session, self.loop
+        # )  # Start saving avatars.
 
-        self.icon_saver = saver.IconSaver(
-            self.icon_webhook, self.cxn, self.session, self.loop
-        )  # Start saving icons.
+        # self.icon_saver = saver.IconSaver(
+        #     self.icon_webhook, self.cxn, self.session, self.loop
+        # )  # Start saving icons.
 
         # load all initial extensions
         for cog in self.exts:
@@ -876,7 +856,6 @@ class Neutra(commands.AutoShardedBot):
         if self.ready is False:
             return
 
-        await self.update_all_listing_stats()
         await self.database.update_server(guild, guild.members)
         await self.database.fix_server(guild.id)
         if guild.me.guild_permissions.manage_guild:
@@ -895,7 +874,6 @@ class Neutra(commands.AutoShardedBot):
         # This happens when the bot gets kicked from a server.
         # No need to waste any space storing their info anymore.
 
-        await self.update_all_listing_stats()
         await self.database.destroy_server(guild.id)
         try:
             await self.logging_webhook.send(
@@ -936,77 +914,5 @@ class Neutra(commands.AutoShardedBot):
         if (after.edited_at - after.created_at).total_seconds() > 10:
             return  # We do not allow edit command invocations after 10s.
         await self.process_commands(after)
-
-    # Update stats on sites listing Discord bots
-    async def update_listing_stats(self, site):
-        if self.production is False:
-            return
-
-        site = self.listing_sites.get(site)
-        token = site["token"]
-        url = site["url"]
-
-        headers = {"authorization": token, "content-type": "application/json"}
-        site["data"][site["guild_count_name"]] = len(self.guilds)
-        data = json.dumps(site["data"])
-
-        async with self.session.post(url, headers=headers, data=data) as resp:
-            if resp.status != 200:
-                return await resp.text()
-
-    # Update stats on all bot lists
-    async def update_all_listing_stats(self):
-        tasks = [self.update_listing_stats(site) for site in self.listing_sites]
-        return await asyncio.gather(*tasks)
-
-    @tasks.loop(seconds=1)
-    async def website_stats_updater(self):
-        url = config.BASE_WEB_URL + "_stats"
-        headers = {"content-type": "application/json"}
-        data = {
-            "uptime": utils.time_between(self.starttime, int(time.time())),
-            "servers": len(self.guilds),
-            "channels": sum(1 for c in self.get_all_channels()),
-            "members": sum(1 for m in self.get_all_members()),
-            "commands": sum(self.command_stats.values()),
-            "messages": sum(self.message_stats.values()),
-        }
-        data = json.dumps(data)
-
-        try:
-            async with self.session.post(url, headers=headers, data=data) as resp:
-                if resp.status == 200:
-                    self.website_stats_updater.change_interval(seconds=1)
-                else:
-                    info_logger.info(
-                        f"Invalid responce from website. Retrying in 10 minuts. Status: {resp.status} Response: {await resp.text()}"
-                    )
-                    self.website_stats_updater.change_interval(minutes=5)
-        except aiohttp.ClientConnectorError:  # Website is down, retry in 5 minutes
-            self.website_stats_updater.change_interval(minutes=5)
-
-    @website_stats_updater.after_loop
-    async def reset_website_stats(self):
-        url = config.BASE_WEB_URL + "_stats"
-        headers = {"content-type": "application/json"}
-        data = {
-            "uptime": "Currently Offline",
-            "servers": len(self.guilds),
-            "channels": sum(1 for c in self.get_all_channels()),
-            "members": sum(1 for m in self.get_all_members()),
-            "commands": sum(self.command_stats.values()),
-            "messages": sum(self.message_stats.values()),
-        }
-        data = json.dumps(data)
-
-        try:
-            async with self.session.post(url, headers=headers, data=data) as resp:
-                if resp.status != 200:
-                    info_logger.info(
-                        f"Invalid responce from website. Status: {resp.status} Response: {await resp.text()}"
-                    )
-        except aiohttp.ClientConnectorError:  # Website is down
-            pass
-
 
 bot = Neutra()

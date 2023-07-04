@@ -18,7 +18,6 @@ Some examples include managing roles and logging server actions.
 ##### [Botconfig](#Botconfig-1)
 ##### [Config](#Config-1)
 ##### [Database](#Database-1)
-##### [Emailer](#Emailer-1)
 ##### [Files](#Files-1)
 ##### [Help](#Help-1)
 ##### [Home](#Home-1)
@@ -199,15 +198,6 @@ sql: Run sql and get results in rst fmt.
 table: Show info on a db table.
 
 update: Update the database.
-```
-
-### Emailer
-#### Send emails and text messages. (2 Commands)
-
-```yaml
-email: None
-
-text: None
 ```
 
 ### Files

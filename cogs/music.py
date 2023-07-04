@@ -3852,7 +3852,7 @@ class Voice(commands.Cog):
 class SpotifyTracker(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.batch_lock = asyncio.Lock(loop=bot.loop)
+        self.batch_lock = asyncio.Lock()
         self.spotify = MusicUtils.spotify(bot)
 
         self.spotify_data = defaultdict(dict)

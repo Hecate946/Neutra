@@ -170,12 +170,6 @@ class Help(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-        self.desc = (
-            f"**Bot Invite Link:** [https://neutra.discord.bot]({self.bot.oauth})\n"
-        )
-        self.desc += f"**Support Server:**  [https://discord.gg/neutra]({self.bot.config.SUPPORT})\n"
-        self.desc += f"**Voting Link:**  [https://top.gg/bot/neutra/vote](https://top.gg/bot/806953546372087818/vote)"
-
     ############################
     ## Get Commands From Cogs ##
     ############################
@@ -187,8 +181,7 @@ class Help(commands.Cog):
 
         embed = discord.Embed(
             title=f"{self.bot.user.name}'s Help Command",
-            url="https://discord.gg/947ramn",
-            description=self.desc,
+            url=self.bot.config.SUPPORT,
             color=self.bot.mode.EMBED_COLOR,
         )
 
@@ -244,7 +237,6 @@ class Help(commands.Cog):
 
         embed = discord.Embed(
             title=f"Category: `{cog.qualified_name}`",
-            description=self.desc,
             color=self.bot.mode.EMBED_COLOR,
         )
         embed.set_footer(
@@ -277,7 +269,6 @@ class Help(commands.Cog):
 
         embed = discord.Embed(
             title=f"Category: `{command.cog_name}`",
-            description=self.desc,
             color=self.bot.mode.EMBED_COLOR,
         )
         embed.set_footer(

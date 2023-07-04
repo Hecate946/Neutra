@@ -25,7 +25,7 @@ class AvatarSaver:
 
         self.avatars = defaultdict(list)
         self.pending = []
-        self.queue = asyncio.Queue(loop=loop)
+        self.queue = asyncio.Queue()
 
         self.is_saving = False
 
@@ -246,7 +246,7 @@ class IconSaver:
 
         self.icons = defaultdict(list)
         self.pending = []
-        self.queue = asyncio.Queue(loop=loop)
+        self.queue = asyncio.Queue()
 
         self.is_saving = False
 

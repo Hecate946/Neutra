@@ -49,8 +49,8 @@ class Batch(commands.Cog):
         self.usernames_batch = []
         self.voice_batch = []
 
-        self.batch_lock = asyncio.Lock(loop=bot.loop)
-        self.queue = asyncio.Queue(loop=bot.loop)
+        self.batch_lock = asyncio.Lock()
+        self.queue = asyncio.Queue()
 
         self.bulk_inserter.start()
         self.invite_tracker.start()

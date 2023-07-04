@@ -36,7 +36,7 @@ class Botadmin(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self._req_lock = asyncio.Lock(loop=bot.loop)
+        self._req_lock = asyncio.Lock()
 
         self.torment = False
 
