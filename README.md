@@ -98,13 +98,13 @@ warns: Display the server warnlist.
 #### Bot admin only stats cog. (24 Commands)
 
 ```yaml
-annoy: Retarded
+annoy: This does what you think it does
 
 bottomservers: Show least member servers.
 
 cachedcommands: Show commands in the cache.
 
-cancelannoy: This is retarded
+cancelannoy: This cancels the annoy command
 
 command_history: Show command history.
 
